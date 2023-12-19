@@ -2,11 +2,18 @@ package pl.touk.nussknacker.ui.api
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{
+  Typed,
+  TypedObjectTypingResult,
+  TypedObjectWithValue,
+  TypingResult,
+  Unknown
+}
 import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinition,
@@ -22,6 +29,7 @@ import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder._
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
 
 import java.time.{Duration, LocalDateTime}
@@ -64,7 +72,11 @@ class Util {
   def withDescription(): Int = 42
 }
 
-class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
+class ExpressionSuggesterSpec
+    extends AnyFunSuite
+    with Matchers
+    with PatientScalaFutures
+    with TableDrivenPropertyChecks {
   implicit val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
 
   private val dictRegistry = new SimpleDictRegistry(
@@ -258,6 +270,30 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       ExpressionSuggestion("abc", Typed.fromInstance(1), fromClass = false, None, Nil),
       ExpressionSuggestion("empty", Typed[Boolean], fromClass = true, None, Nil),
     )
+  }
+
+  test("should not suggest unreferenceable fields for map literal after dot") {
+    nonStandardFieldNames.foreach { fieldName =>
+      spelSuggestionsFor(s"{'$fieldName': 1}.") shouldBe List(
+        ExpressionSuggestion("empty", Typed[Boolean], fromClass = true, None, Nil)
+      )
+    }
+  }
+
+  test("should suggest fields for map literal using indexing by property") {
+    val expression = s"{key: 1}[k]"
+    spelSuggestionsFor(expression, 0, expression.length - 1) shouldBe List(
+      ExpressionSuggestion("key", Typed.fromInstance(1), fromClass = false, None, Nil)
+    )
+  }
+
+  test("should suggest fields for map literal in indexer") {
+    (nonStandardFieldNames ++ standardFieldNames ++ javaKeywordNames).foreach { fieldName =>
+      val expression = s"{'$fieldName': 1}['']"
+      spelSuggestionsFor(expression, 0, expression.length - 2) shouldBe List(
+        ExpressionSuggestion(fieldName, TypedObjectWithValue(Typed.typedClass[Int], 1), fromClass = false, None, Nil)
+      )
+    }
   }
 
   test("should suggest dict variable methods") {
@@ -620,5 +656,13 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       suggestion("#input", Typed[A]),
     )
   }
+
+}
+
+object ExpressionSuggesterTestData {
+
+  val nonStandardFieldNames: List[String] = List("1", " ", "", "1.1", "?", "#", ".", " a ", "  a", "a  ")
+  val javaKeywordNames: List[String]      = List("class", "null", "false")
+  val standardFieldNames: List[String]    = List("key1")
 
 }

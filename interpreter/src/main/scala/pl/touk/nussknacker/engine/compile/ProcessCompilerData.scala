@@ -6,11 +6,11 @@ import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
+import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyInterpreterDependencies, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
-import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
@@ -47,7 +47,7 @@ object ProcessCompilerData {
       definitionWithTypes.modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions
     )
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(
+    val fragmentDefinitionExtractor = FragmentCompleteDefinitionExtractor(
       modelConfig,
       userCodeClassLoader,
       expressionCompiler

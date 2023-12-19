@@ -3,6 +3,16 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.14.x (Not released yet)
+
+### Code API changes
+
+### REST API changes
+
+### Other changes
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
+  Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
+
 ## In version 1.13.x (Not released yet)
 
 ### Code API changes
@@ -98,8 +108,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Boolean expressions in `Switch` and `Filter` nodes are required not null values
   * Variable values in `MapVariable`, `FragmentOutput` and `Variable` are mandatory
   * Field names in `MapVariable`, `FragmentOutput` are required to be unique
-* [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
-  Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
 
 ## In version 1.12.x
 

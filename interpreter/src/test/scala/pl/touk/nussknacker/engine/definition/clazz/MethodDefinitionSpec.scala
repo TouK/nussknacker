@@ -32,16 +32,20 @@ class MethodDefinitionSpec extends AnyFunSuite with Matchers {
     )
 
   private def checkApply(
-                          definition: MethodDefinition,
-                          args: List[TypingResult],
-                          expected: ValidatedNel[String, TypingResult]
+      definition: MethodDefinition,
+      args: List[TypingResult],
+      expected: ValidatedNel[String, TypingResult]
   ): Unit =
     definition.computeResultType(args).leftMap(_.map(_.message)) shouldBe expected
 
   private def checkApplyValid(definition: MethodDefinition, args: List[TypingResult], expected: TypingResult): Unit =
     checkApply(definition, args, expected.validNel)
 
-  private def checkApplyInvalid(definition: MethodDefinition, args: List[TypingResult], expected: ExpressionParseError): Unit =
+  private def checkApplyInvalid(
+      definition: MethodDefinition,
+      args: List[TypingResult],
+      expected: ExpressionParseError
+  ): Unit =
     checkApply(definition, args, expected.message.invalidNel)
 
   test("should generate type functions for methods without varArgs") {
@@ -97,7 +101,11 @@ class MethodDefinitionSpec extends AnyFunSuite with Matchers {
   }
 
   test("should accept subclasses as arguments to methods") {
-    checkApplyValid(superclassMethodDefinition, List(Typed[String], Typed[Int], Typed[Double], Typed[Number]), Typed[String])
+    checkApplyValid(
+      superclassMethodDefinition,
+      List(Typed[String], Typed[Int], Typed[Double], Typed[Number]),
+      Typed[String]
+    )
   }
 
   test("should automatically validate arguments of generic functions") {

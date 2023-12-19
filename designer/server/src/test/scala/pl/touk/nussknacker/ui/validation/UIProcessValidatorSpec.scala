@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
   FragmentParameter,
+  ParameterValueCompileTimeValidation,
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.graph.node._
@@ -51,7 +52,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, possibleValues}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.possibleValues
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -432,7 +433,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = None,
                   hintText = None,
-                  valueEditor = None
+                  valueEditor = None,
+                  valueCompileTimeValidation = None
                 )
               )
             )
@@ -483,7 +485,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                       fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
                       allowOtherValue = false
                     )
-                  )
+                  ),
+                  valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
                   "subParam2",
@@ -495,6 +498,31 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                     ValueInputWithFixedValuesProvided(
                       fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
                       allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  "subParam3",
+                  FragmentClazzRef[java.lang.String],
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = None,
+                  valueCompileTimeValidation =
+                    Some(ParameterValueCompileTimeValidation(Expression.spel("'a' + 'b'"), Some("some failed message")))
+                ),
+                FragmentParameter(
+                  "subParam4",
+                  FragmentClazzRef[java.lang.String],
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = None,
+                  valueCompileTimeValidation = Some(
+                    ParameterValueCompileTimeValidation(
+                      s"#${ValidationExpressionParameterValidator.variableName} < 7", // invalid operation (comparing string with int)
+                      None
                     )
                   )
                 )
@@ -528,6 +556,20 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
               "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
               "There is a problem with expression: 'someValue'",
               Some("$param.subParam2.$fixedValuesList"),
+              NodeValidationErrorType.SaveAllowed
+            ),
+            NodeValidationError(
+              "InvalidValidationExpression",
+              "Invalid validation expression: Bad expression type, expected: Boolean, found: String(ab)",
+              "There is a problem with validation expression: 'a' + 'b'",
+              Some("$param.subParam3.$validationExpression"),
+              NodeValidationErrorType.SaveAllowed
+            ),
+            NodeValidationError(
+              "InvalidValidationExpression",
+              "Invalid validation expression: Wrong part types",
+              "There is a problem with validation expression: #value < 7",
+              Some("$param.subParam4.$validationExpression"),
               NodeValidationErrorType.SaveAllowed
             )
           ) =>
@@ -589,7 +631,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                     fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
                     allowOtherValue = false
                   )
-                )
+                ),
+                valueCompileTimeValidation = None
               ),
             )
           )
@@ -955,6 +998,90 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
             List(
               NodeValidationError("EmptyMandatoryParameter", _, _, Some("P1"), NodeValidationErrorType.SaveAllowed),
               NodeValidationError("EmptyMandatoryParameter", _, _, Some("P2"), NodeValidationErrorType.SaveAllowed)
+            )
+          ) =>
+    }
+  }
+
+  test("validates scenario with fragment parameters - with spel validation expression and valid value") {
+    val fragmentId = "fragment1"
+    val paramName  = "name"
+
+    val fragmentDefinition: CanonicalProcess =
+      createFragmentDefinition(
+        fragmentId,
+        List(
+          FragmentParameter(
+            paramName,
+            FragmentClazzRef[java.lang.String],
+            required = false,
+            initialValue = None,
+            hintText = None,
+            valueEditor = None,
+            valueCompileTimeValidation = Some(
+              ParameterValueCompileTimeValidation(
+                s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
+                None
+              )
+            )
+          )
+        )
+      )
+    val processWithFragment =
+      createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter(paramName, "\"Tomasz\"")))
+
+    val processValidation = mockedProcessValidator(fragmentDefinition, defaultConfig)
+    val result            = processValidation.validate(processWithFragment)
+
+    result.hasErrors shouldBe false
+    result.errors.invalidNodes shouldBe Symbol("empty")
+    result.errors.globalErrors shouldBe Symbol("empty")
+    result.saveAllowed shouldBe true
+  }
+
+  test("validates scenario with fragment parameters - with spel validation expression and invalid value") {
+    val fragmentId = "fragment1"
+    val paramName  = "name"
+
+    val configWithValidators: Config = defaultConfig
+
+    val fragmentDefinition: CanonicalProcess =
+      createFragmentDefinition(
+        fragmentId,
+        List(
+          FragmentParameter(
+            paramName,
+            FragmentClazzRef[java.lang.String],
+            required = false,
+            initialValue = None,
+            hintText = None,
+            valueEditor = None,
+            valueCompileTimeValidation = Some(
+              ParameterValueCompileTimeValidation(
+                s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
+                Some("some failed message")
+              )
+            )
+          )
+        )
+      )
+    val processWithFragment =
+      createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter(paramName, "\"Barabasz\"")))
+
+    val processValidation = mockedProcessValidator(fragmentDefinition, configWithValidators)
+    val result            = processValidation.validate(processWithFragment)
+    result.hasErrors shouldBe true
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("subIn") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                "some failed message",
+                "Please provide value that satisfies the validation expression '#value.length() < 7'",
+                Some(paramName),
+                NodeValidationErrorType.SaveAllowed
+              )
             )
           ) =>
     }

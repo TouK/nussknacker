@@ -1,50 +1,63 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FragmentValidation, onChangeType } from "../../../item";
+import { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../item";
 import { SettingRow, fieldLabel } from "./StyledSettingsComponnets";
-import { ExpressionLang } from "../../../../editors/expression/types";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import EditableEditor from "../../../../editors/EditableEditor";
 import { NodeInput } from "../../../../../../withFocus";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 
-interface ValidationFields extends Omit<FragmentValidation, "validation"> {
+interface ValidationFields extends ValueCompileTimeValidation {
+    variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
-    variableTypes: VariableTypes;
     readOnly: boolean;
     errors: NodeValidationError[];
+    name: string;
 }
 
 export default function ValidationFields({
-    validationErrorMessage,
     validationExpression,
+    validationFailedMessage,
     variableTypes,
     path,
     onChange,
     readOnly,
     errors,
+    name,
 }: ValidationFields) {
     const { t } = useTranslation();
+
+    const validationExpressionFieldName: FieldName = `$param.${name}.$validationExpression`;
+
     return (
         <>
             <EditableEditor
                 fieldLabel={t("fragment.validation.validationExpression", "Validation expression:")}
-                renderFieldLabel={() => fieldLabel(t("fragment.validation.validationExpression", "Validation expression:"))}
-                expressionObj={{ language: ExpressionLang.SpEL, expression: validationExpression }}
-                onValueChange={(value) => onChange(`${path}.validationExpression`, value)}
+                renderFieldLabel={() =>
+                    fieldLabel({ label: t("fragment.validation.validationExpression", "Validation expression:"), required: true })
+                }
+                expressionObj={validationExpression}
+                onValueChange={(value) => onChange(`${path}.valueCompileTimeValidation.validationExpression.expression`, value)}
                 variableTypes={variableTypes}
                 readOnly={readOnly}
-                fieldErrors={getValidationErrorsForField(errors, "validationExpression")}
+                fieldErrors={getValidationErrorsForField(errors, validationExpressionFieldName)}
                 showValidation
             />
             <SettingRow>
-                {fieldLabel(t("fragment.validation.validationErrorMessage", "Validation error message:"))}
+                {fieldLabel({
+                    label: t("fragment.validation.validationErrorMessage", "Validation error message:"),
+                    hintText: t(
+                        "fragment.validation.validationErrorMessageHintText",
+                        "An empty value means that the validation error message will be generated dynamically based on the validation expression.",
+                    ),
+                })}
                 <NodeInput
                     style={{ width: "70%" }}
-                    value={validationErrorMessage}
-                    onChange={(event) => onChange(`${path}.validationErrorMessage`, event.currentTarget.value)}
+                    value={validationFailedMessage}
+                    onChange={(event) => onChange(`${path}.valueCompileTimeValidation.validationFailedMessage`, event.currentTarget.value)}
                     readOnly={readOnly}
+                    placeholder={t("fragment.validation.validationErrorMessagePlaceholder", "eg. Parameter value is not valid.")}
                 />
             </SettingRow>
         </>

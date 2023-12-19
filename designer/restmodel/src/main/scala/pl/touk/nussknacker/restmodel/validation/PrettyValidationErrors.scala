@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.graph.node.{
   InitialValueFieldName,
   InputModeFieldName,
   TypFieldName,
+  ValidationExpressionFieldName,
   qualifiedParamFieldName
 }
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
@@ -177,6 +178,13 @@ object PrettyValidationErrors {
           s"Failed to parse expression: $message",
           s"There is a problem with expression: $originalExpr",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = subFieldName))
+        )
+      case InvalidValidationExpression(message, _, paramName, originalExpr) =>
+        node(
+          s"Invalid validation expression: $message",
+          s"There is a problem with validation expression: $originalExpr",
+          fieldName =
+            Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ValidationExpressionFieldName)))
         )
     }
   }

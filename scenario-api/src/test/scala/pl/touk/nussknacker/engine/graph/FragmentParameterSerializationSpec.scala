@@ -3,18 +3,20 @@ package pl.touk.nussknacker.engine.graph
 import io.circe.jawn.decode
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
+  ParameterValueCompileTimeValidation,
   ValueInputWithFixedValuesProvided
 }
 
 class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
 
   test(
-    "should deserialize FragmentParameter without required, initialValue, hintText, inputConfig [backwards compatibility test]"
+    "should deserialize FragmentParameter without required, initialValue, hintText, valueEditor, valueCompileTimeValidation [backwards compatibility test]"
   ) {
     val referenceFragmentParameter = FragmentParameter(
       "paramString",
@@ -22,7 +24,8 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
       required = false,
       initialValue = None,
       hintText = None,
-      valueEditor = None
+      valueEditor = None,
+      valueCompileTimeValidation = None
     )
 
     decode[FragmentParameter]("""{
@@ -40,7 +43,8 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         |  "required" : false,
         |  "initialValue" : null,
         |  "hintText" : null,
-        |  "valueEditor" : null
+        |  "valueEditor" : null,
+        |  "valueCompileTimeValidation" : null
         |}""".stripMargin) shouldBe Right(referenceFragmentParameter)
   }
 
@@ -69,6 +73,13 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
             "label" : "someOtherValue"
           }
         ]
+      },
+      "valueCompileTimeValidation" : {
+        "validationExpression" : {
+          "expression" : "#value.length() < 7",
+          "language" : "spel"
+        },
+        "validationFailedMessage" : "some failed message"
       }
     }""") shouldBe Right(
       FragmentParameter(
@@ -85,7 +96,10 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
             ),
             allowOtherValue = true
           )
-        )
+        ),
+        valueCompileTimeValidation = Some(
+          ParameterValueCompileTimeValidation(Expression.spel("#value.length() < 7"), Some("some failed message"))
+        ),
       )
     )
   }

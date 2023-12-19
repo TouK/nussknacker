@@ -12,11 +12,8 @@ export const getDefaultFields = (refClazzName: string): FragmentInputParameter =
         // fixedValuesType: FixedValuesType.UserDefinedList,
         valueEditor: null,
         // fixedValuesListPresetId: "",
-        // validationExpression: "test",
         // presetSelection: "",
-        // validationExpression: "",
-        // validationErrorMessage: "",
-        // validation: true,
+        valueCompileTimeValidation: null,
         typ: { refClazzName } as ReturnedType,
     };
 };

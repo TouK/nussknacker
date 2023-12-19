@@ -1,12 +1,14 @@
 import { Expression, ReturnedType } from "../../../../../types";
 
-export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[];
+export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[] | ValueCompileTimeValidation;
 
-//TODO: Makes values required when backend ready
+export interface ValueCompileTimeValidation {
+    validationExpression: Expression;
+    validationFailedMessage?: string;
+}
+
 export interface FragmentValidation {
-    validation?: boolean;
-    validationErrorMessage?: string;
-    validationExpression?: string;
+    valueCompileTimeValidation: ValueCompileTimeValidation | null;
 }
 
 export enum FixedValuesType {
@@ -48,7 +50,7 @@ export interface DefaultParameterVariant extends GenericParameterVariant, Fragme
     valueEditor: null;
 }
 
-export interface FixedListParameterVariant extends GenericParameterVariant {
+export interface FixedListParameterVariant extends GenericParameterVariant, FragmentValidation {
     valueEditor: ValueEditor;
     fixedValuesListPresetId: string;
     presetSelection?: string;

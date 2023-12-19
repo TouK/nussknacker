@@ -1,6 +1,8 @@
 import React from "react";
 import { Switch, Typography, styled, FormLabel, css } from "@mui/material";
 import { NodeRow } from "../../../../NodeDetailsContent/NodeStyled";
+import InfoIcon from "@mui/icons-material/Info";
+import { StyledNodeTip } from "../../../../FieldLabel";
 
 export const SettingsWrapper = styled("div")`
     padding: 10px;
@@ -78,4 +80,9 @@ export const StyledFormControlLabel = styled(Typography)`
     text-align: left;
 `;
 
-export const fieldLabel = (label: string) => <SettingLabelStyled required>{label}</SettingLabelStyled>;
+export const fieldLabel = ({ label, required = false, hintText }: { label: string; required?: boolean; hintText?: string }) => (
+    <SettingLabelStyled required={required}>
+        {label}
+        {hintText && <StyledNodeTip title={hintText} icon={<InfoIcon />} />}
+    </SettingLabelStyled>
+);

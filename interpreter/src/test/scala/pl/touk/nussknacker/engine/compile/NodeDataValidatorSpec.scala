@@ -10,7 +10,11 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  DualParameterEditor,
+  StringParameterEditor,
+  ValidationExpressionParameterValidator
+}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -33,6 +37,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
+  ParameterValueCompileTimeValidation,
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.graph.node._
@@ -720,7 +725,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("1", "someLabel")),
                   allowOtherValue = false
                 )
-              )
+              ),
+              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -758,7 +764,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
                   allowOtherValue = false
                 )
-              )
+              ),
+              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -792,7 +799,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               required = false,
               initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
               hintText = None,
-              valueEditor = None
+              valueEditor = None,
+              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -825,7 +833,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   fixedValuesList = List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
                   allowOtherValue = false
                 )
-              )
+              ),
+              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -854,7 +863,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               required = false,
               initialValue = None,
               hintText = None,
-              valueEditor = None
+              valueEditor = None,
+              valueCompileTimeValidation = None
             ),
             FragmentParameter(
               "param1",
@@ -862,7 +872,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               required = false,
               initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
               hintText = None,
-              valueEditor = None
+              valueEditor = None,
+              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -890,7 +901,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               required = false,
               initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
               hintText = None,
-              valueEditor = None
+              valueEditor = None,
+              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -919,7 +931,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               required = false,
               initialValue = None,
               hintText = None,
-              valueEditor = None
+              valueEditor = None,
+              valueCompileTimeValidation = None
             )
           ),
         ),
@@ -931,6 +944,216 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       error.fieldName shouldBe paramName
       error.refClazzName shouldBe invalidType
       error.nodeIds shouldBe Set(nodeId)
+    }
+  }
+
+  test("shouldn't fail on valid validation expression") {
+    val nodeId: String = "in"
+    val paramName      = "param1"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = Some(
+                ParameterValueCompileTimeValidation(
+                  s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
+                  Some("some failed message")
+                )
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe empty
+    }
+  }
+
+  test("should fail on blank validation expression") {
+    val nodeId: String  = "in"
+    val paramName       = "param1"
+    val blankExpression = "     "
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = Some(
+                ParameterValueCompileTimeValidation(Expression.spel(blankExpression), Some("some failed message"))
+              ),
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidValidationExpression(
+                "Validation expression cannot be blank",
+                nodeId,
+                paramName,
+                blankExpression
+              )
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should fail on invalid validation expression") {
+    val nodeId: String   = "in"
+    val paramName        = "param1"
+    val invalidReference = "#invalidReference"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = Some(
+                ParameterValueCompileTimeValidation(Expression.spel(invalidReference), Some("some failed message"))
+              ),
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidValidationExpression(
+                "Unresolved reference 'invalidReference'",
+                nodeId,
+                paramName,
+                invalidReference
+              )
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should fail on invalid-type validation expression") {
+    val nodeId: String = "in"
+    val paramName      = "param1"
+    val invalidExpression =
+      s"#${ValidationExpressionParameterValidator.variableName} > 0" // invalid operation (comparing string with int)
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = Some(
+                ParameterValueCompileTimeValidation(
+                  invalidExpression,
+                  Some("some failed message")
+                )
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidValidationExpression(
+                "Wrong part types",
+                nodeId,
+                paramName,
+                invalidExpression
+              )
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should fail on non-boolean-result-type validation expression") {
+    val nodeId: String   = "in"
+    val paramName        = "param1"
+    val stringExpression = "'a' + 'b'"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = Some(
+                ParameterValueCompileTimeValidation(Expression.spel(stringExpression), Some("some failed message"))
+              ),
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidValidationExpression(
+                "Bad expression type, expected: Boolean, found: String(ab)",
+                nodeId,
+                paramName,
+                stringExpression
+              )
+            ),
+            None,
+            None
+          ) =>
     }
   }
 

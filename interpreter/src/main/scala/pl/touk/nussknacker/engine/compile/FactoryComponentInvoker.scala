@@ -24,7 +24,13 @@ class FactoryComponentInvoker(expressionEvaluator: ExpressionEvaluator) extends 
       componentUseCase: ComponentUseCase
   )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
     NodeValidationExceptionHandler.handleExceptions {
-      doInvokeCreateMethod[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies, componentUseCase)
+      doInvokeCreateMethod[T](
+        nodeDefinition,
+        compiledParameters,
+        outputVariableNameOpt,
+        additionalDependencies,
+        componentUseCase
+      )
     }
   }
 

@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
-import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.graph.node.{Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
@@ -341,7 +341,7 @@ object ProcessValidator {
       modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions
     )
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(
+    val fragmentDefinitionExtractor = FragmentCompleteDefinitionExtractor(
       modelConfig,
       classLoader,
       expressionCompiler

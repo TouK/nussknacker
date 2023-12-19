@@ -1,5 +1,8 @@
 # Changelog
 
+1.14.0 (Not released yet)
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.2
+
 1.13.0 (Not released yet)
 -------------------------
 * [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service
@@ -29,18 +32,22 @@
 * [#4887](https://github.com/TouK/nussknacker/pull/4887) New parameter validator - `ValidationExpressionParameterValidator` that allows to use SpEL (or any other) expression to validate parameters
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) Add an option to set schema on connections in SQL enricher
 * [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) [#5103](https://github.com/TouK/nussknacker/pull/5103) Breaking change: Scenario type to Category mapping become 1-to-1 instead of 1-to-many.
-* [#4978](https://github.com/TouK/nussknacker/pull/4978) Expand FragmentParameter with new fields: hintText, initialValue, required, inputMode
+* [#4978](https://github.com/TouK/nussknacker/pull/4978) [#5241](https://github.com/TouK/nussknacker/pull/5241) Expand `FragmentParameter` with new fields:
+  * `hintText` - shown next to the parameter when using the fragment
+  * `initialValue` - initial value of the parameter (before user changes it)
+  * `required` - whether the parameter is mandatory
+  * `valueCompileTimeValidation` - allows configuration of `ValidationExpressionParameterValidator` for this parameter
 * [#4953](https://github.com/TouK/nussknacker/pull/4953) Improved node validation
 * [#5141](https://github.com/TouK/nussknacker/pull/5141) Security improvement: API endpoints check if user has access rights to Category associated with Processing Type provided in API
-* [#5182](https://github.com/TouK/nussknacker/pull/5182) [#5203](https://github.com/TouK/nussknacker/pull/5203) Component and User API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
+* [#5182](https://github.com/TouK/nussknacker/pull/5182) [#5203](https://github.com/TouK/nussknacker/pull/5203) [#5250](https://github.com/TouK/nussknacker/pull/5250) Component, User and Notification API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#5171](https://github.com/TouK/nussknacker/pull/5171) Breaking change: some components changed identifier - url's and identifiers in node errors are changed
 * [#5171](https://github.com/TouK/nussknacker/pull/5171) Component `mapVariable` was renamed to `record-variable`
 * [#5223](https://github.com/TouK/nussknacker/pull/5223) Legacy low level kafka components were removed
 * [#5233](https://github.com/TouK/nussknacker/pull/5233) Fix: Not expected type: Null runtime error for non-nullable, optional json fields that were not provided by user in sink
 * [#5233](https://github.com/TouK/nussknacker/pull/5233) Added support for schema evolution in kafka using json schema and response sink
-* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.2
+* [#5197](https://github.com/TouK/nussknacker/pull/5197) Improved accessing fields in records in expressions - fields can now be statically accessed using indexing
 
-* 1.12.5 (1 Dec 2023)
+1.12.5 (1 Dec 2023)
 ------------------------
 * [#5110](https://github.com/TouK/nussknacker/pull/5110) Fix: The compare option doesn't display fragment input properties between the two versions
 

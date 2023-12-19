@@ -325,7 +325,8 @@ object node {
         required: Boolean = false,
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
-        valueEditor: Option[ValueInputWithFixedValues]
+        valueEditor: Option[ValueInputWithFixedValues],
+        valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
     )
 
     @JsonCodec case class FixedExpressionValue(expression: String, label: String)
@@ -339,7 +340,8 @@ object node {
           required = false,
           initialValue = None,
           hintText = None,
-          valueEditor = None
+          valueEditor = None,
+          valueCompileTimeValidation = None
         )
       }
 
@@ -351,6 +353,11 @@ object node {
 
     }
 
+    @JsonCodec case class ParameterValueCompileTimeValidation(
+        validationExpression: Expression,
+        validationFailedMessage: Option[String]
+    )
+
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 
       def toRuntimeClass(classLoader: ClassLoader): Try[Class[_]] =
@@ -360,12 +367,13 @@ object node {
 
   }
 
-  val IdFieldName              = "$id"
-  val ParameterFieldNamePrefix = "$param"
-  val InitialValueFieldName    = "$initialValue"
-  val InputModeFieldName       = "$inputMode"
-  val TypFieldName             = "$typ"
-  val FixedValuesListFieldName = "$fixedValuesList"
+  val IdFieldName                   = "$id"
+  val ParameterFieldNamePrefix      = "$param"
+  val InitialValueFieldName         = "$initialValue"
+  val InputModeFieldName            = "$inputMode"
+  val TypFieldName                  = "$typ"
+  val FixedValuesListFieldName      = "$fixedValuesList"
+  val ValidationExpressionFieldName = "$validationExpression"
 
   def qualifiedParamFieldName(
       paramName: String,
