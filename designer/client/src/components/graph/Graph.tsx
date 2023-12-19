@@ -14,6 +14,7 @@ import { PanZoomPlugin } from "./PanZoomPlugin";
 import { RangeSelectedEventData, RangeSelectPlugin, SelectionMode } from "./RangeSelectPlugin";
 import { prepareSvg } from "./svg-export/prepareSvg";
 import * as GraphUtils from "./utils/graphUtils";
+import { handleGraphEvent } from "./utils/graphUtils";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import { rafThrottle } from "./rafThrottle";
 import { isEdgeEditable } from "../../common/EdgeUtils";
@@ -27,9 +28,8 @@ import ProcessUtils from "../../common/ProcessUtils";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
-import { handleGraphEvent } from "./utils/graphUtils";
 
-interface Props extends GraphProps {
+type Props = GraphProps & {
     processCategory: string;
     processDefinitionData: ProcessDefinitionData;
     loggedUser: Partial<User>;
@@ -37,7 +37,7 @@ interface Props extends GraphProps {
     userSettings: UserSettings;
     showModalNodeDetails: (node: NodeType, process: Process, readonly?: boolean) => void;
     isPristine?: boolean;
-}
+};
 
 function handleActionOnLongPress<T extends dia.CellView>(
     shortPressAction: ((cellView: T, event: dia.Event) => void) | null,
@@ -146,6 +146,7 @@ export class Graph extends React.Component<Props> {
                     }
                 })
                 .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
+                    if (this.props.isFragment === true) return;
                     const isReversed = targetMagnet?.getAttribute("port") === "Out";
                     const sourceView = linkView.getEndView("source");
                     const type = linkView.model.attributes.edgeData?.edgeType;
@@ -182,6 +183,7 @@ export class Graph extends React.Component<Props> {
     };
 
     setEspGraphRef = (instance: HTMLElement): void => {
+        if (this.props.isFragment === true) return;
         const { connectDropTarget } = this.props;
         this.instance = instance;
         if (connectDropTarget && instance) {
@@ -252,6 +254,7 @@ export class Graph extends React.Component<Props> {
         };
 
         const selectNode = (cellView: dia.CellView, evt: dia.Event) => {
+            if (this.props.isFragment === true) return;
             if (this.props.nodeSelectionEnabled) {
                 const nodeDataId = cellView.model.attributes.nodeData?.id;
                 if (!nodeDataId) {
@@ -267,6 +270,7 @@ export class Graph extends React.Component<Props> {
         };
 
         const deselectNodes = (event: JQuery.Event) => {
+            if (this.props.isFragment === true) return;
             if (event.isPropagationStopped()) {
                 return;
             }
@@ -303,14 +307,15 @@ export class Graph extends React.Component<Props> {
         // event handlers binding below. order sometimes matters
         this.panAndZoom = new PanZoomPlugin(this.processGraphPaper);
 
-        if (this.props.nodeSelectionEnabled) {
+        if (this.props.isFragment !== true && this.props.nodeSelectionEnabled) {
+            const { toggleSelection, resetSelection } = this.props;
             new RangeSelectPlugin(this.processGraphPaper, this.panAndZoom.getPinchEventActive);
             this.processGraphPaper.on("rangeSelect:selected", ({ elements, mode }: RangeSelectedEventData) => {
                 const nodes = elements.filter((el) => isModelElement(el)).map(({ id }) => id.toString());
                 if (mode === SelectionMode.toggle) {
-                    this.props.toggleSelection(...nodes);
+                    toggleSelection(...nodes);
                 } else {
-                    this.props.resetSelection(...nodes);
+                    resetSelection(...nodes);
                 }
             });
         }
@@ -335,16 +340,15 @@ export class Graph extends React.Component<Props> {
         this.panAndZoom.fitSmallAndLargeGraphs();
     }
 
-    canAddNode(node: NodeType): boolean {
-        return (
+    addNode(node: NodeType, position: Position): void {
+        if (this.props.isFragment === true) return;
+
+        const canAddNode =
             this.props.capabilities.editFrontend &&
             NodeUtils.isNode(node) &&
-            NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
-        );
-    }
+            NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory);
 
-    addNode(node: NodeType, position: Position): void {
-        if (this.canAddNode(node)) {
+        if (canAddNode) {
             this.props.nodeAdded(node, position);
         }
     }
@@ -371,8 +375,10 @@ export class Graph extends React.Component<Props> {
         if (!isEqual(processCounts, prevProps.processCounts)) {
             this.updateNodesCounts();
         }
-        if (this.props.isDraggingOver !== prevProps.isDraggingOver) {
-            this.highlightHoveredLink(!this.props.isDraggingOver);
+        if (this.props.isFragment !== true && prevProps.isFragment !== true) {
+            if (this.props.isDraggingOver !== prevProps.isDraggingOver) {
+                this.highlightHoveredLink(!this.props.isDraggingOver);
+            }
         }
         if (this.props.isPristine) {
             this._prepareContentForExport();
@@ -443,7 +449,7 @@ export class Graph extends React.Component<Props> {
     };
 
     disconnectPreviousEdge = (from: NodeId, to: NodeId): void => {
-        if (this.graphContainsEdge(from, to)) {
+        if (this.graphContainsEdge(from, to) && this.props.isFragment !== true) {
             this.props.nodesDisconnected(from, to);
         }
     };
@@ -453,6 +459,8 @@ export class Graph extends React.Component<Props> {
     }
 
     handleInjectBetweenNodes = (middleMan: shapes.devs.Model, linkBelowCell?: dia.Link): void => {
+        if (this.props.isFragment === true) return;
+
         const { processToDisplay, injectNode, processDefinitionData } = this.props;
 
         if (linkBelowCell && middleMan) {
@@ -541,11 +549,9 @@ export class Graph extends React.Component<Props> {
     };
 
     changeLayoutIfNeeded = (): void => {
-        const { layout, layoutChanged, isFragment } = this.props;
+        if (this.props.isFragment === true) return;
 
-        if (isFragment) {
-            return;
-        }
+        const { layout, layoutChanged } = this.props;
 
         const elements = this.graph.getElements().filter(isModelElement);
         const collection = elements.map((el) => {
@@ -609,7 +615,7 @@ export class Graph extends React.Component<Props> {
 
     private bindNodeRemove() {
         this.graph.on(Events.REMOVE, (e: dia.Cell) => {
-            if (e.isLink() && !this.redrawing) {
+            if (e.isLink() && !this.redrawing && this.props.isFragment !== true) {
                 this.props.nodesDisconnected(e.attributes.source.id, e.attributes.target.id);
             }
         });

@@ -38,7 +38,7 @@ type ScenarioGraphProps = {
     connectDropTarget;
 };
 
-export type FragmentGraphProps = {
+type FragmentGraphProps = {
     processToDisplay: Process;
     divId: string;
     nodeIdPrefixForFragmentTests: string;
