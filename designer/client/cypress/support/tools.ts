@@ -26,9 +26,7 @@ function dndTo(subject, target: string, options?: { x?: number; y?: number }): C
 }
 
 function matchQuery(query: string): void {
-    cy.window().should(({ location }) => {
-        expect(location.search).to.equal(query);
-    });
+    cy.location("search").should("equal", query);
 }
 
 Cypress.Commands.add("dndTo", { prevSubject: true }, dndTo);
