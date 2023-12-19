@@ -5,6 +5,7 @@ set -e
 cd "$(dirname -- "$0")"
 echo "----NODE VERSION"
 node -v
+whereis node
 cd client && npm ci && npm run build && cd -
 cp -r client/.federated-types/nussknackerUi submodules/types/@remote
 cd submodules && npm ci && CI=true npm run build && cd -
