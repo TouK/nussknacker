@@ -17,11 +17,9 @@ import urljoin from "url-join";
 import { BASE_PATH } from "../../../../config";
 import { RootState } from "../../../../reducers";
 import { applyIdFromFakeName } from "../IdField";
-import { mapValues } from "lodash";
-import { ensureArray } from "../../../../common/arrayUtils";
 import { useTheme } from "@mui/material";
 import { alpha, tint } from "../../../../containers/theme/helpers";
-import { parseWindowsQueryParams, replaceSearchQuery, setAndPreserveLocationParams } from "../../../../containers/hooks/useSearchQuery";
+import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; process: Process }> {
     readOnly?: boolean;
@@ -41,21 +39,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }, []);
 
     const dispatch = useDispatch();
-
-    const navigate = useNavigate();
-    const replaceWindowsQueryParams = useCallback(
-        <P extends Record<string, string | string[]>>(add: P, remove?: P): void => {
-            const params = parseWindowsQueryParams(add, remove);
-            const search = setAndPreserveLocationParams(mapValues(params, (v) => ensureArray(v).map(encodeURIComponent)));
-            navigate({ search }, { replace: true });
-        },
-        [navigate],
-    );
-
-    useEffect(() => {
-        replaceWindowsQueryParams({ nodeId: node.id });
-        return () => replaceWindowsQueryParams({}, { nodeId: node.id });
-    }, [node.id]);
 
     const performNodeEdit = useCallback(async () => {
         await dispatch(editNode(process, node, applyIdFromFakeName(editedNode), outputEdges));
@@ -118,6 +101,11 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
         const HeaderTitle = () => <NodeDetailsModalHeader node={node} />;
         return { HeaderTitle };
     }, [node]);
+
+    useEffect(() => {
+        replaceSearchQuery(parseWindowsQueryParams({ nodeId: node.id }));
+        return () => replaceSearchQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+    }, [node.id]);
 
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!processFromGlobalStore?.nodes) {

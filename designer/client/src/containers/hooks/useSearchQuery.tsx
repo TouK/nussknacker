@@ -1,40 +1,59 @@
-import { defaults, isEqual, omitBy, uniq, without } from "lodash";
+import { isEqual, omitBy, uniq, without } from "lodash";
 import * as queryString from "query-string";
-import { ParseOptions } from "query-string";
-import { useCallback, useMemo } from "react";
-import { UnknownRecord } from "../../types/common";
-import { useLocation, useNavigate } from "react-router-dom";
+import { ParsedQuery, ParseOptions } from "query-string";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { ensureArray } from "../../common/arrayUtils";
 
-export function useSearchQuery<T extends UnknownRecord>(options?: ParseOptions): [T, (v: T) => void] {
-    const navigate = useNavigate();
-    const location = useLocation();
+type QueryRecord = ParsedQuery<string | boolean | number>;
 
-    const query = useMemo(() => {
-        const parsedQuery = queryString.parse(location.search, defaults(options, { arrayFormat: defaultArrayFormat, parseBooleans: true }));
-        return parsedQuery as T;
-    }, [location.search, options]);
+const DEFAULT_ARRAY_FORMAT: ParseOptions["arrayFormat"] = "comma";
 
-    const updateQuery = useCallback(
-        (value: T) => {
-            navigate({ search: setAndPreserveLocationParams(value) }, { replace: true });
-        },
-        [navigate],
-    );
-
-    return [query, updateQuery];
+function parseQuery(searchString = window.location.search): QueryRecord {
+    return queryString.parse(searchString, {
+        arrayFormat: DEFAULT_ARRAY_FORMAT,
+        parseNumbers: true,
+        parseBooleans: true,
+        decode: true,
+    });
 }
 
-export function replaceSearchQuery(updateParams: (params: URLSearchParams) => URLSearchParams): void {
-    const currentState = window.history.state || {};
-    const currentURL = new URL(window.location.href);
-    const currentSearchParams = new URLSearchParams(window.location.search);
-    currentURL.search = updateParams(currentSearchParams).toString();
-    window.history.replaceState(currentState, "", currentURL.href);
+function stringifyQuery(params: QueryRecord): string {
+    const resultParams = omitBy(params, (value) => value === undefined || isEqual(value, []));
+    return queryString.stringify(resultParams, {
+        arrayFormat: DEFAULT_ARRAY_FORMAT,
+        encode: true,
+    });
+}
+
+export function useSearchQuery<T extends QueryRecord>(): [T, (v: T) => void] {
+    const location = useLocation();
+
+    const [queryState, setQueryState] = useState(location.search);
+
+    const parsed = useMemo(() => parseQuery(queryState) as T, [queryState]);
+
+    const updateQuery = useCallback((value: T) => {
+        setQueryState(() => setAndPreserveLocationParams(value));
+    }, []);
+
+    useEffect(() => {
+        replaceSearchQuery(parsed);
+    }, [parsed]);
+
+    return [parsed, updateQuery];
+}
+
+export function replaceSearchQuery(params: QueryRecord): void {
+    const { history, location } = window;
+    const currentState = history.state || {};
+    const currentURL = new URL(location.href);
+    currentURL.search = stringifyQuery(params);
+    history.replaceState(currentState, "", currentURL.href);
 }
 
 export function parseWindowsQueryParams<P extends Record<string, string | string[]>>(append: P, remove?: P): Record<string, string[]> {
-    const query = queryString.parse(window.location.search, { arrayFormat: defaultArrayFormat });
+    const query = parseQuery();
     const keys = uniq(Object.keys({ ...append, ...remove }));
     return Object.fromEntries(
         keys.map((key) => {
@@ -46,11 +65,7 @@ export function parseWindowsQueryParams<P extends Record<string, string | string
     );
 }
 
-export const defaultArrayFormat: ParseOptions["arrayFormat"] = "comma";
-
-export function setAndPreserveLocationParams<T extends Record<string, any>>(params: T, arrayFormat = defaultArrayFormat): string {
-    const queryParams = queryString.parse(window.location.search, { arrayFormat, parseNumbers: true });
-    const merged = { ...queryParams, ...params };
-    const resultParams = omitBy(merged, (value) => value === undefined || isEqual(value, []));
-    return queryString.stringify(resultParams, { arrayFormat });
+export function setAndPreserveLocationParams<T extends Record<string, unknown>>(params: T): string {
+    const currentParams = parseQuery();
+    return stringifyQuery({ ...currentParams, ...params });
 }
