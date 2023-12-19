@@ -3,8 +3,8 @@
 set -e
 
 cd "$(dirname -- "$0")"
-echo "----NPM VERSION"
-npm --version
+echo "----NVM LS"
+nvm ls
 cd client && npm ci && npm run build && cd -
 cp -r client/.federated-types/nussknackerUi submodules/types/@remote
 cd submodules && npm ci && CI=true npm run build && cd -
