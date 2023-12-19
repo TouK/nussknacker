@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import io.circe.Encoder
-import io.restassured.RestAssured.`given`
+import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import io.restassured.specification.RequestSpecification
 import org.hamcrest.Matchers.equalTo
@@ -9,13 +9,14 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.spel
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionId
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
@@ -30,6 +31,7 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLogging
 }
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 
 class NodeApiSpec
     extends AnyFreeSpecLike
@@ -341,10 +343,31 @@ class NodeApiSpec
                  |        }
                  |    ],
                  |    "validationPerformed": true
-                 |}
-                 |""".stripMargin
+                 |}""".stripMargin
             )
           )
+      }
+
+      "suggest the name of parameter" in {
+        val request = ExpressionSuggestionRequest(
+          caretPosition2d = CaretPosition2d(0, 5),
+          expression = spel("#inpu"),
+          variableTypes = Map("input" -> Typed.fromInstance(TypedMap(Map("amount" -> 5L))))
+        )
+
+        val json = Encoder[ExpressionSuggestionRequest].apply(request)
+
+        given()
+          .auth()
+          .basic("allpermuser", "allpermuser")
+          .and()
+          .contentType("application/json")
+          .body(json.toString())
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
+          .Then()
+          .statusCode(200)
+          .body("methodName[0]", equalTo("#input"))
       }
 
       "return 405 when invalid HTTP method is passed" in {
