@@ -103,8 +103,13 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }, [node]);
 
     useEffect(() => {
-        replaceSearchQuery(parseWindowsQueryParams({ nodeId: node.id }));
-        return () => replaceSearchQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+        function mergeQuery(changes: Record<string, string[]>) {
+            return replaceSearchQuery((current) => ({ ...current, ...changes }));
+        }
+        mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
+        return () => {
+            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+        };
     }, [node.id]);
 
     //no process? no nodes? no window contents! no errors for whole tree!

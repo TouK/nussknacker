@@ -44,10 +44,13 @@ export function useSearchQuery<T extends QueryRecord>(): [T, (v: T) => void] {
     return [parsed, updateQuery];
 }
 
-export function replaceSearchQuery(params: QueryRecord): void {
+export function replaceSearchQuery(value: QueryRecord): void;
+export function replaceSearchQuery(update: (current: QueryRecord) => QueryRecord): void;
+export function replaceSearchQuery(callback: ((current: QueryRecord) => QueryRecord) | QueryRecord): void {
     const { history, location } = window;
     const currentState = history.state || {};
     const currentURL = new URL(location.href);
+    const params = typeof callback === "function" ? callback(parseQuery()) : callback;
     currentURL.search = stringifyQuery(params);
     history.replaceState(currentState, "", currentURL.href);
 }
