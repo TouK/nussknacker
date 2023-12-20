@@ -48,6 +48,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.services.{
   AppApiHttpService,
   ComponentApiHttpService,
+  NodesApiHttpService,
   NotificationApiHttpService,
   NuDesignerExposedApiHttpService,
   UserApiHttpService
@@ -243,6 +244,13 @@ class AkkaHttpBasedRouteProvider(
         getProcessCategoryService = getProcessCategoryService,
         notificationService = notificationService
       )
+      val nodesApiHttpService = new NodesApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        getProcessCategoryService = getProcessCategoryService,
+        typeToConfig = typeToConfig.mapValues(_.modelData),
+        processService = processService
+      )
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
@@ -347,7 +355,8 @@ class AkkaHttpBasedRouteProvider(
           appApiHttpService,
           componentsApiHttpService,
           userApiHttpService,
-          notificationApiHttpService
+          notificationApiHttpService,
+          nodesApiHttpService
         )
 
       createAppRoute(
