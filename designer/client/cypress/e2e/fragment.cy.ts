@@ -111,7 +111,11 @@ describe("Fragment", () => {
             .click();
         cy.get("[data-testid='settings:6']")
             .find("label")
-            .contains(/Validation expression/i);
+            .contains(/Validation expression/i)
+            .siblings()
+            .eq(0)
+            .find("[type='ERROR']")
+            .should("exist");
 
         cy.get("@window").find("[data-testid='settings:6']").matchImage();
 
