@@ -183,13 +183,11 @@ export class Graph extends React.Component<Props> {
     };
 
     setEspGraphRef = (instance: HTMLElement): void => {
-        if (this.props.isFragment === true) return;
-        const { connectDropTarget } = this.props;
         this.instance = instance;
-        if (connectDropTarget && instance) {
+        if (this.props.isFragment !== true && this.props.connectDropTarget && instance) {
             // eslint-disable-next-line react/no-find-dom-node
             const node = findDOMNode(instance);
-            connectDropTarget(node);
+            this.props.connectDropTarget(node);
         }
     };
     graph: dia.Graph;
@@ -270,11 +268,10 @@ export class Graph extends React.Component<Props> {
         };
 
         const deselectNodes = (event: JQuery.Event) => {
-            if (this.props.isFragment === true) return;
             if (event.isPropagationStopped()) {
                 return;
             }
-            if (this.props.fetchedProcessDetails) {
+            if (this.props.isFragment !== true && this.props.fetchedProcessDetails) {
                 this.props.resetSelection();
             }
         };
@@ -449,7 +446,7 @@ export class Graph extends React.Component<Props> {
     };
 
     disconnectPreviousEdge = (from: NodeId, to: NodeId): void => {
-        if (this.graphContainsEdge(from, to) && this.props.isFragment !== true) {
+        if (this.props.isFragment !== true && this.graphContainsEdge(from, to)) {
             this.props.nodesDisconnected(from, to);
         }
     };
@@ -615,7 +612,7 @@ export class Graph extends React.Component<Props> {
 
     private bindNodeRemove() {
         this.graph.on(Events.REMOVE, (e: dia.Cell) => {
-            if (e.isLink() && !this.redrawing && this.props.isFragment !== true) {
+            if (this.props.isFragment !== true && !this.redrawing && e.isLink()) {
                 this.props.nodesDisconnected(e.attributes.source.id, e.attributes.target.id);
             }
         });
