@@ -55,10 +55,9 @@ class NodeApiSpec
     "additional info when" - {
       "authenticated should" - {
         "return additional info for existing process" in {
+          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
           val data: NodeData =
             Enricher("enricher", ServiceRef("paramService", List(Parameter("id", Expression.spel("'a'")))), "out", None)
-
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
 
           sendNodeAsJsonAsAllpermuser(data)
             .when()
@@ -81,6 +80,21 @@ class NodeApiSpec
             .statusCode(200)
             .body(
               equalTo("")
+            )
+        }
+        "return 404 for not existent process" in {
+          val data: NodeData =
+            Enricher("enricher", ServiceRef("paramService", List(Parameter("id", Expression.spel("'a'")))), "out", None)
+
+          val wrongName: String = "wrongProcessName"
+
+          sendNodeAsJsonAsAllpermuser(data)
+            .when()
+            .post(s"$nuDesignerHttpAddress/api/nodes/$wrongName/additionalInfo")
+            .Then()
+            .statusCode(404)
+            .body(
+              equalTo(s"No scenario $wrongName found")
             )
         }
       }
@@ -109,9 +123,26 @@ class NodeApiSpec
     }
     "validation when" - {
       "authenticated should" - {
-        "validate filter nodes" in {
+        "validate correct node without errors" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+          val data: node.Filter = node.Filter("id", Expression.spel("#longValue > 1"))
+          val request = NodeValidationRequest(
+            data,
+            ProcessProperties(StreamMetaData()),
+            Map("existButString" -> Typed[String], "longValue" -> Typed[Long]),
+            None,
+            None
+          )
 
+          sendRequestAsJsonAsAllpermuser(request)
+            .when()
+            .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+            .Then()
+            .statusCode(200)
+            .body("validationErrors[0]", equalTo(null))
+        }
+        "validate filter node when wrong parameter type is given" in {
+          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
           val data: node.Filter = node.Filter("id", Expression.spel("#existButString"))
           val request = NodeValidationRequest(
             data,
@@ -150,7 +181,7 @@ class NodeApiSpec
               )
             )
         }
-        "validate sink expression" in {
+        "validate incorrect sink expression" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
 
           val data: node.Sink = node.Sink(
@@ -187,7 +218,6 @@ class NodeApiSpec
             )
             .body("validationErrors[0].fieldName", equalTo(SinkValueParamName))
         }
-
         "validate node using dictionaries" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
           val data: node.Filter = node.Filter("id", Expression.spel("#DICT.Bar != #DICT.Foo"))
@@ -210,7 +240,6 @@ class NodeApiSpec
                  |    "validationPerformed": true
                  |}""".stripMargin))
         }
-
         "validate node id" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
           val blankValue        = " "
@@ -230,7 +259,6 @@ class NodeApiSpec
       "not authenticated should" - {
         "forbid access" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           val data: node.Filter = node.Filter("id", Expression.spel("#existButString"))
           val request = NodeValidationRequest(
             data,
@@ -344,8 +372,6 @@ class NodeApiSpec
             .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/validation")
             .Then()
             .statusCode(200)
-            .body("parameters", equalTo(null))
-            .body("expressionType", equalTo(null))
             .body("validationErrors[0].typ", equalTo("InvalidPropertyFixedValue"))
             .body(
               "validationErrors[0].message",
@@ -355,7 +381,6 @@ class NodeApiSpec
             .body("validationErrors[0].fieldName", equalTo("numberOfThreads"))
             .body("validationPerformed", equalTo(true))
         }
-
         "validate scenario id" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
           val blankValue = " "
@@ -367,7 +392,6 @@ class NodeApiSpec
             ),
             id = blankValue
           )
-
           val json = Encoder[PropertiesValidationRequest].apply(request)
 
           given
@@ -380,9 +404,8 @@ class NodeApiSpec
             .Then()
             .statusCode(200)
             .body(
-              equalsJson(
-                s"""{
-                   |"parameters": null,
+              equalsJson(s"""{
+                   |    "parameters": null,
                    |    "expressionType": null,
                    |    "validationErrors": [
                    |        {
@@ -436,8 +459,7 @@ class NodeApiSpec
                    |        }
                    |    ],
                    |    "validationPerformed": true
-                   |}""".stripMargin
-              )
+                   |}""".stripMargin)
             )
         }
       }
@@ -474,7 +496,7 @@ class NodeApiSpec
   "The endpoint for parameters" - {
     "validation when" - {
       "authenticated should" - {
-        "validate parameter" in {
+        "validate correct parameter" in {
           val request = ParametersValidationRequest(
             parameters = List(UIValueParameter("condition", Typed[Boolean], spel("#input.amount > 2"))),
             variableTypes = Map("input" -> Typed.fromInstance(TypedMap(Map("amount" -> 5L))))
@@ -497,6 +519,34 @@ class NodeApiSpec
                    |  "validationPerformed": true
                    |}""".stripMargin)
             )
+        }
+        "validate incorrect parameter" in {
+          val request = ParametersValidationRequest(
+            parameters = List(UIValueParameter("condition", Typed[Boolean], spel("#input.amount"))),
+            variableTypes = Map("input" -> Typed.fromInstance(TypedMap(Map("amount" -> 5L))))
+          )
+          val json = Encoder[ParametersValidationRequest].apply(request)
+
+          given()
+            .contentType("application/json")
+            .body(json.toString())
+            .and
+            .auth()
+            .basic("allpermuser", "allpermuser")
+            .when()
+            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/validate")
+            .Then()
+            .statusCode(200)
+            .body(equalsJson(s"""{
+                 |  "validationErrors": [ {
+                 |    "typ": "ExpressionParserCompilationError",
+                 |    "message": "Failed to parse expression: Bad expression type, expected: Boolean, found: Long(5)",
+                 |    "description": "There is problem with expression in field Some(condition) - it could not be parsed.",
+                 |    "fieldName": "condition",
+                 |    "errorType": "SaveAllowed"
+                 |  } ],
+                 |  "validationPerformed": true
+                 |}""".stripMargin))
         }
       }
       "not authenticated should" - {
@@ -544,6 +594,26 @@ class NodeApiSpec
             .Then()
             .statusCode(200)
             .body("methodName[0]", equalTo("#input"))
+        }
+        "not suggest anything if no such parameters exist" in {
+          val request = ExpressionSuggestionRequest(
+            caretPosition2d = CaretPosition2d(0, 5),
+            expression = spel("#inpu"),
+            variableTypes = Map()
+          )
+          val json = Encoder[ExpressionSuggestionRequest].apply(request)
+
+          given()
+            .auth()
+            .basic("allpermuser", "allpermuser")
+            .and()
+            .contentType("application/json")
+            .body(json.toString())
+            .when()
+            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
+            .Then()
+            .statusCode(200)
+            .body(equalTo("[]"))
         }
       }
       "not authenticated should" - {
