@@ -34,7 +34,7 @@ import pl.touk.nussknacker.test.{
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 
-class NodeApiSpec
+class NodesApiSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager
