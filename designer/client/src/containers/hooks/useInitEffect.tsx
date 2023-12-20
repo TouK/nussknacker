@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export function usePromiseEffect(callback: () => Promise<void>) {
+export function useInitEffect(callback: () => any) {
     const running = useRef(false);
     useEffect(() => {
         // avoid running twice for same callback (react 18)

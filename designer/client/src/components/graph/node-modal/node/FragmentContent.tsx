@@ -9,7 +9,7 @@ import { FragmentGraphPreview } from "../../fragmentGraph";
 import { correctFetchedDetails } from "../../../../reducers/graph/correctFetchedDetails";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import { getFragmentNodesPrefix, useModalDetailsIfNeeded } from "../../../../containers/hooks/useModalDetailsIfNeeded";
-import { usePromiseEffect } from "../../../../containers/hooks/usePromiseEffect";
+import { useInitEffect } from "../../../../containers/hooks/useInitEffect";
 
 export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNodeType }): JSX.Element {
     const processCounts = useSelector(getProcessCounts);
@@ -18,18 +18,18 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
     const [fragmentContent, setFragmentContent] = useState<Process>(null);
     const { openFragmentNodes } = useModalDetailsIfNeeded();
 
-    usePromiseEffect(
-        useCallback(async () => {
-            if (fragmentContent) return;
-            if (!NodeUtils.nodeIsFragment(nodeToDisplay)) return;
+    const initFragmentData = useCallback(async () => {
+        if (fragmentContent) return;
+        if (!NodeUtils.nodeIsFragment(nodeToDisplay)) return;
 
-            const id = nodeToDisplay?.ref.id;
-            const { data } = await HttpService.fetchProcessDetails(id);
-            const fetchedProcessDetails = correctFetchedDetails(data, processDefinitionData);
-            setFragmentContent(fetchedProcessDetails.json);
-            openFragmentNodes(fetchedProcessDetails.json);
-        }, [fragmentContent, nodeToDisplay, openFragmentNodes, processDefinitionData]),
-    );
+        const id = nodeToDisplay?.ref.id;
+        const { data } = await HttpService.fetchProcessDetails(id);
+        const fetchedProcessDetails = correctFetchedDetails(data, processDefinitionData);
+        setFragmentContent(fetchedProcessDetails.json);
+        openFragmentNodes(fetchedProcessDetails.json);
+    }, [fragmentContent, nodeToDisplay, openFragmentNodes, processDefinitionData]);
+
+    useInitEffect(initFragmentData);
 
     const fragmentCounts = (processCounts[nodeToDisplay.id] || {}).fragmentCounts || {};
 
