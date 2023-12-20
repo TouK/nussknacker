@@ -43,9 +43,6 @@ object FlinkBaseComponentProvider {
       ComponentDefinition("union", UnionTransformer).withRelativeDocs("BasicNodes#union"),
       ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)).withRelativeDocs("DataSourcesAndSinks#deadend"),
       ComponentDefinition("periodic", PeriodicSourceFactory).withRelativeDocs("DataSourcesAndSinks#periodic"),
-      ComponentDefinition("decision-table", DecisionTableTransformer).withRelativeDocs(
-        "BasicNodes#decisiontable"
-      ),
     )
 
     val statefulComponents = List(

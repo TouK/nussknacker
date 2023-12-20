@@ -494,7 +494,8 @@ componentArtifacts := {
     (liteKafkaComponents / assembly).value           -> "components/lite/liteKafka.jar",
     (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
     (openapiComponents / assembly).value             -> "components/common/openapi.jar",
-    (sqlComponents / assembly).value                 -> "components/common/sql.jar"
+    (sqlComponents / assembly).value                 -> "components/common/sql.jar",
+    (decisionTableComponents / assembly).value       -> "components/common/decisiontable.jar",
   )
 }
 
@@ -1360,7 +1361,8 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app"))
       (liteKafkaComponents / assembly).value           -> "components/lite/liteKafka.jar",
       (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
       (openapiComponents / assembly).value             -> "components/common/openapi.jar",
-      (sqlComponents / assembly).value                 -> "components/common/sql.jar"
+      (sqlComponents / assembly).value                 -> "components/common/sql.jar",
+      (decisionTableComponents / assembly).value       -> "components/common/decisiontable.jar",
     ),
     javaAgents += JavaAgent("io.prometheus.jmx" % "jmx_prometheus_javaagent" % jmxPrometheusJavaagentV % "dist"),
     libraryDependencies ++= Seq(
@@ -1667,6 +1669,22 @@ lazy val sqlComponents = (project in component("sql"))
     liteComponentsTestkit % "test"
   )
 
+lazy val decisionTableComponents = (project in component("decisiontable"))
+  .settings(commonSettings)
+  .settings(assemblyNoScala("decisiontable.jar"): _*)
+  .settings(publishAssemblySettings: _*)
+  .settings(
+    name := "nussknacker-decision-table",
+    libraryDependencies ++= Seq(),
+  )
+  .dependsOn(
+    componentsUtils        % Provided,
+    componentsApi          % Provided,
+    commonUtils            % Provided,
+    liteComponentsTestkit  % "test",
+    flinkComponentsTestkit % "test"
+  )
+
 lazy val flinkBaseComponents = (project in flink("components/base"))
   .settings(commonSettings)
   .settings(assemblyNoScala("flinkBase.jar"): _*)
@@ -1958,6 +1976,7 @@ lazy val modules = List[ProjectReference](
   deploymentManagerApi,
   designer,
   sqlComponents,
+  decisionTableComponents,
   schemedKafkaComponentsUtils,
   flinkBaseComponents,
   flinkBaseComponentsTests,

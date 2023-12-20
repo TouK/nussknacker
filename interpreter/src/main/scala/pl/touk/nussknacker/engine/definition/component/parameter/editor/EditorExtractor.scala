@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, RawEditor, SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 
 object EditorExtractor {
@@ -52,6 +52,7 @@ object EditorExtractor {
       case SimpleEditorType.JSON_EDITOR          => JsonParameterEditor
       case SimpleEditorType.SQL_EDITOR           => SqlParameterEditor
       case SimpleEditorType.SPEL_TEMPLATE_EDITOR => SpelTemplateParameterEditor
+      case SimpleEditorType.TYPED_TABULAR_DATA_EDITOR => TypedTabularDataEditor
     }
   }
 
