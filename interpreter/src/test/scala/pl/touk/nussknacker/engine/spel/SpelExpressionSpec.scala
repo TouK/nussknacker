@@ -487,6 +487,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Int]("#obj.children[0].id") shouldBe Symbol("invalid")
   }
 
+  test("not allow accessing methods with name the same as key name in record") {
+    parse[String]("{getClass: 'val'}.getClass").validExpression.evaluateSync[String](ctx) shouldEqual "val"
+    parse[String]("{hashCode: 'val'}.hashCode").validExpression.evaluateSync[String](ctx) shouldEqual "val"
+  }
+
   test("access record elements by index") {
     val ctxWithVal = ctx.withVariable("stringKey", "string")
     val testRecordExpr: String =

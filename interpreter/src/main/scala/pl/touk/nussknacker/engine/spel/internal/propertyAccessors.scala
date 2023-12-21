@@ -7,25 +7,25 @@ import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.typed.TypedMap
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
 
 object propertyAccessors {
 
+  // Order of accessors matters - property from first accessor that returns `true` from `canRead` will be chosen.
+  // This general order can be overridden - each accessor can define target classes for which it will have precedence -
+  // through the `getSpecificTargetClasses` method.
   def configured(): Seq[PropertyAccessor] = {
-
     Seq(
       new ReflectivePropertyAccessor(),
-      NullPropertyAccessor,              // must come before other non-standard ones
+      NullPropertyAccessor,              // must be before other non-standard ones
       ScalaOptionOrNullPropertyAccessor, // must be before scalaPropertyAccessor
       JavaOptionalOrNullPropertyAccessor,
-      NoParamMethodPropertyAccessor,
       PrimitiveOrWrappersPropertyAccessor,
       StaticPropertyAccessor,
-      MapPropertyAccessor,
-      TypedDictInstancePropertyAccessor,
+      MapPropertyAccessor,               // must be before MapPropertyAccessor
+      TypedDictInstancePropertyAccessor, // must be before MapPropertyAccessor
+      NoParamMethodPropertyAccessor,
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor
     )
@@ -162,9 +162,9 @@ object propertyAccessors {
   }
 
   object MapPropertyAccessor extends PropertyAccessor with ReadOnly {
-
+    // if map does not contain property this should return false so that `NoParamMethodPropertyAccessor` can be used
     override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
-      true
+      target.asInstanceOf[java.util.Map[_, _]].containsKey(name)
 
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
       new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))
