@@ -5,6 +5,10 @@ describe("Connection error", () => {
         cy.deleteAllTestProcesses({ filter: NAME, force: true });
     });
 
+    after(() => {
+        cy.deleteAllTestProcesses({ filter: NAME, force: true });
+    });
+
     beforeEach(() => {
         cy.viewport(1400, 1000);
     });
