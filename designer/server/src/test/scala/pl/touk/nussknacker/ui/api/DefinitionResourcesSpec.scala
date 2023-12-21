@@ -82,7 +82,7 @@ class DefinitionResourcesSpec
     }
   }
 
-  it("should return info about editor based on fragment node configuration") {
+  it("should return info about editor based on fragment parameter definition") {
     val fragmentWithFixedValuesEditor = {
       CanonicalProcess(
         MetaData("sub1", FragmentSpecificData()),

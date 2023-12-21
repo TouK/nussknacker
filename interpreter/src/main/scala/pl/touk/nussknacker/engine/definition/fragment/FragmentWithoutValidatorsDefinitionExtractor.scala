@@ -4,7 +4,7 @@ import cats.data.{Validated, Writer}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
@@ -37,7 +37,8 @@ class FragmentWithoutValidatorsDefinitionExtractor(
       val parameters =
         extractFragmentParametersDefinition(input.parameters)(NodeId(input.id)).value
       val outputNames = outputs.map(_.name).sorted
-      new FragmentComponentDefinition(parameters, outputNames)
+      val docsUrl     = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
+      new FragmentComponentDefinition(parameters, outputNames, docsUrl)
     }
   }
 

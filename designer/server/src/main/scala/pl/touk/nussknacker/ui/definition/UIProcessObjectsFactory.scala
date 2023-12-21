@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.definition
 import cats.implicits.catsSyntaxSemigroup
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.FragmentSpecificData
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
@@ -31,8 +30,6 @@ import pl.touk.nussknacker.ui.definition.scenarioproperty.UiScenarioPropertyEdit
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-
-import scala.util.Try
 
 object UIProcessObjectsFactory {
 
@@ -68,7 +65,7 @@ object UIProcessObjectsFactory {
 
     val fragmentComponents = extractFragmentComponents(modelDataForType, fragmentsDetails)
 
-    // merging because ModelDefinition doesn't contain configs for base components and fragments
+    // merging because ModelDefinition doesn't contain configs for base components
     val finalComponentsConfig =
       toComponentsUiConfig(finalModelDefinition) |+| combinedComponentsConfig |+| ComponentsUiConfig(
         fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
@@ -172,10 +169,7 @@ object UIProcessObjectsFactory {
       details    <- fragmentsDetails
       definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption
     } yield {
-      details.canonical.id -> definition.toStaticDefinition(
-        details.category,
-        Try(details.canonical.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl).getOrElse(None)
-      )
+      details.canonical.id -> definition.toStaticDefinition(details.category)
     }).toMap
   }
 
