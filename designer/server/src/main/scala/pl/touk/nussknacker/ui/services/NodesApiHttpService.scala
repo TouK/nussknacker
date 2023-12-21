@@ -52,4 +52,32 @@ class NodesApiHttpService(
       }
   }
 
+  expose {
+    nodesApiEndpoints.propertiesAdditionalInfoEndpoint
+      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverLogic { user => pair =>
+        val (processName, processProperties) = pair
+
+        processService
+          .getProcessId(processName)
+          .flatMap { processId =>
+            processService
+              .getProcessWithDetails(
+                ProcessIdWithName(processId, processName),
+                GetScenarioWithDetailsOptions.detailsOnly
+              )(user)
+              .flatMap { process =>
+                additionalInfoProviders
+                  .prepareAdditionalInfoForProperties(
+                    processProperties.toMetaData(processName),
+                    process.processingType
+                  )(executionContext, user)
+                  .map { additionalInfo =>
+                    success(additionalInfo)
+                  }
+              }
+          }
+      }
+  }
+
 }

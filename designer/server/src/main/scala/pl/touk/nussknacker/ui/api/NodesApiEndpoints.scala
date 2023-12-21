@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
+import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -18,13 +19,28 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
   import NodesApiEndpoints._
 
   lazy val nodesAdditionalInfoEndpoint: SecuredEndpoint[(ProcessName, NodeData), Unit, Option[AdditionalInfo], Any] = {
-    implicitly[Schema[NodeData]]
     baseNuApiEndpoint
       .summary("Additional info for provided node")
       .tag("Nodes")
       .post
       .in("nodess" / path[ProcessName]("processName") / "additionalInfo")
       .in(jsonBody[NodeData])
+      .out(
+        statusCode(Ok).and(
+          jsonBody[Option[AdditionalInfo]]
+        )
+      )
+      .withSecurity(auth)
+  }
+
+  lazy val propertiesAdditionalInfoEndpoint
+      : SecuredEndpoint[(ProcessName, ProcessProperties), Unit, Option[AdditionalInfo], Any] = {
+    baseNuApiEndpoint
+      .summary("Additional info for provided properties")
+      .tag("Nodes")
+      .post
+      .in("propertiess" / path[ProcessName]("processName") / "additionalInfo")
+      .in(jsonBody[ProcessProperties])
       .out(
         statusCode(Ok).and(
           jsonBody[Option[AdditionalInfo]]
@@ -45,10 +61,9 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
 
       implicit val processNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
 
-
     }
+
     implicit val additionalInfoSchema: Schema[AdditionalInfo] = Schema.derived
-//    implicit val nodeDataSchema
   }
 
 }
