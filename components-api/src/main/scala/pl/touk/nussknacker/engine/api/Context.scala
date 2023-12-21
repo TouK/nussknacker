@@ -24,7 +24,8 @@ object Context {
 
   def apply(id: String): Context = Context(id, Map.empty, None)
 
-  def apply(id: String, variables: Map[String, Any]): Context = Context(id, variables, None)
+  def apply(id: String, variables: Map[String, Any]): Context =
+    Context(id, variables, None)
 
 }
 
@@ -37,7 +38,11 @@ case class ContextId(value: String)
  * @param variables     variables available in evaluation
  * @param parentContext context used for scopes handling, mainly for fragment invocation purpose
  */
-case class Context(id: String, variables: Map[String, Any], parentContext: Option[Context]) {
+case class Context(
+    id: String,
+    variables: Map[String, Any],
+    parentContext: Option[Context]
+) {
 
   def appendIdSuffix(suffix: String): Context =
     copy(id = s"$id-$suffix")

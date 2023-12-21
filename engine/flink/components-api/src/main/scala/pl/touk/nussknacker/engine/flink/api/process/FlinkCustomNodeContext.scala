@@ -28,7 +28,8 @@ case class FlinkCustomNodeContext(
 ) {
   def metaData: MetaData = jobData.metaData
 
-  lazy val contextTypeInfo: TypeInformation[Context] = typeInformationDetection.forContext(asOneOutputContext)
+  lazy val contextTypeInfo: TypeInformation[Context] =
+    typeInformationDetection.forContext(asOneOutputContext)
 
   val valueWithContextInfo = new valueWithContextInfo
 

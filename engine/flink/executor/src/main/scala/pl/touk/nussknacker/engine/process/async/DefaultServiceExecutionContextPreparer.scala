@@ -2,15 +2,14 @@ package pl.touk.nussknacker.engine.process.async
 
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicLong
-
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
-import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
+import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ServiceExecutionContext}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 //TODO: this is somewhat experimental - how should we behave??
-object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
+object DefaultServiceExecutionContextPreparer extends LazyLogging {
 
   private final var asyncExecutionContext: Option[(String, ExecutionContextExecutorService)] = None
 
@@ -25,20 +24,25 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
       ex
     }
 
-  private[DefaultAsyncExecutionConfigPreparer] def getExecutionContext(workers: Int, process: String) = synchronized {
+  private[DefaultServiceExecutionContextPreparer] def getExecutionContext(
+      workers: Int,
+      process: String
+  ): ServiceExecutionContext = synchronized {
     counter.incrementAndGet()
     logger.info(s"Creating asyncExecutor for $process, with $workers workers, counter is ${counter.get()}")
-    asyncExecutionContext match {
-      case Some((_, ec)) => ec
-      case None =>
-        val threadFactory = new BasicThreadFactory.Builder().namingPattern(s"asyncWorkerThread-$process-%d").build()
-        val ec            = ExecutionContext.fromExecutorService(executorServiceCreator(workers, threadFactory))
-        asyncExecutionContext = Some((process, ec))
-        ec
+    ServiceExecutionContext {
+      asyncExecutionContext match {
+        case Some((_, ec)) => ec
+        case None =>
+          val threadFactory = new BasicThreadFactory.Builder().namingPattern(s"asyncWorkerThread-$process-%d").build()
+          val ec            = ExecutionContext.fromExecutorService(executorServiceCreator(workers, threadFactory))
+          asyncExecutionContext = Some((process, ec))
+          ec
+      }
     }
   }
 
-  private[DefaultAsyncExecutionConfigPreparer] def close(): Unit = {
+  private[DefaultServiceExecutionContextPreparer] def close(): Unit = {
     logger.info(s"Closing asyncExecutor for ${asyncExecutionContext.map(_._1)} counter is ${counter.get()}")
     if (counter.decrementAndGet() == 0) {
       asyncExecutionContext.foreach(_._2.shutdownNow())
@@ -48,20 +52,20 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
 
 }
 
-case class DefaultAsyncExecutionConfigPreparer(
+final case class DefaultServiceExecutionContextPreparer(
     bufferSize: Int,
     workers: Int,
     defaultUseAsyncInterpretation: Option[Boolean]
 ) extends AsyncExecutionContextPreparer
     with LazyLogging {
 
-  def prepareExecutionContext(processId: String, parallelism: Int): ExecutionContext = {
-    logger.info(s"Creating asyncExecutor for $processId, parallelism: $parallelism, workers: $workers")
-    DefaultAsyncExecutionConfigPreparer.getExecutionContext(workers, processId)
+  def prepare(processId: String): ServiceExecutionContext = {
+    logger.info(s"Creating asyncExecutor for $processId, workers: $workers")
+    DefaultServiceExecutionContextPreparer.getExecutionContext(workers, processId)
   }
 
   def close(): Unit = {
-    DefaultAsyncExecutionConfigPreparer.close()
+    DefaultServiceExecutionContextPreparer.close()
   }
 
 }

@@ -16,14 +16,24 @@ object TestProcess {
       copy(nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ context)))
     }
 
-    def updateExpressionResult(nodeId: String, context: Context, name: String, result: Any): TestResults = {
+    def updateExpressionResult(
+        nodeId: String,
+        context: Context,
+        name: String,
+        result: Any
+    ): TestResults = {
       val invocationResult = ExpressionInvocationResult(context.id, name, result)
       copy(invocationResults =
         invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List())))
       )
     }
 
-    def updateExternalInvocationResult(nodeId: String, contextId: ContextId, name: String, result: Any): TestResults = {
+    def updateExternalInvocationResult(
+        nodeId: String,
+        contextId: ContextId,
+        name: String,
+        result: Any
+    ): TestResults = {
       val invocation = ExternalInvocationResult(contextId.value, name, result)
       copy(externalInvocationResults =
         externalInvocationResults + (nodeId -> (externalInvocationResults.getOrElse(nodeId, List()) :+ invocation))

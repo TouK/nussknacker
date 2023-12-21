@@ -68,7 +68,9 @@ class FlinkExceptionHandler(
     consumer.consume(extractor.extractOrThrow(exceptionInfo))
   }
 
-  override def handling[T](nodeComponentInfo: Option[NodeComponentInfo], context: Context)(action: => T): Option[T] =
+  override def handling[T](nodeComponentInfo: Option[NodeComponentInfo], context: Context)(
+      action: => T
+  ): Option[T] =
     try {
       Some(action)
     } catch {

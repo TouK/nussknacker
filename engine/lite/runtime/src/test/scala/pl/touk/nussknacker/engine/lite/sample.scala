@@ -29,7 +29,8 @@ import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime.syncEc
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -55,10 +56,9 @@ object sample {
 
     import InterpreterShape._
 
-    override def monad: Monad[StateType] = implicitly[Monad[StateType]]
-
-    override def fromFuture[T]: Future[T] => StateType[Either[T, Throwable]] =
-      f => StateT.pure(Await.result(transform(f), 1 second))
+    override def fromFuture[T]: Future[T] => StateType[Either[T, Throwable]] = { f =>
+      StateT.pure(Await.result(transform(f)(SynchronousExecutionContextAndIORuntime.syncEc), 1 second))
+    }
 
   }
 
@@ -112,7 +112,9 @@ object sample {
   class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double])
       extends ContextMappingComponent {
 
-    override def createStateTransformation[F[_]: Monad](context: CustomComponentContext[F]): Context => F[Context] = {
+    override def createStateTransformation[F[_]: Monad](
+        context: CustomComponentContext[F]
+    ): Context => F[Context] = {
       val interpreter = context.interpreter.syncInterpretationFunction(value)
       val convert = context.capabilityTransformer
         .transform[StateType]

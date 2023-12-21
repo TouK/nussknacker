@@ -22,7 +22,9 @@ class FlinkLazyParameterFunctionHelper(
         .keyBy(_.value)
         @see AggregateTransformer
    */
-  def lazyMapFunction[T <: AnyRef](parameter: LazyParameter[T]): FlatMapFunction[Context, ValueWithContext[T]] =
+  def lazyMapFunction[T <: AnyRef](
+      parameter: LazyParameter[T]
+  ): FlatMapFunction[Context, ValueWithContext[T]] =
     new LazyParameterMapFunction[T](parameter, this)
 
   /*
@@ -129,7 +131,9 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation in
     * flatMap-like operators/functions
     */
-  def collectIterableHandlingErrors[T](context: Context, collector: Collector[T])(action: => Iterable[T]): Unit =
+  def collectIterableHandlingErrors[T](context: Context, collector: Collector[T])(
+      action: => Iterable[T]
+  ): Unit =
     handlingErrors(context)(action)
       .foreach(data => data.foreach(collector.collect))
 

@@ -1,5 +1,9 @@
 # Changelog
 
+1.14.0 (Not released yet)
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.2
+* [#5257](https://github.com/TouK/nussknacker/pull/5257) Updated Flink 1.16.2 -> 1.16.3
+
 1.13.0 (Not released yet)
 -------------------------
 * [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service

@@ -6,6 +6,7 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import cats.effect.unsafe.implicits.global
 
 trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with TestPermissions with BeforeAndAfterAll {
   this: Suite =>

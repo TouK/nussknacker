@@ -357,7 +357,8 @@ object SampleNodes {
               inputs: Map[String, DataStream[Context]],
               context: FlinkCustomNodeContext
           ): DataStream[ValueWithContext[AnyRef]] = {
-            val inputFromIr = (ir: Context) => ValueWithContext(ir.variables("input").asInstanceOf[AnyRef], ir)
+            val inputFromIr =
+              (ir: Context) => ValueWithContext(ir.variables("input").asInstanceOf[AnyRef], ir)
             inputs("end1")
               .connect(inputs("end2"))
               .map(new CoMapFunction[Context, Context, ValueWithContext[AnyRef]] {
@@ -402,7 +403,10 @@ object SampleNodes {
 
     @MethodToInvoke(returnType = classOf[Long])
     def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation = {
-      def trans(str: DataStream[Context], ctx: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
+      def trans(
+          str: DataStream[Context],
+          ctx: FlinkCustomNodeContext
+      ): DataStream[ValueWithContext[AnyRef]] = {
         val streamOperator = new AbstractStreamOperator[ValueWithContext[AnyRef]]
           with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
           override def processElement(element: StreamRecord[Context]): Unit = {
@@ -656,7 +660,10 @@ object SampleNodes {
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
-          .map((ctx: Context) => ValueWithContext[AnyRef](TypedMap(map), ctx), fctx.valueWithContextInfo.forUnknown)
+          .map(
+            (ctx: Context) => ValueWithContext[AnyRef](TypedMap(map), ctx),
+            fctx.valueWithContextInfo.forUnknown
+          )
       })
     }
 

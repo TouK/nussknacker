@@ -68,10 +68,12 @@ class ClassDefinitionDiscoverySpec extends AnyFunSuite with Matchers with Option
     val sampleClassInfo = singleClassDefinition[SampleClass]()
 
     sampleClassInfo.value.methods shouldBe Map(
-      "foo"           -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed(Integer.TYPE)), "foo", None)),
-      "bar"           -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "bar", None)),
-      "toString"      -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
-      "returnContext" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Context]), "returnContext", None))
+      "foo"      -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed(Integer.TYPE)), "foo", None)),
+      "bar"      -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "bar", None)),
+      "toString" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
+      "returnContext" -> List(
+        StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Context]), "returnContext", None)
+      )
     )
   }
 

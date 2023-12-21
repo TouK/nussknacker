@@ -13,7 +13,10 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
   */
 trait FlinkSource extends Source {
 
-  def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context]
+  def sourceStream(
+      env: StreamExecutionEnvironment,
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStream[Context]
 
 }
 

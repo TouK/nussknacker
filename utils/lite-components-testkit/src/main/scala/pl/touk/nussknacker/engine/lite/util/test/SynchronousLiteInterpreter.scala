@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
+import cats.Id
 import cats.data.{NonEmptyList, Validated}
-import cats.{Id, Monad}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape.transform
 import pl.touk.nussknacker.engine.ModelData
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransf
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler
 
 import scala.concurrent.duration._
@@ -29,16 +29,15 @@ object SynchronousLiteInterpreter {
 
   type SynchronousResult = Validated[NonEmptyList[ProcessCompilationError], (List[ErrorType], List[EndResult[AnyRef]])]
 
-  implicit val ec: ExecutionContext                             = SynchronousExecutionContext.ctx
+  implicit val ec: ExecutionContext                             = SynchronousExecutionContextAndIORuntime.syncEc
   implicit val capabilityTransformer: CapabilityTransformer[Id] = new FixedCapabilityTransformer[Id]
 
   implicit val syncIdShape: InterpreterShape[Id] = new InterpreterShape[Id] {
 
     private val waitTime = 10 seconds
 
-    override def monad: Monad[Id] = Monad[Id]
-
-    override def fromFuture[T]: Future[T] => Id[Either[T, Throwable]] = f => Await.result(transform(f), waitTime)
+    override def fromFuture[T]: Future[T] => Id[Either[T, Throwable]] =
+      f => Await.result(transform(f)(SynchronousExecutionContextAndIORuntime.syncEc), waitTime)
   }
   // TODO: add generate test data support
 
