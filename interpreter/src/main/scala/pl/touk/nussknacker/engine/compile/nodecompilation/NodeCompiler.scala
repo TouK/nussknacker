@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -51,6 +51,9 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
+import cats.implicits._
+
+import javax.lang.model.SourceVersion
 
 object NodeCompiler {
 
@@ -163,12 +166,37 @@ class NodeCompiler(
           )
       }
 
-      val parameterExtractionValidation =
-        NonEmptyList.fromList(parameterDefinitions.written).map(invalid).getOrElse(valid(List.empty))
+      // TODO local: extract this validation logic somewhere to avoid spaghetti
+      // TODO local: add unique name validation same as in record keys
+      val parameterNames = parameterDefinitions.value
+        .map(_.name)
+      val duplicatedParameterNames = parameterNames.groupBy(identity).view.mapValues(_.size).filter(_._2 > 1)
 
-      compilationResult.copy(compiledObject =
-        parameterExtractionValidation.andThen(_ => compilationResult.compiledObject)
-      )
+      val parameterNamesAsParametersForValidation: Validated[NonEmptyList[PartSubGraphCompilationError], Unit] =
+        parameterNames.zipWithIndex.map { case (parameterName, index) =>
+          // TODO local: compose validation instead of this ifology
+          val first =
+            if (duplicatedParameterNames.contains(parameterName))
+              Invalid(
+                InvalidVariableOutputName(parameterName, Some(s"$$param-$index-$$name-duplicate"))
+              ).toValidatedNel
+            else valid(())
+          // TODO local: expose this properly in components-api and reuse it here and in suggester
+          val second = if (!SourceVersion.isIdentifier(parameterName)) {
+
+            Invalid(InvalidVariableOutputName(parameterName, Some(s"$$param-$index-$$name"))).toValidatedNel
+          } else {
+            valid(())
+          }
+          first.combine(second)
+        }.combineAll
+
+      val parameterExtractionValidation: Validated[NonEmptyList[PartSubGraphCompilationError], Unit] =
+        NonEmptyList.fromList(parameterDefinitions.written).map(errors => invalid(errors)).getOrElse(valid(()))
+
+      val combinedErrors = parameterNamesAsParametersForValidation |+| parameterExtractionValidation
+
+      compilationResult.copy(compiledObject = combinedErrors.andThen(_ => compilationResult.compiledObject))
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(

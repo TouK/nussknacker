@@ -1162,6 +1162,37 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should return error on invalid parameter name") {
+    inside(
+      validate(
+        FragmentInputDefinition(
+          "in",
+          List(
+            FragmentParameter(
+              "1",
+              FragmentClazzRef[String]
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidVariableOutputName(
+                "1",
+                "in",
+                Some("$param-0-name")
+              )
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
   private def genericParameters = List(
     Parameter[String]("par1")
       .copy(
