@@ -1,17 +1,36 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.{DualEditor, RawEditor, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, RawEditor, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  ValueInputWithFixedValues,
+  ValueInputWithFixedValuesProvided
+}
 
 object EditorExtractor {
+
+  def extract(valueInput: ValueInputWithFixedValues): ParameterEditor = valueInput match {
+    case ValueInputWithFixedValuesProvided(fixedValuesList, allowOtherValue) =>
+      val fixedValuesEditor = FixedValuesParameterEditor(
+        nullFixedValue +: fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
+      )
+
+      if (allowOtherValue) {
+        DualParameterEditor(fixedValuesEditor, DualEditorMode.SIMPLE)
+      } else {
+        fixedValuesEditor
+      }
+  }
 
   def extract(param: ParameterData, parameterConfig: ParameterConfig): Option[ParameterEditor] = {
     parameterConfig.editor
       .orElse(extractFromAnnotations(param))
       .orElse(new ParameterTypeEditorDeterminer(param.typing).determine())
   }
+
+  private val nullFixedValue: FixedExpressionValue = FixedExpressionValue("", "")
 
   private def extractFromAnnotations(param: ParameterData): Option[ParameterEditor] = {
     val dualEditorAnnotation: Option[DualEditor]     = param.getAnnotation[DualEditor]

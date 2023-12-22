@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.api.component
+package pl.touk.nussknacker.ui.additionalconfig
 
 import com.typesafe.config.Config
 import sttp.client3.SttpBackend

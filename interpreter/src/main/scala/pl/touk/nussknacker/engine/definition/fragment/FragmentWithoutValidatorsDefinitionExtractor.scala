@@ -68,8 +68,6 @@ class FragmentWithoutValidatorsDefinitionExtractor(
     parameters.map(p => getParamTypingResult(p).map(toParameter(config, _, p))).sequence
   }
 
-  private val nullFixedValue: FixedExpressionValue = FixedExpressionValue("", "")
-
   private def toParameter(
       componentConfig: SingleComponentConfig,
       typ: TypingResult,
@@ -78,14 +76,7 @@ class FragmentWithoutValidatorsDefinitionExtractor(
     val paramConfig   = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
     val extractedEditor = fragmentParameter.valueEditor
-      .map { valueEditor =>
-        fixedValuesEditorWithAllowOtherValue(
-          valueEditor.allowOtherValue,
-          FixedValuesParameterEditor(
-            nullFixedValue +: valueEditor.fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
-          )
-        )
-      }
+      .map(valueEditor => Some(EditorExtractor.extract(valueEditor)))
       .getOrElse(EditorExtractor.extract(parameterData, paramConfig))
 
     val isOptional = !fragmentParameter.required

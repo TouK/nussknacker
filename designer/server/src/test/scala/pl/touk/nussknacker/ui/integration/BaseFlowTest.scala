@@ -125,13 +125,13 @@ class BaseFlowTest
               editor = None,
               validators = None,
               label = None,
-              hintText = None
+              hintText = Some("hint-text-from-additional-ui-config-provider")
             ),
           )
         ),
         icon = Some("/assets/components/Filter.svg"),
         docsUrl = Some("https://touk.github.io/nussknacker/enricher"),
-        componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName),
+        componentGroup = None,
         componentId = None
       ),
       "multipleParamsService" -> SingleComponentConfig(
