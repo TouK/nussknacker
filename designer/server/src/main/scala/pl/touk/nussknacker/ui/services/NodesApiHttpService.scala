@@ -2,17 +2,18 @@ package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.{Decoder, Json}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints
+import pl.touk.nussknacker.ui.api.{NodeValidationRequest, NodesApiEndpoints, NodesResources}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.validation.NodeValidator
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class NodesApiHttpService(
     config: Config,
@@ -54,33 +55,28 @@ class NodesApiHttpService(
       }
   }
 
-  //  expose {
-  //    nodesApiEndpoints.nodesValidationEndpoint
-  //      .serverSecurityLogic(authorizeKnownUser[Unit])
-  //      .serverLogic { user => pair =>
-  //        val (processName, nodeValidationRequest) = pair
-  //
-  //        processService
-  //          .getProcessId(processName)
-  //          .flatMap { processId =>
-  //            processService
-  //              .getProcessWithDetails(
-  //                ProcessIdWithName(processId, processName),
-  //                GetScenarioWithDetailsOptions.detailsOnly
-  //              )(user)
-  //              .flatMap { process =>
-  //                val modelData = typeToConfig.forTypeUnsafe(process.processingType)(user)
-  //                implicit val requestDecoder: Decoder[NodeValidationRequest] =
-  //                  NodesResources.prepareNodeRequestDecoder(modelData)
-  //                val nodeValidator = typeToNodeValidator.forTypeUnsafe(process.processingType)(user)
-  ////                here need to add decoding from string json to NodeValidationRequest
-  //                Future(success(nodeValidator.validate(processName, nodeValidationRequest)))
-  //
-  //              }
-  //          }
-  //
-  //      }
-  //  }
+  expose {
+    nodesApiEndpoints.nodesValidationEndpoint
+      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverLogic { user => pair =>
+        val (processName, nodeValidationRequest) = pair
+
+        processService
+          .getProcessId(processName)
+          .flatMap { processId =>
+            processService
+              .getProcessWithDetails(
+                ProcessIdWithName(processId, processName),
+                GetScenarioWithDetailsOptions.detailsOnly
+              )(user)
+              .flatMap { process =>
+                //                here need to add decoding from string json to NodeValidationRequest
+
+              }
+          }
+
+      }
+  }
 
   expose {
     nodesApiEndpoints.propertiesAdditionalInfoEndpoint

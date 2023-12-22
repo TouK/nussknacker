@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
+import io.circe.{Decoder, Json, JsonNumber}
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -34,20 +37,20 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
-//  lazy val nodesValidationEndpoint: SecuredEndpoint[(ProcessName, NodeValidationRequest), Unit, NodeValidationResult, Any] = {
-//    baseNuApiEndpoint
-//      .summary("Validate provided Node")
-//      .tag("Nodes")
-//      .post
-//      .in("nodess" / path[ProcessName]("processName") / "validation")
-//      .in(jsonBody[NodeValidationRequest])
-//      .out(
-//        statusCode(Ok).and(
-//          jsonBody[NodeValidationResult]
-//        )
-//      )
-//      .withSecurity(auth)
-//  }
+  lazy val nodesValidationEndpoint: SecuredEndpoint[(ProcessName, String), Unit, String, Any] = {
+    baseNuApiEndpoint
+      .summary("Validate provided Node")
+      .tag("Nodes")
+      .post
+      .in("nodess" / path[ProcessName]("processName") / "validation")
+      .in(jsonBody[String])
+      .out(
+        statusCode(Ok).and(
+          jsonBody[String]
+        )
+      )
+      .withSecurity(auth)
+  }
 
   lazy val propertiesAdditionalInfoEndpoint
       : SecuredEndpoint[(ProcessName, ProcessProperties), Unit, Option[AdditionalInfo], Any] = {
@@ -80,5 +83,9 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
 
     implicit val additionalInfoSchema: Schema[AdditionalInfo] = Schema.derived
   }
+
+  type LoadClass = String => Class[_]
+
+  implicit val decoder: Decoder[LoadClass => TypingResult] = {}
 
 }
