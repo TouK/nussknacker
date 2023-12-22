@@ -54,6 +54,34 @@ class NodesApiHttpService(
       }
   }
 
+  //  expose {
+  //    nodesApiEndpoints.nodesValidationEndpoint
+  //      .serverSecurityLogic(authorizeKnownUser[Unit])
+  //      .serverLogic { user => pair =>
+  //        val (processName, nodeValidationRequest) = pair
+  //
+  //        processService
+  //          .getProcessId(processName)
+  //          .flatMap { processId =>
+  //            processService
+  //              .getProcessWithDetails(
+  //                ProcessIdWithName(processId, processName),
+  //                GetScenarioWithDetailsOptions.detailsOnly
+  //              )(user)
+  //              .flatMap { process =>
+  //                val modelData = typeToConfig.forTypeUnsafe(process.processingType)(user)
+  //                implicit val requestDecoder: Decoder[NodeValidationRequest] =
+  //                  NodesResources.prepareNodeRequestDecoder(modelData)
+  //                val nodeValidator = typeToNodeValidator.forTypeUnsafe(process.processingType)(user)
+  ////                here need to add decoding from string json to NodeValidationRequest
+  //                Future(success(nodeValidator.validate(processName, nodeValidationRequest)))
+  //
+  //              }
+  //          }
+  //
+  //      }
+  //  }
+
   expose {
     nodesApiEndpoints.propertiesAdditionalInfoEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])

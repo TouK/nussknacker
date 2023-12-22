@@ -431,6 +431,114 @@ paths:
                     resource
       security:
       - httpAuth: []
+  /api/nodess/{processName}/additionalInfo:
+    post:
+      tags:
+      - Nodes
+      summary: Additional info for provided node
+      operationId: postApiNodessProcessnameAdditionalinfo
+      parameters:
+      - name: processName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeData'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalInfo'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
+  /api/propertiess/{processName}/additionalInfo:
+    post:
+      tags:
+      - Nodes
+      summary: Additional info for provided properties
+      operationId: postApiPropertiessProcessnameAdditionalinfo
+      parameters:
+      - name: processName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessProperties'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalInfo'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
   /api/notifications:
     get:
       tags:
@@ -542,6 +650,37 @@ paths:
       - httpAuth: []
 components:
   schemas:
+    AdditionalInfo:
+      oneOf:
+      - $ref: '#/components/schemas/MarkdownAdditionalInfo'
+    BranchEndData:
+      required:
+      - definition
+      type: object
+      properties:
+        definition:
+          $ref: '#/components/schemas/BranchEndDefinition'
+    BranchEndDefinition:
+      required:
+      - id
+      - joinId
+      type: object
+      properties:
+        id:
+          type: string
+        joinId:
+          type: string
+    BranchParameters:
+      required:
+      - branchId
+      type: object
+      properties:
+        branchId:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
     BuildInfoDto:
       required:
       - name
@@ -669,6 +808,26 @@ components:
           type: string
         lastAction:
           $ref: '#/components/schemas/ProcessAction'
+    CustomNode:
+      required:
+      - id
+      - nodeType
+      type: object
+      properties:
+        id:
+          type: string
+        outputVar:
+          type:
+          - string
+          - 'null'
+        nodeType:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     DataToRefresh:
       type: string
       enum:
@@ -699,6 +858,173 @@ components:
           type: array
           items:
             type: string
+    Enricher:
+      required:
+      - id
+      - service
+      - output
+      type: object
+      properties:
+        id:
+          type: string
+        service:
+          $ref: '#/components/schemas/ServiceRef'
+        output:
+          type: string
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    Expression:
+      required:
+      - language
+      - expression
+      type: object
+      properties:
+        language:
+          type: string
+        expression:
+          type: string
+    Field:
+      required:
+      - name
+      - expression
+      type: object
+      properties:
+        name:
+          type: string
+        expression:
+          $ref: '#/components/schemas/Expression'
+    Filter:
+      required:
+      - id
+      - expression
+      type: object
+      properties:
+        id:
+          type: string
+        expression:
+          $ref: '#/components/schemas/Expression'
+        isDisabled:
+          type:
+          - boolean
+          - 'null'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    FixedExpressionValue:
+      required:
+      - expression
+      - label
+      type: object
+      properties:
+        expression:
+          type: string
+        label:
+          type: string
+    FragmentClazzRef:
+      required:
+      - refClazzName
+      type: object
+      properties:
+        refClazzName:
+          type: string
+    FragmentInput:
+      required:
+      - id
+      - ref
+      type: object
+      properties:
+        id:
+          type: string
+        ref:
+          $ref: '#/components/schemas/FragmentRef'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+        isDisabled:
+          type:
+          - boolean
+          - 'null'
+        fragmentParams:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/FragmentParameter'
+    FragmentInputDefinition:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/FragmentParameter'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    FragmentOutputDefinition:
+      required:
+      - id
+      - outputName
+      type: object
+      properties:
+        id:
+          type: string
+        outputName:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    FragmentOutputVarDefinition:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+    FragmentParameter:
+      required:
+      - name
+      - typ
+      - required
+      type: object
+      properties:
+        name:
+          type: string
+        typ:
+          $ref: '#/components/schemas/FragmentClazzRef'
+        required:
+          type: boolean
+        initialValue:
+          $ref: '#/components/schemas/FixedExpressionValue'
+        hintText:
+          type:
+          - string
+          - 'null'
+        valueEditor:
+          $ref: '#/components/schemas/ValueInputWithFixedValues'
+        valueCompileTimeValidation:
+          $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
+    FragmentRef:
+      required:
+      - id
+      - outputVariableNames
+      type: object
+      properties:
+        id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+        outputVariableNames:
+          $ref: '#/components/schemas/Map_String'
     FragmentUsageData:
       required:
       - fragmentNodeId
@@ -709,6 +1035,20 @@ components:
           type: string
         nodeId:
           type: string
+    FragmentUsageOutput:
+      required:
+      - id
+      - outputName
+      type: object
+      properties:
+        id:
+          type: string
+        outputName:
+          type: string
+        outputVar:
+          $ref: '#/components/schemas/FragmentOutputVarDefinition'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     HealthCheckProcessErrorResponseDto:
       required:
       - status
@@ -743,6 +1083,42 @@ components:
           - 'null'
           items:
             type: string
+    Join:
+      required:
+      - id
+      - nodeType
+      type: object
+      properties:
+        id:
+          type: string
+        outputVar:
+          type:
+          - string
+          - 'null'
+        nodeType:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+        branchParameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/BranchParameters'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    LayoutData:
+      required:
+      - x
+      - y
+      type: object
+      properties:
+        x:
+          type: integer
+          format: int64
+        y:
+          type: integer
+          format: int64
     Map_List_String:
       type: object
       additionalProperties:
@@ -757,6 +1133,31 @@ components:
       type: object
       additionalProperties:
         type: string
+    MarkdownAdditionalInfo:
+      required:
+      - content
+      type: object
+      properties:
+        content:
+          type: string
+    NodeData:
+      oneOf:
+      - $ref: '#/components/schemas/BranchEndData'
+      - $ref: '#/components/schemas/CustomNode'
+      - $ref: '#/components/schemas/Enricher'
+      - $ref: '#/components/schemas/Filter'
+      - $ref: '#/components/schemas/FragmentInput'
+      - $ref: '#/components/schemas/FragmentInputDefinition'
+      - $ref: '#/components/schemas/FragmentOutputDefinition'
+      - $ref: '#/components/schemas/FragmentUsageOutput'
+      - $ref: '#/components/schemas/Join'
+      - $ref: '#/components/schemas/Processor'
+      - $ref: '#/components/schemas/Sink'
+      - $ref: '#/components/schemas/Source'
+      - $ref: '#/components/schemas/Split'
+      - $ref: '#/components/schemas/Switch'
+      - $ref: '#/components/schemas/Variable'
+      - $ref: '#/components/schemas/VariableBuilder'
     NodeUsageData:
       oneOf:
       - $ref: '#/components/schemas/FragmentUsageData'
@@ -787,6 +1188,27 @@ components:
       - info
       - success
       - error
+    Parameter:
+      required:
+      - name
+      - expression
+      type: object
+      properties:
+        name:
+          type: string
+        expression:
+          $ref: '#/components/schemas/Expression'
+    ParameterValueCompileTimeValidation:
+      required:
+      - validationExpression
+      type: object
+      properties:
+        validationExpression:
+          $ref: '#/components/schemas/Expression'
+        validationFailedMessage:
+          type:
+          - string
+          - 'null'
     ProcessAction:
       required:
       - id
@@ -857,6 +1279,20 @@ components:
       - UNARCHIVE
       - PAUSE
       - RENAME
+    ProcessAdditionalFields:
+      required:
+      - properties
+      - metaDataType
+      type: object
+      properties:
+        description:
+          type:
+          - string
+          - 'null'
+        properties:
+          $ref: '#/components/schemas/Map_String'
+        metaDataType:
+          type: string
     ProcessId:
       required:
       - value
@@ -872,6 +1308,29 @@ components:
       properties:
         value:
           type: string
+    ProcessProperties:
+      required:
+      - additionalFields
+      type: object
+      properties:
+        additionalFields:
+          $ref: '#/components/schemas/ProcessAdditionalFields'
+    Processor:
+      required:
+      - id
+      - service
+      type: object
+      properties:
+        id:
+          type: string
+        service:
+          $ref: '#/components/schemas/ServiceRef'
+        isDisabled:
+          type:
+          - boolean
+          - 'null'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     ScenarioUsageData:
       required:
       - nodeId
@@ -879,6 +1338,78 @@ components:
       properties:
         nodeId:
           type: string
+    ServiceRef:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+    Sink:
+      required:
+      - id
+      - ref
+      type: object
+      properties:
+        id:
+          type: string
+        ref:
+          $ref: '#/components/schemas/SinkRef'
+        legacyEndResultExpression:
+          $ref: '#/components/schemas/Expression'
+        isDisabled:
+          type:
+          - boolean
+          - 'null'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    SinkRef:
+      required:
+      - typ
+      type: object
+      properties:
+        typ:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+    Source:
+      required:
+      - id
+      - ref
+      type: object
+      properties:
+        id:
+          type: string
+        ref:
+          $ref: '#/components/schemas/SourceRef'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    SourceRef:
+      required:
+      - typ
+      type: object
+      properties:
+        typ:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+    Split:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     Status:
       type: string
       enum:
@@ -887,6 +1418,75 @@ components:
       type: string
       enum:
       - ERROR
+    Switch:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+        expression:
+          $ref: '#/components/schemas/Expression'
+        exprVal:
+          type:
+          - string
+          - 'null'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    UserDefinedAdditionalNodeFields:
+      type: object
+      properties:
+        description:
+          type:
+          - string
+          - 'null'
+        layoutData:
+          $ref: '#/components/schemas/LayoutData'
+    ValueInputWithFixedValues:
+      oneOf:
+      - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
+    ValueInputWithFixedValuesProvided:
+      required:
+      - allowOtherValue
+      type: object
+      properties:
+        fixedValuesList:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValue'
+        allowOtherValue:
+          type: boolean
+    Variable:
+      required:
+      - id
+      - varName
+      - value
+      type: object
+      properties:
+        id:
+          type: string
+        varName:
+          type: string
+        value:
+          $ref: '#/components/schemas/Expression'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    VariableBuilder:
+      required:
+      - id
+      - varName
+      type: object
+      properties:
+        id:
+          type: string
+        varName:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     VersionId:
       required:
       - value
