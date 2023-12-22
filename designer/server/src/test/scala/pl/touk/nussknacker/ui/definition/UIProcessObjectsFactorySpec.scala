@@ -183,6 +183,20 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     )
   }
 
+  test("should override component's component groups with additionally provided config") {
+    val model: ModelData = LocalModelData(
+      ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+      List(ComponentDefinition("enricher", TestService))
+    )
+
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
+
+    processObjects.componentGroups.map(c => (c.name, c.components.head.label)) should contain(
+      TestAdditionalUIConfigProvider.componentGroupName,
+      "enricher"
+    )
+  }
+
   test("should override scenario properties with additionally provided config") {
     val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)

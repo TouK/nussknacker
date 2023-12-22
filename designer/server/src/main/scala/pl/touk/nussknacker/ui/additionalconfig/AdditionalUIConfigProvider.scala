@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.additionalconfig
 
 import pl.touk.nussknacker.engine.api.component.{
+  ComponentGroupName,
   ComponentId,
   ParameterConfig,
   ScenarioPropertyConfig,
@@ -31,14 +32,21 @@ trait AdditionalUIConfigProvider extends Serializable {
 object AdditionalUIConfigProvider {
   val empty = new DefaultAdditionalUIConfigProvider(Map.empty, Map.empty)
 
-  case class AdditionalUIConfig(parameterConfigs: Map[String, ParameterAdditionalUIConfig]) {
+  case class AdditionalUIConfig(
+      parameterConfigs: Map[String, ParameterAdditionalUIConfig],
+      icon: Option[String] = None,
+      docsUrl: Option[String] = None,
+      componentGroup: Option[ComponentGroupName] = None,
+      disabled: Boolean = false
+  ) {
 
     def toSingleComponentConfigWithoutValidators: SingleComponentConfig =
       SingleComponentConfig(
         params = Some(parameterConfigs.mapValuesNow(_.toParameterConfigWithoutValidators)),
-        icon = None,
-        docsUrl = None,
-        componentGroup = None,
+        icon = icon,
+        docsUrl = docsUrl,
+        componentGroup = componentGroup,
+        disabled = disabled,
         componentId = None
       )
 

@@ -10,7 +10,8 @@ import pl.touk.nussknacker.ui.additionalconfig.AdditionalUIConfigProvider.{
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 
 object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
-  val scenarioPropertyName = "someScenarioProperty1"
+  val componentGroupName: ComponentGroupName = ComponentGroupName("someComponentGroup")
+  val scenarioPropertyName                   = "someScenarioProperty1"
 
   val scenarioPropertyConfigDefault: Map[String, ScenarioPropertyConfig] =
     Map(
@@ -30,7 +31,7 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
     if (processingType == TestProcessingTypes.Streaming) {
       Map(
         ComponentId("streaming-service-enricher") -> AdditionalUIConfig(
-          Map(
+          parameterConfigs = Map(
             "paramStringEditor" -> ParameterAdditionalUIConfig(
               initialValue = Some(
                 FixedExpressionValue(
@@ -42,7 +43,8 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
               valueEditor = None,
               valueCompileTimeValidation = None
             )
-          )
+          ),
+          componentGroup = Some(componentGroupName)
         )
       )
     } else {

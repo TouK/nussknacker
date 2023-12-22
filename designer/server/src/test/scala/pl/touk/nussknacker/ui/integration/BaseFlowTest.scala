@@ -131,7 +131,7 @@ class BaseFlowTest
         ),
         icon = Some("/assets/components/Filter.svg"),
         docsUrl = Some("https://touk.github.io/nussknacker/enricher"),
-        componentGroup = None,
+        componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName),
         componentId = None
       ),
       "multipleParamsService" -> SingleComponentConfig(
