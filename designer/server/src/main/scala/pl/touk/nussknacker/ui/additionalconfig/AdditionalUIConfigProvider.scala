@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
  * Trait allowing the provision of UI configuration for components and scenario properties, without requiring a model reload.
  *
  * TODO: The current implementation allows providing configs only for standard components - meaning that base components aren't handled.
+ * TODO: Currently the value of 'valueCompileTimeValidation' has no effect, it'll be supported in the future but is included now to keep the API stable.
  */
 trait AdditionalUIConfigProvider extends Serializable {
 
@@ -40,9 +41,9 @@ case class AdditionalUIConfig(
     disabled: Boolean = false
 ) {
 
-  def toSingleComponentConfigWithoutValidators: SingleComponentConfig =
+  def toSingleComponentConfig: SingleComponentConfig =
     SingleComponentConfig(
-      params = Some(parameterConfigs.mapValuesNow(_.toParameterConfigWithoutValidators)),
+      params = Some(parameterConfigs.mapValuesNow(_.toParameterConfig)),
       icon = icon,
       docsUrl = docsUrl,
       componentGroup = componentGroup,
@@ -60,10 +61,10 @@ case class ParameterAdditionalUIConfig(
     valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
 ) {
 
-  def toParameterConfigWithoutValidators: ParameterConfig = ParameterConfig(
+  def toParameterConfig: ParameterConfig = ParameterConfig(
     defaultValue = initialValue.map(_.expression),
     editor = valueEditor.map(EditorExtractor.extract),
-    validators = None,
+    validators = None, // see AdditionalUIConfigProvider TODOs
     label = None,
     hintText = hintText
   )

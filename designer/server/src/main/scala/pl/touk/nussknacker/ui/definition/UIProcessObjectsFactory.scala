@@ -38,7 +38,7 @@ object UIProcessObjectsFactory {
 
   def prepareUIProcessObjects(
       modelDataForType: ModelData,
-      modelDefinition: ModelDefinition[ComponentStaticDefinition], // todo enrich with AdditionalUIConfigProvider (?)
+      modelDefinition: ModelDefinition[ComponentStaticDefinition],
       deploymentManager: DeploymentManager,
       user: LoggedUser,
       fragmentsDetails: Set[FragmentDetails],
@@ -66,7 +66,7 @@ object UIProcessObjectsFactory {
       combinedComponentsConfig,
       additionalUIConfigProvider
         .getAllForProcessingType(processingType)
-        .mapValuesNow(_.toSingleComponentConfigWithoutValidators)
+        .mapValuesNow(_.toSingleComponentConfig)
     )
 
     val finalComponentsConfig =
