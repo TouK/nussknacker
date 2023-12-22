@@ -7,7 +7,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
-* [#TODO](https://github.com/TouK/nussknacker/pull/TODO) Changed AdditionalUIConfigProvider to be more in line with FragmentParameter (TODO more explanation?)
+* [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed AdditionalUIConfigProvider to be more in line with FragmentParameter (TODO more explanation?)
 
 ### REST API changes
 

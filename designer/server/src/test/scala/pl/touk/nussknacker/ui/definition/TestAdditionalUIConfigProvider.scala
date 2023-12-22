@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.ui.additionalconfig.AdditionalUIConfigProvider
-import pl.touk.nussknacker.ui.additionalconfig.AdditionalUIConfigProvider.{
+import pl.touk.nussknacker.ui.additionalconfig.{
   AdditionalUIConfig,
+  AdditionalUIConfigProvider,
   ParameterAdditionalUIConfig
 }
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes

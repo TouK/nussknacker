@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   ValueInputWithFixedValues
 }
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.additionalconfig.AdditionalUIConfigProvider.AdditionalUIConfig
 
 /**
  * Trait allowing the provision of UI configuration for components and scenario properties, without requiring a model reload.
@@ -31,43 +30,42 @@ trait AdditionalUIConfigProvider extends Serializable {
 
 object AdditionalUIConfigProvider {
   val empty = new DefaultAdditionalUIConfigProvider(Map.empty, Map.empty)
+}
 
-  case class AdditionalUIConfig(
-      parameterConfigs: Map[String, ParameterAdditionalUIConfig],
-      icon: Option[String] = None,
-      docsUrl: Option[String] = None,
-      componentGroup: Option[ComponentGroupName] = None,
-      disabled: Boolean = false
-  ) {
+case class AdditionalUIConfig(
+    parameterConfigs: Map[String, ParameterAdditionalUIConfig],
+    icon: Option[String] = None,
+    docsUrl: Option[String] = None,
+    componentGroup: Option[ComponentGroupName] = None,
+    disabled: Boolean = false
+) {
 
-    def toSingleComponentConfigWithoutValidators: SingleComponentConfig =
-      SingleComponentConfig(
-        params = Some(parameterConfigs.mapValuesNow(_.toParameterConfigWithoutValidators)),
-        icon = icon,
-        docsUrl = docsUrl,
-        componentGroup = componentGroup,
-        disabled = disabled,
-        componentId = None
-      )
-
-  }
-
-  case class ParameterAdditionalUIConfig(
-      required: Boolean = false,
-      initialValue: Option[FixedExpressionValue],
-      hintText: Option[String],
-      valueEditor: Option[ValueInputWithFixedValues],
-      valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
-  ) {
-
-    def toParameterConfigWithoutValidators: ParameterConfig = ParameterConfig(
-      defaultValue = initialValue.map(_.expression),
-      editor = valueEditor.map(EditorExtractor.extract),
-      validators = None,
-      label = None,
-      hintText = hintText
+  def toSingleComponentConfigWithoutValidators: SingleComponentConfig =
+    SingleComponentConfig(
+      params = Some(parameterConfigs.mapValuesNow(_.toParameterConfigWithoutValidators)),
+      icon = icon,
+      docsUrl = docsUrl,
+      componentGroup = componentGroup,
+      disabled = disabled,
+      componentId = None
     )
 
-  }
+}
+
+case class ParameterAdditionalUIConfig(
+    required: Boolean = false,
+    initialValue: Option[FixedExpressionValue],
+    hintText: Option[String],
+    valueEditor: Option[ValueInputWithFixedValues],
+    valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
+) {
+
+  def toParameterConfigWithoutValidators: ParameterConfig = ParameterConfig(
+    defaultValue = initialValue.map(_.expression),
+    editor = valueEditor.map(EditorExtractor.extract),
+    validators = None,
+    label = None,
+    hintText = hintText
+  )
 
 }
