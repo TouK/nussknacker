@@ -4,14 +4,15 @@ import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.Ok
 import sttp.tapir.Codec.PlainCodec
+import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
-import sttp.tapir._
 
 class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
@@ -32,6 +33,21 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       )
       .withSecurity(auth)
   }
+
+//  lazy val nodesValidationEndpoint: SecuredEndpoint[(ProcessName, NodeValidationRequest), Unit, NodeValidationResult, Any] = {
+//    baseNuApiEndpoint
+//      .summary("Validate provided Node")
+//      .tag("Nodes")
+//      .post
+//      .in("nodess" / path[ProcessName]("processName") / "validation")
+//      .in(jsonBody[NodeValidationRequest])
+//      .out(
+//        statusCode(Ok).and(
+//          jsonBody[NodeValidationResult]
+//        )
+//      )
+//      .withSecurity(auth)
+//  }
 
   lazy val propertiesAdditionalInfoEndpoint
       : SecuredEndpoint[(ProcessName, ProcessProperties), Unit, Option[AdditionalInfo], Any] = {
@@ -60,7 +76,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       }
 
       implicit val processNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
-
     }
 
     implicit val additionalInfoSchema: Schema[AdditionalInfo] = Schema.derived

@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptio
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
+import pl.touk.nussknacker.ui.validation.NodeValidator
 
 import scala.concurrent.ExecutionContext
 
@@ -18,6 +19,7 @@ class NodesApiHttpService(
     authenticator: AuthenticationResources,
     getProcessCategoryService: () => ProcessCategoryService,
     typeToConfig: ProcessingTypeDataProvider[ModelData, _],
+    typeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
     protected val processService: ProcessService
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(config, getProcessCategoryService, authenticator)
