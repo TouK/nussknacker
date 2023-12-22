@@ -20,25 +20,7 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
         case DualParameterEditor(FixedValuesParameterEditor(firstValue :: _), _) =>
           Some(Expression.spel(firstValue.expression))
         case TabularTypedDataEditor =>
-          val expressionString = TabularTypedData
-            .encoder(
-              TabularTypedData
-                .create(
-                  Vector(
-                    Column("some name", classOf[java.lang.Double]),
-                    Column("B", classOf[java.lang.String]),
-                    Column("C", classOf[java.lang.String])
-                  ),
-                  Vector(
-                    Vector(null, null, "test"),
-                    Vector(1.0, "foo", "bar"),
-                    Vector(null, null, "xxx")
-                  )
-                )
-                .get
-            )
-            .noSpaces
-          // val expressionString = TabularTypedData.encoder(TabularTypedData.empty).noSpaces
+          val expressionString = TabularTypedData.encoder(TabularTypedData.empty).noSpaces
           Some(Expression.tabularDataDefinition(expressionString))
         case _ => None
       }
