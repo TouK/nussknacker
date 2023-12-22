@@ -48,8 +48,7 @@ describe("Node window", () => {
             cy.createTestProcess(NAME, "testProcess2");
             cy.intercept("POST", "/api/nodes/*/validation").as("validation");
 
-            cy.visit("/components?USAGES=1");
-            cy.contains(/^9$/i).should("be.visible").click();
+            cy.visit("/components/usages/builtin-filter");
             cy.contains(/^filter 1$/i)
                 .should("be.visible")
                 .click();
@@ -95,7 +94,7 @@ describe("Node window", () => {
 
         it("should be visible for node in fragment", () => {
             cy.createTestFragment(`${NAME}_xxx`, "fragmentWithFilter").as("fragmentName");
-            cy.visitNewProcess(`${NAME}_yyy`, "testProcess2");
+            cy.visitNewProcess(`${NAME}_yyy`, "testProcess");
 
             // TODO: simplify, don't want to test dnd/save here
             cy.get("#toolbox").contains("fragments").should("be.visible").click();
@@ -104,7 +103,7 @@ describe("Node window", () => {
                 .should("be.visible")
                 .drag("#nk-graph-main", {
                     target: {
-                        x: 800,
+                        x: 950,
                         y: 600,
                     },
                     force: true,
