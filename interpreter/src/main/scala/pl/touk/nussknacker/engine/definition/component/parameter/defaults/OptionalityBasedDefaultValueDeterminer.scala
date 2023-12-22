@@ -27,7 +27,7 @@ protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefault
         Expression.Language.Spel
       case SqlParameterEditor | SpelTemplateParameterEditor =>
         Expression.Language.SpelTemplate
-      case TypedTabularDataEditor =>
+      case TabularTypedDataEditor =>
         Expression.Language.TabularDataDefinition
     }
   }

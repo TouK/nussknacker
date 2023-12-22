@@ -52,7 +52,7 @@ object EditorExtractor {
       case SimpleEditorType.JSON_EDITOR          => JsonParameterEditor
       case SimpleEditorType.SQL_EDITOR           => SqlParameterEditor
       case SimpleEditorType.SPEL_TEMPLATE_EDITOR => SpelTemplateParameterEditor
-      case SimpleEditorType.TYPED_TABULAR_DATA_EDITOR => TypedTabularDataEditor
+      case SimpleEditorType.TYPED_TABULAR_DATA_EDITOR => TabularTypedDataEditor
     }
   }
 

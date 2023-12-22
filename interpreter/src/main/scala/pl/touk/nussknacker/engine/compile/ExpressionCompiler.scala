@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.graph._
+import pl.touk.nussknacker.engine.language.tabularDataDefinition.TabularDataDefinitionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -63,9 +64,13 @@ object ExpressionCompiler {
         flavour,
         classDefinitionSet
       )
-    val defaultParsers = Seq(spelParser(SpelExpressionParser.Standard), spelParser(SpelExpressionParser.Template))
-    val parsersSeq     = defaultParsers ++ expressionConfig.languages.expressionParsers
-    val parsers        = parsersSeq.map(p => p.languageId -> p).toMap
+    val defaultParsers = Seq(
+      spelParser(SpelExpressionParser.Standard),
+      spelParser(SpelExpressionParser.Template),
+      TabularDataDefinitionParser
+    )
+    val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
+    val parsers    = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers)
   }
 
