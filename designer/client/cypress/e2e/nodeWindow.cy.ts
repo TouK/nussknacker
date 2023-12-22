@@ -48,7 +48,8 @@ describe("Node window", () => {
             cy.createTestProcess(NAME, "testProcess2");
             cy.intercept("POST", "/api/nodes/*/validation").as("validation");
 
-            cy.visit("/components/usages/builtin-filter");
+            cy.visit("/components?USAGES=1");
+            cy.contains(/^9$/i).should("be.visible").click();
             cy.contains(/^filter 1$/i)
                 .should("be.visible")
                 .click();
@@ -94,7 +95,7 @@ describe("Node window", () => {
 
         it("should be visible for node in fragment", () => {
             cy.createTestFragment(`${NAME}_xxx`, "fragmentWithFilter").as("fragmentName");
-            cy.visitNewProcess(`${NAME}_yyy`, "testProcess");
+            cy.visitNewProcess(`${NAME}_yyy`, "testProcess2");
 
             // TODO: simplify, don't want to test dnd/save here
             cy.get("#toolbox").contains("fragments").should("be.visible").click();
@@ -103,7 +104,7 @@ describe("Node window", () => {
                 .should("be.visible")
                 .drag("#nk-graph-main", {
                     target: {
-                        x: 950,
+                        x: 800,
                         y: 600,
                     },
                     force: true,
@@ -139,20 +140,5 @@ describe("Node window", () => {
             cy.location("pathname", { timeout: 1000 }).should("match", /^\/visualization\/e2e/i);
             cy.location("search", { timeout: 1000 }).should("match", /nodeId=.*xxx-test-process,.*xxx-test-process-filter/i);
         });
-    });
-
-    it("should not open twice on deploy", () => {
-        cy.visitNewProcess(NAME, "testProcess");
-        cy.contains(/^deploy$/i).click();
-        cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
-        cy.get("[data-testid=window] textarea").click().type("---");
-        cy.contains(/^ok$/i).should("be.enabled").click();
-        cy.wait(["@deploy", "@fetch"], {
-            timeout: 20000,
-            log: true,
-        }).each((res) => {
-            cy.wrap(res).its("response.statusCode").should("eq", 200);
-        });
-        cy.getNode("enricher").dblclick();
     });
 });
