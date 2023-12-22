@@ -1,17 +1,13 @@
 import React, { PropsWithChildren } from "react";
-import { GridRenderCellParams } from "@mui/x-data-grid";
 import { Box, Link, LinkProps, SxProps } from "@mui/material";
-import { useCellArrowKeys } from "../utils";
 
 type CellLinkProps<C extends React.ElementType> = LinkProps<C, { component?: C }> &
     PropsWithChildren<{
-        cellProps: GridRenderCellParams;
         disabled?: boolean;
     }>;
 
 export function CellLink<C extends React.ElementType>(props: CellLinkProps<C>): JSX.Element {
-    const { cellProps, disabled, children, sx, ...passProps } = props;
-    const handleCellKeyDown = useCellArrowKeys(cellProps);
+    const { disabled, children, sx, ...passProps } = props;
 
     const styles: SxProps<any> = {
         display: "flex",
@@ -36,7 +32,6 @@ export function CellLink<C extends React.ElementType>(props: CellLinkProps<C>): 
                 ...styles,
             }}
             tabIndex={0}
-            onKeyDown={handleCellKeyDown}
             {...passProps}
         >
             <Box px="10px">{children}</Box>

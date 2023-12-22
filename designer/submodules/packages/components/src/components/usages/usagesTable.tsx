@@ -48,7 +48,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
             {
                 field: "createdAt",
                 headerName: t("table.usages.title.CREATION_DATE", "Creation date"),
-                type: "dateTime",
+                type: "string",
                 flex: 2,
                 renderCell: (props) => <Highlight filterText={filterText} {...props} />,
                 hide: true,
@@ -72,7 +72,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
             {
                 field: "modificationDate",
                 headerName: t("table.usages.title.MODIFICATION_DATE", "Modification date"),
-                type: "dateTime",
+                type: "string",
                 flex: 2,
                 renderCell: (props) => <Highlight filterText={filterText} {...props} />,
                 sortingOrder: ["desc", "asc", null],

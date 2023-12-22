@@ -27,7 +27,7 @@ export const NodesCell = ({
 }): JSX.Element => {
     const {
         value,
-        row: { id },
+        rowNode: { id },
     } = props;
     const filterSegments = useMemo(() => filterText?.toLowerCase().toString().trim().split(/\s/) || [], [filterText]);
 
@@ -44,9 +44,10 @@ export const NodesCell = ({
                     (row) =>
                         rule(row, getFilter(key)),
             ),
-        [nodesFilterRules, getFilter],
+        [getFilter],
     );
-    const filtered = useMemo(() => value.filter((row) => filters.every((f) => f(row))), [value, filters]);
+
+    const filtered = useMemo(() => (Array.isArray(value) ? value.filter((row) => filters.every((f) => f(row))) : []), [value, filters]);
 
     const sorted = useMemo(
         () =>
@@ -62,7 +63,14 @@ export const NodesCell = ({
     );
 
     const elements = sorted.map(([match, node]) => (
-        <NodeChip key={getNodeName(node)} icon={icon} node={node} filterText={filterText} rowId={id} matched={filterText ? match : -1} />
+        <NodeChip
+            key={getNodeName(node)}
+            icon={icon}
+            node={node}
+            filterText={filterText}
+            rowId={id.toString()}
+            matched={filterText ? match : -1}
+        />
     ));
     return <TruncateWrapper {...props}>{elements}</TruncateWrapper>;
 };

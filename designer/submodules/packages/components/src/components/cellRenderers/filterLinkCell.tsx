@@ -16,7 +16,6 @@ export function FilterLinkCell<M>({ filterKey, ...props }: Props<M>): JSX.Elemen
             color={isSelected ? "action.disabled" : "inherit"}
             underline="none"
             onClick={() => setFilter(filterKey, props.value)}
-            cellProps={props}
         >
             {props.value}
         </CellLink>

@@ -1,11 +1,11 @@
 import React, { PropsWithChildren, useCallback, useRef } from "react";
-import { useCellArrowKeys } from "./useCellArrowKeys";
 import { Truncate } from "./truncate";
 import { Visibility } from "@mui/icons-material";
-import { Box, Chip, Popover, PopoverOrigin, Stack } from "@mui/material";
+import { Box, Popover, PopoverOrigin, Stack, Typography } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, PopupState, usePopupState } from "material-ui-popup-state/hooks";
 import { useTranslation } from "react-i18next";
+import { alpha } from "@mui/material/styles";
 
 const paperProps = {
     sx: {
@@ -27,8 +27,7 @@ const transformOrigin: PopoverOrigin = {
     horizontal: "center",
 };
 
-export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRenderCellParams>): JSX.Element {
-    const handleCellKeyDown = useCellArrowKeys(props);
+export function TruncateWrapper({ children }: PropsWithChildren<GridRenderCellParams>): JSX.Element {
     const popupState = usePopupState({ variant: "popover", popupId: "pop" });
     const { anchorEl, ...popoverProps } = bindPopover(popupState);
     const ref = useRef();
@@ -36,11 +35,11 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
     const childrenNumber = React.Children.count(children);
     const renderTruncator = useCallback(
         ({ hiddenItemsCount }) => <Truncator itemsCount={childrenNumber} hiddenItemsCount={hiddenItemsCount} popupState={popupState} />,
-        [popupState, childrenNumber],
+        [childrenNumber, popupState],
     );
 
     return (
-        <Box ref={ref} onKeyDown={handleCellKeyDown} overflow="hidden" flex={1}>
+        <Box ref={ref} overflow="hidden" flex={1}>
             <Stack
                 flex={1}
                 direction="row"
@@ -85,18 +84,34 @@ const Truncator = ({
 }) => {
     const { t } = useTranslation();
     return (
-        <Chip
-            sx={{ border: "none" }}
-            tabIndex={0}
-            icon={<Visibility />}
-            label={
-                itemsCount === hiddenItemsCount
-                    ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })
-                    : t("truncator.someHidden", "{{hiddenItemsCount}} more...", { hiddenItemsCount })
-            }
-            size="small"
-            variant="outlined"
+        <Box
+            component={"button"}
+            sx={(theme) => ({
+                background: "none",
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                textTransform: "lowercase",
+                mx: "2px",
+                padding: 0,
+                height: "24px",
+                ":hover": {
+                    backgroundColor: alpha(theme.palette.common.white, 0.08),
+                },
+                ":focus-visible": {
+                    outline: "none",
+                    backgroundColor: alpha(theme.palette.common.white, 0.08),
+                },
+            })}
+            color={"inherit"}
             {...bindTrigger(popupState)}
-        />
+        >
+            <Visibility sx={{ fontSize: "18px", color: "rgb(224, 224, 224)" }} />
+            <Typography sx={{ mx: "4px", fontSize: "13px" }}>
+                {itemsCount === hiddenItemsCount
+                    ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })
+                    : t("truncator.someHidden", "{{hiddenItemsCount}} more...", { hiddenItemsCount })}
+            </Typography>
+        </Box>
     );
 };
