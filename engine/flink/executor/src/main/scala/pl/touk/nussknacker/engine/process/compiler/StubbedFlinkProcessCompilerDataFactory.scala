@@ -64,7 +64,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       }
 
     // TODO: This is an ugly hack. We shouldn't create ModelData again for this purpose. It is a top-level service
-    val fragmentSourceFactory = new StubbedFragmentInputDefinitionSource(
+    val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
       LocalModelData(
         modelConfig,
         components = List.empty,
@@ -72,7 +72,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       )
     )
     def sourceDefForFragment(frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
-      fragmentSourceFactory.createSourceDefinition(frag)
+      fragmentSourceDefinitionPreparer.createSourceDefinition(frag)
     }
 
     val stubbedSourceForFragment: Seq[(ComponentInfo, ComponentDefinitionWithImplementation)] =

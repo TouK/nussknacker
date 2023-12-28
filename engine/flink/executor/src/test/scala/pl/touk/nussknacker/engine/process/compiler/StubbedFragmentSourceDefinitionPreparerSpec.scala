@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class StubbedFragmentInputDefinitionSourceSpec extends AnyFunSuite with Matchers {
+class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Matchers {
 
   case class SimplifiedParam(name: String, typingResult: TypingResult, editor: Option[ParameterEditor])
 
@@ -29,7 +29,7 @@ class StubbedFragmentInputDefinitionSourceSpec extends AnyFunSuite with Matchers
       )
     )
     val stubbedSource =
-      new StubbedFragmentInputDefinitionSource(
+      new StubbedFragmentSourceDefinitionPreparer(
         LocalModelData(ConfigFactory.empty, List.empty)
       )
     val parameters: Seq[Parameter] = stubbedSource
