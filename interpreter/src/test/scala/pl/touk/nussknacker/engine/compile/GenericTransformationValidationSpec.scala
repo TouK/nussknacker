@@ -56,7 +56,6 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   private val validator = ProcessValidator.default(
     ModelDefinitionWithClasses(modelDefinition),
-    ConfigFactory.empty,
     new SimpleDictRegistry(Map.empty),
     CustomProcessValidatorLoader.emptyCustomProcessValidator
   )

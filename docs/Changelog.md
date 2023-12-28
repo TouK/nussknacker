@@ -47,6 +47,7 @@
 * [#5233](https://github.com/TouK/nussknacker/pull/5233) Fix: Not expected type: Null runtime error for non-nullable, optional json fields that were not provided by user in sink
 * [#5233](https://github.com/TouK/nussknacker/pull/5233) Added support for schema evolution in kafka using json schema and response sink
 * [#5197](https://github.com/TouK/nussknacker/pull/5197) Improved accessing fields in records in expressions - fields can now be statically accessed using indexing
+* [#5253](https://github.com/TouK/nussknacker/pull/5253) Removed the option to configure fragments via config. Due to the recent expansion of FragmentParameter, the option has become largely redundant. Removed to decrease unnecessary complexity.
 
 1.12.5 (1 Dec 2023)
 ------------------------

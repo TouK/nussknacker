@@ -29,7 +29,6 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private lazy val fragmentComponentDefinitionExtractor =
     FragmentCompleteDefinitionExtractor(
-      modelData.modelConfig,
       modelData.modelClassLoader.classLoader,
       expressionCompiler
     )

@@ -56,7 +56,6 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
 
   private val validator = ProcessValidator.default(
     ModelDefinitionWithClasses(modelDefinition),
-    ConfigFactory.empty,
     new SimpleDictRegistry(Map.empty),
     CustomProcessValidatorLoader.emptyCustomProcessValidator
   )
