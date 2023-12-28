@@ -17,11 +17,11 @@ Clicking the "Show advanced configuration" button opens up an additional form.
 
 For types other than `String` and `Boolean` this allows configuration as seen here:
 
-![fragment input](img/fragment_input_advanced_Long.png)
+![fragment input_advanced_long](img/fragment_input_advanced_long.png)
 
 While for parameters of type `String` or `Boolean`, on top of that it also allows choosing an input mode from `Any`, `Any with suggestions`, `Fixed list` and, if applicable, setting the items of the list.
 
-![fragment input](img/fragment_input_advanced_String.png)
+![fragment input_advanced_string](img/fragment_input_advanced_string.png)
 
 ## Outputs
 Fragment can define zero, one or more outputs. Each of them has a name (which should be unique), main scenario can then choose appropriate output. Below you can see fragment with two outputs:
