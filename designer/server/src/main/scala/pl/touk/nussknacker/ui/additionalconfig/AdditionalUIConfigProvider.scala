@@ -2,12 +2,11 @@ package pl.touk.nussknacker.ui.additionalconfig
 
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.definition.component.parameter.editor.EditorExtractor
+import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   ParameterValueCompileTimeValidation,
   ValueInputWithFixedValues
 }
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /**
  * Trait allowing the provision of UI configuration for components and scenario properties, without requiring a model reload.
@@ -40,7 +39,7 @@ case class AdditionalUIConfig(
 
   def toSingleComponentConfig: SingleComponentConfig =
     SingleComponentConfig(
-      params = Some(parameterConfigs.mapValuesNow(_.toParameterConfig)),
+      params = Some(parameterConfigs.map { case (name, p) => name -> p.toParameterConfig(name) }),
       icon = icon,
       docsUrl = docsUrl,
       componentGroup = componentGroup,
@@ -55,12 +54,26 @@ case class ParameterAdditionalUIConfig(
     initialValue: Option[FixedExpressionValue],
     hintText: Option[String],
     valueEditor: Option[ValueInputWithFixedValues],
-    valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
+    valueCompileTimeValidation: Option[
+      ParameterValueCompileTimeValidation
+    ], // not supported yet, see AdditionalUIConfigProvider TODOs
 ) {
 
-  def toParameterConfig: ParameterConfig = ParameterConfig(
-    defaultValue = initialValue.map(_.expression),
-    editor = valueEditor.map(EditorExtractor.extract),
+  def toParameterConfig(paramName: String): ParameterConfig = ParameterConfig(
+    defaultValue = initialValue.map(
+      _.expression
+    ), // TODO validating initialValue with context and expressionCompiler will be similar to handling 'valueCompileTimeValidation'
+    editor = valueEditor.flatMap(editor =>
+      ValueEditorValidator
+        .validateAndGetEditor(
+          editor,
+          initialValue,
+          None,
+          paramName,
+          Set.empty
+        )
+        .toOption
+    ),
     validators = None, // see AdditionalUIConfigProvider TODOs
     label = None,
     hintText = hintText

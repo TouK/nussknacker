@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
+import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -86,11 +86,21 @@ class FragmentWithoutValidatorsDefinitionExtractor(
   ): Writer[List[PartSubGraphCompilationError], Parameter] = {
     val paramConfig   = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
-    val extractedEditor = fragmentParameter.valueEditor
-      .map(valueEditor => Some(EditorExtractor.extract(valueEditor)))
-      .getOrElse(EditorExtractor.extract(parameterData, paramConfig))
 
-    val validation = FragmentParameterValidator.validateWithoutCompilerAndContext(fragmentParameter)
+    val (extractedEditor, validationErrors) = fragmentParameter.valueEditor
+      .map(editor =>
+        ValueEditorValidator.validateAndGetEditor(
+          editor,
+          fragmentParameter.initialValue.map(v => FixedExpressionValue(v.expression, v.label)),
+          Some(fragmentParameter.typ.refClazzName),
+          fragmentParameter.name,
+          Set(nodeId.id)
+        ) match {
+          case Valid(editor) => (Some(editor), List.empty)
+          case Invalid(e)    => (None, e.toList)
+        }
+      )
+      .getOrElse((EditorExtractor.extract(parameterData, paramConfig), List.empty))
 
     val isOptional = !fragmentParameter.required
 
@@ -111,10 +121,7 @@ class FragmentWithoutValidatorsDefinitionExtractor(
 
     Writer
       .value[List[PartSubGraphCompilationError], Parameter](param)
-      .tell(validation match {
-        case Valid(_)   => List.empty
-        case Invalid(e) => e.toList
-      })
+      .tell(validationErrors)
   }
 
   private def getParamTypingResult(

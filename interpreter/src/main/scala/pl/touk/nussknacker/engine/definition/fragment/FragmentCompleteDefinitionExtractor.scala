@@ -24,6 +24,7 @@ class FragmentCompleteDefinitionExtractor(
     withoutValidatorsExtractor: FragmentWithoutValidatorsDefinitionExtractor,
     expressionCompiler: ExpressionCompiler
 ) {
+  private val fragmentParameterValidator = new FragmentParameterValidator(expressionCompiler)
 
   def extractParametersDefinition(
       fragmentInput: FragmentInput,
@@ -105,10 +106,9 @@ class FragmentCompleteDefinitionExtractor(
     val typ         = paramTypeMap(param.name)
 
     val (expressionValidator, validationErrors) =
-      FragmentParameterValidator.validateFixedValuesAndGetExpressionValidator(
+      fragmentParameterValidator.validateFixedValuesAndGetExpressionValidator(
         fragmentParameter,
-        validationContext,
-        expressionCompiler
+        validationContext
       ) match {
         case Valid(validator) => (validator, List.empty)
         case Invalid(e)       => (None, e.toList)
