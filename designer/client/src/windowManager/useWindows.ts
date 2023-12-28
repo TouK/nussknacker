@@ -23,6 +23,7 @@ export function useWindows(parent?: WindowId) {
     const openNodeWindow = useCallback(
         (node: NodeType, process: Process, readonly?: boolean) =>
             open({
+                id: node.id,
                 title: node.id,
                 isResizable: true,
                 kind: readonly ? WindowKind.viewNode : WindowKind.editNode,

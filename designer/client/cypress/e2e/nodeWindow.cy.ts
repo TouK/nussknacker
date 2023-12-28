@@ -140,4 +140,26 @@ describe("Node window", () => {
             cy.location("search", { timeout: 1000 }).should("match", /nodeId=.*xxx-test-process,.*xxx-test-process-filter/i);
         });
     });
+
+    it("should not open twice on deploy", () => {
+        cy.visitNewProcess(NAME, "testProcess");
+
+        cy.deployScenario("---");
+        cy.intercept("/api/notifications", (req) =>
+            req.continue((res) => {
+                res.setDelay(500);
+            }),
+        );
+        cy.cancelScenario("---");
+        cy.getNode("enricher").dblclick();
+        cy.get("[data-testid=window]").should("be.visible");
+        cy.location("search").should("match", /nodeId=enricher/i);
+        cy.contains("canceled").should("be.visible");
+        cy.wait(2000);
+        cy.get("[data-testid=window]").its("length").should("eq", 1);
+        cy.get("[data-testid=window]")
+            .contains(/^cancel$/i)
+            .click();
+        cy.get("[data-testid=window]").its("length").should("eq", 0);
+    });
 });
