@@ -18,6 +18,8 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.{
 }
 
 import java.lang.reflect.Method
+import java.util.concurrent.CompletionStage
+import scala.compat.java8.FutureConverters
 import scala.runtime.BoxedUnit
 
 object ComponentDefinitionExtractor {
@@ -57,26 +59,6 @@ object ComponentDefinitionExtractor {
         case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
       }
 
-    def fromMethodDefinition(methodDef: MethodDefinition): MethodBasedComponentDefinitionWithImplementation = {
-      // TODO: Use ContextTransformation API to check if custom node is adding some output variable
-      def notReturnAnything(typ: TypingResult) =
-        Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
-      val staticDefinition = ComponentStaticDefinition(
-        methodDef.definedParameters,
-        Option(methodDef.returnType).filterNot(notReturnAnything),
-        componentWithConfig.categories,
-        componentWithConfig.componentConfig,
-        componentTypeSpecificData
-      )
-      val implementationInvoker = new MethodBasedComponentImplementationInvoker(component, methodDef)
-      MethodBasedComponentDefinitionWithImplementation(
-        implementationInvoker,
-        component,
-        staticDefinition,
-        methodDef.runtimeClass
-      )
-    }
-
     (component match {
       case e: GenericNodeTransformation[_] =>
         val implementationInvoker = new DynamicComponentImplementationInvoker(e)
@@ -92,9 +74,39 @@ object ComponentDefinitionExtractor {
       case _ =>
         methodDefinitionExtractor
           .extractMethodDefinition(component, findMainComponentMethod(component), componentWithConfig.componentConfig)
-          .map(fromMethodDefinition)
+          .map { methodDef =>
+            def notReturnAnything(typ: TypingResult) =
+              Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
+            val staticDefinition = ComponentStaticDefinition(
+              methodDef.definedParameters,
+              Option(methodDef.returnType).filterNot(notReturnAnything),
+              componentWithConfig.categories,
+              componentWithConfig.componentConfig,
+              componentTypeSpecificData
+            )
+            val implementationInvoker = extractImplementationInvoker(component, methodDef)
+            MethodBasedComponentDefinitionWithImplementation(
+              implementationInvoker,
+              component,
+              staticDefinition
+            )
+          }
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
+  }
+
+  private def extractImplementationInvoker(
+      component: Component,
+      methodDef: MethodDefinition
+  ): ComponentImplementationInvoker = {
+    val invoker = new MethodBasedComponentImplementationInvoker(component, methodDef)
+    if (component.isInstanceOf[Service] && classOf[CompletionStage[_]].isAssignableFrom(methodDef.runtimeClass)) {
+      invoker.transformResult { completionStage =>
+        FutureConverters.toScala(completionStage.asInstanceOf[CompletionStage[_]])
+      }
+    } else {
+      invoker
+    }
   }
 
   private def findMainComponentMethod(obj: Any): Method = {

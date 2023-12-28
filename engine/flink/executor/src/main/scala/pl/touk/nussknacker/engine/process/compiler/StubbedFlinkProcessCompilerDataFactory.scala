@@ -5,20 +5,20 @@ import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker
 }
-import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
+import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
-import pl.touk.nussknacker.engine.testing.LocalModelData
-import shapeless.syntax.typeable._
+import shapeless.syntax.typeable.typeableOps
 
 abstract class StubbedFlinkProcessCompilerDataFactory(
     process: CanonicalProcess,
@@ -37,62 +37,48 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  override protected def definitions(
-      modelDependencies: ProcessObjectDependencies,
-      userCodeClassLoader: ClassLoader
-  ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
-    val (originalDefinitionWithTypes, originalDictRegistry) =
-      super.definitions(modelDependencies, userCodeClassLoader)
-    val originalDefinition = originalDefinitionWithTypes.modelDefinition
-
+  override protected def adjustDefinitions(
+      originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+      definitionContext: ComponentDefinitionContext
+  ): ModelDefinition[ComponentDefinitionWithImplementation] = {
     val collectedSources = process.allStartNodes.map(_.head.data).collect { case source: Source =>
       source
     }
-
-    lazy val context =
-      ComponentDefinitionContext(userCodeClassLoader, originalDefinitionWithTypes, originalDictRegistry)
     val usedSourceTypes = collectedSources.map(_.ref.typ)
     val stubbedSources =
       usedSourceTypes.map { sourceName =>
-        val sourceDefinition = originalDefinition
+        val sourceDefinition = originalModelDefinition
           .getComponent(ComponentType.Source, sourceName)
           .getOrElse(
             throw new IllegalArgumentException(s"Source $sourceName cannot be stubbed - missing definition")
           )
-        val stubbedDefinition = prepareSourceFactory(sourceDefinition, context)
+        val stubbedDefinition = prepareSourceFactory(sourceDefinition, definitionContext)
         ComponentInfo(ComponentType.Source, sourceName) -> stubbedDefinition
       }
 
-    // TODO: This is an ugly hack. We shouldn't create ModelData again for this purpose. It is a top-level service
-    val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
-      LocalModelData(
-        modelConfig,
-        components = List.empty,
-        configCreator = creator
-      )
+    val fragmentDefinitionExtractor = new FragmentWithoutValidatorsDefinitionExtractor(
+      definitionContext.userCodeClassLoader
     )
-    def sourceDefForFragment(frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
-      fragmentSourceDefinitionPreparer.createSourceDefinition(frag)
-    }
+    val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(fragmentDefinitionExtractor)
 
-    val stubbedSourceForFragment: Seq[(ComponentInfo, ComponentDefinitionWithImplementation)] =
+    val stubbedSourceForFragments =
       process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
-        ComponentInfo(ComponentType.Source, frag.id) -> prepareSourceFactory(sourceDefForFragment(frag), context)
+        val fragmentSourceDefWithImpl = fragmentSourceDefinitionPreparer.createSourceDefinition(frag)
+        ComponentInfo(ComponentType.Fragment, frag.id) -> prepareSourceFactory(
+          fragmentSourceDefWithImpl,
+          definitionContext
+        )
       }
 
-    val stubbedServices = originalDefinition.components
+    val stubbedServices = originalModelDefinition.components
       .filter(_._1.`type` == ComponentType.Service)
-      .mapValuesNow(prepareService(_, context))
+      .mapValuesNow(prepareService(_, definitionContext))
 
-    (
-      ModelDefinitionWithClasses(
-        originalDefinition
-          .copy(
-            components = originalDefinition.components ++ stubbedSources ++ stubbedSourceForFragment ++ stubbedServices
-          )
-      ),
-      originalDictRegistry
-    )
+    originalModelDefinition
+      .copy(
+        components =
+          originalModelDefinition.components ++ stubbedSources ++ stubbedSourceForFragments ++ stubbedServices
+      )
   }
 
   protected def prepareService(
@@ -107,18 +93,16 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
 
 }
 
-case class ComponentDefinitionContext(
-    userCodeClassLoader: ClassLoader,
-    originalDefinitionWithTypes: ModelDefinitionWithClasses,
-    originalDictRegistry: EngineDictRegistry
-)
-
 abstract class StubbedComponentImplementationInvoker(
     original: ComponentImplementationInvoker,
-    originalReturnType: Option[TypingResult]
+    originalDefinitionReturnType: Option[TypingResult]
 ) extends ComponentImplementationInvoker {
+
   def this(componentDefinitionWithImpl: ComponentDefinitionWithImplementation) =
-    this(componentDefinitionWithImpl.implementationInvoker, componentDefinitionWithImpl.returnType)
+    this(
+      componentDefinitionWithImpl.implementationInvoker,
+      componentDefinitionWithImpl.cast[MethodBasedComponentDefinitionWithImplementation].flatMap(_.returnType)
+    )
 
   override def invokeMethod(
       params: Map[String, Any],
@@ -126,7 +110,15 @@ abstract class StubbedComponentImplementationInvoker(
       additional: Seq[AnyRef]
   ): Any = {
     def transform(impl: Any): Any = {
-      val typingResult = impl.cast[ReturningType].map(rt => Some(rt.returnType)).getOrElse(originalReturnType)
+      // TypingResult is important for method based components, because even for testing and verification
+      // purpose, ImplementationInvoker is used also determine output types. Dynamic components don't use it during
+      // scenario validation so we pass Unknown for them
+      val typingResult =
+        impl
+          .cast[ReturningType]
+          .map(rt => rt.returnType)
+          .orElse(originalDefinitionReturnType)
+          .getOrElse(Unknown)
       val nodeId = additional
         .collectFirst { case nodeId: NodeId =>
           nodeId
@@ -138,11 +130,11 @@ abstract class StubbedComponentImplementationInvoker(
 
     val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
     originalValue match {
-      case e: ContextTransformation =>
-        e.copy(implementation = transform(e.implementation))
-      case e => transform(e)
+      case contextTransformation: ContextTransformation =>
+        contextTransformation.copy(implementation = transform(contextTransformation.implementation))
+      case componentExecutor => transform(componentExecutor)
     }
   }
 
-  def handleInvoke(impl: Any, typingResult: Option[TypingResult], nodeId: NodeId): Any
+  def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any
 }

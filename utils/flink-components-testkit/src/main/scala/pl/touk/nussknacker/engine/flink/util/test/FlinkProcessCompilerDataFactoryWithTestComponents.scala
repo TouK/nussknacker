@@ -4,16 +4,20 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
-import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompilerDataFactory, TestFlinkExceptionHandler}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
+import pl.touk.nussknacker.engine.process.compiler.{
+  ComponentDefinitionContext,
+  FlinkProcessCompilerDataFactory,
+  TestFlinkExceptionHandler
+}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object FlinkProcessCompilerDataFactoryWithTestComponents {
 
@@ -50,30 +54,23 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       componentUseCase,
     ) {
 
-      override protected def definitions(
-          modelDependencies: ProcessObjectDependencies,
-          userCodeClassLoader: ClassLoader
-      ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
-        val (definitionWithTypes, dictRegistry) = super.definitions(modelDependencies, userCodeClassLoader)
-        val definitions                         = definitionWithTypes.modelDefinition
-        val componentsUiConfig                  = ComponentsUiConfigParser.parse(modelDependencies.config)
+      override protected def adjustDefinitions(
+          originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+          definitionContext: ComponentDefinitionContext
+      ): ModelDefinition[ComponentDefinitionWithImplementation] = {
         val testComponents =
-          ComponentDefinitionWithImplementation.forList(testExtensionsHolder.components, componentsUiConfig)
+          ComponentDefinitionWithImplementation.forList(testExtensionsHolder.components, ComponentsUiConfig.Empty)
 
-        val definitionsWithTestComponentsAndGlobalVariables = definitions
+        originalModelDefinition
           .withComponents(testComponents)
           .copy(
-            expressionConfig = definitions.expressionConfig.copy(
-              definitions.expressionConfig.globalVariables ++
-                GlobalVariableDefinitionExtractor.extractDefinitions(
-                  testExtensionsHolder.globalVariables.view.map { case (key, value) =>
-                    key -> WithCategories.anyCategory(value)
-                  }.toMap
-                )
+            expressionConfig = originalModelDefinition.expressionConfig.copy(
+              originalModelDefinition.expressionConfig.globalVariables ++
+                testExtensionsHolder.globalVariables.mapValuesNow { value =>
+                  GlobalVariableDefinitionExtractor.extractDefinition(value, categories = None)
+                }
             )
           )
-
-        (ModelDefinitionWithClasses(definitionsWithTestComponentsAndGlobalVariables), dictRegistry)
       }
 
       override protected def adjustListeners(

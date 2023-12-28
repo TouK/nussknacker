@@ -7,6 +7,19 @@ trait ComponentImplementationInvoker extends Serializable {
 
   def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any
 
+  final def transformResult(f: Any => Any): ComponentImplementationInvoker = {
+    new ComponentImplementationInvoker {
+      override def invokeMethod(
+          params: Map[String, Any],
+          outputVariableNameOpt: Option[String],
+          additional: Seq[AnyRef]
+      ): Any = {
+        val originalResult = ComponentImplementationInvoker.this.invokeMethod(params, outputVariableNameOpt, additional)
+        f(originalResult)
+      }
+    }
+  }
+
 }
 
 object ComponentImplementationInvoker {

@@ -5,31 +5,26 @@ import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.util.Implicits._
 
-// TODO: Types part and implementation part should be separated
 class GlobalVariablesPreparer(
     globalVariablesDefWithImpl: Map[String, ComponentDefinitionWithImplementation],
     hideMetaVariable: Boolean
 ) {
 
   def emptyLocalVariablesValidationContext(metaData: MetaData): ValidationContext =
-    validationContextWithLocalVariables(metaData, Map.empty)
-
-  def validationContextWithLocalVariables(
-      metaData: MetaData,
-      localVariables: Map[String, TypingResult]
-  ): ValidationContext = ValidationContext(
-    localVariables,
-    prepareGlobalVariables(metaData).mapValuesNow(_.typ)
-  )
+    ValidationContext(
+      localVariables = Map.empty,
+      globalVariables = prepareGlobalVariables(metaData).mapValuesNow(_.typ)
+    )
 
   def emptyLocalVariablesValidationContext(
       scenarioPropertiesNames: Iterable[String]
   ): ValidationContext = ValidationContext(
-    Map.empty,
-    prepareGlobalVariablesTypes(scenarioPropertiesNames)
+    localVariables = Map.empty,
+    globalVariables = prepareGlobalVariablesTypes(scenarioPropertiesNames)
   )
 
   def prepareGlobalVariables(metaData: MetaData): Map[String, ObjectWithType] = {
@@ -42,11 +37,11 @@ class GlobalVariablesPreparer(
   }
 
   private def prepareGlobalVariablesTypes(scenarioPropertiesNames: Iterable[String]): Map[String, TypingResult] = {
-    val globalVariablesWithType = globalVariablesDefWithImpl.mapValuesNow(toGlobalVariableType)
+    val globalVariableTypes = globalVariablesDefWithImpl.mapValuesNow(toGlobalVariableType)
     if (hideMetaVariable) {
-      globalVariablesWithType
+      globalVariableTypes
     } else {
-      globalVariablesWithType + (VariableConstants.MetaVariableName -> MetaVariables.typingResult(
+      globalVariableTypes + (VariableConstants.MetaVariableName -> MetaVariables.typingResult(
         scenarioPropertiesNames
       ))
     }
@@ -62,9 +57,12 @@ class GlobalVariablesPreparer(
       case _ =>
         ObjectWithType(
           componentDefWithImpl.implementation,
-          componentDefWithImpl.returnType.getOrElse(
-            throw new IllegalStateException("Global variable with empty return type.")
-          )
+          componentDefWithImpl
+            .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+            .returnType
+            .getOrElse(
+              throw new IllegalStateException("Global variable with empty return type.")
+            )
         )
     }
   }
@@ -74,9 +72,12 @@ class GlobalVariablesPreparer(
       case typedGlobalVariable: TypedGlobalVariable =>
         typedGlobalVariable.initialReturnType
       case _ =>
-        componentDefWithImpl.returnType.getOrElse(
-          throw new IllegalStateException("Global variable with empty return type.")
-        )
+        componentDefWithImpl
+          .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+          .returnType
+          .getOrElse(
+            throw new IllegalStateException("Global variable with empty return type.")
+          )
     }
   }
 
