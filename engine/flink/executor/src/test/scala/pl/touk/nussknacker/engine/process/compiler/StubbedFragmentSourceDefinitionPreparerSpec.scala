@@ -28,11 +28,11 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
         FragmentParameter("age", FragmentClazzRef[Long]),
       )
     )
-    val stubbedSource =
+    val stubbedSourcePreparer =
       new StubbedFragmentSourceDefinitionPreparer(
         LocalModelData(ConfigFactory.empty, List.empty)
       )
-    val parameters: Seq[Parameter] = stubbedSource
+    val parameters: Seq[Parameter] = stubbedSourcePreparer
       .createSourceDefinition(fragmentInputDefinition)
       .implementationInvoker
       .invokeMethod(Map.empty, None, Seq.empty)
