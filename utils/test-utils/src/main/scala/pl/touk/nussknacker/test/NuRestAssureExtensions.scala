@@ -22,6 +22,26 @@ trait NuRestAssureExtensions {
 
   }
 
+  implicit class BasicAuth[T <: RequestSpecification](requestSpecification: T) {
+
+    def basicAuth(name: String, password: String): RequestSpecification = {
+      requestSpecification
+        .auth()
+        .basic(name, password)
+    }
+
+  }
+
+  implicit class JsonBody[T <: RequestSpecification](requestSpecification: T) {
+
+    def jsonBody(json: String): RequestSpecification = {
+      requestSpecification
+        .contentType("application/json")
+        .body(json)
+    }
+
+  }
+
 }
 
 object NuRestAssureExtensions extends NuRestAssureExtensions

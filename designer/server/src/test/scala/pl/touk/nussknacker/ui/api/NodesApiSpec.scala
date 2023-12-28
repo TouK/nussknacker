@@ -1,30 +1,13 @@
 package pl.touk.nussknacker.ui.api
 
-import io.circe.Encoder
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import io.restassured.specification.RequestSpecification
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
-import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.spel
-import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionId
-import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.restmodel.definition.UIValueParameter
-import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.engine.kafka.KafkaFactory.SinkValueParamName
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
@@ -32,7 +15,6 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLogging
 }
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 
 class NodesApiSpec
     extends AnyFreeSpecLike
@@ -56,10 +38,30 @@ class NodesApiSpec
       "authenticated should" - {
         "return additional info for existing process" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val data: NodeData =
-            Enricher("enricher", ServiceRef("paramService", List(Parameter("id", Expression.spel("'a'")))), "out", None)
 
-          sendNodeAsJsonAsAllpermuser(data)
+          given()
+            .basicAuth("allpermuser", "allpermuser")
+            .and()
+            .jsonBody(
+              s"""{
+                 |    "id": "enricher",
+                 |    "service": {
+                 |        "id": "paramService",
+                 |        "parameters": [
+                 |            {
+                 |                "name": "id",
+                 |                "expression": {
+                 |                    "language": "spel",
+                 |                    "expression": "'a'"
+                 |                }
+                 |            }
+                 |        ]
+                 |    },
+                 |    "output": "out",
+                 |    "additionalFields": null,
+                 |    "type": "Enricher"
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/additionalInfo")
             .Then()
@@ -71,9 +73,21 @@ class NodesApiSpec
                    |}""".stripMargin)
             )
 
-          val dataEmpty: NodeData = Enricher("1", ServiceRef("otherService", List()), "out", None)
-
-          sendNodeAsJsonAsAllpermuser(dataEmpty)
+          given()
+            .basicAuth("allpermuser", "allpermuser")
+            .and()
+            .jsonBody(
+              s"""{
+                 |    "id": "1",
+                 |    "service": {
+                 |        "id": "otherService",
+                 |        "parameters": []
+                 |    },
+                 |    "output": "out",
+                 |    "additionalFields": null,
+                 |    "type": "Enricher"
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/additionalInfo")
             .Then()
@@ -83,12 +97,23 @@ class NodesApiSpec
             )
         }
         "return 404 for not existent process" in {
-          val data: NodeData =
-            Enricher("enricher", ServiceRef("paramService", List(Parameter("id", Expression.spel("'a'")))), "out", None)
-
           val wrongName: String = "wrongProcessName"
 
-          sendNodeAsJsonAsAllpermuser(data)
+          given()
+            .basicAuth("allpermuser", "allpermuser")
+            .and()
+            .jsonBody(
+              s"""{
+                 |    "id": "1",
+                 |    "service": {
+                 |        "id": "otherService",
+                 |        "parameters": []
+                 |    },
+                 |    "output": "out",
+                 |    "additionalFields": null,
+                 |    "type": "Enricher"
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/nodes/$wrongName/additionalInfo")
             .Then()
@@ -101,16 +126,21 @@ class NodesApiSpec
       "not authenticated should" - {
         "forbid access" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val data: NodeData =
-            Enricher("enricher", ServiceRef("paramService", List(Parameter("id", Expression.spel("'a'")))), "out", None)
-          val json = Encoder[NodeData].apply(data)
 
-          given
-            .contentType("application/json")
-            .body(json.toString())
-            .and()
+          given()
             .auth()
             .none
+            .and()
+            .jsonBody(s"""{
+                 |    "id": "1",
+                 |    "service": {
+                 |        "id": "otherService",
+                 |        "parameters": []
+                 |    },
+                 |    "output": "out",
+                 |    "additionalFields": null,
+                 |    "type": "Enricher"
+                 |}""".stripMargin)
             .when()
             .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/additionalInfo")
             .Then()
@@ -125,86 +155,213 @@ class NodesApiSpec
       "authenticated should" - {
         "validate correct node without errors" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val data: node.Filter = node.Filter("id", Expression.spel("#longValue > 1"))
-          val request = NodeValidationRequest(
-            data,
-            ProcessProperties(StreamMetaData()),
-            Map("existButString" -> Typed[String], "longValue" -> Typed[Long]),
-            None,
-            None
-          )
 
-          sendRequestAsJsonAsAllpermuser(request)
+          given()
+            .basicAuth("allpermuser", "allpermuser")
+            .and()
+            .jsonBody(
+              s"""{
+                 |    "nodeData": {
+                 |        "id": "id",
+                 |        "expression": {
+                 |            "language": "spel",
+                 |            "expression": "#longValue > 1"
+                 |        },
+                 |        "isDisabled": null,
+                 |        "additionalFields": null,
+                 |        "type": "Filter"
+                 |    },
+                 |    "processProperties": {
+                 |        "isFragment": false,
+                 |        "additionalFields": {
+                 |            "description": null,
+                 |            "properties": {
+                 |                "parallelism": "",
+                 |                "spillStateToDisk": "true",
+                 |                "useAsyncInterpretation": "",
+                 |                "checkpointIntervalInSeconds": ""
+                 |            },
+                 |            "metaDataType": "StreamMetaData"
+                 |        }
+                 |    },
+                 |    "variableTypes": {
+                 |        "existButString": {
+                 |            "display": "String",
+                 |            "type": "TypedClass",
+                 |            "refClazzName": "java.lang.String",
+                 |            "params": []
+                 |        },
+                 |        "longValue": {
+                 |            "display": "Long",
+                 |            "type": "TypedClass",
+                 |            "refClazzName": "java.lang.Long",
+                 |            "params": []
+                 |        }
+                 |    },
+                 |    "branchVariableTypes": null,
+                 |    "outgoingEdges": null
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
             .Then()
             .statusCode(200)
-            .body("validationErrors[0]", equalTo(null))
+            .body(
+              equalsJson(s"""{
+                   |    "parameters": null,
+                   |    "expressionType": {
+                   |        "display": "Boolean",
+                   |        "type": "TypedClass",
+                   |        "refClazzName": "java.lang.Boolean",
+                   |        "params": []
+                   |    },
+                   |    "validationErrors": [],
+                   |    "validationPerformed": true
+                   |}""".stripMargin)
+            )
         }
         "validate filter node when wrong parameter type is given" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val data: node.Filter = node.Filter("id", Expression.spel("#existButString"))
-          val request = NodeValidationRequest(
-            data,
-            ProcessProperties(StreamMetaData()),
-            Map("existButString" -> Typed[String], "longValue" -> Typed[Long]),
-            None,
-            None
-          )
 
-          sendRequestAsJsonAsAllpermuser(request)
+          given()
+            .basicAuth("allpermuser", "allpermuser")
+            .and()
+            .jsonBody(
+              s"""{
+                 |    "nodeData": {
+                 |        "id": "id",
+                 |        "expression": {
+                 |            "language": "spel",
+                 |            "expression": "#existButString"
+                 |        },
+                 |        "isDisabled": null,
+                 |        "additionalFields": null,
+                 |        "type": "Filter"
+                 |    },
+                 |    "processProperties": {
+                 |        "isFragment": false,
+                 |        "additionalFields": {
+                 |            "description": null,
+                 |            "properties": {
+                 |                "parallelism": "",
+                 |                "spillStateToDisk": "true",
+                 |                "useAsyncInterpretation": "",
+                 |                "checkpointIntervalInSeconds": ""
+                 |            },
+                 |            "metaDataType": "StreamMetaData"
+                 |        }
+                 |    },
+                 |    "variableTypes": {
+                 |        "existButString": {
+                 |            "display": "String",
+                 |            "type": "TypedClass",
+                 |            "refClazzName": "java.lang.String",
+                 |            "params": []
+                 |        },
+                 |        "longValue": {
+                 |            "display": "Long",
+                 |            "type": "TypedClass",
+                 |            "refClazzName": "java.lang.Long",
+                 |            "params": []
+                 |        }
+                 |    },
+                 |    "branchVariableTypes": null,
+                 |    "outgoingEdges": null
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
             .Then()
             .statusCode(200)
             .body(
               equalsJson(
-                Encoder[NodeValidationResult]
-                  .apply(
-                    NodeValidationResult(
-                      parameters = None,
-                      expressionType = Some(typing.Unknown),
-                      validationErrors = List(
-                        PrettyValidationErrors.formatErrorMessage(
-                          ExpressionParserCompilationError(
-                            "Bad expression type, expected: Boolean, found: String",
-                            data.id,
-                            Some(DefaultExpressionId),
-                            data.expression.expression
-                          )
-                        )
-                      ),
-                      validationPerformed = true
-                    )
-                  )
-                  .toString()
+                s"""{
+                   |    "parameters": null,
+                   |    "expressionType": {
+                   |        "display": "Unknown",
+                   |        "type": "Unknown",
+                   |        "refClazzName": "java.lang.Object",
+                   |        "params": []
+                   |    },
+                   |    "validationErrors": [
+                   |        {
+                   |            "typ": "ExpressionParserCompilationError",
+                   |            "message": "Failed to parse expression: Bad expression type, expected: Boolean, found: String",
+                   |            "description": "There is problem with expression in field Some($$expression) - it could not be parsed.",
+                   |            "fieldName": "$$expression",
+                   |            "errorType": "SaveAllowed"
+                   |        }
+                   |    ],
+                   |    "validationPerformed": true
+                   |}""".stripMargin
               )
             )
         }
         "validate incorrect sink expression" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
 
-          val data: node.Sink = node.Sink(
-            "mysink",
-            SinkRef(
-              "kafka-string",
-              List(
-                Parameter(SinkValueParamName, Expression.spel("notvalidspelexpression")),
-                Parameter(TopicParamName, Expression.spel("'test-topic'"))
-              )
-            ),
-            None,
-            None
-          )
-          val request = NodeValidationRequest(
-            data,
-            ProcessProperties(StreamMetaData()),
-            Map("existButString" -> Typed[String], "longValue" -> Typed[Long]),
-            None,
-            None
-          )
-
-          sendRequestAsJsonAsAllpermuser(request)
+          given()
+            .basicAuth("allpermuser", "allpermuser")
+            .and()
+            .jsonBody(
+              s"""{
+                 |    "nodeData": {
+                 |        "id": "mysink",
+                 |        "ref": {
+                 |            "typ": "kafka-string",
+                 |            "parameters": [
+                 |                {
+                 |                    "name": "Value",
+                 |                    "expression": {
+                 |                        "language": "spel",
+                 |                        "expression": "notvalidspelexpression"
+                 |                    }
+                 |                },
+                 |                {
+                 |                    "name": "Topic",
+                 |                    "expression": {
+                 |                        "language": "spel",
+                 |                        "expression": "'test-topic'"
+                 |                    }
+                 |                }
+                 |            ]
+                 |        },
+                 |        "endResult": null,
+                 |        "isDisabled": null,
+                 |        "additionalFields": null,
+                 |        "type": "Sink"
+                 |    },
+                 |    "processProperties": {
+                 |        "isFragment": false,
+                 |        "additionalFields": {
+                 |            "description": null,
+                 |            "properties": {
+                 |                "parallelism": "",
+                 |                "spillStateToDisk": "true",
+                 |                "useAsyncInterpretation": "",
+                 |                "checkpointIntervalInSeconds": ""
+                 |            },
+                 |            "metaDataType": "StreamMetaData"
+                 |        }
+                 |    },
+                 |    "variableTypes": {
+                 |        "existButString": {
+                 |            "display": "String",
+                 |            "type": "TypedClass",
+                 |            "refClazzName": "java.lang.String",
+                 |            "params": []
+                 |        },
+                 |        "longValue": {
+                 |            "display": "Long",
+                 |            "type": "TypedClass",
+                 |            "refClazzName": "java.lang.Long",
+                 |            "params": []
+                 |        }
+                 |    },
+                 |    "branchVariableTypes": null,
+                 |    "outgoingEdges": null
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
             .Then()
@@ -220,10 +377,40 @@ class NodesApiSpec
         }
         "validate node using dictionaries" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val data: node.Filter = node.Filter("id", Expression.spel("#DICT.Bar != #DICT.Foo"))
-          val request           = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
 
-          sendRequestAsJsonAsAllpermuser(request)
+          given()
+            .basicAuth("allpermuser", "allpermuser")
+            .and()
+            .jsonBody(
+              s"""{
+                 |    "nodeData": {
+                 |        "id": "id",
+                 |        "expression": {
+                 |            "language": "spel",
+                 |            "expression": "#DICT.Bar != #DICT.Foo"
+                 |        },
+                 |        "isDisabled": null,
+                 |        "additionalFields": null,
+                 |        "type": "Filter"
+                 |    },
+                 |    "processProperties": {
+                 |        "isFragment": false,
+                 |        "additionalFields": {
+                 |            "description": null,
+                 |            "properties": {
+                 |                "parallelism": "",
+                 |                "spillStateToDisk": "true",
+                 |                "useAsyncInterpretation": "",
+                 |                "checkpointIntervalInSeconds": ""
+                 |            },
+                 |            "metaDataType": "StreamMetaData"
+                 |        }
+                 |    },
+                 |    "variableTypes": {},
+                 |    "branchVariableTypes": null,
+                 |    "outgoingEdges": null
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
             .Then()
@@ -242,39 +429,117 @@ class NodesApiSpec
         }
         "validate node id" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val blankValue        = " "
-          val data: node.Filter = node.Filter(blankValue, Expression.spel("true"))
-          val request           = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
 
-          sendRequestAsJsonAsAllpermuser(request)
+          given()
+            .basicAuth("allpermuser", "allpermuser")
+            .and()
+            .jsonBody(
+              s"""{
+                 |    "nodeData": {
+                 |        "id": " ",
+                 |        "expression": {
+                 |            "language": "spel",
+                 |            "expression": "true"
+                 |        },
+                 |        "isDisabled": null,
+                 |        "additionalFields": null,
+                 |        "type": "Filter"
+                 |    },
+                 |    "processProperties": {
+                 |        "isFragment": false,
+                 |        "additionalFields": {
+                 |            "description": null,
+                 |            "properties": {
+                 |                "parallelism": "",
+                 |                "spillStateToDisk": "true",
+                 |                "useAsyncInterpretation": "",
+                 |                "checkpointIntervalInSeconds": ""
+                 |            },
+                 |            "metaDataType": "StreamMetaData"
+                 |        }
+                 |    },
+                 |    "variableTypes": {},
+                 |    "branchVariableTypes": null,
+                 |    "outgoingEdges": null
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
             .Then()
             .statusCode(200)
-            .body("validationErrors[0].typ", equalTo("NodeIdValidationError"))
-            .body("validationErrors[0].message", equalTo("Node name cannot be blank"))
-            .body("validationErrors[0].fieldName", equalTo("$id"))
+            .body(equalsJson(s"""{
+                 |    "parameters": null,
+                 |    "expressionType": {
+                 |        "value": true,
+                 |        "display": "Boolean(true)",
+                 |        "type": "TypedObjectWithValue",
+                 |        "refClazzName": "java.lang.Boolean",
+                 |        "params": []
+                 |    },
+                 |    "validationErrors": [
+                 |        {
+                 |            "typ": "NodeIdValidationError",
+                 |            "message": "Node name cannot be blank",
+                 |            "description": "Blank node name",
+                 |            "fieldName": "$$id",
+                 |            "errorType": "SaveAllowed"
+                 |        }
+                 |    ],
+                 |    "validationPerformed": true
+                 |}""".stripMargin))
         }
       }
       "not authenticated should" - {
         "forbid access" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val data: node.Filter = node.Filter("id", Expression.spel("#existButString"))
-          val request = NodeValidationRequest(
-            data,
-            ProcessProperties(StreamMetaData()),
-            Map("existButString" -> Typed[String], "longValue" -> Typed[Long]),
-            None,
-            None
-          )
-          val json = Encoder[NodeValidationRequest].apply(request)
 
           given()
             .auth()
             .none()
             .and()
-            .contentType("application/json")
-            .body(json.toString())
+            .jsonBody(
+              s"""{
+                 |    "nodeData": {
+                 |        "id": "id",
+                 |        "expression": {
+                 |            "language": "spel",
+                 |            "expression": "#existButString"
+                 |        },
+                 |        "isDisabled": null,
+                 |        "additionalFields": null,
+                 |        "type": "Filter"
+                 |    },
+                 |    "processProperties": {
+                 |        "isFragment": false,
+                 |        "additionalFields": {
+                 |            "description": null,
+                 |            "properties": {
+                 |                "parallelism": "",
+                 |                "spillStateToDisk": "true",
+                 |                "useAsyncInterpretation": "",
+                 |                "checkpointIntervalInSeconds": ""
+                 |            },
+                 |            "metaDataType": "StreamMetaData"
+                 |        }
+                 |    },
+                 |    "variableTypes": {
+                 |        "existButString": {
+                 |            "display": "String",
+                 |            "type": "TypedClass",
+                 |            "refClazzName": "java.lang.String",
+                 |            "params": []
+                 |        },
+                 |        "longValue": {
+                 |            "display": "Long",
+                 |            "type": "TypedClass",
+                 |            "refClazzName": "java.lang.Long",
+                 |            "params": []
+                 |        }
+                 |    },
+                 |    "branchVariableTypes": null,
+                 |    "outgoingEdges": null
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
             .Then()
@@ -292,22 +557,27 @@ class NodesApiSpec
       "authenticated should" - {
         "return additional info for process properties" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val processProperties = ProcessProperties.combineTypeSpecificProperties(
-            StreamMetaData(),
-            additionalFields = ProcessAdditionalFields(
-              None,
-              Map("numberOfThreads" -> "2", "environment" -> "test"),
-              StreamMetaData.typeName
-            )
-          )
-          val json = Encoder[ProcessProperties].apply(processProperties)
 
           given()
-            .contentType("application/json")
-            .body(json.toString())
+            .basicAuth("allpermuser", "allpermuser")
             .and()
-            .auth()
-            .basic("admin", "admin")
+            .jsonBody(
+              s"""{
+                 |    "isFragment": false,
+                 |    "additionalFields": {
+                 |        "description": null,
+                 |        "properties": {
+                 |            "parallelism": "",
+                 |            "checkpointIntervalInSeconds": "",
+                 |            "numberOfThreads": "2",
+                 |            "spillStateToDisk": "true",
+                 |            "environment": "test",
+                 |            "useAsyncInterpretation": ""
+                 |        },
+                 |        "metaDataType": "StreamMetaData"
+                 |    }
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/additionalInfo")
             .Then()
@@ -323,19 +593,25 @@ class NodesApiSpec
       "not authenticated should" - {
         "forbid access" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val processProperties = ProcessProperties.combineTypeSpecificProperties(
-            StreamMetaData(),
-            additionalFields = ProcessAdditionalFields(
-              None,
-              Map("numberOfThreads" -> "2", "environment" -> "test"),
-              StreamMetaData.typeName
-            )
-          )
-          val json = Encoder[ProcessProperties].apply(processProperties)
 
           given()
-            .contentType("application/json")
-            .body(json.toString())
+            .jsonBody(
+              s"""{
+                 |    "isFragment": false,
+                 |    "additionalFields": {
+                 |        "description": null,
+                 |        "properties": {
+                 |            "parallelism": "",
+                 |            "checkpointIntervalInSeconds": "",
+                 |            "numberOfThreads": "2",
+                 |            "spillStateToDisk": "true",
+                 |            "environment": "test",
+                 |            "useAsyncInterpretation": ""
+                 |        },
+                 |        "metaDataType": "StreamMetaData"
+                 |    }
+                 |}""".stripMargin
+            )
             .and()
             .auth()
             .none()
@@ -353,22 +629,27 @@ class NodesApiSpec
       "authenticated should" - {
         "validate properties" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val request = PropertiesValidationRequest(
-            additionalFields = ProcessAdditionalFields(
-              properties = StreamMetaData().toMap ++ Map("numberOfThreads" -> "a", "environment" -> "test"),
-              metaDataType = StreamMetaData.typeName,
-              description = None
-            ),
-            id = process.id
-          )
-          val json = Encoder[PropertiesValidationRequest].apply(request)
 
-          given
-            .contentType("application/json")
-            .body(json.toString())
+          given()
+            .basicAuth("allpermuser", "allpermuser")
             .and()
-            .auth()
-            .basic("allpermuser", "allpermuser")
+            .jsonBody(
+              s"""{
+                 |    "additionalFields": {
+                 |        "description": null,
+                 |        "properties": {
+                 |            "parallelism": "",
+                 |            "checkpointIntervalInSeconds": "",
+                 |            "numberOfThreads": "a",
+                 |            "spillStateToDisk": "true",
+                 |            "environment": "test",
+                 |            "useAsyncInterpretation": ""
+                 |        },
+                 |        "metaDataType": "StreamMetaData"
+                 |    },
+                 |    "id": "test"
+                 |}""".stripMargin
+            )
             .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/validation")
             .Then()
             .statusCode(200)
@@ -383,23 +664,27 @@ class NodesApiSpec
         }
         "validate scenario id" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val blankValue = " "
-          val request = PropertiesValidationRequest(
-            additionalFields = ProcessAdditionalFields(
-              properties = StreamMetaData().toMap ++ Map("numberOfThreads" -> "a", "environment" -> "test"),
-              metaDataType = StreamMetaData.typeName,
-              description = None
-            ),
-            id = blankValue
-          )
-          val json = Encoder[PropertiesValidationRequest].apply(request)
 
-          given
-            .contentType("application/json")
-            .body(json.toString())
+          given()
+            .basicAuth("allpermuser", "allpermuser")
             .and()
-            .auth()
-            .basic("allpermuser", "allpermuser")
+            .jsonBody(
+              s"""{
+                 |    "additionalFields": {
+                 |        "description": null,
+                 |        "properties": {
+                 |            "parallelism": "",
+                 |            "checkpointIntervalInSeconds": "",
+                 |            "numberOfThreads": "1",
+                 |            "spillStateToDisk": "true",
+                 |            "environment": "test",
+                 |            "useAsyncInterpretation": "1"
+                 |        },
+                 |        "metaDataType": "StreamMetaData"
+                 |    },
+                 |    "id": " "
+                 |}""".stripMargin
+            )
             .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/validation")
             .Then()
             .statusCode(200)
@@ -413,13 +698,6 @@ class NodesApiSpec
                    |            "message": "Scenario name cannot be blank",
                    |            "description": "Blank scenario name",
                    |            "fieldName": "$$id",
-                   |            "errorType": "SaveAllowed"
-                   |        },
-                   |        {
-                   |            "typ": "InvalidPropertyFixedValue",
-                   |            "message": "Property numberOfThreads (Number of threads) has invalid value",
-                   |            "description": "Expected one of 1, 2, got: a.",
-                   |            "fieldName": "numberOfThreads",
                    |            "errorType": "SaveAllowed"
                    |        },
                    |        {
@@ -466,19 +744,25 @@ class NodesApiSpec
       "not authenticated should" - {
         "forbid access" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-          val request = PropertiesValidationRequest(
-            additionalFields = ProcessAdditionalFields(
-              properties = StreamMetaData().toMap ++ Map("numberOfThreads" -> "a", "environment" -> "test"),
-              metaDataType = StreamMetaData.typeName,
-              description = None
-            ),
-            id = process.id
-          )
-          val json = Encoder[PropertiesValidationRequest].apply(request)
 
           given
-            .contentType("application/json")
-            .body(json.toString())
+            .jsonBody(
+              s"""{
+                 |    "additionalFields": {
+                 |        "description": null,
+                 |        "properties": {
+                 |            "parallelism": "",
+                 |            "checkpointIntervalInSeconds": "",
+                 |            "numberOfThreads": "a",
+                 |            "spillStateToDisk": "true",
+                 |            "environment": "test",
+                 |            "useAsyncInterpretation": ""
+                 |        },
+                 |        "metaDataType": "StreamMetaData"
+                 |    },
+                 |    "id": "test"
+                 |}""".stripMargin
+            )
             .and()
             .auth()
             .none()
@@ -497,18 +781,59 @@ class NodesApiSpec
     "validation when" - {
       "authenticated should" - {
         "validate correct parameter" in {
-          val request = ParametersValidationRequest(
-            parameters = List(UIValueParameter("condition", Typed[Boolean], spel("#input.amount > 2"))),
-            variableTypes = Map("input" -> Typed.fromInstance(TypedMap(Map("amount" -> 5L))))
-          )
-          val json = Encoder[ParametersValidationRequest].apply(request)
-
           given()
-            .contentType("application/json")
-            .body(json.toString())
+            .basicAuth("allpermuser", "allpermuser")
             .and
-            .auth()
-            .basic("allpermuser", "allpermuser")
+            .jsonBody(
+              s"""{
+                 |    "parameters": [
+                 |        {
+                 |            "name": "condition",
+                 |            "typ": {
+                 |                "display": "Boolean",
+                 |                "type": "TypedClass",
+                 |                "refClazzName": "java.lang.Boolean",
+                 |                "params": []
+                 |            },
+                 |            "expression": {
+                 |                "language": "spel",
+                 |                "expression": "#input.amount > 2"
+                 |            }
+                 |        }
+                 |    ],
+                 |    "variableTypes": {
+                 |        "input": {
+                 |            "display": "Record{amount: Long(5)}",
+                 |            "type": "TypedObjectTypingResult",
+                 |            "fields": {
+                 |                "amount": {
+                 |                    "value": 5,
+                 |                    "display": "Long(5)",
+                 |                    "type": "TypedObjectWithValue",
+                 |                    "refClazzName": "java.lang.Long",
+                 |                    "params": []
+                 |                }
+                 |            },
+                 |            "refClazzName": "java.util.Map",
+                 |            "params": [
+                 |                {
+                 |                    "display": "String",
+                 |                    "type": "TypedClass",
+                 |                    "refClazzName": "java.lang.String",
+                 |                    "params": []
+                 |                },
+                 |                {
+                 |                    "value": 5,
+                 |                    "display": "Long(5)",
+                 |                    "type": "TypedObjectWithValue",
+                 |                    "refClazzName": "java.lang.Long",
+                 |                    "params": []
+                 |                }
+                 |            ]
+                 |        }
+                 |    }
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/parameters/streaming/validate")
             .Then()
@@ -521,18 +846,59 @@ class NodesApiSpec
             )
         }
         "validate incorrect parameter" in {
-          val request = ParametersValidationRequest(
-            parameters = List(UIValueParameter("condition", Typed[Boolean], spel("#input.amount"))),
-            variableTypes = Map("input" -> Typed.fromInstance(TypedMap(Map("amount" -> 5L))))
-          )
-          val json = Encoder[ParametersValidationRequest].apply(request)
-
           given()
-            .contentType("application/json")
-            .body(json.toString())
-            .and
-            .auth()
-            .basic("allpermuser", "allpermuser")
+            .basicAuth("allpermuser", "allpermuser")
+            .and()
+            .jsonBody(
+              s"""{
+                 |    "parameters": [
+                 |        {
+                 |            "name": "condition",
+                 |            "typ": {
+                 |                "display": "Boolean",
+                 |                "type": "TypedClass",
+                 |                "refClazzName": "java.lang.Boolean",
+                 |                "params": []
+                 |            },
+                 |            "expression": {
+                 |                "language": "spel",
+                 |                "expression": "#input.amount"
+                 |            }
+                 |        }
+                 |    ],
+                 |    "variableTypes": {
+                 |        "input": {
+                 |            "display": "Record{amount: Long(5)}",
+                 |            "type": "TypedObjectTypingResult",
+                 |            "fields": {
+                 |                "amount": {
+                 |                    "value": 5,
+                 |                    "display": "Long(5)",
+                 |                    "type": "TypedObjectWithValue",
+                 |                    "refClazzName": "java.lang.Long",
+                 |                    "params": []
+                 |                }
+                 |            },
+                 |            "refClazzName": "java.util.Map",
+                 |            "params": [
+                 |                {
+                 |                    "display": "String",
+                 |                    "type": "TypedClass",
+                 |                    "refClazzName": "java.lang.String",
+                 |                    "params": []
+                 |                },
+                 |                {
+                 |                    "value": 5,
+                 |                    "display": "Long(5)",
+                 |                    "type": "TypedObjectWithValue",
+                 |                    "refClazzName": "java.lang.Long",
+                 |                    "params": []
+                 |                }
+                 |            ]
+                 |        }
+                 |    }
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/parameters/streaming/validate")
             .Then()
@@ -551,15 +917,57 @@ class NodesApiSpec
       }
       "not authenticated should" - {
         "forbid access" in {
-          val request = ParametersValidationRequest(
-            parameters = List(UIValueParameter("condition", Typed[Boolean], spel("#input.amount > 2"))),
-            variableTypes = Map("input" -> Typed.fromInstance(TypedMap(Map("amount" -> 5L))))
-          )
-          val json = Encoder[ParametersValidationRequest].apply(request)
-
           given()
-            .contentType("application/json")
-            .body(json.toString())
+            .jsonBody(
+              s"""{
+                 |    "parameters": [
+                 |        {
+                 |            "name": "condition",
+                 |            "typ": {
+                 |                "display": "Boolean",
+                 |                "type": "TypedClass",
+                 |                "refClazzName": "java.lang.Boolean",
+                 |                "params": []
+                 |            },
+                 |            "expression": {
+                 |                "language": "spel",
+                 |                "expression": "#input.amount > 2"
+                 |            }
+                 |        }
+                 |    ],
+                 |    "variableTypes": {
+                 |        "input": {
+                 |            "display": "Record{amount: Long(5)}",
+                 |            "type": "TypedObjectTypingResult",
+                 |            "fields": {
+                 |                "amount": {
+                 |                    "value": 5,
+                 |                    "display": "Long(5)",
+                 |                    "type": "TypedObjectWithValue",
+                 |                    "refClazzName": "java.lang.Long",
+                 |                    "params": []
+                 |                }
+                 |            },
+                 |            "refClazzName": "java.util.Map",
+                 |            "params": [
+                 |                {
+                 |                    "display": "String",
+                 |                    "type": "TypedClass",
+                 |                    "refClazzName": "java.lang.String",
+                 |                    "params": []
+                 |                },
+                 |                {
+                 |                    "value": 5,
+                 |                    "display": "Long(5)",
+                 |                    "type": "TypedObjectWithValue",
+                 |                    "refClazzName": "java.lang.Long",
+                 |                    "params": []
+                 |                }
+                 |            ]
+                 |        }
+                 |    }
+                 |""".stripMargin
+            )
             .and
             .auth()
             .none()
@@ -576,19 +984,52 @@ class NodesApiSpec
     "suggestions when" - {
       "authenticated should" - {
         "suggest the name of parameter" in {
-          val request = ExpressionSuggestionRequest(
-            caretPosition2d = CaretPosition2d(0, 5),
-            expression = spel("#inpu"),
-            variableTypes = Map("input" -> Typed.fromInstance(TypedMap(Map("amount" -> 5L))))
-          )
-          val json = Encoder[ExpressionSuggestionRequest].apply(request)
-
           given()
-            .auth()
-            .basic("allpermuser", "allpermuser")
+            .basicAuth("allpermuser", "allpermuser")
             .and()
-            .contentType("application/json")
-            .body(json.toString())
+            .jsonBody(
+              s"""{
+                 |    "expression": {
+                 |        "language": "spel",
+                 |        "expression": "#inpu"
+                 |    },
+                 |    "caretPosition2d": {
+                 |        "row": 0,
+                 |        "column": 5
+                 |    },
+                 |    "variableTypes": {
+                 |        "input": {
+                 |            "display": "Record{amount: Long(5)}",
+                 |            "type": "TypedObjectTypingResult",
+                 |            "fields": {
+                 |                "amount": {
+                 |                    "value": 5,
+                 |                    "display": "Long(5)",
+                 |                    "type": "TypedObjectWithValue",
+                 |                    "refClazzName": "java.lang.Long",
+                 |                    "params": []
+                 |                }
+                 |            },
+                 |            "refClazzName": "java.util.Map",
+                 |            "params": [
+                 |                {
+                 |                    "display": "String",
+                 |                    "type": "TypedClass",
+                 |                    "refClazzName": "java.lang.String",
+                 |                    "params": []
+                 |                },
+                 |                {
+                 |                    "value": 5,
+                 |                    "display": "Long(5)",
+                 |                    "type": "TypedObjectWithValue",
+                 |                    "refClazzName": "java.lang.Long",
+                 |                    "params": []
+                 |                }
+                 |            ]
+                 |        }
+                 |    }
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
             .Then()
@@ -596,19 +1037,22 @@ class NodesApiSpec
             .body("methodName[0]", equalTo("#input"))
         }
         "not suggest anything if no such parameters exist" in {
-          val request = ExpressionSuggestionRequest(
-            caretPosition2d = CaretPosition2d(0, 5),
-            expression = spel("#inpu"),
-            variableTypes = Map()
-          )
-          val json = Encoder[ExpressionSuggestionRequest].apply(request)
-
           given()
-            .auth()
-            .basic("allpermuser", "allpermuser")
+            .basicAuth("allpermuser", "allpermuser")
             .and()
-            .contentType("application/json")
-            .body(json.toString())
+            .jsonBody(
+              s"""{
+                 |    "expression": {
+                 |        "language": "spel",
+                 |        "expression": "#inpu"
+                 |    },
+                 |    "caretPosition2d": {
+                 |        "row": 0,
+                 |        "column": 5
+                 |    },
+                 |    "variableTypes": {}
+                 |}""".stripMargin
+            )
             .when()
             .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
             .Then()
@@ -618,19 +1062,23 @@ class NodesApiSpec
       }
       "not authenticated should" - {
         "forbid access" in {
-          val request = ExpressionSuggestionRequest(
-            caretPosition2d = CaretPosition2d(0, 5),
-            expression = spel("#inpu"),
-            variableTypes = Map("input" -> Typed.fromInstance(TypedMap(Map("amount" -> 5L))))
-          )
-          val json = Encoder[ExpressionSuggestionRequest].apply(request)
-
           given()
+            .jsonBody(
+              s"""{
+                 |    "expression": {
+                 |        "language": "spel",
+                 |        "expression": "#inpu"
+                 |    },
+                 |    "caretPosition2d": {
+                 |        "row": 0,
+                 |        "column": 5
+                 |    },
+                 |    "variableTypes": {}
+                 |}""".stripMargin
+            )
+            .and()
             .auth()
             .none()
-            .and()
-            .contentType("application/json")
-            .body(json.toString())
             .when()
             .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
             .Then()
@@ -641,40 +1089,6 @@ class NodesApiSpec
         }
       }
     }
-  }
-
-  def sendNodeAsJsonAsAdmin(data: NodeData): RequestSpecification =
-    sendNodeAsJson(data, "admin")
-
-  def sendNodeAsJsonAsAllpermuser(data: NodeData): RequestSpecification =
-    sendNodeAsJson(data, "allpermuser")
-
-  def sendNodeAsJson(node: NodeData, user: String): RequestSpecification = {
-    val json = Encoder[NodeData].apply(node)
-
-    given
-      .contentType("application/json")
-      .body(json.toString())
-      .and()
-      .auth()
-      .basic(user, user)
-  }
-
-  def sendRequestAsJsonAsAdmin(request: NodeValidationRequest): RequestSpecification =
-    sendRequestToValidationAsJson(request, "admin")
-
-  def sendRequestAsJsonAsAllpermuser(request: NodeValidationRequest): RequestSpecification =
-    sendRequestToValidationAsJson(request, "allpermuser")
-
-  def sendRequestToValidationAsJson(request: NodeValidationRequest, user: String): RequestSpecification = {
-    val json = Encoder[NodeValidationRequest].apply(request)
-
-    given
-      .contentType("application/json")
-      .body(json.toString())
-      .and()
-      .auth()
-      .basic(user, user)
   }
 
 }

@@ -3,9 +3,9 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Decoder, Encoder}
+import io.circe.Decoder
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
@@ -231,10 +231,6 @@ object ExpressionSuggestionRequest {
 
   implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[ExpressionSuggestionRequest] = {
     deriveConfiguredDecoder[ExpressionSuggestionRequest]
-  }
-
-  implicit def encoder(implicit typing: Encoder[TypingResult]): Encoder[ExpressionSuggestionRequest] = {
-    deriveConfiguredEncoder[ExpressionSuggestionRequest]
   }
 
 }

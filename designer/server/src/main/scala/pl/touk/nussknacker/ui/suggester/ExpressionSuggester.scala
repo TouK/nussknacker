@@ -62,7 +62,7 @@ object ExpressionSuggester {
 
 }
 
-@JsonCodec
+@JsonCodec(decodeOnly = true)
 final case class CaretPosition2d(row: Int, column: Int) {
 
   def normalizedCaretPosition(inputValue: String): Int = {
