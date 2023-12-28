@@ -12,21 +12,20 @@ import pl.touk.nussknacker.engine.api.definition.{
   ParameterEditor
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, ValueInputWithFixedValues}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FixedExpressionValue => FragmentFixedExpressionValue,
+  ValueInputWithFixedValues
+}
 
 object ValueEditorValidator {
 
   def validateAndGetEditor( // this method doesn't validate the compilation validity of FixedExpressionValues (it requires validationContext and expressionCompiler, see FragmentParameterValidator.validateFixedExpressionValues)
       valueEditor: ValueInputWithFixedValues,
-      initialValue: Option[FixedExpressionValue],
-      refClazzName: Option[String],
+      initialValue: Option[FragmentFixedExpressionValue],
       paramName: String,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, ParameterEditor] = {
-    refClazzName
-      .map(validateFixedValuesSupportedType(_, paramName, nodeIds))
-      .getOrElse(Valid(()))
-      .andThen(_ => validateFixedValuesList(valueEditor, initialValue, paramName, nodeIds))
+    validateFixedValuesList(valueEditor, initialValue, paramName, nodeIds)
       .andThen { _ =>
         val fixedValuesEditor = FixedValuesParameterEditor(
           nullFixedValue +: valueEditor.fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
@@ -42,26 +41,9 @@ object ValueEditorValidator {
 
   private val nullFixedValue: FixedExpressionValue = FixedExpressionValue("", "")
 
-  private def validateFixedValuesSupportedType(
-      refClazzName: String,
-      paramName: String,
-      nodeIds: Set[String]
-  ): ValidatedNel[PartSubGraphCompilationError, Unit] =
-    if (List(FragmentClazzRef[java.lang.Boolean].refClazzName, FragmentClazzRef[String].refClazzName)
-        .contains(refClazzName)) {
-      Valid(())
-    } else
-      invalidNel(
-        UnsupportedFixedValuesType(
-          paramName,
-          refClazzName,
-          nodeIds
-        )
-      )
-
   private def validateFixedValuesList(
       valueEditor: ValueInputWithFixedValues,
-      initialValue: Option[FixedExpressionValue],
+      initialValue: Option[FragmentFixedExpressionValue],
       paramName: String,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, Unit] =
@@ -78,7 +60,7 @@ object ValueEditorValidator {
 
   private def initialValueNotPresentInPossibleValues(
       valueEditor: ValueInputWithFixedValues,
-      initialValue: Option[FixedExpressionValue]
+      initialValue: Option[FragmentFixedExpressionValue]
   ) = initialValue.exists(!valueEditor.fixedValuesList.contains(_))
 
 }

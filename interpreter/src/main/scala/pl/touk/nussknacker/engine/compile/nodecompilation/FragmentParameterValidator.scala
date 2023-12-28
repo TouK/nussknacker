@@ -6,21 +6,44 @@ import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.ValidationExpressionParameterValidator
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ValidationExpressionParameterValidator}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator.validateAndGetEditor
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FixedExpressionValue, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FixedExpressionValue,
+  FragmentClazzRef,
+  FragmentParameter,
+  ValueInputWithFixedValues
+}
 import pl.touk.nussknacker.engine.graph.node.{FixedValuesListFieldName, InitialValueFieldName}
 
-class FragmentParameterValidator(
-    expressionCompiler: ExpressionCompiler
-) {
+object FragmentParameterValidator {
+
+  def validateAgainstClazzRefAndGetEditor( // this method doesn't validate the compilation validity of FixedExpressionValues (it requires validationContext and expressionCompiler, see FragmentParameterValidator.validateFixedExpressionValues)
+      valueEditor: ValueInputWithFixedValues,
+      initialValue: Option[FixedExpressionValue],
+      refClazz: FragmentClazzRef,
+      paramName: String,
+      nodeIds: Set[String]
+  ): ValidatedNel[PartSubGraphCompilationError, ParameterEditor] = {
+    validateFixedValuesSupportedType(refClazz, paramName, nodeIds)
+      .andThen(_ =>
+        validateAndGetEditor(
+          valueEditor,
+          initialValue.map(v => FixedExpressionValue(v.expression, v.label)),
+          paramName,
+          nodeIds
+        )
+      )
+  }
 
   def validateFixedValuesAndGetExpressionValidator(
       fragmentParameter: FragmentParameter,
-      validationContext: ValidationContext // localVariables must include this and other FragmentParameters
+      validationContext: ValidationContext, // localVariables must include this and other FragmentParameters
+      expressionCompiler: ExpressionCompiler
   )(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Option[ValidationExpressionParameterValidator]] = {
@@ -29,11 +52,12 @@ class FragmentParameterValidator(
       fragmentParameter.initialValue,
       fragmentParameter.valueEditor.map(_.fixedValuesList).getOrElse(List.empty),
       validationContext,
-      fragmentParameter.name
+      expressionCompiler,
+      fragmentParameter.name,
     )
 
     val validationExpressionResult =
-      compileExpressionValidator(fragmentParameter, validationContext(fragmentParameter.name))
+      compileExpressionValidator(fragmentParameter, validationContext(fragmentParameter.name), expressionCompiler)
 
     List(
       fixedExpressionValuesValidationResult.map(_ => None),
@@ -41,9 +65,26 @@ class FragmentParameterValidator(
     ).sequence.map(_.flatten.headOption)
   }
 
+  private def validateFixedValuesSupportedType(
+      refClazz: FragmentClazzRef,
+      paramName: String,
+      nodeIds: Set[String]
+  ): ValidatedNel[PartSubGraphCompilationError, Unit] =
+    if (List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String]).contains(refClazz)) {
+      Valid(())
+    } else
+      invalidNel(
+        UnsupportedFixedValuesType(
+          paramName,
+          refClazz.refClazzName,
+          nodeIds
+        )
+      )
+
   private def compileExpressionValidator(
       fragmentParameter: FragmentParameter,
       typ: TypingResult,
+      expressionCompiler: ExpressionCompiler
   )(implicit nodeId: NodeId) =
     fragmentParameter.valueCompileTimeValidation.map { expr =>
       expressionCompiler
@@ -91,6 +132,7 @@ class FragmentParameterValidator(
       initialValue: Option[FixedExpressionValue],
       fixedValuesList: List[FixedExpressionValue],
       validationContext: ValidationContext,
+      expressionCompiler: ExpressionCompiler,
       paramName: String
   )(implicit nodeId: NodeId) = {
     def fixedExpressionsCompilationErrors(

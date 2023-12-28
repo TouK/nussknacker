@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
+import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -89,12 +89,12 @@ class FragmentWithoutValidatorsDefinitionExtractor(
 
     val (extractedEditor, validationErrors) = fragmentParameter.valueEditor
       .map(editor =>
-        ValueEditorValidator.validateAndGetEditor(
-          editor,
-          fragmentParameter.initialValue.map(v => FixedExpressionValue(v.expression, v.label)),
-          Some(fragmentParameter.typ.refClazzName),
-          fragmentParameter.name,
-          Set(nodeId.id)
+        FragmentParameterValidator.validateAgainstClazzRefAndGetEditor(
+          valueEditor = editor,
+          initialValue = fragmentParameter.initialValue,
+          refClazz = fragmentParameter.typ,
+          paramName = fragmentParameter.name,
+          nodeIds = Set(nodeId.id)
         ) match {
           case Valid(editor) => (Some(editor), List.empty)
           case Invalid(e)    => (None, e.toList)

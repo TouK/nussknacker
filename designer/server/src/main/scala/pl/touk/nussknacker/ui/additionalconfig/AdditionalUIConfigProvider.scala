@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.additionalconfig
 
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FixedExpressionValue,
   ParameterValueCompileTimeValidation,
   ValueInputWithFixedValues
 }
@@ -66,11 +66,10 @@ case class ParameterAdditionalUIConfig(
     editor = valueEditor.flatMap(editor =>
       ValueEditorValidator
         .validateAndGetEditor(
-          editor,
-          initialValue,
-          None,
-          paramName,
-          Set.empty
+          valueEditor = editor,
+          initialValue = initialValue,
+          paramName = paramName,
+          nodeIds = Set.empty
         )
         .toOption
     ),
