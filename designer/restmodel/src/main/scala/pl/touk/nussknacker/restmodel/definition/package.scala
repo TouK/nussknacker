@@ -8,9 +8,10 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentIn
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
+import pl.touk.nussknacker.engine.graph.EdgeType
 
 import java.net.URI
 
@@ -108,7 +109,7 @@ package object definition {
         componentInfo: ComponentInfo,
         node: NodeData,
         categories: List[String],
-        branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
+        branchParametersTemplate: List[NodeParameter] = List.empty
     ): ComponentNodeTemplate =
       ComponentNodeTemplate(componentInfo.`type`, componentInfo.name, node, categories, branchParametersTemplate)
 
@@ -121,7 +122,7 @@ package object definition {
       node: NodeData,
       // TODO: remove
       categories: List[String],
-      branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty,
+      branchParametersTemplate: List[NodeParameter] = List.empty,
       // TODO: This field is added temporary to pick correct icon - we shouldn't use this class for other purposes than encoding to json
       isEnricher: Option[Boolean] = None
   ) {

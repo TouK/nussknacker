@@ -35,19 +35,19 @@ class ComponentExecutorFactory(expressionEvaluator: ExpressionEvaluator) extends
     }
   }
 
-  private def doCreateComponentExecutor[T](
+  private def doCreateComponentExecutor[ComponentExecutor](
       componentDefWithImpl: ComponentDefinitionWithImplementation,
       params: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef],
       componentUseCase: ComponentUseCase
-  )(implicit processMetaData: MetaData, nodeId: NodeId): T = {
+  )(implicit processMetaData: MetaData, nodeId: NodeId): ComponentExecutor = {
     val paramsMap = params.map { case (tp, p) =>
       p.name -> parameterEvaluator.prepareParameter(tp, p)._1
     }.toMap
     componentDefWithImpl.implementationInvoker
       .invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional)
-      .asInstanceOf[T]
+      .asInstanceOf[ComponentExecutor]
   }
 
 }

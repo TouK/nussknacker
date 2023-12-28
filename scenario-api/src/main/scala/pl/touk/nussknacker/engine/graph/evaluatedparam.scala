@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.graph
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-// TODO: rename to NodeParameter
 object evaluatedparam {
 
   object Parameter {
@@ -13,6 +12,7 @@ object evaluatedparam {
     val tupled: ((String, Expression)) => Parameter = (Parameter.apply _).tupled
   }
 
+  // TODO: rename to NodeParameter
   @JsonCodec case class Parameter(name: String, expression: Expression)
 
   @JsonCodec case class BranchParameters(branchId: String, parameters: List[Parameter])

@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, UserDefinedAdditionalNodeFields}
@@ -27,7 +27,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
           "id",
           Some("out1"),
           "typ1",
-          List(Parameter("name1", Expression.spel("11"))),
+          List(NodeParameter("name1", Expression.spel("11"))),
           Some(UserDefinedAdditionalNodeFields(Some("desc"), None))
         )
       ),

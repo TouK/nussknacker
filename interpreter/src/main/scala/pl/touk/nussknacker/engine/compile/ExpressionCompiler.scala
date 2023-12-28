@@ -138,7 +138,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   }
 
   def compileParam(
-      param: NodeParameter,
+      nodeParam: NodeParameter,
       ctx: ValidationContext,
       definition: Parameter,
       treatEagerParametersAsLazy: Boolean = false
@@ -147,8 +147,8 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   ): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
     val ctxToUse = if (definition.isLazyParameter || treatEagerParametersAsLazy) ctx else ctx.clearVariables
     enrichContext(ctxToUse, definition).andThen { finalCtx =>
-      compile(param.expression, Some(param.name), finalCtx, definition.typ)
-        .map(TypedParameter(param.name, _))
+      compile(nodeParam.expression, Some(nodeParam.name), finalCtx, definition.typ)
+        .map(TypedParameter(nodeParam.name, _))
     }
   }
 
