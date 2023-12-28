@@ -508,14 +508,16 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
-  test("should validate fragment parameters with validators -  - P1 as mandatory param with missing actual value") {
+  test("should validate fragment parameters with validators - P1 as mandatory param with missing actual value") {
     val fragmentId = "fragmentInputId"
     val nodeToBeValidated =
       FragmentInput("nameOfTheNode", FragmentRef(fragmentId, List(Parameter("P1", "")), Map("out1" -> "test1")))
     val fragmentDefinitionWithValidators: CanonicalProcess = CanonicalProcess(
       MetaData(fragmentId, FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("P1", FragmentClazzRef[Short])))),
+        FlatNode(
+          FragmentInputDefinition("in", List(FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true)))
+        ),
         FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
       )
     )
@@ -558,8 +560,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           FragmentInputDefinition(
             "in",
             List(
-              FragmentParameter("P1", FragmentClazzRef[Short]),
-              FragmentParameter("P2", FragmentClazzRef[String])
+              FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true),
+              FragmentParameter("P2", FragmentClazzRef[String]).copy(required = true)
             )
           )
         ),

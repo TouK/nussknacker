@@ -85,7 +85,6 @@ object ScenarioInterpreterFactory {
       val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
 
       val compilerData = ProcessCompilerData.prepare(
-        modelData.modelConfig,
         modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
         listeners,

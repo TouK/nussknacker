@@ -77,7 +77,6 @@ class FlinkProcessCompilerDataFactory(
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, modelConfig)
     val compilerData =
       ProcessCompilerData.prepare(
-        modelConfig,
         definitionWithTypes,
         dictRegistry,
         listenersToUse,
