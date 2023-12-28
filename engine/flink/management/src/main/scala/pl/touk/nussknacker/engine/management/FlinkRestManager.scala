@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
 import sttp.client3._
 
-import java.io.File
 import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)(
@@ -26,7 +25,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
 ) extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName)
     with LazyLogging {
 
-  protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
+  private val modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
 
   private val client = new HttpFlinkClient(config)
 
@@ -214,7 +213,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
       savepointPath: Option[String]
   ): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting to deploy scenario: $processName with savepoint $savepointPath")
-    client.runProgram(jarFile, mainClass, args, savepointPath)
+    client.runProgram(modelJarProvider.getJobJar(), mainClass, args, savepointPath)
   }
 
   override protected def checkRequiredSlotsExceedAvailableSlots(
