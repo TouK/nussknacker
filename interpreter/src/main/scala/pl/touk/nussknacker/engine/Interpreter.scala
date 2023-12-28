@@ -7,7 +7,7 @@ import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.expression.Expression
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.compiledgraph.node._
 import pl.touk.nussknacker.engine.compiledgraph.service._
@@ -240,7 +240,7 @@ private class InterpreterInternal[F[_]: Monad](
     resultFuture.map(ValueWithContext(_, ctx))
   }
 
-  private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)(
+  private def evaluateExpression[R](expr: CompiledExpression, ctx: Context, name: String)(
       implicit metaData: MetaData,
       node: Node
   ): ValueWithContext[R] = {

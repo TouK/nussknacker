@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionTypingInfo, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionTypingInfo, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 object CompiledParameter {
@@ -24,7 +25,7 @@ object CompiledParameter {
 
 case class CompiledParameter(
     name: String,
-    expression: Expression,
+    expression: CompiledExpression,
     returnType: TypingResult,
     shouldBeWrappedWithScalaOption: Boolean,
     shouldBeWrappedWithJavaOptional: Boolean,

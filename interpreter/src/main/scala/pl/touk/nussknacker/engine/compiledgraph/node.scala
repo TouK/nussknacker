@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
-import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.TypedExpression
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
@@ -19,7 +20,7 @@ object node {
     override def id: String = definition.artificialNodeId
   }
 
-  case class VariableBuilder(id: String, varName: String, value: Either[Expression, List[Field]], next: Next)
+  case class VariableBuilder(id: String, varName: String, value: Either[CompiledExpression, List[Field]], next: Next)
       extends Node
 
   case class Processor(id: String, service: ServiceRef, next: Next, isDisabled: Boolean) extends Node
@@ -30,16 +31,20 @@ object node {
 
   case class Filter(
       id: String,
-      expression: Expression,
+      expression: CompiledExpression,
       nextTrue: Option[Next],
       nextFalse: Option[Next],
       isDisabled: Boolean
   ) extends Node
 
-  case class Switch(id: String, expression: Option[(String, Expression)], nexts: List[Case], defaultNext: Option[Next])
-      extends Node
+  case class Switch(
+      id: String,
+      expression: Option[(String, CompiledExpression)],
+      nexts: List[Case],
+      defaultNext: Option[Next]
+  ) extends Node
 
-  case class Case(expression: Expression, node: Next)
+  case class Case(expression: CompiledExpression, node: Next)
 
   case class CustomNode(id: String, ref: String, next: Next) extends Node
 

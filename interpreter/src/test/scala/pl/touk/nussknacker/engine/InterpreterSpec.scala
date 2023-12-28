@@ -4,7 +4,6 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
-import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
@@ -21,7 +20,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, _}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
@@ -1104,11 +1103,11 @@ object InterpreterSpec {
     override def parseWithoutContextValidation(
         original: String,
         expectedType: TypingResult
-    ): Validated[NonEmptyList[ExpressionParseError], pl.touk.nussknacker.engine.api.expression.Expression] = Valid(
+    ): Validated[NonEmptyList[ExpressionParseError], CompiledExpression] = Valid(
       LiteralExpression(original)
     )
 
-    case class LiteralExpression(original: String) extends pl.touk.nussknacker.engine.api.expression.Expression {
+    case class LiteralExpression(original: String) extends CompiledExpression {
       override def language: String = languageId
 
       override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = original.asInstanceOf[T]

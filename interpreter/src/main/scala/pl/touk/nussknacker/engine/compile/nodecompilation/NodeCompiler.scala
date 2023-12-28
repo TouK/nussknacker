@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputGenericNodeTransformation
 }
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.expression.{
   ExpressionParser,
   ExpressionTypingInfo,
@@ -103,7 +104,7 @@ class NodeCompiler(
   private val nodeValidator =
     new GenericNodeTransformationValidator(expressionCompiler, expressionConfig)
   private val fragmentParameterValidator = new FragmentParameterValidator(expressionCompiler)
-  private val baseNodeCompiler           = new BaseNodeCompiler(expressionCompiler)
+  private val builtInNodeCompiler        = new BuiltInNodeCompiler(expressionCompiler)
 
   def compileSource(
       nodeData: SourceNodeData
@@ -251,20 +252,20 @@ class NodeCompiler(
       ctx: ValidationContext
   )(
       implicit nodeId: NodeId
-  ): NodeCompilationResult[(Option[api.expression.Expression], List[api.expression.Expression])] = {
-    baseNodeCompiler.compileSwitch(expressionRaw, choices, ctx)
+  ): NodeCompilationResult[(Option[CompiledExpression], List[CompiledExpression])] = {
+    builtInNodeCompiler.compileSwitch(expressionRaw, choices, ctx)
   }
 
   def compileFilter(filter: Filter, ctx: ValidationContext)(
       implicit nodeId: NodeId
-  ): NodeCompilationResult[expression.Expression] = {
-    baseNodeCompiler.compileFilter(filter, ctx)
+  ): NodeCompilationResult[CompiledExpression] = {
+    builtInNodeCompiler.compileFilter(filter, ctx)
   }
 
   def compileVariable(variable: Variable, ctx: ValidationContext)(
       implicit nodeId: NodeId
-  ): NodeCompilationResult[expression.Expression] = {
-    baseNodeCompiler.compileVariable(variable, ctx)
+  ): NodeCompilationResult[CompiledExpression] = {
+    builtInNodeCompiler.compileVariable(variable, ctx)
   }
 
   def fieldToTypedExpression(fields: List[pl.touk.nussknacker.engine.graph.variable.Field], ctx: ValidationContext)(
@@ -282,7 +283,7 @@ class NodeCompiler(
       ctx: ValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
-    baseNodeCompiler.compileFields(fields, ctx, outputVar)
+    builtInNodeCompiler.compileFields(fields, ctx, outputVar)
   }
 
   def compileProcessor(

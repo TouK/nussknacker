@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.expression
 
 import java.util.Optional
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.expression.Expression
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, ValueWithContext}
 import pl.touk.nussknacker.engine.api.NodeId
@@ -83,7 +83,7 @@ class ExpressionEvaluator(
     }
   }
 
-  def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)(
+  def evaluate[R](expr: CompiledExpression, expressionId: String, nodeId: String, ctx: Context)(
       implicit metaData: MetaData
   ): ValueWithContext[R] = {
     val globalVariables = if (cacheGlobalVariables) {

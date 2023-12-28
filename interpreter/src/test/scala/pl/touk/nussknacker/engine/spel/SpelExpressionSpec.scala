@@ -13,7 +13,8 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
-import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.TypedExpression
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.generics.{
   ExpressionParseError,
   GenericFunctionTypingError,
@@ -55,10 +56,10 @@ import scala.reflect.runtime.universe._
 class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   private implicit class ValidatedExpressionOps[E](validated: Validated[E, TypedExpression]) {
-    def validExpression: Expression = validated.validValue.expression
+    def validExpression: CompiledExpression = validated.validValue.expression
   }
 
-  private implicit class EvaluateSync(expression: Expression) {
+  private implicit class EvaluateSync(expression: CompiledExpression) {
     def evaluateSync[T](ctx: Context = ctx): T = expression.evaluate(ctx, Map.empty)
   }
 
