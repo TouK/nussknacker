@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{Validated, Writer}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
@@ -9,10 +10,10 @@ import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponen
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -20,13 +21,13 @@ import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
 }
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
+import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, ComponentsUiConfigParser}
 
 /*
  * This class exists as a more lightweight alternative to FragmentComponentDefinitionExtractor - it doesn't rely on ExpressionCompiler and ValidationContext
- * However, it doesn't extract (and validate the correctness of) the parameters' validators - use in cases where it's not needed
+ * However, it doesn't validate the parameters' initialValue and valueEditor and doesn't extract (and validate the correctness of) the parameters' validators - use in cases where it's not needed
  */
 class FragmentWithoutValidatorsDefinitionExtractor(
     val componentsUiConfig: ComponentsUiConfig,
@@ -65,23 +66,35 @@ class FragmentWithoutValidatorsDefinitionExtractor(
       implicit nodeId: NodeId
   ) = {
     val config = componentsUiConfig.getConfigByComponentName(componentId)
-    parameters.map(p => getParamTypingResult(p).map(toParameter(config, _, p))).sequence
+    parameters
+      .map(p =>
+        getParamTypingResult(p)
+          .mapBoth { (written, typ) =>
+            val param = toParameter(config, typ, p)
+            (written ++ param.written, param.value)
+          }
+      )
+      .sequence
   }
 
   private def toParameter(
       componentConfig: SingleComponentConfig,
       typ: TypingResult,
       fragmentParameter: FragmentParameter,
-  ) = {
+  )(
+      implicit nodeId: NodeId
+  ): Writer[List[PartSubGraphCompilationError], Parameter] = {
     val paramConfig   = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
     val extractedEditor = fragmentParameter.valueEditor
       .map(valueEditor => Some(EditorExtractor.extract(valueEditor)))
       .getOrElse(EditorExtractor.extract(parameterData, paramConfig))
 
+    val validation = FragmentParameterValidator.validateWithoutCompilerAndContext(fragmentParameter)
+
     val isOptional = !fragmentParameter.required
 
-    Parameter
+    val param = Parameter
       .optional(fragmentParameter.name, typ)
       .copy(
         editor = extractedEditor,
@@ -95,6 +108,13 @@ class FragmentWithoutValidatorsDefinitionExtractor(
           ),
         hintText = fragmentParameter.hintText
       )
+
+    Writer
+      .value[List[PartSubGraphCompilationError], Parameter](param)
+      .tell(validation match {
+        case Valid(_)   => List.empty
+        case Invalid(e) => e.toList
+      })
   }
 
   private def getParamTypingResult(
@@ -111,17 +131,6 @@ class FragmentWithoutValidatorsDefinitionExtractor(
             List(FragmentParamClassLoadError(fragmentParameter.name, fragmentParameter.typ.refClazzName, nodeId.id))
           )
       )
-
-  private def fixedValuesEditorWithAllowOtherValue(
-      allowOtherValue: Boolean,
-      fixedValuesEditor: SimpleParameterEditor,
-  ) = {
-    if (allowOtherValue) {
-      Some(DualParameterEditor(fixedValuesEditor, DualEditorMode.SIMPLE))
-    } else {
-      Some(fixedValuesEditor)
-    }
-  }
 
 }
 

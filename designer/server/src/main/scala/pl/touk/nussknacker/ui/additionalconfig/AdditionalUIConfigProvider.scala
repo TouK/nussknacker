@@ -1,12 +1,6 @@
 package pl.touk.nussknacker.ui.additionalconfig
 
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentGroupName,
-  ComponentId,
-  ParameterConfig,
-  ScenarioPropertyConfig,
-  SingleComponentConfig
-}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
@@ -20,6 +14,9 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
  *
  * TODO: The current implementation allows providing configs only for standard components - meaning that base components aren't handled.
  * TODO: Currently the value of 'valueCompileTimeValidation' has no effect, it'll be supported in the future but is included now to keep the API stable.
+ *       Validating and extracting a parameter's validators requires access to expressionCompiler and validationContext,
+ *       this is currently hard to achieve where AdditionalUIConfigProvider is used (UIProcessObjectsFactory),
+ *       after refactoring it to be used at the level of ModelData or so it should be easy, and support for 'valueCompileTimeValidation' will be possible
  */
 trait AdditionalUIConfigProvider extends Serializable {
 

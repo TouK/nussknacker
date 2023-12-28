@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.expression.{
 }
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.{
   ExpressionCompiler,
@@ -43,7 +43,6 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.expression._
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
@@ -104,8 +103,7 @@ class NodeCompiler(
   private val factory: FactoryComponentInvoker = new FactoryComponentInvoker(expressionEvaluator)
   private val nodeValidator =
     new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
-  private val fragmentParameterValidator = new FragmentParameterValidator(objectParametersExpressionCompiler)
-  private val baseNodeCompiler           = new BaseNodeCompiler(objectParametersExpressionCompiler)
+  private val baseNodeCompiler = new BaseNodeCompiler(objectParametersExpressionCompiler)
 
   def compileSource(
       nodeData: SourceNodeData
