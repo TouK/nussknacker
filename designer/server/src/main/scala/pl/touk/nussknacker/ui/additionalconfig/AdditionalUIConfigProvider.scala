@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.graph.node.{ParameterValueCompileTimeValidatio
  */
 trait AdditionalUIConfigProvider extends Serializable {
 
-  def getAllForProcessingType(processingType: String): Map[ComponentId, AdditionalUIConfig]
+  def getAllForProcessingType(processingType: String): Map[ComponentId, ComponentAdditionalConfig]
 
   def getScenarioPropertiesUIConfigs(processingType: String): Map[String, ScenarioPropertyConfig]
 
@@ -26,7 +26,7 @@ object AdditionalUIConfigProvider {
   val empty = new DefaultAdditionalUIConfigProvider(Map.empty, Map.empty)
 }
 
-case class AdditionalUIConfig(
+case class ComponentAdditionalConfig(
     parameterConfigs: Map[String, ParameterAdditionalUIConfig],
     icon: Option[String] = None,
     docsUrl: Option[String] = None,

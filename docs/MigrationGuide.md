@@ -7,8 +7,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
-* [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed AdditionalUIConfigProvider to be more in line with FragmentParameter (TODO more explanation?)
-
+* [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
+  * `SingleComponentConfigWithoutId` renamed to `ComponentAdditionalConfig`
+  * field `params: Map[String, ParameterConfig]` changed to `parameterConfigs: Map[String, ParameterAdditionalUIConfig]`
+  * `ParameterAdditionalUIConfig` is handled analogously to `FragmentParameter` (expect for `valueCompileTimeValidation`, which isn't yet handled)
+    *  `ParameterConfig.defaultValue` -> `ParameterAdditionalUIConfig.initialValue`
+    *  `ParameterConfig.hintText` -> `ParameterAdditionalUIConfig.hintText`
+    *  most of the capabilities of `ParameterConfig.editor` and `ParameterConfig.validators` are covered by `ParameterAdditionalUIConfig.valueEditor` and `ParameterAdditionalUIConfig.valueCompileTimeValidation`
 ### REST API changes
 
 ### Other changes

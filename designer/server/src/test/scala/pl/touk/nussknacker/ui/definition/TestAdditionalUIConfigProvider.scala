@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.ui.additionalconfig.{
-  AdditionalUIConfig,
   AdditionalUIConfigProvider,
+  ComponentAdditionalConfig,
   ParameterAdditionalUIConfig
 }
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
@@ -27,10 +27,10 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
       )
     )
 
-  override def getAllForProcessingType(processingType: String): Map[ComponentId, AdditionalUIConfig] = {
+  override def getAllForProcessingType(processingType: String): Map[ComponentId, ComponentAdditionalConfig] = {
     if (processingType == TestProcessingTypes.Streaming) {
       Map(
-        ComponentId("streaming-service-enricher") -> AdditionalUIConfig(
+        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
             "paramStringEditor" -> ParameterAdditionalUIConfig(
               initialValue = Some(
