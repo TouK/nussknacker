@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.graph.node.{Filter, FragmentInputDefinition, F
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.ui.api.helpers.{StubFragmentRepository, TestCategories}
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
 //about actual values, only assigns them to nodes
@@ -17,7 +18,9 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
 
   import spel.Implicits._
 
-  private val defaultCounter = new ProcessCounter(new StubFragmentRepository(Set()))
+  private val defaultCounter = new ProcessCounter(new StubFragmentRepository(Map.empty))
+
+  private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
   test("compute counts for simple process") {
     val process = ScenarioBuilder
@@ -88,7 +91,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
 
     val counter = new ProcessCounter(
       fragmentRepository(
-        Set(
+        List(
           CanonicalProcess(
             MetaData("fragment1", FragmentSpecificData()),
             List(
@@ -138,7 +141,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .filter("filter", "#in != 'stop'")
       .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
 
-    val counter = new ProcessCounter(fragmentRepository(Set()))
+    val counter = new ProcessCounter(fragmentRepository(List.empty))
 
     val computed = counter.computeCounts(
       fragment,
@@ -156,7 +159,9 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
     )
   }
 
-  private def fragmentRepository(processes: Set[CanonicalProcess]): FragmentRepository =
-    new StubFragmentRepository(processes.map(c => FragmentDetails(c, TestCategories.Category1)))
+  private def fragmentRepository(processes: List[CanonicalProcess]): FragmentRepository =
+    new StubFragmentRepository(
+      Map("not-important-processing-type" -> processes.map(c => FragmentDetails(c, TestCategories.Category1)))
+    )
 
 }

@@ -179,7 +179,7 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     )
 
     val resolved =
-      FragmentResolver(Set(fragmentWithSplit, fragment, fragmentWithGlobalVar, diamondFragment)).resolve(scenario)
+      FragmentResolver(List(fragmentWithSplit, fragment, fragmentWithGlobalVar, diamondFragment)).resolve(scenario)
 
     resolved shouldBe Symbol("valid")
     resolved.toOption.get

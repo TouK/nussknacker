@@ -32,6 +32,7 @@ import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.fragment.DbFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
@@ -495,12 +496,13 @@ class DefaultComponentServiceSpec
 
   it should "return components for each user" in {
     val processes      = List(MarketingProcess, FraudProcess, ArchivedFraudProcess)
-    val processService = createDbProcessService(categoryService, processes ++ fragmentFromCategories.toList)
+    val processService = createDbProcessService(categoryService, processes)
     val defaultComponentService =
-      DefaultComponentService(
+      new DefaultComponentService(
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
+        createFragmentRepository(fragmentFromCategories.toList),
         TestAdditionalUIConfigProvider
       )
 
@@ -657,10 +659,11 @@ class DefaultComponentServiceSpec
 
     val processService = createDbProcessService(categoryService, processes)
     val defaultComponentService =
-      DefaultComponentService(
+      new DefaultComponentService(
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
+        createFragmentRepository(List(FraudFragment)),
         TestAdditionalUIConfigProvider
       )
 
@@ -730,10 +733,11 @@ class DefaultComponentServiceSpec
   it should "return return error when component doesn't exist" in {
     val processService = createDbProcessService(categoryService)
     val defaultComponentService =
-      DefaultComponentService(
+      new DefaultComponentService(
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
+        createFragmentRepository(List.empty),
         TestAdditionalUIConfigProvider
       )
     val notExistComponentId = ComponentId("not-exist")
@@ -755,6 +759,9 @@ class DefaultComponentServiceSpec
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository()
     )
+
+  private def createFragmentRepository(fragments: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =
+    new DbFragmentRepository(MockFetchingProcessRepository.withProcessesDetails(fragments))
 
   private def cid(processingType: ProcessingType, componentInfo: ComponentInfo): ComponentId =
     ComponentId.default(processingType, componentInfo)

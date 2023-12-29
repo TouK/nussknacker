@@ -7,13 +7,20 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
-import pl.touk.nussknacker.engine.definition.fragment.{FragmentStaticDefinition, FragmentWithoutValidatorsDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.fragment.{
+  FragmentStaticDefinition,
+  FragmentWithoutValidatorsDefinitionExtractor
+}
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, ComponentsUiConfigParser}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.component.{ComponentAdditionalConfigConverter, ComponentDefinitionPreparer, DefaultComponentIdProvider}
+import pl.touk.nussknacker.ui.component.{
+  ComponentAdditionalConfigConverter,
+  ComponentDefinitionPreparer,
+  DefaultComponentIdProvider
+}
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.ui.definition.scenarioproperty.UiScenarioPropertyEditorDeterminer
@@ -28,7 +35,7 @@ object UIProcessObjectsFactory {
       modelDefinition: ModelDefinition[ComponentStaticDefinition],
       deploymentManager: DeploymentManager,
       user: LoggedUser,
-      fragmentsDetails: Set[FragmentDetails],
+      fragmentsDetails: List[FragmentDetails],
       isFragment: Boolean,
       processCategoryService: ProcessCategoryService,
       scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
@@ -142,7 +149,7 @@ object UIProcessObjectsFactory {
 
   private def extractFragmentComponents(
       classLoader: ClassLoader,
-      fragmentsDetails: Set[FragmentDetails],
+      fragmentsDetails: List[FragmentDetails],
   ): Map[String, FragmentStaticDefinition] = {
     val definitionExtractor = new FragmentWithoutValidatorsDefinitionExtractor(classLoader)
     (for {

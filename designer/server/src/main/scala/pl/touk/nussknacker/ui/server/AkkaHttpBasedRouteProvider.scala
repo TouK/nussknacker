@@ -109,7 +109,14 @@ class AkkaHttpBasedRouteProvider(
 
       val managers = typeToConfig.mapValues(_.deploymentManager)
 
-      val fragmentRepository = new DbFragmentRepository(dbRef, system.dispatcher)
+      val dbioRunner        = DBIOActionRunner(dbRef)
+      val actionRepository  = DbProcessActionRepository.create(dbRef, modelData)
+      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
+      // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
+      val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
+      val writeProcessRepository  = ProcessRepository.create(dbRef, modelData)
+
+      val fragmentRepository = new DbFragmentRepository(futureProcessRepository)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
 
       val processValidatorAndResolver = typeToConfig.mapValues { processingTypeData =>
@@ -126,13 +133,6 @@ class AkkaHttpBasedRouteProvider(
 
       val processValidator = processValidatorAndResolver.mapValues(_._1)
       val processResolver  = processValidatorAndResolver.mapValues(_._2)
-
-      val dbioRunner        = DBIOActionRunner(dbRef)
-      val actionRepository  = DbProcessActionRepository.create(dbRef, modelData)
-      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
-      // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-      val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
-      val writeProcessRepository  = ProcessRepository.create(dbRef, modelData)
 
       val notificationsConfig = resolvedConfig.as[NotificationConfig]("notifications")
       val processChangeListener = ProcessChangeListenerLoader.loadListeners(
@@ -209,10 +209,11 @@ class AkkaHttpBasedRouteProvider(
 
       val additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
 
-      val componentService = DefaultComponentService(
+      val componentService = new DefaultComponentService(
         ComponentLinksConfigExtractor.extract(resolvedConfig),
         typeToConfig.mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
         processService,
+        fragmentRepository,
         additionalUIConfigProvider
       )
       val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)

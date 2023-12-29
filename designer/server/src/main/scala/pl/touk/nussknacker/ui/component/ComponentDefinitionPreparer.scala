@@ -290,7 +290,7 @@ object ComponentDefinitionPreparer {
       modelDefinition: ModelDefinition[ComponentStaticDefinition],
       isFragment: Boolean,
       // TODO: enrich modelDefinition with fragments instead of passing them separately
-      fragmentsDetails: Set[FragmentDetails]
+      fragmentsDetails: List[FragmentDetails]
   ): List[NodeEdges] = {
 
     val fragmentOutputs =

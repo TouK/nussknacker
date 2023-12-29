@@ -14,6 +14,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
     properties: ProcessProperties,
     nodes: List[NodeData],
     edges: List[Edge],
+    // TODO: remove both processingType and category
     processingType: ProcessingType,
     category: String,
     validationResult: Option[ValidationResult]

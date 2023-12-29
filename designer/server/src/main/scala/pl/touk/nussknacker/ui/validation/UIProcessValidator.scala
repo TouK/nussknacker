@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
@@ -40,7 +41,7 @@ class UIProcessValidator(
   def withScenarioPropertiesConfig(scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]) =
     new UIProcessValidator(validator, scenarioPropertiesConfig, additionalValidators, fragmentResolver)
 
-  def validate(displayable: DisplayableProcess): ValidationResult = {
+  def validate(displayable: DisplayableProcess)(implicit loggedUser: LoggedUser): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
 
     // there is no point in further validations if ui process structure is invalid
@@ -49,7 +50,7 @@ class UIProcessValidator(
       val canonical = ProcessConverter.fromDisplayable(displayable)
       // The deduplication is needed for errors that are validated on both uiValidation for DisplayableProcess and
       // CanonicalProcess validation.
-      deduplicateErrors(uiValidationResult.add(validateCanonicalProcess(canonical, displayable.category)))
+      deduplicateErrors(uiValidationResult.add(validateCanonicalProcess(canonical, displayable.processingType)))
     } else {
       uiValidationResult
     }
@@ -71,20 +72,20 @@ class UIProcessValidator(
 
   def validateCanonicalProcess(
       canonical: CanonicalProcess,
-      category: Category
-  ): ValidationResult = {
+      processingType: ProcessingType
+  )(implicit loggedUser: LoggedUser): ValidationResult = {
     // TODO: should we validate after resolve?
     val additionalValidatorErrors = additionalValidators
       .map(_.validate(canonical))
       .sequence
       .fold(formatErrors, _ => ValidationResult.success)
 
-    val resolveResult = fragmentResolver.resolveFragments(canonical, category) match {
+    val resolveResult = fragmentResolver.resolveFragments(canonical, processingType) match {
       case Invalid(e) => formatErrors(e)
       case _          =>
         /* 1. We remove disabled nodes from canonical to not validate disabled nodes
            2. TODO: handle types when fragment resolution fails... */
-        fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, category) match {
+        fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType) match {
           case Valid(process) =>
             val validated = validator.validate(process)
             // FIXME: Validation errors for fragment nodes are not properly handled by FE

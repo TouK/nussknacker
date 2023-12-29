@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.graph.node.NodeData
     nodes: List[NodeData],
     edges: List[Edge],
     processingType: ProcessingType,
+    // FIXME: remove from here
     category: String
 ) {
 

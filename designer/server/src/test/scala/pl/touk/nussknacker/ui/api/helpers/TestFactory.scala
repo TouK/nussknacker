@@ -33,7 +33,7 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
 //TODO: merge with ProcessTestData?
@@ -84,7 +84,9 @@ object TestFactory extends TestPermissions {
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
   def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
-    Set(FragmentDetails(ProcessTestData.sampleFragment, TestCategories.Category1))
+    Map(
+      TestProcessingTypes.Streaming -> List(FragmentDetails(ProcessTestData.sampleFragment, TestCategories.Category1))
+    )
   )
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
@@ -115,7 +117,7 @@ object TestFactory extends TestPermissions {
     newWriteProcessRepository(dummyDbRef)
 
   def newFragmentRepository(dbRef: DbRef): DbFragmentRepository =
-    new DbFragmentRepository(dbRef, implicitly[ExecutionContext])
+    new DbFragmentRepository(newFutureFetchingProcessRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
     new DbProcessActionRepository[DB](dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))

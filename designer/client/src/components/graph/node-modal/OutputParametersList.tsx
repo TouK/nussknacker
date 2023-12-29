@@ -77,18 +77,18 @@ export default function OutputParametersList({
 }): JSX.Element {
     const currentVariableNames = editedNode.ref?.outputVariableNames;
 
-    const comopnentDefinition = useMemo(
+    const componentDefinition = useMemo(
         () => ProcessUtils.findComponentDefinition(editedNode, processDefinitionData.components),
         [editedNode, processDefinitionData.components],
     );
-    const isDefinitionAvailable = !!comopnentDefinition.outputParameters && isEditMode;
+    const isDefinitionAvailable = !!componentDefinition.outputParameters && isEditMode;
 
     const [variableNames, setVariableNames] = useState<Record<string, string>>(() => {
         if (!isDefinitionAvailable) {
             return currentVariableNames;
         }
 
-        const entries = comopnentDefinition.outputParameters.map((value) => [value, currentVariableNames?.[value]]);
+        const entries = componentDefinition.outputParameters.map((value) => [value, currentVariableNames?.[value]]);
         return Object.fromEntries(entries);
     });
 
@@ -102,7 +102,7 @@ export default function OutputParametersList({
     }, [variableNames, setProperty, isDefinitionAvailable]);
 
     useEffect(() => {
-        comopnentDefinition.outputParameters
+        componentDefinition.outputParameters
             ?.filter((paramName) => variableNames[paramName] === undefined)
             .forEach((paramName) => {
                 setVariableNames((prevState) => ({
@@ -110,7 +110,7 @@ export default function OutputParametersList({
                     [paramName]: paramName,
                 }));
             });
-    }, [comopnentDefinition.outputParameters, variableNames]);
+    }, [componentDefinition.outputParameters, variableNames]);
 
     const entries = Object.entries(variableNames);
 
