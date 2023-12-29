@@ -57,11 +57,7 @@ export interface NodeObjectTypeDefinition {
 }
 
 export interface ProcessDefinition {
-    services?: Record<string, NodeObjectTypeDefinition>;
-    sourceFactories?: Record<string, NodeObjectTypeDefinition>;
-    sinkFactories?: Record<string, NodeObjectTypeDefinition>;
-    customStreamTransformers?: Record<string, NodeObjectTypeDefinition>;
-    fragmentInputs?: Record<string, NodeObjectTypeDefinition>;
+    components?: Record<string, NodeObjectTypeDefinition>;
     typesInformation?: ClassDefinition[];
 }
 
@@ -89,7 +85,7 @@ export type EdgesForNode = {
 
 export type NodeTypeId = {
     type: string;
-    id?: string;
+    id: string;
 };
 
 export type ClassDefinition = {

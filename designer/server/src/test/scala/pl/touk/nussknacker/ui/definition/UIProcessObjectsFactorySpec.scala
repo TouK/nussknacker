@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -81,7 +81,11 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects = prepareUIProcessObjects(model, Set.empty)
 
-    processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.editor)).toMap shouldBe Map(
+    processObjects.processDefinition
+      .components(ComponentInfo(ComponentType.Service, "enricher"))
+      .parameters
+      .map(p => (p.name, p.editor))
+      .toMap shouldBe Map(
       "paramDualEditor" -> DualParameterEditor(
         simpleEditor = FixedValuesParameterEditor(possibleValues = List(FixedExpressionValue("expression", "label"))),
         defaultMode = DualEditorMode.SIMPLE
@@ -165,7 +169,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")))
 
-    processObjects.processDefinition.fragmentInputs.get(fragment.id) shouldBe empty
+    processObjects.processDefinition.components.get(ComponentInfo(ComponentType.Fragment, fragment.id)) shouldBe empty
   }
 
   test("should override component's parameter config with additionally provided config") {

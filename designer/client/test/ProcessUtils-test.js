@@ -97,15 +97,13 @@ const paramWithVariablesToHide = {
 };
 
 const processDefinition = {
-    services: {
-        transactionParser: {
+    components: {
+        "service-transactionParser": {
             parameters: [],
             returnType: { refClazzName: "org.nussknacker.model.Transaction" },
             categories: ["Category1"],
         },
-    },
-    sourceFactories: {
-        "kafka-transaction": {
+        "source-kafka-transaction": {
             parameters: [
                 {
                     name: "Topic",
@@ -115,25 +113,16 @@ const processDefinition = {
             returnType: { refClazzName: "org.nussknacker.model.Transaction" },
             categories: ["Category1"],
         },
-    },
-    sinkFactories: {
-        endTransaction: {
+        "sink-endTransaction": {
             parameters: [{ name: "Topic", typ: { refClazzName: "java.lang.String" } }],
             returnType: { refClazzName: "pl.touk.esp.engine.kafka.KafkaSinkFactory" },
             categories: ["Category1", "Category2", "Category3"],
         },
-    },
-    customStreamTransformers: {
-        transactionAggregator: {
+        "custom-transactionAggregator": {
             parameters: [paramWithAdditionalVariables, paramWithVariablesToHide],
             returnType: { refClazzName: "java.lang.String" },
             categories: ["Category12"],
         },
-    },
-    exceptionHandlerFactory: {
-        parameters: [{ name: "errorsTopic", typ: { refClazzName: "java.lang.String" } }],
-        returnType: { refClazzName: "org.nussknacker.process.espExceptionHandlerFactory" },
-        categories: [],
     },
     typesInformation: [
         {

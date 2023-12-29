@@ -1,11 +1,18 @@
 package pl.touk.nussknacker.engine.api.component
 
+import io.circe.KeyEncoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 
 @JsonCodec
 final case class ComponentInfo(`type`: ComponentType, name: String) {
   override def toString: String = `type`.toString + "-" + name
+}
+
+object ComponentInfo {
+
+  implicit val keyEncoder: KeyEncoder[ComponentInfo] = KeyEncoder.encodeKeyString.contramap(_.toString)
+
 }
 
 // These names are visible on pallet and used as a part of component identifiers (in urls and in stored component usages cache structure)

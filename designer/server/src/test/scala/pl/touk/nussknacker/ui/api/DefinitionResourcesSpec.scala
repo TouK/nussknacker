@@ -58,8 +58,8 @@ class DefinitionResourcesSpec
 
       val noneReturnType = responseAs[Json].hcursor
         .downField("processDefinition")
-        .downField("customStreamTransformers")
-        .downField("noneReturnTypeTransformer")
+        .downField("components")
+        .downField("custom-noneReturnTypeTransformer")
 
       noneReturnType.downField("returnType").focus shouldBe Some(Json.Null)
     }
@@ -123,8 +123,8 @@ class DefinitionResourcesSpec
 
       val editor = response
         .downField("processDefinition")
-        .downField("fragmentInputs")
-        .downField("sub1")
+        .downField("components")
+        .downField("fragment-sub1")
         .downField("parameters")
         .downAt(_.hcursor.get[String]("name").rightValue == "param1")
         .downField("editor")
@@ -153,7 +153,8 @@ class DefinitionResourcesSpec
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK
 
-      val defaultExpression: Json = responseAs[Json].hcursor
+      val responseJson = responseAs[Json]
+      val defaultExpression = responseJson.hcursor
         .downField("componentGroups")
         .downAt(_.hcursor.get[String]("name").rightValue == "enrichers")
         .downField("components")

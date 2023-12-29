@@ -96,7 +96,7 @@ class NodeUtils {
     };
 
     getEdgesAvailableForNode = (node: NodeType, processDefinitionData: ProcessDefinitionData, forInput?: boolean) => {
-        const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionId(node);
+        const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionNamePart(node);
         //TODO: when we add more configuration for joins, probably more complex logic will be needed
         const edgesForNode = processDefinitionData.edgesForNodes
             .filter((e) => !forInput || e.isForInputDefinition === forInput)
@@ -228,7 +228,7 @@ class NodeUtils {
         switch (node?.type) {
             case "FragmentInput": {
                 const outputParameters =
-                    processDefinitionData?.processDefinition?.fragmentInputs[node.ref.id]?.outputParameters ||
+                    processDefinitionData?.processDefinition?.components["fragment-" + node.ref.id]?.outputParameters ||
                     Object.keys(node.ref.outputVariableNames);
                 return outputParameters.length > 0;
             }

@@ -21,7 +21,7 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
       componentGroups: List[ComponentGroup],
-      // TODO: rename to modelDefinition
+      // TODO: extract definitions on main level
       processDefinition: UIModelDefinition,
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
@@ -31,14 +31,9 @@ package object definition {
   )
 
   // TODO We should map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig
-  // TODO We should keep all components in a single map, not distinguishing between ContentTypes
   @JsonCodec(encodeOnly = true) final case class UIModelDefinition(
-      services: Map[String, UIComponentDefinition],
-      sourceFactories: Map[String, UIComponentDefinition],
-      sinkFactories: Map[String, UIComponentDefinition],
-      customStreamTransformers: Map[String, UIComponentDefinition],
-      typesInformation: Set[UIClassDefinition],
-      fragmentInputs: Map[String, UIFragmentComponentDefinition]
+      components: Map[ComponentInfo, UIComponentDefinition],
+      typesInformation: Set[UIClassDefinition]
   )
 
   @JsonCodec(encodeOnly = true) final case class UIClassDefinition(
@@ -83,18 +78,14 @@ package object definition {
       //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
       categories: List[String],
-  )
-
-  @JsonCodec(encodeOnly = true) final case class UIFragmentComponentDefinition(
-      parameters: List[UIParameter],
-      outputParameters: List[String],
-      returnType: Option[TypingResult],
-      categories: List[String]
+      // For fragments only
+      outputParameters: Option[List[String]]
   )
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
-  @JsonCodec final case class NodeTypeId(`type`: String, id: Option[String] = None)
+  // TODO: replace with ComponentInfo
+  @JsonCodec final case class NodeTypeId(`type`: String, id: String)
 
   @JsonCodec final case class NodeEdges(
       nodeId: NodeTypeId,

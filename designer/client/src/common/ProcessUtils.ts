@@ -172,7 +172,7 @@ class ProcessUtils {
     };
 
     findNodeObjectTypeDefinition = (node: NodeType, processDefinition: ProcessDefinition): NodeObjectTypeDefinition => {
-        const foundDefinition = this.findDefinitionsForType(processDefinition, node)?.[this.findNodeDefinitionId(node)];
+        const foundDefinition = processDefinition.components?.[this.findNodeDefinitionId(node)];
         const emptyDefinition = {
             parameters: null,
             returnType: null,
@@ -180,27 +180,42 @@ class ProcessUtils {
         return foundDefinition || emptyDefinition;
     };
 
-    private findDefinitionsForType = (processDefinition: ProcessDefinition, node?: NodeType): Record<string, NodeObjectTypeDefinition> => {
+    private findNodeDefinitionId = (node?: NodeType): string | null => {
+        const typePart = this.findNodeDefinitionTypePart(node);
+        const namePart = this.findNodeDefinitionNamePart(node);
+        return (typePart && namePart && typePart + "-" + namePart) || null;
+    };
+
+    // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
+    private findNodeDefinitionTypePart = (node?: NodeType): string | null => {
         switch (node?.type) {
             case "Source":
-                return processDefinition.sourceFactories;
+                return "source";
             case "Sink":
-                return processDefinition.sinkFactories;
+                return "sink";
             case "Enricher":
             case "Processor":
-                return processDefinition.services;
+                return "service";
             case "Join":
             case "CustomNode":
-                return processDefinition.customStreamTransformers;
+                return "custom";
             case "FragmentInput":
-                return processDefinition.fragmentInputs;
+                return "fragment";
+            case "Filter":
+            case "Split":
+            case "Switch":
+            case "Variable":
+            case "VariableBuilder":
+            case "FragmentInputDefinition":
+            case "FragmentOutputDefinition":
+                return "builtin";
             default:
-                return {};
+                return null;
         }
     };
 
     // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
-    findNodeDefinitionId = (node: NodeType): string | null => {
+    findNodeDefinitionNamePart = (node: NodeType): string | null => {
         switch (node?.type) {
             case "Source":
             case "Sink": {
@@ -244,15 +259,14 @@ class ProcessUtils {
         }
     };
 
-    findNodeDefinitionIdOrType = (node: NodeType) => this.findNodeDefinitionId(node) || node.type || null;
+    findNodeDefinitionIdOrType = (node: NodeType) => this.findNodeDefinitionNamePart(node) || node.type || null;
 
     getNodeBaseTypeCamelCase = (node: NodeType) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
 
     findNodeConfigName = (node: NodeType): string => {
         // First we try to find id of node (config for specific custom node by id).
-        // If it is falsy then we try to extract config name from node type (config for build-in components e.g. variable, join).
-        // If all above are falsy then it means that node is special process properties node without id and type.
-        return this.findNodeDefinitionId(node) || this.getNodeBaseTypeCamelCase(node) || "$properties";
+        // When is missing it means that node is special process properties node without id
+        return this.findNodeDefinitionNamePart(node) || "$properties";
     };
 
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
