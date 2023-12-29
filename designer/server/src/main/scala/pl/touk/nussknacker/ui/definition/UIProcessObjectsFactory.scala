@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
 import cats.implicits.catsSyntaxSemigroup
-import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
@@ -24,8 +22,6 @@ import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 object UIProcessObjectsFactory {
-
-  import net.ceedubs.ficus.Ficus._
 
   def prepareUIProcessObjects(
       modelDataForType: ModelData,
@@ -92,8 +88,7 @@ object UIProcessObjectsFactory {
         isFragment = isFragment,
         fragmentsDetails = fragmentsDetails
       ),
-      customActions = deploymentManager.customActions.map(UICustomAction(_)),
-      defaultAsyncInterpretation = getDefaultAsyncInterpretation(modelDataForType.modelConfig)
+      customActions = deploymentManager.customActions.map(UICustomAction(_))
     )
   }
 
@@ -143,12 +138,6 @@ object UIProcessObjectsFactory {
       fixedComponentsUiConfig,
       modelDefinitionComponentsConfig
     )
-  }
-
-  private def getDefaultAsyncInterpretation(modelConfig: Config) = {
-    val defaultUseAsyncInterpretationFromConfig =
-      modelConfig.as[Option[Boolean]]("asyncExecutionConfig.defaultUseAsyncInterpretation")
-    DefaultAsyncInterpretationValueDeterminer.determine(defaultUseAsyncInterpretationFromConfig).value
   }
 
   private def extractFragmentComponents(

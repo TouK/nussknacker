@@ -69,7 +69,6 @@ export interface ProcessDefinitionData {
     scenarioPropertiesConfig?: ScenarioPropertiesConfig;
     edgesForNodes?: EdgesForNode[];
     customActions?: Array<CustomAction>;
-    defaultAsyncInterpretation?: boolean;
     fixedValuesPresets?: FixedValuesPresets;
 }
 

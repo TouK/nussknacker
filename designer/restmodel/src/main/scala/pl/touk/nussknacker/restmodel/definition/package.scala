@@ -27,8 +27,7 @@ package object definition {
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
-      customActions: List[UICustomAction],
-      defaultAsyncInterpretation: Boolean
+      customActions: List[UICustomAction]
   )
 
   @JsonCodec(encodeOnly = true) final case class UIValueParameter(
