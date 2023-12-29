@@ -195,7 +195,7 @@ class GenericNodeTransformationValidator(
         }
         val ctxToUse = inputContext match {
           case e: ValidationContext => e
-          case _                    => globalVariablesPreparer.emptyLocalVariablesValidationContext(metaData)
+          case _                    => globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(metaData)
         }
         expressionCompiler
           .compileParam(singleParam, ctxToUse, parameter)

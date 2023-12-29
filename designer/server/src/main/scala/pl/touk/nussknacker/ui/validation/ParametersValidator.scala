@@ -18,7 +18,7 @@ class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterabl
 
   private val validationContextGlobalVariablesOnly =
     GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
-      .emptyLocalVariablesValidationContext(scenarioPropertiesNames)
+      .prepareValidationContextWithGlobalVariablesOnly(scenarioPropertiesNames)
 
   def validate(
       request: ParametersValidationRequest,

@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputGenericNodeTransformation
 }
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.expression.{
+  Expression => CompiledExpression,
   ExpressionParser,
   ExpressionTypingInfo,
   TypedExpression,
@@ -27,8 +27,8 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompi
 import pl.touk.nussknacker.engine.compile.{
   ComponentExecutorFactory,
   ExpressionCompiler,
-  NodeValidationExceptionHandler,
-  StubbedFragmentInputTestSource
+  FragmentSourceWithTestWithParametersSupportFactory,
+  NodeValidationExceptionHandler
 }
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -97,14 +97,12 @@ class NodeCompiler(
   private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
     definitions.expressionConfig
 
-  // FIXME: should it be here?
   private val expressionEvaluator =
-    ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig))
+    ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
   private val factory = new ComponentExecutorFactory(expressionEvaluator)
   private val nodeValidator =
     new GenericNodeTransformationValidator(expressionCompiler, expressionConfig)
-  private val fragmentParameterValidator = new FragmentParameterValidator(expressionCompiler)
-  private val builtInNodeCompiler        = new BuiltInNodeCompiler(expressionCompiler)
+  private val builtInNodeCompiler = new BuiltInNodeCompiler(expressionCompiler)
 
   def compileSource(
       nodeData: SourceNodeData
@@ -112,10 +110,12 @@ class NodeCompiler(
     case a @ Source(_, ref, _) =>
       definitions.getComponent(ComponentType.Source, ref.typ) match {
         case Some(definition) =>
-          def defaultContextTransformation(compiled: Option[Any]) =
+          def defaultCtxForMethodBasedCreatedComponentExecutor(
+              returnType: Option[TypingResult]
+          ) =
             contextWithOnlyGlobalVariables.withVariable(
               VariableConstants.InputVariableName,
-              compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown),
+              returnType.getOrElse(Unknown),
               paramName = None
             )
 
@@ -125,7 +125,7 @@ class NodeCompiler(
             Left(contextWithOnlyGlobalVariables),
             Some(VariableConstants.InputVariableName),
             definition,
-            defaultContextTransformation
+            defaultCtxForMethodBasedCreatedComponentExecutor
           ).map(_._1)
         case None =>
           val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
@@ -140,7 +140,8 @@ class NodeCompiler(
       val variables: Map[String, TypingResult] = parameterDefinitions.value.map(a => a.name -> a.typ).toMap
       val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
 
-      val compilationResult = definitions.getComponent(ComponentType.Source, id) match {
+      val compilationResult = definitions.getComponent(ComponentType.Fragment, id) match {
+        // This case is when fragment is stubbed with test data
         case Some(definition) =>
           compileComponentWithContextTransformation[Source](
             Nil,
@@ -151,12 +152,13 @@ class NodeCompiler(
             _ => Valid(validationContext)
           ).map(_._1)
 
+        // For default case, we creates source that support test with parameters
         case None =>
           NodeCompilationResult(
             Map.empty,
             None,
             Valid(validationContext),
-            Valid(new StubbedFragmentInputTestSource(parameterDefinitions.value).createSource())
+            Valid(new FragmentSourceWithTestWithParametersSupportFactory(parameterDefinitions.value).createSource())
           )
       }
 
@@ -183,8 +185,8 @@ class NodeCompiler(
         val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(nodeId.id)))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
       case Some(componentDefinitionWithImpl) =>
-        val default = defaultContextAfter(data, ending, ctx, componentDefinitionWithImpl)
-        compileComponentWithContextTransformation(
+        val default = defaultContextAfter(data, ending, ctx)
+        compileComponentWithContextTransformation[AnyRef](
           data.parameters,
           data.cast[Join].map(_.branchParameters).getOrElse(Nil),
           ctx,
@@ -212,7 +214,7 @@ class NodeCompiler(
           Left(ctx),
           None,
           definition,
-          (_: Any) => Valid(ctx)
+          _ => Valid(ctx)
         ).map(_._1)
       case None =>
         val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
@@ -334,10 +336,11 @@ class NodeCompiler(
       validationContext: ValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    val ctx: Option[_] => ValidatedNel[ProcessCompilationError, ValidationContext] = invoker =>
+    val defaultCtxForMethodBasedCreatedComponentExecutor
+        : Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] = returnTypeOpt =>
       outputVar match {
         case Some(out) =>
-          componentDefWithImpl.returnType
+          returnTypeOpt
             .map(Valid(_))
             .getOrElse(Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable")))))
             .andThen(validationContext.withVariable(out, _))
@@ -374,7 +377,7 @@ class NodeCompiler(
       Left(validationContext),
       outputVar.map(_.outputName),
       componentDefWithImpl,
-      ctx
+      defaultCtxForMethodBasedCreatedComponentExecutor
     )
     compilationResult.map { case (invoker, nodeParams) =>
       // TODO: Currently in case of object compilation failures we prefer to create "dumb" service invoker, with empty parameters list
@@ -390,41 +393,32 @@ class NodeCompiler(
   }).asInstanceOf[T]
 
   private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext =
-    globalVariablesPreparer.emptyLocalVariablesValidationContext(metaData)
+    globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(metaData)
 
   private def defaultContextAfter(
       node: CustomNodeData,
       ending: Boolean,
-      branchCtx: GenericValidationContext,
-      nodeDefinition: ComponentDefinitionWithImplementation
+      branchCtx: GenericValidationContext
   )(
       implicit nodeId: NodeId,
       metaData: MetaData
-  ): Option[AnyRef] => ValidatedNel[ProcessCompilationError, ValidationContext] = maybeValidNode => {
-    val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
+  ): Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] =
+    returnTypeOpt => {
+      val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
 
-    def ctxWithVar(outputVar: OutputVar, typ: TypingResult) = validationContext
-      .withVariable(outputVar, typ)
-      // ble... NonEmptyList is invariant...
-      .asInstanceOf[ValidatedNel[ProcessCompilationError, ValidationContext]]
+      def ctxWithVar(outputVar: OutputVar, typ: TypingResult) = validationContext
+        .withVariable(outputVar, typ)
+        // ble... NonEmptyList is invariant...
+        .asInstanceOf[ValidatedNel[ProcessCompilationError, ValidationContext]]
 
-    maybeValidNode match {
-      case None =>
-        // we add output variable with Unknown type in case if we have invalid node here - it is to for situation when CustomTransformer.execute end up with failure and we don't want to validation fail fast
-        // real checking of output variable was done in NodeValidationExceptionHandler
-        val maybeAddedFallbackOutputVariable =
-          node.outputVar.map(output => ctxWithVar(OutputVar.customNode(output), Unknown))
-        maybeAddedFallbackOutputVariable.getOrElse(Valid(validationContext))
-      case Some(validNode) =>
-        (node.outputVar, returnType(nodeDefinition, validNode)) match {
-          case (Some(varName), Some(typ)) => ctxWithVar(OutputVar.customNode(varName), typ)
-          case (None, None)               => Valid(validationContext)
-          case (Some(_), None)            => Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable"))))
-          case (None, Some(_)) if ending  => Valid(validationContext)
-          case (None, Some(_))            => Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"))))
-        }
+      (node.outputVar, returnTypeOpt) match {
+        case (Some(varName), Some(typ)) => ctxWithVar(OutputVar.customNode(varName), typ)
+        case (None, None)               => Valid(validationContext)
+        case (Some(_), None)            => Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable"))))
+        case (None, Some(_)) if ending  => Valid(validationContext)
+        case (None, Some(_))            => Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"))))
+      }
     }
-  }
 
   private def compileComponentWithContextTransformation[ComponentExecutor](
       parameters: List[NodeParameter],
@@ -432,7 +426,10 @@ class NodeCompiler(
       ctx: GenericValidationContext,
       outputVar: Option[String],
       componentDefinitionWithImpl: ComponentDefinitionWithImplementation,
-      defaultCtxForCreatedObject: Option[ComponentExecutor] => ValidatedNel[ProcessCompilationError, ValidationContext]
+      defaultCtxForMethodBasedCreatedComponentExecutor: Option[TypingResult] => ValidatedNel[
+        ProcessCompilationError,
+        ValidationContext
+      ]
   )(
       implicit metaData: MetaData,
       nodeId: NodeId
@@ -485,8 +482,14 @@ class NodeCompiler(
           Seq.empty
         )
         val nextCtx = validComponentExecutor.fold(
-          _ => defaultCtxForCreatedObject(None),
-          cNode => contextAfterNode(cNode, ctx, (c: ComponentExecutor) => defaultCtxForCreatedObject(Some(c)))
+          _ => defaultCtxForMethodBasedCreatedComponentExecutor(staticComponent.returnType),
+          executor =>
+            contextAfterMethodBasedCreatedComponentExecutor(
+              executor,
+              ctx,
+              (executor: ComponentExecutor) =>
+                defaultCtxForMethodBasedCreatedComponentExecutor(returnType(staticComponent.returnType, executor))
+            )
         )
         val unwrappedComponentExecutor =
           validComponentExecutor.map(unwrapContextTransformation[ComponentExecutor](_)).map((_, parameters))
@@ -494,12 +497,12 @@ class NodeCompiler(
     }
   }
 
-  private def returnType(nodeDefinition: ComponentDefinitionWithImplementation, obj: Any): Option[TypingResult] =
-    obj match {
+  private def returnType(definitionReturnType: Option[TypingResult], componentExecutor: Any): Option[TypingResult] =
+    componentExecutor match {
       case returningType: ReturningType =>
         Some(returningType.returnType)
       case _ =>
-        nodeDefinition.returnType
+        definitionReturnType
     }
 
   private def createComponentExecutor[ComponentExecutor](
@@ -550,13 +553,16 @@ class NodeCompiler(
     (compiledObjectWithTypingInfo.map(_._1).valueOr(_ => Map.empty), compiledObjectWithTypingInfo.map(_._2))
   }
 
-  private def contextAfterNode[T](
-      cNode: T,
+  private def contextAfterMethodBasedCreatedComponentExecutor[ComponentExecutor](
+      executor: ComponentExecutor,
       validationContexts: GenericValidationContext,
-      legacy: T => ValidatedNel[ProcessCompilationError, ValidationContext]
+      handleNonContextTransformingExecutor: ComponentExecutor => ValidatedNel[
+        ProcessCompilationError,
+        ValidationContext
+      ]
   )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     NodeValidationExceptionHandler.handleExceptionsInValidation {
-      val contextTransformationDefOpt = cNode.cast[AbstractContextTransformation].map(_.definition)
+      val contextTransformationDefOpt = executor.cast[AbstractContextTransformation].map(_.definition)
       (contextTransformationDefOpt, validationContexts) match {
         case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
           // copying global variables because custom transformation may override them -> TODO: in ValidationContext
@@ -571,7 +577,7 @@ class NodeCompiler(
             FatalUnknownError(s"Invalid ContextTransformation class $transformation for contexts: $ctx")
           ).toValidatedNel
         case (None, _) =>
-          legacy(cNode)
+          handleNonContextTransformingExecutor(executor)
       }
     }
   }
@@ -628,7 +634,7 @@ class NodeCompiler(
       val serviceRef = computedParameters.map { params =>
         compiledgraph.service.ServiceRef(
           n.id,
-          MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod),
+          new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod),
           params,
           resultCollector
         )

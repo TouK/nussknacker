@@ -116,7 +116,7 @@ object FragmentCompleteDefinitionExtractor {
       classLoader: ClassLoader,
       expressionCompiler: ExpressionCompiler
   ): FragmentCompleteDefinitionExtractor = {
-    val withoutValidatorsExtractor = FragmentWithoutValidatorsDefinitionExtractor(classLoader)
+    val withoutValidatorsExtractor = new FragmentWithoutValidatorsDefinitionExtractor(classLoader)
 
     new FragmentCompleteDefinitionExtractor(
       withoutValidatorsExtractor,

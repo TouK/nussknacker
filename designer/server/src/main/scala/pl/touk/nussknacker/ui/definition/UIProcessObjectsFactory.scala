@@ -63,7 +63,7 @@ object UIProcessObjectsFactory {
         .mapValuesNow(_.toSingleComponentConfig)
     )
 
-    val fragmentComponents = extractFragmentComponents(modelDataForType, fragmentsDetails)
+    val fragmentComponents = extractFragmentComponents(modelDataForType.modelClassLoader.classLoader, fragmentsDetails)
 
     // merging because ModelDefinition doesn't contain configs for built-in components
     val finalComponentsConfig =
@@ -161,10 +161,10 @@ object UIProcessObjectsFactory {
   }
 
   private def extractFragmentComponents(
-      modelDataForType: ModelData,
+      classLoader: ClassLoader,
       fragmentsDetails: Set[FragmentDetails],
   ): Map[String, FragmentStaticDefinition] = {
-    val definitionExtractor = FragmentWithoutValidatorsDefinitionExtractor(modelDataForType)
+    val definitionExtractor = new FragmentWithoutValidatorsDefinitionExtractor(classLoader)
     (for {
       details    <- fragmentsDetails
       definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption

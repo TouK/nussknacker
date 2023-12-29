@@ -3,14 +3,13 @@ package pl.touk.nussknacker.engine.definition.fragment
 import cats.data.{Validated, Writer}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
@@ -126,24 +125,6 @@ class FragmentWithoutValidatorsDefinitionExtractor(
     } else {
       Some(fixedValuesEditor)
     }
-  }
-
-}
-
-object FragmentWithoutValidatorsDefinitionExtractor {
-
-  def apply(modelData: ModelData): FragmentWithoutValidatorsDefinitionExtractor = {
-    FragmentWithoutValidatorsDefinitionExtractor(
-      modelData.modelClassLoader.classLoader,
-    )
-  }
-
-  def apply(
-      classLoader: ClassLoader,
-  ): FragmentWithoutValidatorsDefinitionExtractor = {
-    new FragmentWithoutValidatorsDefinitionExtractor(
-      classLoader
-    )
   }
 
 }

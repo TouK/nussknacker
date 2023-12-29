@@ -10,25 +10,23 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentTypeSpecificData
 }
 
-case class MethodBasedComponentDefinitionWithImplementation(
+final case class MethodBasedComponentDefinitionWithImplementation(
     implementationInvoker: ComponentImplementationInvoker,
     implementation: Any,
-    staticDefinition: ComponentStaticDefinition,
-    // TODO: it should be removed - instead implementationInvoker should be transformed
-    runtimeClass: Class[_]
+    staticDefinition: ComponentStaticDefinition
 ) extends ComponentDefinitionWithImplementation {
 
-  final override def withImplementationInvoker(
+  override def withImplementationInvoker(
       implementationInvoker: ComponentImplementationInvoker
   ): ComponentDefinitionWithImplementation =
     copy(implementationInvoker = implementationInvoker)
 
-  final override def componentType: ComponentType = staticDefinition.componentType
+  override def componentType: ComponentType = staticDefinition.componentType
 
-  final def parameters: List[Parameter] = staticDefinition.parameters
+  def parameters: List[Parameter] = staticDefinition.parameters
 
-  final override def returnType: Option[TypingResult] = staticDefinition.returnType
+  def returnType: Option[TypingResult] = staticDefinition.returnType
 
-  final override def componentTypeSpecificData: ComponentTypeSpecificData = staticDefinition.componentTypeSpecificData
+  override def componentTypeSpecificData: ComponentTypeSpecificData = staticDefinition.componentTypeSpecificData
 
 }

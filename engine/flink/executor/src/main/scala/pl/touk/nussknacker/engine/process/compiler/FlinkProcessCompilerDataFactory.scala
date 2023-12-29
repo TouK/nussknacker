@@ -7,7 +7,10 @@ import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
+import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
@@ -108,24 +111,31 @@ class FlinkProcessCompilerDataFactory(
     )
   }
 
-  // TODO: We already passed extractModelDefinition function to compiler - we shouldn't transform this definition again.
-  //       It should be merged
-  protected def definitions(
+  private def definitions(
       modelDependencies: ProcessObjectDependencies,
       userCodeClassLoader: ClassLoader
   ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
     val modelDefinitionWithTypes = ModelDefinitionWithClasses(
-      extractModelDefinition(
-        userCodeClassLoader,
-        modelDependencies,
-      )
+      extractModelDefinition(userCodeClassLoader, modelDependencies)
     )
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(
       modelDefinitionWithTypes.modelDefinition.expressionConfig.dictionaries
     )
-    (modelDefinitionWithTypes, dictRegistry)
+    val definitionContext = ComponentDefinitionContext(
+      userCodeClassLoader,
+      dictRegistry,
+      modelDefinitionWithTypes.modelDefinition.expressionConfig,
+      modelDefinitionWithTypes.classDefinitions
+    )
+    val adjustedDefinitions = adjustDefinitions(modelDefinitionWithTypes.modelDefinition, definitionContext)
+    (ModelDefinitionWithClasses(adjustedDefinitions), dictRegistry)
   }
+
+  protected def adjustDefinitions(
+      originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+      definitionContext: ComponentDefinitionContext
+  ): ModelDefinition[ComponentDefinitionWithImplementation] = originalModelDefinition
 
   private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {
     // we are loading DictServicesFactory on TaskManager side. It may be tricky because of class loaders...
@@ -157,3 +167,11 @@ private[process] case class UsedNodes(nodes: Iterable[NodeData], nextParts: Iter
 object UsedNodes {
   val empty: UsedNodes = UsedNodes(Nil, Nil)
 }
+
+case class ComponentDefinitionContext(
+    userCodeClassLoader: ClassLoader,
+    // below are for purpose of TestDataPreparer
+    dictRegistry: EngineDictRegistry,
+    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
+    classDefinitions: ClassDefinitionSet
+)
