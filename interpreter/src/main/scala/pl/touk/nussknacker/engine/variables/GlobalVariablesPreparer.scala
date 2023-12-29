@@ -58,6 +58,8 @@ class GlobalVariablesPreparer(
         ObjectWithType(
           componentDefWithImpl.implementation,
           componentDefWithImpl
+            // We have an assumption that GlobalVariables are handled by MethodBasedComponentDefinitionWithImplementation
+            // See GlobalVariableDefinitionExtractor
             .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
             .returnType
             .getOrElse(
@@ -73,6 +75,8 @@ class GlobalVariablesPreparer(
         typedGlobalVariable.initialReturnType
       case _ =>
         componentDefWithImpl
+          // We have an assumption that GlobalVariables are handled by MethodBasedComponentDefinitionWithImplementation
+          // See GlobalVariableDefinitionExtractor
           .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
           .returnType
           .getOrElse(
