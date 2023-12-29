@@ -14,13 +14,13 @@ class GlobalVariablesPreparer(
     hideMetaVariable: Boolean
 ) {
 
-  def emptyLocalVariablesValidationContext(metaData: MetaData): ValidationContext =
+  def prepareValidationContextWithGlobalVariablesOnly(metaData: MetaData): ValidationContext =
     ValidationContext(
       localVariables = Map.empty,
       globalVariables = prepareGlobalVariables(metaData).mapValuesNow(_.typ)
     )
 
-  def emptyLocalVariablesValidationContext(
+  def prepareValidationContextWithGlobalVariablesOnly(
       scenarioPropertiesNames: Iterable[String]
   ): ValidationContext = ValidationContext(
     localVariables = Map.empty,

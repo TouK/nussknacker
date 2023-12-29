@@ -32,7 +32,6 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   private val scenarioWithSingleSource = ScenarioBuilder
     .streaming("test")
     .source("left-source", "test-source")
-    .filter("filter", "#input.longValue != -123")
     .processorEnd("left-end", "mockService", "all" -> "{}")
 
   private val scenarioWithSingleTestParametersSource = ScenarioBuilder

@@ -71,7 +71,7 @@ class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository
       variableTypes: Map[String, TypingResult]
   )(implicit metaData: MetaData): ValidationContext = {
     GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
-      .emptyLocalVariablesValidationContext(metaData)
+      .prepareValidationContextWithGlobalVariablesOnly(metaData)
       .copy(localVariables = variableTypes)
   }
 
