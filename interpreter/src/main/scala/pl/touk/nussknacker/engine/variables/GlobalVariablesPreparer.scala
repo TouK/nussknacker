@@ -5,12 +5,13 @@ import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.util.Implicits._
 
 class GlobalVariablesPreparer(
-    globalVariablesDefWithImpl: Map[String, ComponentDefinitionWithImplementation],
+    globalVariablesDefWithImpl: Map[String, MethodBasedComponentDefinitionWithImplementation],
     hideMetaVariable: Boolean
 ) {
 
@@ -48,7 +49,7 @@ class GlobalVariablesPreparer(
   }
 
   private def toGlobalVariable(
-      componentDefWithImpl: ComponentDefinitionWithImplementation,
+      componentDefWithImpl: MethodBasedComponentDefinitionWithImplementation,
       metaData: MetaData
   ): ObjectWithType = {
     componentDefWithImpl.implementation match {
@@ -57,11 +58,7 @@ class GlobalVariablesPreparer(
       case _ =>
         ObjectWithType(
           componentDefWithImpl.implementation,
-          componentDefWithImpl
-            // We have an assumption that GlobalVariables are handled by MethodBasedComponentDefinitionWithImplementation
-            // See GlobalVariableDefinitionExtractor
-            .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
-            .returnType
+          componentDefWithImpl.returnType
             .getOrElse(
               throw new IllegalStateException("Global variable with empty return type.")
             )
@@ -69,19 +66,16 @@ class GlobalVariablesPreparer(
     }
   }
 
-  private def toGlobalVariableType(componentDefWithImpl: ComponentDefinitionWithImplementation): TypingResult = {
+  private def toGlobalVariableType(
+      componentDefWithImpl: MethodBasedComponentDefinitionWithImplementation
+  ): TypingResult = {
     componentDefWithImpl.implementation match {
       case typedGlobalVariable: TypedGlobalVariable =>
         typedGlobalVariable.initialReturnType
       case _ =>
-        componentDefWithImpl
-          // We have an assumption that GlobalVariables are handled by MethodBasedComponentDefinitionWithImplementation
-          // See GlobalVariableDefinitionExtractor
-          .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
-          .returnType
-          .getOrElse(
-            throw new IllegalStateException("Global variable with empty return type.")
-          )
+        componentDefWithImpl.returnType.getOrElse(
+          throw new IllegalStateException("Global variable with empty return type.")
+        )
     }
   }
 
@@ -92,7 +86,14 @@ object GlobalVariablesPreparer {
   def apply(
       expressionDefinition: ExpressionConfigDefinition[ComponentDefinitionWithImplementation]
   ): GlobalVariablesPreparer = {
-    new GlobalVariablesPreparer(expressionDefinition.globalVariables, expressionDefinition.hideMetaVariable)
+    // We have an assumption that GlobalVariables are handled by MethodBasedComponentDefinitionWithImplementation
+    // See GlobalVariableDefinitionExtractor
+    val methodBasedGlobalVariables = expressionDefinition.globalVariables.mapValuesNow {
+      case methodBased: MethodBasedComponentDefinitionWithImplementation => methodBased
+      case dynamic: DynamicComponentDefinitionWithImplementation =>
+        throw new IllegalStateException(s"Global variable represented as a dynamic component: $dynamic")
+    }
+    new GlobalVariablesPreparer(methodBasedGlobalVariables, expressionDefinition.hideMetaVariable)
   }
 
 }

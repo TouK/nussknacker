@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
+import pl.touk.nussknacker.engine.process.compiler.StubbedComponentImplementationInvoker.returnType
 import shapeless.syntax.typeable.typeableOps
 
 abstract class StubbedFlinkProcessCompilerDataFactory(
@@ -106,13 +107,6 @@ abstract class StubbedComponentImplementationInvoker(
     )
   }
 
-  private def returnType(componentDefinitionWithImpl: ComponentDefinitionWithImplementation) = {
-    componentDefinitionWithImpl match {
-      case methodBasedDefinition: MethodBasedComponentDefinitionWithImplementation => methodBasedDefinition.returnType
-      case _: DynamicComponentDefinitionWithImplementation                         => None
-    }
-  }
-
   override def invokeMethod(
       params: Map[String, Any],
       outputVariableNameOpt: Option[String],
@@ -146,4 +140,15 @@ abstract class StubbedComponentImplementationInvoker(
   }
 
   def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any
+}
+
+object StubbedComponentImplementationInvoker {
+
+  private def returnType(componentDefinitionWithImpl: ComponentDefinitionWithImplementation): Option[TypingResult] = {
+    componentDefinitionWithImpl match {
+      case methodBasedDefinition: MethodBasedComponentDefinitionWithImplementation => methodBasedDefinition.returnType
+      case _: DynamicComponentDefinitionWithImplementation                         => None
+    }
+  }
+
 }
