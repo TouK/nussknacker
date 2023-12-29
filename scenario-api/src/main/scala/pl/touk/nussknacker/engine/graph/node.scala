@@ -7,9 +7,9 @@ import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
@@ -305,20 +305,6 @@ object node {
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends EndingNodeData
       with RealNodeData
-
-  @ConfiguredJsonCodec
-  sealed trait ValueInputWithFixedValues {
-    def allowOtherValue: Boolean
-    def fixedValuesList: List[FixedExpressionValue]
-  }
-
-  case class ValueInputWithFixedValuesProvided(fixedValuesList: List[FixedExpressionValue], allowOtherValue: Boolean)
-      extends ValueInputWithFixedValues
-
-  @JsonCodec case class ParameterValueCompileTimeValidation(
-      validationExpression: Expression,
-      validationFailedMessage: Option[String]
-  )
 
   // we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has TypedResult which has *real* class inside
   // TODO: probably should be able to handle class parameters or typed maps (i.e. use TypingResult inside FragmentClazzRef)

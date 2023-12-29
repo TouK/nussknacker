@@ -1,9 +1,7 @@
-package pl.touk.nussknacker.ui.additionalconfig
+package pl.touk.nussknacker.engine.api.component
 
-import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
-import pl.touk.nussknacker.engine.graph.node.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
+import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
 
 /**
  * Trait allowing the provision of UI configuration for components and scenario properties, without requiring a model reload.
@@ -32,19 +30,7 @@ case class ComponentAdditionalConfig(
     docsUrl: Option[String] = None,
     componentGroup: Option[ComponentGroupName] = None,
     disabled: Boolean = false
-) {
-
-  def toSingleComponentConfig: SingleComponentConfig =
-    SingleComponentConfig(
-      params = Some(parameterConfigs.map { case (name, p) => name -> p.toParameterConfig(name) }),
-      icon = icon,
-      docsUrl = docsUrl,
-      componentGroup = componentGroup,
-      disabled = disabled,
-      componentId = None
-    )
-
-}
+)
 
 case class ParameterAdditionalUIConfig(
     required: Boolean = false,
@@ -54,25 +40,4 @@ case class ParameterAdditionalUIConfig(
     valueCompileTimeValidation: Option[
       ParameterValueCompileTimeValidation
     ], // not supported yet, see AdditionalUIConfigProvider TODOs
-) {
-
-  def toParameterConfig(paramName: String): ParameterConfig = ParameterConfig(
-    defaultValue = initialValue.map(
-      _.expression
-    ), // TODO validating initialValue with context and expressionCompiler will be similar to handling 'valueCompileTimeValidation'
-    editor = valueEditor.flatMap(editor =>
-      ValueEditorValidator
-        .validateAndGetEditor(
-          valueEditor = editor,
-          initialValue = initialValue,
-          paramName = paramName,
-          nodeIds = Set.empty
-        )
-        .toOption
-    ),
-    validators = None, // see AdditionalUIConfigProvider TODOs
-    label = None,
-    hintText = hintText
-  )
-
-}
+)

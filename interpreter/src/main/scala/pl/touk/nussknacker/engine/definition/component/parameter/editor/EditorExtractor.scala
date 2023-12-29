@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, RawEdi
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import FixedExpressionValue.nullFixedValue
-import pl.touk.nussknacker.engine.graph.node.{ValueInputWithFixedValues, ValueInputWithFixedValuesProvided}
+import pl.touk.nussknacker.engine.api.parameter.{ValueInputWithFixedValues, ValueInputWithFixedValuesProvided}
 
 object EditorExtractor {
 

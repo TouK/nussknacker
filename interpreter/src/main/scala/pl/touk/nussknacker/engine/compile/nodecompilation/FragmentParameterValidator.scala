@@ -11,16 +11,13 @@ import pl.touk.nussknacker.engine.api.definition.{
   ParameterEditor,
   ValidationExpressionParameterValidator
 }
+import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
-import pl.touk.nussknacker.engine.graph.node.{
-  FixedValuesListFieldName,
-  InitialValueFieldName,
-  ValueInputWithFixedValues
-}
+import pl.touk.nussknacker.engine.graph.node.{FixedValuesListFieldName, InitialValueFieldName}
 
 object FragmentParameterValidator {
 

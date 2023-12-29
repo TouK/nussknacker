@@ -1,6 +1,4 @@
-package pl.touk.nussknacker.ui.additionalconfig
-
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ScenarioPropertyConfig}
+package pl.touk.nussknacker.engine.api.component
 
 class DefaultAdditionalUIConfigProvider(
     processingTypeToConfig: Map[String, Map[ComponentId, ComponentAdditionalConfig]],

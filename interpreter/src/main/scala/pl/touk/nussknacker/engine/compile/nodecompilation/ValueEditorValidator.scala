@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import FixedExpressionValue.nullFixedValue
-import pl.touk.nussknacker.engine.graph.node.ValueInputWithFixedValues
+import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValues
 
 object ValueEditorValidator {
 

@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, ComponentsUiConfigParser}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.additionalconfig.AdditionalUIConfigProvider
+import pl.touk.nussknacker.ui.component.ComponentAdditionalConfigConverter.toSingleComponentConfig
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.scenarioproperty.UiScenarioPropertyEditorDeterminer
@@ -61,7 +61,7 @@ object UIProcessObjectsFactory {
       combinedComponentsConfig,
       additionalUIConfigProvider
         .getAllForProcessingType(processingType)
-        .mapValuesNow(_.toSingleComponentConfig)
+        .mapValuesNow(toSingleComponentConfig)
     )
 
     val fragmentComponents = extractFragmentComponents(modelDataForType.modelClassLoader.classLoader, fragmentsDetails)
