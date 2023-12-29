@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
@@ -98,11 +99,19 @@ abstract class StubbedComponentImplementationInvoker(
     originalDefinitionReturnType: Option[TypingResult]
 ) extends ComponentImplementationInvoker {
 
-  def this(componentDefinitionWithImpl: ComponentDefinitionWithImplementation) =
+  def this(componentDefinitionWithImpl: ComponentDefinitionWithImplementation) = {
     this(
       componentDefinitionWithImpl.implementationInvoker,
-      componentDefinitionWithImpl.cast[MethodBasedComponentDefinitionWithImplementation].flatMap(_.returnType)
+      returnType(componentDefinitionWithImpl)
     )
+  }
+
+  private def returnType(componentDefinitionWithImpl: ComponentDefinitionWithImplementation) = {
+    componentDefinitionWithImpl match {
+      case methodBasedDefinition: MethodBasedComponentDefinitionWithImplementation => methodBasedDefinition.returnType
+      case _: DynamicComponentDefinitionWithImplementation                         => None
+    }
+  }
 
   override def invokeMethod(
       params: Map[String, Any],
@@ -110,8 +119,8 @@ abstract class StubbedComponentImplementationInvoker(
       additional: Seq[AnyRef]
   ): Any = {
     def transform(impl: Any): Any = {
-      // TypingResult is important for method based components, because even for testing and verification
-      // purpose, ImplementationInvoker is used also determine output types. Dynamic components don't use it during
+      // Correct TypingResult is important for method based components, because even for testing and verification
+      // purpose, ImplementationInvoker is used also to determine output types. Dynamic components don't use it during
       // scenario validation so we pass Unknown for them
       val typingResult =
         impl
