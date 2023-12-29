@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{Source, TestWithParametersSupport}
 
-class StubbedFragmentInputTestSource(
+class FragmentSourceWithTestWithParametersSupportFactory(
     parameterDefinitions: List[Parameter]
 ) {
 

@@ -90,10 +90,12 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerReturningContextTransformationWithOutputVariable")
       .value
+      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
       .returnType shouldBe defined
     modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerReturningContextTransformationWithoutOutputVariable")
       .value
+      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
       .returnType shouldBe empty
   }
 
@@ -155,7 +157,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   test("extract basic global variable") {
     val definition = modelDefinitionWithTypes(None).modelDefinition.expressionConfig.globalVariables
 
-    val helperDef = definition("helper")
+    val helperDef = definition("helper").asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
     helperDef.implementation shouldBe SampleHelper
     helperDef.returnType.value shouldBe Typed(SampleHelper.getClass)
   }
@@ -163,7 +165,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   test("extract typed global variable") {
     val definition = modelDefinitionWithTypes(None).modelDefinition.expressionConfig.globalVariables
 
-    val typedGlobalDef = definition("typedGlobal")
+    val typedGlobalDef = definition("typedGlobal").asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
     typedGlobalDef.implementation shouldBe SampleTypedVariable
     typedGlobalDef.returnType.value shouldBe Typed(classOf[Int])
   }

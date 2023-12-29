@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.variables
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, typing}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
@@ -14,7 +13,7 @@ class GlobalVariablesPreparerTest extends AnyFunSuite with Matchers {
     val metaData = MetaData("test", StreamMetaData())
     val varsWithMethodDef = Map(
       "typedVar" ->
-        GlobalVariableDefinitionExtractor.extractDefinition(WithCategories.anyCategory(TestTypedGlobalVariable))
+        GlobalVariableDefinitionExtractor.extractDefinition(TestTypedGlobalVariable, categories = None)
     )
 
     val varsWithType =
