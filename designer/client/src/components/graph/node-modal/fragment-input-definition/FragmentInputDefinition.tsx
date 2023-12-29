@@ -22,11 +22,11 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
     const definitionData = useSelector(getProcessDefinitionData);
     const typeOptions = useMemo(
         () =>
-            definitionData?.processDefinition?.typesInformation?.map((type) => ({
-                value: type.clazzName.refClazzName,
-                label: ProcessUtils.humanReadableType(type.clazzName),
+            definitionData?.classes?.map((type) => ({
+                value: type.refClazzName,
+                label: ProcessUtils.humanReadableType(type),
             })),
-        [definitionData?.processDefinition?.typesInformation],
+        [definitionData?.classes],
     );
 
     const orderedTypeOptions = useMemo(() => orderBy(typeOptions, (item) => [item.label, item.value], ["asc"]), [typeOptions]);

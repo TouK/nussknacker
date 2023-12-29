@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
@@ -21,28 +21,13 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
       componentGroups: List[ComponentGroup],
-      // TODO: rename to modelDefinition
-      processDefinition: UIModelDefinition,
+      // TODO: extract definitions on main level
+      components: Map[ComponentInfo, UIComponentDefinition],
+      classes: List[TypingResult],
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
-      customActions: List[UICustomAction],
-      defaultAsyncInterpretation: Boolean
-  )
-
-  // TODO We should map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig
-  // TODO We should keep all components in a single map, not distinguishing between ContentTypes
-  @JsonCodec(encodeOnly = true) final case class UIModelDefinition(
-      services: Map[String, UIComponentDefinition],
-      sourceFactories: Map[String, UIComponentDefinition],
-      sinkFactories: Map[String, UIComponentDefinition],
-      customStreamTransformers: Map[String, UIComponentDefinition],
-      typesInformation: Set[UIClassDefinition],
-      fragmentInputs: Map[String, UIFragmentComponentDefinition]
-  )
-
-  @JsonCodec(encodeOnly = true) final case class UIClassDefinition(
-      clazzName: TypingResult
+      customActions: List[UICustomAction]
   )
 
   @JsonCodec(encodeOnly = true) final case class UIValueParameter(
@@ -83,25 +68,24 @@ package object definition {
       //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
       categories: List[String],
-  )
-
-  @JsonCodec(encodeOnly = true) final case class UIFragmentComponentDefinition(
-      parameters: List[UIParameter],
-      outputParameters: List[String],
-      returnType: Option[TypingResult],
-      categories: List[String]
+      // For fragments only
+      outputParameters: Option[List[String]]
   )
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
-  @JsonCodec final case class NodeTypeId(`type`: String, id: Option[String] = None)
-
-  @JsonCodec final case class NodeEdges(
-      nodeId: NodeTypeId,
+  final case class NodeEdges(
+      componentId: ComponentInfo,
       edges: List[EdgeType],
       canChooseNodes: Boolean,
       isForInputDefinition: Boolean
   )
+
+  object NodeEdges {
+    implicit val componentIdEncoder: Encoder[ComponentInfo] = Encoder.encodeString.contramap(_.toString)
+
+    implicit val encoder: Encoder[NodeEdges] = deriveConfiguredEncoder
+  }
 
   object ComponentNodeTemplate {
 

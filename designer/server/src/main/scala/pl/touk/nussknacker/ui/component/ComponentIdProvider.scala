@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition.component
+package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.graph.node.NodeData
