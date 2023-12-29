@@ -6,7 +6,7 @@ describe("Node window", () => {
     });
 
     after(() => {
-        // cy.deleteAllTestProcesses({ filter: NAME });
+        cy.deleteAllTestProcesses({ filter: NAME });
     });
 
     beforeEach(() => {
