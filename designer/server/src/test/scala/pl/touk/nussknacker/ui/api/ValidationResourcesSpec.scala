@@ -206,7 +206,7 @@ class ValidationResourcesSpec
     }
   }
 
-  it should "find missing mandatory parameter errors in base components" in {
+  it should "find missing mandatory parameter errors in built-in components" in {
     val emptyExpression = Expression.spel("")
 
     val process =

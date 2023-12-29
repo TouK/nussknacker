@@ -11,12 +11,12 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
-import pl.touk.nussknacker.engine.compiledgraph
+import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -37,8 +37,8 @@ class GenericNodeTransformationValidator(
 
   def validateNode(
       transformer: GenericNodeTransformation[_],
-      parametersFromNode: List[evaluatedparam.Parameter],
-      branchParametersFromNode: List[evaluatedparam.BranchParameters],
+      parametersFromNode: List[NodeParameter],
+      branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
       componentConfig: SingleComponentConfig
   )(
@@ -53,7 +53,7 @@ class GenericNodeTransformationValidator(
 
   class NodeInstanceValidation(
       transformer: GenericNodeTransformation[_],
-      branchParametersFromNode: List[evaluatedparam.BranchParameters],
+      branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
       componentConfig: SingleComponentConfig
   )(inputContextRaw: Any)(implicit nodeId: NodeId, metaData: MetaData)
@@ -73,7 +73,7 @@ class GenericNodeTransformationValidator(
         evaluatedSoFar: List[(Parameter, BaseDefinedParameter)],
         stateForFar: Option[transformer.State],
         errors: List[ProcessCompilationError],
-        nodeParameters: List[evaluatedparam.Parameter]
+        nodeParameters: List[NodeParameter]
     ): ValidatedNel[ProcessCompilationError, TransformationResult] = {
       val transformationStep = transformer.TransformationStep(
         evaluatedSoFar
@@ -155,8 +155,8 @@ class GenericNodeTransformationValidator(
 
     private def prepareParameter(
         parameter: Parameter,
-        nodeParameters: List[evaluatedparam.Parameter]
-    ): ValidatedNel[ProcessCompilationError, (BaseDefinedParameter, Option[evaluatedparam.Parameter])] = {
+        nodeParameters: List[NodeParameter]
+    ): ValidatedNel[ProcessCompilationError, (BaseDefinedParameter, Option[NodeParameter])] = {
       val compiledParameter = compileParameter(parameter, nodeParameters)
       compiledParameter.map { case (typed, extraNodeParamOpt) =>
         val (_, definedParam) = parameterEvaluator.prepareParameter(typed, parameter)
@@ -166,9 +166,9 @@ class GenericNodeTransformationValidator(
 
     // TODO: this method is a bit duplicating ExpressionCompiler.compileObjectParameters
     // we should unify them a bit in the future
-    private def compileParameter(parameter: Parameter, nodeParameters: List[evaluatedparam.Parameter]): ValidatedNel[
+    private def compileParameter(parameter: Parameter, nodeParameters: List[NodeParameter]): ValidatedNel[
       ProcessCompilationError,
-      (compiledgraph.evaluatedparam.TypedParameter, Option[evaluatedparam.Parameter])
+      (TypedParameter, Option[NodeParameter])
     ] = {
 
       if (parameter.branchParam) {
@@ -190,7 +190,7 @@ class GenericNodeTransformationValidator(
       } else {
         val (singleParam, extraNodeParamOpt) = nodeParameters.find(_.name == parameter.name).map((_, None)).getOrElse {
           val paramToAdd =
-            evaluatedparam.Parameter(parameter.name, parameter.defaultValue.getOrElse(Expression.spel("")))
+            NodeParameter(parameter.name, parameter.defaultValue.getOrElse(Expression.spel("")))
           (paramToAdd, Some(paramToAdd))
         }
         val ctxToUse = inputContext match {
@@ -198,7 +198,7 @@ class GenericNodeTransformationValidator(
           case _                    => globalVariablesPreparer.emptyLocalVariablesValidationContext(metaData)
         }
         expressionCompiler
-          .compileParam(singleParam, ctxToUse, parameter, eager = false)
+          .compileParam(singleParam, ctxToUse, parameter)
           .map((_, extraNodeParamOpt))
           .andThen(Validations.validate(parameter, _))
       }
@@ -213,5 +213,5 @@ case class TransformationResult(
     parameters: List[Parameter],
     outputContext: ValidationContext,
     finalState: Option[Any],
-    nodeParameters: List[evaluatedparam.Parameter]
+    nodeParameters: List[NodeParameter]
 )

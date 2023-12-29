@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
-import pl.touk.nussknacker.engine.api.expression.Expression
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 
 object variable {
 
-  case class Field(name: String, expression: Expression)
+  case class Field(name: String, expression: CompiledExpression)
 
 }

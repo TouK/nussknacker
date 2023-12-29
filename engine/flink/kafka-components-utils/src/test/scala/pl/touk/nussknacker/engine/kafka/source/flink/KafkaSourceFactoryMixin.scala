@@ -39,7 +39,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   val constTimestamp: Long          = 123L
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
-  lazy val processObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies.withConfig(config)
+  lazy val modelDependencies: ProcessObjectDependencies = ProcessObjectDependencies.withConfig(config)
 
   protected def objToSerializeSerializationSchema(topic: String): serialization.KafkaSerializationSchema[Any] =
     new BaseSimpleSerializationSchema[ObjToSerialize](
@@ -97,7 +97,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       formatterFactory,
-      processObjectDependencies,
+      modelDependencies,
       new FlinkKafkaSourceImplFactory(None)
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -112,7 +112,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       formatterFactory,
-      processObjectDependencies,
+      modelDependencies,
       new FlinkKafkaSourceImplFactory(None)
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -127,7 +127,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       formatterFactory,
-      processObjectDependencies,
+      modelDependencies,
       new FlinkKafkaSourceImplFactory(None)
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -140,7 +140,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       formatterFactory,
-      processObjectDependencies,
+      modelDependencies,
       new FlinkKafkaSourceImplFactory(None)
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]

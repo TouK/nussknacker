@@ -51,7 +51,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
   class WithConvUtilConfigCreator(spelCustomConversionsProviderOpt: Option[SpelConversionsProvider])
       extends EmptyProcessConfigCreator {
 
-    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
+    override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
       ExpressionConfig(
         globalProcessVariables = Map("CONV" -> WithCategories.anyCategory(ConversionUtils)),
         globalImports = List.empty,

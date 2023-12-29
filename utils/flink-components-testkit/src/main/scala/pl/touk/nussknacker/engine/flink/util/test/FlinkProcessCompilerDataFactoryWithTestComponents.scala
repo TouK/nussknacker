@@ -51,12 +51,12 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
     ) {
 
       override protected def definitions(
-          processObjectDependencies: ProcessObjectDependencies,
+          modelDependencies: ProcessObjectDependencies,
           userCodeClassLoader: ClassLoader
       ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
-        val (definitionWithTypes, dictRegistry) = super.definitions(processObjectDependencies, userCodeClassLoader)
+        val (definitionWithTypes, dictRegistry) = super.definitions(modelDependencies, userCodeClassLoader)
         val definitions                         = definitionWithTypes.modelDefinition
-        val componentsUiConfig                  = ComponentsUiConfigParser.parse(processObjectDependencies.config)
+        val componentsUiConfig                  = ComponentsUiConfigParser.parse(modelDependencies.config)
         val testComponents =
           ComponentDefinitionWithImplementation.forList(testExtensionsHolder.components, componentsUiConfig)
 
@@ -78,19 +78,19 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
 
       override protected def adjustListeners(
           defaults: List[ProcessListener],
-          processObjectDependencies: ProcessObjectDependencies
+          modelDependencies: ProcessObjectDependencies
       ): List[ProcessListener] = defaults :+ resultsCollectingListener
 
       override protected def exceptionHandler(
           metaData: MetaData,
-          processObjectDependencies: ProcessObjectDependencies,
+          modelDependencies: ProcessObjectDependencies,
           listeners: Seq[ProcessListener],
           classLoader: ClassLoader
       ): FlinkExceptionHandler = componentUseCase match {
         case ComponentUseCase.TestRuntime => // We want to be consistent with exception handling in test mode, therefore we have disabled the default exception handler
-          new TestFlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+          new TestFlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader)
         case _ =>
-          super.exceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+          super.exceptionHandler(metaData, modelDependencies, listeners, classLoader)
       }
 
     }

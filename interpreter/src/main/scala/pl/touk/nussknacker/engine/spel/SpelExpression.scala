@@ -13,7 +13,7 @@ import org.springframework.expression.spel.{
   SpelParserConfiguration,
   standard
 }
-import pl.touk.nussknacker.engine.api
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
@@ -85,7 +85,7 @@ class SpelExpression(
     expectedReturnType: TypingResult,
     flavour: Flavour,
     evaluationContextPreparer: EvaluationContextPreparer
-) extends api.expression.Expression
+) extends CompiledExpression
     with LazyLogging {
 
   override val original: String = parsed.original
@@ -146,7 +146,7 @@ class SpelExpressionParser(
   override def parseWithoutContextValidation(
       original: String,
       expectedType: TypingResult
-  ): ValidatedNel[ExpressionParseError, api.expression.Expression] = {
+  ): ValidatedNel[ExpressionParseError, CompiledExpression] = {
     if (shouldUseNullExpression(original)) {
       Valid(NullExpression(original, flavour))
     } else {

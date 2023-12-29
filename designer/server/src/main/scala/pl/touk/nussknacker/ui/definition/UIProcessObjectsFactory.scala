@@ -65,7 +65,7 @@ object UIProcessObjectsFactory {
 
     val fragmentComponents = extractFragmentComponents(modelDataForType, fragmentsDetails)
 
-    // merging because ModelDefinition doesn't contain configs for base components
+    // merging because ModelDefinition doesn't contain configs for built-in components
     val finalComponentsConfig =
       toComponentsUiConfig(finalModelDefinition) |+| combinedComponentsConfig |+| ComponentsUiConfig(
         fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)

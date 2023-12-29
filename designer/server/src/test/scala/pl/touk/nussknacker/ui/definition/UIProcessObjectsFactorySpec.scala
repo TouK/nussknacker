@@ -101,7 +101,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
       new EmptyProcessConfigCreator {
         override def services(
-            processObjectDependencies: ProcessObjectDependencies
+            modelDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[Service]] =
           Map(
             "enricher" -> WithCategories.anyCategory(TestService),
@@ -127,7 +127,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
       new EmptyProcessConfigCreator {
         override def customStreamTransformers(
-            processObjectDependencies: ProcessObjectDependencies
+            modelDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[CustomStreamTransformer]] =
           Map(
             "someGenericNode" -> WithCategories

@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
@@ -58,21 +57,21 @@ class FlinkProcessCompilerDataFactory(
       usedNodes: UsedNodes,
       userCodeClassLoader: ClassLoader
   ): FlinkProcessCompilerData = {
-    val processObjectDependencies = ProcessObjectDependencies(modelConfig, objectNaming)
+    val modelDependencies = ProcessObjectDependencies(modelConfig, objectNaming)
 
     // TODO: this should be somewhere else?
     val timeout = modelConfig.as[FiniteDuration]("timeout")
 
     // TODO: should this be the default?
     val asyncExecutionContextPreparer = creator
-      .asyncExecutionContextPreparer(processObjectDependencies)
+      .asyncExecutionContextPreparer(modelDependencies)
       .getOrElse(
         modelConfig.as[DefaultServiceExecutionContextPreparer]("asyncExecutionConfig")
       )
-    val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(processObjectDependencies)
-    val listenersToUse   = adjustListeners(defaultListeners, processObjectDependencies)
+    val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(modelDependencies)
+    val listenersToUse   = adjustListeners(defaultListeners, modelDependencies)
 
-    val (definitionWithTypes, dictRegistry) = definitions(processObjectDependencies, userCodeClassLoader)
+    val (definitionWithTypes, dictRegistry) = definitions(modelDependencies, userCodeClassLoader)
 
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, modelConfig)
     val compilerData =
@@ -89,7 +88,7 @@ class FlinkProcessCompilerDataFactory(
     new FlinkProcessCompilerData(
       compilerData = compilerData,
       jobData = JobData(metaData, processVersion),
-      exceptionHandler = exceptionHandler(metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
+      exceptionHandler = exceptionHandler(metaData, modelDependencies, listenersToUse, userCodeClassLoader),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
       componentUseCase = componentUseCase
@@ -112,14 +111,14 @@ class FlinkProcessCompilerDataFactory(
   // TODO: We already passed extractModelDefinition function to compiler - we shouldn't transform this definition again.
   //       It should be merged
   protected def definitions(
-      processObjectDependencies: ProcessObjectDependencies,
+      modelDependencies: ProcessObjectDependencies,
       userCodeClassLoader: ClassLoader
   ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
     val modelDefinitionWithTypes = ModelDefinitionWithClasses(
       extractModelDefinition(
         userCodeClassLoader,
-        processObjectDependencies,
+        modelDependencies,
       )
     )
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(
@@ -135,16 +134,16 @@ class FlinkProcessCompilerDataFactory(
 
   protected def adjustListeners(
       defaults: List[ProcessListener],
-      processObjectDependencies: ProcessObjectDependencies
+      modelDependencies: ProcessObjectDependencies
   ): List[ProcessListener] = defaults
 
   protected def exceptionHandler(
       metaData: MetaData,
-      processObjectDependencies: ProcessObjectDependencies,
+      modelDependencies: ProcessObjectDependencies,
       listeners: Seq[ProcessListener],
       classLoader: ClassLoader
   ): FlinkExceptionHandler = {
-    new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+    new FlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader)
   }
 
 }

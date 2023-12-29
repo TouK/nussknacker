@@ -208,7 +208,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   object TestCreator extends ProcessConfigCreator {
 
     override def customStreamTransformers(
-        processObjectDependencies: ProcessObjectDependencies
+        modelDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
         "transformer1"                -> WithCategories.anyCategory(Transformer1),
@@ -231,7 +231,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         "transformedInSomeOtherCategory" -> WithCategories(Transformer1, SomeOtherCategory),
       )
 
-    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+    override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
       Map(
         "configurable1" -> WithCategories.anyCategory(
           EmptyExplicitMethodToInvoke(
@@ -242,16 +242,16 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       )
 
     override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
+        modelDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] = Map()
 
     override def sinkFactories(
-        processObjectDependencies: ProcessObjectDependencies
+        modelDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SinkFactory]] = Map()
 
-    override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
+    override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
 
-    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
+    override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig =
       ExpressionConfig(
         globalProcessVariables = Map(
           "helper"      -> WithCategories.anyCategory(SampleHelper),

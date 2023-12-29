@@ -38,11 +38,11 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
   import pl.touk.nussknacker.engine.util.Implicits._
 
   override protected def definitions(
-      processObjectDependencies: ProcessObjectDependencies,
+      modelDependencies: ProcessObjectDependencies,
       userCodeClassLoader: ClassLoader
   ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val (originalDefinitionWithTypes, originalDictRegistry) =
-      super.definitions(processObjectDependencies, userCodeClassLoader)
+      super.definitions(modelDependencies, userCodeClassLoader)
     val originalDefinition = originalDefinitionWithTypes.modelDefinition
 
     val collectedSources = process.allStartNodes.map(_.head.data).collect { case source: Source =>
@@ -64,7 +64,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       }
 
     // TODO: This is an ugly hack. We shouldn't create ModelData again for this purpose. It is a top-level service
-    val fragmentSourceFactory = new StubbedFragmentInputDefinitionSource(
+    val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
       LocalModelData(
         modelConfig,
         components = List.empty,
@@ -72,7 +72,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       )
     )
     def sourceDefForFragment(frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
-      fragmentSourceFactory.createSourceDefinition(frag)
+      fragmentSourceDefinitionPreparer.createSourceDefinition(frag)
     }
 
     val stubbedSourceForFragment: Seq[(ComponentInfo, ComponentDefinitionWithImplementation)] =

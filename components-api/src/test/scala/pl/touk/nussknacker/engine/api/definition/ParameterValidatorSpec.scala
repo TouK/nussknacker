@@ -7,7 +7,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.expression.{Expression => ApiExpression}
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 
 import scala.jdk.CollectionConverters._
 
@@ -254,7 +254,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
 
 }
 
-private class TestSpelExpression(expression: String) extends ApiExpression {
+private class TestSpelExpression(expression: String) extends CompiledExpression {
 
   override def language: String = "spel"
 

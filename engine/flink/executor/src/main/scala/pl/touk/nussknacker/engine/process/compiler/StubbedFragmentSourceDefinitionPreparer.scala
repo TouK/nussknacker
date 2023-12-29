@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 
 // Needed to build source based on FragmentInputDefinition. It allows fragment to be treated as scenario (when it comes to testing)
 // This source adds input parameters to context and allows testing with ad-hoc testing.
-class StubbedFragmentInputDefinitionSource(modelData: ModelData) {
+class StubbedFragmentSourceDefinitionPreparer(modelData: ModelData) {
 
   private val fragmentDefinitionExtractor = FragmentWithoutValidatorsDefinitionExtractor(modelData)
   private val fragmentReturnType          = Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))

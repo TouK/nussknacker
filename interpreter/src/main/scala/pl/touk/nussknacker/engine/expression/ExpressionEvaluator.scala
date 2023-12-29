@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.expression
 
 import java.util.Optional
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.expression.Expression
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, ValueWithContext}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.util.control.NonFatal
@@ -16,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference
 /* We have 3 different places where expressions can be evaluated:
   - Interpreter - evaluation of service parameters and variable definitions
   - CompilerLazyInterpreter - evaluation of parameters of CustomStreamTransformers
-  - ProcessObjectFactory - evaluation of exceptionHandler, source and sink parameters
+  - ComponentExecutorFactory - evaluation of eager parameters for all components that are Executor's factories and for ExceptionHandler
   They are evaluated with different contexts - e.g. in interpreter we can use process variables, but in source/sink we can use only global ones.
  */
 object ExpressionEvaluator {
@@ -50,7 +51,7 @@ class ExpressionEvaluator(
   private val optimizedGlobals: AtomicReference[Option[Map[String, Any]]] = new AtomicReference(None)
 
   def evaluateParameters(
-      params: List[pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter],
+      params: List[CompiledParameter],
       ctx: Context
   )(implicit nodeId: NodeId, metaData: MetaData): (Context, Map[String, AnyRef]) = {
     val (newCtx, evaluatedParams) = params.foldLeft((ctx, List.empty[(String, AnyRef)])) {
@@ -64,7 +65,7 @@ class ExpressionEvaluator(
   }
 
   def evaluateParameter(
-      param: pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter,
+      param: CompiledParameter,
       ctx: Context
   )(implicit nodeId: NodeId, metaData: MetaData): ValueWithContext[AnyRef] = {
     try {
@@ -82,7 +83,7 @@ class ExpressionEvaluator(
     }
   }
 
-  def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)(
+  def evaluate[R](expr: CompiledExpression, expressionId: String, nodeId: String, ctx: Context)(
       implicit metaData: MetaData
   ): ValueWithContext[R] = {
     val globalVariables = if (cacheGlobalVariables) {
