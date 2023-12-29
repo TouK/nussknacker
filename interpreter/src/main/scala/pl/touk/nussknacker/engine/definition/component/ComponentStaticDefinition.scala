@@ -16,7 +16,7 @@ final case class ComponentStaticDefinition(
   def withComponentConfig(componentConfig: SingleComponentConfig): ComponentStaticDefinition =
     copy(componentConfig = componentConfig)
 
-  val hasNoReturn: Boolean = returnType.isEmpty
+  val hasReturn: Boolean = returnType.isDefined
 
   override def componentType: ComponentType = componentTypeSpecificData.componentType
 

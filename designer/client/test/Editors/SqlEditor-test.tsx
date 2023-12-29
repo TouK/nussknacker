@@ -15,12 +15,12 @@ const store = mockStore({
     settings: {
         processDefinitionData: {
             componentGroups: [],
-            processDefinition: {},
+            components: {},
+            classes: [],
             componentsConfig: {},
             additionalPropertiesConfig: {},
             edgesForNodes: [],
             customActions: [],
-            defaultAsyncInterpretation: true,
         },
     },
     graphReducer: { history: { present: [] }, processToDisplay: {} },

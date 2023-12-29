@@ -57,9 +57,8 @@ class DefinitionResourcesSpec
       status shouldBe StatusCodes.OK
 
       val noneReturnType = responseAs[Json].hcursor
-        .downField("processDefinition")
-        .downField("customStreamTransformers")
-        .downField("noneReturnTypeTransformer")
+        .downField("components")
+        .downField("custom-noneReturnTypeTransformer")
 
       noneReturnType.downField("returnType").focus shouldBe Some(Json.Null)
     }
@@ -70,10 +69,8 @@ class DefinitionResourcesSpec
       status shouldBe StatusCodes.OK
 
       val typesInformation = responseAs[Json].hcursor
-        .downField("processDefinition")
-        .downField("typesInformation")
-        .downAt(_.hcursor.downField("clazzName").get[String]("display").rightValue == "ReturningTestCaseClass")
-        .downField("clazzName")
+        .downField("classes")
+        .downAt(_.hcursor.get[String]("display").rightValue == "ReturningTestCaseClass")
         .downField("display")
 
       typesInformation.focus.value shouldBe Json.fromString("ReturningTestCaseClass")
@@ -122,9 +119,8 @@ class DefinitionResourcesSpec
       val response = responseAs[Json].hcursor
 
       val editor = response
-        .downField("processDefinition")
-        .downField("fragmentInputs")
-        .downField("sub1")
+        .downField("components")
+        .downField("fragment-sub1")
         .downField("parameters")
         .downAt(_.hcursor.get[String]("name").rightValue == "param1")
         .downField("editor")
@@ -153,7 +149,8 @@ class DefinitionResourcesSpec
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK
 
-      val defaultExpression: Json = responseAs[Json].hcursor
+      val responseJson = responseAs[Json]
+      val defaultExpression = responseJson.hcursor
         .downField("componentGroups")
         .downAt(_.hcursor.get[String]("name").rightValue == "enrichers")
         .downField("components")
@@ -250,6 +247,30 @@ class DefinitionResourcesSpec
         "'barValueFromProviderCode'",
         "'fooValueFromConfig' + '-' + 'barValueFromProviderCode'"
       )
+    }
+  }
+
+  it("return edgesForNodes") {
+    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      val edgesForNodes = responseJson.hcursor
+        .downField("edgesForNodes")
+        .focus
+        .value
+        .asArray
+        .value
+
+      edgesForNodes.map(_.asObject.get("componentId").value.asString.value) should contain theSameElementsAs
+        Set(
+          "builtin-split",
+          "builtin-choice",
+          "builtin-filter",
+          "custom-unionWithEditors",
+          "custom-union",
+          "custom-enrichWithAdditionalData"
+        )
     }
   }
 
