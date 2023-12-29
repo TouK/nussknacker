@@ -30,7 +30,7 @@ sealed trait GenericNodeTransformation[T] {
   // State is arbitrary data that can be passed between steps of NodeTransformationDefinition
   type State
 
-  // TODO: what if we cannot determine parameters/context? With some "fatal validation error"?
+  // TODO: Rename to ContextTransformationDefinition
   type NodeTransformationDefinition = PartialFunction[TransformationStep, TransformationStepResult]
 
   def contextTransformation(context: InputContext, dependencies: List[NodeDependencyValue])(

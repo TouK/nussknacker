@@ -77,7 +77,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
   // used only for services and fragments - in places where component is an Executor instead of a factory
   // that creates Executor
-  def compileExecutorComponentBasedNodeParameters(
+  def compileExecutorComponentNodeParameters(
       parameterDefinitions: List[Parameter],
       nodeParameters: List[NodeParameter],
       ctx: ValidationContext

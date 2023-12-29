@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 
-class BuiltInNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
+class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
 
   def compileVariable(variable: Variable, ctx: ValidationContext)(
       implicit nodeId: NodeId
@@ -116,7 +116,7 @@ class BuiltInNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler
 
     val (compiledRecord, indexedFields) = {
       val compiledFields = fields.zipWithIndex.map { case (field, index) =>
-        val compiledField = objectParametersExpressionCompiler
+        val compiledField = expressionCompiler
           .compile(field.expression, Some(node.recordValueFieldName(index)), ctx, Unknown)
           .map(result =>
             CompiledIndexedRecordField(compiledgraph.variable.Field(field.name, result.expression), index, result)
@@ -162,7 +162,7 @@ class BuiltInNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler
   )(
       implicit nodeId: NodeId
   ): (ValidatedNel[ProcessCompilationError, TypedExpression], NodeCompilationResult[CompiledExpression]) = {
-    val validTypedExpression = objectParametersExpressionCompiler
+    val validTypedExpression = expressionCompiler
       .compile(expr, Some(fieldName), ctx, expectedType)
 
     val typingResult = typedExprToTypingResult(validTypedExpression.toOption)

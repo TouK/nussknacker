@@ -1,18 +1,15 @@
 package pl.touk.nussknacker.engine.expression
 
-import java.util.Optional
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
-import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, ValueWithContext}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-import scala.util.control.NonFatal
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-
+import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
+import scala.util.control.NonFatal
 
 /* We have 3 different places where expressions can be evaluated:
   - Interpreter - evaluation of service parameters and variable definitions
@@ -33,9 +30,6 @@ object ExpressionEvaluator {
   // Should *NOT* be used for evaluating expressions on events in *production*
   def unOptimizedEvaluator(globalVariablesPreparer: GlobalVariablesPreparer) =
     new ExpressionEvaluator(globalVariablesPreparer, Nil, cacheGlobalVariables = false)
-
-  def unOptimizedEvaluator(modelData: ModelData): ExpressionEvaluator =
-    unOptimizedEvaluator(GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig))
 
 }
 

@@ -99,9 +99,10 @@ class NodeCompiler(
 
   private val expressionEvaluator =
     ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
-  private val factory = new ComponentExecutorFactory(expressionEvaluator)
-  private val nodeValidator =
-    new GenericNodeTransformationValidator(expressionCompiler, expressionConfig)
+  private val parametersEvaluator = new ParameterEvaluator(expressionEvaluator)
+  private val factory             = new ComponentExecutorFactory(parametersEvaluator)
+  private val dynamicNodeValidator =
+    new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator)
   private val builtInNodeCompiler = new BuiltInNodeCompiler(expressionCompiler)
 
   def compileSource(
@@ -235,7 +236,7 @@ class NodeCompiler(
         case (acc, paramDef) => acc.andThen(_.withVariable(OutputVar.variable(paramDef.name), paramDef.typ))
       }
     val validParams =
-      expressionCompiler.compileExecutorComponentBasedNodeParameters(validParamDefs.value, ref.parameters, ctx)
+      expressionCompiler.compileExecutorComponentNodeParameters(validParamDefs.value, ref.parameters, ctx)
     val validParamsCombinedErrors = validParams.combine(
       NonEmptyList
         .fromList(validParamDefs.written)
@@ -591,11 +592,23 @@ class NodeCompiler(
   )(implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
     (dynamicDefinition.implementation, eitherSingleOrJoin) match {
       case (single: SingleInputGenericNodeTransformation[_], Left(singleCtx)) =>
-        nodeValidator.validateNode(single, parameters, branchParameters, outputVar, dynamicDefinition.componentConfig)(
+        dynamicNodeValidator.validateNode(
+          single,
+          parameters,
+          branchParameters,
+          outputVar,
+          dynamicDefinition.componentConfig
+        )(
           singleCtx
         )
       case (join: JoinGenericNodeTransformation[_], Right(joinCtx)) =>
-        nodeValidator.validateNode(join, parameters, branchParameters, outputVar, dynamicDefinition.componentConfig)(
+        dynamicNodeValidator.validateNode(
+          join,
+          parameters,
+          branchParameters,
+          outputVar,
+          dynamicDefinition.componentConfig
+        )(
           joinCtx
         )
       case (_: SingleInputGenericNodeTransformation[_], Right(_)) =>
@@ -621,7 +634,7 @@ class NodeCompiler(
         ctx: ValidationContext
     )(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
       val computedParameters =
-        expressionCompiler.compileExecutorComponentBasedNodeParameters(objWithMethod.parameters, n.parameters, ctx)
+        expressionCompiler.compileExecutorComponentNodeParameters(objWithMethod.parameters, n.parameters, ctx)
       val outputCtx = outputVar match {
         case Some(output) =>
           objWithMethod.returnType

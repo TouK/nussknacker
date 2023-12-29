@@ -11,8 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData, VariableConstants}
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
@@ -32,7 +31,6 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.charset.StandardCharsets
-import java.time.{LocalDateTime, ZoneOffset}
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
@@ -369,13 +367,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   }
 
   private def validate(params: (String, Expression)*): TransformationResult = {
-
     val modelData = LocalModelData(ConfigFactory.empty(), List.empty)
-
-    val validator = new GenericNodeTransformationValidator(
-      ExpressionCompiler.withoutOptimization(modelData),
-      modelData.modelDefinition.expressionConfig
-    )
+    val validator = DynamicNodeValidator(modelData)
 
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
