@@ -250,6 +250,30 @@ class DefinitionResourcesSpec
     }
   }
 
+  it("return edgesForNodes") {
+    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      val edgesForNodes = responseJson.hcursor
+        .downField("edgesForNodes")
+        .focus
+        .value
+        .asArray
+        .value
+
+      edgesForNodes.map(_.asObject.get("componentId").value.asString.value) should contain theSameElementsAs
+        Set(
+          "builtin-split",
+          "builtin-choice",
+          "builtin-filter",
+          "custom-unionWithEditors",
+          "custom-union",
+          "custom-enrichWithAdditionalData"
+        )
+    }
+  }
+
   private def getProcessDefinitionData(processingType: String): RouteTestResult = {
     Get(s"/processDefinitionData/$processingType?isFragment=false") ~> withPermissions(
       definitionResources,

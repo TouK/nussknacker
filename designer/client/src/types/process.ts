@@ -73,13 +73,8 @@ export interface ProcessDefinitionData {
 }
 
 export type EdgesForNode = {
-    nodeId: NodeTypeId;
+    componentId: string;
     edges: EdgeType[];
     canChooseNodes: boolean;
     isForInputDefinition: boolean;
-};
-
-export type NodeTypeId = {
-    type: string;
-    id: string;
 };

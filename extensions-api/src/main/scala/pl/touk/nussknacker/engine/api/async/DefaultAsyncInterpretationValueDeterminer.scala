@@ -10,6 +10,6 @@ object DefaultAsyncInterpretationValueDeterminer {
   def determine(asyncExecutionConfig: AsyncExecutionContextPreparer): DefaultAsyncInterpretationValue =
     asyncExecutionConfig.defaultUseAsyncInterpretation
       .map(DefaultAsyncInterpretationValue)
-      .getOrElse(DefaultValue.value)
+      .getOrElse(DefaultValue)
 
 }

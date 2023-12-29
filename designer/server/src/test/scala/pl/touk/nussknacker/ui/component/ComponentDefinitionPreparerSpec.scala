@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ComponentDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
+import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
@@ -63,21 +63,21 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     )
 
     edgeTypes.toSet shouldBe Set(
-      NodeEdges(NodeTypeId("Split", BuiltInComponentInfo.Split.name), List(), true, false),
+      NodeEdges(BuiltInComponentInfo.Split, List(), true, false),
       NodeEdges(
-        NodeTypeId("Switch", BuiltInComponentInfo.Choice.name),
+        BuiltInComponentInfo.Choice,
         List(NextSwitch(Expression.spel("true")), SwitchDefault),
         true,
         false
       ),
       NodeEdges(
-        NodeTypeId("Filter", BuiltInComponentInfo.Filter.name),
+        BuiltInComponentInfo.Filter,
         List(FilterTrue, FilterFalse),
         false,
         false
       ),
       NodeEdges(
-        NodeTypeId("FragmentInput", "sub1"),
+        ComponentInfo(ComponentType.Fragment, "sub1"),
         List(FragmentOutput("out1"), FragmentOutput("out2")),
         false,
         false

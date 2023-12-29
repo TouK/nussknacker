@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
@@ -74,15 +74,18 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
-  // TODO: replace with ComponentInfo
-  @JsonCodec final case class NodeTypeId(`type`: String, id: String)
-
-  @JsonCodec final case class NodeEdges(
-      nodeId: NodeTypeId,
+  final case class NodeEdges(
+      componentId: ComponentInfo,
       edges: List[EdgeType],
       canChooseNodes: Boolean,
       isForInputDefinition: Boolean
   )
+
+  object NodeEdges {
+    implicit val componentIdEncoder: Encoder[ComponentInfo] = Encoder.encodeString.contramap(_.toString)
+
+    implicit val encoder: Encoder[NodeEdges] = deriveConfiguredEncoder
+  }
 
   object ComponentNodeTemplate {
 

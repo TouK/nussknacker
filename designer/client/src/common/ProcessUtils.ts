@@ -180,7 +180,7 @@ class ProcessUtils {
     };
 
     findComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition => {
-        const foundDefinition = components?.[this.findComponentDefinitionId(node)];
+        const foundDefinition = components?.[this.findComponentId(node)];
         const emptyDefinition = {
             parameters: null,
             returnType: null,
@@ -188,7 +188,7 @@ class ProcessUtils {
         return foundDefinition || emptyDefinition;
     };
 
-    private findComponentDefinitionId = (node?: NodeType): string | null => {
+    findComponentId = (node?: NodeType): string | null => {
         const componentType = this.findComponentType(node);
         const componentName = this.findComponentName(node);
         return (componentType && componentName && componentType + "-" + componentName) || null;
@@ -223,7 +223,7 @@ class ProcessUtils {
     };
 
     // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
-    findComponentName = (node: NodeType): string | null => {
+    private findComponentName = (node: NodeType): string | null => {
         switch (node?.type) {
             case "Source":
             case "Sink": {

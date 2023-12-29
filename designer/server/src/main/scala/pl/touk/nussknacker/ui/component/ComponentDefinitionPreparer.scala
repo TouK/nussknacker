@@ -289,6 +289,7 @@ object ComponentDefinitionPreparer {
   def prepareEdgeTypes(
       modelDefinition: ModelDefinition[ComponentStaticDefinition],
       isFragment: Boolean,
+      // TODO: enrich modelDefinition with fragments instead of passing them separately
       fragmentsDetails: Set[FragmentDetails]
   ): List[NodeEdges] = {
 
@@ -301,7 +302,7 @@ object ComponentDefinitionPreparer {
           }
           // TODO: enable choice of output type
           NodeEdges(
-            NodeTypeId("FragmentInput", process.metaData.id),
+            ComponentInfo(ComponentType.Fragment, process.metaData.id),
             outputs.map(EdgeType.FragmentOutput),
             canChooseNodes = false,
             isForInputDefinition = false
@@ -312,24 +313,24 @@ object ComponentDefinitionPreparer {
       case (info, componentDefinition)
           if componentDefinition.componentType == ComponentType.CustomComponent &&
             componentDefinition.componentTypeSpecificData.asCustomComponentData.manyInputs =>
-        NodeEdges(NodeTypeId("Join", info.name), List(), canChooseNodes = true, isForInputDefinition = true)
+        NodeEdges(info, List(), canChooseNodes = true, isForInputDefinition = true)
     }
 
     List(
       NodeEdges(
-        NodeTypeId("Split", BuiltInComponentInfo.Split.name),
+        BuiltInComponentInfo.Split,
         List(),
         canChooseNodes = true,
         isForInputDefinition = false
       ),
       NodeEdges(
-        NodeTypeId("Switch", BuiltInComponentInfo.Choice.name),
+        BuiltInComponentInfo.Choice,
         List(EdgeType.NextSwitch(Expression.spel("true")), EdgeType.SwitchDefault),
         canChooseNodes = true,
         isForInputDefinition = false
       ),
       NodeEdges(
-        NodeTypeId("Filter", BuiltInComponentInfo.Filter.name),
+        BuiltInComponentInfo.Filter,
         List(FilterTrue, FilterFalse),
         canChooseNodes = false,
         isForInputDefinition = false
