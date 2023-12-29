@@ -70,12 +70,12 @@ class NodeUtils {
         };
     };
 
-    isAvailable = (node: NodeType, processDefinitionData, category): boolean => {
-        const availableIdsInCategory = ProcessDefinitionUtils.getFlatCategoryComponents(processDefinitionData, category).map((component) =>
-            ProcessUtils.findNodeDefinitionIdOrType(component.node),
+    isAvailable = (node: NodeType, processDefinitionData): boolean => {
+        const availableIdsInComponentGroups = ProcessDefinitionUtils.getFlatComponents(processDefinitionData).map((component) =>
+            ProcessUtils.findComponentId(component.node),
         );
-        const nodeDefinitionId = ProcessUtils.findNodeDefinitionIdOrType(node);
-        return availableIdsInCategory.includes(nodeDefinitionId);
+        const nodeComponentId = ProcessUtils.findComponentId(node);
+        return availableIdsInComponentGroups.includes(nodeComponentId);
     };
 
     getOutputEdges = (nodeId: NodeId, edges: Edge[]): Edge[] => edges.filter((e) => e.from === nodeId);

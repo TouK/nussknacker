@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
-import { flatten, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, transform } from "lodash";
+import { flatten, isEmpty, isEqual, map, omit, pickBy, transform } from "lodash";
 import {
-    NodeId,
     ComponentDefinition,
+    NodeId,
     NodeResults,
     NodeType,
     Process,
@@ -266,9 +266,6 @@ class ProcessUtils {
             }
         }
     };
-
-    // TODO: why is it needed? We should everywhere use just componentDefinitionId
-    findNodeDefinitionIdOrType = (node: NodeType) => this.findComponentName(node) || node.type || null;
 
     findNodeConfigName = (node: NodeType): string => {
         // First we try to find id of node (config for specific custom node by id).
