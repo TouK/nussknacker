@@ -1,23 +1,21 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import java.util.ServiceLoader
-import java.util.regex.Pattern
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.parser._
+import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import io.circe.parser._
-
-import scala.util.Try
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.ValidationExpressionParameterValidator.variableName
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.expression.{Expression => ApiExpression}
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
 
+import java.util.ServiceLoader
+import java.util.regex.Pattern
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 

@@ -5,13 +5,13 @@ import pl.touk.nussknacker.engine.api.definition.{
   DateParameterEditor,
   DateTimeParameterEditor,
   DualParameterEditor,
-  FixedExpressionValue,
   FixedValuesParameterEditor,
   ParameterEditor,
   StringParameterEditor,
   TimeParameterEditor
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 
 object implicits {
 

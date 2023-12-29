@@ -39,6 +39,7 @@ import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, T
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
+import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}

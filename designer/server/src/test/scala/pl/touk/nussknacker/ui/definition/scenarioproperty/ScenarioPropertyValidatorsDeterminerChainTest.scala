@@ -3,12 +3,12 @@ package pl.touk.nussknacker.ui.definition.scenarioproperty
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition.{
-  FixedExpressionValue,
   FixedValuesParameterEditor,
   FixedValuesValidator,
   MandatoryParameterValidator
 }
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 
 class ScenarioPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Matchers {
 

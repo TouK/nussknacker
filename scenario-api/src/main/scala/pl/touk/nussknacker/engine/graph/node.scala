@@ -8,9 +8,9 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FixedExpressionValue, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -333,8 +333,6 @@ object node {
         valueEditor: Option[ValueInputWithFixedValues],
         valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
     )
-
-    @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
     object FragmentParameter {
 

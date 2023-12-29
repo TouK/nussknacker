@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FixedExpressionValue
+import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 import pl.touk.nussknacker.ui.additionalconfig.{
   AdditionalUIConfig,
   AdditionalUIConfigProvider,

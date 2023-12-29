@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   OneParamLazyParameterFunction
 }
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /*

@@ -10,12 +10,8 @@ import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ValidationExp
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.expression.NullExpression
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
-  FixedExpressionValue,
-  FragmentClazzRef,
-  FragmentParameter
-}
+import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{
   FixedValuesListFieldName,
   InitialValueFieldName,
@@ -35,7 +31,7 @@ object FragmentParameterValidator {
       .andThen(_ =>
         ValueEditorValidator.validateAndGetEditor(
           valueEditor,
-          initialValue.map(v => FixedExpressionValue(v.expression, v.label)),
+          initialValue,
           paramName,
           nodeIds
         )
