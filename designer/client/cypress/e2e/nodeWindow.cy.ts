@@ -6,7 +6,7 @@ describe("Node window", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: NAME });
+        // cy.deleteAllTestProcesses({ filter: NAME });
     });
 
     beforeEach(() => {
@@ -103,7 +103,7 @@ describe("Node window", () => {
                 .should("be.visible")
                 .drag("#nk-graph-main", {
                     target: {
-                        x: 950,
+                        x: 850,
                         y: 600,
                     },
                     force: true,
