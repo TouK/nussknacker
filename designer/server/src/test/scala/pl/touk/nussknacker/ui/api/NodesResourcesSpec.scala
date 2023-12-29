@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
@@ -88,7 +88,7 @@ class NodesResourcesSpec
   test("it should return additional info for process") {
     saveProcess(testProcess) {
       val data: NodeData =
-        Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression.spel("'a'")))), "out", None)
+        Enricher("1", ServiceRef("paramService", List(NodeParameter("id", Expression.spel("'a'")))), "out", None)
       Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(
         nodeRoute,
         testPermissionRead
@@ -149,8 +149,8 @@ class NodesResourcesSpec
         SinkRef(
           "kafka-string",
           List(
-            Parameter(SinkValueParamName, Expression.spel("notvalidspelexpression")),
-            Parameter(TopicParamName, Expression.spel("'test-topic'"))
+            NodeParameter(SinkValueParamName, Expression.spel("notvalidspelexpression")),
+            NodeParameter(TopicParamName, Expression.spel("'test-topic'"))
           )
         ),
         None,

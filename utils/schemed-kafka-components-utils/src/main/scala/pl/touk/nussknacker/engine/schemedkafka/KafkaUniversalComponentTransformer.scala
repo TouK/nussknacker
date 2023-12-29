@@ -43,7 +43,7 @@ trait KafkaUniversalComponentTransformer[T]
 
   def schemaRegistryClientFactory: SchemaRegistryClientFactory
 
-  def processObjectDependencies: ProcessObjectDependencies
+  def modelDependencies: ProcessObjectDependencies
 
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
@@ -58,7 +58,7 @@ trait KafkaUniversalComponentTransformer[T]
     )
 
   protected def prepareKafkaConfig: KafkaConfig = {
-    KafkaConfig.parseConfig(processObjectDependencies.config)
+    KafkaConfig.parseConfig(modelDependencies.config)
   }
 
   protected def getTopicParam(implicit nodeId: NodeId): WithError[Parameter] = {
@@ -82,8 +82,8 @@ trait KafkaUniversalComponentTransformer[T]
         FixedValuesParameterEditor(
           nullTopicOption +: topics
             .flatMap(topic =>
-              processObjectDependencies.objectNaming
-                .decodeName(topic, processObjectDependencies.config, KafkaComponentsUtils.KafkaTopicUsageKey)
+              modelDependencies.objectNaming
+                .decodeName(topic, modelDependencies.config, KafkaComponentsUtils.KafkaTopicUsageKey)
             )
             .sorted
             .map(v => FixedExpressionValue(s"'$v'", v))
@@ -118,7 +118,7 @@ trait KafkaUniversalComponentTransformer[T]
   )
 
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
-    KafkaComponentsUtils.prepareKafkaTopic(topic, processObjectDependencies)
+    KafkaComponentsUtils.prepareKafkaTopic(topic, modelDependencies)
 
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)

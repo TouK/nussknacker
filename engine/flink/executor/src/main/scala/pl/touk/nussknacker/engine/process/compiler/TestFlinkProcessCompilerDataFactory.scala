@@ -41,7 +41,7 @@ object TestFlinkProcessCompilerDataFactory {
 
       override protected def adjustListeners(
           defaults: List[ProcessListener],
-          processObjectDependencies: ProcessObjectDependencies
+          modelDependencies: ProcessObjectDependencies
       ): List[ProcessListener] = {
         collectingListener :: defaults
       }
@@ -81,11 +81,11 @@ object TestFlinkProcessCompilerDataFactory {
 
       override protected def exceptionHandler(
           metaData: MetaData,
-          processObjectDependencies: ProcessObjectDependencies,
+          modelDependencies: ProcessObjectDependencies,
           listeners: Seq[ProcessListener],
           classLoader: ClassLoader
       ): FlinkExceptionHandler = {
-        new TestFlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+        new TestFlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader)
       }
 
     }
@@ -139,10 +139,10 @@ class StubbedSourcePreparer(
 
 class TestFlinkExceptionHandler(
     metaData: MetaData,
-    processObjectDependencies: ProcessObjectDependencies,
+    modelDependencies: ProcessObjectDependencies,
     listeners: Seq[ProcessListener],
     classLoader: ClassLoader
-) extends FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
+) extends FlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader) {
   override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
 
   override val consumer: FlinkEspExceptionConsumer = _ => {}

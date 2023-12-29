@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
   TransmissionNames
 }
 import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, ServiceInvoker}
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
@@ -21,7 +20,7 @@ object service {
   case class ServiceRef(
       id: String,
       invoker: ServiceInvoker,
-      parameters: List[Parameter],
+      parameters: List[CompiledParameter],
       resultCollector: ResultCollector,
   ) {
 

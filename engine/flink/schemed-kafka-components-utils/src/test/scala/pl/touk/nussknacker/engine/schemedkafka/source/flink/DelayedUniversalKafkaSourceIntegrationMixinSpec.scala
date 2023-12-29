@@ -90,14 +90,14 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
 class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConfigCreator {
 
   override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
+      modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = {
     Map(
       "kafka-universal-delayed" -> defaultCategory(
         new DelayedUniversalKafkaSourceFactory[String, GenericRecord](
           schemaRegistryClientFactory,
           UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
-          processObjectDependencies,
+          modelDependencies,
           new FlinkKafkaDelayedSourceImplFactory(None, UniversalTimestampFieldAssigner(_))
         )
       )
@@ -105,20 +105,20 @@ class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConf
   }
 
   override def customStreamTransformers(
-      processObjectDependencies: ProcessObjectDependencies
+      modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] =
     Map.empty
 
   override def sinkFactories(
-      processObjectDependencies: ProcessObjectDependencies
+      modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] = {
     Map(
       "sinkForLongs" -> defaultCategory(SinkForLongs.toSinkFactory)
     )
   }
 
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
-    super.expressionConfig(processObjectDependencies).copy(additionalClasses = List(classOf[Instant]))
+  override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
+    super.expressionConfig(modelDependencies).copy(additionalClasses = List(classOf[Instant]))
   }
 
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =

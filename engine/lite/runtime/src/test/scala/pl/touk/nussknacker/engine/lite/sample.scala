@@ -134,7 +134,7 @@ object sample {
 
   object WithUtilConfigCreator extends EmptyProcessConfigCreator {
 
-    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
+    override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig =
       ExpressionConfig(
         Map("UTIL" -> WithCategories.anyCategory(new UtilHelpers)),
         List.empty
