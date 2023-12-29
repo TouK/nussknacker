@@ -18,7 +18,6 @@ export const getProcessName = getProcessId;
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);
 export const getProcessVersionId = createSelector(getFetchedProcessDetails, (d) => d?.processVersionId);
 export const getProcessCategory = createSelector(getFetchedProcessDetails, (d) => d?.processCategory || "");
-
 export const isLatestProcessVersion = createSelector(getFetchedProcessDetails, (d) => d?.isLatestVersion);
 export const isFragment = createSelector(getProcessToDisplay, (p) => p.properties?.isFragment);
 export const isArchived = createSelector(getFetchedProcessDetails, (p) => p?.isArchived);

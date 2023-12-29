@@ -262,14 +262,13 @@ class DefinitionResourcesSpec
         .asArray
         .value
 
-      edgesForNodes.map(_.asObject.get("componentId").value.asString.value) should contain theSameElementsAs
-        Set(
-          "builtin-split",
+      edgesForNodes.map(_.asObject.get("componentId").value.asString.value).sorted should contain theSameElementsAs
+        List(
           "builtin-choice",
           "builtin-filter",
+          "builtin-split",
+          "custom-enrichWithAdditionalData",
           "custom-unionWithEditors",
-          "custom-union",
-          "custom-enrichWithAdditionalData"
         )
     }
   }
