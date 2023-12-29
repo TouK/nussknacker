@@ -12,11 +12,13 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   DualParameterEditor,
+  FixedExpressionValue,
   Parameter,
   StringParameterEditor,
   ValidationExpressionParameterValidator
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -34,13 +36,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParamet
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
-  FixedExpressionValue,
-  FragmentClazzRef,
-  FragmentParameter,
-  ParameterValueCompileTimeValidation,
-  ValueInputWithFixedValuesProvided
-}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -731,7 +727,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               hintText = None,
               valueEditor = Some(
                 ValueInputWithFixedValuesProvided(
-                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("1", "someLabel")),
+                  fixedValuesList = List(FixedExpressionValue("1", "someLabel")),
                   allowOtherValue = false
                 )
               ),
@@ -770,7 +766,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               hintText = None,
               valueEditor = Some(
                 ValueInputWithFixedValuesProvided(
-                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                  fixedValuesList = List(FixedExpressionValue("'someValue'", "someValue")),
                   allowOtherValue = false
                 )
               ),

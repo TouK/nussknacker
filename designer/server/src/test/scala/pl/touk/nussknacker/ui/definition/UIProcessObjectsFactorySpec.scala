@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
@@ -177,8 +176,11 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects = prepareUIProcessObjects(model, Set.empty)
 
-    processObjects.processDefinition.services("enricher").parameters.map(p => p.name -> p.defaultValue) should contain
-    "paramDualEditor" -> Expression.spel("'default-from-additional-ui-config-provider'")
+    processObjects.componentsConfig("enricher").params.get.map { case (name, config) =>
+      name -> config.defaultValue
+    } should contain(
+      "paramStringEditor" -> Some("'default-from-additional-ui-config-provider'")
+    )
   }
 
   test("should override component's component groups with additionally provided config") {

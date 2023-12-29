@@ -125,7 +125,7 @@ class BaseFlowTest
               editor = None,
               validators = None,
               label = None,
-              hintText = None
+              hintText = Some("hint-text-from-additional-ui-config-provider")
             ),
           )
         ),

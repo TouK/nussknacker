@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,7 +33,7 @@ object DynamicMultipleParamsService extends EagerService with SingleInputGeneric
         Some(
           FixedValuesParameterEditor(
             List(
-              FixedExpressionValue("", ""),
+              nullFixedValue,
               FixedExpressionValue("'fooValueFromConfig'", "From Config"),
               FixedExpressionValue("'other'", "Other")
             )

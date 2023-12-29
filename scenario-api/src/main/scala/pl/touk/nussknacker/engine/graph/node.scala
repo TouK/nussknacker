@@ -6,9 +6,10 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
@@ -311,15 +312,6 @@ object node {
   object FragmentInputDefinition {
 
     @ConfiguredJsonCodec
-    sealed trait ValueInputWithFixedValues {
-      def allowOtherValue: Boolean
-      def fixedValuesList: List[FixedExpressionValue]
-    }
-
-    case class ValueInputWithFixedValuesProvided(fixedValuesList: List[FixedExpressionValue], allowOtherValue: Boolean)
-        extends ValueInputWithFixedValues
-
-    @ConfiguredJsonCodec
     case class FragmentParameter(
         name: String,
         typ: FragmentClazzRef,
@@ -329,8 +321,6 @@ object node {
         valueEditor: Option[ValueInputWithFixedValues],
         valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
     )
-
-    @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
     object FragmentParameter {
 
@@ -353,11 +343,6 @@ object node {
       def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
 
     }
-
-    @JsonCodec case class ParameterValueCompileTimeValidation(
-        validationExpression: Expression,
-        validationFailedMessage: Option[String]
-    )
 
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 
