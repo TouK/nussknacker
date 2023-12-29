@@ -22,22 +22,13 @@ package object definition {
   @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
       componentGroups: List[ComponentGroup],
       // TODO: extract definitions on main level
-      processDefinition: UIModelDefinition,
+      components: Map[ComponentInfo, UIComponentDefinition],
+      classes: List[TypingResult],
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
       customActions: List[UICustomAction],
       defaultAsyncInterpretation: Boolean
-  )
-
-  // TODO We should map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig
-  @JsonCodec(encodeOnly = true) final case class UIModelDefinition(
-      components: Map[ComponentInfo, UIComponentDefinition],
-      typesInformation: Set[UIClassDefinition]
-  )
-
-  @JsonCodec(encodeOnly = true) final case class UIClassDefinition(
-      clazzName: TypingResult
   )
 
   @JsonCodec(encodeOnly = true) final case class UIValueParameter(

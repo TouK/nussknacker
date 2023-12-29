@@ -57,7 +57,6 @@ class DefinitionResourcesSpec
       status shouldBe StatusCodes.OK
 
       val noneReturnType = responseAs[Json].hcursor
-        .downField("processDefinition")
         .downField("components")
         .downField("custom-noneReturnTypeTransformer")
 
@@ -70,10 +69,8 @@ class DefinitionResourcesSpec
       status shouldBe StatusCodes.OK
 
       val typesInformation = responseAs[Json].hcursor
-        .downField("processDefinition")
-        .downField("typesInformation")
-        .downAt(_.hcursor.downField("clazzName").get[String]("display").rightValue == "ReturningTestCaseClass")
-        .downField("clazzName")
+        .downField("classes")
+        .downAt(_.hcursor.get[String]("display").rightValue == "ReturningTestCaseClass")
         .downField("display")
 
       typesInformation.focus.value shouldBe Json.fromString("ReturningTestCaseClass")
@@ -122,7 +119,6 @@ class DefinitionResourcesSpec
       val response = responseAs[Json].hcursor
 
       val editor = response
-        .downField("processDefinition")
         .downField("components")
         .downField("fragment-sub1")
         .downField("parameters")

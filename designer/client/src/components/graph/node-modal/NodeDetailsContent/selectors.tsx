@@ -8,7 +8,7 @@ import { isEqual } from "lodash";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
-const getProcessDefinition = createSelector(getProcessDefinitionData, (s) => s.processDefinition);
+const getComponentsDefinition = createSelector(getProcessDefinitionData, (s) => s.components);
 export const getScenarioPropertiesConfig = createSelector(
     getProcessDefinitionData,
     (s) => (s.scenarioPropertiesConfig || {}) as ScenarioPropertiesConfig,
@@ -60,19 +60,20 @@ export const getDynamicParameterDefinitions = createSelector(
     getValidationPerformed,
     getDetailsParameters,
     getResultParameters,
-    getProcessDefinitionData,
-    (validationPerformed, detailsParameters, resultParameters, { processDefinition }) =>
-        (node: NodeType) => {
-            const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(node.id);
-            if (!dynamicParameterDefinitions) {
-                return ProcessUtils.findNodeObjectTypeDefinition(node, processDefinition)?.parameters;
-            }
-            return dynamicParameterDefinitions || null;
-        },
+    getComponentsDefinition,
+    (validationPerformed, detailsParameters, resultParameters, components) => (node: NodeType) => {
+        const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(node.id);
+        if (!dynamicParameterDefinitions) {
+            return ProcessUtils.findComponentDefinition(node, components)?.parameters;
+        }
+        return dynamicParameterDefinitions || null;
+    },
 );
 
-export const getFindAvailableVariables = createSelector(getProcessDefinition, getProcessToDisplay, (processDefinition, processToDisplay) =>
-    ProcessUtils.findAvailableVariables(processDefinition, processToDisplay),
+export const getFindAvailableVariables = createSelector(
+    getComponentsDefinition,
+    getProcessToDisplay,
+    (processDefinition, processToDisplay) => ProcessUtils.findAvailableVariables(processDefinition, processToDisplay),
 );
 export const getVariableTypes = createSelector(
     getNodeResults,

@@ -50,15 +50,11 @@ export interface ReturnedType {
     params: [];
 }
 
-export interface NodeObjectTypeDefinition {
+export interface ComponentDefinition {
     parameters: UIParameter[] | null;
-    outputParameters?: string[] | null;
     returnType: ReturnedType | null;
-}
-
-export interface ProcessDefinition {
-    components?: Record<string, NodeObjectTypeDefinition>;
-    typesInformation?: ClassDefinition[];
+    // For fragments only
+    outputParameters?: string[] | null;
 }
 
 export type ComponentsConfig = Record<string, SingleComponentConfig>;
@@ -67,7 +63,8 @@ export type FixedValuesPresets = Record<string, FixedValuesOption[]>;
 
 export interface ProcessDefinitionData {
     componentsConfig?: ComponentsConfig;
-    processDefinition?: ProcessDefinition;
+    components?: Record<string, ComponentDefinition>;
+    classes?: TypingResult[];
     componentGroups?: ComponentGroup[];
     scenarioPropertiesConfig?: ScenarioPropertiesConfig;
     edgesForNodes?: EdgesForNode[];
@@ -86,8 +83,4 @@ export type EdgesForNode = {
 export type NodeTypeId = {
     type: string;
     id: string;
-};
-
-export type ClassDefinition = {
-    clazzName: TypingResult;
 };

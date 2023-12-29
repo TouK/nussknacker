@@ -96,12 +96,12 @@ class NodeUtils {
     };
 
     getEdgesAvailableForNode = (node: NodeType, processDefinitionData: ProcessDefinitionData, forInput?: boolean) => {
-        const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionNamePart(node);
+        const componentName = ProcessUtils.findComponentName(node);
         //TODO: when we add more configuration for joins, probably more complex logic will be needed
         const edgesForNode = processDefinitionData.edgesForNodes
             .filter((e) => !forInput || e.isForInputDefinition === forInput)
             //here we use == in second comparison, as we sometimes compare null to undefined :|
-            .find((e) => e.nodeId.type === get(node, "type") && e.nodeId.id == nodeObjectTypeDefinition);
+            .find((e) => e.nodeId.type === get(node, "type") && e.nodeId.id == componentName);
         return edgesForNode || { edges: [null], canChooseNodes: false };
     };
 
@@ -228,7 +228,7 @@ class NodeUtils {
         switch (node?.type) {
             case "FragmentInput": {
                 const outputParameters =
-                    processDefinitionData?.processDefinition?.components["fragment-" + node.ref.id]?.outputParameters ||
+                    processDefinitionData?.components["fragment-" + node.ref.id]?.outputParameters ||
                     Object.keys(node.ref.outputVariableNames);
                 return outputParameters.length > 0;
             }

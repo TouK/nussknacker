@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.engine.definition.fragment.{FragmentStaticDefinition, FragmentWithoutValidatorsDefinitionExtractor}
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -75,12 +74,12 @@ object UIProcessObjectsFactory {
         processCategoryService = processCategoryService,
         processingType
       ),
-      processDefinition = createUIModelDefinition(
+      components = createUIComponentsDefinitions(
         finalModelDefinition,
         fragmentComponents,
-        modelDataForType.modelDefinitionWithClasses.classDefinitions.all.map(prepareClazzDefinition),
         processCategoryService
       ),
+      classes = modelDataForType.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       componentsConfig = finalComponentsConfig.config,
       scenarioPropertiesConfig =
         if (!isFragment) {
@@ -152,10 +151,6 @@ object UIProcessObjectsFactory {
     DefaultAsyncInterpretationValueDeterminer.determine(defaultUseAsyncInterpretationFromConfig).value
   }
 
-  private def prepareClazzDefinition(definition: ClassDefinition): UIClassDefinition = {
-    UIClassDefinition(definition.clazzName)
-  }
-
   private def extractFragmentComponents(
       classLoader: ClassLoader,
       fragmentsDetails: Set[FragmentDetails],
@@ -193,13 +188,12 @@ object UIProcessObjectsFactory {
     )
   }
 
-  private def createUIModelDefinition(
+  private def createUIComponentsDefinitions(
       modelDefinition: ModelDefinition[ComponentStaticDefinition],
       // TODO: pass modelDefinition already enriched with components
       fragmentInputs: Map[String, FragmentStaticDefinition],
-      types: Set[UIClassDefinition],
       processCategoryService: ProcessCategoryService
-  ): UIModelDefinition = {
+  ): Map[ComponentInfo, UIComponentDefinition] = {
     def createUIFragmentComponentDef(fragmentName: String, fragmentDef: FragmentStaticDefinition) =
       ComponentInfo(ComponentType.Fragment, fragmentName) -> createUIFragmentComponentDefinition(
         fragmentDef,
@@ -209,10 +203,7 @@ object UIProcessObjectsFactory {
     val transformedDefinition: Map[ComponentInfo, UIComponentDefinition] =
       modelDefinition.components.mapValuesNow(createUIComponentDefinition(_, processCategoryService))
 
-    UIModelDefinition(
-      components = transformedDefinition ++ fragmentInputs.map(createUIFragmentComponentDef _ tupled),
-      typesInformation = types
-    )
+    transformedDefinition ++ fragmentInputs.map(createUIFragmentComponentDef _ tupled)
   }
 
   def createUIParameter(parameter: Parameter): UIParameter = {

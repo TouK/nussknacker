@@ -2,11 +2,10 @@
 import { flatten, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, transform } from "lodash";
 import {
     NodeId,
-    NodeObjectTypeDefinition,
+    ComponentDefinition,
     NodeResults,
     NodeType,
     Process,
-    ProcessDefinition,
     ReturnedType,
     TypingResult,
     UIParameter,
@@ -106,11 +105,11 @@ class ProcessUtils {
     escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
     findAvailableVariables =
-        (processDefinition: ProcessDefinition, process: Process) =>
+        (components: Record<string, ComponentDefinition>, process: Process) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
             const nodeResults = this.getNodeResults(process);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
-            const variablesForNode = variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
+            const variablesForNode = variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, process, components);
             const variablesToHideForParam = parameterDefinition?.variablesToHide || [];
             const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key));
             const additionalVariablesForParam = parameterDefinition?.additionalVariables || {};
@@ -119,10 +118,14 @@ class ProcessUtils {
 
     getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes;
 
-    _findVariablesDeclaredBeforeNode = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): VariableTypes => {
+    _findVariablesDeclaredBeforeNode = (
+        nodeId: NodeId,
+        process: Process,
+        components: Record<string, ComponentDefinition>,
+    ): VariableTypes => {
         const previousNodes = this._findPreviousNodes(nodeId, process);
         const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
-            return this._findVariablesDefinedInProcess(nodeId, process, processDefinition);
+            return this._findVariablesDefinedInProcess(nodeId, process, components);
         });
         return this._listOfObjectsToObject(variablesDefinedBeforeNodeList);
     };
@@ -136,12 +139,17 @@ class ProcessUtils {
     _findVariablesDefinedInProcess = (
         nodeId: NodeId,
         process: Process,
-        processDefinition: ProcessDefinition,
+        components: Record<string, ComponentDefinition>,
     ): Record<string, ReturnedType>[] => {
         const node = process.nodes.find((node) => node.id === nodeId);
-        const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition);
-        const clazzName = nodeObjectTypeDefinition?.returnType;
-        const unknown: ReturnedType = { display: "Unknown", type: "Unknown", refClazzName: "java.lang.Object", params: [] };
+        const componentDefinition = this.findComponentDefinition(node, components);
+        const clazzName = componentDefinition?.returnType;
+        const unknown: ReturnedType = {
+            display: "Unknown",
+            type: "Unknown",
+            refClazzName: "java.lang.Object",
+            params: [],
+        };
         switch (node.type) {
             case "Source": {
                 return isEmpty(clazzName) ? [] : [{ input: clazzName }];
@@ -171,8 +179,8 @@ class ProcessUtils {
         }
     };
 
-    findNodeObjectTypeDefinition = (node: NodeType, processDefinition: ProcessDefinition): NodeObjectTypeDefinition => {
-        const foundDefinition = processDefinition.components?.[this.findNodeDefinitionId(node)];
+    findComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition => {
+        const foundDefinition = components?.[this.findComponentDefinitionId(node)];
         const emptyDefinition = {
             parameters: null,
             returnType: null,
@@ -180,14 +188,14 @@ class ProcessUtils {
         return foundDefinition || emptyDefinition;
     };
 
-    private findNodeDefinitionId = (node?: NodeType): string | null => {
-        const typePart = this.findNodeDefinitionTypePart(node);
-        const namePart = this.findNodeDefinitionNamePart(node);
-        return (typePart && namePart && typePart + "-" + namePart) || null;
+    private findComponentDefinitionId = (node?: NodeType): string | null => {
+        const componentType = this.findComponentType(node);
+        const componentName = this.findComponentName(node);
+        return (componentType && componentName && componentType + "-" + componentName) || null;
     };
 
     // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
-    private findNodeDefinitionTypePart = (node?: NodeType): string | null => {
+    private findComponentType = (node?: NodeType): string | null => {
         switch (node?.type) {
             case "Source":
                 return "source";
@@ -215,7 +223,7 @@ class ProcessUtils {
     };
 
     // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
-    findNodeDefinitionNamePart = (node: NodeType): string | null => {
+    findComponentName = (node: NodeType): string | null => {
         switch (node?.type) {
             case "Source":
             case "Sink": {
@@ -259,14 +267,13 @@ class ProcessUtils {
         }
     };
 
-    findNodeDefinitionIdOrType = (node: NodeType) => this.findNodeDefinitionNamePart(node) || node.type || null;
-
-    getNodeBaseTypeCamelCase = (node: NodeType) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
+    // TODO: why is it needed? We should everywhere use just componentDefinitionId
+    findNodeDefinitionIdOrType = (node: NodeType) => this.findComponentName(node) || node.type || null;
 
     findNodeConfigName = (node: NodeType): string => {
         // First we try to find id of node (config for specific custom node by id).
         // When is missing it means that node is special process properties node without id
-        return this.findNodeDefinitionNamePart(node) || "$properties";
+        return this.findComponentName(node) || "$properties";
     };
 
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;

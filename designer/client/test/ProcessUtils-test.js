@@ -5,14 +5,14 @@ const unknown = { display: "Unknown", params: [], type: "Unknown", refClazzName:
 
 describe("process available variables finder", () => {
     it("should find available variables with its types in process at the beginning of the process", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, process)("processVariables");
+        const availableVariables = ProcessUtils.findAvailableVariables(components, process)("processVariables");
         expect(availableVariables).toEqual({
             input: { refClazzName: "org.nussknacker.model.Transaction" },
         });
     });
 
     it("should find available variables with its types in process in the end of the process", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, process)("endEnriched");
+        const availableVariables = ProcessUtils.findAvailableVariables(components, process)("endEnriched");
 
         expect(availableVariables).toEqual({
             input: { refClazzName: "org.nussknacker.model.Transaction" },
@@ -24,7 +24,7 @@ describe("process available variables finder", () => {
     });
 
     it("should find fragment parameters as variables with its types", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, fragment)("endEnriched");
+        const availableVariables = ProcessUtils.findAvailableVariables(components, fragment)("endEnriched");
         expect(availableVariables).toEqual({
             fragmentParam: { refClazzName: "java.lang.String" },
         });
@@ -37,13 +37,13 @@ describe("process available variables finder", () => {
         });
         const processWithDanglingNode = { ...process, ...{ edges: newEdges } };
 
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, processWithDanglingNode)("danglingNodeId");
+        const availableVariables = ProcessUtils.findAvailableVariables(components, processWithDanglingNode)("danglingNodeId");
 
         expect(availableVariables).toEqual({});
     });
 
     it("should use variables from validation results if exist", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, processWithVariableTypes)("variableNode");
+        const availableVariables = ProcessUtils.findAvailableVariables(components, processWithVariableTypes)("variableNode");
 
         expect(availableVariables).toEqual({
             input: { refClazzName: "java.lang.String" },
@@ -52,7 +52,7 @@ describe("process available variables finder", () => {
     });
 
     it("should fallback to variables decoded from graph if typing via validation fails", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, processWithVariableTypes)("anonymousUserFilter");
+        const availableVariables = ProcessUtils.findAvailableVariables(components, processWithVariableTypes)("anonymousUserFilter");
 
         expect(availableVariables).toEqual({
             someVariableName: unknown,
@@ -62,7 +62,7 @@ describe("process available variables finder", () => {
     });
 
     it("add additional variables to node if defined", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, processWithVariableTypes)(
+        const availableVariables = ProcessUtils.findAvailableVariables(components, processWithVariableTypes)(
             "aggregateId",
             paramWithAdditionalVariables,
         );
@@ -77,7 +77,7 @@ describe("process available variables finder", () => {
     });
 
     it("hide variables in parameter if defined", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, processWithVariableTypes)(
+        const availableVariables = ProcessUtils.findAvailableVariables(components, processWithVariableTypes)(
             "aggregateId",
             paramWithVariablesToHide,
         );
@@ -96,45 +96,32 @@ const paramWithVariablesToHide = {
     variablesToHide: ["input", "parsedTransaction", "processVariables", "someVariableName"],
 };
 
-const processDefinition = {
-    components: {
-        "service-transactionParser": {
-            parameters: [],
-            returnType: { refClazzName: "org.nussknacker.model.Transaction" },
-            categories: ["Category1"],
-        },
-        "source-kafka-transaction": {
-            parameters: [
-                {
-                    name: "Topic",
-                    typ: { refClazzName: "java.lang.String" },
-                },
-            ],
-            returnType: { refClazzName: "org.nussknacker.model.Transaction" },
-            categories: ["Category1"],
-        },
-        "sink-endTransaction": {
-            parameters: [{ name: "Topic", typ: { refClazzName: "java.lang.String" } }],
-            returnType: { refClazzName: "pl.touk.esp.engine.kafka.KafkaSinkFactory" },
-            categories: ["Category1", "Category2", "Category3"],
-        },
-        "custom-transactionAggregator": {
-            parameters: [paramWithAdditionalVariables, paramWithVariablesToHide],
-            returnType: { refClazzName: "java.lang.String" },
-            categories: ["Category12"],
-        },
+const components = {
+    "service-transactionParser": {
+        parameters: [],
+        returnType: { refClazzName: "org.nussknacker.model.Transaction" },
+        categories: ["Category1"],
     },
-    typesInformation: [
-        {
-            clazzName: { refClazzName: "org.nussknacker.model.Transaction" },
-        },
-        {
-            clazzName: { refClazzName: "pl.touk.nussknacker.model.Account" },
-        },
-        {
-            clazzName: { refClazzName: "java.time.LocalDate" },
-        },
-    ],
+    "source-kafka-transaction": {
+        parameters: [
+            {
+                name: "Topic",
+                typ: { refClazzName: "java.lang.String" },
+            },
+        ],
+        returnType: { refClazzName: "org.nussknacker.model.Transaction" },
+        categories: ["Category1"],
+    },
+    "sink-endTransaction": {
+        parameters: [{ name: "Topic", typ: { refClazzName: "java.lang.String" } }],
+        returnType: { refClazzName: "pl.touk.esp.engine.kafka.KafkaSinkFactory" },
+        categories: ["Category1", "Category2", "Category3"],
+    },
+    "custom-transactionAggregator": {
+        parameters: [paramWithAdditionalVariables, paramWithVariablesToHide],
+        returnType: { refClazzName: "java.lang.String" },
+        categories: ["Category12"],
+    },
 };
 
 const process = {

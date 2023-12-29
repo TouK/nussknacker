@@ -81,7 +81,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects = prepareUIProcessObjects(model, Set.empty)
 
-    processObjects.processDefinition
+    processObjects
       .components(ComponentInfo(ComponentType.Service, "enricher"))
       .parameters
       .map(p => (p.name, p.editor))
@@ -169,7 +169,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")))
 
-    processObjects.processDefinition.components.get(ComponentInfo(ComponentType.Fragment, fragment.id)) shouldBe empty
+    processObjects.components.get(ComponentInfo(ComponentType.Fragment, fragment.id)) shouldBe empty
   }
 
   test("should override component's parameter config with additionally provided config") {
