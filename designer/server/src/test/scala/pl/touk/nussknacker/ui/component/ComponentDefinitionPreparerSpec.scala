@@ -54,7 +54,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   }
 
   test("return edge types for fragment, filters and switches") {
-    val fragmentsDetails = TestFactory.prepareSampleFragmentRepository.loadFragments(Map.empty)
+    val fragmentsDetails = TestFactory.prepareSampleFragmentRepository.fragmentsByProcessingType.head._2
 
     val edgeTypes = ComponentDefinitionPreparer.prepareEdgeTypes(
       modelDefinition = ProcessTestData.modelDefinition,

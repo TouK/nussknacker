@@ -2,8 +2,9 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
+import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
@@ -19,6 +20,8 @@ import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+
+import scala.concurrent.Future
 
 class TestModelMigrations(
     migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
@@ -71,14 +74,15 @@ class TestModelMigrations(
   private def prepareFragmentRepository(fragments: List[(DisplayableProcess, String)]) = {
     val fragmentsDetails = fragments.map { case (displayable, category) =>
       val canonical = ProcessConverter.fromDisplayable(displayable)
-      FragmentDetails(canonical, category)
-    }
+      displayable.processingType -> FragmentDetails(canonical, category)
+    }.toGroupedMap
     new FragmentRepository {
-      override def loadFragments(versions: Map[String, VersionId]): Set[FragmentDetails] =
-        fragmentsDetails.toSet
-
-      override def loadFragments(versions: Map[String, VersionId], category: Category): Set[FragmentDetails] =
-        loadFragments(versions).filter(_.category == category)
+      override def fetchFragments(processingType: ProcessingType)(
+          implicit user: LoggedUser
+      ): Future[List[FragmentDetails]] =
+        Future.successful(fragmentsDetails.getOrElse(processingType, List.empty))
+      override def fetchFragment(processName: ProcessName)(implicit user: LoggedUser): Future[Option[FragmentDetails]] =
+        throw new IllegalStateException("FragmentRepository.get(ProcessName) used during migration")
     }
   }
 

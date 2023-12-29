@@ -127,7 +127,7 @@ object ProcessTestData {
     ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),
     Map.empty,
     List.empty,
-    new FragmentResolver(new StubFragmentRepository(Set.empty))
+    new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")

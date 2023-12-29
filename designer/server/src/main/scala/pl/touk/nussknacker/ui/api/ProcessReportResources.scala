@@ -73,7 +73,7 @@ class ProcessReportResources(
   private def computeCounts(
       process: DisplayableProcess,
       countsRequest: CountsRequest
-  ): Future[ToResponseMarshallable] = {
+  )(implicit loggedUser: LoggedUser): Future[ToResponseMarshallable] = {
     countsReporter
       .prepareRawCounts(process.id, countsRequest)
       .map(computeFinalCounts(process, _))
@@ -85,7 +85,7 @@ class ProcessReportResources(
   private def computeFinalCounts(
       displayable: DisplayableProcess,
       nodeCountFunction: String => Option[Long]
-  ): ToResponseMarshallable = {
+  )(implicit loggedUser: LoggedUser): ToResponseMarshallable = {
     val computedCounts = processCounter.computeCounts(
       ProcessConverter.fromDisplayable(displayable),
       nodeId => nodeCountFunction(nodeId).map(count => RawCount(count, 0))

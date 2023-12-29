@@ -79,7 +79,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       List(ComponentDefinition("enricher", TestService))
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     processObjects
       .components(ComponentInfo(ComponentType.Service, "enricher"))
@@ -117,7 +117,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       }
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     processObjects.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
   }
@@ -142,7 +142,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       }
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
     componentsGroups should not be empty
@@ -157,7 +157,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       fragment.metaData.withTypeSpecificData(typeSpecificData = FragmentSpecificData(Some(docsUrl)))
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragmentWithDocsUrl, "Category1")))
+    val processObjects = prepareUIProcessObjects(model, List(FragmentDetails(fragmentWithDocsUrl, "Category1")))
 
     processObjects.componentsConfig(fragmentWithDocsUrl.id).docsUrl shouldBe Some(docsUrl)
   }
@@ -167,7 +167,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
     val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
-    val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")))
+    val processObjects = prepareUIProcessObjects(model, List(FragmentDetails(fragment, "Category1")))
 
     processObjects.components.get(ComponentInfo(ComponentType.Fragment, fragment.id)) shouldBe empty
   }
@@ -178,7 +178,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       List(ComponentDefinition("enricher", TestService))
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     processObjects.componentsConfig("enricher").params.get.map { case (name, config) =>
       name -> config.defaultValue
@@ -193,7 +193,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       List(ComponentDefinition("enricher", TestService))
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     processObjects.componentGroups.map(c => (c.name, c.components.head.label)) should contain(
       TestAdditionalUIConfigProvider.componentGroupName,
@@ -205,13 +205,13 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     processObjects.scenarioPropertiesConfig shouldBe TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride
       .mapValuesNow(createUIScenarioPropertyConfig)
   }
 
-  private def prepareUIProcessObjects(model: ModelData, fragmentDetails: Set[FragmentDetails]) = {
+  private def prepareUIProcessObjects(model: ModelData, fragmentDetails: List[FragmentDetails]) = {
     val staticModelDefinition =
       ToStaticComponentDefinitionTransformer.transformModel(model, initialData.create(_, Map.empty))
     UIProcessObjectsFactory.prepareUIProcessObjects(

@@ -21,7 +21,6 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
       componentGroups: List[ComponentGroup],
-      // TODO: extract definitions on main level
       components: Map[ComponentInfo, UIComponentDefinition],
       classes: List[TypingResult],
       componentsConfig: Map[String, SingleComponentConfig],

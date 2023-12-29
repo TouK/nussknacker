@@ -6,6 +6,7 @@ import cats.implicits._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.definition.fragment.{FragmentGraphDefinition, FragmentGraphDefinitionExtractor}
@@ -15,13 +16,13 @@ object FragmentResolver {
 
   // For easier testing purpose
   def apply(fragments: Iterable[CanonicalProcess]): FragmentResolver = {
-    val fragmentMap = fragments.map(a => a.metaData.id -> a).toMap
+    val fragmentMap = fragments.map(a => ProcessName(a.metaData.id) -> a).toMap
     FragmentResolver(fragmentMap.get _)
   }
 
 }
 
-case class FragmentResolver(fragments: String => Option[CanonicalProcess]) {
+case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) {
 
   type CompilationValid[A] = ValidatedNel[ProcessCompilationError, A]
 
@@ -129,7 +130,7 @@ case class FragmentResolver(fragments: String => Option[CanonicalProcess]) {
   def resolveInput(fragmentInput: FragmentInput): CompilationValid[FragmentGraphDefinition] = {
     implicit val nodeId: NodeId = NodeId(fragmentInput.id)
     fragments
-      .apply(fragmentInput.ref.id)
+      .apply(ProcessName(fragmentInput.ref.id))
       .map(valid)
       .getOrElse(invalidNel(UnknownFragment(id = fragmentInput.ref.id, nodeId = nodeId.id)))
       .andThen { fragment =>

@@ -27,6 +27,7 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
     isArchived: Boolean,
     isFragment: Boolean,
     processingType: ProcessingType,
+    // FIXME: remove
     processCategory: String,
     modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
     modifiedAt: Instant,

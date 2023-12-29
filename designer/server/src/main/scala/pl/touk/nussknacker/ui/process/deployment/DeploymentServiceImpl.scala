@@ -63,9 +63,9 @@ class DeploymentServiceImpl(
   def getDeployedScenarios(
       processingType: ProcessingType
   )(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
+    implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
     for {
       deployedProcesses <- {
-        implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
         dbioRunner.run(
           processRepository.fetchProcessesDetails[CanonicalProcess](
             ScenarioQuery(
@@ -83,7 +83,7 @@ class DeploymentServiceImpl(
         val deployingUser  = User(lastDeployAction.user, lastDeployAction.user)
         val deploymentData = prepareDeploymentData(deployingUser, DeploymentId.fromActionId(lastDeployAction.id))
         val deployedScenarioDataTry =
-          scenarioResolver.resolveScenario(details.json, details.processCategory).map { resolvedScenario =>
+          scenarioResolver.resolveScenario(details.json, details.processingType).map { resolvedScenario =>
             DeployedScenarioData(
               details.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
               deploymentData,
@@ -176,7 +176,7 @@ class DeploymentServiceImpl(
       deploymentManager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
       // TODO: scenario was already resolved during validation - use it here
       resolvedCanonicalProcess <- Future.fromTry(
-        scenarioResolver.resolveScenario(processDetails.json, processDetails.processCategory)
+        scenarioResolver.resolveScenario(processDetails.json, processDetails.processingType)
       )
       deploymentData = prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId))
       _ <- deploymentManager.validate(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
@@ -190,7 +190,7 @@ class DeploymentServiceImpl(
       .forTypeUnsafe(processDetails.processingType)
       .validateCanonicalProcess(
         processDetails.json,
-        processDetails.processCategory
+        processDetails.processingType
       )
     if (validationResult.hasErrors) {
       throw DeployingInvalidScenarioError(validationResult.errors)

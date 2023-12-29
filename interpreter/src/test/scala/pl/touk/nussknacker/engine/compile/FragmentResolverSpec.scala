@@ -44,7 +44,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List.empty
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
@@ -90,7 +90,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List.empty
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment, nested)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment, nested)).resolve(process)
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
@@ -123,7 +123,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List.empty
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(FragmentOutputNotDefined("badoutput", Set("sub-out1", "sub"))))
 
@@ -160,7 +160,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List.empty
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingManyOutputsFragment("sub", Set("output1", "output2"))))
 
@@ -183,7 +183,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List.empty
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingNoOutputsFragment("sub")))
 
@@ -222,9 +222,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       ),
       List.empty
     )
-    val resolver = FragmentResolver(Set(fragment, emptyFragment))
+    val resolver = FragmentResolver(List(fragment, emptyFragment))
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
-      case Valid(CanonicalProcess(_, flatNodes, additional)) =>
+      case Valid(CanonicalProcess(_, flatNodes, _)) =>
         flatNodes(0) match {
           case FlatNode(Source(id, _, _)) =>
             id shouldBe "source"
@@ -266,7 +266,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .filter("f1", "false")
       .emptySink("end", "sink1")
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
@@ -281,7 +281,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .fragmentOneOut("nodeFragmentId", "fragmentId", "fragmentResult", "output")
       .emptySink("id2", "sink")
 
-    val resolvedValidated = FragmentResolver(fragments = Set()).resolve(process)
+    val resolvedValidated = FragmentResolver(List.empty).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownFragment(id = "fragmentId", nodeId = "nodeFragmentId")))
   }
@@ -322,7 +322,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       ) :: Nil
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process).toOption.get.allStartNodes
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process).toOption.get.allStartNodes
     resolvedValidated should have length 2
   }
 
@@ -348,7 +348,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
         )
       )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(scenario)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(scenario)
     resolvedValidated shouldBe Symbol("valid")
 
   }
@@ -363,7 +363,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .fragmentOneOut("fragment", "fragment1", "output1", "outVar1")
       .emptySink("id1", "sink")
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(scenario)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(scenario)
     resolvedValidated shouldBe Invalid(NonEmptyList.of(MultipleOutputsForName("output1", "fragment")))
 
   }

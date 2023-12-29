@@ -41,7 +41,7 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingType,
       processingTypeData,
       user = NussknackerInternalUser.instance, // We need admin user to receive all components info
-      fragments = Set.empty,
+      fragments = List.empty,
       additionalUIConfigProvider =
         AdditionalUIConfigProvider.empty // this method is only used in ComponentIdProviderFactory, and because AdditionalUIConfigProvider can't change ComponentId, we don't need it
     )
@@ -52,7 +52,7 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingType: ProcessingType,
       processingTypeData: ProcessingTypeData,
       user: LoggedUser,
-      fragments: Set[FragmentDetails],
+      fragments: List[FragmentDetails],
       additionalUIConfigProvider: AdditionalUIConfigProvider
   ): ComponentObjects = {
     val uiProcessObjects =
@@ -64,7 +64,7 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingType: ProcessingType,
       processingTypeData: ProcessingTypeData,
       user: LoggedUser,
-      fragments: Set[FragmentDetails],
+      fragments: List[FragmentDetails],
       additionalUIConfigProvider: AdditionalUIConfigProvider
   ): UIProcessObjects = {
     UIProcessObjectsFactory.prepareUIProcessObjects(
