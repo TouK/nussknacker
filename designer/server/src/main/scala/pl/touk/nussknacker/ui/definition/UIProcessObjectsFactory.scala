@@ -10,22 +10,19 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
-import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, DefaultComponentIdProvider}
+import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentStaticDefinition,
   FragmentWithoutValidatorsDefinitionExtractor
 }
-import pl.touk.nussknacker.engine.definition.model.{
-  ComponentIdWithName,
-  ModelDefinition,
-  ModelDefinitionWithComponentIds
-}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, ComponentsUiConfigParser}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
+import pl.touk.nussknacker.ui.component.{ComponentDefinitionPreparer, DefaultComponentIdProvider}
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
+import pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.ui.definition.scenarioproperty.UiScenarioPropertyEditorDeterminer
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
@@ -56,7 +53,7 @@ object UIProcessObjectsFactory {
     ) // combinedComponentsConfig potentially changes componentIds
 
     val finalModelDefinition = finalizeModelDefinition(
-      modelDefinition.withComponentIds(componentIdProvider, processingType),
+      definition.ModelDefinitionWithComponentIds(modelDefinition, componentIdProvider, processingType),
       combinedComponentsConfig,
       additionalUIConfigProvider
         .getAllForProcessingType(processingType)
@@ -106,7 +103,7 @@ object UIProcessObjectsFactory {
   }
 
   private def toComponentsUiConfig(
-      modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition]
+      modelDefinition: ModelDefinitionWithComponentIds
   ): ComponentsUiConfig = {
     ComponentsUiConfig(
       modelDefinition.components.map { case (idWithName, value) => idWithName.name -> value.componentConfig }.toMap
@@ -114,13 +111,13 @@ object UIProcessObjectsFactory {
   }
 
   private def finalizeModelDefinition(
-      modelDefinitionWithIds: ModelDefinitionWithComponentIds[ComponentStaticDefinition],
+      modelDefinitionWithIds: ModelDefinitionWithComponentIds,
       combinedComponentsConfig: ComponentsUiConfig,
       additionalComponentsUiConfig: Map[ComponentId, SingleComponentConfig]
   ) = {
 
     val finalizeComponentConfig
-        : ((ComponentIdWithName, ComponentStaticDefinition)) => (ComponentIdWithName, ComponentStaticDefinition) = {
+        : ((ComponentIdWithInfo, ComponentStaticDefinition)) => (ComponentIdWithInfo, ComponentStaticDefinition) = {
       case (idWithName, value) =>
         val finalConfig = additionalComponentsUiConfig.getOrElse(idWithName.id, SingleComponentConfig.zero) |+|
           combinedComponentsConfig.getConfigByComponentName(idWithName.name) |+|
@@ -197,7 +194,7 @@ object UIProcessObjectsFactory {
   }
 
   def createUIModelDefinition(
-      modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition],
+      modelDefinition: ModelDefinitionWithComponentIds,
       fragmentInputs: Map[String, FragmentStaticDefinition],
       types: Set[UIClassDefinition],
       processCategoryService: ProcessCategoryService

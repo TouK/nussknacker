@@ -13,7 +13,6 @@ import pl.touk.nussknacker.restmodel.component.{
 }
 import pl.touk.nussknacker.restmodel.definition.ComponentNodeTemplate
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.ComponentIdProvider
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{

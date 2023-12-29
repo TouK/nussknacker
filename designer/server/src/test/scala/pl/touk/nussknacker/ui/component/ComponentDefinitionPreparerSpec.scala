@@ -7,9 +7,8 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, CustomComponentSpecificData}
+import pl.touk.nussknacker.engine.definition.component.CustomComponentSpecificData
 import pl.touk.nussknacker.engine.definition.fragment.FragmentStaticDefinition
-import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithComponentIds
 import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
@@ -18,8 +17,11 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ComponentDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
+import pl.touk.nussknacker.ui
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.SimpleTestComponentIdProvider
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
+import pl.touk.nussknacker.ui.definition
+import pl.touk.nussknacker.ui.definition.ModelDefinitionWithComponentIds
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with TestPermissions with OptionValues {
@@ -164,9 +166,14 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
         CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
         parameter
       )
-      .withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
+    val definitionWithComponentIds =
+      ui.definition.ModelDefinitionWithComponentIds(
+        definition,
+        new SimpleTestComponentIdProvider,
+        TestProcessingTypes.Streaming
+      )
 
-    val groups           = prepareGroups(Map.empty, Map.empty, definition)
+    val groups           = prepareGroups(Map.empty, Map.empty, definitionWithComponentIds)
     val transformerGroup = groups.find(_.name == ComponentGroupName("optionalEndingCustom")).value
     inside(transformerGroup.components.head.node) { case withParameters: WithParameters =>
       withParameters.parameters.head.expression shouldEqual defaultValueExpression
@@ -253,8 +260,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   private def prepareGroups(
       fixedConfig: Map[String, String],
       componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
-      modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition] =
-        ProcessTestData.modelDefinitionWithIds
+      modelDefinition: ModelDefinitionWithComponentIds = ProcessTestData.modelDefinitionWithIds
   ): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val fragmentInputs = Map[String, FragmentStaticDefinition]()
@@ -284,10 +290,14 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   private def prepareGroupsOfNodes(services: List[String]): List[ComponentGroup] = {
     val modelDefinition = services
       .foldRight(ModelDefinitionBuilder.empty)((s, p) => p.withService(s))
-      .withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
+    val definitionWithComponentIds = definition.ModelDefinitionWithComponentIds(
+      modelDefinition,
+      new SimpleTestComponentIdProvider,
+      TestProcessingTypes.Streaming
+    )
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
-      modelDefinition = modelDefinition,
+      modelDefinition = definitionWithComponentIds,
       fragmentComponents = Map.empty,
       isFragment = false,
       componentsConfig = ComponentsUiConfig(Map.empty),

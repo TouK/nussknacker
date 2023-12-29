@@ -1,15 +1,9 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.{
-  BuiltInComponentInfo,
-  ComponentGroupName,
-  ComponentType,
-  SingleComponentConfig
-}
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.engine.definition.fragment.FragmentStaticDefinition
-import pl.touk.nussknacker.engine.definition.model.{ComponentIdWithName, ModelDefinitionWithComponentIds}
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -23,7 +17,7 @@ import pl.touk.nussknacker.engine.graph.{EdgeType, node}
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.definition.SortedComponentGroup
+import pl.touk.nussknacker.ui.definition.{ComponentIdWithInfo, ModelDefinitionWithComponentIds, SortedComponentGroup}
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, UserCategoryService}
@@ -35,12 +29,11 @@ import scala.collection.immutable.ListMap
 object ComponentDefinitionPreparer {
 
   import DefaultsComponentGroupName._
-  import cats.instances.map._
   import cats.syntax.semigroup._
 
   def prepareComponentsGroupList(
       user: LoggedUser,
-      modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition],
+      modelDefinition: ModelDefinitionWithComponentIds,
       fragmentComponents: Map[String, FragmentStaticDefinition],
       isFragment: Boolean,
       componentsConfig: ComponentsUiConfig,
@@ -64,12 +57,12 @@ object ComponentDefinitionPreparer {
     def nodeTemplateBranchParameters(componentDefinition: ComponentStaticDefinition): List[NodeParameter] =
       NodeTemplateParameterPreparer.prepareNodeTemplateBranchParameter(componentDefinition.parameters)
 
-    def serviceRef(idWithName: ComponentIdWithName, componentDefinition: ComponentStaticDefinition) =
+    def serviceRef(idWithName: ComponentIdWithInfo, componentDefinition: ComponentStaticDefinition) =
       ServiceRef(idWithName.name, nodeTemplateParameters(componentDefinition))
 
     val hasNoReturn =
       (
-          (_: ComponentIdWithName, componentDefinition: ComponentStaticDefinition) => componentDefinition.hasNoReturn
+          (_: ComponentIdWithInfo, componentDefinition: ComponentStaticDefinition) => componentDefinition.hasNoReturn
       ).tupled
 
     // TODO: make it possible to configure other defaults here.
@@ -301,7 +294,7 @@ object ComponentDefinitionPreparer {
   }
 
   def prepareEdgeTypes(
-      modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition],
+      modelDefinition: ModelDefinitionWithComponentIds,
       isFragment: Boolean,
       fragmentsDetails: Set[FragmentDetails]
   ): List[NodeEdges] = {
