@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
+  FixedExpressionValue,
   FixedValuesValidator,
   MandatoryParameterValidator,
   Parameter,
@@ -25,7 +26,7 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.{
   MethodBasedComponentDefinitionWithImplementation,
   MethodBasedComponentImplementationInvoker
 }
-import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.{
   ComponentsUiConfigParser,
   DefaultModelConfigLoader,

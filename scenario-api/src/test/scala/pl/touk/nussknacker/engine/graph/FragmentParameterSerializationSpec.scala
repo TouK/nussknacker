@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.graph
 import io.circe.jawn.decode
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
 

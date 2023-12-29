@@ -7,12 +7,17 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputGenericNodeTransformation
 }
-import pl.touk.nussknacker.engine.api.definition.{FixedValuesParameterEditor, NodeDependency, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{
+  FixedExpressionValue,
+  FixedValuesParameterEditor,
+  NodeDependency,
+  Parameter
+}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue.nullFixedValue
-import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -5,7 +5,6 @@ import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 
 import java.time.temporal.ChronoUnit
 import scala.util.Try

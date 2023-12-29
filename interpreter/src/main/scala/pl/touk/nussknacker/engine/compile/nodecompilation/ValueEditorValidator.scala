@@ -5,10 +5,14 @@ import cats.data.ValidatedNel
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedValuesParameterEditor, ParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  DualParameterEditor,
+  FixedExpressionValue,
+  FixedValuesParameterEditor,
+  ParameterEditor
+}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue.nullFixedValue
+import FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.graph.node.ValueInputWithFixedValues
 
 object ValueEditorValidator {

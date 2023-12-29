@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.clazz.JavaSampleEnum
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 
 import scala.reflect.ClassTag
 

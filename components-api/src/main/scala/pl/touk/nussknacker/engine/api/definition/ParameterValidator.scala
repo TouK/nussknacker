@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.ValidationExpressionParameterValidator.variableName
 import pl.touk.nussknacker.engine.api.expression.{Expression => ApiExpression}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
-import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import java.util.ServiceLoader
 import java.util.regex.Pattern

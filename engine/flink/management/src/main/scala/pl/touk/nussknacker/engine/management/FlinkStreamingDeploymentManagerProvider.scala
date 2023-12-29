@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 
 import scala.concurrent.{ExecutionContext, Future}
 

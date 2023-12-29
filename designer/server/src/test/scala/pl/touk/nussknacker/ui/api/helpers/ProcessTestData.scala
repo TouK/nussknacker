@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   CustomComponentSpecificData
 }
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithComponentIds}
-import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
