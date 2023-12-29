@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FixedExpressionValue, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -304,19 +304,24 @@ object node {
   ) extends EndingNodeData
       with RealNodeData
 
+  @ConfiguredJsonCodec
+  sealed trait ValueInputWithFixedValues {
+    def allowOtherValue: Boolean
+    def fixedValuesList: List[FixedExpressionValue]
+  }
+
+  case class ValueInputWithFixedValuesProvided(fixedValuesList: List[FixedExpressionValue], allowOtherValue: Boolean)
+      extends ValueInputWithFixedValues
+
+  @JsonCodec case class ParameterValueCompileTimeValidation(
+      validationExpression: Expression,
+      validationFailedMessage: Option[String]
+  )
+
   // we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has TypedResult which has *real* class inside
   // TODO: probably should be able to handle class parameters or typed maps (i.e. use TypingResult inside FragmentClazzRef)
   // shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
-
-    @ConfiguredJsonCodec
-    sealed trait ValueInputWithFixedValues {
-      def allowOtherValue: Boolean
-      def fixedValuesList: List[FixedExpressionValue]
-    }
-
-    case class ValueInputWithFixedValuesProvided(fixedValuesList: List[FixedExpressionValue], allowOtherValue: Boolean)
-        extends ValueInputWithFixedValues
 
     @ConfiguredJsonCodec
     case class FragmentParameter(
@@ -352,11 +357,6 @@ object node {
       def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
 
     }
-
-    @JsonCodec case class ParameterValueCompileTimeValidation(
-        validationExpression: Expression,
-        validationFailedMessage: Option[String]
-    )
 
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 

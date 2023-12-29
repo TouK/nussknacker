@@ -2,11 +2,8 @@ package pl.touk.nussknacker.ui.additionalconfig
 
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
-  FixedExpressionValue,
-  ParameterValueCompileTimeValidation,
-  ValueInputWithFixedValues
-}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FixedExpressionValue
+import pl.touk.nussknacker.engine.graph.node.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
 
 /**
  * Trait allowing the provision of UI configuration for components and scenario properties, without requiring a model reload.

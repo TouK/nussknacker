@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
-  FixedExpressionValue => FragmentFixedExpressionValue,
-  ValueInputWithFixedValues
+  FixedExpressionValue => FragmentFixedExpressionValue
 }
+import pl.touk.nussknacker.engine.graph.node.ValueInputWithFixedValues
 
 object ValueEditorValidator {
 
