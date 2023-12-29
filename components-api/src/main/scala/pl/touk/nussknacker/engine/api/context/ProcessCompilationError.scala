@@ -267,17 +267,14 @@ object ProcessCompilationError {
 
   final case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
-  final case class RequireValueFromEmptyFixedList(paramName: String, nodeId: String)
+  final case class RequireValueFromEmptyFixedList(paramName: String, nodeIds: Set[String])
       extends PartSubGraphCompilationError
-      with InASingleNode
 
-  final case class InitialValueNotPresentInPossibleValues(paramName: String, nodeId: String)
+  final case class InitialValueNotPresentInPossibleValues(paramName: String, nodeIds: Set[String])
       extends PartSubGraphCompilationError
-      with InASingleNode
 
-  final case class UnsupportedFixedValuesType(paramName: String, typ: String, nodeId: String)
+  final case class UnsupportedFixedValuesType(paramName: String, typ: String, nodeIds: Set[String])
       extends PartSubGraphCompilationError
-      with InASingleNode
 
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 

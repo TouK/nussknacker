@@ -25,9 +25,9 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   private val jobData: JobData = JobData(metadata, ProcessVersion.empty)
 
   it should "invoke service method with declared parameters as scala params" in {
-    val mock = new MockService(jobData)
+    val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig(mock)
-    val invoker = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
+    val invoker    = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
 
     whenReady(invoker.invokeService(Map("foo" -> "aa", "bar" -> 1))) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
@@ -35,9 +35,9 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   }
 
   it should "throw excpetion with nice message when parameters do not match" in {
-    val mock = new MockService(jobData)
+    val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig(mock)
-    val invoker = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
+    val invoker    = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
 
     intercept[IllegalArgumentException](
       invoker.invokeService(Map("foo" -> "aa", "bar" -> "terefere"))

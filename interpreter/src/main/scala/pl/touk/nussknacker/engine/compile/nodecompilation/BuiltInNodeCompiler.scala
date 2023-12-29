@@ -84,8 +84,8 @@ class BuiltInNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler
     val (additionalValidations, caseExpressions) = choices.map { case (outEdge, caseExpr) =>
       val (validTypedExpression, nodeCompilation) =
         compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)
-      val validation      = validateBoolean(validTypedExpression, outEdge)
-      val caseExpression  = nodeCompilation
+      val validation     = validateBoolean(validTypedExpression, outEdge)
+      val caseExpression = nodeCompilation
       (validation, caseExpression)
     }.unzip
 
