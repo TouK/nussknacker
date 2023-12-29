@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
-import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
@@ -29,7 +28,6 @@ import scala.concurrent.duration.FiniteDuration
 object ProcessCompilerData {
 
   def prepare(
-      modelConfig: Config,
       definitionWithTypes: ModelDefinitionWithClasses,
       dictRegistry: EngineDictRegistry,
       listeners: Seq[ProcessListener],
@@ -48,7 +46,6 @@ object ProcessCompilerData {
       definitionWithTypes.classDefinitions
     )
     val fragmentDefinitionExtractor = FragmentCompleteDefinitionExtractor(
-      modelConfig,
       userCodeClassLoader,
       expressionCompiler
     )

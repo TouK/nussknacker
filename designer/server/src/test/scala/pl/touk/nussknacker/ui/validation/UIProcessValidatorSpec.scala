@@ -30,7 +30,8 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
+import pl.touk.nussknacker.engine.graph.EdgeType
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
@@ -587,7 +588,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         Source("in", SourceRef(sourceTypeName, List())),
         FragmentInput(
           "subIn",
-          FragmentRef(invalidFragment.id, List(evaluatedparam.Parameter("param1", "'someString'"))),
+          FragmentRef(invalidFragment.id, List(NodeParameter("param1", "'someString'"))),
           isDisabled = Some(false)
         ),
         Sink("out", SinkRef(sinkTypeName, List()))
@@ -645,7 +646,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
           FragmentRef(
             fragment.id,
             List(
-              evaluatedparam.Parameter("subParam1", "'outsideAllowedValues'"),
+              NodeParameter("subParam1", "'outsideAllowedValues'"),
             )
           ),
           isDisabled = Some(false)
@@ -655,7 +656,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
           FragmentRef(
             fragment.id,
             List(
-              evaluatedparam.Parameter("subParam1", ""),
+              NodeParameter("subParam1", ""),
             )
           ),
           isDisabled = Some(false)
@@ -713,7 +714,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         Source("in", SourceRef(sourceTypeName, List())),
         FragmentInput(
           "subIn",
-          FragmentRef(invalidFragment.id, List(evaluatedparam.Parameter("param1", "'someString'"))),
+          FragmentRef(invalidFragment.id, List(NodeParameter("param1", "'someString'"))),
           isDisabled = Some(true)
         ),
         Sink("out", SinkRef(sinkTypeName, List()))
@@ -753,7 +754,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         Source("source", SourceRef(sourceTypeName, Nil)),
         FragmentInput(
           "subIn",
-          FragmentRef(fragment.id, List(evaluatedparam.Parameter("subParam1", "'someString'"))),
+          FragmentRef(fragment.id, List(NodeParameter("subParam1", "'someString'"))),
           isDisabled = Some(false)
         ),
         Variable(id = "var1", varName = "var1", value = "#subOut1.foo"),
@@ -789,7 +790,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         Source("inID", SourceRef(existingSourceFactory, List())),
         Enricher(
           "custom",
-          ServiceRef("fooService3", List(evaluatedparam.Parameter("expression", Expression.spel("")))),
+          ServiceRef("fooService3", List(NodeParameter("expression", Expression.spel("")))),
           "out"
         ),
         Sink("out", SinkRef(existingSinkFactory, List()))
@@ -818,7 +819,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
 
   test("check for wrong fixed expression value in node parameter") {
     val process: DisplayableProcess = createProcessWithParams(
-      List(evaluatedparam.Parameter("expression", Expression.spel("wrong fixed value"))),
+      List(NodeParameter("expression", Expression.spel("wrong fixed value"))),
       Map.empty
     )
 
@@ -882,7 +883,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         Source("source", SourceRef(sourceTypeName, Nil)),
         FragmentInput(
           "subIn",
-          FragmentRef(fragment.id, List(evaluatedparam.Parameter("subParam1", "'someString'"))),
+          FragmentRef(fragment.id, List(NodeParameter("subParam1", "'someString'"))),
           isDisabled = Some(false)
         ),
         Sink("sink", SinkRef(sinkTypeName, Nil))
@@ -917,7 +918,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
 
     val fragmentDefinition: CanonicalProcess =
       createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short])))
-    val processWithFragment = createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter("P1", "123")))
+    val processWithFragment = createProcessWithFragmentParams(fragmentId, List(NodeParameter("P1", "123")))
 
     val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
     val result           = processValidator.validate(processWithFragment)
@@ -930,17 +931,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
   test("validates scenario with fragment parameters - P1 as mandatory param with with missing actual value") {
     val fragmentId = "fragment1"
 
-    val configWithValidators: Config = defaultConfig
-      .withValue(
-        s"componentsUiConfig.$fragmentId.params.P1.validators",
-        fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
-      )
-
     val fragmentDefinition: CanonicalProcess =
-      createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short])))
-    val processWithFragment = createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter("P1", "")))
+      createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true)))
+    val processWithFragment = createProcessWithFragmentParams(fragmentId, List(NodeParameter("P1", "")))
 
-    val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
+    val processValidator = mockedProcessValidator(fragmentDefinition, defaultConfig)
     val result           = processValidator.validate(processWithFragment)
 
     result.hasErrors shouldBe true
@@ -957,33 +952,23 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
   ) {
     val fragmentId = "fragment1"
 
-    val configWithValidators: Config = defaultConfig
-      .withValue(
-        s"componentsUiConfig.$fragmentId.params.P1.validators",
-        fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
-      )
-      .withValue(
-        s"componentsUiConfig.$fragmentId.params.P2.validators",
-        fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
-      )
-
     val fragmentDefinition: CanonicalProcess = createFragmentDefinition(
       fragmentId,
       List(
-        FragmentParameter("P1", FragmentClazzRef[Short]),
-        FragmentParameter("P2", FragmentClazzRef[String])
+        FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true),
+        FragmentParameter("P2", FragmentClazzRef[String]).copy(required = true)
       )
     )
 
     val processWithFragment = createProcessWithFragmentParams(
       fragmentId,
       List(
-        evaluatedparam.Parameter("P1", ""),
-        evaluatedparam.Parameter("P2", "")
+        NodeParameter("P1", ""),
+        NodeParameter("P2", "")
       )
     )
 
-    val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
+    val processValidator = mockedProcessValidator(fragmentDefinition, defaultConfig)
     val result           = processValidator.validate(processWithFragment)
 
     result.hasErrors shouldBe true
@@ -1023,7 +1008,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         )
       )
     val processWithFragment =
-      createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter(paramName, "\"Tomasz\"")))
+      createProcessWithFragmentParams(fragmentId, List(NodeParameter(paramName, "\"Tomasz\"")))
 
     val processValidation = mockedProcessValidator(fragmentDefinition, defaultConfig)
     val result            = processValidation.validate(processWithFragment)
@@ -1061,7 +1046,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         )
       )
     val processWithFragment =
-      createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter(paramName, "\"Barabasz\"")))
+      createProcessWithFragmentParams(fragmentId, List(NodeParameter(paramName, "\"Barabasz\"")))
 
     val processValidation = mockedProcessValidator(fragmentDefinition, configWithValidators)
     val result            = processValidation.validate(processWithFragment)
@@ -1214,7 +1199,7 @@ private object UIProcessValidatorSpec {
   }
 
   private def createProcessWithParams(
-      nodeParams: List[evaluatedparam.Parameter],
+      nodeParams: List[NodeParameter],
       scenarioProperties: Map[String, String],
       category: String = Category1
   ): DisplayableProcess = {
@@ -1233,7 +1218,7 @@ private object UIProcessValidatorSpec {
 
   private def createProcessWithFragmentParams(
       fragmentDefinitionId: String,
-      nodeParams: List[evaluatedparam.Parameter]
+      nodeParams: List[NodeParameter]
   ): DisplayableProcess = {
     createProcess(
       nodes = List(

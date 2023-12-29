@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -109,7 +108,7 @@ protected trait ProcessCompilerBase {
   }
 
   private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext =
-    globalVariablesPreparer.emptyLocalVariablesValidationContext(metaData)
+    globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(metaData)
 
   private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] =
     CompilationResult.map2(
@@ -320,7 +319,6 @@ object ProcessValidator {
   def default(modelData: ModelData): ProcessValidator = {
     default(
       modelData.modelDefinitionWithClasses,
-      modelData.modelConfig,
       modelData.designerDictServices.dictRegistry,
       modelData.customProcessValidator,
       modelData.modelClassLoader.classLoader
@@ -329,7 +327,6 @@ object ProcessValidator {
 
   def default(
       definitionWithTypes: ModelDefinitionWithClasses,
-      modelConfig: Config,
       dictRegistry: DictRegistry,
       customProcessValidator: CustomProcessValidator,
       classLoader: ClassLoader = getClass.getClassLoader
@@ -342,7 +339,6 @@ object ProcessValidator {
       definitionWithTypes.classDefinitions
     )
     val fragmentDefinitionExtractor = FragmentCompleteDefinitionExtractor(
-      modelConfig,
       classLoader,
       expressionCompiler
     )

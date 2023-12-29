@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.editor.Paramete
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
-import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
@@ -688,11 +688,11 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
             Some("aggresult"),
             "aggregate-tumbling",
             List(
-              evaluatedparam.Parameter("groupBy", asSpelExpression("#key")),
-              evaluatedparam.Parameter("aggregator", asSpelExpression("#AGG.sum")),
-              evaluatedparam.Parameter("aggregateBy", asSpelExpression("#aggBy")),
-              evaluatedparam.Parameter("windowLength", asSpelExpression("T(java.time.Duration).parse('PT2H')")),
-              evaluatedparam.Parameter(
+              NodeParameter("groupBy", asSpelExpression("#key")),
+              NodeParameter("aggregator", asSpelExpression("#AGG.sum")),
+              NodeParameter("aggregateBy", asSpelExpression("#aggBy")),
+              NodeParameter("windowLength", asSpelExpression("T(java.time.Duration).parse('PT2H')")),
+              NodeParameter(
                 "emitWhen",
                 asSpelExpression(
                   "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEnd"

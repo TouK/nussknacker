@@ -8,7 +8,8 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
@@ -88,7 +89,7 @@ object node {
     // TODO: rename to componentId
     def nodeType: String
 
-    def parameters: List[Parameter]
+    def parameters: List[NodeParameter]
 
     def outputVar: Option[String]
   }
@@ -103,7 +104,7 @@ object node {
   See: ParametersUtils.ts/#parametersPath and ParametersUtils.ts/#adjustParameters
    */
   trait WithParameters {
-    def parameters: List[Parameter]
+    def parameters: List[NodeParameter]
   }
 
   sealed trait OneOutputSubsequentNodeData extends NodeData with RealNodeData
@@ -123,7 +124,7 @@ object node {
       with WithParameters {
     override val componentId: String = ref.typ
 
-    override def parameters: List[Parameter] = ref.parameters
+    override def parameters: List[NodeParameter] = ref.parameters
   }
 
   // TODO JOIN: move branchParameters to BranchEnd
@@ -132,7 +133,7 @@ object node {
       outputVar: Option[String],
       // TODO: rename to componentId
       nodeType: String,
-      parameters: List[Parameter],
+      parameters: List[NodeParameter],
       branchParameters: List[BranchParameters],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends StartingNodeData
@@ -196,7 +197,7 @@ object node {
       with WithParameters {
     override val componentId: String = service.id
 
-    override def parameters: List[Parameter] = service.parameters
+    override def parameters: List[NodeParameter] = service.parameters
   }
 
   case class CustomNode(
@@ -204,7 +205,7 @@ object node {
       outputVar: Option[String],
       // TODO: rename to componentId
       nodeType: String,
-      parameters: List[Parameter],
+      parameters: List[NodeParameter],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends OneOutputSubsequentNodeData
       with CustomNodeData
@@ -224,7 +225,7 @@ object node {
       with WithParameters {
     override val componentId: String = service.id
 
-    override def parameters: List[Parameter] = service.parameters
+    override def parameters: List[NodeParameter] = service.parameters
   }
 
   case class BranchEndData(definition: BranchEndDefinition) extends EndingNodeData {
@@ -261,7 +262,7 @@ object node {
       with WithParameters {
     override val componentId: String = ref.typ
 
-    override def parameters: List[Parameter] = ref.parameters
+    override def parameters: List[NodeParameter] = ref.parameters
   }
 
   // TODO: A better way of passing information regarding fragment parameter definition

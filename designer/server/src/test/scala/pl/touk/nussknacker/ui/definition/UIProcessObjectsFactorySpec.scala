@@ -100,7 +100,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
       new EmptyProcessConfigCreator {
         override def services(
-            processObjectDependencies: ProcessObjectDependencies
+            modelDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[Service]] =
           Map(
             "enricher" -> WithCategories.anyCategory(TestService),
@@ -126,7 +126,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
       new EmptyProcessConfigCreator {
         override def customStreamTransformers(
-            processObjectDependencies: ProcessObjectDependencies
+            modelDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[CustomStreamTransformer]] =
           Map(
             "someGenericNode" -> WithCategories
@@ -155,7 +155,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragmentWithDocsUrl, "Category1")))
 
-    processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
+    processObjects.componentsConfig(fragmentWithDocsUrl.id).docsUrl shouldBe Some(docsUrl)
   }
 
   test("should skip empty fragments in definitions") {

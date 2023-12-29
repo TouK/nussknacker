@@ -15,16 +15,16 @@ import javax.validation.constraints.NotBlank
 
 class KafkaSinkFactory(
     serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
-    processObjectDependencies: ProcessObjectDependencies,
+    modelDependencies: ProcessObjectDependencies,
     implProvider: KafkaSinkImplFactory
-) extends BaseKafkaSinkFactory(serializationSchemaFactory, processObjectDependencies, implProvider) {
+) extends BaseKafkaSinkFactory(serializationSchemaFactory, modelDependencies, implProvider) {
 
   def this(
       serializationSchema: String => serialization.KafkaSerializationSchema[AnyRef],
-      processObjectDependencies: ProcessObjectDependencies,
+      modelDependencies: ProcessObjectDependencies,
       implProvider: KafkaSinkImplFactory
   ) =
-    this(FixedKafkaSerializationSchemaFactory(serializationSchema), processObjectDependencies, implProvider)
+    this(FixedKafkaSerializationSchemaFactory(serializationSchema), modelDependencies, implProvider)
 
   @MethodToInvoke
   def create(
@@ -42,13 +42,13 @@ class KafkaSinkFactory(
 
 abstract class BaseKafkaSinkFactory(
     serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
-    processObjectDependencies: ProcessObjectDependencies,
+    modelDependencies: ProcessObjectDependencies,
     implProvider: KafkaSinkImplFactory
 ) extends SinkFactory {
 
   protected def createSink(topic: String, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
-    val kafkaConfig   = KafkaConfig.parseConfig(processObjectDependencies.config)
-    val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, processObjectDependencies)
+    val kafkaConfig   = KafkaConfig.parseConfig(modelDependencies.config)
+    val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelDependencies)
     KafkaComponentsUtils.validateTopicsExistence(List(preparedTopic), kafkaConfig)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
     val clientId            = s"${processMetaData.id}-${preparedTopic.prepared}"

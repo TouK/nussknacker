@@ -12,6 +12,7 @@ object evaluatedparam {
     val tupled: ((String, Expression)) => Parameter = (Parameter.apply _).tupled
   }
 
+  // TODO: rename to NodeParameter
   @JsonCodec case class Parameter(name: String, expression: Expression)
 
   @JsonCodec case class BranchParameters(branchId: String, parameters: List[Parameter])

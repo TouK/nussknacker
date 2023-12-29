@@ -80,10 +80,10 @@ object ProcessTestHelpers {
 }
 
 object ProcessTestHelpersConfigCreator extends EmptyProcessConfigCreator {
-  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     List(CountingNodesListener)
 
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
+  override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val dictId  = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])
     val dictDef = EmbeddedDictDefinition.forJavaEnum(classOf[SimpleJavaEnum])
     val globalProcessVariables = Map(

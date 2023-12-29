@@ -3,11 +3,10 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.{Parameter, TypedParameter}
+import pl.touk.nussknacker.engine.api.{Context, MetaData, NodeId}
+import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.Implicits._
 
 class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
@@ -50,10 +49,10 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
 
     param.typedValue match {
       case e: TypedExpression if !definition.branchParam =>
-        val evaluated = evaluateSync(Parameter(e, definition), augumentedCtx)
+        val evaluated = evaluateSync(CompiledParameter(e, definition), augumentedCtx)
         (evaluated, DefinedEagerParameter(evaluated, e))
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
-        val evaluated = valueByKey.mapValuesNow(exp => evaluateSync(Parameter(exp, definition), augumentedCtx))
+        val evaluated = valueByKey.mapValuesNow(exp => evaluateSync(CompiledParameter(exp, definition), augumentedCtx))
         (evaluated, DefinedEagerBranchParameter(evaluated, valueByKey))
       case _ => throw new IllegalStateException()
     }
@@ -71,7 +70,7 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
   }
 
   private def evaluateSync(
-      param: Parameter,
+      param: CompiledParameter,
       ctx: Context
   )(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
     expressionEvaluator.evaluateParameter(param, ctx).value

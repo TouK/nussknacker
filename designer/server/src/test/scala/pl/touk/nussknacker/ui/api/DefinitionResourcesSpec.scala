@@ -4,12 +4,21 @@ import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Json
+import io.circe.{Json, parser}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentClazzRef,
+  FragmentParameter,
+  ValueInputWithFixedValuesProvided
+}
+import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
@@ -73,16 +82,41 @@ class DefinitionResourcesSpec
     }
   }
 
-  it("should return info about editor based on fragment node configuration") {
+  it("should return info about editor based on fragment parameter definition") {
+    val fragmentWithFixedValuesEditor = {
+      CanonicalProcess(
+        MetaData("sub1", FragmentSpecificData()),
+        List(
+          FlatNode(
+            FragmentInputDefinition(
+              "in",
+              List(
+                FragmentParameter("param1", FragmentClazzRef[String]).copy(
+                  valueEditor = Some(
+                    ValueInputWithFixedValuesProvided(
+                      fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                      allowOtherValue = false
+                    )
+                  ),
+                )
+              )
+            )
+          ),
+          canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        ),
+        List.empty
+      )
+    }
+
     val processName         = ProcessName(SampleProcess.process.id)
-    val processWithfragment = ProcessTestData.validProcessWithFragment(processName)
-    val displayablefragment = ProcessConverter.toDisplayable(
-      processWithfragment.fragment,
+    val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
+    val displayableFragment = ProcessConverter.toDisplayable(
+      processWithFragment.fragment,
       TestProcessingTypes.Streaming,
       TestCategories.Category1
     )
-    savefragment(displayablefragment)(succeed)
-    saveProcess(processName, processWithfragment.process, TestCategories.Category1)(succeed)
+    savefragment(displayableFragment)(succeed)
+    saveProcess(processName, processWithFragment.process, TestCategories.Category1)(succeed)
 
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK
@@ -99,7 +133,21 @@ class DefinitionResourcesSpec
         .focus
         .value
 
-      editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
+      editor shouldBe parser
+        .parse("""{"possibleValues" : [
+                   |    {
+                   |      "expression" : "",
+                   |      "label" : ""
+                   |    },
+                   |    {
+                   |      "expression" : "'someValue'",
+                   |      "label" : "someValue"
+                   |    }
+                   |  ],
+                   |  "type" : "FixedValuesParameterEditor"
+                   |}""".stripMargin)
+        .toOption
+        .get
     }
   }
 

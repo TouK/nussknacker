@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.migrate
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, have}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node.CustomNode
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
@@ -37,7 +37,7 @@ class UnionParametersMigrationSpec extends AnyFunSuite {
     val processMigrationResult = results.find(_.converted.id == process.id).get
     processMigrationResult.shouldFail shouldBe false
     getFirst[CustomNode](processMigrationResult).parameters shouldBe List(
-      evaluatedparam.Parameter("Output expression", "#input")
+      NodeParameter("Output expression", "#input")
     )
   }
 
@@ -57,7 +57,7 @@ class UnionParametersMigrationSpec extends AnyFunSuite {
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
     processMigrationResult.shouldFail shouldBe false
-    getFirst[CustomNode](processMigrationResult).parameters shouldBe List(evaluatedparam.Parameter("value", "#input"))
+    getFirst[CustomNode](processMigrationResult).parameters shouldBe List(NodeParameter("value", "#input"))
   }
 
   test("should do nothing when union node is missing") {

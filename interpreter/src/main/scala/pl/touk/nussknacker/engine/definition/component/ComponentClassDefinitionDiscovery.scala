@@ -22,9 +22,10 @@ object ComponentClassDefinitionDiscovery {
       fromAdditionalVars.toList :+ parameter.typ
     }
 
-    def typesFromParameters(obj: ComponentDefinitionWithImplementation): List[TypingResult] = {
+    def typesFromParametersAndReturnType(obj: ComponentDefinitionWithImplementation): List[TypingResult] = {
       obj match {
-        case static: MethodBasedComponentDefinitionWithImplementation => static.parameters.flatMap(typesFromParameter)
+        case static: MethodBasedComponentDefinitionWithImplementation =>
+          static.parameters.flatMap(typesFromParameter) ++ static.returnType
         // WithExplicitTypesToExtract trait should be used in that case
         case _: DynamicComponentDefinitionWithImplementation => List.empty
       }
@@ -37,7 +38,7 @@ object ComponentClassDefinitionDiscovery {
       }
     }
 
-    obj.returnType.toList ::: typesFromParameters(obj) ::: explicitTypes(obj)
+    typesFromParametersAndReturnType(obj) ::: explicitTypes(obj)
   }
 
 }

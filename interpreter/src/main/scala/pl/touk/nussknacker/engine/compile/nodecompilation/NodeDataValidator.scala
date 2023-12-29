@@ -49,7 +49,6 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
   private val compiler = new NodeCompiler(
     modelData.modelDefinition,
     FragmentCompleteDefinitionExtractor(
-      modelData.modelConfig,
       modelData.modelClassLoader.classLoader,
       expressionCompiler
     ),
@@ -103,7 +102,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
               validationContext
             )
           )
-        case a: FragmentInput => validateFragment(validationContext, outgoingEdges, compiler, a)
+        case a: FragmentInput => validateFragment(validationContext, outgoingEdges, a)
         case Split(_, _) | FragmentUsageOutput(_, _, _, _) | BranchEndData(_) =>
           ValidationNotPerformed
       }
@@ -123,7 +122,6 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
   private def validateFragment(
       validationContext: ValidationContext,
       outgoingEdges: List[OutgoingEdge],
-      compiler: NodeCompiler,
       a: FragmentInput
   )(implicit nodeId: NodeId) = {
     fragmentResolver

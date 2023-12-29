@@ -5,7 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, Source}
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -141,7 +141,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
       FragmentParameter("param42", FragmentClazzRef[String])
     )
     getFirst[FragmentInput](processMigrationResult).ref.parameters shouldBe List(
-      evaluatedparam.Parameter("param42", "'foo'")
+      NodeParameter("param42", "'foo'")
     )
   }
 

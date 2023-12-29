@@ -10,6 +10,8 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.ValidationExpressionParameterValidator.variableName
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.expression.{Expression => ApiExpression}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -255,7 +257,7 @@ case object JsonValidator extends ParameterValidator {
 }
 
 case class ValidationExpressionParameterValidator(
-    validationExpression: ApiExpression,
+    validationExpression: CompiledExpression,
     validationFailedMessage: Option[String]
 ) extends ParameterValidator {
 
@@ -306,11 +308,11 @@ object ValidationExpressionParameterValidator {
   implicit val encoder: Encoder[ValidationExpressionParameterValidator] = deriveEncoder
   implicit val decoder: Decoder[ValidationExpressionParameterValidator] = deriveDecoder
 
-  implicit val apiExpressionEncoder: Encoder[ApiExpression] = {
+  implicit val CompiledExpressionEncoder: Encoder[CompiledExpression] = {
     Encoder.forProduct2("language", "original")(e => (e.language, e.original))
   }
 
-  implicit val apiExpressionDecoder: Decoder[ApiExpression] = {
+  implicit val CompiledExpressionDecoder: Decoder[CompiledExpression] = {
     Decoder.failedWithMessage(
       "Cannot evaluate Expression in ValidationExpressionParameterValidator as loading from config file is not supported"
     )

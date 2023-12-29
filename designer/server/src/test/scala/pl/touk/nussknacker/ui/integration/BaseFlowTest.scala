@@ -167,23 +167,6 @@ class BaseFlowTest
         componentGroup = None,
         componentId = None
       ),
-      "sub1" -> SingleComponentConfig(
-        params = Some(
-          Map(
-            "param1" -> ParameterConfig(
-              defaultValue = None,
-              editor = Some(StringParameterEditor),
-              validators = None,
-              label = None,
-              hintText = None
-            )
-          )
-        ),
-        icon = None,
-        docsUrl = Some("http://nussknacker.io"),
-        componentGroup = None,
-        componentId = None,
-      ),
       "optionalTypesService" -> SingleComponentConfig(
         params = Some(
           Map(

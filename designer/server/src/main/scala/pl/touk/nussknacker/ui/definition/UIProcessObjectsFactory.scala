@@ -50,16 +50,11 @@ object UIProcessObjectsFactory {
   ): UIProcessObjects = {
     val fixedComponentsUiConfig = ComponentsUiConfigParser.parse(modelDataForType.modelConfig)
 
-    val fragmentComponents =
-      extractFragmentComponents(modelDataForType, fragmentsDetails)
+    val combinedComponentsConfig = getCombinedComponentsConfig(fixedComponentsUiConfig, modelDefinition)
 
-    val combinedComponentsConfig =
-      getCombinedComponentsConfig(fixedComponentsUiConfig, fragmentComponents, modelDefinition)
-
-    val componentIdProvider =
-      new DefaultComponentIdProvider(
-        Map(processingType -> combinedComponentsConfig)
-      ) // combinedComponentsConfig potentially changes componentIds
+    val componentIdProvider = new DefaultComponentIdProvider(
+      Map(processingType -> combinedComponentsConfig)
+    ) // combinedComponentsConfig potentially changes componentIds
 
     val finalModelDefinition = finalizeModelDefinition(
       modelDefinition.withComponentIds(componentIdProvider, processingType),
@@ -69,10 +64,13 @@ object UIProcessObjectsFactory {
         .mapValuesNow(_.toSingleComponentConfig)
     )
 
+    val fragmentComponents = extractFragmentComponents(modelDataForType.modelClassLoader.classLoader, fragmentsDetails)
+
+    // merging because ModelDefinition doesn't contain configs for built-in components
     val finalComponentsConfig =
-      toComponentsUiConfig(
-        finalModelDefinition
-      ) |+| combinedComponentsConfig // merging with combinedComponentsConfig, because ModelDefinition doesn't contain configs for base components and fragments
+      toComponentsUiConfig(finalModelDefinition) |+| combinedComponentsConfig |+| ComponentsUiConfig(
+        fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
+      )
 
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
@@ -139,12 +137,8 @@ object UIProcessObjectsFactory {
 
   private def getCombinedComponentsConfig(
       fixedComponentsUiConfig: ComponentsUiConfig,
-      fragmentComponents: Map[String, FragmentStaticDefinition],
       modelDefinition: ModelDefinition[ComponentStaticDefinition],
   ): ComponentsUiConfig = {
-    val fragmentsComponentsConfig = ComponentsUiConfig(
-      fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
-    )
     val modelDefinitionComponentsConfig = ComponentsUiConfig(modelDefinition.components.map { case (info, component) =>
       info.name -> component.componentConfig
     })
@@ -152,7 +146,6 @@ object UIProcessObjectsFactory {
     // we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in modelDefinitionComponentsConfig...
     // maybe we can put them also in uiProcessDefinition.allDefinitions?
     ComponentDefinitionPreparer.combineComponentsConfig(
-      fragmentsComponentsConfig,
       fixedComponentsUiConfig,
       modelDefinitionComponentsConfig
     )
@@ -169,10 +162,10 @@ object UIProcessObjectsFactory {
   }
 
   private def extractFragmentComponents(
-      modelDataForType: ModelData,
+      classLoader: ClassLoader,
       fragmentsDetails: Set[FragmentDetails],
   ): Map[String, FragmentStaticDefinition] = {
-    val definitionExtractor = FragmentWithoutValidatorsDefinitionExtractor(modelDataForType)
+    val definitionExtractor = new FragmentWithoutValidatorsDefinitionExtractor(classLoader)
     (for {
       details    <- fragmentsDetails
       definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, Processor, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -60,7 +60,9 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
-        n.copy(service = ServiceRef(ProcessTestData.existingServiceId, Parameter("newParam", "'abc'") :: parameters))
+        n.copy(service =
+          ServiceRef(ProcessTestData.existingServiceId, NodeParameter("newParam", "'abc'") :: parameters)
+        )
     }
 
   }
@@ -73,7 +75,9 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
-        n.copy(service = ServiceRef(ProcessTestData.existingServiceId, Parameter("newParam", "'abc'") :: parameters))
+        n.copy(service =
+          ServiceRef(ProcessTestData.existingServiceId, NodeParameter("newParam", "'abc'") :: parameters)
+        )
     }
 
   }
@@ -144,7 +148,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, parameters), _) =>
-        n.copy(ref = ref.copy(parameters = Parameter("newParam", "'abc'") :: parameters))
+        n.copy(ref = ref.copy(parameters = NodeParameter("newParam", "'abc'") :: parameters))
     }
 
   }
