@@ -63,6 +63,7 @@ describe("Node window", () => {
             cy.contains(/^filter 1$/i).should("be.visible");
             cy.location("pathname", { timeout: 1000 }).should("not.match", /^\/visualization\/e2e/i);
             cy.location("search", { timeout: 1000 }).should("not.match", /nodeId/i);
+            cy.wait(2000);
 
             cy.go("forward");
 
