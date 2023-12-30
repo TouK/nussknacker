@@ -39,7 +39,7 @@ class RemoteEnvironmentResources(
         get {
           complete {
             for {
-              processes <- processService.getProcessesWithDetails(
+              processes <- processService.getLatestProcessesWithDetails(
                 ScenarioQuery.unarchived,
                 GetScenarioWithDetailsOptions.withsScenarioGraph
               )

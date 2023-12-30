@@ -13,36 +13,37 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 trait FragmentRepository {
 
   // FIXME: async version should be used instead
-  final def fetchFragmentsSync(processingType: ProcessingType)(implicit user: LoggedUser): List[FragmentDetails] =
-    Await.result(fetchFragments(processingType), 10 seconds)
+  final def fetchLatestFragmentsSync(processingType: ProcessingType)(implicit user: LoggedUser): List[FragmentDetails] =
+    Await.result(fetchLatestFragments(processingType), 10 seconds)
 
-  def fetchFragments(processingType: ProcessingType)(implicit user: LoggedUser): Future[List[FragmentDetails]]
+  def fetchLatestFragments(processingType: ProcessingType)(implicit user: LoggedUser): Future[List[FragmentDetails]]
 
   // FIXME: async version should be used instead
-  final def fetchFragmentSync(processName: ProcessName)(implicit user: LoggedUser): Option[FragmentDetails] =
-    Await.result(fetchFragment(processName), 10 seconds)
+  final def fetchLatestFragmentSync(processName: ProcessName)(implicit user: LoggedUser): Option[FragmentDetails] =
+    Await.result(fetchLatestFragment(processName), 10 seconds)
 
-  // FIXME: processing type should be passed to ensure correct resolving of fragments across different processing types
-  def fetchFragment(processName: ProcessName)(implicit user: LoggedUser): Future[Option[FragmentDetails]]
+  def fetchLatestFragment(processName: ProcessName)(implicit user: LoggedUser): Future[Option[FragmentDetails]]
 
 }
 
 final case class FragmentDetails(canonical: CanonicalProcess, category: String)
 
-class DbFragmentRepository(processRepository: FetchingProcessRepository[Future])(implicit ec: ExecutionContext)
+class DefaultFragmentRepository(processRepository: FetchingProcessRepository[Future])(implicit ec: ExecutionContext)
     extends FragmentRepository {
 
-  override def fetchFragments(
+  override def fetchLatestFragments(
       processingType: ProcessingType
   )(implicit user: LoggedUser): Future[List[FragmentDetails]] = {
     processRepository
-      .fetchProcessesDetails[CanonicalProcess](
+      .fetchLatestProcessesDetails[CanonicalProcess](
         ScenarioQuery(isFragment = Some(true), isArchived = Some(false), processingTypes = Some(List(processingType)))
       )
       .map(_.map(sub => FragmentDetails(sub.json, sub.processCategory)))
   }
 
-  override def fetchFragment(processName: ProcessName)(implicit user: LoggedUser): Future[Option[FragmentDetails]] = {
+  override def fetchLatestFragment(
+      processName: ProcessName
+  )(implicit user: LoggedUser): Future[Option[FragmentDetails]] = {
     processRepository
       .fetchProcessId(processName)
       .flatMap { processIdOpt =>

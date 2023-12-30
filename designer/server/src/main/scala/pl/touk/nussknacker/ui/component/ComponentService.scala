@@ -109,7 +109,7 @@ class DefaultComponentService(
       componentId: ComponentId
   )(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
-      .getRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
+      .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map { processDetailsList =>
         val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processDetailsList)
 
@@ -147,7 +147,7 @@ class DefaultComponentService(
       ec: ExecutionContext
   ): Future[Map[ComponentId, Long]] = {
     processService
-      .getRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
+      .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }
 
@@ -158,7 +158,7 @@ class DefaultComponentService(
   ): Future[List[ComponentListElement]] = {
     implicit val userImplicit: LoggedUser = user
     fragmentsRepository
-      .fetchFragments(processingType)
+      .fetchLatestFragments(processingType)
       .map { fragments =>
         val componentObjectsService = new ComponentObjectsService(categoryService)
         // We assume that fragments have unique component ids ($processing-type-fragment-$name) thus we do not need to validate them.

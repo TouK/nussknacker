@@ -39,7 +39,7 @@ import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
-import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReload
 import pl.touk.nussknacker.ui.process.repository._
@@ -116,7 +116,7 @@ class AkkaHttpBasedRouteProvider(
       val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
       val writeProcessRepository  = ProcessRepository.create(dbRef, modelData)
 
-      val fragmentRepository = new DbFragmentRepository(futureProcessRepository)
+      val fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
 
       val processValidatorAndResolver = typeToConfig.mapValues { processingTypeData =>

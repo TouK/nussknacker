@@ -109,7 +109,7 @@ package object definition {
       // TODO: This field is added temporary to pick correct icon - we shouldn't use this class for other purposes than encoding to json
       isEnricher: Option[Boolean] = None
   ) {
-    // TODO: This is temporary - we shouldn't use this class for other purposes than encoding to json
+    // TODO: This is temporary - we shouldn't use ComponentNodeTemplate class for other purposes than encoding to json
     def componentInfo: ComponentInfo = ComponentInfo(`type`, label)
   }
 

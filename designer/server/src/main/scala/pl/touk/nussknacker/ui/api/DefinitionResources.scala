@@ -36,7 +36,7 @@ class DefinitionResources(
             get {
               parameter(Symbol("isFragment").as[Boolean]) { isFragment =>
                 complete(
-                  fragmentRepository.fetchFragments(processingType).map { fragments =>
+                  fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
                     UIProcessObjectsFactory.prepareUIProcessObjects(
                       processingTypeData.modelData,
                       processingTypeData.staticModelDefinition,

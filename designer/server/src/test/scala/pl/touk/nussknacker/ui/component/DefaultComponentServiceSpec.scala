@@ -32,7 +32,7 @@ import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
-import pl.touk.nussknacker.ui.process.fragment.DbFragmentRepository
+import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
@@ -761,7 +761,7 @@ class DefaultComponentServiceSpec
     )
 
   private def createFragmentRepository(fragments: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =
-    new DbFragmentRepository(MockFetchingProcessRepository.withProcessesDetails(fragments))
+    new DefaultFragmentRepository(MockFetchingProcessRepository.withProcessesDetails(fragments))
 
   private def cid(processingType: ProcessingType, componentInfo: ComponentInfo): ComponentId =
     ComponentId.default(processingType, componentInfo)

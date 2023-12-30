@@ -14,11 +14,10 @@ class FragmentResolver(fragmentRepository: FragmentRepository) {
   )(implicit user: LoggedUser): ValidatedNel[ProcessCompilationError, CanonicalProcess] = {
     val fragments =
       fragmentRepository
-        .fetchFragmentsSync(processingType)
+        .fetchLatestFragmentsSync(processingType)
         .map(s => ProcessName(s.canonical.id) -> s.canonical)
         .toMap
-        .get _
-    pl.touk.nussknacker.engine.compile.FragmentResolver(fragments).resolve(process)
+    pl.touk.nussknacker.engine.compile.FragmentResolver(fragments.get _).resolve(process)
   }
 
 }

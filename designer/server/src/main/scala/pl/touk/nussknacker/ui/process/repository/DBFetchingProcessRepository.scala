@@ -6,13 +6,12 @@ import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ProcessActionType}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, ScenarioVersion, VersionId}
-import pl.touk.nussknacker.restmodel.scenariodetails._
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,7 +35,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
 
   import api._
 
-  override def fetchProcessesDetails[PS: ScenarioShapeFetchStrategy](
+  override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       query: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ScenarioWithDetailsEntity[PS]]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
@@ -48,7 +47,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
     )
 
     run(
-      fetchProcessDetailsByQueryAction(
+      fetchLatestProcessDetailsByQueryAction(
         { process =>
           expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
         },
@@ -57,7 +56,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
     )
   }
 
-  private def fetchProcessDetailsByQueryAction[PS: ScenarioShapeFetchStrategy](
+  private def fetchLatestProcessDetailsByQueryAction[PS: ScenarioShapeFetchStrategy](
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
       isDeployed: Option[Boolean]
   )(
@@ -134,12 +133,6 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
 
   def fetchProcessName(processId: ProcessId)(implicit ec: ExecutionContext): F[Option[ProcessName]] = {
     run(processesTable.filter(_.id === processId).map(_.name).result.headOption)
-  }
-
-  override def fetchProcessDetails(
-      processName: ProcessName
-  )(implicit ec: ExecutionContext): F[Option[ProcessEntityData]] = {
-    run(processesTable.filter(_.name === processName).result.headOption)
   }
 
   override def fetchProcessingType(

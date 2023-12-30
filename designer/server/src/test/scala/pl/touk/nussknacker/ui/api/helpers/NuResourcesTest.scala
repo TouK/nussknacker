@@ -38,7 +38,7 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
-import pl.touk.nussknacker.ui.process.fragment.DbFragmentRepository
+import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
@@ -86,7 +86,7 @@ trait NuResourcesTest
 
   protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(testDbRef)
 
-  protected val fragmentRepository: DbFragmentRepository = newFragmentRepository(testDbRef)
+  protected val fragmentRepository: DefaultFragmentRepository = newFragmentRepository(testDbRef)
 
   protected val actionRepository: DbProcessActionRepository[DB] = newActionProcessRepository(testDbRef)
 
