@@ -65,7 +65,7 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
   }
 
   private def getFragment(fragmentId: ProcessName)(implicit user: LoggedUser): Option[CanonicalProcess] = {
-    fragmentRepository.fetchFragmentSync(fragmentId).map(_.canonical)
+    fragmentRepository.fetchLatestFragmentSync(fragmentId).map(_.canonical)
   }
 
 }

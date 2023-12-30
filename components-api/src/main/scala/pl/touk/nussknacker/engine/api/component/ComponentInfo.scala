@@ -4,6 +4,7 @@ import io.circe.KeyEncoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 
+// TODO: rename to ComponentId
 @JsonCodec
 final case class ComponentInfo(`type`: ComponentType, name: String) {
   override def toString: String = `type`.toString + "-" + name

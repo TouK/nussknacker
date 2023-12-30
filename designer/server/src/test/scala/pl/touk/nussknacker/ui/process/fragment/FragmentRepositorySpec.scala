@@ -36,7 +36,7 @@ class FragmentRepositorySpec
     ProcessTestData.sampleFragment.metaData.id shouldBe ProcessTestData.sampleFragment2.metaData.id
     ProcessTestData.sampleFragment should not be ProcessTestData.sampleFragment2
 
-    fragmentRepository.fetchFragments(TestProcessingTypes.Streaming)(adminUser).futureValue shouldBe List(
+    fragmentRepository.fetchLatestFragments(TestProcessingTypes.Streaming)(adminUser).futureValue shouldBe List(
       FragmentDetails(ProcessTestData.sampleFragment2, Category1)
     )
   }

@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
-import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
+import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   ProcessingTypeDataConfigurationReader,
   ProcessingTypeDataProvider,
@@ -116,8 +116,8 @@ object TestFactory extends TestPermissions {
   def newDummyWriteProcessRepository(): DBProcessRepository =
     newWriteProcessRepository(dummyDbRef)
 
-  def newFragmentRepository(dbRef: DbRef): DbFragmentRepository =
-    new DbFragmentRepository(newFutureFetchingProcessRepository(dbRef))
+  def newFragmentRepository(dbRef: DbRef): DefaultFragmentRepository =
+    new DefaultFragmentRepository(newFutureFetchingProcessRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
     new DbProcessActionRepository[DB](dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))

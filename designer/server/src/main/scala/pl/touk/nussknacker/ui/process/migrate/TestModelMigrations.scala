@@ -77,11 +77,13 @@ class TestModelMigrations(
       displayable.processingType -> FragmentDetails(canonical, category)
     }.toGroupedMap
     new FragmentRepository {
-      override def fetchFragments(processingType: ProcessingType)(
+      override def fetchLatestFragments(processingType: ProcessingType)(
           implicit user: LoggedUser
       ): Future[List[FragmentDetails]] =
         Future.successful(fragmentsDetails.getOrElse(processingType, List.empty))
-      override def fetchFragment(processName: ProcessName)(implicit user: LoggedUser): Future[Option[FragmentDetails]] =
+      override def fetchLatestFragment(processName: ProcessName)(
+          implicit user: LoggedUser
+      ): Future[Option[FragmentDetails]] =
         throw new IllegalStateException("FragmentRepository.get(ProcessName) used during migration")
     }
   }

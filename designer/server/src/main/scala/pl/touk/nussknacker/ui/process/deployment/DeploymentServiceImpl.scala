@@ -67,7 +67,7 @@ class DeploymentServiceImpl(
     for {
       deployedProcesses <- {
         dbioRunner.run(
-          processRepository.fetchProcessesDetails[CanonicalProcess](
+          processRepository.fetchLatestProcessesDetails[CanonicalProcess](
             ScenarioQuery(
               isFragment = Some(false),
               isArchived = Some(false),

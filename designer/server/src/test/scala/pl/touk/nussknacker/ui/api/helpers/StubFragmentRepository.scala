@@ -9,12 +9,14 @@ import scala.concurrent.Future
 class StubFragmentRepository(val fragmentsByProcessingType: Map[ProcessingType, List[FragmentDetails]])
     extends FragmentRepository {
 
-  override def fetchFragments(processingType: ProcessingType)(
+  override def fetchLatestFragments(processingType: ProcessingType)(
       implicit user: LoggedUser
   ): Future[List[FragmentDetails]] =
     Future.successful(fragmentsByProcessingType.getOrElse(processingType, List.empty))
 
-  override def fetchFragment(processName: ProcessName)(implicit user: LoggedUser): Future[Option[FragmentDetails]] =
+  override def fetchLatestFragment(processName: ProcessName)(
+      implicit user: LoggedUser
+  ): Future[Option[FragmentDetails]] =
     Future.successful(fragmentsByProcessingType.values.flatten.find(_.canonical.id == processName.value))
 
 }
