@@ -103,7 +103,7 @@ class PeriodicProcessServiceTest
             EnrichedProcessConfig(
               initialScheduleData.inputConfigDuringExecution.withValue(
                 "processName",
-                ConfigValueFactory.fromAnyRef(initialScheduleData.canonicalProcess.metaData.id)
+                ConfigValueFactory.fromAnyRef(initialScheduleData.canonicalProcess.name.value)
               )
             )
           )

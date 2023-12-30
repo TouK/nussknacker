@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/test-with-form.svg";
 import {
-    getProcessId,
+    getProcessName,
     getProcessToDisplay,
     getTestCapabilities,
     getTestParameters,
@@ -32,7 +32,7 @@ function TestWithFormButton(props: Props) {
     const testCapabilities = useSelector(getTestCapabilities);
     const isRenamed = useSelector(isProcessRenamed);
     const testFormParameters: TestFormParameters[] = useSelector(getTestParameters);
-    const scenarioName = useSelector(getProcessId);
+    const scenarioName = useSelector(getProcessName);
     const processToDisplay = useSelector(getProcessToDisplay);
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const dispatch = useDispatch();

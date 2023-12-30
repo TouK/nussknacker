@@ -90,7 +90,7 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
       isFragment: Boolean,
       processingType: ProcessingType = Streaming
   ): Future[ProcessId] = {
-    val processName = ProcessName(process.id)
+    val processName = process.name
     val action =
       CreateProcessAction(processName, category, process, processingType, isFragment, forwardedUserName = None)
     for {

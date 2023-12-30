@@ -37,7 +37,7 @@ export default createRoutesFromElements(
             {/* overrides metrics custom tab */}
             <Route path={MetricsBasePath}>
                 <Route index element={<Metrics />} />
-                <Route path=":processId" element={<Metrics />} />
+                <Route path=":processName" element={<Metrics />} />
             </Route>
 
             <Route path="/:id/*" element={<CustomTab />} />

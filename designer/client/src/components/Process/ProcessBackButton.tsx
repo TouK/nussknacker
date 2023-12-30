@@ -34,19 +34,22 @@ const ProcessLinkButton = styled(ProcessLink)(({ theme }) => ({
 export default function ProcessBackButton() {
     const { t } = useTranslation();
     const { pathname } = useLocation();
-    const processId = useMemo(() => {
-        const match = matchPath(`${MetricsBasePath}/:processId`, pathname);
-        return match?.params?.processId;
+    const processName = useMemo(() => {
+        const match = matchPath(`${MetricsBasePath}/:processName`, pathname);
+        return match?.params?.processName;
     }, [pathname]);
 
-    if (!processId) {
+    if (!processName) {
         return null;
     }
 
     return (
-        <ProcessLinkButton processId={processId} title={t("processBackButton.title", "Go back to {{processId}} graph page", { processId })}>
+        <ProcessLinkButton
+            processName={processName}
+            title={t("processBackButton.title", "Go back to {{processName}} graph page", { processName: processName })}
+        >
             <BackIcon />
-            <ButtonText>{t("processBackButton.text", "back to {{processId}}", { processId })}</ButtonText>
+            <ButtonText>{t("processBackButton.text", "back to {{processName}}", { processName: processName })}</ButtonText>
         </ProcessLinkButton>
     );
 }

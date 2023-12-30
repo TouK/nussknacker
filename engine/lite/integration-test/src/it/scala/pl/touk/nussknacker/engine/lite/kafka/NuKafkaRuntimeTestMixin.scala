@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import org.scalatest.TestSuite
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils
@@ -12,10 +13,10 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
   protected def kafkaBoostrapServer: String
 
   protected def prepareTestCaseFixture(
-      scenarioId: String,
+      scenarioName: ProcessName,
       prepareScenario: (String, String) => CanonicalProcess
   ): NuKafkaRuntimeTestTestCaseFixture = {
-    val testCaseId  = NuRuntimeTestUtils.testCaseId(self.suiteName, scenarioId)
+    val testCaseId  = NuRuntimeTestUtils.testCaseId(self.suiteName, scenarioName)
     val inputTopic  = testCaseId + "-input"
     val outputTopic = testCaseId + "-output"
     val errorTopic  = testCaseId + "-error"

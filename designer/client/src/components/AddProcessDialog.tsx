@@ -20,22 +20,22 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     const { t } = useTranslation();
     const { isFragment, errors = [], ...passProps } = props;
     const nameValidators = useProcessNameValidators();
-    const [value, setState] = useState({ processId: "", processCategory: "" });
+    const [value, setState] = useState({ processName: "", processCategory: "" });
     const [processNameFromBackend, setProcessNameFromBackendError] = useState<NodeValidationError[]>([]);
 
     const fieldErrors = getValidationErrorsForField(
-        extendErrors([...errors, ...processNameFromBackend], value.processId, "processName", nameValidators),
+        extendErrors([...errors, ...processNameFromBackend], value.processName, "processName", nameValidators),
         "processName",
     );
 
     const navigate = useNavigate();
     const createProcess = useCallback(async () => {
         if (isEmpty(fieldErrors)) {
-            const { processId, processCategory } = value;
+            const { processName: processName, processCategory } = value;
             try {
-                await HttpService.createProcess(processId, processCategory, isFragment);
+                await HttpService.createProcess(processName, processCategory, isFragment);
                 passProps.close();
-                navigate(visualizationUrl(processId));
+                navigate(visualizationUrl(processName));
             } catch (error) {
                 if (error?.response?.status == 400) {
                     setProcessNameFromBackendError(() => [

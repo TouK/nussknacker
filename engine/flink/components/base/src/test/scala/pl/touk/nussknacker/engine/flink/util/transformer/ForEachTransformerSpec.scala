@@ -126,7 +126,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
   private def runProcess(model: LocalModelData, testProcess: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
-    stoppableEnv.executeAndWaitForFinished(testProcess.id)()
+    stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
   }
 
 }

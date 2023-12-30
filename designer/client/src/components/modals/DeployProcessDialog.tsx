@@ -3,16 +3,16 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { getProcessId } from "../../reducers/selectors/graph";
+import { getProcessName } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import { ProcessId } from "../../types";
+import { ProcessName } from "../../types";
 import { PromptContent, WindowKind } from "../../windowManager";
 import CommentInput from "../comment/CommentInput";
 import { ValidationLabel } from "../common/ValidationLabel";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 
 export type ToggleProcessActionModalData = {
-    action: (processId: ProcessId, comment: string) => Promise<unknown>;
+    action: (processName: ProcessName, comment: string) => Promise<unknown>;
     displayWarnings?: boolean;
 };
 
@@ -21,7 +21,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const {
         meta: { action, displayWarnings },
     } = props.data;
-    const processId = useSelector(getProcessId);
+    const processName = useSelector(getProcessName);
     const [comment, setComment] = useState("");
     const [validationError, setValidationError] = useState("");
     const featureSettings = useSelector(getFeatureSettings);
@@ -31,12 +31,12 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
 
     const confirmAction = useCallback(async () => {
         try {
-            await action(processId, comment);
+            await action(processName, comment);
             props.close();
         } catch (error) {
             setValidationError(error?.response?.data);
         }
-    }, [action, comment, dispatch, processId, props]);
+    }, [action, comment, dispatch, processName, props]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(

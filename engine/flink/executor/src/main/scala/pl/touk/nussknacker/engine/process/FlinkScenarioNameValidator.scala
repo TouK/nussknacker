@@ -16,8 +16,8 @@ class FlinkScenarioNameValidator(config: Config) extends CustomProcessValidator 
   private val flinkProcessNameValidationPattern = "[a-zA-Z0-9_-]++[a-zA-Z0-9_ -]*+(?<! )".r
 
   def validate(process: CanonicalProcess): ValidatedNel[ScenarioNameValidationError, Unit] = {
-    val scenarioName = process.metaData.id
-    if (flinkProcessNameValidationPattern.pattern.matcher(scenarioName).matches()) {
+    val scenarioName = process.name
+    if (flinkProcessNameValidationPattern.pattern.matcher(scenarioName.value).matches()) {
       Valid(())
     } else {
       Invalid(

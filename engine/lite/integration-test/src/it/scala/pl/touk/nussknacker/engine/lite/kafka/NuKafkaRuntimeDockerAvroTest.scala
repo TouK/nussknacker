@@ -27,7 +27,7 @@ class NuKafkaRuntimeDockerAvroTest
     kafkaContainer.start()          // must be started before prepareTestCaseFixture because it creates topic via api
     schemaRegistryContainer.start() // should be started after kafka
     fixture =
-      prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
+      prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioName, NuKafkaRuntimeTestSamples.pingPongScenario)
     registerSchemas()
     startRuntimeContainer(fixture.scenarioFile)
     MultipleContainers(kafkaContainer, schemaRegistryContainer, runtimeContainer)

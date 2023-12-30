@@ -131,8 +131,8 @@ object ComponentTestProcessData {
         .source(SecondSourceName, SharedSourceName)
         .filter(SecondFilterName, "#input.id != null")
         .fragment(
-          FraudFragment.id,
-          FraudFragment.id,
+          FraudFragment.name.value,
+          FraudFragment.name.value,
           Nil,
           Map.empty,
           Map(

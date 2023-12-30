@@ -1,11 +1,11 @@
 import HttpService, { SourceWithParametersTest, TestProcessResponse } from "../../http/HttpService";
 import { displayProcessCounts } from "./displayProcessCounts";
 import { TestResults } from "../../common/TestResultUtils";
-import { Expression, Process, ProcessId } from "../../types";
+import { Expression, Process, ProcessName } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
 
-export function testProcessFromFile(id: ProcessId, testDataFile: File, process: Process): ThunkAction {
+export function testProcessFromFile(id: ProcessName, testDataFile: File, process: Process): ThunkAction {
     return (dispatch) => {
         dispatch({
             type: "PROCESS_LOADING",
@@ -18,7 +18,7 @@ export function testProcessFromFile(id: ProcessId, testDataFile: File, process: 
     };
 }
 
-export function testProcessWithParameters(id: ProcessId, testData: SourceWithParametersTest, process: Process): ThunkAction {
+export function testProcessWithParameters(id: ProcessName, testData: SourceWithParametersTest, process: Process): ThunkAction {
     return (dispatch) => {
         dispatch({
             type: "PROCESS_LOADING",
@@ -31,7 +31,7 @@ export function testProcessWithParameters(id: ProcessId, testData: SourceWithPar
     };
 }
 
-export function testScenarioWithGeneratedData(id: ProcessId, testSampleSize: string, process: Process): ThunkAction {
+export function testScenarioWithGeneratedData(id: ProcessName, testSampleSize: string, process: Process): ThunkAction {
     return (dispatch) => {
         dispatch({
             type: "PROCESS_LOADING",

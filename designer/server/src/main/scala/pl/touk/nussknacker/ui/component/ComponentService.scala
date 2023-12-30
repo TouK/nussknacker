@@ -57,9 +57,7 @@ object DefaultComponentService {
       nodesUsagesData: List[NodeUsageData]
   ): ComponentUsagesInScenario =
     ComponentUsagesInScenario(
-      id = process.id, // Right now we assume that scenario id is name..
-      name = process.idWithName.name,
-      processId = process.processId,
+      name = process.name,
       nodesUsagesData = nodesUsagesData,
       isFragment = process.isFragment,
       processCategory = process.processCategory,
@@ -119,7 +117,7 @@ class DefaultComponentService(
             Right(
               data
                 .map { case (process, nodesUsagesData) => toComponentUsagesInScenario(process, nodesUsagesData) }
-                .sortBy(_.id)
+                .sortBy(_.name.value)
             )
           )
           .getOrElse(Left(ComponentNotFoundError(componentId)))

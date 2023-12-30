@@ -3,15 +3,15 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/archive.svg";
 import * as DialogMessages from "../../../../common/DialogMessages";
-import { getProcessId, isArchivePossible } from "../../../../reducers/selectors/graph";
+import { getProcessName, isArchivePossible } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
 import { useArchiveHelper } from "./useArchiveHelper";
 
 function ArchiveButton({ disabled }: ToolbarButtonProps): JSX.Element {
-    const processId = useSelector(getProcessId);
-    const { confirmArchiveCallback } = useArchiveHelper(processId);
+    const processName = useSelector(getProcessName);
+    const { confirmArchiveCallback } = useArchiveHelper(processName);
     const archivePossible = useSelector(isArchivePossible);
     const available = !disabled && archivePossible;
     const { t } = useTranslation();
@@ -21,12 +21,12 @@ function ArchiveButton({ disabled }: ToolbarButtonProps): JSX.Element {
         () =>
             available &&
             confirm({
-                text: DialogMessages.archiveProcess(processId),
+                text: DialogMessages.archiveProcess(processName),
                 onConfirmCallback: confirmArchiveCallback,
                 confirmText: t("panels.actions.process-archive.yes", "Yes"),
                 denyText: t("panels.actions.process-archive.no", "No"),
             }),
-        [available, confirm, processId, t, confirmArchiveCallback],
+        [available, confirm, processName, t, confirmArchiveCallback],
     );
 
     return (

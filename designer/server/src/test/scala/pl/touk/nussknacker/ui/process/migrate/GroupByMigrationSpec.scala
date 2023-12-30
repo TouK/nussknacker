@@ -34,7 +34,7 @@ class GroupByMigrationSpec extends AnyFunSuite {
     val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
     results should have size 1
-    val processMigrationResult = results.find(_.converted.id == process.id).get
+    val processMigrationResult = results.find(_.converted.name == process.name).get
     processMigrationResult.shouldFail shouldBe false
     getFirst[CustomNode](processMigrationResult).parameters shouldBe List(NodeParameter("groupBy", "#input"))
   }
@@ -53,7 +53,7 @@ class GroupByMigrationSpec extends AnyFunSuite {
     val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
     results should have size 1
-    val processMigrationResult = results.find(_.converted.id == process.id).get
+    val processMigrationResult = results.find(_.converted.name == process.name).get
     processMigrationResult.shouldFail shouldBe false
     getFirst[CustomNode](processMigrationResult).parameters shouldBe List(NodeParameter("keyBy", "#input"))
   }
@@ -71,7 +71,7 @@ class GroupByMigrationSpec extends AnyFunSuite {
     val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
     results should have size 1
-    val processMigrationResult = results.find(_.converted.id == process.id).get
+    val processMigrationResult = results.find(_.converted.name == process.name).get
     processMigrationResult.shouldFail shouldBe false
   }
 

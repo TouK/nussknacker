@@ -43,7 +43,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
   ) {
 
     def deployScenario(scenario: CanonicalProcess): Unit = {
-      val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
+      val version = ProcessVersion.empty.copy(processName = scenario.name)
       deploymentManager.deploy(version, DeploymentData.empty, scenario, None).futureValue
     }
 

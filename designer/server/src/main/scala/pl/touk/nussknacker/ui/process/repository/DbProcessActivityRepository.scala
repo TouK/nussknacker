@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import java.sql.Timestamp
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
@@ -64,8 +64,8 @@ final case class DbProcessActivityRepository(dbRef: DbRef)
     val findProcessActivityAction = for {
       fetchedComments    <- commentsTable.filter(_.processId === processId.id).sortBy(_.createDate.desc).result
       fetchedAttachments <- attachmentsTable.filter(_.processId === processId.id).sortBy(_.createDate.desc).result
-      comments    = fetchedComments.map(c => Comment(c, processId.name.value)).toList
-      attachments = fetchedAttachments.map(c => Attachment(c, processId.name.value)).toList
+      comments    = fetchedComments.map(c => Comment(c, processId.name)).toList
+      attachments = fetchedAttachments.map(c => Attachment(c, processId.name)).toList
     } yield ProcessActivity(comments, attachments)
 
     run(findProcessActivityAction)
@@ -104,7 +104,8 @@ object DbProcessActivityRepository {
 
   @JsonCodec final case class Attachment(
       id: Long,
-      processId: String,
+      // TODO: rename to processName
+      processId: ProcessName,
       processVersionId: VersionId,
       fileName: String,
       user: String,
@@ -113,7 +114,7 @@ object DbProcessActivityRepository {
 
   object Attachment {
 
-    def apply(attachment: AttachmentEntityData, processName: String): Attachment = {
+    def apply(attachment: AttachmentEntityData, processName: ProcessName): Attachment = {
       Attachment(
         id = attachment.id,
         processId = processName,
@@ -128,7 +129,8 @@ object DbProcessActivityRepository {
 
   @JsonCodec final case class Comment(
       id: Long,
-      processId: String,
+      // TODO: rename to processName
+      processId: ProcessName,
       processVersionId: VersionId,
       content: String,
       user: String,
@@ -137,7 +139,7 @@ object DbProcessActivityRepository {
 
   object Comment {
 
-    def apply(comment: CommentEntityData, processName: String): Comment = {
+    def apply(comment: CommentEntityData, processName: ProcessName): Comment = {
       Comment(
         id = comment.id,
         processId = processName,

@@ -48,7 +48,7 @@ export const getNodeExpressionType = createSelector(getExpressionType, getNodeTy
     };
 });
 export const getProcessProperties = createSelector(getProcessToDisplay, (s) => s.properties);
-export const getProcessId = createSelector(getProcessToDisplay, (s) => s.id);
+export const getProcessName = createSelector(getProcessToDisplay, (s) => s.name);
 export const getCurrentErrors = createSelector(
     getValidationPerformed,
     getValidationErrors,

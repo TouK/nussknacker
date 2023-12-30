@@ -22,7 +22,7 @@ object DefaultSharedKafkaProducerHolder
       creator: KafkaProducerCreator[Array[Byte], Array[Byte]],
       metaData: MetaData
   ): DefaultSharedKafkaProducer = {
-    val clientId = s"$name-${metaData.id}-${creator.hashCode()}"
+    val clientId = s"$name-${metaData.name}-${creator.hashCode()}"
     DefaultSharedKafkaProducer(creator, creator.createProducer(clientId))
   }
 

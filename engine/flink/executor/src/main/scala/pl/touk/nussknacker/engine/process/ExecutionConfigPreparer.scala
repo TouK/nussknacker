@@ -53,7 +53,7 @@ object ExecutionConfigPreparer extends LazyLogging {
         config: ExecutionConfig
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
       val namingParameters = objectNaming
-        .objectNamingParameters(jobData.metaData.id, modelConfig, new NamingContext(FlinkUsageKey))
+        .objectNamingParameters(jobData.metaData.name.value, modelConfig, new NamingContext(FlinkUsageKey))
         .map(p => NamingParameters(p.toTags))
 
       NkGlobalParameters.setInContext(

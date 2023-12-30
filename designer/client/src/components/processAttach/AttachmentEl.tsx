@@ -10,7 +10,7 @@ export function AttachmentEl({ data }: { data: Attachment }) {
         <li style={{ display: "flex" }}>
             <DownloadAttachment className="download-attachment">
                 <DownloadButton
-                    onClick={() => HttpService.downloadAttachment(data.processId, data.processVersionId, data.id, data.fileName)}
+                    onClick={() => HttpService.downloadAttachment(data.processName, data.processVersionId, data.id, data.fileName)}
                 >
                     <DownloadIcon sx={{ width: 13, height: 13 }} />
                 </DownloadButton>

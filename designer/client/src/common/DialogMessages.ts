@@ -1,31 +1,33 @@
 import i18next from "i18next";
-import { ProcessId } from "../types";
+import { ProcessName } from "../types";
 
 export const unsavedProcessChanges = () => {
     return i18next.t("dialogMessages.unsavedProcessChanges", "There are some unsaved scenario changes. Discard unsaved changes?");
 };
 
-export const deploy = (processId: ProcessId) => {
-    return i18next.t("dialogMessages.deploy", "Are you sure you want to deploy {{processId}}?", { processId });
+export const deploy = (processName: ProcessName) => {
+    return i18next.t("dialogMessages.deploy", "Are you sure you want to deploy {{processName}}?", { processName: processName });
 };
 
-export const migrate = (processId, environmentId) => {
-    return i18next.t("dialogMessages.migrate", "Are you sure you want to migrate {{processId}} to {{environmentId}}?", {
-        processId,
+export const migrate = (processName, environmentId) => {
+    return i18next.t("dialogMessages.migrate", "Are you sure you want to migrate {{processName}} to {{environmentId}}?", {
+        processName: processName,
         environmentId,
     });
 };
 
-export const stop = (processId: ProcessId) => {
-    return i18next.t("dialogMessages.stop", "Are you sure you want to stop {{processId}}?", { processId });
+export const stop = (processName: ProcessName) => {
+    return i18next.t("dialogMessages.stop", "Are you sure you want to stop {{processName}}?", { processName: processName });
 };
 
-export const archiveProcess = (processId: ProcessId) => {
-    return i18next.t("dialogMessages.archiveProcess", "Are you sure you want to archive {{processId}}?", { processId });
+export const archiveProcess = (processName: ProcessName) => {
+    return i18next.t("dialogMessages.archiveProcess", "Are you sure you want to archive {{processName}}?", { processName: processName });
 };
 
-export const unArchiveProcess = (processId: ProcessId) => {
-    return i18next.t("dialogMessages.unArchiveProcess", "Are you sure you want to unarchive {{processId}}?", { processId });
+export const unArchiveProcess = (processName: ProcessName) => {
+    return i18next.t("dialogMessages.unArchiveProcess", "Are you sure you want to unarchive {{processName}}?", {
+        processName: processName,
+    });
 };
 
 export const deleteComment = () => {

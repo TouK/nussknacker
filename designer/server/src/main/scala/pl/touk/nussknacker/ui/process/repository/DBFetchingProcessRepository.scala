@@ -200,8 +200,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
       history: Option[Seq[ScenarioVersion]]
   ): ScenarioWithDetailsEntity[PS] = {
     repository.ScenarioWithDetailsEntity[PS](
-      id = process.name.value, // TODO: replace by Long / ProcessId
-      processId = process.id,  // TODO: Remove it weh we will support Long / ProcessId
+      processId = process.id,
       name = process.name,
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,

@@ -43,20 +43,20 @@ class ProcessActivityResourceSpec
     val commentContent = "test message"
     saveProcess(processToSave) { status shouldEqual StatusCodes.OK }
     Post(
-      s"/processes/${processToSave.id}/1/activity/comments",
+      s"/processes/${processToSave.name}/1/activity/comments",
       HttpEntity(ContentTypes.`text/plain(UTF-8)`, commentContent)
     ) ~> processActivityRouteWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      getActivity(ProcessName(processToSave.id)) ~> check {
+      getActivity(processToSave.name) ~> check {
         val processActivity = responseAs[ProcessActivity]
         val firstComment    = processActivity.comments.head
         processActivity.comments should have size 1
         processActivity.comments.head.content shouldBe commentContent
         Delete(
-          s"/processes/${processToSave.id}/activity/comments/${firstComment.id}"
+          s"/processes/${processToSave.name}/activity/comments/${firstComment.id}"
         ) ~> processActivityRouteWithAllPermissions ~> check {
           status shouldEqual StatusCodes.OK
-          getActivity(ProcessName(processToSave.id)) ~> check {
+          getActivity(processToSave.name) ~> check {
             val newProcessActivity = responseAs[ProcessActivity]
             newProcessActivity.comments shouldBe empty
           }
@@ -74,17 +74,17 @@ class ProcessActivityResourceSpec
     val mutipartFile = MultipartUtils.prepareMultiPart(fileContent, "attachment", fileName)
 
     Post(
-      s"/processes/${processToSave.id}/1/activity/attachments",
+      s"/processes/${processToSave.name}/1/activity/attachments",
       mutipartFile
     ) ~> attachmentsRouteWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
 
-      getActivity(ProcessName(processToSave.id)) ~> check {
+      getActivity(processToSave.name) ~> check {
         val processActivity = responseAs[ProcessActivity]
         val attachment      = processActivity.attachments.head
         attachment.fileName shouldBe fileName
-        attachment.processId shouldBe processToSave.id
-        getAttachment(processToSave.id, attachment.id) { responseAs[String] shouldBe fileContent }
+        attachment.processId shouldBe processToSave.name
+        getAttachment(processToSave.name, attachment.id) { responseAs[String] shouldBe fileContent }
       }
     }
   }
@@ -100,29 +100,31 @@ class ProcessActivityResourceSpec
     val mutipartFile2 = MultipartUtils.prepareMultiPart(fileContent2, "attachment", fileName)
 
     Post(
-      s"/processes/${processToSave.id}/1/activity/attachments",
+      s"/processes/${processToSave.name}/1/activity/attachments",
       mutipartFile1
     ) ~> attachmentsRouteWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       Post(
-        s"/processes/${processToSave.id}/1/activity/attachments",
+        s"/processes/${processToSave.name}/1/activity/attachments",
         mutipartFile2
       ) ~> attachmentsRouteWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
-        getActivity(ProcessName(processToSave.id)) ~> check {
+        getActivity(processToSave.name) ~> check {
           val processActivity = responseAs[ProcessActivity]
           processActivity.attachments.size shouldBe 2
           val attachmentsOrdered         = processActivity.attachments.sortBy(_.createDate)
           val (attachment1, attachment2) = (attachmentsOrdered.head, attachmentsOrdered(1))
-          getAttachment(processToSave.id, attachment1.id) { responseAs[String] shouldBe fileContent1 }
-          getAttachment(processToSave.id, attachment2.id) { responseAs[String] shouldBe fileContent2 }
+          getAttachment(processToSave.name, attachment1.id) { responseAs[String] shouldBe fileContent1 }
+          getAttachment(processToSave.name, attachment2.id) { responseAs[String] shouldBe fileContent2 }
         }
       }
     }
   }
 
-  private def getAttachment(processId: String, attachmentId: Long)(testCode: => Assertion) = {
-    Get(s"/processes/$processId/1/activity/attachments/$attachmentId") ~> attachmentsRouteWithAllPermissions ~> check {
+  private def getAttachment(processName: ProcessName, attachmentId: Long)(testCode: => Assertion) = {
+    Get(
+      s"/processes/$processName/1/activity/attachments/$attachmentId"
+    ) ~> attachmentsRouteWithAllPermissions ~> check {
       testCode
     }
   }

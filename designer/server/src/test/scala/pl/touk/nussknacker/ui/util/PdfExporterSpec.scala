@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.engine.api.process.{ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestCategories, TestProcessUtil, TestProcessingTypes}
@@ -36,7 +36,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
       .map(commentId =>
         Comment(
           commentId,
-          process.id,
+          process.name,
           details.processVersionId,
           "Jakiś taki dziwny ten proces??",
           "Wacław Wójcik",
@@ -55,7 +55,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   it should "export empty process to " in {
     val displayable: DisplayableProcess = DisplayableProcess(
-      "Proc11",
+      ProcessName("Proc11"),
       ProcessProperties(StreamMetaData()),
       List(),
       List(),
@@ -74,7 +74,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   it should "not allow entities in provided SVG" in {
     val displayable: DisplayableProcess = DisplayableProcess(
-      "Proc11",
+      ProcessName("Proc11"),
       ProcessProperties(StreamMetaData()),
       List(),
       List(),
@@ -93,7 +93,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
   }
 
   private def createDetails(displayable: DisplayableProcess) = TestProcessUtil.toDetails(
-    "My process",
+    ProcessName("My process"),
     json = Some(displayable),
     description = Some(
       "My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."

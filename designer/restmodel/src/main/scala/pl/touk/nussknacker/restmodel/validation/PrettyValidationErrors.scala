@@ -245,11 +245,11 @@ object PrettyValidationErrors {
 
   private def mapIdErrorToNodeError(error: IdError) = {
     val validatedObjectType = error match {
-      case ScenarioIdError(_, _, isFragment) => if (isFragment) "Fragment" else "Scenario"
-      case NodeIdValidationError(_, _)       => "Node"
+      case ScenarioNameError(_, _, isFragment) => if (isFragment) "Fragment" else "Scenario"
+      case NodeIdValidationError(_, _)         => "Node"
     }
     val errorSeverity = error match {
-      case ScenarioIdError(_, _, _) => NodeValidationErrorType.SaveAllowed
+      case ScenarioNameError(_, _, _) => NodeValidationErrorType.SaveAllowed
       case NodeIdValidationError(errorType, _) =>
         errorType match {
           case ProcessCompilationError.EmptyValue | IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
@@ -257,7 +257,7 @@ object PrettyValidationErrors {
         }
     }
     val fieldName = error match {
-      case ScenarioIdError(_, _, _)    => CanonicalProcess.IdFieldName
+      case ScenarioNameError(_, _, _)  => CanonicalProcess.IdFieldName
       case NodeIdValidationError(_, _) => pl.touk.nussknacker.engine.graph.node.IdFieldName
     }
     val message = error.errorType match {

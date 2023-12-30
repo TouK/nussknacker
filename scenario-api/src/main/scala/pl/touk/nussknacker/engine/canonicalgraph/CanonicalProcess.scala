@@ -84,7 +84,7 @@ case class CanonicalProcess(
 
   import CanonicalProcess._
 
-  lazy val id: String = metaData.id
+  def name: ProcessName = metaData.name
 
   def allStartNodes: NonEmptyList[List[CanonicalNode]] = NonEmptyList(nodes, additionalBranches)
 

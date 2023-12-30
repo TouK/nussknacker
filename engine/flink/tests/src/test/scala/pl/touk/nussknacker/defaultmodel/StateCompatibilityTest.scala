@@ -160,11 +160,11 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
 
     val jobExecutionResult = env.execute(streamGraph)
-    env.waitForStart(jobExecutionResult.getJobID, process1.id)()
+    env.waitForStart(jobExecutionResult.getJobID, process1.name.value)()
     sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input)
 
     verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
-    env.stopJob(process1.id, jobExecutionResult)
+    env.stopJob(process1.name.value, jobExecutionResult)
   }
 
   private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
@@ -184,7 +184,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   private def run(process: CanonicalProcess, action: JobExecutionResult => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
-    env.withJobRunning(process.id, action)
+    env.withJobRunning(process.name.value, action)
   }
 
 }

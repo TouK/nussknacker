@@ -156,7 +156,7 @@ object UIProcessObjectsFactory {
       details    <- fragmentsDetails
       definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption
     } yield {
-      details.canonical.id -> definition.toStaticDefinition(details.category)
+      details.canonical.name.value -> definition.toStaticDefinition(details.category)
     }).toMap
   }
 

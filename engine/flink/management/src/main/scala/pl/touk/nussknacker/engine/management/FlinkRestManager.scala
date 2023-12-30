@@ -167,13 +167,13 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     statuses.filterNot(details => SimpleStateStatus.isFinalStatus(details.status)) match {
       case Nil =>
         logger.warn(
-          s"Trying to cancel ${processName.value}${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink."
+          s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink."
         )
         Future.successful(())
       case single :: Nil => cancelJob(single)
       case moreThanOne @ (_ :: _ :: _) =>
         logger.warn(
-          s"Found duplicate jobs of ${processName.value}${deploymentId.map(" with id: " + _).getOrElse("")}: $moreThanOne. Cancelling all in non terminal state."
+          s"Found duplicate jobs of $processName${deploymentId.map(" with id: " + _).getOrElse("")}: $moreThanOne. Cancelling all in non terminal state."
         )
         Future.sequence(moreThanOne.map(cancelJob)).map(_ => ())
     }

@@ -533,7 +533,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   ): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
-    stoppableEnv.executeAndWaitForFinished(testProcess.id)()
+    stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
   }
 
   private def variablesForKey(

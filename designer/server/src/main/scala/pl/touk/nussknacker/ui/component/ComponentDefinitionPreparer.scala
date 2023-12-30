@@ -302,7 +302,7 @@ object ComponentDefinitionPreparer {
           }
           // TODO: enable choice of output type
           NodeEdges(
-            ComponentInfo(ComponentType.Fragment, process.metaData.id),
+            ComponentInfo(ComponentType.Fragment, process.name.value),
             outputs.map(EdgeType.FragmentOutput),
             canChooseNodes = false,
             isForInputDefinition = false

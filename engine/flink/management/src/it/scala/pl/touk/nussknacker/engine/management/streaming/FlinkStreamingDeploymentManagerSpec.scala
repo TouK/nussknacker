@@ -24,14 +24,14 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   private val processId = ProcessId(765)
 
   test("deploy scenario in running flink") {
-    val processName = "runningFlink"
+    val processName = ProcessName("runningFlink")
 
-    val version = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
+    val version = ProcessVersion(VersionId(15), processName, processId, "user1", Some(13))
     val process = SampleProcess.prepareProcess(processName)
 
     deployProcessAndWaitIfRunning(process, version)
     try {
-      processVersion(ProcessName(processName)) shouldBe List(version)
+      processVersion(processName) shouldBe List(version)
     } finally {
       cancelProcess(processName)
     }
@@ -40,9 +40,9 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   // manual test because it is hard to make it automatic
   // to run this test you have to add Thread.sleep(over 1 minute) to FlinkProcessMain.main method
   ignore("continue on timeout exception during scenario deploy") {
-    val processName = "runningFlink"
+    val processName = ProcessName("runningFlink")
     val process     = SampleProcess.prepareProcess(processName)
-    val version     = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
+    val version     = ProcessVersion(VersionId(15), processName, processId, "user1", Some(13))
 
     val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, process, None)
 
@@ -55,58 +55,58 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   }
 
   test("be able verify&redeploy kafka scenario") {
-    val processId    = "verifyAndRedeploy"
-    val outTopic     = s"output-$processId"
-    val inTopic      = s"input-$processId"
-    val kafkaProcess = SampleProcess.kafkaProcess(processId, inTopic)
+    val processName  = ProcessName("verifyAndRedeploy")
+    val outTopic     = s"output-$processName"
+    val inTopic      = s"input-$processName"
+    val kafkaProcess = SampleProcess.kafkaProcess(processName, inTopic)
 
     kafkaClient.createTopic(outTopic, 1)
     kafkaClient.createTopic(inTopic, 1)
     logger.info("Kafka topics created, deploying scenario")
 
-    deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
+    deployProcessAndWaitIfRunning(kafkaProcess, empty(processName))
     try {
       kafkaClient.sendMessage(inTopic, "1").futureValue
       messagesFromTopic(outTopic, 1).head shouldBe "1"
 
-      deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
+      deployProcessAndWaitIfRunning(kafkaProcess, empty(processName))
 
       kafkaClient.sendMessage(inTopic, "2").futureValue
       messagesFromTopic(outTopic, 2).last shouldBe "2"
     } finally {
-      cancelProcess(kafkaProcess.id)
+      cancelProcess(kafkaProcess.name)
     }
   }
 
   test("save state when redeploying") {
-    val processId                           = "redeploy"
-    val outTopic                            = s"output-$processId"
-    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
+    val processName                         = ProcessName("redeploy")
+    val outTopic                            = s"output-$processName"
+    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processName)
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
     try {
       // we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
       messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
 
-      deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
+      deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
 
       val messages = messagesFromTopic(outTopic, 2)
       messages shouldBe List("List(One element)", "List(One element, One element)")
     } finally {
-      cancelProcess(processId)
+      cancelProcess(processName)
     }
   }
 
   test("snapshot state and be able to deploy using it") {
-    val processId                           = "snapshot"
-    val outTopic                            = s"output-$processId"
-    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
+    val processName                         = ProcessName("snapshot")
+    val outTopic                            = s"output-$processName"
+    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processName)
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
     try {
       // we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
       messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
@@ -114,99 +114,103 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       val savepointDir = Files.createTempDirectory("customSavepoint")
       val savepointPathFuture = deploymentManager
         .savepoint(
-          ProcessName(processEmittingOneElementAfterStart.id),
+          processEmittingOneElementAfterStart.name,
           savepointDir = Some(savepointDir.toUri.toString)
         )
         .map(_.path)
       val savepointPath = new URI(savepointPathFuture.futureValue)
       Paths.get(savepointPath).startsWith(savepointDir) shouldBe true
 
-      cancelProcess(processId)
-      deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.toString))
+      cancelProcess(processName)
+      deployProcessAndWaitIfRunning(
+        processEmittingOneElementAfterStart,
+        empty(processName),
+        Some(savepointPath.toString)
+      )
 
       val messages = messagesFromTopic(outTopic, 2)
       messages shouldBe List("List(One element)", "List(One element, One element)")
     } finally {
-      cancelProcess(processId)
+      cancelProcess(processName)
     }
   }
 
   test("should stop scenario and deploy it using savepoint") {
-    val processId                           = "stop"
-    val outTopic                            = s"output-$processId"
-    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
+    val processName                         = ProcessName("stop")
+    val outTopic                            = s"output-$processName"
+    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processName)
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
     try {
       messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
 
       val savepointPath =
-        deploymentManager.stop(ProcessName(processId), savepointDir = None, user = userToAct).map(_.path)
+        deploymentManager.stop(processName, savepointDir = None, user = userToAct).map(_.path)
       eventually {
-        val status = deploymentManager.getProcessStates(ProcessName(processId)).futureValue
+        val status = deploymentManager.getProcessStates(processName).futureValue
         status.value.map(_.status) shouldBe List(SimpleStateStatus.Canceled)
       }
 
       deployProcessAndWaitIfRunning(
         processEmittingOneElementAfterStart,
-        empty(processId),
+        empty(processName),
         Some(savepointPath.futureValue)
       )
 
       val messages = messagesFromTopic(outTopic, 2)
       messages shouldBe List("List(One element)", "List(One element, One element)")
     } finally {
-      cancelProcess(processId)
+      cancelProcess(processName)
     }
   }
 
   test("fail to redeploy if old is incompatible") {
-    val processId = "redeployFail"
-    val outTopic  = s"output-$processId"
-    val process   = StatefulSampleProcess.prepareProcessStringWithStringState(processId)
+    val processName = ProcessName("redeployFail")
+    val outTopic    = s"output-$processName"
+    val process     = StatefulSampleProcess.prepareProcessStringWithStringState(processName)
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(process, empty(process.id))
+    deployProcessAndWaitIfRunning(process, empty(process.name))
     try {
       messagesFromTopic(outTopic, 1) shouldBe List("")
 
       logger.info("Starting to redeploy")
 
-      val statefullProcess = StatefulSampleProcess.prepareProcessWithLongState(processId)
+      val statefullProcess = StatefulSampleProcess.prepareProcessWithLongState(processName)
       val exception =
-        deploymentManager.deploy(empty(process.id), defaultDeploymentData, statefullProcess, None).failed.futureValue
+        deploymentManager.deploy(empty(process.name), defaultDeploymentData, statefullProcess, None).failed.futureValue
       exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
     } finally {
-      cancelProcess(processId)
+      cancelProcess(processName)
     }
   }
 
   test("fail to redeploy if result produced by aggregation is incompatible") {
-    val processId = "redeployFailAggregator"
-    val outTopic  = s"output-$processId"
-    val process   = StatefulSampleProcess.processWithAggregator(processId, "#AGG.set")
+    val processName = ProcessName("redeployFailAggregator")
+    val outTopic    = s"output-$processName"
+    val process     = StatefulSampleProcess.processWithAggregator(processName, "#AGG.set")
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(process, empty(process.id))
+    deployProcessAndWaitIfRunning(process, empty(process.name))
     try {
       messagesFromTopic(outTopic, 1) shouldBe List("test")
 
       logger.info("Starting to redeploy")
 
-      val statefulProcess = StatefulSampleProcess.processWithAggregator(processId, "#AGG.approxCardinality")
+      val statefulProcess = StatefulSampleProcess.processWithAggregator(processName, "#AGG.approxCardinality")
       val exception =
-        deploymentManager.deploy(empty(process.id), defaultDeploymentData, statefulProcess, None).failed.futureValue
+        deploymentManager.deploy(empty(process.name), defaultDeploymentData, statefulProcess, None).failed.futureValue
       exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
     } finally {
-      cancelProcess(processId)
+      cancelProcess(processName)
     }
   }
 
-  def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processName = ProcessName(processId))
+  def empty(processName: ProcessName): ProcessVersion = ProcessVersion.empty.copy(processName = processName)
 
   test("extract scenario definition") {
     val modelData  = ModelData(processingTypeConfig)

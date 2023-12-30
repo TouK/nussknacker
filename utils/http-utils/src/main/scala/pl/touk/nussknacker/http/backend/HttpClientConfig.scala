@@ -2,6 +2,7 @@ package pl.touk.nussknacker.http.backend
 
 import net.ceedubs.ficus.readers.ValueReader
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.http.backend.HttpClientConfig.EffectiveHttpClientConfig
 import sttp.client3.SttpBackendOptions
 
@@ -18,25 +19,25 @@ case class HttpClientConfig(
     configForProcess: Option[Map[String, HttpClientConfig]]
 ) {
 
-  def toAsyncHttpClientConfig(processId: Option[String]): DefaultAsyncHttpClientConfig.Builder = {
-    val effectiveConfig = toEffectiveHttpClientConfig(processId)
+  def toAsyncHttpClientConfig(processName: Option[ProcessName]): DefaultAsyncHttpClientConfig.Builder = {
+    val effectiveConfig = toEffectiveHttpClientConfig(processName)
     new DefaultAsyncHttpClientConfig.Builder()
       .setConnectTimeout(effectiveConfig.connectTimeout.toMillis.toInt)
       .setRequestTimeout(effectiveConfig.timeout.toMillis.toInt)
       .setIoThreadsCount(effectiveConfig.maxPoolSize)
       .setUseNativeTransport(effectiveConfig.useNative)
       .setFollowRedirect(effectiveConfig.followRedirect)
-      .setThreadPoolName(processId.map(_ + s"-http-pool").getOrElse(s"http-pool"))
+      .setThreadPoolName(processName.map(_.value + s"-http-pool").getOrElse(s"http-pool"))
   }
 
-  def toSttpBackendOptions(processId: Option[String]): SttpBackendOptions = {
-    val effectiveConfig = toEffectiveHttpClientConfig(processId)
+  def toSttpBackendOptions(processName: Option[ProcessName]): SttpBackendOptions = {
+    val effectiveConfig = toEffectiveHttpClientConfig(processName)
     SttpBackendOptions.Default.copy(connectionTimeout = effectiveConfig.connectTimeout)
   }
 
-  private def toEffectiveHttpClientConfig(processId: Option[String]): EffectiveHttpClientConfig = {
+  private def toEffectiveHttpClientConfig(processName: Option[ProcessName]): EffectiveHttpClientConfig = {
     def extractConfig[T](extract: HttpClientConfig => Option[T], default: T): T = {
-      val specificConfig = processId.flatMap(id => configForProcess.flatMap(_.get(id)))
+      val specificConfig = processName.flatMap(name => configForProcess.flatMap(_.get(name.value)))
       specificConfig.flatMap(extract).orElse(extract(this)).getOrElse(default)
     }
     EffectiveHttpClientConfig(

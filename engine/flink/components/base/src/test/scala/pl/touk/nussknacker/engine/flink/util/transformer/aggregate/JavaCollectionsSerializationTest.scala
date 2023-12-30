@@ -79,7 +79,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
   ): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
-    stoppableEnv.executeAndWaitForFinished(testProcess.id)()
+    stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
   }
 
 }

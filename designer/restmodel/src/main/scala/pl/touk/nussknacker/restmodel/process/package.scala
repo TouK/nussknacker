@@ -9,8 +9,8 @@ package object process {
   @JsonCodec final case class UpdateProcessCategoryResponse(oldCategory: String, newCategory: String)
 
   object UpdateProcessNameResponse {
-    def create(oldNameString: String, newNameString: String): UpdateProcessNameResponse =
-      UpdateProcessNameResponse(ProcessName(oldNameString), ProcessName(newNameString))
+    def create(oldNameString: ProcessName, newNameString: ProcessName): UpdateProcessNameResponse =
+      UpdateProcessNameResponse(oldNameString, newNameString)
   }
 
   @JsonCodec final case class UpdateProcessNameResponse(oldName: ProcessName, newName: ProcessName)

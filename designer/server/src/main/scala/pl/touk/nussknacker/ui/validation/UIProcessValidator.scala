@@ -114,7 +114,7 @@ class UIProcessValidator(
   }
 
   private def validateScenarioId(displayable: DisplayableProcess): ValidationResult = {
-    IdValidator.validateScenarioId(displayable.id, displayable.metaData.isFragment) match {
+    IdValidator.validateScenarioName(displayable.name, displayable.metaData.isFragment) match {
       case Valid(_)   => ValidationResult.success
       case Invalid(e) => formatErrors(e)
     }

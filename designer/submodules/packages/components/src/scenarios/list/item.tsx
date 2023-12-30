@@ -40,8 +40,8 @@ export function FirstLine({ row }: { row: RowType }): JSX.Element {
 
     return (
         <Stack direction="row" spacing={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-            <CopyTooltip text={row.id} title={t("scenario.copyName", "Copy name to clipboard")}>
-                <Highlight value={row.id} filterText={filtersContext.getFilter("NAME")} />
+            <CopyTooltip text={row.name} title={t("scenario.copyName", "Copy name to clipboard")}>
+                <Highlight value={row.name} filterText={filtersContext.getFilter("NAME")} />
             </CopyTooltip>
             <Category value={row.processCategory} filtersContext={filtersContext} />
         </Stack>

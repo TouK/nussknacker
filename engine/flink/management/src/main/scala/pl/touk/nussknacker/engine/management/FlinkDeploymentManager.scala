@@ -41,7 +41,7 @@ abstract class FlinkDeploymentManager(
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
     for {
       statusesWithFreshness <- getProcessStates(idWithName.name)
-      _ = logger.debug(s"Statuses for ${idWithName.name.value}: $statusesWithFreshness")
+      _ = logger.debug(s"Statuses for ${idWithName.name}: $statusesWithFreshness")
       actionAfterPostprocessOpt <- postprocess(idWithName, statusesWithFreshness.value)
       engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(
         statusesWithFreshness.value,
@@ -210,14 +210,13 @@ abstract class FlinkDeploymentManager(
   private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(
       action: ExternalDeploymentId => Future[T]
   ): Future[T] = {
-    val name = processName.value
     getFreshProcessStates(processName).flatMap { statuses =>
       val runningDeploymentIds = statuses.filter(statusDetailsPredicate).collect {
         case StatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _, _, _) => deploymentId
       }
       runningDeploymentIds match {
         case Nil =>
-          Future.failed(new IllegalStateException(s"Job $name not found"))
+          Future.failed(new IllegalStateException(s"Job $processName not found"))
         case single :: Nil =>
           action(single)
         case moreThanOne =>

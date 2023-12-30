@@ -110,7 +110,7 @@ class DBFetchingProcessRepositorySpec
     processExists(newName) shouldBe false
 
     val before = fetchMetaDataIdsForAllVersions(oldName)
-    before.toSet shouldBe Set(oldName.value)
+    before.toSet shouldBe Set(oldName)
 
     renameProcess(oldName, newName)
 
@@ -122,7 +122,7 @@ class DBFetchingProcessRepositorySpec
     val newAfter = fetchMetaDataIdsForAllVersions(newName)
     oldAfter.length shouldBe 0
     newAfter.length shouldBe before.length
-    newAfter.toSet shouldBe Set(newName.value)
+    newAfter.toSet shouldBe Set(newName)
   }
 
   // TODO: remove this in favour of process-audit-log
@@ -147,7 +147,7 @@ class DBFetchingProcessRepositorySpec
       .futureValue
 
     atLeast(1, comments) should matchPattern {
-      case Comment(_, "newName", VersionId(1L), "Rename: [oldName] -> [newName]", user.username, _) =>
+      case Comment(_, ProcessName("newName"), VersionId(1L), "Rename: [oldName] -> [newName]", user.username, _) =>
     }
   }
 
@@ -295,12 +295,12 @@ class DBFetchingProcessRepositorySpec
     dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
   }
 
-  private def saveProcess(espProcess: CanonicalProcess, now: Instant = Instant.now(), category: String = "") = {
+  private def saveProcess(process: CanonicalProcess, now: Instant = Instant.now(), category: String = "") = {
     currentTime = now
     val action = CreateProcessAction(
-      ProcessName(espProcess.id),
+      process.name,
       category,
-      espProcess,
+      process,
       TestProcessingTypes.Streaming,
       isFragment = false,
       forwardedUserName = None
@@ -323,7 +323,7 @@ class DBFetchingProcessRepositorySpec
         .futureValue
         .filter(_.processId.value == processId.value)
         .map(_.json)
-        .map(_.metaData.id)
+        .map(_.name)
     }
   }
 
