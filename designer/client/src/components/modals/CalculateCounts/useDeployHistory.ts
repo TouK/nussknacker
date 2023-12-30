@@ -5,12 +5,12 @@ import { DATE_FORMAT } from "../../../config";
 import { Range } from "./CountsRangesButtons";
 import moment from "moment";
 
-export function useDeployHistory(processId: string): Range[] {
+export function useDeployHistory(processName: string): Range[] {
     const { t } = useTranslation();
     const [deploys, setDeploys] = useState<Range[]>([]);
 
     useEffect(() => {
-        HttpService.fetchProcessesDeployments(processId)
+        HttpService.fetchProcessesDeployments(processName)
             .then((dates) =>
                 dates.map((current, i, all) => {
                     const from = moment(current);
@@ -28,7 +28,7 @@ export function useDeployHistory(processId: string): Range[] {
                 }),
             )
             .then(setDeploys);
-    }, [t, processId]);
+    }, [t, processName]);
 
     return deploys;
 }

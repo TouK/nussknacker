@@ -54,11 +54,11 @@ class ProcessStateUtils {
         return processState?.tooltip || state?.tooltip || unknownTooltip();
     }
 
-    getTransitionKey({ id, isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
+    getTransitionKey({ name, isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
         if (isArchived || isFragment) {
-            return `${id}`;
+            return `${name}`;
         }
-        return `${id}-${processState?.icon || state?.icon || unknownIcon}`;
+        return `${name}-${processState?.icon || state?.icon || unknownIcon}`;
     }
 }
 

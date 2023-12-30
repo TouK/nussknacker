@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SubsequentNode
@@ -9,8 +10,8 @@ object SampleProcess {
 
   import spel.Implicits._
 
-  def prepareProcess(id: String, parallelism: Option[Int] = None): CanonicalProcess = {
-    val baseProcessBuilder = ScenarioBuilder.streaming(id)
+  def prepareProcess(name: ProcessName, parallelism: Option[Int] = None): CanonicalProcess = {
+    val baseProcessBuilder = ScenarioBuilder.streaming(name.value)
     parallelism
       .map(baseProcessBuilder.parallelism)
       .getOrElse(baseProcessBuilder)
@@ -19,11 +20,11 @@ object SampleProcess {
       .emptySink("endSend", "sendSms", "Value" -> "'message'")
   }
 
-  def kafkaProcess(id: String, topic: String): CanonicalProcess = {
+  def kafkaProcess(name: ProcessName, topic: String): CanonicalProcess = {
     ScenarioBuilder
-      .streaming(id)
+      .streaming(name.value)
       .source("startProcess", "real-kafka", "Topic" -> s"'$topic'")
-      .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#input")
+      .emptySink("end", "kafka-string", "Topic" -> s"'output-$name'", "Value" -> "#input")
   }
 
   private def endWithMessage(idSuffix: String, message: String): SubsequentNode = {

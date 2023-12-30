@@ -4,31 +4,31 @@ import { useParams } from "react-router-dom";
 import HttpService from "../http/HttpService";
 import { getMetricsSettings } from "../reducers/selectors/settings";
 import { CustomTabWrapper } from "./CustomTabPage";
-import { ProcessId } from "../types";
+import { ProcessName } from "../types";
 
-function useMetricsUrl(processId?: ProcessId): string {
+function useMetricsUrl(processName?: ProcessName): string {
     const [processingType, setProcessingType] = useState("");
     useEffect(() => {
-        if (processId) {
-            HttpService.fetchProcessDetails(processId).then(({ data }) => {
+        if (processName) {
+            HttpService.fetchProcessDetails(processName).then(({ data }) => {
                 setProcessingType(data.processingType);
             });
         } else {
             setProcessingType("");
         }
-    }, [processId]);
+    }, [processName]);
 
     const settings = useSelector(getMetricsSettings);
     return useMemo(() => {
         const dashboard = settings.scenarioTypeToDashboard?.[processingType] || settings.defaultDashboard;
-        const scenarioName = processId || "All";
+        const scenarioName = processName || "All";
         return settings.url?.replace("$dashboard", dashboard).replace("$scenarioName", scenarioName);
-    }, [processId, processingType, settings]);
+    }, [processName, processingType, settings]);
 }
 
 function Metrics(): JSX.Element {
-    const { processId } = useParams<{ processId: string }>();
-    const url = useMetricsUrl(processId);
+    const { processName } = useParams<{ processName: string }>();
+    const url = useMetricsUrl(processName);
     return <CustomTabWrapper tab={{ url, type: "IFrame", accessTokenInQuery: { enabled: true, parameterName: "auth_token" } }} />;
 }
 

@@ -47,7 +47,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
   private val modelData =
     LocalModelData(ConfigFactory.load(), RequestResponseComponentProvider.Components)
 
-  private val scenarioName: ProcessName = ProcessName(scenario.metaData.id)
+  private val scenarioName: ProcessName = scenario.name
 
   private val interpreter = RequestResponseInterpreter[Future](
     scenario,

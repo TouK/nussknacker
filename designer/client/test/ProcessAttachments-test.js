@@ -22,7 +22,6 @@ jest.mock("react-i18next", () => ({
 
 const processAttachment = (id) => ({
     id: `${id}`,
-    processId: "proc1",
     processVersionId: 1,
     createDate: "2016-10-10T12:39:44.092",
     user: "TouK",

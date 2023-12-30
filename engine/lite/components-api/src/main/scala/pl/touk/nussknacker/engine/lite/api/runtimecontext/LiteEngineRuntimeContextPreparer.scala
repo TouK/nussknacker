@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.api.runtimecontext
 
 import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext, IncContextIdGenerator}
 import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOpMetricsProviderForScenario}
 
@@ -15,10 +16,10 @@ object LiteEngineRuntimeContextPreparer {
 }
 
 class LiteEngineRuntimeContextPreparer(
-    metricRegistryForScenario: String => MetricsProviderForScenario with AutoCloseable
+    metricRegistryForScenario: ProcessName => MetricsProviderForScenario with AutoCloseable
 ) {
   def prepare(jobData: JobData): LiteEngineRuntimeContext =
-    LiteEngineRuntimeContext(jobData, metricRegistryForScenario(jobData.metaData.id))
+    LiteEngineRuntimeContext(jobData, metricRegistryForScenario(jobData.metaData.name))
 }
 
 case class LiteEngineRuntimeContext(jobData: JobData, metricsProvider: MetricsProviderForScenario with AutoCloseable)

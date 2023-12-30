@@ -8,9 +8,9 @@ export type DisplayProcessActivityAction = {
     attachments: Attachment[];
 };
 
-export function displayProcessActivity(processId: string): ThunkAction {
+export function displayProcessActivity(processName: string): ThunkAction {
     return (dispatch) => {
-        return HttpService.fetchProcessActivity(processId).then((response) => {
+        return HttpService.fetchProcessActivity(processName).then((response) => {
             return dispatch({
                 type: "DISPLAY_PROCESS_ACTIVITY",
                 comments: response.data.comments,

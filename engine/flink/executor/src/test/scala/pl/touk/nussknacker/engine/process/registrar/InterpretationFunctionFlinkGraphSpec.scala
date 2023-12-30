@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.registrar
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar._
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
@@ -11,7 +12,7 @@ import scala.jdk.CollectionConverters._
 
 class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
 
-  private val scenarioId = "test"
+  private val scenarioName = ProcessName("test")
   private val interpretationNodeNames =
     Set(InterpretationName, CustomNodeInterpretationName, BranchInterpretationName, SinkInterpretationName)
 
@@ -43,42 +44,47 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
     exactly(3, operatorNames) should endWith("Async")
     exactly(8, operatorNames) should endWith("Sync")
     operatorNames should contain only (
-      interpretationOperatorName(scenarioId, "sourceId1", InterpretationName, shouldUseAsyncInterpretation = true),
-      interpretationOperatorName(scenarioId, "sourceId2", InterpretationName, shouldUseAsyncInterpretation = false),
-      interpretationOperatorName(scenarioId, "joinId", BranchInterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioName, "sourceId1", InterpretationName, shouldUseAsyncInterpretation = true),
+      interpretationOperatorName(scenarioName, "sourceId2", InterpretationName, shouldUseAsyncInterpretation = false),
       interpretationOperatorName(
-        scenarioId,
+        scenarioName,
+        "joinId",
+        BranchInterpretationName,
+        shouldUseAsyncInterpretation = false
+      ),
+      interpretationOperatorName(
+        scenarioName,
         "customId4",
         CustomNodeInterpretationName,
         shouldUseAsyncInterpretation = false
       ),
-      interpretationOperatorName(scenarioId, "sinkId4", SinkInterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioName, "sinkId4", SinkInterpretationName, shouldUseAsyncInterpretation = false),
       interpretationOperatorName(
-        scenarioId,
+        scenarioName,
         "customId5",
         CustomNodeInterpretationName,
         shouldUseAsyncInterpretation = false
       ),
-      interpretationOperatorName(scenarioId, "sinkId5", SinkInterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioName, "sinkId5", SinkInterpretationName, shouldUseAsyncInterpretation = false),
       interpretationOperatorName(
-        scenarioId,
+        scenarioName,
         "customId6",
         CustomNodeInterpretationName,
         shouldUseAsyncInterpretation = true
       ),
       interpretationOperatorName(
-        scenarioId,
+        scenarioName,
         "customId7",
         CustomNodeInterpretationName,
         shouldUseAsyncInterpretation = true
       ),
       interpretationOperatorName(
-        scenarioId,
+        scenarioName,
         "customEnding8",
         CustomNodeInterpretationName,
         shouldUseAsyncInterpretation = false
       ),
-      interpretationOperatorName(scenarioId, "sinkId9", SinkInterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioName, "sinkId9", SinkInterpretationName, shouldUseAsyncInterpretation = false),
     )
   }
 
@@ -87,7 +93,7 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
   }
 
   private def prepareProcess(useAsyncInterpretation: Boolean) = ScenarioBuilder
-    .streaming(scenarioId)
+    .streaming(scenarioName.value)
     .useAsyncInterpretation(useAsyncInterpretation)
     .sources(
       GraphBuilder

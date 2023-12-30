@@ -118,7 +118,7 @@ class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeData
     val insertNew =
       processesTable.returning(processesTable.map(_.id)).into { case (entity, newId) => entity.copy(id = newId) }
 
-    logger.debug(s"Saving scenario ${action.processName.value} by user $userName")
+    logger.debug(s"Saving scenario ${action.processName} by user $userName")
 
     latestProcessVersionsNoJsonQuery(action.processName).result.headOption.flatMap {
       case Some(_) => DBIOAction.failed(ProcessAlreadyExists(action.processName.value))
@@ -269,7 +269,7 @@ class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeData
           newCommentAction(
             process.id,
             version.id,
-            Some(UpdateProcessComment(s"Rename: [${process.name.value}] -> [$newName]"))
+            Some(UpdateProcessComment(s"Rename: [${process.name}] -> [$newName]"))
           )
         case None => DBIO.successful(())
       }

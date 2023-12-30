@@ -47,7 +47,8 @@ class NodeUtils {
 
     edgesFromProcess = (process: Process) => process.edges || [];
 
-    getProcessProperties = ({ id, properties }: Process, name?: string) => ({ id: name || id, ...properties });
+    // For sake of consistency with other nodes, name must be renamed to id
+    getProcessPropertiesNode = ({ name, properties }: Process, unsavedName?: string) => ({ id: name || unsavedName, ...properties });
 
     getNodeById = (nodeId: NodeId, process: Process) => this.nodesFromProcess(process).find((n) => n.id === nodeId);
 

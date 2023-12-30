@@ -9,6 +9,7 @@ import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.processCounts._
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -40,7 +41,7 @@ class ProcessReportResources(
   }
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
-    path("processCounts" / Segment) { processName =>
+    path("processCounts" / ProcessNameSegment) { processName =>
       (get & processId(processName) & parameters(
         Symbol("dateFrom").as[Instant].optional,
         Symbol("dateTo").as[Instant].optional
@@ -75,7 +76,7 @@ class ProcessReportResources(
       countsRequest: CountsRequest
   )(implicit loggedUser: LoggedUser): Future[ToResponseMarshallable] = {
     countsReporter
-      .prepareRawCounts(process.id, countsRequest)
+      .prepareRawCounts(process.name, countsRequest)
       .map(computeFinalCounts(process, _))
       .recover { case CannotFetchCountsError(msg) =>
         HttpResponse(status = StatusCodes.BadRequest, entity = msg)

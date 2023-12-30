@@ -46,7 +46,15 @@ object TestProcessUtil {
       lastAction: Option[ProcessActionType] = None,
       json: Option[DisplayableProcess] = None
   ): ScenarioWithDetailsEntity[DisplayableProcess] =
-    toDetails(name, category, isFragment = false, isArchived, processingType, json = json, lastAction = lastAction)
+    toDetails(
+      ProcessName(name),
+      category,
+      isFragment = false,
+      isArchived,
+      processingType,
+      json = json,
+      lastAction = lastAction
+    )
 
   def createFragment(
       name: String,
@@ -55,16 +63,18 @@ object TestProcessUtil {
       processingType: String = Streaming,
       json: Option[DisplayableProcess] = None,
       lastAction: Option[ProcessActionType] = None
-  ): ScenarioWithDetailsEntity[DisplayableProcess] =
+  ): ScenarioWithDetailsEntity[DisplayableProcess] = {
+    val processName = ProcessName(name)
     toDetails(
-      name,
+      processName,
       category,
       isFragment = true,
       isArchived,
       processingType,
       lastAction = lastAction,
-      json = Some(json.getOrElse(createDisplayableFragment(name, processingType, category)))
+      json = Some(json.getOrElse(createDisplayableFragment(processName, processingType, category)))
     )
+  }
 
   def displayableToProcess(
       displayable: DisplayableProcess,
@@ -73,7 +83,7 @@ object TestProcessUtil {
       isFragment: Boolean = false
   ): ScenarioWithDetailsEntity[DisplayableProcess] =
     toDetails(
-      displayable.id,
+      displayable.name,
       category,
       isArchived = isArchived,
       processingType = displayable.processingType,
@@ -84,14 +94,14 @@ object TestProcessUtil {
   def validatedToProcess(displayable: ValidatedDisplayableProcess): ScenarioWithDetails =
     ScenarioWithDetailsConversions.fromEntity(
       toDetails(
-        displayable.id,
+        displayable.name,
         processingType = displayable.processingType,
         category = displayable.category
       ).copy(json = displayable)
     )
 
   def toDetails(
-      name: String,
+      name: ProcessName,
       category: Category = TestCategories.Category1,
       isFragment: Boolean = false,
       isArchived: Boolean = false,
@@ -102,11 +112,10 @@ object TestProcessUtil {
       history: Option[List[ScenarioVersion]] = None
   ): ScenarioWithDetailsEntity[DisplayableProcess] = {
     val jsonData = json
-      .map(_.copy(id = name, processingType = processingType, category = category))
+      .map(_.copy(name = name, processingType = processingType, category = category))
       .getOrElse(createEmptyJson(name, processingType, category))
     repository.ScenarioWithDetailsEntity[DisplayableProcess](
-      id = name,
-      name = ProcessName(name),
+      name = name,
       processId = ProcessId(generateId()),
       processVersionId = VersionId.initialVersionId,
       isLatestVersion = true,
@@ -134,17 +143,21 @@ object TestProcessUtil {
     )
   }
 
-  private def createEmptyJson(id: String, processingType: ProcessingType, category: Category) = {
+  private def createEmptyJson(name: ProcessName, processingType: ProcessingType, category: Category) = {
     val typeSpecificProperties = processingType match {
       case RequestResponse   => RequestResponseMetaData(None)
       case Streaming | Fraud => StreamMetaData()
       case _                 => throw new IllegalArgumentException(s"Unknown processing type: $processingType.")
     }
 
-    DisplayableProcess(id, ProcessProperties(typeSpecificProperties), Nil, Nil, processingType, category)
+    DisplayableProcess(name, ProcessProperties(typeSpecificProperties), Nil, Nil, processingType, category)
   }
 
-  def createDisplayableFragment(name: String, processingType: ProcessingType, category: Category): DisplayableProcess =
+  def createDisplayableFragment(
+      name: ProcessName,
+      processingType: ProcessingType,
+      category: Category
+  ): DisplayableProcess =
     createDisplayableFragment(
       name,
       List(FragmentInputDefinition("input", List(FragmentParameter("in", FragmentClazzRef[String])))),
@@ -153,7 +166,7 @@ object TestProcessUtil {
     )
 
   def createDisplayableFragment(
-      name: String,
+      name: ProcessName,
       nodes: List[NodeData],
       processingType: ProcessingType,
       category: Category

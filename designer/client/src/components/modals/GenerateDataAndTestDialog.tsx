@@ -3,7 +3,7 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { getProcessId, getProcessToDisplay } from "../../reducers/selectors/graph";
+import { getProcessName, getProcessToDisplay } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { PromptContent } from "../../windowManager";
 import {
@@ -22,7 +22,7 @@ import { isEmpty } from "lodash";
 function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    const processId = useSelector(getProcessId);
+    const processName = useSelector(getProcessName);
     const processToDisplay = useSelector(getProcessToDisplay);
     const maxSize = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
@@ -31,9 +31,9 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     });
 
     const confirmAction = useCallback(async () => {
-        await dispatch(testScenarioWithGeneratedData(processId, testSampleSize, processToDisplay));
+        await dispatch(testScenarioWithGeneratedData(processName, testSampleSize, processToDisplay));
         props.close();
-    }, [dispatch, processId, processToDisplay, props, testSampleSize]);
+    }, [dispatch, processName, processToDisplay, props, testSampleSize]);
 
     const validators = [literalIntegerValueValidator, minimalNumberValidator(0), maximalNumberValidator(maxSize), mandatoryValueValidator];
     const errors = extendErrors([], testSampleSize, "testData", validators);

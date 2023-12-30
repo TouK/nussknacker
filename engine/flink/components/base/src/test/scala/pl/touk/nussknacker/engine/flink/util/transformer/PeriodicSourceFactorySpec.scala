@@ -39,7 +39,7 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with PatientS
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(scenario)
 
-    val id = stoppableEnv.executeAndWaitForStart(scenario.id)
+    val id = stoppableEnv.executeAndWaitForStart(scenario.name.value)
     try {
       eventually {
         val results = collectingListener.results.nodeResults.get(sinkId)

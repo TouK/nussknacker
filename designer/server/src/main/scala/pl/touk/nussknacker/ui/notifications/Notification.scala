@@ -34,7 +34,7 @@ object Notification {
     Notification(
       id,
       Some(name),
-      s"${displayableActionName(actionType)} of ${name.value} failed" + failureMessageOpt
+      s"${displayableActionName(actionType)} of $name failed" + failureMessageOpt
         .map(" with reason: " + _)
         .getOrElse(""),
       Some(NotificationType.error),

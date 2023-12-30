@@ -163,7 +163,7 @@ class ProcessMarshallerSpec
       val canonicalProcess = buildProcessJsonWithAdditionalFields(processAdditionalFields = Some(marshalled))
 
       inside(canonicalProcess) { case Valid(process) =>
-        process.metaData.id shouldBe "custom"
+        process.name.value shouldBe "custom"
         process.metaData.additionalFields.description shouldBe unmarshaled.description
         process.metaData.additionalFields.metaDataType shouldBe unmarshaled.metaDataType
         unmarshaled.properties.toSet.subsetOf(process.metaData.additionalFields.properties.toSet) shouldBe true
@@ -177,7 +177,7 @@ class ProcessMarshallerSpec
     )
 
     inside(canonicalProcess) { case Valid(process) =>
-      process.metaData.id shouldBe "custom"
+      process.name.value shouldBe "custom"
       process.nodes should have size 1
       process.nodes.head.data.additionalFields shouldBe Some(
         UserDefinedAdditionalNodeFields(description = Some("single node description"), None)
@@ -189,7 +189,7 @@ class ProcessMarshallerSpec
     val canonicalProcess = buildProcessJsonWithAdditionalFields()
 
     inside(canonicalProcess) { case Valid(process) =>
-      process.metaData.id shouldBe "custom"
+      process.name.value shouldBe "custom"
       process.metaData.additionalFields shouldBe ProcessAdditionalFields(
         None,
         testStreamMetaData.toMap,
@@ -208,7 +208,7 @@ class ProcessMarshallerSpec
     )
 
     inside(canonicalProcess) { case Valid(process) =>
-      process.metaData.id shouldBe "custom"
+      process.name.value shouldBe "custom"
       process.metaData.additionalFields shouldBe ProcessAdditionalFields(
         None,
         testStreamMetaData.toMap,

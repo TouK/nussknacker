@@ -34,7 +34,7 @@ class UnionParametersMigrationSpec extends AnyFunSuite {
     val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
     results should have size 1
-    val processMigrationResult = results.find(_.converted.id == process.id).get
+    val processMigrationResult = results.find(_.converted.name == process.name).get
     processMigrationResult.shouldFail shouldBe false
     getFirst[CustomNode](processMigrationResult).parameters shouldBe List(
       NodeParameter("Output expression", "#input")
@@ -55,7 +55,7 @@ class UnionParametersMigrationSpec extends AnyFunSuite {
     val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
     results should have size 1
-    val processMigrationResult = results.find(_.converted.id == process.id).get
+    val processMigrationResult = results.find(_.converted.name == process.name).get
     processMigrationResult.shouldFail shouldBe false
     getFirst[CustomNode](processMigrationResult).parameters shouldBe List(NodeParameter("value", "#input"))
   }
@@ -73,7 +73,7 @@ class UnionParametersMigrationSpec extends AnyFunSuite {
     val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
     results should have size 1
-    val processMigrationResult = results.find(_.converted.id == process.id).get
+    val processMigrationResult = results.find(_.converted.name == process.name).get
     processMigrationResult.shouldFail shouldBe false
   }
 

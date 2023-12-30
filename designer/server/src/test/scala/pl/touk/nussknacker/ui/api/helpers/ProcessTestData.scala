@@ -129,7 +129,7 @@ object ProcessTestData {
     new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
 
-  val validProcess: CanonicalProcess = validProcessWithId("fooProcess")
+  val validProcess: CanonicalProcess = validProcessWithName(ProcessName("fooProcess"))
 
   val validProcessWithEmptySpelExpr: CanonicalProcess =
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
@@ -141,8 +141,8 @@ object ProcessTestData {
   val archivedValidProcessDetails: ScenarioWithDetails =
     TestProcessUtil.validatedToProcess(validDisplayableProcess).copy(isArchived = true)
 
-  def validProcessWithId(id: String): CanonicalProcess = ScenarioBuilder
-    .streaming(id)
+  def validProcessWithName(name: ProcessName): CanonicalProcess = ScenarioBuilder
+    .streaming(name.value)
     .source("source", existingSourceFactory)
     .processor("processor", existingServiceId)
     .customNode("custom", "out1", existingStreamTransformer)
@@ -255,7 +255,7 @@ object ProcessTestData {
   }
 
   val processWithInvalidScenarioProperties: DisplayableProcess = DisplayableProcess(
-    id = "fooProcess",
+    name = ProcessName("fooProcess"),
     properties = ProcessProperties.combineTypeSpecificProperties(
       StreamMetaData(Some(2)),
       ProcessAdditionalFields(
@@ -276,7 +276,7 @@ object ProcessTestData {
 
   val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
-      id = "fooProcess",
+      name = ProcessName("fooProcess"),
       properties = ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(Some(2)),
         ProcessAdditionalFields(Some("process description"), Map.empty, StreamMetaData.typeName)
@@ -354,7 +354,7 @@ object ProcessTestData {
       comment: Option[UpdateProcessComment]
   ): UpdateProcessCommand = {
     val displayableProcess = DisplayableProcess(
-      id = processName.value,
+      name = processName,
       properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
       nodes = List.empty,
       edges = List.empty,
@@ -374,8 +374,8 @@ object ProcessTestData {
         .streaming(processName.value)
         .source("source", existingSourceFactory)
         .fragment(
-          fragment.metaData.id,
-          fragment.metaData.id,
+          fragment.name.value,
+          fragment.name.value,
           Nil,
           Map.empty,
           Map(

@@ -75,7 +75,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
   ): DataStream[Context] = {
     env
       .addSource(flinkSourceFunction, implicitly[TypeInformation[T]])
-      .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
+      .name(s"${flinkNodeContext.metaData.name}-${flinkNodeContext.nodeId}-source")
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,

@@ -16,7 +16,7 @@ object FragmentResolver {
 
   // For easier testing purpose
   def apply(fragments: Iterable[CanonicalProcess]): FragmentResolver = {
-    val fragmentMap = fragments.map(a => ProcessName(a.metaData.id) -> a).toMap
+    val fragmentMap = fragments.map(a => a.metaData.name -> a).toMap
     FragmentResolver(fragmentMap.get _)
   }
 

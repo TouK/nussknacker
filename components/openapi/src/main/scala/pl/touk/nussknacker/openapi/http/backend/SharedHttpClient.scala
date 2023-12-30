@@ -28,7 +28,7 @@ class SharedHttpClientBackendProvider(httpClientConfig: HttpClientConfig) extend
 object SharedHttpClientBackendProvider extends SharedServiceHolder[HttpClientConfig, SharedHttpClient] {
 
   override protected def createService(config: HttpClientConfig, metaData: MetaData): SharedHttpClient = {
-    val httpClientConfig = config.toAsyncHttpClientConfig(Option(metaData.id))
+    val httpClientConfig = config.toAsyncHttpClientConfig(Option(metaData.name))
     new SharedHttpClient(new DefaultAsyncHttpClient(httpClientConfig.build()), config)
   }
 

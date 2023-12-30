@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
@@ -76,7 +76,7 @@ object RequestResponseInterpreter {
     private lazy val outputSchemaString: Option[String] =
       context.jobData.metaData.additionalFields.properties.get(OutputSchemaProperty)
 
-    val id: String = context.jobData.metaData.id
+    val scenarioName: ProcessName = context.jobData.metaData.name
 
     val sinkTypes: Map[NodeId, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
 
@@ -118,7 +118,7 @@ object RequestResponseInterpreter {
     }
 
     def generateInfoOpenApiDefinitionPart(): OApiInfo = OApiInfo(
-      title = id,
+      title = scenarioName.value,
       version = context.jobData.processVersion.versionId.value.toString,
       description = context.jobData.metaData.additionalFields.description
     )
@@ -130,8 +130,8 @@ object RequestResponseInterpreter {
       } yield {
         // TODO: remove cyclic dependency: RequestResponseOpenApiGenerator -> RequestResponseScenarioInterpreter -> RequestResponseOpenApiGenerator
         RequestResponseOpenApiGenerator.generateScenarioDefinition(
-          id,
-          id,
+          scenarioName.value,
+          scenarioName.value,
           sourceDefinition.description,
           sourceDefinition.tags,
           sourceDefinition.definition,

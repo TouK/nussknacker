@@ -165,7 +165,7 @@ class FlinkTestScenarioRunner(
           testScenarioCollectorHandler.resultCollector
         )
 
-        env.executeAndWaitForFinished(scenario.id)()
+        env.executeAndWaitForFinished(scenario.name.value)()
 
         RunUnitResult(errors = testScenarioCollectorHandler.resultsCollectingListener.results.exceptions)
       }

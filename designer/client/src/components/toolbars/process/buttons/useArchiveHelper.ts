@@ -9,7 +9,7 @@ import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
 import { useCallback } from "react";
 
-export const useArchiveHelper = (processId: string) => {
+export const useArchiveHelper = (processName: string) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { confirm } = useWindows();
@@ -17,16 +17,16 @@ export const useArchiveHelper = (processId: string) => {
     const { redirectAfterArchive } = useSelector(getFeatureSettings);
 
     const archive = useCallback(async () => {
-        return HttpService.archiveProcess(processId).then(() => {
+        return HttpService.archiveProcess(processName).then(() => {
             dispatch({ type: "ARCHIVED" });
             if (redirectAfterArchive) {
                 navigate(ArchivedPath);
             } else {
-                dispatch(loadProcessToolbarsConfiguration(processId));
-                dispatch(displayCurrentProcessVersion(processId));
+                dispatch(loadProcessToolbarsConfiguration(processName));
+                dispatch(displayCurrentProcessVersion(processName));
             }
         });
-    }, [dispatch, navigate, processId, redirectAfterArchive]);
+    }, [dispatch, navigate, processName, redirectAfterArchive]);
 
     const confirmArchiveCallback = useCallback(
         async (archiveConfirmed: boolean) => {
