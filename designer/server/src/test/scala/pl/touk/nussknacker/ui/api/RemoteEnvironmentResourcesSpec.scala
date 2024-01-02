@@ -6,15 +6,13 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.{BeforeAndAfterEach, Inside}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
-import pl.touk.nussknacker.restmodel.scenariodetails
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
@@ -32,8 +30,6 @@ import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
 
 import scala.concurrent.{ExecutionContext, Future}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 
 class RemoteEnvironmentResourcesSpec
     extends AnyFlatSpec
@@ -90,7 +86,7 @@ class RemoteEnvironmentResourcesSpec
       ),
       readWritePermissions
     )
-    val expectedDisplayable = ProcessTestData.validDisplayableProcess.toDisplayable.copy(category = category)
+    val expectedDisplayable = ProcessTestData.validDisplayableProcess.copy(category = category)
 
     saveProcess(processName, ProcessTestData.validProcess, category) {
       Get(s"/remoteEnvironment/$processName/2/compare/1") ~> route ~> check {

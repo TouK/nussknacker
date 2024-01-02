@@ -444,9 +444,12 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
   private def verifyInputMeta[T](key: T, topic: String, partition: Int, offset: Long): Assertion = {
     val expectedInputMeta =
       InputMeta[T](key, topic, partition, offset, 0L, TimestampType.CREATE_TIME, Map.empty[String, String].asJava, 0)
-    SinkForInputMeta.data should not be empty
-    val results = SinkForInputMeta.data.map(_.asInstanceOf[InputMeta[T]].copy(timestamp = 0L))
-    results should contain(expectedInputMeta)
+
+    eventually {
+      val results = SinkForInputMeta.data.map(_.asInstanceOf[InputMeta[T]].copy(timestamp = 0L))
+      results should not be empty
+      results should contain(expectedInputMeta)
+    }
   }
 
 }

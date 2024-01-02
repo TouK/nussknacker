@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
-import pl.touk.nussknacker.ui.process.ProcessService.{FetchScenarioGraph, GetScenarioWithDetailsOptions}
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{NuPathMatchers, ProcessComparator}
 
@@ -35,7 +35,9 @@ class RemoteEnvironmentResources(
 
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("remoteEnvironment") {
-      // TODO: remove this endpoint, it isn't used anywhere
+      // TODO This endpoint is used by an external project. We should consider moving its logic to this project
+      //      Currently it only compose result of processes endpoints and an endpoint below but with
+      //      the latest remote version instead of the specific one
       path("compare") {
         get {
           complete {
@@ -122,7 +124,7 @@ class RemoteEnvironmentResources(
 @JsonCodec final case class EnvironmentComparisonResult(processDifferences: List[ProcessDifference])
 
 @JsonCodec final case class ProcessDifference(
-    id: ProcessName,
+    name: ProcessName,
     presentOnOther: Boolean,
     differences: Map[String, ProcessComparator.Difference]
 ) {
