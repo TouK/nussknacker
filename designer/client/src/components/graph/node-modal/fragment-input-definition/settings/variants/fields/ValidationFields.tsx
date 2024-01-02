@@ -55,7 +55,10 @@ export default function ValidationFields({
                 <NodeInput
                     style={{ width: "70%" }}
                     value={validationFailedMessage}
-                    onChange={(event) => onChange(`${path}.valueCompileTimeValidation.validationFailedMessage`, event.currentTarget.value)}
+                    onChange={(event) => onChange(
+                        `${path}.valueCompileTimeValidation.validationFailedMessage`,
+                        event.currentTarget.value === "" ? null : event.currentTarget.value
+                    )}
                     readOnly={readOnly}
                     placeholder={t("fragment.validation.validationErrorMessagePlaceholder", "eg. Parameter value is not valid.")}
                 />

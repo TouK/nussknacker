@@ -45,7 +45,7 @@ export function ValidationsFields(props: Validation) {
                                             language: ExpressionLang.SpEL,
                                             expression: "",
                                         },
-                                        validationFailedMessage: "",
+                                        validationFailedMessage: null,
                                     };
 
                                     onChange(

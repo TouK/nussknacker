@@ -7,13 +7,18 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyMandatoryParameter,
   ExpressionParserCompilationError,
   WrongParameters
 }
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  DualParameterEditor,
+  MandatoryParameterValidator,
+  Parameter,
+  StringParameterEditor
+}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
@@ -33,6 +38,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   private val components = List(
     ComponentDefinition("genericParameters", GenericParametersTransformer),
+    ComponentDefinition("genericParametersWithAdditionalConfig", GenericParametersTransformer),
     ComponentDefinition("genericJoin", DynamicParameterJoinTransformer),
     ComponentDefinition("twoStepsInOne", GenericParametersTransformerWithTwoStepsThatCanBeDoneInOneStep),
     ComponentDefinition("paramsLoop", ParamsLoopNode),
@@ -46,10 +52,26 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     ComponentDefinition("genericParametersThrowingException", GenericParametersThrowingException),
   )
 
+  private val config = ComponentsUiConfig(
+    Map(
+      "genericParametersWithAdditionalConfig" -> SingleComponentConfig.zero.copy(
+        params = Some(
+          Map(
+            "par1" -> ParameterConfig.empty.copy(
+              hintText = Some("some hint text"),
+              defaultValue = Some("'some default string value'"),
+              validators = Some(List(MandatoryParameterValidator))
+            )
+          )
+        )
+      )
+    )
+  )
+
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
   private val modelDefinition = ModelDefinition(
-    ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+    ComponentDefinitionWithImplementation.forList(components, config),
     ModelDefinitionBuilder.toDefinitionWithImpl(ModelDefinitionBuilder.emptyExpressionConfig),
     ClassExtractionSettings.Default
   )
@@ -97,6 +119,34 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     )
 
     result.parametersInNodes("generic") shouldBe expectedGenericParameters
+  }
+
+  test("should validate happy path and enrich parameters based on config") {
+    val result = validator.validate(
+      processBase
+        .customNode(
+          "genericParametersWithAdditionalConfig",
+          "out1",
+          "genericParametersWithAdditionalConfig",
+          "par1"     -> "'val1,val2,val3'",
+          "lazyPar1" -> "#input == null ? 1 : 5",
+          "val1"     -> "'aa'",
+          "val2"     -> "11",
+          "val3"     -> "{false}"
+        )
+        .emptySink("end", "dummySink")
+    )
+    result.result shouldBe Symbol("valid")
+
+    result.parametersInNodes("genericParametersWithAdditionalConfig") should contain(
+      Parameter[String]("par1")
+        .copy(
+          editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+          defaultValue = Some("'some default string value'"),
+          hintText = Some("some hint text"),
+          validators = List(MandatoryParameterValidator)
+        )
+    )
   }
 
   test("should validate sources") {
