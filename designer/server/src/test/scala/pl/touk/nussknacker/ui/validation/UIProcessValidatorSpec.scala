@@ -869,7 +869,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("validates scenario with fragment with category") {
+  test("validates scenario with fragment within other processingType") {
     val fragment = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
       nodes = List(
@@ -902,7 +902,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     validationResult.errors.globalErrors shouldBe Symbol("empty")
     validationResult.saveAllowed shouldBe true
 
-    val validationResultWithCategory2 = processValidator.validate(process.copy(category = Category2))
+    val validationResultWithCategory2 =
+      processValidator.validate(process.copy(processingType = TestProcessingTypes.Streaming2))
     validationResultWithCategory2.errors.invalidNodes shouldBe Map(
       "subIn" -> List(PrettyValidationErrors.formatErrorMessage(UnknownFragment(fragment.id, "subIn")))
     )
@@ -1284,9 +1285,7 @@ private object UIProcessValidatorSpec {
       List(SampleCustomProcessValidator),
       new FragmentResolver(
         new StubFragmentRepository(
-          Set(
-            FragmentDetails(fragment, Category1),
-          )
+          Map(TestProcessingTypes.Streaming -> List(FragmentDetails(fragment, Category1)))
         )
       )
     )

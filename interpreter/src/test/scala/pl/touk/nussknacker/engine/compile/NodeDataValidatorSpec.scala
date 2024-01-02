@@ -1182,7 +1182,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       aModelData: LocalModelData = modelData
   ): ValidationResponse = {
     val fragmentResolver = FragmentResolver(List(fragmentDefinition))
-    new NodeDataValidator(aModelData, fragmentResolver).validate(nodeData, ctx, branchCtxs, outgoingEdges)(
+    new NodeDataValidator(aModelData).validate(nodeData, ctx, branchCtxs, outgoingEdges, fragmentResolver)(
       MetaData("id", StreamMetaData())
     )
   }

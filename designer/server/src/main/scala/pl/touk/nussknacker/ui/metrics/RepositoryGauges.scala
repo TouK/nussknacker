@@ -33,7 +33,7 @@ class RepositoryGauges(
     override def loadValue(): Values = {
       implicit val user: LoggedUser = NussknackerInternalUser.instance
       val result =
-        processRepository.fetchProcessesDetails[Unit](ScenarioQuery(isArchived = Some(false))).map { scenarios =>
+        processRepository.fetchLatestProcessesDetails[Unit](ScenarioQuery(isArchived = Some(false))).map { scenarios =>
           val all       = scenarios.size
           val deployed  = scenarios.count(_.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)))
           val fragments = scenarios.count(_.isFragment)

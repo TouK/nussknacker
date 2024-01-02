@@ -22,7 +22,7 @@ const preloadBeImage = memoize((src: string): string | null => {
 });
 
 function getIconFromDef(nodeOrPath: NodeType, processDefinitionData: ProcessDefinitionData): string | null {
-    const nodeComponentId = ProcessUtils.findNodeConfigName(nodeOrPath);
+    const nodeComponentId = ProcessUtils.determineNodeConfigName(nodeOrPath);
     const componentConfig = processDefinitionData?.componentsConfig?.[nodeComponentId];
     const iconFromConfig = componentConfig?.icon;
     const iconBasedOnType = nodeOrPath.type && `/assets/components/${nodeOrPath.type}.svg`;

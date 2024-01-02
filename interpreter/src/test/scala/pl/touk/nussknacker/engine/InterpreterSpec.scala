@@ -498,7 +498,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -540,7 +540,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -556,7 +556,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .emptySink("end-sink", "dummySink")
     val emptyFragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()), List.empty, List.empty)
 
-    val resolved = FragmentResolver(Set(emptyFragment)).resolve(process)
+    val resolved = FragmentResolver(List(emptyFragment)).resolve(process)
 
     resolved should matchPattern { case Invalid(NonEmptyList(InvalidFragment("fragment1", "sub"), Nil)) =>
     }
@@ -587,7 +587,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -615,7 +615,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -658,7 +658,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment, nested)).resolve(process)
+    val resolved = FragmentResolver(List(fragment, nested)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -707,7 +707,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -732,7 +732,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -764,7 +764,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
     resolved shouldBe Symbol("valid")
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List.empty) shouldBe "8"
   }

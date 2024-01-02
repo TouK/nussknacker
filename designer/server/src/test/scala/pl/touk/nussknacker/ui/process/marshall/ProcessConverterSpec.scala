@@ -34,6 +34,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithModelDefinition, TestCategories, TestProcessingTypes}
+import pl.touk.nussknacker.ui.security.api.AdminUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
@@ -62,7 +63,10 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
     val canonical   = ProcessConverter.fromDisplayable(process)
     val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
-    ValidatedDisplayableProcess.withValidationResult(displayable, validation.validate(displayable))
+    ValidatedDisplayableProcess.withValidationResult(
+      displayable,
+      validation.validate(displayable)(AdminUser("admin", "admin"))
+    )
   }
 
   test("be able to convert empty process") {

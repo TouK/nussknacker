@@ -621,7 +621,7 @@ class DeploymentServiceSpec
     prepareProcessesInProgress
 
     val processesDetails = fetchingProcessRepository
-      .fetchProcessesDetails[Unit](ScenarioQuery.empty)
+      .fetchLatestProcessesDetails[Unit](ScenarioQuery.empty)
       .dbioActionValues
 
     val processesDetailsWithState = deploymentService

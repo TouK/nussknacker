@@ -12,12 +12,8 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentIdProvider,
-  ComponentStaticDefinition,
-  CustomComponentSpecificData
-}
-import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithComponentIds}
+import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, CustomComponentSpecificData}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -29,6 +25,8 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.ui.component.ComponentIdProvider
+import pl.touk.nussknacker.ui.definition.ModelDefinitionWithComponentIds
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -72,7 +70,7 @@ object ProcessTestData {
     def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] = ???
   }
 
-  private val modelDefinition: ModelDefinition[ComponentStaticDefinition] =
+  val modelDefinition: ModelDefinition[ComponentStaticDefinition] =
     ModelDefinitionBuilder.empty
       .withSourceFactory(existingSourceFactory)
       .withSourceFactory(otherExistingSourceFactory)
@@ -117,14 +115,18 @@ object ProcessTestData {
         CustomComponentSpecificData(manyInputs = false, canBeEnding = true)
       )
 
-  val modelDefinitionWithIds: ModelDefinitionWithComponentIds[ComponentStaticDefinition] =
-    modelDefinition.withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
+  val modelDefinitionWithIds: ModelDefinitionWithComponentIds =
+    ModelDefinitionWithComponentIds(
+      modelDefinition,
+      new SimpleTestComponentIdProvider,
+      TestProcessingTypes.Streaming
+    )
 
   def processValidator: UIProcessValidator = new UIProcessValidator(
     ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),
     Map.empty,
     List.empty,
-    new FragmentResolver(new StubFragmentRepository(Set.empty))
+    new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")

@@ -712,7 +712,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       List.empty
     )
 
-    FragmentResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
+    FragmentResolver(List(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
   }
 
 }

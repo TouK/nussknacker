@@ -14,7 +14,17 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     *  `ParameterConfig.defaultValue` -> `ParameterAdditionalUIConfig.initialValue`
     *  `ParameterConfig.hintText` -> `ParameterAdditionalUIConfig.hintText`
     *  most of the capabilities of `ParameterConfig.editor` and `ParameterConfig.validators` are covered by `ParameterAdditionalUIConfig.valueEditor` and `ParameterAdditionalUIConfig.valueCompileTimeValidation`
+
 ### REST API changes
+* [#5280](https://github.com/TouK/nussknacker/pull/5280) Changes in the definition API:
+  * `/processDefinitionData/componentIds` endpoint is removed
+  * `/processDefinitionData/*` response changes:
+    * `services`, `sourceFactories`, `sinkFactories`, `customStreamTransformers` and `fragmentInputs` maps inside `processDefinition` were replaced by
+      one `components` map with key in format `$componentType-$componentName` and moved into top level of response
+    * `typesInformation` inside `processDefinition` was renamed into `classes`, moved into top level of response 
+      and nested `clazzName` inside each element was extracted
+    * `nodeId` field inside `edgesForNodes` was renamed into `componentId` in the flat `$componentType-$componentName` format
+    * `defaultAsyncInterpretation` field was removed
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump

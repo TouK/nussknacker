@@ -14,7 +14,6 @@ trait ScenarioTestExecutorService {
   def testProcess(
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
-      category: String,
       processingType: ProcessingType,
       scenarioTestData: ScenarioTestData,
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults]
@@ -27,12 +26,11 @@ class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, dispat
   override def testProcess(
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
-      category: String,
       processingType: ProcessingType,
       scenarioTestData: ScenarioTestData
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults] = {
     for {
-      resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess, category))
+      resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess, processingType))
       manager = dispatcher.deploymentManagerUnsafe(processingType)
       testResult <- manager.test(id.name, resolvedProcess, scenarioTestData)
     } yield testResult

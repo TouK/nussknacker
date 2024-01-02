@@ -14,12 +14,13 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodecompilation.GenericNodeTransformationValidator
+import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, ParameterEvaluator}
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 // This class purpose is to provide initial set of parameters that will be presented after first usage of a component.
 // It is necessary to provide them, because:
@@ -27,13 +28,9 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 // - Sometimes user want to just use the component without filling parameters with own data - in this case we want to make sure
 //   that parameters will be available in the scenario, even with a default values
 class ToStaticComponentDefinitionTransformer(
-    objectParametersExpressionCompiler: ExpressionCompiler,
-    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
+    nodeValidator: DynamicNodeValidator,
     createMetaData: ProcessName => MetaData
 ) extends LazyLogging {
-
-  private val nodeValidator =
-    new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
 
   def toStaticComponentDefinition(
       componentDefWithImpl: ComponentDefinitionWithImplementation
@@ -97,11 +94,9 @@ object ToStaticComponentDefinitionTransformer {
       modelDataForType: ModelData,
       createMetaData: ProcessName => MetaData
   ): ModelDefinition[ComponentStaticDefinition] = {
-    val toStaticComponentDefinitionTransformer = new ToStaticComponentDefinitionTransformer(
-      ExpressionCompiler.withoutOptimization(modelDataForType),
-      modelDataForType.modelDefinition.expressionConfig,
-      createMetaData
-    )
+    val nodeValidator = DynamicNodeValidator(modelDataForType)
+    val toStaticComponentDefinitionTransformer =
+      new ToStaticComponentDefinitionTransformer(nodeValidator, createMetaData)
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {
