@@ -78,7 +78,7 @@ export default function OutputParametersList({
     const currentVariableNames = editedNode.ref?.outputVariableNames;
 
     const componentDefinition = useMemo(
-        () => ProcessUtils.findComponentDefinition(editedNode, processDefinitionData.components),
+        () => ProcessUtils.extractComponentDefinition(editedNode, processDefinitionData.components),
         [editedNode, processDefinitionData.components],
     );
     const isDefinitionAvailable = !!componentDefinition.outputParameters && isEditMode;

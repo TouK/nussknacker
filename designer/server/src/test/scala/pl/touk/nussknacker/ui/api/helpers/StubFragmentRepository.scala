@@ -14,9 +14,9 @@ class StubFragmentRepository(val fragmentsByProcessingType: Map[ProcessingType, 
   ): Future[List[FragmentDetails]] =
     Future.successful(fragmentsByProcessingType.getOrElse(processingType, List.empty))
 
-  override def fetchLatestFragment(processName: ProcessName)(
+  override def fetchLatestFragment(fragmentName: ProcessName)(
       implicit user: LoggedUser
   ): Future[Option[FragmentDetails]] =
-    Future.successful(fragmentsByProcessingType.values.flatten.find(_.canonical.id == processName.value))
+    Future.successful(fragmentsByProcessingType.values.flatten.find(_.canonical.id == fragmentName.value))
 
 }

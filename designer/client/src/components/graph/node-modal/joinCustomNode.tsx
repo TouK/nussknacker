@@ -36,7 +36,7 @@ export function JoinCustomNode({
 }): JSX.Element {
     const testResultsState = useTestResults();
     const hasOutputVar = useMemo(
-        (): boolean => !!ProcessUtils.findComponentDefinition(node, processDefinitionData.components)?.returnType || !!node.outputVar,
+        (): boolean => !!ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.returnType || !!node.outputVar,
         [node, processDefinitionData.components],
     );
     return (

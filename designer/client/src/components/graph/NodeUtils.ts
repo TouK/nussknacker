@@ -72,9 +72,9 @@ class NodeUtils {
 
     isAvailable = (node: NodeType, processDefinitionData): boolean => {
         const availableIdsInComponentGroups = ProcessDefinitionUtils.getFlatComponents(processDefinitionData).map((component) =>
-            ProcessUtils.findComponentId(component.node),
+            ProcessUtils.determineComponentId(component.node),
         );
-        const nodeComponentId = ProcessUtils.findComponentId(node);
+        const nodeComponentId = ProcessUtils.determineComponentId(node);
         return availableIdsInComponentGroups.includes(nodeComponentId);
     };
 
@@ -96,7 +96,7 @@ class NodeUtils {
     };
 
     getEdgesAvailableForNode = (node: NodeType, processDefinitionData: ProcessDefinitionData, forInput?: boolean) => {
-        const componentId = ProcessUtils.findComponentId(node);
+        const componentId = ProcessUtils.determineComponentId(node);
         //TODO: when we add more configuration for joins, probably more complex logic will be needed
         const edgesForNode = processDefinitionData.edgesForNodes
             .filter((e) => !forInput || e.isForInputDefinition === forInput)

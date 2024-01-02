@@ -22,7 +22,6 @@ import pl.touk.nussknacker.ui.component.{
   DefaultComponentIdProvider
 }
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
-import pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.ui.definition.scenarioproperty.UiScenarioPropertyEditorDeterminer
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
@@ -51,7 +50,7 @@ object UIProcessObjectsFactory {
     ) // combinedComponentsConfig potentially changes componentIds
 
     val finalModelDefinition = finalizeModelDefinition(
-      definition.ModelDefinitionWithComponentIds(modelDefinition, componentIdProvider, processingType),
+      ModelDefinitionWithComponentIds(modelDefinition, componentIdProvider, processingType),
       combinedComponentsConfig,
       additionalUIConfigProvider
         .getAllForProcessingType(processingType)

@@ -124,7 +124,7 @@ export function enrichNodeWithProcessDependentData(
 
     switch (NodeUtils.nodeType(node)) {
         case "Join": {
-            const { parameters } = ProcessUtils.findComponentDefinition(node, processDefinitionData.components);
+            const { parameters } = ProcessUtils.extractComponentDefinition(node, processDefinitionData.components);
             const declaredBranchParameters = parameters.filter((p) => p.branchParam);
             const incomingEdges = edges.filter((e) => e.to === node.id);
             const branchParameters = incomingEdges.map((edge) => {

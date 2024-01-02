@@ -26,7 +26,6 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.component.ComponentIdProvider
-import pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.ui.definition.ModelDefinitionWithComponentIds
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -117,7 +116,7 @@ object ProcessTestData {
       )
 
   val modelDefinitionWithIds: ModelDefinitionWithComponentIds =
-    definition.ModelDefinitionWithComponentIds(
+    ModelDefinitionWithComponentIds(
       modelDefinition,
       new SimpleTestComponentIdProvider,
       TestProcessingTypes.Streaming

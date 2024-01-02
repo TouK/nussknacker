@@ -142,7 +142,7 @@ class ProcessUtils {
         components: Record<string, ComponentDefinition>,
     ): Record<string, ReturnedType>[] => {
         const node = process.nodes.find((node) => node.id === nodeId);
-        const componentDefinition = this.findComponentDefinition(node, components);
+        const componentDefinition = this.extractComponentDefinition(node, components);
         const clazzName = componentDefinition?.returnType;
         const unknown: ReturnedType = {
             display: "Unknown",
@@ -179,23 +179,23 @@ class ProcessUtils {
         }
     };
 
-    findComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition => {
-        const foundDefinition = components?.[this.findComponentId(node)];
+    extractComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition => {
+        const definition = components?.[this.determineComponentId(node)];
         const emptyDefinition = {
             parameters: null,
             returnType: null,
         };
-        return foundDefinition || emptyDefinition;
+        return definition || emptyDefinition;
     };
 
-    findComponentId = (node?: NodeType): string | null => {
-        const componentType = this.findComponentType(node);
-        const componentName = this.findComponentName(node);
+    determineComponentId = (node?: NodeType): string | null => {
+        const componentType = this.determineComponentType(node);
+        const componentName = this.determineComponentName(node);
         return (componentType && componentName && componentType + "-" + componentName) || null;
     };
 
     // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
-    private findComponentType = (node?: NodeType): string | null => {
+    private determineComponentType = (node?: NodeType): string | null => {
         switch (node?.type) {
             case "Source":
                 return "source";
@@ -223,7 +223,7 @@ class ProcessUtils {
     };
 
     // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
-    private findComponentName = (node: NodeType): string | null => {
+    private determineComponentName = (node: NodeType): string | null => {
         switch (node?.type) {
             case "Source":
             case "Sink": {
@@ -267,10 +267,11 @@ class ProcessUtils {
         }
     };
 
-    findNodeConfigName = (node: NodeType): string => {
-        // First we try to find id of node (config for specific custom node by id).
-        // When is missing it means that node is special process properties node without id
-        return this.findComponentName(node) || "$properties";
+    determineNodeConfigName = (node: NodeType): string => {
+        // First we try to find the component's name (configs for components are resolved by component's name).
+        // When we can't determine component's name, it means that the node is a special process properties node,
+        // not a node that uses a component so we use a special, fake $properties node configuration for it
+        return this.determineComponentName(node) || "$properties";
     };
 
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;

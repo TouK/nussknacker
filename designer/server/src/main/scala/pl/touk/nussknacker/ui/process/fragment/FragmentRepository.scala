@@ -19,10 +19,10 @@ trait FragmentRepository {
   def fetchLatestFragments(processingType: ProcessingType)(implicit user: LoggedUser): Future[List[FragmentDetails]]
 
   // FIXME: async version should be used instead
-  final def fetchLatestFragmentSync(processName: ProcessName)(implicit user: LoggedUser): Option[FragmentDetails] =
-    Await.result(fetchLatestFragment(processName), 10 seconds)
+  final def fetchLatestFragmentSync(fragmentName: ProcessName)(implicit user: LoggedUser): Option[FragmentDetails] =
+    Await.result(fetchLatestFragment(fragmentName), 10 seconds)
 
-  def fetchLatestFragment(processName: ProcessName)(implicit user: LoggedUser): Future[Option[FragmentDetails]]
+  def fetchLatestFragment(fragmentName: ProcessName)(implicit user: LoggedUser): Future[Option[FragmentDetails]]
 
 }
 
@@ -42,12 +42,12 @@ class DefaultFragmentRepository(processRepository: FetchingProcessRepository[Fut
   }
 
   override def fetchLatestFragment(
-      processName: ProcessName
+      fragmentName: ProcessName
   )(implicit user: LoggedUser): Future[Option[FragmentDetails]] = {
     processRepository
-      .fetchProcessId(processName)
+      .fetchProcessId(fragmentName)
       .flatMap { processIdOpt =>
-        val processId = processIdOpt.getOrElse(throw ProcessNotFoundError(processName.toString))
+        val processId = processIdOpt.getOrElse(throw ProcessNotFoundError(fragmentName.toString))
         processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId)
       }
       .map(_.map(sub => FragmentDetails(sub.json, sub.processCategory)))

@@ -64,7 +64,7 @@ export const getDynamicParameterDefinitions = createSelector(
     (validationPerformed, detailsParameters, resultParameters, components) => (node: NodeType) => {
         const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(node.id);
         if (!dynamicParameterDefinitions) {
-            return ProcessUtils.findComponentDefinition(node, components)?.parameters;
+            return ProcessUtils.extractComponentDefinition(node, components)?.parameters;
         }
         return dynamicParameterDefinitions || null;
     },
