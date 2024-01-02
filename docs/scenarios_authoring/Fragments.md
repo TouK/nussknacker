@@ -20,7 +20,7 @@ For types other than `String` and `Boolean` this allows configuration as seen he
 
 ![fragment input_advanced_long](img/fragment_input_advanced_long.png)
 
-While for parameters of type `String` or `Boolean`, on top of that it also allows choosing an input mode from `Any`, `Any with suggestions`, `Fixed list` and, if applicable, setting the items of the list.
+For parameters of type `String` or `Boolean` it also allows choosing an input mode from `Any value`, `Any value with suggestions`, `Fixed list`.
 
 ![fragment input_advanced_string](img/fragment_input_advanced_string.png)
 
