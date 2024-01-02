@@ -93,7 +93,7 @@ class AutomaticMigration(
 
   def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     val results: DB[List[Unit]] = for {
-      allToMigrate <- fetchingProcessRepository.fetchProcessesDetails[DisplayableProcess](
+      allToMigrate <- fetchingProcessRepository.fetchLatestProcessesDetails[DisplayableProcess](
         ScenarioQuery.unarchived
       )
       migrated <- allToMigrate.map(migrateOne).sequence[DB, Unit]

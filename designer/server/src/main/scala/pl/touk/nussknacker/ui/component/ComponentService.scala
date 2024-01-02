@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentId, SingleComponentConfig}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
@@ -12,17 +12,15 @@ import pl.touk.nussknacker.restmodel.component.{
   ScenarioComponentsUsages
 }
 import pl.touk.nussknacker.restmodel.definition.ComponentNodeTemplate
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.ComponentIdProvider
-import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.NotFoundError
+import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{
   getComponentDoc,
   getComponentIcon,
   toComponentUsagesInScenario
 }
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
-import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
+import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
@@ -40,23 +38,6 @@ trait ComponentService {
 }
 
 object DefaultComponentService {
-
-  def apply(
-      componentLinksConfig: ComponentLinksConfig,
-      processingTypeDataProvider: ProcessingTypeDataProvider[
-        ProcessingTypeData,
-        (ComponentIdProvider, ProcessCategoryService)
-      ],
-      processService: ProcessService,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
-  )(implicit ec: ExecutionContext): DefaultComponentService = {
-    new DefaultComponentService(
-      componentLinksConfig,
-      processingTypeDataProvider,
-      processService,
-      additionalUIConfigProvider
-    )
-  }
 
   private[component] def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentNodeTemplate): String =
     componentConfig(componentsUiConfig, com).icon
@@ -92,13 +73,14 @@ object DefaultComponentService {
 
 }
 
-class DefaultComponentService private (
+class DefaultComponentService(
     componentLinksConfig: ComponentLinksConfig,
     processingTypeDataProvider: ProcessingTypeDataProvider[
       ProcessingTypeData,
       (ComponentIdProvider, ProcessCategoryService)
     ],
     processService: ProcessService,
+    fragmentsRepository: FragmentRepository,
     additionalUIConfigProvider: AdditionalUIConfigProvider
 )(implicit ec: ExecutionContext)
     extends ComponentService {
@@ -127,7 +109,7 @@ class DefaultComponentService private (
       componentId: ComponentId
   )(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
-      .getRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
+      .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map { processDetailsList =>
         val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processDetailsList)
 
@@ -165,7 +147,7 @@ class DefaultComponentService private (
       ec: ExecutionContext
   ): Future[Map[ComponentId, Long]] = {
     processService
-      .getRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
+      .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }
 
@@ -175,11 +157,8 @@ class DefaultComponentService private (
       user: LoggedUser
   ): Future[List[ComponentListElement]] = {
     implicit val userImplicit: LoggedUser = user
-    processService
-      .getRawProcessesWithDetails[CanonicalProcess](
-        ScenarioQuery(isFragment = Some(true), isArchived = Some(false), processingTypes = Some(List(processingType)))
-      )
-      .map(_.map(sub => FragmentDetails(sub.json, sub.processCategory)).toSet)
+    fragmentsRepository
+      .fetchLatestFragments(processingType)
       .map { fragments =>
         val componentObjectsService = new ComponentObjectsService(categoryService)
         // We assume that fragments have unique component ids ($processing-type-fragment-$name) thus we do not need to validate them.

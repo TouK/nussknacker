@@ -343,7 +343,7 @@ export class Graph extends React.Component<Props> {
         const canAddNode =
             this.props.capabilities.editFrontend &&
             NodeUtils.isNode(node) &&
-            NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory);
+            NodeUtils.isAvailable(node, this.props.processDefinitionData);
 
         if (canAddNode) {
             this.props.nodeAdded(node, position);

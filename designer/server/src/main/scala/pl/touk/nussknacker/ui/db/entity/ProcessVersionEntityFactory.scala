@@ -173,6 +173,7 @@ final case class ProcessVersionEntityData(
     componentsUsages: Option[ScenarioComponentsUsages],
 )
 
+// TODO: Remove this codec and just serialize Map[ComponentInfo, List[NodeId]]
 @JsonCodec
 private[entity] final case class ComponentUsages(
     componentName: String,

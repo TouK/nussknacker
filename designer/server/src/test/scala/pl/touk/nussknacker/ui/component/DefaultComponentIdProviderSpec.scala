@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition.component
+package pl.touk.nussknacker.ui.component
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

@@ -27,14 +27,7 @@ class DefinitionResources(
     with RouteWithUser {
 
   def securedRoute(implicit user: LoggedUser): Route = encodeResponse {
-    path("processDefinitionData" / "componentIds") {
-      get {
-        complete {
-          val fragmentNames = fragmentRepository.loadFragmentIds()
-          ComponentNamesFinder.componentNames(modelDataProvider.all.values.map(_.modelDefinition).toList, fragmentNames)
-        }
-      }
-    } ~ pathPrefix("processDefinitionData" / Segment) { processingType =>
+    pathPrefix("processDefinitionData" / Segment) { processingType =>
       processingTypeDataProvider
         .forType(processingType)
         .map { processingTypeData =>
@@ -42,20 +35,21 @@ class DefinitionResources(
           pathEndOrSingleSlash {
             get {
               parameter(Symbol("isFragment").as[Boolean]) { isFragment =>
-                val fragments = fragmentRepository.loadFragments(Map.empty)
                 complete(
-                  UIProcessObjectsFactory.prepareUIProcessObjects(
-                    processingTypeData.modelData,
-                    processingTypeData.staticModelDefinition,
-                    processingTypeData.deploymentManager,
-                    user,
-                    fragments,
-                    isFragment,
-                    getProcessCategoryService(),
-                    processingTypeData.scenarioPropertiesConfig,
-                    processingType,
-                    additionalUIConfigProvider
-                  )
+                  fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
+                    UIProcessObjectsFactory.prepareUIProcessObjects(
+                      processingTypeData.modelData,
+                      processingTypeData.staticModelDefinition,
+                      processingTypeData.deploymentManager,
+                      user,
+                      fragments,
+                      isFragment,
+                      getProcessCategoryService(),
+                      processingTypeData.scenarioPropertiesConfig,
+                      processingType,
+                      additionalUIConfigProvider
+                    )
+                  }
                 )
               }
             }

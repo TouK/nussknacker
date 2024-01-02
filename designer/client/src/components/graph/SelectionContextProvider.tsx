@@ -17,7 +17,7 @@ import * as ClipboardUtils from "../../common/ClipboardUtils";
 import { tryParseOrNull } from "../../common/JsonUtils";
 import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
 import { useDocumentListeners } from "../../containers/useDocumentListeners";
-import { canModifySelectedNodes, getProcessCategory, getSelection, getSelectionState } from "../../reducers/selectors/graph";
+import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import NodeUtils from "./NodeUtils";
@@ -39,7 +39,6 @@ interface UserActions {
 }
 
 function useClipboardParse() {
-    const processCategory = useSelector(getProcessCategory);
     const processDefinitionData = useSelector(getProcessDefinitionData);
     return useCallback(
         (text) => {
@@ -47,14 +46,11 @@ function useClipboardParse() {
             const isValid =
                 selection?.edges &&
                 selection?.nodes?.every(
-                    (node) =>
-                        NodeUtils.isNode(node) &&
-                        NodeUtils.isPlainNode(node) &&
-                        NodeUtils.isAvailable(node, processDefinitionData, processCategory),
+                    (node) => NodeUtils.isNode(node) && NodeUtils.isPlainNode(node) && NodeUtils.isAvailable(node, processDefinitionData),
                 );
             return isValid ? selection : null;
         },
-        [processCategory, processDefinitionData],
+        [processDefinitionData],
     );
 }
 

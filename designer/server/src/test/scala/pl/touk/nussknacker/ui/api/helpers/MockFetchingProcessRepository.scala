@@ -50,7 +50,7 @@ class MockFetchingProcessRepository private (
     extends FetchingProcessRepository[Future]
     with BasicRepository {
 
-  override def fetchProcessesDetails[PS: ScenarioShapeFetchStrategy](
+  override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       q: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ScenarioWithDetailsEntity[PS]]] =
     getUserProcesses[PS].map(
@@ -83,11 +83,6 @@ class MockFetchingProcessRepository private (
       processId: ProcessId
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[String] =
     getUserProcesses[Unit].map(_.find(p => p.processId == processId).map(_.processingType).get)
-
-  // TODO: Implement
-  override def fetchProcessDetails(processName: ProcessName)(
-      implicit ec: ExecutionContext
-  ): Future[Option[ProcessEntityData]] = ???
 
   private def getUserProcesses[PS: ScenarioShapeFetchStrategy](implicit loggedUser: LoggedUser) =
     getProcesses[PS].map(_.filter(p => loggedUser.isAdmin || loggedUser.can(p.processCategory, Permission.Read)))

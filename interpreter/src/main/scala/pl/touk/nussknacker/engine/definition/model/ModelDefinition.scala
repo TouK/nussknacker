@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.model
 import pl.touk.nussknacker.engine.api.component.ComponentInfo
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.definition.component.{BaseComponentDefinition, ComponentIdProvider}
+import pl.touk.nussknacker.engine.definition.component.BaseComponentDefinition
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 
 case class ModelDefinition[T <: BaseComponentDefinition] private (
@@ -28,23 +28,6 @@ case class ModelDefinition[T <: BaseComponentDefinition] private (
 
   def getComponent(componentType: ComponentType, componentName: String): Option[T] =
     components.get(ComponentInfo(componentType, componentName))
-
-  // FIXME: remove from here and move ComponentIdProvider outside of interpreter
-  def withComponentIds(
-      componentIdProvider: ComponentIdProvider,
-      processingType: String
-  ): ModelDefinitionWithComponentIds[T] = {
-    val transformedComponents =
-      components.toList.map { case (info, component) =>
-        val id = componentIdProvider.createComponentId(processingType, info)
-        ComponentIdWithName(id, info.name) -> component
-      }
-    ModelDefinitionWithComponentIds(
-      transformedComponents,
-      expressionConfig,
-      settings
-    )
-  }
 
   def transform[R <: BaseComponentDefinition](f: T => R): ModelDefinition[R] = copy(
     components.mapValuesNow(f),

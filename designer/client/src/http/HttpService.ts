@@ -210,13 +210,6 @@ class HttpService {
         return promise;
     }
 
-    /**
-     * @deprecated
-     */
-    fetchComponentIds() {
-        // `id` is not the same as in //api/component response
-        return api.get<string[]>("/processDefinitionData/componentIds");
-    }
     fetchComponents(): Promise<AxiosResponse<ComponentType[]>> {
         return api.get<ComponentType[]>("/components");
     }

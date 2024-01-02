@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -79,9 +79,13 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       List(ComponentDefinition("enricher", TestService))
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
-    processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.editor)).toMap shouldBe Map(
+    processObjects
+      .components(ComponentInfo(ComponentType.Service, "enricher"))
+      .parameters
+      .map(p => (p.name, p.editor))
+      .toMap shouldBe Map(
       "paramDualEditor" -> DualParameterEditor(
         simpleEditor = FixedValuesParameterEditor(possibleValues = List(FixedExpressionValue("expression", "label"))),
         defaultMode = DualEditorMode.SIMPLE
@@ -113,7 +117,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       }
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     processObjects.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
   }
@@ -138,7 +142,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       }
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
     componentsGroups should not be empty
@@ -153,7 +157,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       fragment.metaData.withTypeSpecificData(typeSpecificData = FragmentSpecificData(Some(docsUrl)))
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragmentWithDocsUrl, "Category1")))
+    val processObjects = prepareUIProcessObjects(model, List(FragmentDetails(fragmentWithDocsUrl, "Category1")))
 
     processObjects.componentsConfig(fragmentWithDocsUrl.id).docsUrl shouldBe Some(docsUrl)
   }
@@ -163,9 +167,9 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
     val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
-    val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")))
+    val processObjects = prepareUIProcessObjects(model, List(FragmentDetails(fragment, "Category1")))
 
-    processObjects.processDefinition.fragmentInputs.get(fragment.id) shouldBe empty
+    processObjects.components.get(ComponentInfo(ComponentType.Fragment, fragment.id)) shouldBe empty
   }
 
   test("should override component's parameter config with additionally provided config") {
@@ -174,7 +178,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       List(ComponentDefinition("enricher", TestService))
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     processObjects.componentsConfig("enricher").params.get.map { case (name, config) =>
       name -> config.defaultValue
@@ -189,7 +193,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       List(ComponentDefinition("enricher", TestService))
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     processObjects.componentGroups.map(c => (c.name, c.components.head.label)) should contain(
       TestAdditionalUIConfigProvider.componentGroupName,
@@ -201,13 +205,13 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, List.empty)
 
     processObjects.scenarioPropertiesConfig shouldBe TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride
       .mapValuesNow(createUIScenarioPropertyConfig)
   }
 
-  private def prepareUIProcessObjects(model: ModelData, fragmentDetails: Set[FragmentDetails]) = {
+  private def prepareUIProcessObjects(model: ModelData, fragmentDetails: List[FragmentDetails]) = {
     val staticModelDefinition =
       ToStaticComponentDefinitionTransformer.transformModel(model, initialData.create(_, Map.empty))
     UIProcessObjectsFactory.prepareUIProcessObjects(

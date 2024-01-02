@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.component
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder}
 
+// TODO: rename to ComponentSetupId
 final case class ComponentId private (value: String) extends AnyVal {
   override def toString: String = value
 }
