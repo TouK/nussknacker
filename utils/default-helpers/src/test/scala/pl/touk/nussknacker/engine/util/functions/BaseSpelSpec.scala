@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.functions
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.Expression
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.Context
@@ -82,7 +82,7 @@ trait BaseSpelSpec {
     def value: A = validated.valueOr(err => throw new ParseException(err.map(_.message).toList.mkString, -1))
   }
 
-  protected implicit class EvaluateSync(expression: Expression) {
+  protected implicit class EvaluateSync(expression: CompiledExpression) {
     def evaluateSync[T](ctx: Context): T = expression.evaluate(ctx, Map.empty)
   }
 

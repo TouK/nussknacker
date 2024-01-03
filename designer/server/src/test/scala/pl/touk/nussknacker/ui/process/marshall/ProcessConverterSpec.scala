@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -34,6 +35,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithModelDefinition, TestCategories, TestProcessingTypes}
+import pl.touk.nussknacker.ui.security.api.AdminUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
@@ -62,7 +64,10 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
     val canonical   = ProcessConverter.fromDisplayable(process)
     val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
-    ValidatedDisplayableProcess.withValidationResult(displayable, validation.validate(displayable))
+    ValidatedDisplayableProcess.withValidationResult(
+      displayable,
+      validation.validate(displayable)(AdminUser("admin", "admin"))
+    )
   }
 
   test("be able to convert empty process") {
@@ -73,7 +78,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   test("be able to handle different node order") {
     val process = DisplayableProcess(
-      "t1",
+      ProcessName("t1"),
       ProcessProperties(metaData),
       List(
         Processor("e", ServiceRef("ref", List())),
@@ -100,7 +105,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       )
     ) { unexpectedEnd =>
       val process = ValidatedDisplayableProcess(
-        "t1",
+        ProcessName("t1"),
         ProcessProperties(metaData),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
         List(Edge("s", "e", None)),
@@ -139,7 +144,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       additionalFields = ProcessAdditionalFields(None, Map.empty, StreamMetaData.typeName)
     )
     val process = ValidatedDisplayableProcess(
-      meta.id,
+      meta.name,
       ProcessProperties(meta.typeSpecificData),
       List(
         Source("s", SourceRef("sourceRef", List())),
@@ -198,7 +203,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   test("convert process with branches") {
     val process = DisplayableProcess(
-      "t1",
+      ProcessName("t1"),
       ProcessProperties(metaData),
       List(
         Processor("e", ServiceRef("ref", List.empty)),

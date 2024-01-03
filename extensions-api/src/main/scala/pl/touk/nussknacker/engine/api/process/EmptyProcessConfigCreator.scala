@@ -5,27 +5,27 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener,
 class EmptyProcessConfigCreator extends ProcessConfigCreator {
 
   override def customStreamTransformers(
-      processObjectDependencies: ProcessObjectDependencies
+      modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] =
     Map.empty
 
-  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+  override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
     Map.empty
 
   override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
+      modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] =
     Map.empty
 
   override def sinkFactories(
-      processObjectDependencies: ProcessObjectDependencies
+      modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] =
     Map.empty
 
-  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     Nil
 
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) =
+  override def expressionConfig(modelDependencies: ProcessObjectDependencies) =
     ExpressionConfig(Map.empty, List.empty)
 
   override def buildInfo(): Map[String, String] =

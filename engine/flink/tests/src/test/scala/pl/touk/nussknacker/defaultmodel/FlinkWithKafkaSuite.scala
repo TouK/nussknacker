@@ -126,7 +126,7 @@ abstract class FlinkWithKafkaSuite
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
-    env.withJobRunning(process.id)(action)
+    env.withJobRunning(process.name.value)(action)
   }
 
   protected def sendAvro(obj: Any, topic: String, timestamp: java.lang.Long = null) = {
@@ -229,7 +229,7 @@ object MockSchemaRegistry extends Serializable {
 
 class TestDefaultConfigCreator extends DefaultConfigCreator {
 
-  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     Seq(LoggingListener)
 
 }

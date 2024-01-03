@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
 import sttp.client3._
 
-import java.io.File
 import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)(
@@ -26,7 +25,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
 ) extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName)
     with LazyLogging {
 
-  protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
+  private val modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
 
   private val client = new HttpFlinkClient(config)
 
@@ -167,13 +166,13 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     statuses.filterNot(details => SimpleStateStatus.isFinalStatus(details.status)) match {
       case Nil =>
         logger.warn(
-          s"Trying to cancel ${processName.value}${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink."
+          s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink."
         )
         Future.successful(())
       case single :: Nil => cancelJob(single)
       case moreThanOne @ (_ :: _ :: _) =>
         logger.warn(
-          s"Found duplicate jobs of ${processName.value}${deploymentId.map(" with id: " + _).getOrElse("")}: $moreThanOne. Cancelling all in non terminal state."
+          s"Found duplicate jobs of $processName${deploymentId.map(" with id: " + _).getOrElse("")}: $moreThanOne. Cancelling all in non terminal state."
         )
         Future.sequence(moreThanOne.map(cancelJob)).map(_ => ())
     }
@@ -214,7 +213,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
       savepointPath: Option[String]
   ): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting to deploy scenario: $processName with savepoint $savepointPath")
-    client.runProgram(jarFile, mainClass, args, savepointPath)
+    client.runProgram(modelJarProvider.getJobJar(), mainClass, args, savepointPath)
   }
 
   override protected def checkRequiredSlotsExceedAvailableSlots(

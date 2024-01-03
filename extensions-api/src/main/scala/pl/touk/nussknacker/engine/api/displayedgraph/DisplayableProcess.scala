@@ -9,21 +9,18 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 
-//it would be better to have two classes but it would either to derive from each other, which is not easy for final case classes
-//or we'd have to do composition which would break many things in client
-// TODO: id type should be ProcessName
 @JsonCodec final case class DisplayableProcess(
-    id: String,
+    // TODO: remove - it is already available in ScenarioWithDetails
+    name: ProcessName,
     properties: ProcessProperties,
     nodes: List[NodeData],
     edges: List[Edge],
+    // TODO: remove both processingType and category - they are already available in ScenarioWithDetails
     processingType: ProcessingType,
     category: String
 ) {
 
-  val processName: ProcessName = ProcessName(id)
-
-  val metaData: MetaData = properties.toMetaData(processName)
+  val metaData: MetaData = properties.toMetaData(name)
 
 }
 

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../actions/nk";
 import HttpService from "../../http/HttpService";
-import { getProcessId } from "../../reducers/selectors/graph";
+import { getProcessName } from "../../reducers/selectors/graph";
 import { CustomAction } from "../../types";
 import { UnknownRecord } from "../../types/common";
 import { WindowContent } from "../../windowManager";
@@ -72,7 +72,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
 }
 
 export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomAction>): JSX.Element {
-    const processId = useSelector(getProcessId);
+    const processName = useSelector(getProcessName);
     const dispatch = useDispatch();
     const action = props.data.meta;
     const [validationError, setValidationError] = useState("");
@@ -80,15 +80,15 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     const [value, setValue] = useState<UnknownRecord>();
 
     const confirm = useCallback(async () => {
-        await HttpService.customAction(processId, action.name, value).then((response) => {
+        await HttpService.customAction(processName, action.name, value).then((response) => {
             if (response.isSuccess) {
-                dispatch(loadProcessState(processId));
+                dispatch(loadProcessState(processName));
                 props.close();
             } else {
                 setValidationError(response.msg);
             }
         });
-    }, [processId, action.name, value, props, dispatch]);
+    }, [processName, action.name, value, props, dispatch]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(

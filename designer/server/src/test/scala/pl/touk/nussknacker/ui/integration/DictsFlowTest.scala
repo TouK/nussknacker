@@ -5,6 +5,7 @@ import io.circe.Json
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -44,7 +45,7 @@ class DictsFlowTest
     val expressionUsingDictWithInvalidLabel = s"#DICT['invalid']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithInvalidLabel)
 
-    createEmptyScenario(process.id)
+    createEmptyScenario(process.name)
 
     val response1 = httpClient.send(
       quickRequest
@@ -74,7 +75,7 @@ class DictsFlowTest
 
     val response2 = httpClient.send(
       quickRequest
-        .get(uri"$nuDesignerHttpAddress/api/processes/${process.id}")
+        .get(uri"$nuDesignerHttpAddress/api/processes/${process.name}")
         .auth
         .basic("admin", "admin")
     )
@@ -108,7 +109,7 @@ class DictsFlowTest
 
     val response1 = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processes/${process.id}/Category1?isFragment=false")
+        .post(uri"$nuDesignerHttpAddress/api/processes/${process.name}/Category1?isFragment=false")
         .auth
         .basic("admin", "admin")
     )
@@ -136,7 +137,7 @@ class DictsFlowTest
 
     val response = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${process.id}")
+        .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${process.name}")
         .contentType(MediaType.MultipartFormData)
         .multipartBody(
           sttpPrepareMultiParts(
@@ -165,7 +166,7 @@ class DictsFlowTest
       process: CanonicalProcess,
       endResultExpressionToPost: String
   ): Json = {
-    createEmptyScenario(process.id)
+    createEmptyScenario(process.name)
 
     val response1 = httpClient.send(
       quickRequest
@@ -182,7 +183,7 @@ class DictsFlowTest
 
     val response2 = httpClient.send(
       quickRequest
-        .get(uri"$nuDesignerHttpAddress/api/processes/${process.id}")
+        .get(uri"$nuDesignerHttpAddress/api/processes/${process.name}")
         .auth
         .basic("admin", "admin")
     )
@@ -193,10 +194,10 @@ class DictsFlowTest
     response2.extractFieldJsonValue("json", "validationResult", "errors", "invalidNodes")
   }
 
-  private def createEmptyScenario(processId: String) = {
+  private def createEmptyScenario(processName: ProcessName) = {
     val response = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processes/$processId/Category1?isFragment=false")
+        .post(uri"$nuDesignerHttpAddress/api/processes/$processName/Category1?isFragment=false")
         .auth
         .basic("admin", "admin")
     )
@@ -206,7 +207,7 @@ class DictsFlowTest
   private def extractValidationResult(process: CanonicalProcess): Json = {
     val response = httpClient.send(
       quickRequest
-        .put(uri"$nuDesignerHttpAddress/api/processes/${process.id}")
+        .put(uri"$nuDesignerHttpAddress/api/processes/${process.name}")
         .contentType(MediaType.ApplicationJson)
         .body(TestFactory.posting.toJsonAsProcessToSave(process).spaces2)
         .auth

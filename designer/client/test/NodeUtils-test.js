@@ -15,11 +15,11 @@ describe("edgeType retrieved", () => {
         expect(
             NodeUtils.getEdgesAvailableForNode({ id: "node1", type: "FragmentInput", ref: { id: "sub1" } }, processDefinitionData),
         ).toEqual({
-            nodeId: { type: "FragmentInput", id: "sub1" },
+            componentId: "fragment-sub1",
             edges: [{ type: "edge3" }],
         });
         expect(NodeUtils.getEdgesAvailableForNode({ id: "node1", type: "Filter" }, processDefinitionData)).toEqual({
-            nodeId: { type: "Filter", id: "filter" },
+            componentId: "builtin-filter",
             edges: [{ type: "edge1" }, { type: "edge2" }],
         });
     });
@@ -148,7 +148,6 @@ describe("isAvailable", () => {
                                     expression: "true",
                                 },
                             },
-                            categories: ["Category2", "Default", "RequestResponseCategory1", "Technical", "Category1"],
                             branchParametersTemplate: [],
                         },
                     ],
@@ -176,7 +175,6 @@ describe("isAvailable", () => {
                                 },
                                 output: "output",
                             },
-                            categories: ["Category2", "Category1"],
                             branchParametersTemplate: [],
                         },
                     ],
@@ -207,21 +205,15 @@ describe("isAvailable", () => {
     });
 
     it("should be available", () => {
-        const available = NodeUtils.isAvailable(component, processDefinitionData, "Category1");
+        const available = NodeUtils.isAvailable(component, processDefinitionData);
 
         expect(available).toBe(true);
-    });
-
-    it("should not be available for node in other category", () => {
-        const available = NodeUtils.isAvailable(component, processDefinitionData, "Technical");
-
-        expect(available).toBe(false);
     });
 
     it("should not be available for unknown node", () => {
         const unknownComponentModel = { ...component, service: { ...component.service, id: "unknown" } };
 
-        const available = NodeUtils.isAvailable(unknownComponentModel, processDefinitionData, "Category1");
+        const available = NodeUtils.isAvailable(unknownComponentModel, processDefinitionData);
 
         expect(available).toBe(false);
     });
@@ -230,46 +222,23 @@ describe("isAvailable", () => {
 const processDefinitionData = {
     edgesForNodes: [
         {
-            nodeId: { type: "Filter", id: "filter" },
+            componentId: "builtin-filter",
             edges: [{ type: "edge1" }, { type: "edge2" }],
         },
         {
-            nodeId: { type: "FragmentInput", id: "sub1" },
+            componentId: "fragment-sub1",
             edges: [{ type: "edge3" }],
         },
     ],
 };
 
-const createProcess = (groups) => ({
-    properties: { additionalFields: { groups: groups || [] } },
-    nodes: [
-        { id: "node1" },
-        { id: "node2" },
-        { id: "node3" },
-        { id: "node4" },
-        { id: "node5" },
-        { id: "node6" },
-        { id: "node7" },
-        { id: "node8" },
-    ],
-    edges: [
-        { from: "node1", to: "node2" },
-        { from: "node2", to: "node3" },
-        { from: "node3", to: "node4" },
-        { from: "node3", to: "node5" },
-        { from: "node4", to: "node6" },
-        { from: "node5", to: "node7" },
-        { from: "node6", to: "node8" },
-    ],
-});
-
 const simpleProcessDefinition = () => {
     return {
         edgesForNodes: [
-            { nodeId: { type: "Filter", id: "filter" }, edges: [{ type: "FilterTrue" }, { type: "FilterFalse" }], canChooseNodes: false },
-            { nodeId: { type: "Split", id: "split" }, edges: [], canChooseNodes: true },
+            { componentId: "builtin-filter", edges: [{ type: "FilterTrue" }, { type: "FilterFalse" }], canChooseNodes: false },
+            { componentId: "builtin-split", edges: [], canChooseNodes: true },
             {
-                nodeId: { type: "Switch", id: "choice" },
+                componentId: "builtin-choice",
                 edges: [{ type: "NextSwitch", condition: { language: "spel", expression: "true" } }, { type: "SwitchDefault" }],
                 canChooseNodes: true,
             },

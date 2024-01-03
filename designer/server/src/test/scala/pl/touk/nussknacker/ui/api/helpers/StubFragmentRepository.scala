@@ -1,12 +1,22 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-class StubFragmentRepository(fragments: Set[FragmentDetails]) extends FragmentRepository {
-  override def loadFragments(versions: Map[String, VersionId]): Set[FragmentDetails] = fragments
+import scala.concurrent.Future
 
-  override def loadFragments(versions: Map[String, VersionId], category: Category): Set[FragmentDetails] =
-    loadFragments(versions).filter(_.category == category)
+class StubFragmentRepository(val fragmentsByProcessingType: Map[ProcessingType, List[FragmentDetails]])
+    extends FragmentRepository {
+
+  override def fetchLatestFragments(processingType: ProcessingType)(
+      implicit user: LoggedUser
+  ): Future[List[FragmentDetails]] =
+    Future.successful(fragmentsByProcessingType.getOrElse(processingType, List.empty))
+
+  override def fetchLatestFragment(fragmentName: ProcessName)(
+      implicit user: LoggedUser
+  ): Future[Option[FragmentDetails]] =
+    Future.successful(fragmentsByProcessingType.values.flatten.find(_.canonical.name == fragmentName))
+
 }

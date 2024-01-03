@@ -9,16 +9,18 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputGenericNodeTransformation,
   WithStaticParameters
 }
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodecompilation.GenericNodeTransformationValidator
+import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, ParameterEvaluator}
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 // This class purpose is to provide initial set of parameters that will be presented after first usage of a component.
 // It is necessary to provide them, because:
@@ -26,13 +28,9 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 // - Sometimes user want to just use the component without filling parameters with own data - in this case we want to make sure
 //   that parameters will be available in the scenario, even with a default values
 class ToStaticComponentDefinitionTransformer(
-    objectParametersExpressionCompiler: ExpressionCompiler,
-    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
+    nodeValidator: DynamicNodeValidator,
     createMetaData: ProcessName => MetaData
 ) extends LazyLogging {
-
-  private val nodeValidator =
-    new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
 
   def toStaticComponentDefinition(
       componentDefWithImpl: ComponentDefinitionWithImplementation
@@ -43,7 +41,7 @@ class ToStaticComponentDefinitionTransformer(
         val parameters = determineInitialParameters(dynamic)
         ComponentStaticDefinition(
           parameters,
-          dynamic.returnType,
+          if (dynamic.implementation.nodeDependencies.contains(OutputVariableNameDependency)) Some(Unknown) else None,
           dynamic.categories,
           dynamic.componentConfig,
           dynamic.componentTypeSpecificData
@@ -51,7 +49,7 @@ class ToStaticComponentDefinitionTransformer(
     }
   }
 
-  private def determineInitialParameters(generic: DynamicComponentDefinitionWithImplementation): List[Parameter] = {
+  private def determineInitialParameters(dynamic: DynamicComponentDefinitionWithImplementation): List[Parameter] = {
     def inferParameters(transformer: GenericNodeTransformation[_])(inputContext: transformer.InputContext) = {
       // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
       //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
@@ -63,8 +61,9 @@ class ToStaticComponentDefinitionTransformer(
           transformer,
           Nil,
           Nil,
-          generic.returnType.map(_ => "fakeOutputVariable"),
-          generic.componentConfig
+          if (dynamic.implementation.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
+          else None,
+          dynamic.componentConfig
         )(inputContext)
         .map(_.parameters)
         .valueOr { err =>
@@ -77,9 +76,9 @@ class ToStaticComponentDefinitionTransformer(
         }
     }
 
-    generic.implementation match {
+    dynamic.implementation match {
       case withStatic: WithStaticParameters =>
-        StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, generic.componentConfig)
+        StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.componentConfig)
       case single: SingleInputGenericNodeTransformation[_] =>
         inferParameters(single)(ValidationContext())
       case join: JoinGenericNodeTransformation[_] =>
@@ -95,11 +94,9 @@ object ToStaticComponentDefinitionTransformer {
       modelDataForType: ModelData,
       createMetaData: ProcessName => MetaData
   ): ModelDefinition[ComponentStaticDefinition] = {
-    val toStaticComponentDefinitionTransformer = new ToStaticComponentDefinitionTransformer(
-      ExpressionCompiler.withoutOptimization(modelDataForType),
-      modelDataForType.modelDefinition.expressionConfig,
-      createMetaData
-    )
+    val nodeValidator = DynamicNodeValidator(modelDataForType)
+    val toStaticComponentDefinitionTransformer =
+      new ToStaticComponentDefinitionTransformer(nodeValidator, createMetaData)
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {

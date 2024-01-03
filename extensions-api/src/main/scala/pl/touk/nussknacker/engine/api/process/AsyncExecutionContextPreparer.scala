@@ -9,12 +9,7 @@ trait AsyncExecutionContextPreparer {
   def bufferSize: Int
 
   def defaultUseAsyncInterpretation: Option[Boolean]
-
-  @deprecated("Use 'prepare' instead", "1.13.0")
-  def prepareExecutionContext(processId: String, parallelism: Int): ExecutionContext =
-    prepare(processId).executionContext
-
-  def prepare(processId: String): ServiceExecutionContext
+  def prepare(processName: ProcessName): ServiceExecutionContext
 
   def close(): Unit
 }

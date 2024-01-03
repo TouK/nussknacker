@@ -38,9 +38,7 @@ export type ProcessVersionType = {
 };
 
 export interface ProcessType {
-    id: string;
     name: string;
-    processId: number;
     processVersionId: number;
     isArchived: boolean;
     isFragment: boolean;

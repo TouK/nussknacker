@@ -58,7 +58,7 @@ export function useComponentUsagesWithStatus(componentId: string): UseQueryResul
             ...usagesQuery,
             data: usages.map((el) => ({
                 ...el,
-                state: statuses?.[el.id],
+                state: statuses?.[el.name],
             })),
         } as UseQueryResult<UsageWithStatus[]>;
     }, [usagesQuery, usages, statuses]);

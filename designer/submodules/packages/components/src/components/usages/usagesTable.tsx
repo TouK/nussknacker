@@ -163,6 +163,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
         <TableWrapper<ComponentUsageType, UsagesFiltersModel>
             sx={sx}
             getRowClassName={rowClassName}
+            getRowId={(row) => row.name}
             columns={columns}
             data={data}
             isLoading={isLoading}

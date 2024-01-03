@@ -48,6 +48,7 @@ case class KafkaConfig(
 }
 
 object ConsumerGroupNamingStrategy extends Enumeration {
+  // TODO: Rename to processName and processName-nodeName
   val ProcessId: ConsumerGroupNamingStrategy.Value       = Value("processId")
   val ProcessIdNodeId: ConsumerGroupNamingStrategy.Value = Value("processId-nodeId")
 }

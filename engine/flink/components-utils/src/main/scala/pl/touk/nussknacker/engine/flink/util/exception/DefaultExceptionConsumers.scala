@@ -14,7 +14,7 @@ case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: 
 
   override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
     logger.error(
-      s"${processMetaData.id}: Exception during processing job, params: $params, context: ${e.context}",
+      s"${processMetaData.name}: Exception during processing job, params: $params, context: ${e.context}",
       e.throwable
     )
   }
@@ -27,7 +27,7 @@ case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Ma
 
   override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
     warnWithDebugStack(
-      s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params",
+      s"${processMetaData.name}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params",
       e.throwable
     )
   }

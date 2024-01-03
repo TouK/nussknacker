@@ -50,7 +50,7 @@ class MockFetchingProcessRepository private (
     extends FetchingProcessRepository[Future]
     with BasicRepository {
 
-  override def fetchProcessesDetails[PS: ScenarioShapeFetchStrategy](
+  override def fetchLatestProcessesDetails[PS: ScenarioShapeFetchStrategy](
       q: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ScenarioWithDetailsEntity[PS]]] =
     getUserProcesses[PS].map(
@@ -65,29 +65,24 @@ class MockFetchingProcessRepository private (
   override def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
       id: ProcessId
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[ScenarioWithDetailsEntity[PS]]] =
-    getUserProcesses[PS].map(_.filter(p => p.idWithName.id == id).lastOption)
+    getUserProcesses[PS].map(_.filter(p => p.processId == id).lastOption)
 
   override def fetchProcessDetailsForId[PS: ScenarioShapeFetchStrategy](processId: ProcessId, versionId: VersionId)(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[Option[ScenarioWithDetailsEntity[PS]]] =
-    getUserProcesses[PS].map(_.find(p => p.idWithName.id == processId && p.processVersionId == versionId))
+    getUserProcesses[PS].map(_.find(p => p.processId == processId && p.processVersionId == versionId))
 
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]] =
-    Future(processes.find(p => p.idWithName.name == processName).map(_.processId))
+    Future(processes.find(p => p.name == processName).map(_.processId))
 
   override def fetchProcessName(processId: ProcessId)(implicit ec: ExecutionContext): Future[Option[ProcessName]] =
-    Future(processes.find(p => p.processId == processId).map(_.idWithName.name))
+    Future(processes.find(p => p.processId == processId).map(_.name))
 
   override def fetchProcessingType(
       processId: ProcessId
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[String] =
     getUserProcesses[Unit].map(_.find(p => p.processId == processId).map(_.processingType).get)
-
-  // TODO: Implement
-  override def fetchProcessDetails(processName: ProcessName)(
-      implicit ec: ExecutionContext
-  ): Future[Option[ProcessEntityData]] = ???
 
   private def getUserProcesses[PS: ScenarioShapeFetchStrategy](implicit loggedUser: LoggedUser) =
     getProcesses[PS].map(_.filter(p => loggedUser.isAdmin || loggedUser.can(p.processCategory, Permission.Read)))

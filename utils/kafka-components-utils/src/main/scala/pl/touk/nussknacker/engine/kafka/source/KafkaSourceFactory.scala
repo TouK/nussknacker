@@ -36,7 +36,7 @@ import scala.reflect.ClassTag
 class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     protected val deserializationSchemaFactory: KafkaDeserializationSchemaFactory[ConsumerRecord[K, V]],
     protected val formatterFactory: RecordFormatterFactory,
-    protected val processObjectDependencies: ProcessObjectDependencies,
+    protected val modelDependencies: ProcessObjectDependencies,
     protected val implProvider: KafkaSourceImplFactory[K, V]
 ) extends SourceFactory
     with SingleInputGenericNodeTransformation[Source]
@@ -72,7 +72,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   )(implicit nodeId: NodeId): List[ProcessCompilationError.CustomNodeError] = {
     val topics = topic.split(topicNameSeparator).map(_.trim).toList
     val preparedTopics =
-      topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
+      topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, modelDependencies)).map(_.prepared)
     validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(TopicParamName)))
   }
 
@@ -153,7 +153,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
       finalState: Option[State]
   ): Source = {
     val topics                = extractTopics(params)
-    val preparedTopics        = topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, processObjectDependencies))
+    val preparedTopics        = topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, modelDependencies))
     val deserializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
     val formatter             = formatterFactory.create(kafkaConfig, deserializationSchema)
     val contextInitializer    = finalState.get.contextInitializer
@@ -193,7 +193,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   override def nodeDependencies: List[NodeDependency] =
     List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId], OutputVariableNameDependency)
 
-  override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
+  override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelDependencies.config)
 }
 
 object KafkaSourceFactory {

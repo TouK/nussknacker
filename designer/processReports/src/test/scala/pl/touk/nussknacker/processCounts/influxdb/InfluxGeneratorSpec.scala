@@ -3,6 +3,7 @@ package pl.touk.nussknacker.processCounts.influxdb
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client3.Identity
 import sttp.client3.monad.IdMonad
@@ -17,7 +18,7 @@ class InfluxGeneratorSpec extends AnyFunSuite with Matchers with PatientScalaFut
   test("Point in time query returns correct results") {
 
     val pointInTimeQuery =
-      new PointInTimeQuery[Identity](_ => sampleInfluxOutput, "process1", "test", MetricsConfig())(IdMonad)
+      new PointInTimeQuery[Identity](_ => sampleInfluxOutput, ProcessName("process1"), "test", MetricsConfig())(IdMonad)
 
     pointInTimeQuery.query(Instant.now()) shouldBe Map(
       "start" -> (552855221L + 557871409L),

@@ -36,7 +36,7 @@ class JsonSchemaRequestResponseSource(
     with SourceTestSupport[Any]
     with TestWithParametersSupport[Any] {
 
-  protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
+  protected val openApiDescription: String = s"**scenario name**: ${metaData.name}"
 
   private val deserializer = new CirceJsonDeserializer(inputSchema)
 

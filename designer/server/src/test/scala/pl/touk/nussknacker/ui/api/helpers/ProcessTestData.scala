@@ -12,12 +12,8 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentIdProvider,
-  ComponentStaticDefinition,
-  CustomComponentSpecificData
-}
-import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithComponentIds}
+import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, CustomComponentSpecificData}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -29,6 +25,8 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.ui.component.ComponentIdProvider
+import pl.touk.nussknacker.ui.definition.ModelDefinitionWithComponentIds
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -72,7 +70,7 @@ object ProcessTestData {
     def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] = ???
   }
 
-  private val modelDefinition: ModelDefinition[ComponentStaticDefinition] =
+  val modelDefinition: ModelDefinition[ComponentStaticDefinition] =
     ModelDefinitionBuilder.empty
       .withSourceFactory(existingSourceFactory)
       .withSourceFactory(otherExistingSourceFactory)
@@ -117,17 +115,21 @@ object ProcessTestData {
         CustomComponentSpecificData(manyInputs = false, canBeEnding = true)
       )
 
-  val modelDefinitionWithIds: ModelDefinitionWithComponentIds[ComponentStaticDefinition] =
-    modelDefinition.withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
+  val modelDefinitionWithIds: ModelDefinitionWithComponentIds =
+    ModelDefinitionWithComponentIds(
+      modelDefinition,
+      new SimpleTestComponentIdProvider,
+      TestProcessingTypes.Streaming
+    )
 
   def processValidator: UIProcessValidator = new UIProcessValidator(
     ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),
     Map.empty,
     List.empty,
-    new FragmentResolver(new StubFragmentRepository(Set.empty))
+    new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
 
-  val validProcess: CanonicalProcess = validProcessWithId("fooProcess")
+  val validProcess: CanonicalProcess = validProcessWithName(ProcessName("fooProcess"))
 
   val validProcessWithEmptySpelExpr: CanonicalProcess =
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
@@ -139,8 +141,8 @@ object ProcessTestData {
   val archivedValidProcessDetails: ScenarioWithDetails =
     TestProcessUtil.validatedToProcess(validDisplayableProcess).copy(isArchived = true)
 
-  def validProcessWithId(id: String): CanonicalProcess = ScenarioBuilder
-    .streaming(id)
+  def validProcessWithName(name: ProcessName): CanonicalProcess = ScenarioBuilder
+    .streaming(name.value)
     .source("source", existingSourceFactory)
     .processor("processor", existingServiceId)
     .customNode("custom", "out1", existingStreamTransformer)
@@ -253,7 +255,7 @@ object ProcessTestData {
   }
 
   val processWithInvalidScenarioProperties: DisplayableProcess = DisplayableProcess(
-    id = "fooProcess",
+    name = ProcessName("fooProcess"),
     properties = ProcessProperties.combineTypeSpecificProperties(
       StreamMetaData(Some(2)),
       ProcessAdditionalFields(
@@ -274,7 +276,7 @@ object ProcessTestData {
 
   val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
-      id = "fooProcess",
+      name = ProcessName("fooProcess"),
       properties = ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(Some(2)),
         ProcessAdditionalFields(Some("process description"), Map.empty, StreamMetaData.typeName)
@@ -352,7 +354,7 @@ object ProcessTestData {
       comment: Option[UpdateProcessComment]
   ): UpdateProcessCommand = {
     val displayableProcess = DisplayableProcess(
-      id = processName.value,
+      name = processName,
       properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
       nodes = List.empty,
       edges = List.empty,
@@ -372,8 +374,8 @@ object ProcessTestData {
         .streaming(processName.value)
         .source("source", existingSourceFactory)
         .fragment(
-          fragment.metaData.id,
-          fragment.metaData.id,
+          fragment.name.value,
+          fragment.name.value,
           Nil,
           Map.empty,
           Map(

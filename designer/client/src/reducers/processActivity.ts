@@ -1,12 +1,11 @@
 import { Action } from "../actions/reduxTypes";
 import { Instant } from "../types/common";
-import { ProcessId } from "../types";
+import { ProcessName } from "../types";
 import { ProcessVersionId } from "../components/Process/types";
 
 export type User = string;
 
 export type Attachment = {
-    processId: ProcessId;
     processVersionId: ProcessVersionId;
     id: string;
     createDate: Instant;
@@ -16,7 +15,6 @@ export type Attachment = {
 
 export type Comment = {
     id: number;
-    processId: string;
     processVersionId: string;
     user: User;
     content: string;

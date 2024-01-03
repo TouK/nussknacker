@@ -210,7 +210,7 @@ class SlickPeriodicProcessesRepository(
 
   override def findProcessData(processName: ProcessName): Action[Seq[PeriodicProcess]] = {
     PeriodicProcesses
-      .filter(p => p.active === true && p.processName === processName.value)
+      .filter(p => p.active === true && p.processName === processName)
       .result
       .map(_.map(PeriodicProcessesRepository.createPeriodicProcess))
   }
@@ -274,7 +274,7 @@ class SlickPeriodicProcessesRepository(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int
   ): Action[SchedulesState] = {
-    val activeProcessesQuery = PeriodicProcesses.filter(p => p.processName === processName.value && p.active)
+    val activeProcessesQuery = PeriodicProcesses.filter(p => p.processName === processName && p.active)
     getLatestDeploymentsForEachSchedule(activeProcessesQuery, deploymentsPerScheduleMaxCount)
   }
 
@@ -284,7 +284,7 @@ class SlickPeriodicProcessesRepository(
       deploymentsPerScheduleMaxCount: Int
   ): Action[SchedulesState] = {
     val filteredProcessesQuery = PeriodicProcesses
-      .filter(p => p.processName === processName.value && !p.active)
+      .filter(p => p.processName === processName && !p.active)
       .sortBy(_.createdAt.desc)
       .take(inactiveProcessesMaxCount)
     getLatestDeploymentsForEachSchedule(filteredProcessesQuery, deploymentsPerScheduleMaxCount)

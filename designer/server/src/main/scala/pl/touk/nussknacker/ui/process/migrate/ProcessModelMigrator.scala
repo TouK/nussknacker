@@ -12,8 +12,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 final case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[ProcessMigration]) {
 
-  def id: String = process.metaData.id
-
   def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(
     id = processId,
     canonicalProcess = process,

@@ -63,11 +63,11 @@ class DeploymentServiceImpl(
   def getDeployedScenarios(
       processingType: ProcessingType
   )(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
+    implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
     for {
       deployedProcesses <- {
-        implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
         dbioRunner.run(
-          processRepository.fetchProcessesDetails[CanonicalProcess](
+          processRepository.fetchLatestProcessesDetails[CanonicalProcess](
             ScenarioQuery(
               isFragment = Some(false),
               isArchived = Some(false),
@@ -83,7 +83,7 @@ class DeploymentServiceImpl(
         val deployingUser  = User(lastDeployAction.user, lastDeployAction.user)
         val deploymentData = prepareDeploymentData(deployingUser, DeploymentId.fromActionId(lastDeployAction.id))
         val deployedScenarioDataTry =
-          scenarioResolver.resolveScenario(details.json, details.processCategory).map { resolvedScenario =>
+          scenarioResolver.resolveScenario(details.json, details.processingType).map { resolvedScenario =>
             DeployedScenarioData(
               details.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
               deploymentData,
@@ -92,7 +92,7 @@ class DeploymentServiceImpl(
           }
         deployedScenarioDataTry match {
           case Failure(exception) =>
-            logger.error(s"Exception during resolving deployed scenario ${details.id}", exception)
+            logger.error(s"Exception during resolving deployed scenario ${details.name}", exception)
             None
           case Success(value) => Some(Future.successful(value))
         }
@@ -176,7 +176,7 @@ class DeploymentServiceImpl(
       deploymentManager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
       // TODO: scenario was already resolved during validation - use it here
       resolvedCanonicalProcess <- Future.fromTry(
-        scenarioResolver.resolveScenario(processDetails.json, processDetails.processCategory)
+        scenarioResolver.resolveScenario(processDetails.json, processDetails.processingType)
       )
       deploymentData = prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId))
       _ <- deploymentManager.validate(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
@@ -190,7 +190,7 @@ class DeploymentServiceImpl(
       .forTypeUnsafe(processDetails.processingType)
       .validateCanonicalProcess(
         processDetails.json,
-        processDetails.processCategory
+        processDetails.processingType
       )
     if (validationResult.hasErrors) {
       throw DeployingInvalidScenarioError(validationResult.errors)
@@ -250,9 +250,9 @@ class DeploymentServiceImpl(
       processDetails: ScenarioWithDetailsEntity[PS]
   ): Unit = {
     if (processDetails.isArchived) {
-      throw ProcessIllegalAction.archived(actionType, processDetails.idWithName)
+      throw ProcessIllegalAction.archived(actionType, processDetails.name)
     } else if (processDetails.isFragment) {
-      throw ProcessIllegalAction.fragment(actionType, processDetails.idWithName)
+      throw ProcessIllegalAction.fragment(actionType, processDetails.name)
     }
   }
 
@@ -263,7 +263,7 @@ class DeploymentServiceImpl(
   ): Unit = {
     if (!ps.allowedActions.contains(actionType)) {
       logger.debug(s"Action: $actionType on process: ${processDetails.name} not allowed in ${ps.status} state")
-      throw ProcessIllegalAction(actionType, processDetails.idWithName, ps)
+      throw ProcessIllegalAction(actionType, processDetails.name, ps)
     }
   }
 
@@ -369,7 +369,7 @@ class DeploymentServiceImpl(
             case process =>
               getProcessState(
                 process.toEntity,
-                actionsInProgress.getOrElse(process.processId, Set.empty)
+                actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty)
               ).map(state => process.copy(state = Some(state)))
           }
           .sequence[DB, ScenarioWithDetails]
@@ -385,7 +385,9 @@ class DeploymentServiceImpl(
     processTraverse.toList match {
       case Nil => DBIO.successful(Map.empty)
       case head :: Nil =>
-        actionRepository.getInProgressActionTypes(head.processId).map(actionTypes => Map(head.processId -> actionTypes))
+        actionRepository
+          .getInProgressActionTypes(head.processIdUnsafe)
+          .map(actionTypes => Map(head.processIdUnsafe -> actionTypes))
       case _ =>
         // We are getting only Deploy and Cancel InProgress actions as only these two impact ProcessState
         actionRepository.getInProgressActionTypes(Set(Deploy, Cancel))
@@ -506,7 +508,7 @@ class DeploymentServiceImpl(
   ): Future[Option[ProcessAction]] = {
     implicit val user: AdminUser            = NussknackerInternalUser.instance
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
-    logger.debug(s"About to mark process ${processName.value} as finished if last action was DEPLOY")
+    logger.debug(s"About to mark process $processName as finished if last action was DEPLOY")
     dbioRunner.run(for {
       processIdOpt      <- processRepository.fetchProcessId(processName)
       processId         <- existsOrFail(processIdOpt, ProcessNotFoundError(processName.value))
@@ -514,10 +516,10 @@ class DeploymentServiceImpl(
       processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.value.toString))
       _ = validateExpectedProcessingType(expectedProcessingType, processDetails.processingType)
       cancelActionOpt <- {
-        logger.debug(s"lastDeployedAction for ${processName.value}: ${processDetails.lastDeployedAction}")
+        logger.debug(s"lastDeployedAction for $processName: ${processDetails.lastDeployedAction}")
         processDetails.lastDeployedAction
           .map { lastDeployedAction =>
-            logger.info(s"Marking process ${processName.value} as finished")
+            logger.info(s"Marking process $processName as finished")
             val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)
             processChangeListener.handle(OnFinished(processDetails.processId, lastDeployedAction.processVersionId))
             actionRepository

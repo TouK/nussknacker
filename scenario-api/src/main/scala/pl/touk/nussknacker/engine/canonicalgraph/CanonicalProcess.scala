@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
@@ -15,7 +16,8 @@ sealed trait CanonicalTreeNode
 
 object CanonicalProcess {
 
-  val IdFieldName = "$id"
+  // On the FE side, scenario properties are treated as a special type of node, so field name have to be the same
+  val NameFieldName: String = node.IdFieldName
 
   private def isNodeDisabled(node: CanonicalNode): Boolean =
     node.data match {
@@ -84,7 +86,7 @@ case class CanonicalProcess(
 
   import CanonicalProcess._
 
-  lazy val id: String = metaData.id
+  def name: ProcessName = metaData.name
 
   def allStartNodes: NonEmptyList[List[CanonicalNode]] = NonEmptyList(nodes, additionalBranches)
 
@@ -97,7 +99,7 @@ case class CanonicalProcess(
     copy(nodes = head, additionalBranches = tail)
   }
 
-  def withProcessId(processName: ProcessName): CanonicalProcess =
+  def withProcessName(processName: ProcessName): CanonicalProcess =
     copy(metaData = metaData.copy(id = processName.value))
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)

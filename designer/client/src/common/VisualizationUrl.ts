@@ -1,8 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
-import { omitBy, isEqual } from "lodash";
 import Moment from "moment";
 import * as queryString from "query-string";
-import { ParseOptions } from "query-string";
 import { NodeId } from "../types";
 import { VisualizationBasePath } from "../containers/paths";
 
@@ -29,13 +27,4 @@ export function extractCountParams(queryParams) {
     }
 
     return null;
-}
-
-export const defaultArrayFormat: ParseOptions["arrayFormat"] = "comma";
-
-export function setAndPreserveLocationParams<T extends Record<string, any>>(params: T, arrayFormat = defaultArrayFormat): string {
-    const queryParams = queryString.parse(window.location.search, { arrayFormat, parseNumbers: true });
-    const merged = { ...queryParams, ...params };
-    const resultParams = omitBy(merged, (value) => value === undefined || isEqual(value, []));
-    return queryString.stringify(resultParams, { arrayFormat });
 }

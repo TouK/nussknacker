@@ -7,7 +7,7 @@ class DefaultConfigCreator extends EmptyProcessConfigCreator {
 
   import pl.touk.nussknacker.engine.util.functions._
 
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
+  override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
     ExpressionConfig(
       Map(
         "GEO"         -> anyCategory(geo),

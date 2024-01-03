@@ -81,7 +81,6 @@ class ScenarioTestService(
       testResults <- testExecutorService.testProcess(
         idWithName,
         canonical,
-        displayableProcess.category,
         displayableProcess.processingType,
         scenarioTestData
       )
@@ -101,7 +100,6 @@ class ScenarioTestService(
       testResults <- testExecutorService.testProcess(
         idWithName,
         canonical,
-        displayableProcess.category,
         displayableProcess.processingType,
         ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions)
       )
@@ -128,7 +126,9 @@ class ScenarioTestService(
     }
   }
 
-  private def computeCounts(canonical: CanonicalProcess, results: TestResults): Map[String, NodeCount] = {
+  private def computeCounts(canonical: CanonicalProcess, results: TestResults)(
+      implicit loggedUser: LoggedUser
+  ): Map[String, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
       key -> RawCount(
         nresults.size.toLong,

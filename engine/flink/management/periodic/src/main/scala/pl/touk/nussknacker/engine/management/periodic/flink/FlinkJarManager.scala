@@ -11,13 +11,12 @@ import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
 import pl.touk.nussknacker.engine.management.{
   FlinkConfig,
   FlinkDeploymentManager,
-  FlinkModelJar,
+  FlinkModelJarProvider,
   FlinkStreamingRestManager
 }
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import sttp.client3.SttpBackend
 
-import java.io.File
 import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -31,7 +30,7 @@ private[periodic] object FlinkJarManager {
       flinkClient = new HttpFlinkClient(flinkConfig),
       jarsDir = Paths.get(periodicBatchConfig.jarsDir),
       inputConfigDuringExecution = modelData.inputConfigDuringExecution,
-      createCurrentModelJarFile = new FlinkModelJar().buildJobJar(modelData)
+      modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
     )
   }
 
@@ -42,13 +41,11 @@ private[periodic] class FlinkJarManager(
     flinkClient: FlinkClient,
     jarsDir: Path,
     inputConfigDuringExecution: InputConfigDuringExecution,
-    createCurrentModelJarFile: => File
+    modelJarProvider: FlinkModelJarProvider
 ) extends JarManager
     with LazyLogging {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-
-  private lazy val currentModelJarFile = createCurrentModelJarFile
 
   override def prepareDeploymentWithJar(
       processVersion: ProcessVersion,
@@ -68,9 +65,9 @@ private[periodic] class FlinkJarManager(
   private def copyJarToLocalDir(processVersion: ProcessVersion): Future[String] = Future {
     jarsDir.toFile.mkdirs()
     val jarFileName =
-      s"${processVersion.processName.value}-${processVersion.versionId.value}-${System.currentTimeMillis()}.jar"
+      s"${processVersion.processName}-${processVersion.versionId.value}-${System.currentTimeMillis()}.jar"
     val jarPath = jarsDir.resolve(jarFileName)
-    Files.copy(currentModelJarFile.toPath, jarPath)
+    Files.copy(modelJarProvider.getJobJar().toPath, jarPath)
     logger.info(s"Copied current model jar to $jarPath")
     jarFileName
   }
@@ -81,7 +78,7 @@ private[periodic] class FlinkJarManager(
   ): Future[Option[ExternalDeploymentId]] = {
     val processVersion = deploymentWithJarData.processVersion
     logger.info(
-      s"Deploying scenario ${processVersion.processName.value}, version id: ${processVersion.versionId} and jar: ${deploymentWithJarData.jarFileName}"
+      s"Deploying scenario ${processVersion.processName}, version id: ${processVersion.versionId} and jar: ${deploymentWithJarData.jarFileName}"
     )
     val jarFile = jarsDir.resolve(deploymentWithJarData.jarFileName).toFile
     val args = FlinkDeploymentManager.prepareProgramArgs(

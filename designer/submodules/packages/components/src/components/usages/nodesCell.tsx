@@ -27,7 +27,7 @@ export const NodesCell = ({
 }): JSX.Element => {
     const {
         value,
-        rowNode: { id },
+        rowNode: { name },
     } = props;
     const filterSegments = useMemo(() => filterText?.toLowerCase().toString().trim().split(/\s/) || [], [filterText]);
 
@@ -68,7 +68,7 @@ export const NodesCell = ({
             icon={icon}
             node={node}
             filterText={filterText}
-            rowId={id.toString()}
+            rowId={name.toString()}
             matched={filterText ? match : -1}
         />
     ));
