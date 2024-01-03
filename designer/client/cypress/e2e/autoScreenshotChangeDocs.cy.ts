@@ -1,4 +1,6 @@
-describe("Auto Screenshot Change Docs - ", () => {
+import * as path from "path";
+
+describe("Auto Screenshot Change Docs -", () => {
     const seed = "autoScreenshotChangeDocs";
 
     before(() => {
@@ -6,7 +8,7 @@ describe("Auto Screenshot Change Docs - ", () => {
     });
 
     beforeEach(() => {
-        cy.viewport(1920, 1080);
+        cy.viewport(1400, 800);
     });
 
     afterEach(() => {
@@ -61,6 +63,8 @@ describe("Auto Screenshot Change Docs - ", () => {
         //skip
         cy.visitNewProcess(seed, "docsBasicComponentsChoice#0");
         cy.layoutScenario();
+        cy.get("[title='toggle left panel']").click();
+        cy.get("[title='toggle right panel']").click();
         takeGraphScreenshot();
 
         cy.get('[model-id="choice"]').dblclick();
@@ -83,6 +87,7 @@ describe("Auto Screenshot Change Docs - ", () => {
     });
 
     it("basic components - union", () => {
+        cy.viewport(1920, 1080);
         //skip
         cy.visitNewProcess(seed, "docsBasicComponentsUnion#0");
         cy.layoutScenario();
@@ -126,15 +131,16 @@ describe("Auto Screenshot Change Docs - ", () => {
         cy.layoutScenario();
         cy.get('[model-id="output"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeGraphScreenshot();
+        takeWindowScreenshot();
     });
 });
 
 // screenshots CONSTANT options DO NOT CHANGE
 
+const projectRoot = path.join(Cypress.config("fileServerFolder"), "../..");
 const snapshotOptions = {
     maxDiffThreshold: 0.00001,
-    imagesPath: "../../docs/autoScreenshotChangeDocs",
+    imagesPath: path.join(projectRoot, "docs/autoScreenshotChangeDocs"),
 };
 
 // screenshots taking functions
