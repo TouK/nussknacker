@@ -20,7 +20,7 @@ export default function SettingsButton({ isOpen, toggleIsOpen }: SettingsButton)
                 marginRight: 5,
                 backgroundColor: isOpen && theme.custom.colors.charcoal,
             }}
-            title={"SettingsButton"}
+            title={"Options"}
             onClick={toggleIsOpen}
         >
             <TuneIcon />

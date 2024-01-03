@@ -43,7 +43,7 @@ export function ValidationsFields(props: Validation) {
                                     const defaultValueCompileTimeValidation: ValueCompileTimeValidation = {
                                         validationExpression: {
                                             language: ExpressionLang.SpEL,
-                                            expression: "",
+                                            expression: "true",
                                         },
                                         validationFailedMessage: null,
                                     };
