@@ -87,6 +87,7 @@ describe("Auto Screenshot Change Docs -", () => {
     });
 
     it("basic components - union", () => {
+        cy.viewport(1920, 1080);
         //skip
         cy.visitNewProcess(seed, "docsBasicComponentsUnion#0");
         cy.layoutScenario();
