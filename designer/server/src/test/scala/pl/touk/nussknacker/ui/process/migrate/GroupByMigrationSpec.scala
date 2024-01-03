@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.migrate
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, have}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node.CustomNode
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
@@ -36,7 +36,7 @@ class GroupByMigrationSpec extends AnyFunSuite {
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
     processMigrationResult.shouldFail shouldBe false
-    getFirst[CustomNode](processMigrationResult).parameters shouldBe List(evaluatedparam.Parameter("groupBy", "#input"))
+    getFirst[CustomNode](processMigrationResult).parameters shouldBe List(NodeParameter("groupBy", "#input"))
   }
 
   test("should do nothing for non aggregate custom node") {
@@ -55,7 +55,7 @@ class GroupByMigrationSpec extends AnyFunSuite {
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
     processMigrationResult.shouldFail shouldBe false
-    getFirst[CustomNode](processMigrationResult).parameters shouldBe List(evaluatedparam.Parameter("keyBy", "#input"))
+    getFirst[CustomNode](processMigrationResult).parameters shouldBe List(NodeParameter("keyBy", "#input"))
   }
 
   test("should do nothing when custom node is missing") {

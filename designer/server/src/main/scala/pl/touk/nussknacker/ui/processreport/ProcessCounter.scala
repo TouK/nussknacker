@@ -2,14 +2,18 @@ package pl.touk.nussknacker.ui.processreport
 
 import cats.data.NonEmptyList
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.node.{BranchEndData, FragmentInputDefinition}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ProcessCounter(fragmentRepository: FragmentRepository) {
 
-  def computeCounts(canonicalProcess: CanonicalProcess, counts: String => Option[RawCount]): Map[String, NodeCount] = {
+  def computeCounts(canonicalProcess: CanonicalProcess, counts: String => Option[RawCount])(
+      implicit user: LoggedUser
+  ): Map[String, NodeCount] = {
 
     def computeCounts(prefixes: List[String])(nodes: NonEmptyList[Iterable[CanonicalNode]]): Map[String, NodeCount] = {
       nodes
@@ -48,7 +52,7 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
         case SplitNode(node, nexts)  => computeCountsSamePrefixes(nexts.flatten) + (node.id -> nodeCount(node.id))
         case Fragment(node, outputs) =>
           // TODO: validate that process exists
-          val fragment = getFragment(node.ref.id).get
+          val fragment = getFragment(ProcessName(node.ref.id)).get
           computeCountsSamePrefixes(outputs.values.flatten) + (node.id -> nodeCount(
             node.id,
             computeCounts(prefixes :+ node.id)(fragment.allStartNodes)
@@ -60,8 +64,8 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
     computeCounts(List())(canonicalProcess.allStartNodes)
   }
 
-  private def getFragment(fragmentId: String): Option[CanonicalProcess] = {
-    fragmentRepository.get(fragmentId).map(_.canonical)
+  private def getFragment(fragmentId: ProcessName)(implicit user: LoggedUser): Option[CanonicalProcess] = {
+    fragmentRepository.fetchLatestFragmentSync(fragmentId).map(_.canonical)
   }
 
 }

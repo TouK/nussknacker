@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
+import pl.touk.nussknacker.engine.graph.EdgeType
 
 import java.net.URI
 
@@ -20,28 +21,12 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
       componentGroups: List[ComponentGroup],
-      // TODO: rename to modelDefinition
-      processDefinition: UIModelDefinition,
+      components: Map[ComponentInfo, UIComponentDefinition],
+      classes: List[TypingResult],
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
-      customActions: List[UICustomAction],
-      defaultAsyncInterpretation: Boolean
-  )
-
-  // TODO We should map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig
-  // TODO We should keep all components in a single map, not distinguishing between ContentTypes
-  @JsonCodec(encodeOnly = true) final case class UIModelDefinition(
-      services: Map[String, UIComponentDefinition],
-      sourceFactories: Map[String, UIComponentDefinition],
-      sinkFactories: Map[String, UIComponentDefinition],
-      customStreamTransformers: Map[String, UIComponentDefinition],
-      typesInformation: Set[UIClassDefinition],
-      fragmentInputs: Map[String, UIFragmentComponentDefinition]
-  )
-
-  @JsonCodec(encodeOnly = true) final case class UIClassDefinition(
-      clazzName: TypingResult
+      customActions: List[UICustomAction]
   )
 
   @JsonCodec(encodeOnly = true) final case class UIValueParameter(
@@ -82,25 +67,24 @@ package object definition {
       //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
       categories: List[String],
-  )
-
-  @JsonCodec(encodeOnly = true) final case class UIFragmentComponentDefinition(
-      parameters: List[UIParameter],
-      outputParameters: List[String],
-      returnType: Option[TypingResult],
-      categories: List[String]
+      // For fragments only
+      outputParameters: Option[List[String]]
   )
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
-  @JsonCodec final case class NodeTypeId(`type`: String, id: Option[String] = None)
-
-  @JsonCodec final case class NodeEdges(
-      nodeId: NodeTypeId,
+  final case class NodeEdges(
+      componentId: ComponentInfo,
       edges: List[EdgeType],
       canChooseNodes: Boolean,
       isForInputDefinition: Boolean
   )
+
+  object NodeEdges {
+    implicit val componentIdEncoder: Encoder[ComponentInfo] = Encoder.encodeString.contramap(_.toString)
+
+    implicit val encoder: Encoder[NodeEdges] = deriveConfiguredEncoder
+  }
 
   object ComponentNodeTemplate {
 
@@ -108,7 +92,7 @@ package object definition {
         componentInfo: ComponentInfo,
         node: NodeData,
         categories: List[String],
-        branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
+        branchParametersTemplate: List[NodeParameter] = List.empty
     ): ComponentNodeTemplate =
       ComponentNodeTemplate(componentInfo.`type`, componentInfo.name, node, categories, branchParametersTemplate)
 
@@ -121,11 +105,11 @@ package object definition {
       node: NodeData,
       // TODO: remove
       categories: List[String],
-      branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty,
+      branchParametersTemplate: List[NodeParameter] = List.empty,
       // TODO: This field is added temporary to pick correct icon - we shouldn't use this class for other purposes than encoding to json
       isEnricher: Option[Boolean] = None
   ) {
-    // TODO: This is temporary - we shouldn't use this class for other purposes than encoding to json
+    // TODO: This is temporary - we shouldn't use ComponentNodeTemplate class for other purposes than encoding to json
     def componentInfo: ComponentInfo = ComponentInfo(`type`, label)
   }
 

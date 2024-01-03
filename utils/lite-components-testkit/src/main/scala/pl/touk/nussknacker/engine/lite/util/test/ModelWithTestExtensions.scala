@@ -15,11 +15,11 @@ object ModelWithTestExtensions {
       extraGlobalVariables: Map[String, AnyRef]
   ): ModelData = {
     val configCreator = new DefaultConfigCreator {
-      override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
+      override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
         val extraVariablesWithCategories = extraGlobalVariables.map { case (key, value) =>
           key -> WithCategories.anyCategory(value)
         }
-        val defaultExpressionConfig = super.expressionConfig(processObjectDependencies)
+        val defaultExpressionConfig = super.expressionConfig(modelDependencies)
         defaultExpressionConfig.copy(
           globalProcessVariables = defaultExpressionConfig.globalProcessVariables ++ extraVariablesWithCategories
         )

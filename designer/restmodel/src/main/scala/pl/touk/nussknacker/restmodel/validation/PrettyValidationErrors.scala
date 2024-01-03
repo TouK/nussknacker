@@ -158,19 +158,19 @@ object PrettyValidationErrors {
       case InitialValueNotPresentInPossibleValues(paramName, _) =>
         node(
           s"The initial value provided for parameter '$paramName' is not present in the parameter's possible values list",
-          "Please check fragment definition",
+          "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InitialValueFieldName)))
         )
       case UnsupportedFixedValuesType(paramName, typ, _) =>
         node(
           s"Fixed values list can only be be provided for type String or Boolean, found: $typ",
-          "Please check fragment definition",
+          "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
       case RequireValueFromEmptyFixedList(paramName, _) =>
         node(
           s"Required parameter '$paramName' cannot be a member of an empty fixed list",
-          "Please check fragment definition",
+          "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
         )
       case ExpressionParserCompilationErrorInFragmentDefinition(message, _, paramName, subFieldName, originalExpr) =>

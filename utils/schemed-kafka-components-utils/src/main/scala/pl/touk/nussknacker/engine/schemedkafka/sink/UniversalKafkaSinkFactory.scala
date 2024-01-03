@@ -47,7 +47,7 @@ object UniversalKafkaSinkFactory {
 class UniversalKafkaSinkFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-    val processObjectDependencies: ProcessObjectDependencies,
+    val modelDependencies: ProcessObjectDependencies,
     implProvider: UniversalKafkaSinkImplFactory
 ) extends KafkaUniversalComponentTransformer[Sink]
     with SinkFactory {

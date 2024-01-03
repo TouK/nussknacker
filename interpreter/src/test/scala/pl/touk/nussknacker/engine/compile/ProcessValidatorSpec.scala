@@ -3,14 +3,13 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
-import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
@@ -50,7 +49,6 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.{
   wrapWithStaticSinkDefinition,
   wrapWithStaticSourceDefinition
 }
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParameters, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
@@ -1666,7 +1664,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val fragment = ScenarioBuilder
       .fragment("frag1")
       .fragmentOutput("out", "output1", "field1" -> "''")
-    val resolver = FragmentResolver(Set(fragment))
+    val resolver = FragmentResolver(List(fragment))
 
     val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
     withNonUsed shouldBe Symbol("valid")
@@ -1692,7 +1690,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     ProcessValidator
       .default(
         ModelDefinitionWithClasses(definitions),
-        ConfigFactory.empty,
         new SimpleDictRegistry(Map.empty),
         CustomProcessValidatorLoader.emptyCustomProcessValidator
       )

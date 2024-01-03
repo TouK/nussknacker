@@ -70,12 +70,12 @@ class NodeUtils {
         };
     };
 
-    isAvailable = (node: NodeType, processDefinitionData, category): boolean => {
-        const availableIdsInCategory = ProcessDefinitionUtils.getFlatCategoryComponents(processDefinitionData, category).map((component) =>
-            ProcessUtils.findNodeDefinitionIdOrType(component.node),
+    isAvailable = (node: NodeType, processDefinitionData): boolean => {
+        const availableIdsInComponentGroups = ProcessDefinitionUtils.getFlatComponents(processDefinitionData).map((component) =>
+            ProcessUtils.determineComponentId(component.node),
         );
-        const nodeDefinitionId = ProcessUtils.findNodeDefinitionIdOrType(node);
-        return availableIdsInCategory.includes(nodeDefinitionId);
+        const nodeComponentId = ProcessUtils.determineComponentId(node);
+        return availableIdsInComponentGroups.includes(nodeComponentId);
     };
 
     getOutputEdges = (nodeId: NodeId, edges: Edge[]): Edge[] => edges.filter((e) => e.from === nodeId);
@@ -96,12 +96,11 @@ class NodeUtils {
     };
 
     getEdgesAvailableForNode = (node: NodeType, processDefinitionData: ProcessDefinitionData, forInput?: boolean) => {
-        const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionId(node);
+        const componentId = ProcessUtils.determineComponentId(node);
         //TODO: when we add more configuration for joins, probably more complex logic will be needed
         const edgesForNode = processDefinitionData.edgesForNodes
             .filter((e) => !forInput || e.isForInputDefinition === forInput)
-            //here we use == in second comparison, as we sometimes compare null to undefined :|
-            .find((e) => e.nodeId.type === get(node, "type") && e.nodeId.id == nodeObjectTypeDefinition);
+            .find((e) => e.componentId === componentId);
         return edgesForNode || { edges: [null], canChooseNodes: false };
     };
 
@@ -228,7 +227,7 @@ class NodeUtils {
         switch (node?.type) {
             case "FragmentInput": {
                 const outputParameters =
-                    processDefinitionData?.processDefinition?.fragmentInputs[node.ref.id]?.outputParameters ||
+                    processDefinitionData?.components["fragment-" + node.ref.id]?.outputParameters ||
                     Object.keys(node.ref.outputVariableNames);
                 return outputParameters.length > 0;
             }

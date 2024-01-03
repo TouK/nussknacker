@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.expression
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
+// TODO: rename to CompiledExpression
 trait Expression {
 
   def language: String

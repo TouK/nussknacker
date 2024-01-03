@@ -73,8 +73,8 @@ object ScenarioInterpreterFactory {
   ): ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Input, Res]] =
     modelData.withThisAsContextClassLoader {
 
-      val creator                   = modelData.configCreator
-      val processObjectDependencies = ProcessObjectDependencies(modelData.modelConfig, modelData.objectNaming)
+      val creator           = modelData.configCreator
+      val modelDependencies = ProcessObjectDependencies(modelData.modelConfig, modelData.objectNaming)
 
       val allNodes = process.collectAllNodes
       val countingListeners = List(
@@ -82,10 +82,9 @@ object ScenarioInterpreterFactory {
         new ExceptionCountingListener,
         new EndCountingListener(allNodes)
       )
-      val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
+      val listeners = creator.listeners(modelDependencies) ++ additionalListeners ++ countingListeners
 
       val compilerData = ProcessCompilerData.prepare(
-        modelData.modelConfig,
         modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
         listeners,

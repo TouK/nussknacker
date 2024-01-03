@@ -125,7 +125,7 @@ class BaseFlowTest
               editor = None,
               validators = None,
               label = None,
-              hintText = None
+              hintText = Some("hint-text-from-additional-ui-config-provider")
             ),
           )
         ),
@@ -166,23 +166,6 @@ class BaseFlowTest
         docsUrl = Some("accountServiceDocs"),
         componentGroup = None,
         componentId = None
-      ),
-      "sub1" -> SingleComponentConfig(
-        params = Some(
-          Map(
-            "param1" -> ParameterConfig(
-              defaultValue = None,
-              editor = Some(StringParameterEditor),
-              validators = None,
-              label = None,
-              hintText = None
-            )
-          )
-        ),
-        icon = None,
-        docsUrl = Some("http://nussknacker.io"),
-        componentGroup = None,
-        componentId = None,
       ),
       "optionalTypesService" -> SingleComponentConfig(
         params = Some(

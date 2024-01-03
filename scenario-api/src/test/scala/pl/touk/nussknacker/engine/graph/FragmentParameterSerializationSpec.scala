@@ -3,15 +3,10 @@ package pl.touk.nussknacker.engine.graph
 import io.circe.jawn.decode
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
-  FixedExpressionValue,
-  FragmentClazzRef,
-  FragmentParameter,
-  ParameterValueCompileTimeValidation,
-  ValueInputWithFixedValuesProvided
-}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 
 class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
 
@@ -91,8 +86,8 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         valueEditor = Some(
           ValueInputWithFixedValuesProvided(
             fixedValuesList = List(
-              FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"),
-              FragmentInputDefinition.FixedExpressionValue("'someOtherValue'", "someOtherValue")
+              FixedExpressionValue("'someValue'", "someValue"),
+              FixedExpressionValue("'someOtherValue'", "someOtherValue")
             ),
             allowOtherValue = true
           )

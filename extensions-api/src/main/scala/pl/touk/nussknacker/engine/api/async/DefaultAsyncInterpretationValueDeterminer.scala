@@ -8,9 +8,8 @@ object DefaultAsyncInterpretationValueDeterminer {
   val DefaultValue: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValue(false)
 
   def determine(asyncExecutionConfig: AsyncExecutionContextPreparer): DefaultAsyncInterpretationValue =
-    determine(asyncExecutionConfig.defaultUseAsyncInterpretation)
-
-  def determine(defaultUseAsyncInterpretationFromConfig: Option[Boolean]): DefaultAsyncInterpretationValue =
-    DefaultAsyncInterpretationValue(defaultUseAsyncInterpretationFromConfig.getOrElse(DefaultValue.value))
+    asyncExecutionConfig.defaultUseAsyncInterpretation
+      .map(DefaultAsyncInterpretationValue)
+      .getOrElse(DefaultValue)
 
 }

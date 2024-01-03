@@ -7,7 +7,24 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
+* [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
+  * `SingleComponentConfigWithoutId` renamed to `ComponentAdditionalConfig`
+  * field `params: Map[String, ParameterConfig]` changed to `parameterConfigs: Map[String, ParameterAdditionalUIConfig]`
+  * `ParameterAdditionalUIConfig` is handled analogously to `FragmentParameter` (expect for `valueCompileTimeValidation`, which isn't yet handled)
+    *  `ParameterConfig.defaultValue` -> `ParameterAdditionalUIConfig.initialValue`
+    *  `ParameterConfig.hintText` -> `ParameterAdditionalUIConfig.hintText`
+    *  most of the capabilities of `ParameterConfig.editor` and `ParameterConfig.validators` are covered by `ParameterAdditionalUIConfig.valueEditor` and `ParameterAdditionalUIConfig.valueCompileTimeValidation`
+
 ### REST API changes
+* [#5280](https://github.com/TouK/nussknacker/pull/5280) Changes in the definition API:
+  * `/processDefinitionData/componentIds` endpoint is removed
+  * `/processDefinitionData/*` response changes:
+    * `services`, `sourceFactories`, `sinkFactories`, `customStreamTransformers` and `fragmentInputs` maps inside `processDefinition` were replaced by
+      one `components` map with key in format `$componentType-$componentName` and moved into top level of response
+    * `typesInformation` inside `processDefinition` was renamed into `classes`, moved into top level of response 
+      and nested `clazzName` inside each element was extracted
+    * `nodeId` field inside `edgesForNodes` was renamed into `componentId` in the flat `$componentType-$componentName` format
+    * `defaultAsyncInterpretation` field was removed
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump

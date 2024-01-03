@@ -47,7 +47,7 @@ abstract class InitializationOnDbItSpec
 
     dbioRunner
       .runInTransaction(
-        repository.fetchProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
+        repository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion)) shouldBe List(("proc1", Some(2)))
@@ -66,7 +66,7 @@ abstract class InitializationOnDbItSpec
 
     dbioRunner
       .runInTransaction(
-        repository.fetchProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
+        repository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion))
@@ -89,7 +89,7 @@ abstract class InitializationOnDbItSpec
 
     dbioRunner
       .runInTransaction(
-        repository.fetchProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
+        repository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion)) shouldBe List(("proc1", Some(1)))

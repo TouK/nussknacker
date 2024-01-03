@@ -1,23 +1,23 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import java.util.ServiceLoader
-import java.util.regex.Pattern
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.parser._
+import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import io.circe.parser._
-
-import scala.util.Try
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.ValidationExpressionParameterValidator.variableName
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.expression.{Expression => ApiExpression}
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+import java.util.ServiceLoader
+import java.util.regex.Pattern
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
@@ -257,7 +257,7 @@ case object JsonValidator extends ParameterValidator {
 }
 
 case class ValidationExpressionParameterValidator(
-    validationExpression: ApiExpression,
+    validationExpression: CompiledExpression,
     validationFailedMessage: Option[String]
 ) extends ParameterValidator {
 
@@ -308,11 +308,11 @@ object ValidationExpressionParameterValidator {
   implicit val encoder: Encoder[ValidationExpressionParameterValidator] = deriveEncoder
   implicit val decoder: Decoder[ValidationExpressionParameterValidator] = deriveDecoder
 
-  implicit val apiExpressionEncoder: Encoder[ApiExpression] = {
+  implicit val CompiledExpressionEncoder: Encoder[CompiledExpression] = {
     Encoder.forProduct2("language", "original")(e => (e.language, e.original))
   }
 
-  implicit val apiExpressionDecoder: Decoder[ApiExpression] = {
+  implicit val CompiledExpressionDecoder: Decoder[CompiledExpression] = {
     Decoder.failedWithMessage(
       "Cannot evaluate Expression in ValidationExpressionParameterValidator as loading from config file is not supported"
     )

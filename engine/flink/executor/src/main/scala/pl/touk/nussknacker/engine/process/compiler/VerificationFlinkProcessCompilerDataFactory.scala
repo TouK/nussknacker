@@ -23,7 +23,7 @@ object VerificationFlinkProcessCompilerDataFactory {
 
       override protected def adjustListeners(
           defaults: List[ProcessListener],
-          processObjectDependencies: ProcessObjectDependencies
+          modelDependencies: ProcessObjectDependencies
       ): List[ProcessListener] = Nil
 
       override protected def prepareService(
@@ -31,7 +31,7 @@ object VerificationFlinkProcessCompilerDataFactory {
           context: ComponentDefinitionContext
       ): ComponentDefinitionWithImplementation =
         service.withImplementationInvoker(new StubbedComponentImplementationInvoker(service) {
-          override def handleInvoke(impl: Any, typingResult: Option[TypingResult], nodeId: NodeId): Any = null
+          override def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any = null
         })
 
       override protected def prepareSourceFactory(
@@ -39,8 +39,8 @@ object VerificationFlinkProcessCompilerDataFactory {
           context: ComponentDefinitionContext
       ): ComponentDefinitionWithImplementation =
         sourceFactory.withImplementationInvoker(new StubbedComponentImplementationInvoker(sourceFactory) {
-          override def handleInvoke(impl: Any, returnType: Option[TypingResult], nodeId: NodeId): Any =
-            new EmptySource[Object](returnType.getOrElse(Unknown))(TypeInformation.of(classOf[Object]))
+          override def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any =
+            new EmptySource[Object](typingResult)(TypeInformation.of(classOf[Object]))
         })
 
     }

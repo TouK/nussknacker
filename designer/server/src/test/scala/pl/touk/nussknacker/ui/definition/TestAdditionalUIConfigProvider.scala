@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
-import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider.SingleComponentConfigWithoutId
 import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 
 object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
@@ -22,13 +22,21 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
       )
     )
 
-  override def getAllForProcessingType(processingType: String): Map[ComponentId, SingleComponentConfigWithoutId] = {
+  override def getAllForProcessingType(processingType: String): Map[ComponentId, ComponentAdditionalConfig] = {
     if (processingType == TestProcessingTypes.Streaming) {
       Map(
-        ComponentId("streaming-service-enricher") -> SingleComponentConfigWithoutId.zero.copy(
-          params = Map(
-            "paramStringEditor" -> ParameterConfig.empty.copy(
-              defaultValue = Some("'default-from-additional-ui-config-provider'"),
+        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            "paramStringEditor" -> ParameterAdditionalUIConfig(
+              initialValue = Some(
+                FixedExpressionValue(
+                  "'default-from-additional-ui-config-provider'",
+                  "default-from-additional-ui-config-provider"
+                )
+              ),
+              hintText = Some("hint-text-from-additional-ui-config-provider"),
+              valueEditor = None,
+              valueCompileTimeValidation = None
             )
           ),
           componentGroup = Some(componentGroupName)

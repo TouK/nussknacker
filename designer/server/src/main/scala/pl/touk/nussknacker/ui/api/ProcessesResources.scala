@@ -53,7 +53,7 @@ class ProcessesResources(
         get {
           complete {
             processService
-              .getProcessesWithDetails(
+              .getLatestProcessesWithDetails(
                 ScenarioQuery(isArchived = Some(true)),
                 GetScenarioWithDetailsOptions.detailsOnly
               )
@@ -83,7 +83,7 @@ class ProcessesResources(
         get {
           processesQuery { query =>
             complete {
-              processService.getProcessesWithDetails(
+              processService.getLatestProcessesWithDetails(
                 query,
                 GetScenarioWithDetailsOptions.detailsOnly.withFetchState
               )
@@ -93,7 +93,7 @@ class ProcessesResources(
       } ~ path("processesDetails") {
         (get & processesQuery & skipValidateAndResolveParameter) { (query, skipValidateAndResolve) =>
           complete {
-            processService.getProcessesWithDetails(
+            processService.getLatestProcessesWithDetails(
               query,
               GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = false)
             )
@@ -103,7 +103,7 @@ class ProcessesResources(
         get {
           complete {
             processService
-              .getProcessesWithDetails(
+              .getLatestProcessesWithDetails(
                 ScenarioQuery(isFragment = Some(false), isArchived = Some(false)),
                 GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
               )
@@ -152,7 +152,7 @@ class ProcessesResources(
             }
           } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
             complete {
-              processService.getProcessWithDetails(
+              processService.getLatestProcessWithDetails(
                 processId,
                 GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = true)
               )
@@ -215,7 +215,7 @@ class ProcessesResources(
         (get & processId(processName)) { processId =>
           complete {
             processService
-              .getProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
+              .getLatestProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
               .map(_.toEntity)
               .map(processToolbarService.getProcessToolbarSettings)
           }

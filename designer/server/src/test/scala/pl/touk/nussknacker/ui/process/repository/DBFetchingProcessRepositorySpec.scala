@@ -75,7 +75,7 @@ class DBFetchingProcessRepositorySpec
     saveProcessForCategory("c1")
     saveProcessForCategory("c2")
     val processes = fetching
-      .fetchProcessesDetails(ScenarioQuery(isArchived = Some(false)))(
+      .fetchLatestProcessesDetails(ScenarioQuery(isArchived = Some(false)))(
         ScenarioShapeFetchStrategy.NotFetch,
         c1Reader,
         implicitly[ExecutionContext]
@@ -319,7 +319,7 @@ class DBFetchingProcessRepositorySpec
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
       fetching
-        .fetchProcessesDetails[DisplayableProcess](ScenarioQuery.unarchived)
+        .fetchLatestProcessesDetails[DisplayableProcess](ScenarioQuery.unarchived)
         .futureValue
         .filter(_.processId.value == processId.value)
         .map(_.json)
