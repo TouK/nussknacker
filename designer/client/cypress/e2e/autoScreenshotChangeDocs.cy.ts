@@ -140,7 +140,9 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.viewport(1920, 1080);
         cy.visitNewProcess(seed, "docsFragmentsOutputs#0");
         cy.layoutScenario();
-        takeGraphScreenshot();
+        cy.get('[model-id="output"]').dblclick();
+        cy.get('[title="Name"]').click();
+        takeWindowScreenshot();
     });
 });
 
