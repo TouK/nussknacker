@@ -67,7 +67,7 @@ export const getDynamicParameterDefinitions = createSelector(
             if (!dynamicParameterDefinitions) {
                 return ProcessUtils.findNodeObjectTypeDefinition(node, processDefinition)?.parameters;
             }
-            return dynamicParameterDefinitions || null;
+            return dynamicParameterDefinitions || [];
         },
 );
 
