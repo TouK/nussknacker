@@ -13,8 +13,7 @@ export const getGraph = (state: RootState) => state.graphReducer.history.present
 export const getFetchedProcessDetails = createSelector(getGraph, (g) => g.fetchedProcessDetails);
 export const getProcessToDisplay = createSelector(getGraph, (g) => g.processToDisplay || ({} as Process));
 export const getProcessNodesIds = createSelector(getProcessToDisplay, (p) => NodeUtils.nodesFromProcess(p).map((n) => n.id));
-export const getProcessId = createSelector(getFetchedProcessDetails, (d) => d?.name);
-export const getProcessName = getProcessId;
+export const getProcessName = createSelector(getFetchedProcessDetails, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);
 export const getProcessVersionId = createSelector(getFetchedProcessDetails, (d) => d?.processVersionId);
 export const getProcessCategory = createSelector(getFetchedProcessDetails, (d) => d?.processCategory || "");
@@ -38,7 +37,7 @@ export const isProcessRenamed = createSelector(
 );
 export const getProcessToDisplayWithUnsavedName = createSelector(
     [getProcessToDisplay, getProcessUnsavedNewName, isProcessRenamed],
-    (process, unsavedName, isProcessRenamed) => ({ ...process, id: isProcessRenamed ? unsavedName : process.id }),
+    (process, unsavedName, isProcessRenamed) => ({ ...process, name: isProcessRenamed ? unsavedName : process.name }),
 );
 
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);

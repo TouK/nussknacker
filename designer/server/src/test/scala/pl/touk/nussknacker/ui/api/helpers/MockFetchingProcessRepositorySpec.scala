@@ -167,7 +167,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
-      val names = processes.map(_.idWithName.name)
+      val names = processes.map(_.name)
       val result = mockRepository
         .fetchLatestProcessesDetails(
           ScenarioQuery(names = Some(names), isArchived = Some(false), isFragment = Some(false))
@@ -301,7 +301,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   }
 
   it should "return ProcessId for ProcessName" in {
-    val data = processes.map(p => (p.idWithName.name, Some(p.processId))) ++ List((ProcessName("not-exist-name"), None))
+    val data = processes.map(p => (p.name, Some(p.processId))) ++ List((ProcessName("not-exist-name"), None))
 
     data.foreach { case (processName, processId) =>
       val result = mockRepository.fetchProcessId(processName).futureValue
@@ -310,7 +310,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   }
 
   it should "return ProcessName for ProcessId" in {
-    val data = processes.map(p => (p.processId, Some(p.idWithName.name))) ++ List((ProcessId(666), None))
+    val data = processes.map(p => (p.processId, Some(p.name))) ++ List((ProcessId(666), None))
 
     data.foreach { case (processId, processName) =>
       val result = mockRepository.fetchProcessName(processId).futureValue

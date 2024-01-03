@@ -33,12 +33,12 @@ class ProcessesChangeListenerSpec
   private val routeWithAdminPermissions = withAdminPermissions(processesRoute)
   implicit val loggedUser: LoggedUser   = LoggedUser("1", "lu", testCategory)
 
-  private val processName = ProcessName(SampleProcess.process.id)
+  private val processName = SampleProcess.process.name
 
   test("listen to category change") {
     val processId = createEmptyProcess(processName, Category1, false)
 
-    Post(s"/processes/category/${processName.value}/$Category2") ~> routeWithAdminPermissions ~> checkEventually {
+    Post(s"/processes/category/$processName/$Category2") ~> routeWithAdminPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern {
         case OnCategoryChanged(`processId`, Category1, Category2) =>
       }
@@ -47,7 +47,7 @@ class ProcessesChangeListenerSpec
 
   test("listen to process create") {
     Post(
-      s"/processes/${processName.value}/$Category1?isFragment=false"
+      s"/processes/$processName/$Category1?isFragment=false"
     ) ~> processesRouteWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
     }
@@ -66,9 +66,9 @@ class ProcessesChangeListenerSpec
   test("listen to process archive / unarchive") {
     val processId = createEmptyProcess(processName, Category1, false)
 
-    Post(s"/archive/${processName.value}") ~> routeWithAllPermissions ~> checkEventually {
+    Post(s"/archive/$processName") ~> routeWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnArchived(`processId`) => }
-      Post(s"/unarchive/${processName.value}") ~> routeWithAllPermissions ~> checkEventually {
+      Post(s"/unarchive/$processName") ~> routeWithAllPermissions ~> checkEventually {
         processChangeListener.events.toArray.last should matchPattern { case OnUnarchived(`processId`) => }
       }
     }
@@ -78,7 +78,7 @@ class ProcessesChangeListenerSpec
     val processId = createEmptyProcess(processName, Category1, false)
     val newName   = ProcessName("new_name")
 
-    Put(s"/processes/${processName.value}/rename/${newName.value}") ~> routeWithAllPermissions ~> checkEventually {
+    Put(s"/processes/$processName/rename/$newName") ~> routeWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern {
         case OnRenamed(`processId`, `processName`, `newName`) =>
       }
@@ -88,7 +88,7 @@ class ProcessesChangeListenerSpec
   test("listen to delete process") {
     val processId = createArchivedProcess(processName, false)
 
-    Delete(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
+    Delete(s"/processes/$processName") ~> routeWithAllPermissions ~> check {
       status shouldBe StatusCodes.OK
       eventually {
         processChangeListener.events.toArray.last should matchPattern { case OnDeleted(`processId`) => }
@@ -101,7 +101,7 @@ class ProcessesChangeListenerSpec
     val comment   = Some("deployComment")
 
     deployProcess(
-      processName.value,
+      processName,
       Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
       comment
     ) ~> checkEventually {
@@ -115,7 +115,7 @@ class ProcessesChangeListenerSpec
     val processId = createValidProcess(processName, Category1, false)
 
     deploymentManager.withFailingDeployment(processName) {
-      deployProcess(processName.value) ~> checkEventually {
+      deployProcess(processName) ~> checkEventually {
         processChangeListener.events.toArray.last should matchPattern { case OnDeployActionFailed(`processId`, _) => }
       }
     }
@@ -126,7 +126,7 @@ class ProcessesChangeListenerSpec
     val comment   = Some("cancelComment")
 
     cancelProcess(
-      SampleProcess.process.id,
+      SampleProcess.process.name,
       Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
       comment
     ) ~> checkEventually {

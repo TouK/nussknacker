@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -429,7 +430,7 @@ object FlinkProcessRegistrar {
       splittedNode: splittednode.SplittedNode[NodeData],
       operation: String
   ) = {
-    s"${metaData.id}-${splittedNode.id}-$operation"
+    s"${metaData.name}-${splittedNode.id}-$operation"
   }
 
   private[registrar] def interpretationOperatorName(
@@ -438,16 +439,16 @@ object FlinkProcessRegistrar {
       interpretationName: String,
       shouldUseAsyncInterpretation: Boolean
   ): String = {
-    interpretationOperatorName(metaData.id, splittedNode.id, interpretationName, shouldUseAsyncInterpretation)
+    interpretationOperatorName(metaData.name, splittedNode.id, interpretationName, shouldUseAsyncInterpretation)
   }
 
   private[registrar] def interpretationOperatorName(
-      scenarioId: String,
+      scenarioName: ProcessName,
       nodeId: String,
       interpretationName: String,
       shouldUseAsyncInterpretation: Boolean
   ) = {
-    s"$scenarioId-$nodeId-$interpretationName${if (shouldUseAsyncInterpretation) "Async" else "Sync"}"
+    s"$scenarioName-$nodeId-$interpretationName${if (shouldUseAsyncInterpretation) "Async" else "Sync"}"
   }
 
 }

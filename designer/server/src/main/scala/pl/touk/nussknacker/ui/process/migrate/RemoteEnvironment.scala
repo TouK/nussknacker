@@ -1,14 +1,12 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import akka.actor.ActorSystem
-import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.Uri.{Path, Query}
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, RawHeader}
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, RawHeader}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
+import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
 import cats.data.EitherT
 import cats.implicits._
@@ -18,7 +16,6 @@ import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
-import pl.touk.nussknacker.ui.{FatalError, NuDesignerError, OtherError}
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
@@ -26,9 +23,12 @@ import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
+import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
-import scala.concurrent.{Await, ExecutionContext, Future}
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait RemoteEnvironment {
 
@@ -66,7 +66,7 @@ final case class MigrationValidationError(errors: ValidationErrors)
 
 final case class MigrationToArchivedError(processName: ProcessName, environment: String)
     extends FatalError(
-      s"Cannot migrate, scenario ${processName.value} is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
+      s"Cannot migrate, scenario $processName is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
     )
 
 final case class HttpRemoteEnvironmentConfig(
@@ -145,9 +145,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(
       implicit ec: ExecutionContext
   ): Future[Either[NuDesignerError, Map[String, Difference]]] = {
-    val id = localProcess.id
     (for {
-      process <- EitherT(fetchProcessVersion(id, remoteProcessVersion))
+      process <- EitherT(fetchProcessVersion(localProcess.name, remoteProcessVersion))
       compared <- EitherT.rightT[Future, NuDesignerError](
         ProcessComparator.compare(localProcess, process.scenarioGraphUnsafe)
       )
@@ -165,11 +164,11 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
           Left[NuDesignerError, Unit](MigrationValidationError(validation.errors))
         else Right(())
       )
-      processEither <- fetchProcessDetails(localProcess.id)
+      processEither <- fetchProcessDetails(localProcess.name)
       _ <- processEither match {
         case Right(processDetails) if processDetails.isArchived =>
           EitherT.leftT[Future, NuDesignerError](
-            MigrationToArchivedError(processDetails.idWithName.name, environmentId)
+            MigrationToArchivedError(processDetails.name, environmentId)
           )
         case Right(_) => EitherT.rightT[Future, NuDesignerError](())
         case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) =>
@@ -196,7 +195,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     EitherT {
       invokeForSuccess(
         HttpMethods.POST,
-        List("processes", localProcess.id, category),
+        List("processes", localProcess.name.value, category),
         Query(("isFragment", localProcess.metaData.isFragment.toString)),
         HttpEntity.Empty,
         remoteUserNameHeader
@@ -237,20 +236,20 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     invokeJson[List[ScenarioWithDetails]](HttpMethods.GET, List("processes"), Query(("isArchived", "false")))
   }
 
-  private def fetchProcessVersion(id: String, remoteProcessVersion: Option[VersionId])(
+  private def fetchProcessVersion(name: ProcessName, remoteProcessVersion: Option[VersionId])(
       implicit ec: ExecutionContext
   ): Future[Either[NuDesignerError, ScenarioWithDetails]] = {
     invokeJson[ScenarioWithDetails](
       HttpMethods.GET,
-      List("processes", id) ++ remoteProcessVersion.map(_.value.toString).toList,
+      List("processes", name.value) ++ remoteProcessVersion.map(_.value.toString).toList,
       Query()
     )
   }
 
   private def fetchProcessDetails(
-      id: String
+      name: ProcessName
   )(implicit ec: ExecutionContext): FutureE[Either[NuDesignerError, ScenarioWithDetails]] = {
-    EitherT(invokeJson[ScenarioWithDetails](HttpMethods.GET, List("processes", id)).map(_.asRight))
+    EitherT(invokeJson[ScenarioWithDetails](HttpMethods.GET, List("processes", name.value)).map(_.asRight))
   }
 
   private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
@@ -287,7 +286,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         .to[MessageEntity](marshaller, ec)
       response <- invokeJson[ValidationResult](
         HttpMethods.PUT,
-        List("processes", process.id),
+        List("processes", process.name.value),
         requestEntity = processToSave
       )
     } yield response

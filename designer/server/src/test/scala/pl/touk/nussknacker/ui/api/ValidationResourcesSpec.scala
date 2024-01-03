@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -122,7 +123,7 @@ class ValidationResourcesSpec
   }
 
   it should "find errors in scenario id" in {
-    createAndValidateScenario(ProcessTestData.validProcessWithId(" ")) {
+    createAndValidateScenario(ProcessTestData.validProcessWithName(ProcessName(" "))) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("Scenario name cannot be blank")
@@ -247,9 +248,9 @@ class ValidationResourcesSpec
     }
   }
 
-  private def newDisplayableProcess(id: String, nodes: List[NodeData], edges: List[Edge]): DisplayableProcess = {
+  private def newDisplayableProcess(name: String, nodes: List[NodeData], edges: List[Edge]): DisplayableProcess = {
     DisplayableProcess(
-      id = id,
+      name = ProcessName(name),
       properties = ProcessProperties(StreamMetaData(Some(2), Some(false))),
       nodes = nodes,
       edges = edges,
@@ -262,7 +263,7 @@ class ValidationResourcesSpec
     createAndValidateScenario(TestProcessUtil.toDisplayable(scenario))(testCode)
 
   private def createAndValidateScenario(displayable: DisplayableProcess)(testCode: => Assertion): Assertion = {
-    createEmptyProcess(displayable.processName)
+    createEmptyProcess(displayable.name)
     validateScenario(displayable)(testCode)
   }
 

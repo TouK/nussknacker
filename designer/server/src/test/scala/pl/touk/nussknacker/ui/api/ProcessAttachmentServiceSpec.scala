@@ -7,12 +7,12 @@ import akka.util.ByteString
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
+import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.listener.Comment
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Random
@@ -57,7 +57,7 @@ private object TestProcessActivityRepository extends ProcessActivityRepository {
 
   override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = ???
 
-  override def findActivity(processId: ProcessIdWithName)(
+  override def findActivity(processId: ProcessId)(
       implicit ec: ExecutionContext
   ): Future[DbProcessActivityRepository.ProcessActivity] = ???
 

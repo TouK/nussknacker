@@ -75,7 +75,7 @@ class K8sDeploymentManagerKafkaTest
           "Value"                 -> s"{ original: #input, version: $version }"
         )
 
-      val pversion = ProcessVersion(VersionId(version), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
+      val pversion = ProcessVersion(VersionId(version), scenario.name, ProcessId(1234), "testUser", Some(22))
       manager.deploy(pversion, DeploymentData.empty, scenario, None).futureValue
       pversion
     }
@@ -171,7 +171,7 @@ class K8sDeploymentManagerKafkaTest
     val f = createKafkaFixture()
 
     def withManager(manager: K8sDeploymentManager)(action: ProcessVersion => Unit): Unit = {
-      val version = ProcessVersion(VersionId(11), ProcessName(f.scenario.id), ProcessId(1234), "testUser", Some(22))
+      val version = ProcessVersion(VersionId(11), f.scenario.name, ProcessId(1234), "testUser", Some(22))
       manager.deploy(version, DeploymentData.empty, f.scenario, None).futureValue
 
       action(version)
@@ -410,8 +410,8 @@ class K8sDeploymentManagerKafkaTest
         "Value validation mode" -> "'strict'",
         "Value"                 -> "#input"
       )
-    logger.info(s"Running kafka test on ${scenario.id} $input - $output")
-    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
+    logger.info(s"Running kafka test on ${scenario.name} $input - $output")
+    val version = ProcessVersion(VersionId(11), scenario.name, ProcessId(1234), "testUser", Some(22))
     new KafkaTestFixture(
       inputTopic = input,
       outputTopic = output,

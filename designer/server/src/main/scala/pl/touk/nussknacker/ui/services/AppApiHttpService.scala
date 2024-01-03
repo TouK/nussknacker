@@ -174,7 +174,7 @@ class AppApiHttpService(
       .map { processes =>
         processes
           .filterNot(_.validationResultUnsafe.errors.isEmpty)
-          .map(_.id)
+          .map(_.name.value)
       }
   }
 

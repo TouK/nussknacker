@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.UriUtils
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
 import pl.touk.nussknacker.ui.config.processtoolbar._
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -547,5 +547,5 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
   }
 
   private def createProcess(name: String, category: ProcessingType, isFragment: Boolean, isArchived: Boolean) =
-    TestProcessUtil.toDetails(name, category, isFragment = isFragment, isArchived = isArchived)
+    TestProcessUtil.toDetails(ProcessName(name), category, isFragment = isFragment, isArchived = isArchived)
 }

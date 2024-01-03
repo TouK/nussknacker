@@ -6,6 +6,7 @@ import io.circe.syntax.EncoderOps
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -23,7 +24,8 @@ class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: 
       timestamp: lang.Long
   ): ProducerRecord[Array[Byte], Array[Byte]] = {
     val key =
-      s"${metaData.id}-${exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("")}".getBytes(StandardCharsets.UTF_8)
+      s"${metaData.name}-${exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("")}"
+        .getBytes(StandardCharsets.UTF_8)
     val value           = KafkaExceptionInfo(metaData, exceptionInfo, consumerConfig)
     val serializedValue = value.asJson.spaces2.getBytes(StandardCharsets.UTF_8)
     new ProducerRecord(consumerConfig.topic, key, serializedValue)
@@ -32,7 +34,7 @@ class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: 
 }
 
 @JsonCodec case class KafkaExceptionInfo(
-    processName: String,
+    processName: ProcessName,
     nodeId: Option[String],
     message: Option[String],
     exceptionInput: Option[String],
@@ -56,7 +58,7 @@ object KafkaExceptionInfo {
       config: KafkaExceptionConsumerConfig
   ): KafkaExceptionInfo = {
     new KafkaExceptionInfo(
-      metaData.id,
+      metaData.name,
       exceptionInfo.nodeComponentInfo.map(_.nodeId),
       Option(exceptionInfo.throwable.message),
       Option(exceptionInfo.throwable.input),

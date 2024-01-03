@@ -207,7 +207,7 @@ class DeploymentServiceSpec
     lastStateAction.state shouldBe ProcessActionState.ExecutionFinished
     // we want to hide finished deploys
     processDetails.lastDeployedAction shouldBe empty
-    activityRepository.findActivity(ProcessIdWithName(processId, processName)).futureValue.comments should have length 1
+    activityRepository.findActivity(processId).futureValue.comments should have length 1
 
     deploymentManager.withEmptyProcessState(processName) {
       val stateAfterJobRetention =

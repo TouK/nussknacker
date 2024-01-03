@@ -21,18 +21,18 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
             return async (dispatch, getState) => {
                 const state = getState();
                 const processJson = getProcessToDisplay(state);
-                const currentProcessName = processJson.id;
+                const currentProcessName = processJson.name;
 
-                // save changes before rename and force same processId everywhere
+                // save changes before rename and force same processName everywhere
                 await HttpService.saveProcess(currentProcessName, processJson, comment);
 
                 const unsavedNewName = getProcessUnsavedNewName(state);
                 const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
-                const processId = isRenamed ? unsavedNewName : currentProcessName;
+                const processName = isRenamed ? unsavedNewName : currentProcessName;
 
                 await dispatch(UndoActionCreators.clearHistory());
-                await dispatch(displayCurrentProcessVersion(processId));
-                await dispatch(displayProcessActivity(processId));
+                await dispatch(displayCurrentProcessVersion(processName));
+                await dispatch(displayProcessActivity(processName));
 
                 if (isRenamed) {
                     await dispatch(loadProcessToolbarsConfiguration(unsavedNewName));

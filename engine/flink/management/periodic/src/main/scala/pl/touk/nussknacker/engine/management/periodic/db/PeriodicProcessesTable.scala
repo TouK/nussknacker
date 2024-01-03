@@ -21,6 +21,12 @@ trait PeriodicProcessesTableFactory {
 
   import profile.api._
 
+  implicit val processNameMapping: BaseColumnType[ProcessName] =
+    MappedColumnType.base[ProcessName, String](_.value, ProcessName.apply)
+
+  implicit val versionIdMapping: BaseColumnType[VersionId] =
+    MappedColumnType.base[VersionId, Long](_.value, VersionId(_))
+
   implicit val ProcessActionIdTypedType: TypedType[ProcessActionId] =
     MappedColumnType.base[ProcessActionId, UUID](
       _.value,
@@ -31,9 +37,9 @@ trait PeriodicProcessesTableFactory {
 
     def id: Rep[PeriodicProcessId] = column[PeriodicProcessId]("id", O.PrimaryKey, O.AutoInc)
 
-    def processName: Rep[String] = column[String]("process_name", NotNull)
+    def processName: Rep[ProcessName] = column[ProcessName]("process_name", NotNull)
 
-    def processVersionId: Rep[Long] = column[Long]("process_version_id", NotNull)
+    def processVersionId: Rep[VersionId] = column[VersionId]("process_version_id", NotNull)
 
     def processingType: Rep[String] = column[String]("processing_type", NotNull)
 
@@ -82,8 +88,8 @@ trait PeriodicProcessesTableFactory {
               ) =>
             (
               id,
-              processName.value,
-              versionId.value,
+              processName,
+              versionId,
               processingType,
               processJson.asJson.noSpaces,
               inputConfigDuringExecutionJson,
@@ -106,8 +112,8 @@ object PeriodicProcessEntity {
 
   def create(
       id: PeriodicProcessId,
-      processName: String,
-      processVersionId: Long,
+      processName: ProcessName,
+      processVersionId: VersionId,
       processingType: String,
       processJson: String,
       inputConfigDuringExecutionJson: String,
@@ -119,8 +125,8 @@ object PeriodicProcessEntity {
   ): PeriodicProcessEntity =
     PeriodicProcessEntity(
       id,
-      ProcessName(processName),
-      VersionId(processVersionId),
+      processName,
+      processVersionId,
       processingType,
       ProcessMarshaller.fromJsonUnsafe(processJson),
       inputConfigDuringExecutionJson,

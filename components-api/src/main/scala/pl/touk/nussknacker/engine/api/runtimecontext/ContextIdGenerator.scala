@@ -29,6 +29,6 @@ object IncContextIdGenerator {
     withProcessIdNodeIdPrefix(jobData.metaData, nodeId)
 
   def withProcessIdNodeIdPrefix(metaData: MetaData, nodeId: String): IncContextIdGenerator =
-    new IncContextIdGenerator(metaData.id + "-" + nodeId)
+    new IncContextIdGenerator(metaData.name.value + "-" + nodeId)
 
 }

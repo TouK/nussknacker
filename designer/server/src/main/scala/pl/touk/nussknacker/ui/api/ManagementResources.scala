@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionInvocationResult, _}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
@@ -153,7 +154,7 @@ class ManagementResources(
 
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("adminProcessManagement") {
-      path("snapshot" / Segment) { processName =>
+      path("snapshot" / ProcessNameSegment) { processName =>
         (post & processId(processName) & parameters(Symbol("savepointDir").?)) { (processId, savepointDir) =>
           canDeploy(processId) {
             complete {
@@ -166,7 +167,7 @@ class ManagementResources(
           }
         }
       } ~
-        path("stop" / Segment) { processName =>
+        path("stop" / ProcessNameSegment) { processName =>
           (post & processId(processName) & parameters(Symbol("savepointDir").?)) { (processId, savepointDir) =>
             canDeploy(processId) {
               complete {
@@ -179,7 +180,7 @@ class ManagementResources(
             }
           }
         } ~
-        path("deploy" / Segment) { processName =>
+        path("deploy" / ProcessNameSegment) { processName =>
           (post & processId(processName) & parameters(Symbol("savepointPath"))) { (processId, savepointPath) =>
             canDeploy(processId) {
               withDeploymentComment { deploymentComment =>
@@ -194,7 +195,7 @@ class ManagementResources(
         }
     } ~
       pathPrefix("processManagement") {
-        path("deploy" / Segment) { processName =>
+        path("deploy" / ProcessNameSegment) { processName =>
           (post & processId(processName)) { processId =>
             canDeploy(processId) {
               withDeploymentComment { deploymentComment =>
@@ -209,7 +210,7 @@ class ManagementResources(
             }
           }
         } ~
-          path("cancel" / Segment) { processName =>
+          path("cancel" / ProcessNameSegment) { processName =>
             (post & processId(processName)) { processId =>
               canDeploy(processId) {
                 withDeploymentComment { deploymentComment =>
@@ -223,7 +224,7 @@ class ManagementResources(
             }
           } ~
           // TODO: maybe Write permission is enough here?
-          path("test" / Segment) { processName =>
+          path("test" / ProcessNameSegment) { processName =>
             (post & processId(processName)) { idWithName =>
               canDeploy(idWithName.id) {
                 formFields(Symbol("testData"), Symbol("processJson")) { (testDataContent, displayableProcessJson) =>
@@ -253,7 +254,7 @@ class ManagementResources(
             {
               (post & entity(as[DisplayableProcess])) { displayableProcess =>
                 {
-                  processId(displayableProcess.id) { idWithName =>
+                  processId(displayableProcess.name) { idWithName =>
                     canDeploy(idWithName) {
                       complete {
                         measureTime("generateAndTest", metricRegistry) {
@@ -278,7 +279,7 @@ class ManagementResources(
               }
             }
           } ~
-          path("testWithParameters" / Segment) { processName =>
+          path("testWithParameters" / ProcessNameSegment) { processName =>
             {
               (post & processDetailsForName(processName)) { process =>
                 val modelData = typeToConfig.forTypeUnsafe(process.processingType)
@@ -286,7 +287,7 @@ class ManagementResources(
                   prepareTestFromParametersDecoder(modelData)
                 (post & entity(as[TestFromParametersRequest])) { testParametersRequest =>
                   {
-                    processId(testParametersRequest.displayableProcess.id) { idWithName =>
+                    processId(testParametersRequest.displayableProcess.name) { idWithName =>
                       canDeploy(idWithName) {
                         complete {
                           scenarioTestService
@@ -306,7 +307,7 @@ class ManagementResources(
               }
             }
           } ~
-          path("customAction" / Segment) { processName =>
+          path("customAction" / ProcessNameSegment) { processName =>
             (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
               val params = req.params.getOrElse(Map.empty)
               complete {

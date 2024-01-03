@@ -5,6 +5,7 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.CoreOptions
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
@@ -52,7 +53,7 @@ class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) 
       case stream: StreamMetaData =>
         val requiredSlotsFuture = for {
           releasedSlots  <- slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobsIds)
-          allocatedSlots <- slotsAllocatedByProcessThatWilBeDeployed(stream, canonicalProcess.metaData.id)
+          allocatedSlots <- slotsAllocatedByProcessThatWilBeDeployed(stream, canonicalProcess.metaData.name)
         } yield Option(SlotsBalance(releasedSlots, allocatedSlots))
         OptionT(requiredSlotsFuture)
       case _ => OptionT.none
@@ -70,13 +71,16 @@ class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) 
       .map(_.sum)
   }
 
-  private def slotsAllocatedByProcessThatWilBeDeployed(stream: StreamMetaData, processId: String): Future[Int] = {
+  private def slotsAllocatedByProcessThatWilBeDeployed(
+      stream: StreamMetaData,
+      processName: ProcessName
+  ): Future[Int] = {
     stream.parallelism
       .map(definedParallelism => Future.successful(definedParallelism))
       .getOrElse(client.getJobManagerConfig.map { config =>
         val defaultParallelism = config.get(CoreOptions.DEFAULT_PARALLELISM)
         logger.debug(
-          s"Not specified parallelism for process: $processId, will be used default configured on jobmanager: $defaultParallelism"
+          s"Not specified parallelism for process: $processName, will be used default configured on jobmanager: $defaultParallelism"
         )
         defaultParallelism
       })

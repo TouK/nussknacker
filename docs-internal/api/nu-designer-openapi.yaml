@@ -28,9 +28,7 @@ paths:
                 Example0:
                   summary: List component usages
                   value:
-                  - id: scenario1
-                    name: scenario1
-                    processId: 1
+                  - name: scenario1
                     nodesUsagesData:
                     - nodeId: csv-source
                       type: ScenarioUsageData
@@ -54,9 +52,7 @@ paths:
                 Example1:
                   summary: List component usages with no last Action
                   value:
-                  - id: scenario1
-                    name: scenario1
-                    processId: 1
+                  - name: scenario1
                     nodesUsagesData:
                     - nodeId: csv-source
                       type: ScenarioUsageData
@@ -767,9 +763,7 @@ components:
       - builtin
     ComponentUsagesInScenario:
       required:
-      - id
       - name
-      - processId
       - isFragment
       - processCategory
       - modificationDate
@@ -779,12 +773,8 @@ components:
       - createdBy
       type: object
       properties:
-        id:
-          type: string
         name:
           $ref: '#/components/schemas/ProcessName'
-        processId:
-          $ref: '#/components/schemas/ProcessId'
         nodesUsagesData:
           type: array
           items:

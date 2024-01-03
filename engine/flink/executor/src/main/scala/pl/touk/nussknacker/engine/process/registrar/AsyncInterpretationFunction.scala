@@ -37,7 +37,7 @@ private[registrar] class AsyncInterpretationFunction(
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    serviceExecutionContext = serviceExecutionContextPreparer.prepare(compilerData.metaData.id)
+    serviceExecutionContext = serviceExecutionContextPreparer.prepare(compilerData.metaData.name)
   }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
