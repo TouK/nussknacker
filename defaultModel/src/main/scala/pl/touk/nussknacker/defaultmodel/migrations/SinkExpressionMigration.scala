@@ -19,5 +19,4 @@ object SinkExpressionMigration extends NodeMigration {
 
   override def description: String = "Remove endResult from kafka-json"
 
-  override def failOnNewValidationError: Boolean = true
 }
