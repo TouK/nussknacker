@@ -124,6 +124,15 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.get('[model-id="input"]').dblclick();
         cy.get('[title="Name"]').click();
         takeWindowScreenshot();
+
+        cy.get('[title="Options"]').click(); // open parameter1 options
+        cy.get('[title="Name"]').click();
+        takeWindowScreenshot();
+
+        cy.get('[title="Options"]').click(); // close parameter1 options
+        cy.get('[title="Options"]').eq(1).click(); // assuming parameter2 options are the second element with the title "Options"
+        cy.get('[title="Name"]').click();
+        takeWindowScreenshot();
     });
 
     it("fragments - Outputs", () => {
@@ -131,7 +140,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         cy.get('[model-id="output"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeWindowScreenshot();
+        takeGraphScreenshot();
     });
 });
 

@@ -11,17 +11,16 @@ Once a fragment is created using Designer (see Fragments tab) it can be used in 
 ## Inputs
 Fragment must have exactly one input node. You can define parameters of a fragment:
 
-![fragment input_base](img/fragment_input_simple.png)
-
+![fragment input_base](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_fragments_-_Inputs0.png)
 Clicking the "Options" button next to the parameter's type opens up an additional form, that allow setting additional options for the input parameter.
 
 For types other than `String` and `Boolean` this allows configuration as seen here:
 
-![fragment input_advanced_long](img/fragment_input_advanced_long.png)
+![fragment input_advanced_long](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_fragments_-_Inputs1.png)
 
 For parameters of type `String` or `Boolean` it also allows choosing an input mode from `Any value`, `Any value with suggestions`, `Fixed list`.
 
-![fragment input_advanced_string](img/fragment_input_advanced_string.png)
+![fragment input_advanced_string](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_fragments_-_Inputs2.png)
 
 | Field name               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 |--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -36,7 +35,7 @@ For parameters of type `String` or `Boolean` it also allows choosing an input mo
 ## Outputs
 Fragment can define zero, one or more outputs. Each of them has a name (which should be unique), main scenario can then choose appropriate output. Below you can see fragment with two outputs:
 
-![fragment output](img/fragment_output.png)
+![fragment output](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_fragments_-_Outputs0.png)
 
 ## Limitations of fragments
 - They cannot access variables from the main scenario if they are not passed as parameters.
