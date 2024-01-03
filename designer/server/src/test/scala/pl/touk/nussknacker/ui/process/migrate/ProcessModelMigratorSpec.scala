@@ -90,7 +90,7 @@ class ProcessModelMigratorSpec
   private def migrateByVersionsOpt(startFrom: Option[Int], migrations: Int*): Option[MigrationResult] =
     migrator(migrations: _*).migrateProcess(
       TestProcessUtil
-        .displayableToProcess(ProcessTestData.validDisplayableProcess.toDisplayable)
+        .displayableToProcess(ProcessTestData.validDisplayableProcess)
         .copy(modelVersion = startFrom),
       skipEmptyMigrations = true
     )

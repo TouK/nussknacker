@@ -53,7 +53,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     )
   }
 
-  test("return edge types for fragment, filters and switches") {
+  test("return edge types for fragment, filters, switches and components with multiple inputs") {
     val fragmentsDetails = TestFactory.prepareSampleFragmentRepository.fragmentsByProcessingType.head._2
 
     val edgeTypes = ComponentDefinitionPreparer.prepareEdgeTypes(
@@ -63,29 +63,40 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     )
 
     edgeTypes.toSet shouldBe Set(
-      NodeEdges(BuiltInComponentInfo.Split, List(), true, false),
+      NodeEdges(
+        BuiltInComponentInfo.Split,
+        List.empty,
+        canChooseNodes = true,
+        isForInputDefinition = false
+      ),
       NodeEdges(
         BuiltInComponentInfo.Choice,
         List(NextSwitch(Expression.spel("true")), SwitchDefault),
-        true,
-        false
+        canChooseNodes = true,
+        isForInputDefinition = false
       ),
       NodeEdges(
         BuiltInComponentInfo.Filter,
         List(FilterTrue, FilterFalse),
-        false,
-        false
+        canChooseNodes = false,
+        isForInputDefinition = false
       ),
       NodeEdges(
         ComponentInfo(ComponentType.Fragment, "sub1"),
         List(FragmentOutput("out1"), FragmentOutput("out2")),
-        false,
-        false
+        canChooseNodes = false,
+        isForInputDefinition = false
+      ),
+      NodeEdges(
+        ComponentInfo(ComponentType.CustomComponent, "union"),
+        List.empty,
+        canChooseNodes = true,
+        isForInputDefinition = true
       )
     )
   }
 
-  test("return objects sorted by label with mapped categories") {
+  test("return objects with mapped groups") {
     val groups = prepareGroups(
       Map(),
       Map(
@@ -102,40 +113,21 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     baseComponentsGroups should have size 1
 
     val baseComponents = baseComponentsGroups.flatMap(_.components)
-    // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
-    baseComponents should have size (5 + 3 + 1)
-    baseComponents.filter(n => n.componentInfo == BuiltInComponentInfo.Filter) should have size 1
-    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 4
-
+    baseComponents
+      .filter(n => n.`type` == ComponentType.BuiltIn)
+      .map(_.label) should contain allElementsOf BuiltInComponentInfo.AllAvailableForScenario.map(_.name)
+    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 5
   }
 
-  test("return objects sorted by label with mapped categories and mapped nodes") {
-
+  test("return objects with mapped nodes") {
     val groups = prepareGroups(
       Map("barService" -> "foo", "barSource" -> "fooBar"),
-      Map(
-        ComponentGroupName("custom")               -> Some(ComponentGroupName("base")),
-        ComponentGroupName("optionalEndingCustom") -> Some(ComponentGroupName("base"))
-      )
+      Map.empty
     )
-
-    validateGroups(groups, 7)
-
-    groups.exists(_.name == ComponentGroupName("custom")) shouldBe false
-
-    val baseComponentsGroups = groups.filter(_.name == ComponentGroupName("base"))
-    baseComponentsGroups should have size 1
-
-    val baseComponents = baseComponentsGroups.flatMap(_.components)
-    // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
-    baseComponents should have size (5 + 3 + 1)
-    baseComponents.filter(n => n.componentInfo == BuiltInComponentInfo.Filter) should have size 1
-    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 4
 
     val fooNodes = groups.filter(_.name == ComponentGroupName("foo")).flatMap(_.components)
     fooNodes should have size 1
     fooNodes.filter(_.label == "barService") should have size 1
-
   }
 
   test("return custom nodes with correct group") {

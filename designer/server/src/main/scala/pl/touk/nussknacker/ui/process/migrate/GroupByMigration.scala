@@ -10,8 +10,6 @@ object GroupByMigration extends NodeMigration {
 
   private val keyByParameterName = "keyBy"
 
-  override def failOnNewValidationError: Boolean = false
-
   override def migrateNode(metadata: MetaData): PartialFunction[NodeData, NodeData] = {
     case node @ CustomNode(_, _, nodeType, parameters, _)
         if parameters.exists(_.name == keyByParameterName) && nodeType.startsWith("aggregate-") =>
