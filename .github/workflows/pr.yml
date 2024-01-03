@@ -527,12 +527,14 @@ jobs:
         with:
           name: e2e-test-results
           path: |
+            docs/autoScreenshotChangeDocs/
             designer/client/cypress/**/__image_snapshots__/
             designer/client/cypress/screenshots/
             designer/client/cypress/videos/
           if-no-files-found: ignore
       - name: Create Pull Request
         id: update_snapshots
+        uses: peter-evans/create-pull-request@v4
         if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
           HASH: ${{ format('#{0}', github.event.number) }}
@@ -545,7 +547,6 @@ jobs:
           commit-message: Updated snapshots
           body: Updated snapshots in ${{ github.event_name == 'pull_request' && env.HASH || env.BRANCH}}
           labels: cypress
-        uses: peter-evans/create-pull-request@v4
       - name: Comment PR
         if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
         uses: thollander/actions-comment-pull-request@v2
