@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, RequestResponse, Streaming}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.{ScenarioWithDetailsConversions, repository}
@@ -91,14 +92,18 @@ object TestProcessUtil {
       isFragment = isFragment
     )
 
-  def validatedToProcess(displayable: ValidatedDisplayableProcess): ScenarioWithDetails =
+  def wrapWithDetails(
+      displayable: DisplayableProcess,
+      validationResult: ValidationResult = ValidationResult.success
+  ): ScenarioWithDetails = {
     ScenarioWithDetailsConversions.fromEntity(
       toDetails(
         displayable.name,
         processingType = displayable.processingType,
         category = displayable.category
-      ).copy(json = displayable)
+      ).copy(json = ValidatedDisplayableProcess.withValidationResult(displayable, validationResult))
     )
+  }
 
   def toDetails(
       name: ProcessName,

@@ -21,5 +21,4 @@ object RequestResponseSinkValidationModeMigration extends NodeMigration {
   override def description: String =
     "Add value validation mode param to rr response sink: https://github.com/TouK/nussknacker/pull/3727"
 
-  override def failOnNewValidationError: Boolean = true
 }

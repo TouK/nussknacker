@@ -16,8 +16,6 @@ case class UnionParametersMigration(migratedNodeType: String = "union") extends 
   private val oldValueParameterName            = "value"
   private val newOutputExpressionParameterName = "Output expression"
 
-  override def failOnNewValidationError: Boolean = false
-
   override def migrateNode(metadata: MetaData): PartialFunction[NodeData, NodeData] = {
     case node @ CustomNode(_, _, nodeType, parameters, _)
         if parameters.exists(_.name == oldValueParameterName) && nodeType == migratedNodeType =>

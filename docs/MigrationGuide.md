@@ -25,6 +25,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `DisplayableProcess.id` of type `String` was replaced by `name` field of type `ProcessName`, `processName` field is removed
   * deprecated `AsyncExecutionContextPreparer.prepareExecutionContext` was removed
   * `AsyncExecutionContextPreparer.prepare` now takes `ProcessName` instead of `String`
+* [#5288](https://github.com/TouK/nussknacker/pull/5288) RemoteEnvironment / ModelMigration changes:
+  * `ProcessMigration.failOnNewValidationError` was removed - it wasn't used anywhere anymore
+  * `RemoteEnvironment.testMigration` result types changes
+    * `shouldFailOnNewErrors` field was removed - it wasn't used anywhere anymore
+    * `converted` field was replaced by the `processName` field which was the only information that was used
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280) Changes in the definition API:

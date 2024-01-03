@@ -45,6 +45,7 @@ trait RemoteEnvironment {
       loggedUser: LoggedUser
   ): Future[Either[NuDesignerError, Unit]]
 
+  // TODO This method is used by an external project. We should move it to some api module
   def testMigration(processToInclude: ScenarioWithDetails => Boolean = _ => true)(
       implicit ec: ExecutionContext,
       user: LoggedUser
