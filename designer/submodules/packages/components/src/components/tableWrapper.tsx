@@ -82,22 +82,11 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
     return (
         <Layout>
             <DataGrid
-                sx={(theme) => ({
-                    ".MuiDataGrid-row": {
-                        my: "5.5px",
-                    },
-                    ".MuiDataGrid-cell:focus-within": {
-                        outlineColor: theme.palette.primary.main,
-                    },
-                    ".MuiDataGrid-cell .Mui-focusVisible": {
-                        outline: "none", // Remove the white cell outline when the cell is focused via the keyboard, a link is clicked, and the user returns to the previous page
-                    },
-                })}
                 apiRef={apiRef}
                 isRowSelectable={rowSelectable}
                 autoPageSize
                 rows={rows}
-                getRowHeight={() => "auto"}
+                getRowHeight={() => 50} // In the case of a default 52px row height, there is a problem with correctly resizing the table when the window height changes.
                 loading={loading}
                 localeText={localeText}
                 disableColumnFilter

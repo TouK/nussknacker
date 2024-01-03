@@ -1,7 +1,7 @@
 import React, { PropsWithChildren, useCallback, useRef } from "react";
 import { Truncate } from "./truncate";
 import { Visibility } from "@mui/icons-material";
-import { Box, Popover, PopoverOrigin, Stack, Typography } from "@mui/material";
+import { Box, Popover, PopoverOrigin, Stack, styled, Typography } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, PopupState, usePopupState } from "material-ui-popup-state/hooks";
 import { useTranslation } from "react-i18next";
@@ -25,6 +25,47 @@ const anchorOrigin: PopoverOrigin = {
 const transformOrigin: PopoverOrigin = {
     vertical: "center",
     horizontal: "center",
+};
+
+const TruncateButton = styled("button")(({ theme }) => ({
+    background: "none",
+    border: "none",
+    color: theme.palette.common.white,
+    display: "flex",
+    alignItems: "center",
+    textTransform: "lowercase",
+    margin: "0 2px",
+    height: "100%",
+    padding: 0,
+    ":hover": {
+        backgroundColor: alpha(theme.palette.common.white, 0.08),
+    },
+    ":focus-visible": {
+        outline: "none",
+        backgroundColor: alpha(theme.palette.common.white, 0.08),
+    },
+}));
+
+const Truncator = ({
+    itemsCount,
+    hiddenItemsCount,
+    popupState,
+}: {
+    itemsCount: number;
+    hiddenItemsCount: number;
+    popupState: PopupState;
+}) => {
+    const { t } = useTranslation();
+    return (
+        <TruncateButton {...bindTrigger(popupState)}>
+            <Visibility sx={{ fontSize: "18px", color: "rgb(224, 224, 224)" }} />
+            <Typography sx={{ mx: "4px", fontSize: "13px" }}>
+                {itemsCount === hiddenItemsCount
+                    ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })
+                    : t("truncator.someHidden", "{{hiddenItemsCount}} more...", { hiddenItemsCount })}
+            </Typography>
+        </TruncateButton>
+    );
 };
 
 export function TruncateWrapper({ children }: PropsWithChildren<GridRenderCellParams>): JSX.Element {
@@ -72,46 +113,3 @@ export function TruncateWrapper({ children }: PropsWithChildren<GridRenderCellPa
         </Box>
     );
 }
-
-const Truncator = ({
-    itemsCount,
-    hiddenItemsCount,
-    popupState,
-}: {
-    itemsCount: number;
-    hiddenItemsCount: number;
-    popupState: PopupState;
-}) => {
-    const { t } = useTranslation();
-    return (
-        <Box
-            component={"button"}
-            sx={(theme) => ({
-                background: "none",
-                border: "none",
-                display: "flex",
-                alignItems: "center",
-                textTransform: "lowercase",
-                mx: "2px",
-                padding: 0,
-                height: "24px",
-                ":hover": {
-                    backgroundColor: alpha(theme.palette.common.white, 0.08),
-                },
-                ":focus-visible": {
-                    outline: "none",
-                    backgroundColor: alpha(theme.palette.common.white, 0.08),
-                },
-            })}
-            color={"inherit"}
-            {...bindTrigger(popupState)}
-        >
-            <Visibility sx={{ fontSize: "18px", color: "rgb(224, 224, 224)" }} />
-            <Typography sx={{ mx: "4px", fontSize: "13px" }}>
-                {itemsCount === hiddenItemsCount
-                    ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })
-                    : t("truncator.someHidden", "{{hiddenItemsCount}} more...", { hiddenItemsCount })}
-            </Typography>
-        </Box>
-    );
-};

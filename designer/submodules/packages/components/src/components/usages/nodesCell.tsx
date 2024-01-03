@@ -27,7 +27,7 @@ export const NodesCell = ({
 }): JSX.Element => {
     const {
         value,
-        rowNode: { name },
+        rowNode: { id },
     } = props;
     const filterSegments = useMemo(() => filterText?.toLowerCase().toString().trim().split(/\s/) || [], [filterText]);
 
@@ -68,7 +68,7 @@ export const NodesCell = ({
             icon={icon}
             node={node}
             filterText={filterText}
-            rowId={name.toString()}
+            rowId={id.toString()}
             matched={filterText ? match : -1}
         />
     ));
@@ -110,6 +110,7 @@ const NodeChip = memo(function NodeChip({
             label={matched > 0 ? <HighlightNode value={nodeLabel} filterText={filterText} /> : nodeLabel}
             color={matched !== 0 ? (fragmentNodeId ? "secondary" : "primary") : "default"}
             icon={icon}
+            clickable
         />
     );
 });
