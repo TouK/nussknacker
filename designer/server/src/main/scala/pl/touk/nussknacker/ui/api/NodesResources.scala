@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -39,16 +40,15 @@ class NodesResources(
     typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
     typeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
 )(implicit val ec: ExecutionContext)
-    extends ProcessDirectives
+    extends Directives
+    with ProcessDirectives
     with FailFastCirceSupport
     with RouteWithUser {
 
   private val additionalInfoProviders = new AdditionalInfoProviders(typeToConfig)
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
-    import akka.http.scaladsl.server.Directives._
-
-    pathPrefix("nodes" / Segment) { processName =>
+    pathPrefix("nodes" / ProcessNameSegment) { processName =>
       (post & processDetailsForName(processName)) { process =>
         path("additionalInfo") {
           entity(as[NodeData]) { nodeData =>
@@ -68,7 +68,7 @@ class NodesResources(
           }
         }
       }
-    } ~ pathPrefix("properties" / Segment) { processName =>
+    } ~ pathPrefix("properties" / ProcessNameSegment) { processName =>
       (post & processDetailsForName(processName)) { process =>
         path("additionalInfo") {
           entity(as[ProcessProperties]) { processProperties =>
@@ -85,7 +85,7 @@ class NodesResources(
           entity(as[PropertiesValidationRequest]) { request =>
             complete {
               val scenario = DisplayableProcess(
-                request.id,
+                request.name,
                 ProcessProperties(request.additionalFields),
                 Nil,
                 Nil,
@@ -218,7 +218,7 @@ object NodesResources {
 
 @JsonCodec(encodeOnly = true) final case class PropertiesValidationRequest(
     additionalFields: ProcessAdditionalFields,
-    id: String
+    name: ProcessName
 )
 
 final case class ExpressionSuggestionRequest(

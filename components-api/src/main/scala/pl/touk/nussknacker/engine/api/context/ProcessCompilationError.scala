@@ -4,6 +4,7 @@ import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -322,9 +323,11 @@ object ProcessCompilationError {
     val id: String
   }
 
-  final case class ScenarioIdError(errorType: IdErrorType, id: String, isFragment: Boolean)
+  final case class ScenarioNameError(errorType: IdErrorType, name: ProcessName, isFragment: Boolean)
       extends IdError
-      with ScenarioPropertiesError
+      with ScenarioPropertiesError {
+    override val id: String = name.value
+  }
 
   final case class NodeIdValidationError(errorType: IdErrorType, id: String) extends IdError with InASingleNode {
     override protected def nodeId: String = id

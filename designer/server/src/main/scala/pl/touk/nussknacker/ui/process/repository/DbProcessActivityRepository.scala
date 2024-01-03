@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.sql.Timestamp
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
+import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 
+import java.sql.Timestamp
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,7 +22,7 @@ trait ProcessActivityRepository {
   ): Future[Unit]
 
   def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit]
-  def findActivity(processId: ProcessIdWithName)(implicit ec: ExecutionContext): Future[ProcessActivity]
+  def findActivity(processId: ProcessId)(implicit ec: ExecutionContext): Future[ProcessActivity]
 
   def addAttachment(
       attachmentToAdd: AttachmentToAdd
@@ -60,12 +60,12 @@ final case class DbProcessActivityRepository(dbRef: DbRef)
     }
   }
 
-  override def findActivity(processId: ProcessIdWithName)(implicit ec: ExecutionContext): Future[ProcessActivity] = {
+  override def findActivity(processId: ProcessId)(implicit ec: ExecutionContext): Future[ProcessActivity] = {
     val findProcessActivityAction = for {
-      fetchedComments    <- commentsTable.filter(_.processId === processId.id).sortBy(_.createDate.desc).result
-      fetchedAttachments <- attachmentsTable.filter(_.processId === processId.id).sortBy(_.createDate.desc).result
-      comments    = fetchedComments.map(c => Comment(c, processId.name.value)).toList
-      attachments = fetchedAttachments.map(c => Attachment(c, processId.name.value)).toList
+      fetchedComments    <- commentsTable.filter(_.processId === processId).sortBy(_.createDate.desc).result
+      fetchedAttachments <- attachmentsTable.filter(_.processId === processId).sortBy(_.createDate.desc).result
+      comments    = fetchedComments.map(c => Comment(c)).toList
+      attachments = fetchedAttachments.map(c => Attachment(c)).toList
     } yield ProcessActivity(comments, attachments)
 
     run(findProcessActivityAction)
@@ -104,7 +104,6 @@ object DbProcessActivityRepository {
 
   @JsonCodec final case class Attachment(
       id: Long,
-      processId: String,
       processVersionId: VersionId,
       fileName: String,
       user: String,
@@ -113,10 +112,9 @@ object DbProcessActivityRepository {
 
   object Attachment {
 
-    def apply(attachment: AttachmentEntityData, processName: String): Attachment = {
+    def apply(attachment: AttachmentEntityData): Attachment = {
       Attachment(
         id = attachment.id,
-        processId = processName,
         processVersionId = attachment.processVersionId,
         fileName = attachment.fileName,
         user = attachment.user,
@@ -128,7 +126,6 @@ object DbProcessActivityRepository {
 
   @JsonCodec final case class Comment(
       id: Long,
-      processId: String,
       processVersionId: VersionId,
       content: String,
       user: String,
@@ -137,10 +134,9 @@ object DbProcessActivityRepository {
 
   object Comment {
 
-    def apply(comment: CommentEntityData, processName: String): Comment = {
+    def apply(comment: CommentEntityData): Comment = {
       Comment(
         id = comment.id,
-        processId = processName,
         processVersionId = comment.processVersionId,
         content = comment.content,
         user = comment.user,

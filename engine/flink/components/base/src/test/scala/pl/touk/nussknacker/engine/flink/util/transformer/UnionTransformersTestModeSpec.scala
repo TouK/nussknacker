@@ -140,7 +140,7 @@ class UnionTransformersTestModeSpec
   private def runProcess(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, modelData)(scenario)
-    stoppableEnv.executeAndWaitForFinished(scenario.id)()
+    stoppableEnv.executeAndWaitForFinished(scenario.name.value)()
   }
 
 }

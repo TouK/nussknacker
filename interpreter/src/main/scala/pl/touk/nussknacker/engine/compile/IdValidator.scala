@@ -5,6 +5,7 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 
 object IdValidator {
@@ -13,7 +14,7 @@ object IdValidator {
   private val nodeIdIllegalCharactersReadable = "Quotation mark (\"), dot (.) and apostrophe (')"
 
   def validate(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
-    val scenarioIdValidationResult = validateScenarioId(process.id, process.metaData.isFragment)
+    val scenarioIdValidationResult = validateScenarioName(process.name, process.metaData.isFragment)
     val nodesIdValidationResult = process.nodes
       .map(node => validateNodeId(node.data.id))
       .combineAll
@@ -21,8 +22,11 @@ object IdValidator {
     scenarioIdValidationResult.combine(nodesIdValidationResult)
   }
 
-  def validateScenarioId(scenarioId: String, isFragment: Boolean): ValidatedNel[ProcessCompilationError, Unit] =
-    validateId(scenarioId).leftMap(_.map(ScenarioIdError(_, scenarioId, isFragment)))
+  def validateScenarioName(
+      scenarioName: ProcessName,
+      isFragment: Boolean
+  ): ValidatedNel[ProcessCompilationError, Unit] =
+    validateId(scenarioName.value).leftMap(_.map(ScenarioNameError(_, scenarioName, isFragment)))
 
   def validateNodeId(nodeId: String): ValidatedNel[ProcessCompilationError, Unit] =
     validateId(nodeId, nodeIdIllegalCharacters, nodeIdIllegalCharactersReadable)

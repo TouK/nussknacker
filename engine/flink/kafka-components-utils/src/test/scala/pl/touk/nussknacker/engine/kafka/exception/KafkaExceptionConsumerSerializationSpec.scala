@@ -57,7 +57,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
     new String(message.key()) shouldBe "test-nodeId"
     val decodedPayload = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](message.value())
 
-    decodedPayload.processName shouldBe metaData.id
+    decodedPayload.processName shouldBe metaData.name
     decodedPayload.nodeId shouldBe Some("nodeId")
     decodedPayload.exceptionInput shouldBe Some("input1")
     decodedPayload.message shouldBe Some("mess")

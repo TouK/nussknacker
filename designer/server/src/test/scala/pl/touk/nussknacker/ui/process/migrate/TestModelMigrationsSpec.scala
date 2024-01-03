@@ -126,7 +126,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
         ScenarioBuilder
           .streaming("fooProcess")
           .source("source", existingSourceFactory)
-          .fragmentOneOut("fragment", fragment.id, "output", "fragmentResult", "param1" -> "'foo'")
+          .fragmentOneOut("fragment", fragment.name.value, "output", "fragmentResult", "param1" -> "'foo'")
           .emptySink("sink", existingSinkFactory)
       )
 
@@ -134,7 +134,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     results should have size 2
     val (fragmentMigrationResult, processMigrationResult) =
-      (results.find(_.converted.id == fragment.id).get, results.find(_.converted.id == process.id).get)
+      (results.find(_.converted.name == fragment.name).get, results.find(_.converted.name == process.name).get)
     fragmentMigrationResult.shouldFail shouldBe false
     processMigrationResult.shouldFail shouldBe false
     getFirst[FragmentInputDefinition](fragmentMigrationResult).parameters shouldBe List(
@@ -158,7 +158,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
         ScenarioBuilder
           .streaming("fooProcess")
           .source("source", existingSourceFactory)
-          .fragmentOneOut("fragment", fragment.id, "output", "fragmentResult", "param1" -> "'foo'")
+          .fragmentOneOut("fragment", fragment.name.value, "output", "fragmentResult", "param1" -> "'foo'")
           .emptySink("sink", existingSinkFactory)
       )
 
@@ -167,7 +167,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
       List(validatedToProcess(fragment).copy(modelVersion = Some(10)))
     )
 
-    val processMigrationResult = results.find(_.converted.id == process.id).get
+    val processMigrationResult = results.find(_.converted.name == process.name).get
     processMigrationResult.newErrors.hasErrors shouldBe false
     processMigrationResult.newErrors.hasWarnings shouldBe false
     processMigrationResult.converted.validationResult.value.hasErrors shouldBe false

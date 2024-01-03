@@ -33,7 +33,7 @@ class FragmentRepositorySpec
       status shouldEqual StatusCodes.OK
     }
 
-    ProcessTestData.sampleFragment.metaData.id shouldBe ProcessTestData.sampleFragment2.metaData.id
+    ProcessTestData.sampleFragment.name shouldBe ProcessTestData.sampleFragment2.name
     ProcessTestData.sampleFragment should not be ProcessTestData.sampleFragment2
 
     fragmentRepository.fetchLatestFragments(TestProcessingTypes.Streaming)(adminUser).futureValue shouldBe List(

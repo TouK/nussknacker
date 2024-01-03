@@ -48,24 +48,24 @@ function useUnmountCleanup() {
 function useProcessState(time = 10000) {
     const dispatch = useDispatch();
     const fetchedProcessDetails = useSelector(getFetchedProcessDetails);
-    const { isFragment, isArchived, id } = fetchedProcessDetails || {};
+    const { isFragment, isArchived, name } = fetchedProcessDetails || {};
 
-    const fetch = useCallback(() => dispatch(loadProcessState(id)), [dispatch, id]);
+    const fetch = useCallback(() => dispatch(loadProcessState(name)), [dispatch, name]);
 
     useEffect(() => {
         let processStateIntervalId;
-        if (id && !isFragment && !isArchived) {
+        if (name && !isFragment && !isArchived) {
             processStateIntervalId = setInterval(fetch, time);
         }
         return () => {
             clearInterval(processStateIntervalId);
         };
-    }, [fetch, id, isArchived, isFragment, time]);
+    }, [fetch, name, isArchived, isFragment, time]);
 }
 
 function useCountsIfNeeded() {
     const dispatch = useDispatch();
-    const id = useSelector(getFetchedProcessDetails)?.id;
+    const name = useSelector(getFetchedProcessDetails)?.name;
     const processToDisplay = useSelector(getProcessToDisplay);
 
     const [searchParams] = useSearchParams();
@@ -73,14 +73,14 @@ function useCountsIfNeeded() {
     const to = searchParams.get("to");
     useEffect(() => {
         const countParams = VisualizationUrl.extractCountParams({ from, to });
-        if (id && countParams) {
-            dispatch(fetchAndDisplayProcessCounts(id, countParams.from, countParams.to, processToDisplay));
+        if (name && countParams) {
+            dispatch(fetchAndDisplayProcessCounts(name, countParams.from, countParams.to, processToDisplay));
         }
-    }, [dispatch, from, id, to, processToDisplay]);
+    }, [dispatch, from, name, to, processToDisplay]);
 }
 
 function Visualization() {
-    const { id: processId } = useDecodedParams<{ id: string }>();
+    const { processName } = useDecodedParams<{ processName: string }>();
     const dispatch = useDispatch();
 
     const graphRef = useRef<Graph>();
@@ -114,8 +114,8 @@ function Visualization() {
     }, [getGraphInstance]);
 
     useEffect(() => {
-        fetchData(processId);
-    }, [fetchData, processId]);
+        fetchData(processName);
+    }, [fetchData, processName]);
 
     useProcessState();
     useCountsIfNeeded();

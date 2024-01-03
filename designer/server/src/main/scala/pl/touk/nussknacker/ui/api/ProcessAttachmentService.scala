@@ -38,7 +38,7 @@ class ProcessAttachmentService(config: AttachmentsConfig, processActivityReposit
 
   def readAttachment(
       attachmentId: Long
-  )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Option[AttachmentDataWithName]] = {
+  )(implicit ec: ExecutionContext): Future[Option[AttachmentDataWithName]] = {
     val attachmentFutureOpt = processActivityRepository.findAttachment(attachmentId)
     CatsSyntax.futureOpt.map(attachmentFutureOpt) { attachment =>
       (attachment.fileName, attachment.data)

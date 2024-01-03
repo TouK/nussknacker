@@ -4,14 +4,14 @@ import { useDispatch, useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/unarchive.svg";
 import * as DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
-import { getProcessId, isArchived } from "../../../../reducers/selectors/graph";
+import { getProcessName, isArchived } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
 
 function UnArchiveButton({ disabled }: ToolbarButtonProps) {
-    const processId = useSelector(getProcessId);
+    const processName = useSelector(getProcessName);
     const archived = useSelector(isArchived);
     const available = !disabled || !archived;
     const { t } = useTranslation();
@@ -22,17 +22,17 @@ function UnArchiveButton({ disabled }: ToolbarButtonProps) {
         () =>
             available &&
             confirm({
-                text: DialogMessages.unArchiveProcess(processId),
+                text: DialogMessages.unArchiveProcess(processName),
                 onConfirmCallback: (confirmed) =>
                     confirmed &&
-                    HttpService.unArchiveProcess(processId).then(() => {
-                        dispatch(loadProcessToolbarsConfiguration(processId));
-                        dispatch(displayCurrentProcessVersion(processId));
+                    HttpService.unArchiveProcess(processName).then(() => {
+                        dispatch(loadProcessToolbarsConfiguration(processName));
+                        dispatch(displayCurrentProcessVersion(processName));
                     }),
                 confirmText: t("panels.actions.process-unarchive.yes", "Yes"),
                 denyText: t("panels.actions.process-unarchive.no", "No"),
             }),
-        [available, confirm, dispatch, processId, t],
+        [available, confirm, dispatch, processName, t],
     );
 
     return (

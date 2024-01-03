@@ -61,7 +61,7 @@ class UIProcessValidator(
   // that have loose nodes. If you want to achieve this result, you need to add these validations here and deduplicate
   // resulting errors later.
   def uiValidation(displayable: DisplayableProcess): ValidationResult = {
-    validateScenarioId(displayable)
+    validateScenarioName(displayable)
       .add(validateNodesId(displayable))
       .add(validateDuplicates(displayable))
       .add(validateLooseNodes(displayable))
@@ -113,8 +113,8 @@ class UIProcessValidator(
     ValidationResult.warnings(disabledNodesWarnings)
   }
 
-  private def validateScenarioId(displayable: DisplayableProcess): ValidationResult = {
-    IdValidator.validateScenarioId(displayable.id, displayable.metaData.isFragment) match {
+  private def validateScenarioName(displayable: DisplayableProcess): ValidationResult = {
+    IdValidator.validateScenarioName(displayable.name, displayable.metaData.isFragment) match {
       case Valid(_)   => ValidationResult.success
       case Invalid(e) => formatErrors(e)
     }

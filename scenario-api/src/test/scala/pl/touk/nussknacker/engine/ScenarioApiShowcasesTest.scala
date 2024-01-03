@@ -16,14 +16,14 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val scenarioId   = "fooId"
+  private val scenarioName = "fooId"
   private val sourceNodeId = "source"
   private val sourceType   = "source-type"
 
   private val scenarioJson =
     s"""{
        |  "metaData" : {
-       |    "id" : "$scenarioId",
+       |    "id" : "$scenarioName",
        |    "additionalFields" : {
        |      "properties" : {
        |        "parallelism" : "",
@@ -84,14 +84,14 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
 
   test("should be able to parse scenario and easily extract its fields") {
     val canonicalScenario = ProcessMarshaller.fromJson(scenarioJson).toEither.rightValue
-    canonicalScenario.metaData.id shouldEqual scenarioId
+    canonicalScenario.name.value shouldEqual scenarioName
     canonicalScenario.nodes.head.data.id shouldEqual sourceNodeId
     canonicalScenario.nodes.head.data.asInstanceOf[Source].ref.typ shouldEqual sourceType
   }
 
   test("should be able to create scenario using dsl and print it") {
     val scenarioDsl = ScenarioBuilder
-      .streaming(scenarioId)
+      .streaming(scenarioName)
       .source(sourceNodeId, sourceType, "foo" -> "'expression value'")
       .filter("filter", "#input != 123")
       .emptySink("sink", "sink-type", "bar" -> "#input")

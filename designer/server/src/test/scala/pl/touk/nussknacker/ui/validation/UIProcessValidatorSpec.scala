@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -589,7 +589,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         Source("in", SourceRef(sourceTypeName, List())),
         FragmentInput(
           "subIn",
-          FragmentRef(invalidFragment.id, List(NodeParameter("param1", "'someString'"))),
+          FragmentRef(invalidFragment.name.value, List(NodeParameter("param1", "'someString'"))),
           isDisabled = Some(false)
         ),
         Sink("out", SinkRef(sinkTypeName, List()))
@@ -645,7 +645,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         FragmentInput(
           "subIn1",
           FragmentRef(
-            fragment.id,
+            fragment.name.value,
             List(
               NodeParameter("subParam1", "'outsideAllowedValues'"),
             )
@@ -655,7 +655,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         FragmentInput(
           "subIn2",
           FragmentRef(
-            fragment.id,
+            fragment.name.value,
             List(
               NodeParameter("subParam1", ""),
             )
@@ -715,7 +715,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         Source("in", SourceRef(sourceTypeName, List())),
         FragmentInput(
           "subIn",
-          FragmentRef(invalidFragment.id, List(NodeParameter("param1", "'someString'"))),
+          FragmentRef(invalidFragment.name.value, List(NodeParameter("param1", "'someString'"))),
           isDisabled = Some(true)
         ),
         Sink("out", SinkRef(sinkTypeName, List()))
@@ -755,7 +755,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         Source("source", SourceRef(sourceTypeName, Nil)),
         FragmentInput(
           "subIn",
-          FragmentRef(fragment.id, List(NodeParameter("subParam1", "'someString'"))),
+          FragmentRef(fragment.name.value, List(NodeParameter("subParam1", "'someString'"))),
           isDisabled = Some(false)
         ),
         Variable(id = "var1", varName = "var1", value = "#subOut1.foo"),
@@ -884,7 +884,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         Source("source", SourceRef(sourceTypeName, Nil)),
         FragmentInput(
           "subIn",
-          FragmentRef(fragment.id, List(NodeParameter("subParam1", "'someString'"))),
+          FragmentRef(fragment.name.value, List(NodeParameter("subParam1", "'someString'"))),
           isDisabled = Some(false)
         ),
         Sink("sink", SinkRef(sinkTypeName, Nil))
@@ -905,7 +905,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val validationResultWithCategory2 =
       processValidator.validate(process.copy(processingType = TestProcessingTypes.Streaming2))
     validationResultWithCategory2.errors.invalidNodes shouldBe Map(
-      "subIn" -> List(PrettyValidationErrors.formatErrorMessage(UnknownFragment(fragment.id, "subIn")))
+      "subIn" -> List(PrettyValidationErrors.formatErrorMessage(UnknownFragment(fragment.name.value, "subIn")))
     )
   }
 
@@ -1071,7 +1071,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
 
   test("validates with custom validator") {
     val process = ScenarioBuilder
-      .streaming(SampleCustomProcessValidator.badName)
+      .streaming(SampleCustomProcessValidator.badName.value)
       .source("start", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
 
@@ -1084,11 +1084,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
   }
 
   test("should validate invalid scenario id") {
-    val blankValue     = " "
-    val testedScenario = UIProcessValidatorSpec.validFlinkProcess.copy(id = blankValue)
+    val blankValue     = ProcessName(" ")
+    val testedScenario = UIProcessValidatorSpec.validFlinkProcess.copy(name = blankValue)
     val result         = TestFactory.flinkProcessValidator.validate(testedScenario).errors.processPropertiesErrors
     result shouldBe List(
-      PrettyValidationErrors.formatErrorMessage(ScenarioIdError(BlankId, blankValue, isFragment = false))
+      PrettyValidationErrors.formatErrorMessage(ScenarioNameError(BlankId, blankValue, isFragment = false))
     )
   }
 
@@ -1113,7 +1113,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
         Variable(id = " ", varName = "var", value = "")
       ),
       List.empty
-    ).copy(id = " ")
+    ).copy(name = ProcessName(" "))
     val result = TestFactory.flinkProcessValidator.validate(incompleteScenarioWithBlankIds)
     inside(result) { case ValidationResult(errors, _, _) =>
       inside(errors) { case ValidationErrors(nodeErrors, propertiesErrors, _) =>
@@ -1122,7 +1122,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
           PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, " "))
         )
         propertiesErrors shouldBe List(
-          PrettyValidationErrors.formatErrorMessage(ScenarioIdError(BlankId, " ", isFragment = false))
+          PrettyValidationErrors.formatErrorMessage(ScenarioNameError(BlankId, ProcessName(" "), isFragment = false))
         )
       }
     }
@@ -1175,7 +1175,7 @@ private object UIProcessValidatorSpec {
   )
 
   val validFlinkFragment: DisplayableProcess = DisplayableProcess(
-    "test",
+    ProcessName("test"),
     ProcessProperties.combineTypeSpecificProperties(
       StreamMetaData(),
       additionalFields = ProcessAdditionalFields(None, FragmentSpecificData().toMap, FragmentSpecificData.typeName)
@@ -1243,7 +1243,7 @@ private object UIProcessValidatorSpec {
       additionalFields: Map[String, String] = Map()
   ): DisplayableProcess = {
     DisplayableProcess(
-      "test",
+      ProcessName("test"),
       ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(),
         additionalFields = ProcessAdditionalFields(None, additionalFields, StreamMetaData.typeName)
@@ -1292,12 +1292,12 @@ private object UIProcessValidatorSpec {
   }
 
   object SampleCustomProcessValidator extends CustomProcessValidator {
-    val badName = "badName"
+    val badName = ProcessName("badName")
 
     val badNameError: ScenarioNameValidationError = ScenarioNameValidationError("BadName", "BadName")
 
     override def validate(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
-      Validated.condNel(process.id != badName, (), badNameError)
+      Validated.condNel(process.name != badName, (), badNameError)
     }
 
   }

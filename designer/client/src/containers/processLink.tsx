@@ -1,11 +1,11 @@
 import React, { PropsWithChildren } from "react";
 import { visualizationUrl } from "../common/VisualizationUrl";
-import { ProcessId } from "../types";
+import { ProcessName } from "../types";
 import { PlainStyleLink } from "./plainStyleLink";
 
 export function ProcessLink({
-    processId,
+    processName,
     ...props
-}: PropsWithChildren<{ processId: ProcessId; className?: string; title?: string }>): JSX.Element {
-    return <PlainStyleLink to={visualizationUrl(processId)} {...props} />;
+}: PropsWithChildren<{ processName: ProcessName; className?: string; title?: string }>): JSX.Element {
+    return <PlainStyleLink to={visualizationUrl(processName)} {...props} />;
 }

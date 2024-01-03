@@ -31,16 +31,16 @@ class NewProcessPreparer(
     additionalFields: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
 ) {
 
-  def prepareEmptyProcess(processId: String, processingType: ProcessingType, isFragment: Boolean)(
+  def prepareEmptyProcess(processName: ProcessName, processingType: ProcessingType, isFragment: Boolean)(
       implicit user: LoggedUser
   ): CanonicalProcess = {
     val creator = emptyProcessCreate.forTypeUnsafe(processingType)
     val initialProperties = additionalFields.forTypeUnsafe(processingType).map { case (key, config) =>
       (key, config.defaultValue.getOrElse(""))
     }
-    val name = ProcessName(processId)
     val initialMetadata =
-      if (isFragment) MetaData(name.value, initialFragmentFields) else creator.create(name, initialProperties)
+      if (isFragment) MetaData(processName.value, initialFragmentFields)
+      else creator.create(processName, initialProperties)
 
     val emptyCanonical = CanonicalProcess(
       metaData = initialMetadata,

@@ -6,7 +6,7 @@ import {
     getDynamicParameterDefinitions,
     getFindAvailableBranchVariables,
     getFindAvailableVariables,
-    getProcessId,
+    getProcessName,
     getProcessProperties,
 } from "./NodeDetailsContent/selectors";
 import { adjustParameters } from "./ParametersUtils";
@@ -57,7 +57,7 @@ export function NodeTypeDetailsContent({
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const getParameterDefinitions = useSelector(getDynamicParameterDefinitions);
     const getBranchVariableTypes = useSelector(getFindAvailableBranchVariables);
-    const processId = useSelector(getProcessId);
+    const processName = useSelector(getProcessName);
     const processProperties = useSelector(getProcessProperties);
 
     const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id]);
@@ -133,7 +133,7 @@ export function NodeTypeDetailsContent({
     useEffect(() => {
         if (showValidation) {
             dispatch(
-                validateNodeData(processId, {
+                validateNodeData(processName, {
                     //see NODES_CONNECTED/NODES_DISCONNECTED
                     outgoingEdges: edges.filter((e) => e.to != ""),
                     nodeData: node,
@@ -143,7 +143,7 @@ export function NodeTypeDetailsContent({
                 }),
             );
         }
-    }, [dispatch, edges, getBranchVariableTypes, node, processId, processProperties, showValidation, variableTypes]);
+    }, [dispatch, edges, getBranchVariableTypes, node, processName, processProperties, showValidation, variableTypes]);
 
     useEffect(() => {
         setEditedNode((node) => {

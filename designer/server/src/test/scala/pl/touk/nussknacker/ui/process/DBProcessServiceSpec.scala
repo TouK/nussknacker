@@ -126,7 +126,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     val dBProcessService = createDbProcessService(processes)
 
     val categoryDisplayable =
-      ProcessTestData.sampleDisplayableProcess.copy(id = category1Process.name.value, category = Category1)
+      ProcessTestData.sampleDisplayableProcess.copy(name = category1Process.name, category = Category1)
     val categoryStringData = ProcessConverter.fromDisplayable(categoryDisplayable).asJson.spaces2
     val baseProcessData    = ProcessConverter.fromDisplayable(ProcessTestData.sampleDisplayableProcess).asJson.spaces2
 

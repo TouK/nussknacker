@@ -5,7 +5,7 @@ import { parseWindowsQueryParams } from "./useSearchQuery";
 import NodeUtils from "../../components/graph/NodeUtils";
 
 export function getFragmentNodesPrefix(fragmentContent: Process) {
-    return fragmentContent ? `${fragmentContent.id}-` : "";
+    return fragmentContent ? `${fragmentContent.name}-` : "";
 }
 
 function removePrefix(input: string, prefix: string): string {
@@ -27,7 +27,7 @@ export function useModalDetailsIfNeeded() {
     const openNodes = useCallback(
         (scenario: Process) => {
             return getNodeIds()
-                .map((id) => NodeUtils.getNodeById(id, scenario) ?? (scenario.id === id && NodeUtils.getProcessProperties(scenario)))
+                .map((id) => NodeUtils.getNodeById(id, scenario) ?? (scenario.name === id && NodeUtils.getProcessPropertiesNode(scenario)))
                 .filter(Boolean)
                 .map((node) => openNodeWindow(node, scenario));
         },

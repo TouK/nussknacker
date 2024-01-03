@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.FragmentOutput
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 
 object ProcessConverter {
 
@@ -29,7 +29,7 @@ object ProcessConverter {
         }
     }
     val props = ProcessProperties(process.metaData.additionalFields)
-    DisplayableProcess(process.metaData.id, props, nodes, edges, processingType, category)
+    DisplayableProcess(process.name, props, nodes, edges, processingType, category)
   }
 
   def findNodes(process: CanonicalProcess): List[NodeData] = {

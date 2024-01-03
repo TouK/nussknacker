@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -23,9 +24,8 @@ object ScenarioWithDetailsConversions {
       details: ScenarioWithDetailsEntity[_]
   ): ScenarioWithDetails = {
     ScenarioWithDetails(
-      id = details.id,
       name = details.name,
-      processId = details.processId,
+      processId = Some(details.processId),
       processVersionId = details.processVersionId,
       isLatestVersion = details.isLatestVersion,
       description = details.description,
@@ -62,9 +62,10 @@ object ScenarioWithDetailsConversions {
 
     private def toEntity[T](prepareJson: => T): ScenarioWithDetailsEntity[T] = {
       ScenarioWithDetailsEntity(
-        id = scenarioWithDetails.id,
         name = scenarioWithDetails.name,
-        processId = scenarioWithDetails.processId,
+        // We can't just use processIdUnsafe because it is used also for testMigrations which gets ScenarioWithDetails
+        // via REST API so this information will be missing
+        processId = scenarioWithDetails.processId.getOrElse(ProcessId(-1)),
         processVersionId = scenarioWithDetails.processVersionId,
         isLatestVersion = scenarioWithDetails.isLatestVersion,
         description = scenarioWithDetails.description,

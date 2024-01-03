@@ -64,8 +64,8 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
     computeCounts(List())(canonicalProcess.allStartNodes)
   }
 
-  private def getFragment(fragmentId: ProcessName)(implicit user: LoggedUser): Option[CanonicalProcess] = {
-    fragmentRepository.fetchLatestFragmentSync(fragmentId).map(_.canonical)
+  private def getFragment(fragmentName: ProcessName)(implicit user: LoggedUser): Option[CanonicalProcess] = {
+    fragmentRepository.fetchLatestFragmentSync(fragmentName).map(_.canonical)
   }
 
 }

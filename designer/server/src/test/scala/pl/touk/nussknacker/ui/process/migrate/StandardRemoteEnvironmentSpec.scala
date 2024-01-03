@@ -67,7 +67,7 @@ class StandardRemoteEnvironmentSpec
   private def statefulEnvironment(
       expectedProcessDetails: ScenarioWithDetails,
       expectedProcessCategory: String,
-      initialRemoteProcessList: List[String],
+      initialRemoteProcessList: List[ProcessName],
       onMigrate: Future[UpdateProcessCommand] => Unit
   ) = new MockRemoteEnvironment with TriedToAddProcess {
     private var remoteProcessList = initialRemoteProcessList
@@ -91,16 +91,16 @@ class StandardRemoteEnvironmentSpec
       }
 
       object UpdateProcess {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.id}", PUT)
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.name}", PUT)
       }
 
       object CheckProcess {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.id}", GET)
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.name}", GET)
       }
 
       object AddProcess {
         def unapply(arg: (String, HttpMethod)): Option[Boolean] = {
-          if (is(s"/processes/${expectedProcessDetails.id}/$expectedProcessCategory", POST)) {
+          if (is(s"/processes/${expectedProcessDetails.name}/$expectedProcessCategory", POST)) {
             uri.query().get("isFragment").map(_.toBoolean).orElse(Some(false))
           } else {
             None
@@ -117,7 +117,7 @@ class StandardRemoteEnvironmentSpec
             HttpResponse(OK, entity = entity)
           }
 
-        case CheckProcess() if remoteProcessList contains expectedProcessDetails.id =>
+        case CheckProcess() if remoteProcessList contains expectedProcessDetails.name =>
           Marshal(expectedProcessDetails).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
@@ -126,7 +126,7 @@ class StandardRemoteEnvironmentSpec
           Future.successful(HttpResponse(NotFound))
 
         case AddProcess(isFragment) =>
-          remoteProcessList = expectedProcessDetails.id :: remoteProcessList
+          remoteProcessList = expectedProcessDetails.name :: remoteProcessList
           triedToAddProcess = true
           addedFragment = Some(isFragment)
 
@@ -134,7 +134,7 @@ class StandardRemoteEnvironmentSpec
             HttpResponse(OK, entity = entity)
           }
 
-        case UpdateProcess() if remoteProcessList contains expectedProcessDetails.id =>
+        case UpdateProcess() if remoteProcessList contains expectedProcessDetails.name =>
           onMigrate(Unmarshal(request).to[UpdateProcessCommand])
 
           Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
@@ -257,7 +257,7 @@ class StandardRemoteEnvironmentSpec
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       validArchivedProcess,
       validArchivedProcess.processCategory,
-      validArchivedProcess.id :: Nil,
+      validArchivedProcess.name :: Nil,
       migrationFuture => migrated = Some(migrationFuture)
     )
     whenReady(
@@ -266,12 +266,13 @@ class StandardRemoteEnvironmentSpec
         ProcessTestData.validProcessDetails.processCategory
       )
     ) { result =>
-      result.leftValue shouldBe MigrationToArchivedError(ProcessName(validProcess.id), remoteEnvironment.environmentId)
+      result.leftValue shouldBe MigrationToArchivedError(validProcess.name, remoteEnvironment.environmentId)
     }
   }
 
   it should "handle spaces in scenario id" in {
-    val process = ProcessTestData.toValidatedDisplayable(ProcessTestData.validProcessWithId("a b c")).toDisplayable
+    val process =
+      ProcessTestData.toValidatedDisplayable(ProcessTestData.validProcessWithName(ProcessName("a b c"))).toDisplayable
 
     val remoteEnvironment = new MockRemoteEnvironment {
 
@@ -300,7 +301,8 @@ class StandardRemoteEnvironmentSpec
   }
 
   it should "handle non-ascii signs in scenario id" in {
-    val process = ProcessTestData.toValidatedDisplayable(ProcessTestData.validProcessWithId("łódź")).toDisplayable
+    val process =
+      ProcessTestData.toValidatedDisplayable(ProcessTestData.validProcessWithName(ProcessName("łódź"))).toDisplayable
 
     val remoteEnvironment = new MockRemoteEnvironment {
 
@@ -332,7 +334,7 @@ class StandardRemoteEnvironmentSpec
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       ProcessTestData.validProcessDetails,
       ProcessTestData.validProcessDetails.processCategory,
-      ProcessTestData.validDisplayableProcess.id :: Nil,
+      ProcessTestData.validDisplayableProcess.name :: Nil,
       migrationFuture => migrated = Some(migrationFuture)
     )
 
@@ -416,8 +418,8 @@ class StandardRemoteEnvironmentSpec
 
     migrationResult should have size 2
     migrationResult.map(
-      _.converted.id
-    ) should contain only (ProcessTestData.validProcessDetails.name.value, ProcessTestData.sampleFragment.id)
+      _.converted.name
+    ) should contain only (ProcessTestData.validProcessDetails.name, ProcessTestData.sampleFragment.name)
   }
 
 }

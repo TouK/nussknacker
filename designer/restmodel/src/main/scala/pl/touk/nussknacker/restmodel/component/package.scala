@@ -61,9 +61,7 @@ package object component {
 
   @JsonCodec
   final case class ComponentUsagesInScenario(
-      id: String,
       name: ProcessName,
-      processId: ProcessId,
       nodesUsagesData: List[NodeUsageData],
       isFragment: Boolean,
       processCategory: String,

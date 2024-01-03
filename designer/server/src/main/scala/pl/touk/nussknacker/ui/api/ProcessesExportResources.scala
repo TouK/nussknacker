@@ -39,7 +39,7 @@ class ProcessesExportResources(
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   def securedRoute(implicit user: LoggedUser): Route = {
-    path("processesExport" / Segment) { processName =>
+    path("processesExport" / ProcessNameSegment) { processName =>
       (get & processId(processName)) { processId =>
         complete {
           processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).map {
@@ -47,7 +47,7 @@ class ProcessesExportResources(
           }
         }
       }
-    } ~ path("processesExport" / Segment / VersionIdSegment) { (processName, versionId) =>
+    } ~ path("processesExport" / ProcessNameSegment / VersionIdSegment) { (processName, versionId) =>
       (get & processId(processName)) { processId =>
         complete {
           processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).map {
@@ -55,12 +55,12 @@ class ProcessesExportResources(
           }
         }
       }
-    } ~ path("processesExport" / "pdf" / Segment / VersionIdSegment) { (processName, versionId) =>
+    } ~ path("processesExport" / "pdf" / ProcessNameSegment / VersionIdSegment) { (processName, versionId) =>
       (post & processId(processName)) { processId =>
         entity(as[String]) { svg =>
           complete {
             processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).flatMap { process =>
-              processActivityRepository.findActivity(processId).map(exportProcessToPdf(svg, process, _))
+              processActivityRepository.findActivity(processId.id).map(exportProcessToPdf(svg, process, _))
             }
           }
         }
@@ -99,7 +99,7 @@ class ProcessesExportResources(
   private def fileResponse(canonicalProcess: CanonicalProcess) = {
     val canonicalJson = canonicalProcess.asJson.spaces2
     val entity        = HttpEntity(ContentTypes.`application/json`, canonicalJson)
-    AkkaHttpResponse.asFile(entity, s"${canonicalProcess.metaData.id}.json")
+    AkkaHttpResponse.asFile(entity, s"${canonicalProcess.name}.json")
   }
 
   private def exportProcessToPdf(

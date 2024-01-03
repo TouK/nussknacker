@@ -9,7 +9,7 @@ import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioP
 import { FixedValuesOption } from "../components/graph/node-modal/fragment-input-definition/item";
 
 export type Process = {
-    id: string;
+    name: string;
     nodes: NodeType[];
     edges: Edge[];
     properties: PropertiesType;
@@ -18,7 +18,7 @@ export type Process = {
     category?: string; // optional - see the comment for a field with the same name in DisplayableProcess.scala
 };
 
-export type ProcessId = Process["id"];
+export type ProcessName = Process["name"];
 
 export type Category = string;
 

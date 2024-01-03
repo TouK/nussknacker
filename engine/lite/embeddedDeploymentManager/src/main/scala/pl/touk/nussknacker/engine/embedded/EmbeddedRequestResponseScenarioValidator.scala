@@ -15,7 +15,7 @@ object EmbeddedRequestResponseScenarioValidator extends CustomProcessValidator {
   override def validate(scenario: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
     scenario.metaData.typeSpecificData match {
       case rrMetaData: RequestResponseMetaData =>
-        validateRequestResponse(ProcessName(scenario.id), rrMetaData)
+        validateRequestResponse(scenario.name, rrMetaData)
       case _: FragmentSpecificData =>
         Valid(())
       // should not happen

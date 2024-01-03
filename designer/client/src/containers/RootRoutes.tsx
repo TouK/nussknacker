@@ -25,7 +25,7 @@ export default createRoutesFromElements(
         <Route index element={<DefaultRedirect />} />
         <Route path="/404" element={<NotFound />} />
         <Route errorElement={<ErrorBoundaryFallbackComponent />}>
-            <Route path={`${VisualizationBasePath}/:id`} element={<Visualization />} />
+            <Route path={`${VisualizationBasePath}/:processName`} element={<Visualization />} />
 
             {/* overrides scenarios custom tab */}
             <Route path={ScenariosBasePath} element={<ScenariosTab />} />
@@ -37,7 +37,7 @@ export default createRoutesFromElements(
             {/* overrides metrics custom tab */}
             <Route path={MetricsBasePath}>
                 <Route index element={<Metrics />} />
-                <Route path=":processId" element={<Metrics />} />
+                <Route path=":processName" element={<Metrics />} />
             </Route>
 
             <Route path="/:id/*" element={<CustomTab />} />
