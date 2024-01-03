@@ -8,7 +8,7 @@ describe("Auto Screenshot Change Docs -", () => {
     });
 
     beforeEach(() => {
-        cy.viewport(1920, 1080);
+        cy.viewport(1400, 800);
     });
 
     afterEach(() => {
@@ -63,6 +63,8 @@ describe("Auto Screenshot Change Docs -", () => {
         //skip
         cy.visitNewProcess(seed, "docsBasicComponentsChoice#0");
         cy.layoutScenario();
+        cy.get("[title='toggle left panel']").click();
+        cy.get("[title='toggle right panel']").click();
         takeGraphScreenshot();
 
         cy.get('[model-id="choice"]').dblclick();
@@ -128,7 +130,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         cy.get('[model-id="output"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeGraphScreenshot();
+        takeWindowScreenshot();
     });
 });
 
