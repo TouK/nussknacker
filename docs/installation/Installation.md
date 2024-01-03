@@ -26,10 +26,10 @@ If you want to check locally Streaming processing mode with plain Docker and emb
 ```bash
 docker run -it --network host -e DEFAULT_SCENARIO_TYPE=streaming-lite-embedded -e KAFKA_ADDRESS=localhost:3032 -e SCHEMA_REGISTRY_URL=http://localhost:3082 touk/nussknacker:latest
 ```
-
+Note: `--network host `only works on linux and is used to connect to existing kafka/schema registry. In case of other OS you have to use different methods to make it accessible from Nussknacker container (e.g start Kafka/SR and Nussknacker in a single docker network)
 If you want to see Nussknacker in action without Kafka, using embedded Request-Response processing mode (scenario logic is exposed with REST API), run:
 ```bash
-docker run -it --network host -e DEFAULT_SCENARIO_TYPE=request-response-embedded touk/nussknacker:latest
+docker run -it -p 8080:8080 -p 8181:8181 -e DEFAULT_SCENARIO_TYPE=request-response-embedded touk/nussknacker:latest
 ```
 After it started go to http://localhost:8080 and login using credentials: admin/admin.
 REST endpoints of deployed scenarios will be exposed at `http://localhost:8181/scenario/<slug>`. Slug is defined in Properties, and by default it is scenario name.
