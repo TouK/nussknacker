@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.migrate
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
@@ -20,14 +21,18 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 class TestModelMigrations(
     migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
     processValidation: ProcessValidation
-) {
+) extends LazyLogging {
 
   def testMigrations(
       processes: List[ValidatedProcessDetails],
       fragments: List[ValidatedProcessDetails]
   ): List[TestMigrationResult] = {
+    logger.debug(
+      s"Testing scenario migrations (scenarios=${processes.count(_ => true)}, fragments=${fragments.count(_ => true)})"
+    )
     val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
+    logger.debug("Validating migrated scenarios")
     val validation = processValidation.withFragmentResolver(
       new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
     )
