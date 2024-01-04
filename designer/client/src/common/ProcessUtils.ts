@@ -174,7 +174,7 @@ class ProcessUtils {
     findNodeObjectTypeDefinition = (node: NodeType, processDefinition: ProcessDefinition): NodeObjectTypeDefinition => {
         const foundDefinition = this.findDefinitionsForType(processDefinition, node)?.[this.findNodeDefinitionId(node)];
         const emptyDefinition = {
-            parameters: null,
+            parameters: [],
             returnType: null,
         };
         return foundDefinition || emptyDefinition;
