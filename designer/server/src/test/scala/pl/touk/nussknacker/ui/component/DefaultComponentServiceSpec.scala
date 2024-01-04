@@ -746,17 +746,19 @@ class DefaultComponentServiceSpec
           category
         )
     }
-    val processingTypeDataProvider = ProcessingTypeDataProvider(
-      processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
-      ComponentIdProviderFactory.create(processingTypeDataMap)
-    ).mapValues { processingTypeData =>
-      val modelDefinitionEnricher = ModelDefinitionEnricher(
-        processingTypeData.processingType,
-        processingTypeData.modelData,
-        processingTypeData.staticModelDefinition
+
+    val processingTypeDataProvider = ProcessingTypeDataProvider
+      .withEmptyCombinedData(
+        processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
       )
-      ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
-    }
+      .mapValues { processingTypeData =>
+        val modelDefinitionEnricher = ModelDefinitionEnricher(
+          processingTypeData.modelData,
+          processingTypeData.staticModelDefinition
+        )
+        ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
+      }
+
     val processService = createDbProcessService(categoryService, scenarios)
     new DefaultComponentService(
       componentLinksConfig,

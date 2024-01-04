@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
@@ -10,10 +10,10 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 
 class ModelDefinitionEnricher(
-    processingType: ProcessingType,
     builtInComponentsDefinitionsPreparer: BuiltInComponentsStaticDefinitionsPreparer,
     fragmentDefinitionExtractor: FragmentWithoutValidatorsDefinitionExtractor,
-    modelDefinition: ModelDefinition[ComponentStaticDefinition]
+    modelDefinition: ModelDefinition[ComponentStaticDefinition],
+    componentInfoToId: ComponentInfo => ComponentId
 ) {
 
   def modelDefinitionWithBuiltInComponentsAndFragments(
@@ -32,12 +32,12 @@ class ModelDefinitionEnricher(
       .withComponents(fragmentComponents.toList)
   }
 
-  private def extractFragmentComponents(
+  def extractFragmentComponents(
       fragmentsScenarios: List[CanonicalProcess],
   ): Map[String, ComponentStaticDefinition] = {
     (for {
       scenario   <- fragmentsScenarios
-      definition <- fragmentDefinitionExtractor.extractFragmentComponentDefinition(scenario, processingType).toOption
+      definition <- fragmentDefinitionExtractor.extractFragmentComponentDefinition(scenario, componentInfoToId).toOption
     } yield {
       scenario.name.value -> definition
     }).toMap
@@ -48,16 +48,15 @@ class ModelDefinitionEnricher(
 object ModelDefinitionEnricher {
 
   def apply(
-      processingType: ProcessingType,
       modelData: ModelData,
       modelDefinition: ModelDefinition[ComponentStaticDefinition]
   ): ModelDefinitionEnricher = {
     val builtInComponentConfig = ComponentsUiConfigParser.parse(modelData.modelConfig)
     new ModelDefinitionEnricher(
-      processingType,
       new BuiltInComponentsStaticDefinitionsPreparer(builtInComponentConfig),
       new FragmentWithoutValidatorsDefinitionExtractor(modelData.modelClassLoader.classLoader),
-      modelDefinition
+      modelDefinition,
+      modelData.componentInfoToId
     )
   }
 

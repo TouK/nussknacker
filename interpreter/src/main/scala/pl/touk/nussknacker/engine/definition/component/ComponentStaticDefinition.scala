@@ -27,7 +27,11 @@ final case class ComponentStaticDefinition(
     componentConfig.componentGroup.getOrElse(throw new IllegalStateException(s"Component group not defined in $this"))
   def iconUnsafe: String =
     componentConfig.icon.getOrElse(throw new IllegalStateException(s"Icon not defined in $this"))
+
   def componentIdUnsafe: ComponentId =
-    componentConfig.componentId.getOrElse(throw new IllegalStateException(s"ComponentId not defined in $this"))
+    componentConfig.componentId // relies on ComponentDefinitionExtractor and ModelDefinitionEnricher to provide components with filled componentConfig.componentId
+      .getOrElse(
+        throw new IllegalStateException(s"ComponentId not defined in $this")
+      )
 
 }

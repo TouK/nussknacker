@@ -272,10 +272,10 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val processingType = TestProcessingTypes.Streaming
 
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
-      processingType,
       new BuiltInComponentsStaticDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
       new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
-      staticModelDefinition
+      staticModelDefinition,
+      ComponentId.default(processingType, _)
     )
 
     new DefinitionsService(

@@ -165,10 +165,10 @@ class UIComponentGroupsPreparerSpec
       forFragment: Boolean = false
   ) = {
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
-      TestProcessingTypes.Streaming,
       new BuiltInComponentsStaticDefinitionsPreparer(new ComponentsUiConfig(Map.empty, groupNameMapping)),
       new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
-      modelDefinition.toStaticComponentsDefinition
+      modelDefinition.toStaticComponentsDefinition,
+      ComponentId.default(TestProcessingTypes.Streaming, _)
     )
 
     modelDefinitionEnricher

@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
-import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
@@ -136,7 +135,6 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
     ): CombinedProcessingTypeData = {
       CombinedProcessingTypeData(
         statusNameToStateDefinitionsMapping = Map.empty,
-        componentIdProvider = new DefaultComponentIdProvider({ (_, _) => None }),
         categoryService = ConfigProcessCategoryService(valueMap.mapValuesNow(_.category))
       )
     }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentId, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, FragmentOutput, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -15,7 +15,10 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
 
   test("return edge types for fragment, filters, switches and components with multiple inputs") {
     val sampleFragmentDef = new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader)
-      .extractFragmentComponentDefinition(ProcessTestData.sampleFragment, TestProcessingTypes.Streaming)
+      .extractFragmentComponentDefinition(
+        ProcessTestData.sampleFragment,
+        ComponentId.default(TestProcessingTypes.Streaming, _)
+      )
       .validValue
     val definitionsWithFragments = ProcessTestData
       .modelDefinition()
