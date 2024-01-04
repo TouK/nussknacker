@@ -223,7 +223,7 @@ class K8sDeploymentManager(
       )
     } yield {
       logger.info(
-        s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}${serviceOpt
+        s"Deployed ${processVersion.processName}, with deployment: ${deployment.name}, configmap: ${configMap.name}${serviceOpt
             .map(svc => s", service: ${svc.name}")
             .getOrElse("")}${ingressOpt.map(i => s", ingress: ${i.name}").getOrElse("")}"
       )
@@ -266,8 +266,7 @@ class K8sDeploymentManager(
           case Some(existing) =>
             parseVersionAnnotation(existing) match {
               case Some(existingServiceData) if existingServiceData.processId != processVersion.processId =>
-                val scenarioName = existingServiceData.processName.value
-                val message      = s"Slug is not unique, scenario $scenarioName is using it"
+                val message = s"Slug is not unique, scenario ${existingServiceData.processName} is using it"
                 Future.failed(new IllegalArgumentException(message))
               case _ => Future.successful(())
             }
@@ -293,7 +292,7 @@ class K8sDeploymentManager(
       secrets     <- k8sClient.deleteAllSelected[ListResource[Secret]](selector)
     } yield {
       logger.debug(
-        s"Canceled ${name.value}, ${ingresses.map(i => s"ingresses: ${i.itemNames}, ").getOrElse("")}services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}"
+        s"Canceled $name, ${ingresses.map(i => s"ingresses: ${i.itemNames}, ").getOrElse("")}services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}"
       )
       ()
     }
@@ -446,7 +445,7 @@ object K8sDeploymentManager {
   ): String = {
     // we simulate (more or less) --append-hash kubectl behaviour...
     val hashToAppend      = hashInput.map(input => "-" + shortHash(input)).getOrElse("")
-    val plainScenarioName = s"scenario-${processVersion.processId.value}-${processVersion.processName.value}"
+    val plainScenarioName = s"scenario-${processVersion.processId.value}-${processVersion.processName}"
     val scenarioName      = objectNamePrefixedWithNussknackerInstanceName(nussknackerInstanceName, plainScenarioName)
     sanitizeObjectName(scenarioName, hashToAppend)
   }

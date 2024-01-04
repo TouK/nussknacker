@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/migrate.svg";
 import * as DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
-import { getProcessId, getProcessVersionId, isMigrationPossible } from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, isMigrationPossible } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings, getTargetEnvironmentId } from "../../../../reducers/selectors/settings";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
@@ -15,7 +15,7 @@ type Props = ToolbarButtonProps;
 
 function MigrateButton(props: Props) {
     const { disabled } = props;
-    const processId = useSelector(getProcessId);
+    const processName = useSelector(getProcessName);
     const versionId = useSelector(getProcessVersionId);
     const featuresSettings = useSelector(getFeatureSettings);
     const migrationPossible = useSelector(isMigrationPossible);
@@ -28,12 +28,12 @@ function MigrateButton(props: Props) {
     const onClick = useCallback(
         () =>
             confirm({
-                text: DialogMessages.migrate(processId, targetEnvironmentId),
-                onConfirmCallback: (confirmed) => confirmed && HttpService.migrateProcess(processId, versionId),
+                text: DialogMessages.migrate(processName, targetEnvironmentId),
+                onConfirmCallback: (confirmed) => confirmed && HttpService.migrateProcess(processName, versionId),
                 confirmText: t("panels.actions.process-migrate.yes", "Yes"),
                 denyText: t("panels.actions.process-migrate.no", "No"),
             }),
-        [confirm, processId, t, targetEnvironmentId, versionId],
+        [confirm, processName, t, targetEnvironmentId, versionId],
     );
 
     if (isEmpty(featuresSettings?.remoteEnvironment)) {

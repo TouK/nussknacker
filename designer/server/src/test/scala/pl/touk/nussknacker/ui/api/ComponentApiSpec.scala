@@ -308,9 +308,7 @@ class ComponentApiSpec
           .body(
             matchJsonWithRegexValues(
               s"""[{
-                 |  "id": "${processName.value}",
-                 |  "name": "${processName.value}",
-                 |  "processId": ${processId.value},
+                 |  "name": "$processName",
                  |  "nodesUsagesData": [ { "nodeId": "source", "type": "ScenarioUsageData" } ],
                  |  "isFragment": false,
                  |  "processCategory": "$Category1",

@@ -6,7 +6,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ## In version 1.14.x (Not released yet)
 
 ### Code API changes
-
 * [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
   * `SingleComponentConfigWithoutId` renamed to `ComponentAdditionalConfig`
   * field `params: Map[String, ParameterConfig]` changed to `parameterConfigs: Map[String, ParameterAdditionalUIConfig]`
@@ -14,6 +13,23 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     *  `ParameterConfig.defaultValue` -> `ParameterAdditionalUIConfig.initialValue`
     *  `ParameterConfig.hintText` -> `ParameterAdditionalUIConfig.hintText`
     *  most of the capabilities of `ParameterConfig.editor` and `ParameterConfig.validators` are covered by `ParameterAdditionalUIConfig.valueEditor` and `ParameterAdditionalUIConfig.valueCompileTimeValidation`
+* [#5285](https://github.com/TouK/nussknacker/pull/5285) Changes around scenario id/name fields:
+  * `CanonicalProcess.id` of type `String` was replaced by `name` field of type `ProcessName` 
+  * `CanonicalProcess.withProcessId` was renamed to `withProcessName` 
+  * `ScenarioWithDetails.id` was removed (it had the same value as `name`)
+  * `ScenarioWithDetails.processId` changed the type to `Option[ProcessId]` and will have always `None` value
+  * `ComponentUsagesInScenario.id` was removed (it had the same value as `name`)
+  * `ComponentUsagesInScenario.processId` was removed
+  * `ListenerScenarioWithDetails.id` was removed (it had the same value as `name`)
+  * `ValidatedDisplayableProcess.id` of type `String` was replaced by `name` field of type `ProcessName`
+  * `DisplayableProcess.id` of type `String` was replaced by `name` field of type `ProcessName`, `processName` field is removed
+  * deprecated `AsyncExecutionContextPreparer.prepareExecutionContext` was removed
+  * `AsyncExecutionContextPreparer.prepare` now takes `ProcessName` instead of `String`
+* [#5288](https://github.com/TouK/nussknacker/pull/5288) RemoteEnvironment / ModelMigration changes:
+  * `ProcessMigration.failOnNewValidationError` was removed - it wasn't used anywhere anymore
+  * `RemoteEnvironment.testMigration` result types changes
+    * `shouldFailOnNewErrors` field was removed - it wasn't used anywhere anymore
+    * `converted` field was replaced by the `processName` field which was the only information that was used
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280) Changes in the definition API:
@@ -25,6 +41,17 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       and nested `clazzName` inside each element was extracted
     * `nodeId` field inside `edgesForNodes` was renamed into `componentId` in the flat `$componentType-$componentName` format
     * `defaultAsyncInterpretation` field was removed
+* [#5285](https://github.com/TouK/nussknacker/pull/5285) Changes around scenario id/name fields:
+  * `/process(Details)/**` endpoints:
+    * `id` fields was removed (it had the same value as `name`)
+    * `processId` fields return always `null`
+    * `.json.id` fields was renamed to `.json.name`
+  * `components/*/usages` endpoint:
+    * `id` fields was removed (it had the same value as `name`)
+    * `processId` fields was removed
+  * `processes/**/activity/attachments` - `processId` fields was removed
+  * `processes/**/activity/comments` - `processId` fields was removed
+  * GET `processes/$name/$version/activity/attachments` - `$version` segment is removed now
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump

@@ -196,7 +196,7 @@ class KafkaTransactionalScenarioInterpreterTest
 
       val error = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](errorTopic).take(1).head.message()
       error.nodeId shouldBe Some("throw on 0")
-      error.processName shouldBe scenario.id
+      error.processName shouldBe scenario.name
       error.exceptionInput shouldBe Some("1 / #input.length")
     }
   }
@@ -368,7 +368,7 @@ class KafkaTransactionalScenarioInterpreterTest
         kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](fixture.errorTopic).take(1).head.message()
 
       error.nodeId shouldBe Some("source")
-      error.processName shouldBe scenario.id
+      error.processName shouldBe scenario.name
       // shouldn't it be just in error.message?
       error.exceptionInput.value should include(TestComponentProvider.SourceFailure.getMessage)
     }

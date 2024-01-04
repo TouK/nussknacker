@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.metrics.dropwizard
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5
 import io.dropwizard.metrics5.{Metric, MetricName, MetricRegistry, SlidingTimeWindowReservoir}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.metrics._
 import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 
@@ -10,12 +11,12 @@ import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 
 class DropwizardMetricsProviderFactory(metricRegistry: MetricRegistry)
-    extends (String => MetricsProviderForScenario with AutoCloseable) {
-  override def apply(scenarioId: String): MetricsProviderForScenario with AutoCloseable =
-    new DropwizardMetricsProviderForScenario(scenarioId, metricRegistry)
+    extends (ProcessName => MetricsProviderForScenario with AutoCloseable) {
+  override def apply(scenarioName: ProcessName): MetricsProviderForScenario with AutoCloseable =
+    new DropwizardMetricsProviderForScenario(scenarioName, metricRegistry)
 }
 
-class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: MetricRegistry)
+class DropwizardMetricsProviderForScenario(scenarioName: ProcessName, metricRegistry: MetricRegistry)
     extends BaseMetricsProviderForScenario
     with AutoCloseable
     with LazyLogging {
@@ -58,11 +59,13 @@ class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: M
     MetricRegistry
       .name(id.name.head, id.name.tail: _*)
       .tagged(id.tags.asJava)
-      .tagged(scenarioIdTag, scenarioId)
+      .tagged(scenarioIdTag, scenarioName.value)
   }
 
   override def close(): Unit = {
-    metricRegistry.removeMatching((name: MetricName, _: Metric) => name.getTags.get(scenarioIdTag) == scenarioId)
+    metricRegistry.removeMatching((name: MetricName, _: Metric) =>
+      name.getTags.get(scenarioIdTag) == scenarioName.value
+    )
   }
 
 }

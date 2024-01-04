@@ -7,6 +7,7 @@ import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.processCounts.{CannotFetchCountsError, ExecutionCount, RangeCount}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend}
@@ -46,7 +47,7 @@ class InfluxCountsReporterSpec
 
   test("invokes counts for point in time data") {
 
-    val process = "myProcess-1"
+    val process = ProcessName("myProcess-1")
 
     val data = new InfluxData(MetricsConfig(additionalGroupByTags = List("someSlot", "otherSlot")))
 
@@ -63,7 +64,7 @@ class InfluxCountsReporterSpec
 
   test("invokes query for date range") {
 
-    val process = "myProcess-2"
+    val process = ProcessName("myProcess-2")
 
     val data = new InfluxData(MetricsConfig())
 
@@ -89,7 +90,7 @@ class InfluxCountsReporterSpec
   }
 
   test("should detect restarts one SingleDifference mode") {
-    val process = "myProcess-3"
+    val process = ProcessName("myProcess-3")
 
     val data = new InfluxData(MetricsConfig())
 
@@ -141,7 +142,13 @@ class InfluxCountsReporterSpec
     influxDB.setDatabase(container.database)
     influxDB.disableBatch()
 
-    def writePointForCount(processName: String, nodeName: String, value: Long, time: Instant, slot: Int = 0): Unit = {
+    def writePointForCount(
+        processName: ProcessName,
+        nodeName: String,
+        value: Long,
+        time: Instant,
+        slot: Int = 0
+    ): Unit = {
       def savePoint(measurement: String): Unit = {
         influxDB.write(
           Point
@@ -150,7 +157,7 @@ class InfluxCountsReporterSpec
             .time(time.toEpochMilli, TimeUnit.MILLISECONDS)
             .tag(config.envTag, env)
             .tag(config.nodeIdTag, nodeName)
-            .tag(config.scenarioTag, processName)
+            .tag(config.scenarioTag, processName.value)
             .tag(config.additionalGroupByTags.head, slot.toString)
             .build()
         )

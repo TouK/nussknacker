@@ -159,7 +159,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects = prepareUIProcessObjects(model, List(FragmentDetails(fragmentWithDocsUrl, "Category1")))
 
-    processObjects.componentsConfig(fragmentWithDocsUrl.id).docsUrl shouldBe Some(docsUrl)
+    processObjects.componentsConfig(fragmentWithDocsUrl.name.value).docsUrl shouldBe Some(docsUrl)
   }
 
   test("should skip empty fragments in definitions") {
@@ -169,7 +169,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val processObjects = prepareUIProcessObjects(model, List(FragmentDetails(fragment, "Category1")))
 
-    processObjects.components.get(ComponentInfo(ComponentType.Fragment, fragment.id)) shouldBe empty
+    processObjects.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)) shouldBe empty
   }
 
   test("should override component's parameter config with additionally provided config") {

@@ -8,7 +8,7 @@ export const filterRules = createFilterRules<RowType, ScenariosFiltersModel>({
         if (!text?.length) return true;
         const segments = text.trim().split(/\s/);
         return segments.every((segment) =>
-            ["id"]
+            ["name"]
                 .map((field) => row[field]?.toString().toLowerCase())
                 .filter(Boolean)
                 .some((value) => value.includes(segment.toLowerCase())),

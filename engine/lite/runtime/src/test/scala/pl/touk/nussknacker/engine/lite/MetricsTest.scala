@@ -5,6 +5,7 @@ import io.dropwizard.metrics5.{MetricFilter, MetricRegistry}
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
@@ -80,7 +81,7 @@ class MetricsTest extends AnyFunSuite with Matchers {
 
   test("should unregister metrics") {
     val metricRegistry   = new MetricRegistry
-    val metricProvider   = new DropwizardMetricsProviderFactory(metricRegistry)("fooScenarioId")
+    val metricProvider   = new DropwizardMetricsProviderFactory(metricRegistry)(ProcessName("fooScenarioId"))
     val metricIdentifier = MetricIdentifier(NonEmptyList("foo", Nil), Map.empty)
     val someGauge = new Gauge[Int] {
       override def getValue: Int = 123

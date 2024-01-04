@@ -165,7 +165,7 @@ trait ExpressionRewriter {
     } catch {
       case NonFatal(ex) =>
         throw new IllegalArgumentException(
-          s"Exception during expression rewriting: $e, with id: $expressionId in node: $nodeId in process: ${metaData.id}",
+          s"Exception during expression rewriting: $e, with id: $expressionId in node: $nodeId in process: ${metaData.name}",
           ex
         )
     }

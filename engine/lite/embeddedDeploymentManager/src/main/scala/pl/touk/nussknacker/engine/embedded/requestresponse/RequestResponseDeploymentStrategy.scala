@@ -40,7 +40,7 @@ object RequestResponseDeploymentStrategy {
 
   def slugForScenario(metaData: MetaData): Validated[NonEmptyList[FatalUnknownError], String] =
     metaData.typeSpecificData match {
-      case RequestResponseMetaData(slug) => Valid(slug.getOrElse(defaultSlug(ProcessName(metaData.id))))
+      case RequestResponseMetaData(slug) => Valid(slug.getOrElse(defaultSlug(metaData.name)))
       case _ => Invalid(NonEmptyList.of(FatalUnknownError(s"Wrong scenario metadata: ${metaData.typeSpecificData}")))
     }
 

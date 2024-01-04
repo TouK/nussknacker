@@ -6,6 +6,8 @@ import sttp.client3.SttpBackend
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.process.ProcessName
+
 import scala.language.higherKinds
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -19,7 +21,7 @@ private[influxdb] class InfluxGenerator[F[_]](config: InfluxConfig, env: String)
   private val influxClient = new SimpleInfluxClient(config)
 
   def queryBySingleDifference(
-      processName: String,
+      processName: ProcessName,
       dateFrom: Option[Instant],
       dateTo: Instant,
       config: MetricsConfig
@@ -37,7 +39,7 @@ private[influxdb] class InfluxGenerator[F[_]](config: InfluxConfig, env: String)
   }
 
   def queryBySumOfDifferences(
-      processName: String,
+      processName: ProcessName,
       dateFrom: Instant,
       dateTo: Instant,
       config: MetricsConfig
@@ -51,7 +53,7 @@ private[influxdb] class InfluxGenerator[F[_]](config: InfluxConfig, env: String)
   }
 
   def detectRestarts(
-      processName: String,
+      processName: ProcessName,
       dateFrom: Instant,
       dateTo: Instant,
       config: MetricsConfig
@@ -115,7 +117,7 @@ object InfluxGenerator extends LazyLogging {
   // TODO: probably we should just take one of them, but the one which is closer to t1?
   class PointInTimeQuery[F[_]: MonadError](
       invokeQuery: String => F[List[InfluxSeries]],
-      processName: String,
+      processName: ProcessName,
       env: String,
       config: MetricsConfig
   ) extends LazyLogging {

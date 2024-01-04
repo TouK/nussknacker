@@ -103,7 +103,7 @@ class DefinitionResourcesSpec
       )
     }
 
-    val processName         = ProcessName(SampleProcess.process.id)
+    val processName         = SampleProcess.process.name
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
     val displayableFragment = ProcessConverter.toDisplayable(
       processWithFragment.fragment,

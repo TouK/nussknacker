@@ -53,7 +53,7 @@ class KafkaSingleScenarioTaskRun(
     extends Task
     with LazyLogging {
 
-  private val groupId = metaData.id
+  private val groupId = metaData.name.value
 
   private var consumer: KafkaConsumer[Array[Byte], Array[Byte]] = _
   private var producer: KafkaProducerRecordsHandler             = _
@@ -197,7 +197,7 @@ class KafkaSingleScenarioTaskRun(
     List(producer, consumer, producerMetricsRegistrar, consumerMetricsRegistrar)
       .filter(_ != null)
       .foreach(closeable => retryCloseOnInterrupt(closeable.close))
-    logger.info(s"Closed runner for ${metaData.id}")
+    logger.info(s"Closed runner for ${metaData.name}")
   }
 
   private def configSanityCheck(): Unit = {

@@ -301,9 +301,9 @@ class DBProcessService(
         dbioRunner
           .runInTransaction(
             DBIOAction.seq(
-              processRepository.archive(processId = process.idWithName.id, isArchived = false),
+              processRepository.archive(processId = process.processIdUnsafe, isArchived = false),
               processActionRepository
-                .markProcessAsUnArchived(processId = process.idWithName.id, process.processVersionId)
+                .markProcessAsUnArchived(processId = process.processIdUnsafe, process.processVersionId)
             )
           )
       } else {
@@ -336,7 +336,7 @@ class DBProcessService(
   )(implicit user: LoggedUser): Future[ProcessResponse] =
     withProcessingType(command.category) { processingType =>
       val emptyCanonicalProcess =
-        newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isFragment)
+        newProcessPreparer.prepareEmptyProcess(command.processName, processingType, command.isFragment)
       val action = CreateProcessAction(
         command.processName,
         command.category,
@@ -399,7 +399,7 @@ class DBProcessService(
         .fromJson(jsonString)
         .valueOr(msg => throw ProcessUnmarshallingError(msg))
 
-      val canonical   = jsonCanonicalProcess.withProcessId(processId.name)
+      val canonical   = jsonCanonicalProcess.withProcessName(processId.name)
       val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
       val validationResult = processResolverByProcessingType
         .forTypeUnsafe(process.processingType)
@@ -436,7 +436,7 @@ class DBProcessService(
         if (state.allowedActions.contains(actionToCheck)) {
           callback
         } else {
-          throw ProcessIllegalAction(actionToCheck, process.idWithName, state)
+          throw ProcessIllegalAction(actionToCheck, process.name, state)
         }
       })
   }
@@ -445,8 +445,8 @@ class DBProcessService(
     dbioRunner
       .runInTransaction(
         DBIOAction.seq(
-          processRepository.archive(processId = process.idWithName.id, isArchived = true),
-          processActionRepository.markProcessAsArchived(processId = process.idWithName.id, process.processVersionId)
+          processRepository.archive(processId = process.processIdUnsafe, isArchived = true),
+          processActionRepository.markProcessAsArchived(processId = process.processIdUnsafe, process.processVersionId)
         )
       )
 
@@ -454,7 +454,7 @@ class DBProcessService(
     dbioRunner.runInTransaction(
       processRepository
         .renameProcess(processIdWithName, name)
-        .map(_ => UpdateProcessNameResponse.create(processIdWithName.name.value, name.value))
+        .map(_ => UpdateProcessNameResponse.create(processIdWithName.name, name))
     )
   }
 
@@ -494,7 +494,7 @@ class DBProcessService(
   )(implicit user: LoggedUser): Future[T] =
     getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
-        throw ProcessIllegalAction.archived(action, process.idWithName)
+        throw ProcessIllegalAction.archived(action, process.name)
       } else {
         callback(process)
       }

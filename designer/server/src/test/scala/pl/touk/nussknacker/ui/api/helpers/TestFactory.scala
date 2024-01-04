@@ -63,12 +63,12 @@ object TestFactory extends TestPermissions {
 
   val processValidator: UIProcessValidator = ProcessTestData.processValidator.withFragmentResolver(sampleResolver)
 
-  val processValidatorByProcessingType: ProcessingTypeDataProvider[UIProcessValidator, _] =
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processValidator)
-
   val flinkProcessValidator: UIProcessValidator = ProcessTestData.processValidator
     .withFragmentResolver(sampleResolver)
     .withScenarioPropertiesConfig(FlinkStreamingPropertiesConfig.properties)
+
+  val processValidatorByProcessingType: ProcessingTypeDataProvider[UIProcessValidator, _] =
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> flinkProcessValidator)
 
   val processResolver = new UIProcessResolver(
     processValidator,

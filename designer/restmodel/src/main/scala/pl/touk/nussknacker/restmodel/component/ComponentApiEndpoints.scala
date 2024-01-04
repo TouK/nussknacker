@@ -75,9 +75,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                 summary = Some("List component usages"),
                 value = List(
                   ComponentUsagesInScenario(
-                    id = "scenario1",
                     name = ProcessName("scenario1"),
-                    processId = ProcessId(1),
                     nodesUsagesData = List(
                       ScenarioUsageData("csv-source")
                     ),
@@ -113,9 +111,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                 summary = Some("List component usages with no last Action"),
                 value = List(
                   ComponentUsagesInScenario(
-                    id = "scenario1",
                     name = ProcessName("scenario1"),
-                    processId = ProcessId(1),
                     nodesUsagesData = List(
                       ScenarioUsageData("csv-source")
                     ),

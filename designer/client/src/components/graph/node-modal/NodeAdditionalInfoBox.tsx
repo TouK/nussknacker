@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown/with-html";
 import { useDebounce } from "use-debounce";
 import { NodeType } from "../../../types";
 import { useSelector } from "react-redux";
-import { getProcessId } from "./NodeDetailsContent/selectors";
+import { getProcessName } from "./NodeDetailsContent/selectors";
 import NodeUtils from "../NodeUtils";
 import { styled } from "@mui/material";
 
@@ -44,7 +44,7 @@ const ReactMarkdownStyled = styled(ReactMarkdown)`
 
 export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
     const { node } = props;
-    const processId = useSelector(getProcessId);
+    const processName = useSelector(getProcessName);
 
     const [additionalInfo, setAdditionalInfo] = useState<AdditionalInfo>(null);
 
@@ -53,17 +53,17 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
     const [debouncedNode] = useDebounce(node, 1000);
     useEffect(() => {
         let ignore = false;
-        if (processId) {
+        if (processName) {
             const nodeType = NodeUtils.nodeType(debouncedNode) === "Properties";
             const promise = nodeType
-                ? HttpService.getPropertiesAdditionalInfo(processId, debouncedNode)
-                : HttpService.getNodeAdditionalInfo(processId, debouncedNode);
+                ? HttpService.getPropertiesAdditionalInfo(processName, debouncedNode)
+                : HttpService.getNodeAdditionalInfo(processName, debouncedNode);
             promise.then(({ data }) => ignore || setAdditionalInfo(data));
         }
         return () => {
             ignore = true;
         };
-    }, [processId, debouncedNode]);
+    }, [processName, debouncedNode]);
 
     if (!additionalInfo?.type) {
         return null;

@@ -51,7 +51,7 @@ abstract class BaseKafkaSinkFactory(
     val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelDependencies)
     KafkaComponentsUtils.validateTopicsExistence(List(preparedTopic), kafkaConfig)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
-    val clientId            = s"${processMetaData.id}-${preparedTopic.prepared}"
+    val clientId            = s"${processMetaData.name}-${preparedTopic.prepared}"
     implProvider.prepareSink(preparedTopic, value, kafkaConfig, serializationSchema, clientId)
   }
 

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, CustomComponentSpecificData}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentStaticDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue}
@@ -119,9 +119,10 @@ object ComponentDefinitionPreparer {
         // branches will be. After moving this parameters to BranchEnd it will disappear from here.
         // Also it is not the best design pattern to reply with backend's NodeData as a template in API.
         // TODO: keep only custom node ids in componentGroups element and move templates to parameters definition API
-        case (info, componentDefinition)
-            if componentDefinition.componentType == ComponentType.CustomComponent &&
-              componentDefinition.componentTypeSpecificData.asCustomComponentData.manyInputs =>
+        case (
+              info,
+              componentDefinition @ ComponentStaticDefinition(_, _, _, _, CustomComponentSpecificData(true, _))
+            ) =>
           ComponentNodeTemplate(
             ComponentType.CustomComponent,
             info.name,
@@ -135,19 +136,20 @@ object ComponentDefinitionPreparer {
             filterCategories(componentDefinition),
             nodeTemplateBranchParameters(componentDefinition)
           )
-        case (info, component)
-            if component.componentType == ComponentType.CustomComponent &&
-              !component.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
+        case (
+              info,
+              componentDefinition @ ComponentStaticDefinition(_, _, _, _, CustomComponentSpecificData(false, false))
+            ) =>
           ComponentNodeTemplate(
             ComponentType.CustomComponent,
             info.name,
             CustomNode(
               "",
-              if (component.hasReturn) Some("outputVar") else None,
+              if (componentDefinition.hasReturn) Some("outputVar") else None,
               info.name,
-              nodeTemplateParameters(component)
+              nodeTemplateParameters(componentDefinition)
             ),
-            filterCategories(component)
+            filterCategories(componentDefinition)
           )
       }
     )
@@ -155,9 +157,10 @@ object ComponentDefinitionPreparer {
     val optionalEndingCustomTransformers = ComponentGroup(
       OptionalEndingCustomGroupName,
       modelDefinition.components.toList.collect {
-        case (info, componentDefinition)
-            if componentDefinition.componentType == ComponentType.CustomComponent &&
-              componentDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
+        case (
+              info,
+              componentDefinition @ ComponentStaticDefinition(_, _, _, _, CustomComponentSpecificData(false, true))
+            ) =>
           ComponentNodeTemplate(
             ComponentType.CustomComponent,
             info.name,
@@ -302,7 +305,7 @@ object ComponentDefinitionPreparer {
           }
           // TODO: enable choice of output type
           NodeEdges(
-            ComponentInfo(ComponentType.Fragment, process.metaData.id),
+            ComponentInfo(ComponentType.Fragment, process.name.value),
             outputs.map(EdgeType.FragmentOutput),
             canChooseNodes = false,
             isForInputDefinition = false

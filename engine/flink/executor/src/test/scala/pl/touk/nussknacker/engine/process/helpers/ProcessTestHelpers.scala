@@ -36,7 +36,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       MockService.clear()
       SinkForStrings.clear()
       SinkForInts.clear()
-      env.executeAndWaitForFinished(process.id)()
+      env.executeAndWaitForFinished(process.name.value)()
     }
 
   }

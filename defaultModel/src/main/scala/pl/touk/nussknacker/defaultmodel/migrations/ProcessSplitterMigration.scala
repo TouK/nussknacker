@@ -13,8 +13,6 @@ case class ProcessSplitterMigration(migratedNodeType: String = "split") extends 
   private val oldElementsParameterName = "parts"
   private val newElementsParameterName = "Elements"
 
-  override def failOnNewValidationError: Boolean = false
-
   override def migrateNode(metadata: MetaData): PartialFunction[NodeData, NodeData] = {
     case node @ CustomNode(_, _, nodeType, _, _) if nodeType == migratedNodeType =>
       node.copy(

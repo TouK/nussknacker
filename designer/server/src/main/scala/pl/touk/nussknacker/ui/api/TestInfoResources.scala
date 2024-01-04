@@ -32,7 +32,7 @@ class TestInfoResources(
     pathPrefix("testInfo") {
       post {
         entity(as[DisplayableProcess]) { displayableProcess =>
-          processId(displayableProcess.id) { idWithName =>
+          processId(displayableProcess.name) { idWithName =>
             canDeploy(idWithName.id) {
               path("capabilities") {
                 complete {
