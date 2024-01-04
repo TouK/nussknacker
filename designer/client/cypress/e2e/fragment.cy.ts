@@ -115,7 +115,7 @@ describe("Fragment", () => {
             .siblings()
             .eq(0)
             .find("[type='ERROR']")
-            .should("exist");
+            .should("not.exist");
 
         cy.get("@window").find("[data-testid='settings:6']").matchImage();
 
