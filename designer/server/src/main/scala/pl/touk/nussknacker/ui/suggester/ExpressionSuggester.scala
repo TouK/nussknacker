@@ -26,7 +26,9 @@ class ExpressionSuggester(
     new SpelExpressionSuggester(expressionDefinition, classDefinitions, uiDictServices, classLoader)
 
   private val validationContextGlobalVariablesOnly =
-    GlobalVariablesPreparer(expressionDefinition).emptyLocalVariablesValidationContext(scenarioPropertiesNames)
+    GlobalVariablesPreparer(expressionDefinition).prepareValidationContextWithGlobalVariablesOnly(
+      scenarioPropertiesNames
+    )
 
   def expressionSuggestions(
       expression: Expression,

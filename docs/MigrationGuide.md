@@ -3,6 +3,60 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.14.x (Not released yet)
+
+### Code API changes
+* [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
+  * `SingleComponentConfigWithoutId` renamed to `ComponentAdditionalConfig`
+  * field `params: Map[String, ParameterConfig]` changed to `parameterConfigs: Map[String, ParameterAdditionalUIConfig]`
+  * `ParameterAdditionalUIConfig` is handled analogously to `FragmentParameter` (expect for `valueCompileTimeValidation`, which isn't yet handled)
+    *  `ParameterConfig.defaultValue` -> `ParameterAdditionalUIConfig.initialValue`
+    *  `ParameterConfig.hintText` -> `ParameterAdditionalUIConfig.hintText`
+    *  most of the capabilities of `ParameterConfig.editor` and `ParameterConfig.validators` are covered by `ParameterAdditionalUIConfig.valueEditor` and `ParameterAdditionalUIConfig.valueCompileTimeValidation`
+* [#5285](https://github.com/TouK/nussknacker/pull/5285) Changes around scenario id/name fields:
+  * `CanonicalProcess.id` of type `String` was replaced by `name` field of type `ProcessName` 
+  * `CanonicalProcess.withProcessId` was renamed to `withProcessName` 
+  * `ScenarioWithDetails.id` was removed (it had the same value as `name`)
+  * `ScenarioWithDetails.processId` changed the type to `Option[ProcessId]` and will have always `None` value
+  * `ComponentUsagesInScenario.id` was removed (it had the same value as `name`)
+  * `ComponentUsagesInScenario.processId` was removed
+  * `ListenerScenarioWithDetails.id` was removed (it had the same value as `name`)
+  * `ValidatedDisplayableProcess.id` of type `String` was replaced by `name` field of type `ProcessName`
+  * `DisplayableProcess.id` of type `String` was replaced by `name` field of type `ProcessName`, `processName` field is removed
+  * deprecated `AsyncExecutionContextPreparer.prepareExecutionContext` was removed
+  * `AsyncExecutionContextPreparer.prepare` now takes `ProcessName` instead of `String`
+* [#5288](https://github.com/TouK/nussknacker/pull/5288) RemoteEnvironment / ModelMigration changes:
+  * `ProcessMigration.failOnNewValidationError` was removed - it wasn't used anywhere anymore
+  * `RemoteEnvironment.testMigration` result types changes
+    * `shouldFailOnNewErrors` field was removed - it wasn't used anywhere anymore
+    * `converted` field was replaced by the `processName` field which was the only information that was used
+
+### REST API changes
+* [#5280](https://github.com/TouK/nussknacker/pull/5280) Changes in the definition API:
+  * `/processDefinitionData/componentIds` endpoint is removed
+  * `/processDefinitionData/*` response changes:
+    * `services`, `sourceFactories`, `sinkFactories`, `customStreamTransformers` and `fragmentInputs` maps inside `processDefinition` were replaced by
+      one `components` map with key in format `$componentType-$componentName` and moved into top level of response
+    * `typesInformation` inside `processDefinition` was renamed into `classes`, moved into top level of response 
+      and nested `clazzName` inside each element was extracted
+    * `nodeId` field inside `edgesForNodes` was renamed into `componentId` in the flat `$componentType-$componentName` format
+    * `defaultAsyncInterpretation` field was removed
+* [#5285](https://github.com/TouK/nussknacker/pull/5285) Changes around scenario id/name fields:
+  * `/process(Details)/**` endpoints:
+    * `id` fields was removed (it had the same value as `name`)
+    * `processId` fields return always `null`
+    * `.json.id` fields was renamed to `.json.name`
+  * `components/*/usages` endpoint:
+    * `id` fields was removed (it had the same value as `name`)
+    * `processId` fields was removed
+  * `processes/**/activity/attachments` - `processId` fields was removed
+  * `processes/**/activity/comments` - `processId` fields was removed
+  * GET `processes/$name/$version/activity/attachments` - `$version` segment is removed now
+
+### Other changes
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
+  Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
+
 ## In version 1.13.x (Not released yet)
 
 ### Code API changes
@@ -91,7 +145,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5033](https://github.com/TouK/nussknacker/pull/5033) Scala 2.13 was updated to 2.13.12, you may update your `flink-scala-2.13` to 1.1.1
   (it's not required, new version is binary-compatible)
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
-* [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) Categories configuration doesn't allow to configure multiple categories for the same scenario type. 
+* [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) Categories configuration doesn't allow configuring multiple categories for the same scenario type. 
   If you have such a case, you have to extract another scenario types and assign each category to each scenario type.
   Because of this change configuration of categories was also removed from Components configuration
 * [#4953](https://github.com/TouK/nussknacker/pull/4953) Stricter validation in base components:

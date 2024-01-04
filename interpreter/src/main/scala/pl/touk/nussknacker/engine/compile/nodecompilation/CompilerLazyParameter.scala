@@ -5,10 +5,11 @@ import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.lazyparam.EvaluableLazyParameter
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compiledgraph
+import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -32,7 +33,7 @@ case class ExpressionLazyParameter[T <: AnyRef](
       )
     val evaluator = compilerLazyInterpreter.deps.expressionEvaluator
     val compiledParameter =
-      compiledgraph.evaluatedparam.Parameter(TypedExpression(compiledExpression, Unknown, null), parameterDef)
+      CompiledParameter(TypedExpression(compiledExpression, Unknown, null), parameterDef)
     context: Context =>
       Future
         .successful(evaluator.evaluateParameter(compiledParameter, context)(nodeId, compilerLazyInterpreter.metaData))
@@ -59,9 +60,11 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
     }
   }
 
-  override def syncInterpretationFunction[T <: AnyRef](lazyInterpreter: LazyParameter[T]): Context => T = {
+  override def syncInterpretationFunction[T <: AnyRef](
+      lazyInterpreter: LazyParameter[T]
+  ): Context => T = {
 
-    implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
+    implicit val ec: ExecutionContext = SynchronousExecutionContextAndIORuntime.syncEc
     val interpreter                   = createInterpreter(ec, lazyInterpreter)
     v1: Context => Await.result(interpreter(v1), deps.processTimeout)
   }

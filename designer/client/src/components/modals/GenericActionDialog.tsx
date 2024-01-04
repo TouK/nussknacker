@@ -3,7 +3,7 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { getProcessId } from "../../reducers/selectors/graph";
+import { getProcessName } from "../../reducers/selectors/graph";
 import { Expression, NodeValidationError, UIParameter, VariableTypes } from "../../types";
 import { WindowContent } from "../../windowManager";
 import { WindowKind } from "../../windowManager";
@@ -111,7 +111,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
 }
 
 export function GenericActionDialog(props: WindowContentProps<WindowKind, GenericAction>): JSX.Element {
-    const processId = useSelector(getProcessId);
+    const processName = useSelector(getProcessName);
     const { t } = useTranslation();
     const action = props.data.meta;
     const [value, setValue] = useState(() =>
@@ -129,7 +129,7 @@ export function GenericActionDialog(props: WindowContentProps<WindowKind, Generi
     const confirm = useCallback(async () => {
         action.onConfirmAction(value);
         props.close();
-    }, [processId, action.layout.name, value, props]);
+    }, [processName, action.layout.name, value, props]);
 
     const cancelText = action.layout.cancelText ? action.layout.cancelText : "cancel";
     const confirmText = action.layout.confirmText ? action.layout.confirmText : "confirm";

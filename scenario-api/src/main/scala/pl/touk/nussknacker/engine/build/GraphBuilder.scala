@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.build
 
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable._
-import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam, node}
+import pl.touk.nussknacker.engine.graph.{EdgeType, node}
 
 trait GraphBuilder[R] {
 
@@ -21,7 +22,7 @@ trait GraphBuilder[R] {
 
   def source(id: String, typ: String, params: (String, Expression)*): GraphBuilder[SourceNode] =
     new SimpleGraphBuilder(
-      SourceNode(Source(id, SourceRef(typ, params.map(evaluatedparam.Parameter.tupled).toList)), _)
+      SourceNode(Source(id, SourceRef(typ, params.map(NodeParameter.tupled).toList)), _)
     )
 
   def buildVariable(id: String, varName: String, fields: (String, Expression)*): GraphBuilder[R] =
@@ -35,20 +36,20 @@ trait GraphBuilder[R] {
   def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node =>
       creator(
-        OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output), node)
+        OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, params.map(NodeParameter.tupled).toList), output), node)
       )
     )
 
   def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node =>
-      creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList)), node))
+      creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(NodeParameter.tupled).toList)), node))
     )
 
   def disabledProcessor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node =>
       creator(
         OneOutputSubsequentNode(
-          Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), isDisabled = Some(true)),
+          Processor(id, ServiceRef(svcId, params.map(NodeParameter.tupled).toList), isDisabled = Some(true)),
           node
         )
       )
@@ -68,7 +69,7 @@ trait GraphBuilder[R] {
             id,
             FragmentRef(
               fragmentId,
-              params.map(Parameter.tupled).toList,
+              params.map(NodeParameter.tupled).toList,
               Map(fragmentOutputDefinitionName -> outputParamName)
             )
           ),
@@ -85,12 +86,18 @@ trait GraphBuilder[R] {
       outputs: Map[String, SubsequentNode]
   ): R =
     creator(
-      FragmentNode(FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled), outputParameters)), outputs)
+      FragmentNode(
+        FragmentInput(id, FragmentRef(fragmentId, params.map(NodeParameter.tupled), outputParameters)),
+        outputs
+      )
     )
 
   def fragmentEnd(id: String, fragmentId: String, params: (String, Expression)*): R =
     creator(
-      FragmentNode(FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled).toList, Map.empty)), Map())
+      FragmentNode(
+        FragmentInput(id, FragmentRef(fragmentId, params.map(NodeParameter.tupled).toList, Map.empty)),
+        Map()
+      )
     )
 
   def fragmentInput(id: String, params: (String, Class[_])*): GraphBuilder[SourceNode] =
@@ -124,16 +131,18 @@ trait GraphBuilder[R] {
     build(node => creator(FilterNode(Filter(id, expression), nextTrue = Some(node), nextFalse = Some(nextFalse))))
 
   def emptySink(id: String, typ: String, params: (String, Expression)*): R =
-    creator(EndingNode(Sink(id, SinkRef(typ, params.map(evaluatedparam.Parameter.tupled).toList))))
+    creator(EndingNode(Sink(id, SinkRef(typ, params.map(NodeParameter.tupled).toList))))
 
   def disabledSink(id: String, typ: String): R =
     creator(EndingNode(Sink(id, SinkRef(typ, List()), isDisabled = Some(true))))
 
   def processorEnd(id: String, svcId: String, params: (String, Expression)*): R =
-    creator(EndingNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList))))
+    creator(EndingNode(Processor(id, ServiceRef(svcId, params.map(NodeParameter.tupled).toList))))
 
   def disabledProcessorEnd(id: String, svcId: String, params: (String, Expression)*): R =
-    creator(EndingNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), isDisabled = Some(true))))
+    creator(
+      EndingNode(Processor(id, ServiceRef(svcId, params.map(NodeParameter.tupled).toList), isDisabled = Some(true)))
+    )
 
   def branchEnd(branchId: String, joinId: String): R =
     creator(BranchEnd(node.BranchEndData(BranchEndDefinition(branchId, joinId))))
@@ -151,7 +160,7 @@ trait GraphBuilder[R] {
     build(node =>
       creator(
         OneOutputSubsequentNode(
-          CustomNode(id, Some(outputVar), customNodeRef, params.map(Parameter.tupled).toList),
+          CustomNode(id, Some(outputVar), customNodeRef, params.map(NodeParameter.tupled).toList),
           node
         )
       )
@@ -159,11 +168,13 @@ trait GraphBuilder[R] {
 
   // outputVar must be provided always when parameter with @OutputVariableName annotation is used - look into comment in @OutputVariableName
   def endingCustomNode(id: String, outputVar: Option[String], customNodeRef: String, params: (String, Expression)*): R =
-    creator(EndingNode(CustomNode(id, outputVar, customNodeRef, params.map(Parameter.tupled).toList)))
+    creator(EndingNode(CustomNode(id, outputVar, customNodeRef, params.map(NodeParameter.tupled).toList)))
 
   def customNodeNoOutput(id: String, customNodeRef: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node =>
-      creator(OneOutputSubsequentNode(CustomNode(id, None, customNodeRef, params.map(Parameter.tupled).toList), node))
+      creator(
+        OneOutputSubsequentNode(CustomNode(id, None, customNodeRef, params.map(NodeParameter.tupled).toList), node)
+      )
     )
 
   def split(id: String, nexts: SubsequentNode*): R = creator(SplitNode(Split(id), nexts.toList))
@@ -178,9 +189,9 @@ trait GraphBuilder[R] {
       branchParams: List[(String, List[(String, Expression)])],
       params: (String, Expression)*
   ): GraphBuilder[SourceNode] = {
-    val parameters = params.map(evaluatedparam.Parameter.tupled)
+    val parameters = params.map(NodeParameter.tupled)
     val branchParameters = branchParams.map { case (branchId, bParams) =>
-      BranchParameters(branchId, bParams.map(evaluatedparam.Parameter.tupled))
+      BranchParameters(branchId, bParams.map(NodeParameter.tupled))
     }
     new SimpleGraphBuilder(SourceNode(node.Join(id, output, typ, parameters.toList, branchParameters), _))
   }

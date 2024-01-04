@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.graph
 
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 
 object fragment {
 
@@ -12,7 +12,7 @@ object fragment {
 
   @JsonCodec case class FragmentRef(
       id: String,
-      parameters: List[Parameter],
+      parameters: List[NodeParameter],
       outputVariableNames: Map[String, String] = Map.empty
   )
 

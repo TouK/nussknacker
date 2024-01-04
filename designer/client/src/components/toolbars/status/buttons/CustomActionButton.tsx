@@ -12,7 +12,7 @@ import { FallbackProps } from "react-error-boundary";
 
 type CustomActionProps = {
     action: CustomAction;
-    processId: string;
+    processName: string;
     processStatus: StatusType | null;
 } & ToolbarButtonProps;
 

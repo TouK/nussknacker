@@ -3,23 +3,25 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Valid, invalid, valid}
 import cats.data.ValidatedNel
 import cats.instances.list._
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
+import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
-import pl.touk.nussknacker.engine.graph._
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.language.tabularDataDefinition.TabularDataDefinitionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
-import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
 
 object ExpressionCompiler {
 
@@ -78,47 +80,55 @@ object ExpressionCompiler {
 
 class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
-  // used only for services
-  def compileEagerObjectParameters(
+  // used only for services and fragments - in places where component is an Executor instead of a factory
+  // that creates Executor
+  def compileExecutorComponentNodeParameters(
       parameterDefinitions: List[Parameter],
-      parameters: List[evaluatedparam.Parameter],
+      nodeParameters: List[NodeParameter],
       ctx: ValidationContext
   )(
       implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] = {
-    compileObjectParameters(parameterDefinitions, parameters, List.empty, ctx, Map.empty, eager = true).map(_.map {
-      case (TypedParameter(name, expr: TypedExpression), paramDef) =>
-        compiledgraph.evaluatedparam.Parameter(expr, paramDef)
-      case (TypedParameter(name, expr: TypedExpressionMap), paramDef) =>
+  ): ValidatedNel[PartSubGraphCompilationError, List[CompiledParameter]] = {
+    compileNodeParameters(
+      parameterDefinitions,
+      nodeParameters,
+      List.empty,
+      ctx,
+      Map.empty,
+      treatEagerParametersAsLazy = true
+    ).map(_.map {
+      case (TypedParameter(_, expr: TypedExpression), paramDef) =>
+        CompiledParameter(expr, paramDef)
+      case (TypedParameter(_, _: TypedExpressionMap), _) =>
         throw new IllegalArgumentException("Typed expression map should not be here...")
     })
   }
 
-  // used by ProcessCompiler
-  def compileObjectParameters(
+  // used for most cases during node compilation - for all components that are factories of Executors
+  def compileNodeParameters(
       parameterDefinitions: List[Parameter],
-      parameters: List[evaluatedparam.Parameter],
-      branchParameters: List[evaluatedparam.BranchParameters],
+      nodeParameters: List[NodeParameter],
+      nodeBranchParameters: List[BranchParameters],
       ctx: ValidationContext,
       branchContexts: Map[String, ValidationContext],
-      eager: Boolean
+      treatEagerParametersAsLazy: Boolean = false
   )(
       implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, List[(compiledgraph.evaluatedparam.TypedParameter, Parameter)]] = {
+  ): ValidatedNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
 
     val redundantMissingValidation = Validations.validateRedundantAndMissingParameters(
       parameterDefinitions,
-      parameters ++ branchParameters.flatMap(_.parameters)
+      nodeParameters ++ nodeBranchParameters.flatMap(_.parameters)
     )
     val paramDefMap = parameterDefinitions.map(p => p.name -> p).toMap
 
-    val compiledParams = parameters
+    val compiledParams = nodeParameters
       .flatMap { p =>
         val paramDef = paramDefMap.get(p.name)
-        paramDef.map(pd => compileParam(p, ctx, pd, eager))
+        paramDef.map(pd => compileParam(p, ctx, pd, treatEagerParametersAsLazy))
       }
     val compiledBranchParams = (for {
-      branchParams <- branchParameters
+      branchParams <- nodeBranchParameters
       p            <- branchParams.parameters
     } yield p.name -> (branchParams.branchId, p.expression)).toGroupedMap.toList.flatMap {
       case (paramName, branchIdAndExpressions) =>
@@ -132,18 +142,23 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       .combine(redundantMissingValidation.map(_ => List()))
   }
 
-  def compileParam(param: evaluatedparam.Parameter, ctx: ValidationContext, definition: Parameter, eager: Boolean)(
+  def compileParam(
+      nodeParam: NodeParameter,
+      ctx: ValidationContext,
+      definition: Parameter,
+      treatEagerParametersAsLazy: Boolean = false
+  )(
       implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.TypedParameter] = {
-    val ctxToUse = if (definition.isLazyParameter || eager) ctx else ctx.clearVariables
+  ): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
+    val ctxToUse = if (definition.isLazyParameter || treatEagerParametersAsLazy) ctx else ctx.clearVariables
     enrichContext(ctxToUse, definition).andThen { finalCtx =>
-      compile(param.expression, Some(param.name), finalCtx, definition.typ)
-        .map(compiledgraph.evaluatedparam.TypedParameter(param.name, _))
+      compile(nodeParam.expression, Some(nodeParam.name), finalCtx, definition.typ)
+        .map(TypedParameter(nodeParam.name, _))
     }
   }
 
   def compileBranchParam(
-      branchIdAndExpressions: List[(String, expression.Expression)],
+      branchIdAndExpressions: List[(String, Expression)],
       branchContexts: Map[String, ValidationContext],
       definition: Parameter
   )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
@@ -162,13 +177,11 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
         }
       }
       .sequence
-      .map(exprByBranchId =>
-        compiledgraph.evaluatedparam.TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap))
-      )
+      .map(exprByBranchId => TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
   }
 
   def compile(
-      n: expression.Expression,
+      n: Expression,
       fieldName: Option[String],
       validationCtx: ValidationContext,
       expectedType: TypingResult
@@ -190,9 +203,9 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     }
   }
 
-  def compileWithoutContextValidation(n: expression.Expression, fieldName: String, expectedType: TypingResult)(
+  def compileWithoutContextValidation(n: Expression, fieldName: String, expectedType: TypingResult)(
       implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, Expression] = {
+  ): ValidatedNel[PartSubGraphCompilationError, CompiledExpression] = {
     val validParser = expressionParsers
       .get(n.language)
       .map(valid)

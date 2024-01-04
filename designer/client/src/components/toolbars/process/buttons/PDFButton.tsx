@@ -3,7 +3,7 @@ import { RootState } from "../../../../reducers/index";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { connect } from "react-redux";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import { getProcessId, getProcessVersionId } from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
 import { useTranslation } from "react-i18next";
 import { useGraph } from "../../../graph/GraphContext";
 import Icon from "../../../../assets/img/toolbarButtons/PDF.svg";
@@ -13,7 +13,7 @@ import HttpService from "../../../../http/HttpService";
 type Props = StateProps & ToolbarButtonProps;
 
 function PDFButton(props: Props) {
-    const { processId, versionId, canExport, disabled } = props;
+    const { processName, versionId, canExport, disabled } = props;
     const available = !disabled && canExport;
     const { t } = useTranslation();
     const graphGetter = useGraph();
@@ -28,7 +28,7 @@ function PDFButton(props: Props) {
                 // TODO: try to do this in worker
                 // TODO: try to do this more in redux/react style
                 const exportedGraph = await graphGetter?.()?.exportGraph();
-                HttpService.exportProcessToPdf(processId, versionId, exportedGraph);
+                HttpService.exportProcessToPdf(processName, versionId, exportedGraph);
             }}
         />
     );
@@ -36,7 +36,7 @@ function PDFButton(props: Props) {
 
 const mapState = (state: RootState) => {
     return {
-        processId: getProcessId(state),
+        processName: getProcessName(state),
         versionId: getProcessVersionId(state),
         canExport: ProcessUtils.canExport(state),
     };

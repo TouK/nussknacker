@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.Materializer
-import cats.effect.{ContextShift, IO, Resource}
+import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import fr.davit.akka.http.metrics.core.HttpMetrics._
 import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings}
@@ -23,7 +23,6 @@ class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSy
   private implicit val systemImplicit: ActorSystem                = system
   private implicit val materializerImplicit: Materializer         = materializer
   private implicit val executionContextImplicit: ExecutionContext = system.dispatcher
-  private implicit val contextShift: ContextShift[IO]             = IO.contextShift(executionContextImplicit)
 
   def start(config: ConfigWithUnresolvedVersion, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
     for {

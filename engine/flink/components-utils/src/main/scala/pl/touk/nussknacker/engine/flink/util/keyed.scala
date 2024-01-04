@@ -57,7 +57,10 @@ object keyed {
 
     protected def interpret(ctx: Context): KeyedValue[OutputKey, OutputValue]
 
-    override def flatMap(ctx: Context, out: Collector[ValueWithContext[KeyedValue[OutputKey, OutputValue]]]): Unit = {
+    override def flatMap(
+        ctx: Context,
+        out: Collector[ValueWithContext[KeyedValue[OutputKey, OutputValue]]]
+    ): Unit = {
       collectHandlingErrors(ctx, out) {
         ValueWithContext(interpret(ctx), ctx)
       }

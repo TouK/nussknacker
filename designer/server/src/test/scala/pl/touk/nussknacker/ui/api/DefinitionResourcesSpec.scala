@@ -4,12 +4,19 @@ import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Json
+import io.circe.{Json, parser}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValuesProvided
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
@@ -50,9 +57,8 @@ class DefinitionResourcesSpec
       status shouldBe StatusCodes.OK
 
       val noneReturnType = responseAs[Json].hcursor
-        .downField("processDefinition")
-        .downField("customStreamTransformers")
-        .downField("noneReturnTypeTransformer")
+        .downField("components")
+        .downField("custom-noneReturnTypeTransformer")
 
       noneReturnType.downField("returnType").focus shouldBe Some(Json.Null)
     }
@@ -63,26 +69,49 @@ class DefinitionResourcesSpec
       status shouldBe StatusCodes.OK
 
       val typesInformation = responseAs[Json].hcursor
-        .downField("processDefinition")
-        .downField("typesInformation")
-        .downAt(_.hcursor.downField("clazzName").get[String]("display").rightValue == "ReturningTestCaseClass")
-        .downField("clazzName")
+        .downField("classes")
+        .downAt(_.hcursor.get[String]("display").rightValue == "ReturningTestCaseClass")
         .downField("display")
 
       typesInformation.focus.value shouldBe Json.fromString("ReturningTestCaseClass")
     }
   }
 
-  it("should return info about editor based on fragment node configuration") {
-    val processName         = ProcessName(SampleProcess.process.id)
-    val processWithfragment = ProcessTestData.validProcessWithFragment(processName)
-    val displayablefragment = ProcessConverter.toDisplayable(
-      processWithfragment.fragment,
+  it("should return info about editor based on fragment parameter definition") {
+    val fragmentWithFixedValuesEditor = {
+      CanonicalProcess(
+        MetaData("sub1", FragmentSpecificData()),
+        List(
+          FlatNode(
+            FragmentInputDefinition(
+              "in",
+              List(
+                FragmentParameter("param1", FragmentClazzRef[String]).copy(
+                  valueEditor = Some(
+                    ValueInputWithFixedValuesProvided(
+                      fixedValuesList = List(FixedExpressionValue("'someValue'", "someValue")),
+                      allowOtherValue = false
+                    )
+                  ),
+                )
+              )
+            )
+          ),
+          canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+        ),
+        List.empty
+      )
+    }
+
+    val processName         = SampleProcess.process.name
+    val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
+    val displayableFragment = ProcessConverter.toDisplayable(
+      processWithFragment.fragment,
       TestProcessingTypes.Streaming,
       TestCategories.Category1
     )
-    savefragment(displayablefragment)(succeed)
-    saveProcess(processName, processWithfragment.process, TestCategories.Category1)(succeed)
+    savefragment(displayableFragment)(succeed)
+    saveProcess(processName, processWithFragment.process, TestCategories.Category1)(succeed)
 
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK
@@ -90,16 +119,29 @@ class DefinitionResourcesSpec
       val response = responseAs[Json].hcursor
 
       val editor = response
-        .downField("processDefinition")
-        .downField("fragmentInputs")
-        .downField("sub1")
+        .downField("components")
+        .downField("fragment-sub1")
         .downField("parameters")
         .downAt(_.hcursor.get[String]("name").rightValue == "param1")
         .downField("editor")
         .focus
         .value
 
-      editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
+      editor shouldBe parser
+        .parse("""{"possibleValues" : [
+                   |    {
+                   |      "expression" : "",
+                   |      "label" : ""
+                   |    },
+                   |    {
+                   |      "expression" : "'someValue'",
+                   |      "label" : "someValue"
+                   |    }
+                   |  ],
+                   |  "type" : "FixedValuesParameterEditor"
+                   |}""".stripMargin)
+        .toOption
+        .get
     }
   }
 
@@ -107,7 +149,8 @@ class DefinitionResourcesSpec
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK
 
-      val defaultExpression: Json = responseAs[Json].hcursor
+      val responseJson = responseAs[Json]
+      val defaultExpression = responseJson.hcursor
         .downField("componentGroups")
         .downAt(_.hcursor.get[String]("name").rightValue == "enrichers")
         .downField("components")
@@ -204,6 +247,29 @@ class DefinitionResourcesSpec
         "'barValueFromProviderCode'",
         "'fooValueFromConfig' + '-' + 'barValueFromProviderCode'"
       )
+    }
+  }
+
+  it("return edgesForNodes") {
+    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      val edgesForNodes = responseJson.hcursor
+        .downField("edgesForNodes")
+        .focus
+        .value
+        .asArray
+        .value
+
+      edgesForNodes.map(_.asObject.get("componentId").value.asString.value).sorted should contain theSameElementsAs
+        List(
+          "builtin-choice",
+          "builtin-filter",
+          "builtin-split",
+          "custom-enrichWithAdditionalData",
+          "custom-unionWithEditors",
+        )
     }
   }
 

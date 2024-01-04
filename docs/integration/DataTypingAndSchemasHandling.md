@@ -13,7 +13,7 @@ types of data like JSON, Binary, and DB data. In each case format of these data 
 * Request-response inputs and outputs are described by JSON Schema, stored in Nussknacker scenario's properties
 * Source [Kafka](https://kafka.apache.org/) with JSON data is described by JSON Schema, stored in the schema registry
 * Source [Kafka](https://kafka.apache.org/) with binary data is described by Avro schema, stored in the schema registry
-* [OpenAPI](https://swagger.io/specification/) enricher uses JSON data described by OpenAPI schema
+* [OpenAPI](https://swagger.io/specification/) enricher uses JSON data described by OpenAPI interface definition
 * Database data are described by JDBC metadata, that contain column information
 
 ![Typing architecture](./img/typing.png)

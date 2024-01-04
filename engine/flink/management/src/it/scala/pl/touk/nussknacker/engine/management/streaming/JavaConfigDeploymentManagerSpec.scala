@@ -24,16 +24,16 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
 
     assert(
       deploymentManager
-        .deploy(ProcessVersion.empty.copy(processName = ProcessName(process.id)), DeploymentData.empty, process, None)
+        .deploy(ProcessVersion.empty.copy(processName = process.name), DeploymentData.empty, process, None)
         .isReadyWithin(100 seconds)
     )
 
     eventually {
-      val jobStatus = deploymentManager.getProcessStates(ProcessName(process.id)).futureValue.value
+      val jobStatus = deploymentManager.getProcessStates(process.name).futureValue.value
       jobStatus.map(_.status) shouldBe List(SimpleStateStatus.Running)
     }
 
-    assert(deploymentManager.cancel(ProcessName(process.id), user = userToAct).isReadyWithin(10 seconds))
+    assert(deploymentManager.cancel(process.name, user = userToAct).isReadyWithin(10 seconds))
   }
 
 }

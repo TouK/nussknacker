@@ -28,7 +28,7 @@ abstract class InitializationOnDbItSpec
   import Initialization.nussknackerUser
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  private val processId = "proc1"
+  private val processName = ProcessName("proc1")
 
   private val migrations = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2))
 
@@ -38,7 +38,7 @@ abstract class InitializationOnDbItSpec
 
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(testDbRef)
 
-  private def sampleCanonicalProcess(processId: String) = ProcessTestData.validProcessWithId(processId)
+  private def sampleCanonicalProcess(processName: ProcessName) = ProcessTestData.validProcessWithName(processName)
 
   it should "migrate processes" in {
     saveSampleProcess()
@@ -47,7 +47,7 @@ abstract class InitializationOnDbItSpec
 
     dbioRunner
       .runInTransaction(
-        repository.fetchProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
+        repository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion)) shouldBe List(("proc1", Some(2)))
@@ -55,18 +55,18 @@ abstract class InitializationOnDbItSpec
 
   it should "migrate processes when fragments present" in {
     (1 to 20).foreach { id =>
-      saveSampleProcess(s"sub$id", fragment = true)
+      saveSampleProcess(ProcessName(s"sub$id"), fragment = true)
     }
 
     (1 to 20).foreach { id =>
-      saveSampleProcess(s"id$id")
+      saveSampleProcess(ProcessName(s"id$id"))
     }
 
     Initialization.init(migrations, testDbRef, repository, "env1")
 
     dbioRunner
       .runInTransaction(
-        repository.fetchProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
+        repository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion))
@@ -89,17 +89,17 @@ abstract class InitializationOnDbItSpec
 
     dbioRunner
       .runInTransaction(
-        repository.fetchProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
+        repository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion)) shouldBe List(("proc1", Some(1)))
   }
 
-  private def saveSampleProcess(processName: String = processId, fragment: Boolean = false): Unit = {
+  private def saveSampleProcess(processName: ProcessName = processName, fragment: Boolean = false): Unit = {
     val action = CreateProcessAction(
-      ProcessName(processName),
+      processName,
       "RTM",
-      sampleCanonicalProcess(processId),
+      sampleCanonicalProcess(processName),
       TestProcessingTypes.Streaming,
       fragment,
       forwardedUserName = None

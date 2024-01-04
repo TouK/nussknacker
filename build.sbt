@@ -304,7 +304,7 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV             = "1.16.2"
+val flinkV             = "1.16.3"
 val flinkCommonsLang3V = "3.12.0"
 val flinkCommonsTextV  = "1.10.0"
 val flinkCommonsIOV    = "2.11.0"
@@ -327,7 +327,7 @@ val circeGenericExtrasV     = "0.14.3"
 val jwtCirceV               = "9.3.0"
 val jacksonV                = "2.14.3"
 val catsV                   = "2.9.0"
-val catsEffectV             = "2.5.5"
+val catsEffectV             = "3.5.2"
 val everitSchemaV           = "1.14.2"
 val slf4jV                  = "1.7.36"
 val scalaLoggingV           = "3.9.5"
@@ -1050,6 +1050,7 @@ lazy val commonUtils = (project in utils("utils"))
         "commons-io"                    % "commons-io"         % flinkCommonsIOV,
         "org.slf4j"                     % "jul-to-slf4j"       % slf4jV,
         "com.iheart"                   %% "ficus"              % ficusV,
+        "org.typelevel"                %% "cats-effect"        % catsEffectV,
       )
     }
   )

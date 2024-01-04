@@ -62,7 +62,7 @@ object PrettyValidationErrors {
         node(
           message,
           description,
-          fieldName = Some(CanonicalProcess.IdFieldName),
+          fieldName = Some(CanonicalProcess.NameFieldName),
         )
       case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case NonUniqueEdgeType(etype, nodeId) =>
@@ -158,19 +158,19 @@ object PrettyValidationErrors {
       case InitialValueNotPresentInPossibleValues(paramName, _) =>
         node(
           s"The initial value provided for parameter '$paramName' is not present in the parameter's possible values list",
-          "Please check fragment definition",
+          "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InitialValueFieldName)))
         )
       case UnsupportedFixedValuesType(paramName, typ, _) =>
         node(
           s"Fixed values list can only be be provided for type String or Boolean, found: $typ",
-          "Please check fragment definition",
+          "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
       case RequireValueFromEmptyFixedList(paramName, _) =>
         node(
           s"Required parameter '$paramName' cannot be a member of an empty fixed list",
-          "Please check fragment definition",
+          "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
         )
       case ExpressionParserCompilationErrorInFragmentDefinition(message, _, paramName, subFieldName, originalExpr) =>
@@ -245,11 +245,11 @@ object PrettyValidationErrors {
 
   private def mapIdErrorToNodeError(error: IdError) = {
     val validatedObjectType = error match {
-      case ScenarioIdError(_, _, isFragment) => if (isFragment) "Fragment" else "Scenario"
-      case NodeIdValidationError(_, _)       => "Node"
+      case ScenarioNameError(_, _, isFragment) => if (isFragment) "Fragment" else "Scenario"
+      case NodeIdValidationError(_, _)         => "Node"
     }
     val errorSeverity = error match {
-      case ScenarioIdError(_, _, _) => NodeValidationErrorType.SaveAllowed
+      case ScenarioNameError(_, _, _) => NodeValidationErrorType.SaveAllowed
       case NodeIdValidationError(errorType, _) =>
         errorType match {
           case ProcessCompilationError.EmptyValue | IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
@@ -257,7 +257,7 @@ object PrettyValidationErrors {
         }
     }
     val fieldName = error match {
-      case ScenarioIdError(_, _, _)    => CanonicalProcess.IdFieldName
+      case ScenarioNameError(_, _, _)  => CanonicalProcess.NameFieldName
       case NodeIdValidationError(_, _) => pl.touk.nussknacker.engine.graph.node.IdFieldName
     }
     val message = error.errorType match {

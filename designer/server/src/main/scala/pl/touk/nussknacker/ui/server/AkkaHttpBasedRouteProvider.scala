@@ -3,20 +3,20 @@ package pl.touk.nussknacker.ui.server
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
-import cats.effect.{ContextShift, IO, Resource}
+import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProviderFactory,
-  EmptyAdditionalUIConfigProviderFactory
-}
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.api.component.{
+  AdditionalUIConfigProviderFactory,
+  EmptyAdditionalUIConfigProviderFactory
+}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
@@ -39,7 +39,7 @@ import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
-import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReload
 import pl.touk.nussknacker.ui.process.repository._
@@ -109,7 +109,14 @@ class AkkaHttpBasedRouteProvider(
 
       val managers = typeToConfig.mapValues(_.deploymentManager)
 
-      val fragmentRepository = new DbFragmentRepository(dbRef, system.dispatcher)
+      val dbioRunner        = DBIOActionRunner(dbRef)
+      val actionRepository  = DbProcessActionRepository.create(dbRef, modelData)
+      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
+      // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
+      val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
+      val writeProcessRepository  = ProcessRepository.create(dbRef, modelData)
+
+      val fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
 
       val processValidatorAndResolver = typeToConfig.mapValues { processingTypeData =>
@@ -126,13 +133,6 @@ class AkkaHttpBasedRouteProvider(
 
       val processValidator = processValidatorAndResolver.mapValues(_._1)
       val processResolver  = processValidatorAndResolver.mapValues(_._2)
-
-      val dbioRunner        = DBIOActionRunner(dbRef)
-      val actionRepository  = DbProcessActionRepository.create(dbRef, modelData)
-      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
-      // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-      val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
-      val writeProcessRepository  = ProcessRepository.create(dbRef, modelData)
 
       val notificationsConfig = resolvedConfig.as[NotificationConfig]("notifications")
       val processChangeListener = ProcessChangeListenerLoader.loadListeners(
@@ -209,10 +209,11 @@ class AkkaHttpBasedRouteProvider(
 
       val additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
 
-      val componentService = DefaultComponentService(
+      val componentService = new DefaultComponentService(
         ComponentLinksConfigExtractor.extract(resolvedConfig),
         typeToConfig.mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
         processService,
+        fragmentRepository,
         additionalUIConfigProvider
       )
       val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
@@ -363,7 +364,6 @@ class AkkaHttpBasedRouteProvider(
   }
 
   private def createSttpBackend()(implicit executionContext: ExecutionContext) = {
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
     Resource
       .make(
         acquire = IO(AsyncHttpClientFutureBackend.usingConfigBuilder(identity))

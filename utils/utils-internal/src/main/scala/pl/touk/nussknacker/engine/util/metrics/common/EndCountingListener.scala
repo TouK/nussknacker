@@ -29,11 +29,20 @@ private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends 
     )
   }
 
-  override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {
+  override def deadEndEncountered(
+      lastNodeId: String,
+      context: Context,
+      processMetaData: MetaData
+  ): Unit = {
     deadEndRateMeters.mark(lastNodeId)
   }
 
-  override def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit = {
+  override def endEncountered(
+      nodeId: String,
+      ref: String,
+      context: Context,
+      processMetaData: MetaData
+  ): Unit = {
     endRateMeters.mark(nodeId)
   }
 

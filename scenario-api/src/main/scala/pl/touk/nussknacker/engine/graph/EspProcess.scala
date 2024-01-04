@@ -13,7 +13,5 @@ object EspProcess {
 }
 
 case class EspProcess(metaData: MetaData, roots: NonEmptyList[SourceNode]) {
-  def id: String = metaData.id
-
   def toCanonicalProcess: CanonicalProcess = ProcessCanonizer.canonize(this)
 }

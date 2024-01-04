@@ -47,7 +47,7 @@ object UniversalKafkaSinkFactory {
 class UniversalKafkaSinkFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-    val processObjectDependencies: ProcessObjectDependencies,
+    val modelDependencies: ProcessObjectDependencies,
     implProvider: UniversalKafkaSinkImplFactory
 ) extends KafkaUniversalComponentTransformer[Sink]
     with SinkFactory {
@@ -219,7 +219,7 @@ class UniversalKafkaSinkFactory(
       Option(finalState.schema),
       kafkaConfig
     )
-    val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
+    val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = extractValidationMode(
       params.getOrElse(SinkValidationModeParameterName, ValidationMode.strict.name).asInstanceOf[String]
     )

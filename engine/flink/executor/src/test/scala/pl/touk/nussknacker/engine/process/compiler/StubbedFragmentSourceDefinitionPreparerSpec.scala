@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition.{
@@ -12,11 +11,11 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.TestWithParametersSupport
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
-import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class StubbedFragmentInputDefinitionSourceSpec extends AnyFunSuite with Matchers {
+class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Matchers {
 
   case class SimplifiedParam(name: String, typingResult: TypingResult, editor: Option[ParameterEditor])
 
@@ -28,11 +27,10 @@ class StubbedFragmentInputDefinitionSourceSpec extends AnyFunSuite with Matchers
         FragmentParameter("age", FragmentClazzRef[Long]),
       )
     )
-    val stubbedSource =
-      new StubbedFragmentInputDefinitionSource(
-        LocalModelData(ConfigFactory.empty, List.empty)
-      )
-    val parameters: Seq[Parameter] = stubbedSource
+    val stubbedSourcePreparer = new StubbedFragmentSourceDefinitionPreparer(
+      new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader)
+    )
+    val parameters: Seq[Parameter] = stubbedSourcePreparer
       .createSourceDefinition(fragmentInputDefinition)
       .implementationInvoker
       .invokeMethod(Map.empty, None, Seq.empty)

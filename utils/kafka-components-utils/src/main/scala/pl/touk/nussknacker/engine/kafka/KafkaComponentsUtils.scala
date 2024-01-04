@@ -14,11 +14,11 @@ object KafkaComponentsUtils extends KafkaUtils {
       .valueOr(err => throw err)
   }
 
-  def prepareKafkaTopic(topic: String, processObjectDependencies: ProcessObjectDependencies): PreparedKafkaTopic =
+  def prepareKafkaTopic(topic: String, modelDependencies: ProcessObjectDependencies): PreparedKafkaTopic =
     PreparedKafkaTopic(
       topic,
-      processObjectDependencies.objectNaming
-        .prepareName(topic, processObjectDependencies.config, KafkaTopicUsageKey)
+      modelDependencies.objectNaming
+        .prepareName(topic, modelDependencies.config, KafkaTopicUsageKey)
     )
 
 }

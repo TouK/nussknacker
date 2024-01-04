@@ -23,7 +23,7 @@ object LoggingService extends EagerService {
     new ServiceInvoker {
 
       private lazy val logger = LoggerFactory.getLogger(
-        (rootLogger :: metaData.id :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
+        (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
       )
 
       override def invokeService(params: Map[String, Any])(

@@ -1,25 +1,18 @@
 package pl.touk.nussknacker.restmodel.scenariodetails
 
-import io.circe.generic.JsonCodec
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.{
-  ProcessId => ApiProcessId,
-  ProcessIdWithName,
-  ProcessName,
-  ProcessingType,
-  ScenarioVersion,
-  VersionId
-}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.restmodel.validation.{ValidatedDisplayableProcess, ValidationResults}
 
 import java.time.Instant
 
-@JsonCodec
 final case class ScenarioWithDetails(
-    id: String,
     name: ProcessName,
-    processId: ApiProcessId,
+    // TODO: This field is not passed to FE as we always use ProcessName in our API (see the encoder below)
+    //       We should use entity in places where it is used on BE side or extract another class for DTO without this field
+    processId: Option[ProcessId],
     processVersionId: VersionId,
     isLatestVersion: Boolean,
     description: Option[String],
@@ -43,8 +36,6 @@ final case class ScenarioWithDetails(
     state: Option[ProcessState]
 ) {
 
-  lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, name)
-
   def withScenarioGraphAndValidationResult(
       scenarioWithValidationResult: ValidatedDisplayableProcess
   ): ScenarioWithDetails = {
@@ -53,7 +44,7 @@ final case class ScenarioWithDetails(
 
   def historyUnsafe: List[ScenarioVersion] = history.getOrElse(throw new IllegalStateException("Missing history"))
 
-  def scenarioGraphUnsafe: DisplayableProcess = scenarioGraphAndValidationResultUnsafe.toDisplayable
+  def scenarioGraphUnsafe: DisplayableProcess = scenarioGraphAndValidationResultUnsafe.toDisplayable(name)
 
   def validationResultUnsafe: ValidationResults.ValidationResult =
     validationResult.getOrElse(throw new IllegalStateException("Missing validation result"))
@@ -64,5 +55,20 @@ final case class ScenarioWithDetails(
 
   def scenarioGraphAndValidationResultUnsafe: ValidatedDisplayableProcess =
     json.getOrElse(throw new IllegalStateException("Missing scenario graph and validation result"))
+
+  def processIdUnsafe: ProcessId = processId.getOrElse(throw new IllegalStateException("Missing processId"))
+
+}
+
+object ScenarioWithDetails {
+
+  import io.circe.generic.semiauto._
+
+  implicit val encoder: Encoder[ScenarioWithDetails] =
+    deriveEncoder[ScenarioWithDetails]
+      .contramap[ScenarioWithDetails](_.copy(processId = None))
+
+  implicit val decoder: Decoder[ScenarioWithDetails] =
+    deriveDecoder[ScenarioWithDetails]
 
 }

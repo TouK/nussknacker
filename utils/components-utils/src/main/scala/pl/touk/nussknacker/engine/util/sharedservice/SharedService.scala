@@ -21,13 +21,13 @@ abstract class SharedServiceHolder[CreationData, Service <: SharedService[Creati
   private var sharedServices = Map[CreationData, (Service, Int)]()
 
   def retrieveService(creationData: CreationData)(implicit metaData: MetaData): Service = synchronized {
-    val processId = metaData.id
+    val processName = metaData.name
     val newValue = sharedServices.get(creationData) match {
       case Some((currentInstance, counter)) =>
-        logger.debug(s"Retrieving $name from cache for config: $creationData and $processId")
+        logger.debug(s"Retrieving $name from cache for config: $creationData and $processName")
         (currentInstance, counter + 1)
       case None =>
-        logger.info(s"Creating new $name for config: $creationData for $processId")
+        logger.info(s"Creating new $name for config: $creationData for $processName")
         (createService(creationData, metaData), 1)
 
     }

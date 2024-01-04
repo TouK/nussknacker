@@ -11,6 +11,6 @@ case class FlinkEngineRuntimeContextImpl(jobData: JobData, runtimeContext: Runti
   override val metricsProvider: MetricsProviderForScenario = new FlinkMetricsProviderForScenario(runtimeContext)
 
   override def contextIdGenerator(nodeId: String): ContextIdGenerator =
-    new IncContextIdGenerator(jobData.metaData.id + "-" + nodeId + "-" + runtimeContext.getIndexOfThisSubtask)
+    new IncContextIdGenerator(jobData.metaData.name.value + "-" + nodeId + "-" + runtimeContext.getIndexOfThisSubtask)
 
 }

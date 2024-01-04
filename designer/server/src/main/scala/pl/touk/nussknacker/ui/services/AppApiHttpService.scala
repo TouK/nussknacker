@@ -153,7 +153,7 @@ class AppApiHttpService(
 
   private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[ProcessName, ProcessState]] = {
     for {
-      processes <- processService.getProcessesWithDetails(
+      processes <- processService.getLatestProcessesWithDetails(
         ScenarioQuery.deployed,
         GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
       )
@@ -167,14 +167,14 @@ class AppApiHttpService(
 
   private def processesWithValidationErrors(implicit user: LoggedUser): Future[List[String]] = {
     processService
-      .getProcessesWithDetails(
+      .getLatestProcessesWithDetails(
         ScenarioQuery.unarchivedProcesses,
         GetScenarioWithDetailsOptions.withsScenarioGraph.withValidation
       )
       .map { processes =>
         processes
           .filterNot(_.validationResultUnsafe.errors.isEmpty)
-          .map(_.id)
+          .map(_.name.value)
       }
   }
 

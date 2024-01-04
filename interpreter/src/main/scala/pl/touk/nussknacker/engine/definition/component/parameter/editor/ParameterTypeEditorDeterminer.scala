@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
 import java.time.temporal.ChronoUnit
-
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}

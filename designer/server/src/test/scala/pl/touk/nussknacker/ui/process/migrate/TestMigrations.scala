@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, Processor, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -30,8 +30,6 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override val description = "testMigration1"
 
-    override def failOnNewValidationError: Boolean = false
-
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service = ServiceRef(ProcessTestData.otherExistingServiceId, parameters))
@@ -42,8 +40,6 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
   object Migration2 extends ProcessMigration {
 
     override val description = "testMigration2"
-
-    override def failOnNewValidationError: Boolean = false
 
     override def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess =
       canonicalProcess.copy(metaData =
@@ -56,11 +52,11 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override val description = "testMigration3"
 
-    override def failOnNewValidationError: Boolean = true
-
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
-        n.copy(service = ServiceRef(ProcessTestData.existingServiceId, Parameter("newParam", "'abc'") :: parameters))
+        n.copy(service =
+          ServiceRef(ProcessTestData.existingServiceId, NodeParameter("newParam", "'abc'") :: parameters)
+        )
     }
 
   }
@@ -69,11 +65,11 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override val description = "testMigration4"
 
-    override def failOnNewValidationError: Boolean = false
-
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
-        n.copy(service = ServiceRef(ProcessTestData.existingServiceId, Parameter("newParam", "'abc'") :: parameters))
+        n.copy(service =
+          ServiceRef(ProcessTestData.existingServiceId, NodeParameter("newParam", "'abc'") :: parameters)
+        )
     }
 
   }
@@ -82,8 +78,6 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override val description = "testMigration5"
 
-    override def failOnNewValidationError: Boolean = false
-
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] =
       throw new RuntimeException("made to fail..")
   }
@@ -91,8 +85,6 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
   object Migration6 extends NodeMigration {
 
     override val description = "testMigration6"
-
-    override def failOnNewValidationError: Boolean = true
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
@@ -104,8 +96,6 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
   object Migration7 extends NodeMigration {
 
     override val description = "testMigration7"
-
-    override def failOnNewValidationError: Boolean = true
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case sub @ FragmentInputDefinition(_, subParams, _)
@@ -127,8 +117,6 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override val description = "testMigration8"
 
-    override def failOnNewValidationError: Boolean = true
-
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, _), _) =>
         n.copy(ref = ref.copy(typ = ProcessTestData.otherExistingSourceFactory))
@@ -140,11 +128,9 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override val description = "testMigration9"
 
-    override def failOnNewValidationError: Boolean = true
-
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, parameters), _) =>
-        n.copy(ref = ref.copy(parameters = Parameter("newParam", "'abc'") :: parameters))
+        n.copy(ref = ref.copy(parameters = NodeParameter("newParam", "'abc'") :: parameters))
     }
 
   }

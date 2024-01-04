@@ -15,7 +15,9 @@ import scala.concurrent.{ExecutionContext, Future}
 trait EvaluableLazyParameter[+T <: AnyRef] extends LazyParameter[T] {
 
   // TODO: get rid of Future[_] as we evaluate parameters synchronously...
-  def prepareEvaluator(deps: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T]
+  def prepareEvaluator(deps: LazyParameterInterpreter)(
+      implicit ec: ExecutionContext
+  ): Context => Future[T]
 
 }
 
@@ -48,7 +50,9 @@ private[api] case class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](
   override def returnType: TypingResult =
     wrapReturnType(args.map(_.returnType))
 
-  override def prepareEvaluator(lpi: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
+  override def prepareEvaluator(
+      lpi: LazyParameterInterpreter
+  )(implicit ec: ExecutionContext): Context => Future[Y] = {
     val argsInterpreters = args.map(_.prepareEvaluator(lpi))
     ctx: Context => Future.sequence(argsInterpreters.map(_(ctx))).map(wrapResult)
   }
@@ -63,7 +67,9 @@ private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
 
   override def returnType: TypingResult = transformTypingResult(arg.returnType)
 
-  override def prepareEvaluator(lpi: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
+  override def prepareEvaluator(
+      lpi: LazyParameterInterpreter
+  )(implicit ec: ExecutionContext): Context => Future[Y] = {
     val argInterpreter = arg.prepareEvaluator(lpi)
     ctx: Context => argInterpreter(ctx).map(fun)
   }
@@ -73,7 +79,9 @@ private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
 private[api] case class FixedLazyParameter[T <: AnyRef](value: T, returnType: TypingResult)
     extends EvaluableLazyParameter[T] {
 
-  override def prepareEvaluator(deps: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] =
+  override def prepareEvaluator(deps: LazyParameterInterpreter)(
+      implicit ec: ExecutionContext
+  ): Context => Future[T] =
     _ => Future.successful(value)
 
 }

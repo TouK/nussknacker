@@ -45,17 +45,14 @@ object ModelDefinitionBuilder {
   def withNullImplementation(
       definition: ModelDefinition[ComponentStaticDefinition]
   ): ModelDefinition[ComponentDefinitionWithImplementation] = {
-    definition.transform { component =>
-      val realType = if (component.componentType == ComponentType.Service) classOf[Future[_]] else classOf[Any]
-      wrapWithNullImplementation(component, realType)
-    }
+    definition.transform(wrapWithNullImplementation)
   }
 
   def toDefinitionWithImpl(
       expressionConfig: ExpressionConfigDefinition[ComponentStaticDefinition]
   ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
     ExpressionConfigDefinition(
-      expressionConfig.globalVariables.mapValuesNow(wrapWithNullImplementation(_)),
+      expressionConfig.globalVariables.mapValuesNow(wrapWithNullImplementation),
       expressionConfig.globalImports,
       expressionConfig.additionalClasses,
       expressionConfig.languages,
@@ -72,14 +69,12 @@ object ModelDefinitionBuilder {
     )
 
   private def wrapWithNullImplementation(
-      staticDefinition: ComponentStaticDefinition,
-      runtimeClass: Class[_] = classOf[Any]
+      staticDefinition: ComponentStaticDefinition
   ): ComponentDefinitionWithImplementation =
     MethodBasedComponentDefinitionWithImplementation(
       ComponentImplementationInvoker.nullImplementationInvoker,
       null,
-      staticDefinition,
-      runtimeClass
+      staticDefinition
     )
 
   implicit class ComponentDefinitionBuilder(definition: ModelDefinition[ComponentStaticDefinition]) {

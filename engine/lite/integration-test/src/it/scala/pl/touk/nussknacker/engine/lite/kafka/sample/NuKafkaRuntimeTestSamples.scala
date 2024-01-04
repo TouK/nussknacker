@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka.sample
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -20,10 +21,10 @@ object NuKafkaRuntimeTestSamples {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  val pingPongScenarioId = "universal-ping-pong"
+  val pingPongScenarioName = ProcessName("universal-ping-pong")
 
   def pingPongScenario(inputTopic: String, outputTopic: String): CanonicalProcess = ScenarioBuilder
-    .streamingLite(pingPongScenarioId)
+    .streamingLite(pingPongScenarioName.value)
     .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
     .emptySink(
       "sink",

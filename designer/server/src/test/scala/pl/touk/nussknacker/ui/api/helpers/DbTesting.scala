@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbRef}
 
 import scala.jdk.CollectionConverters._
 import scala.util.{Try, Using}
+import cats.effect.unsafe.implicits.global
 
 trait WithTestDb extends BeforeAndAfterAll {
   this: Suite =>

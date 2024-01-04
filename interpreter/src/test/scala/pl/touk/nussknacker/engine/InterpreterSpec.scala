@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
-import com.typesafe.config.ConfigFactory
+import cats.effect.unsafe.IORuntime
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
@@ -18,14 +18,9 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputGenericNodeTransformation
 }
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{
-  NodeDependency,
-  OutputVariableNameDependency,
-  ParameterWithExtractor,
-  SpelTemplateParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, _}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
@@ -39,7 +34,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPar
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -54,7 +49,7 @@ import pl.touk.nussknacker.engine.util.service.{
   EagerServiceWithStaticParametersAndReturnType,
   EnricherContextTransformation
 }
-import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
+import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContextAndIORuntime}
 
 import java.util.{Collections, Optional}
 import javax.annotation.Nullable
@@ -103,7 +98,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       listeners: Seq[ProcessListener] = listenersDef(),
   ): Any = {
     import Interpreter._
-    import SynchronousExecutionContext.ctx
 
     AccountService.clear()
     NameDictService.clear()
@@ -117,10 +111,17 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     def compileNode(part: ProcessPart) =
       failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData).result)
 
-    val initialCtx = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
+    val initialCtx                    = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
+    val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
+    implicit val ioRuntime: IORuntime = SynchronousExecutionContextAndIORuntime.syncIoRuntime
 
     val resultBeforeSink = interpreter
-      .interpret[IO](compileNode(parts.sources.head), scenario.metaData, initialCtx)
+      .interpret[IO](
+        compileNode(parts.sources.head),
+        scenario.metaData,
+        initialCtx,
+        serviceExecutionContext
+      )
       .unsafeRunSync()
       .head match {
       case Left(result)         => result
@@ -134,7 +135,12 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           case endingCustomPart: CustomNodePart if endingCustomPart.id == nextPartId => endingCustomPart
         }.get
         interpreter
-          .interpret(compileNode(sink), metaData, resultBeforeSink.finalContext)
+          .interpret[IO](
+            compileNode(sink),
+            metaData,
+            resultBeforeSink.finalContext,
+            serviceExecutionContext
+          )
           .unsafeRunSync()
           .head
           .swap
@@ -175,7 +181,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
-      ConfigFactory.empty(),
       definitionsWithTypes,
       new SimpleDictRegistry(Map.empty).toEngineRegistry,
       listeners,
@@ -401,9 +406,18 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         nodeResults = nodeResults :+ nodeId
       }
 
-      override def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit = {}
+      override def endEncountered(
+          nodeId: String,
+          ref: String,
+          context: Context,
+          processMetaData: MetaData
+      ): Unit = {}
 
-      override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {}
+      override def deadEndEncountered(
+          lastNodeId: String,
+          context: Context,
+          processMetaData: MetaData
+      ): Unit = {}
 
       override def serviceInvoked(
           nodeId: String,
@@ -484,7 +498,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -526,7 +540,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -542,7 +556,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .emptySink("end-sink", "dummySink")
     val emptyFragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()), List.empty, List.empty)
 
-    val resolved = FragmentResolver(Set(emptyFragment)).resolve(process)
+    val resolved = FragmentResolver(List(emptyFragment)).resolve(process)
 
     resolved should matchPattern { case Invalid(NonEmptyList(InvalidFragment("fragment1", "sub"), Nil)) =>
     }
@@ -573,7 +587,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -601,7 +615,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -637,14 +651,14 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List(
         FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
         canonicalnode.Fragment(
-          FragmentInput("sub2", FragmentRef("fragment1", List(Parameter("param", "#param")))),
+          FragmentInput("sub2", FragmentRef("fragment1", List(NodeParameter("param", "#param")))),
           Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty))))
         )
       ),
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment, nested)).resolve(process)
+    val resolved = FragmentResolver(List(fragment, nested)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -693,7 +707,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -718,7 +732,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -750,7 +764,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List.empty
     )
 
-    val resolved = FragmentResolver(Set(fragment)).resolve(process)
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
     resolved shouldBe Symbol("valid")
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List.empty) shouldBe "8"
   }
@@ -1035,7 +1049,7 @@ object InterpreterSpec {
 
   object WithExplicitDefinitionService extends EagerServiceWithStaticParametersAndReturnType {
 
-    override def parameters: List[api.definition.Parameter] = List(api.definition.Parameter[Long]("param1"))
+    override def parameters: List[Parameter] = List(Parameter[Long]("param1"))
 
     override def returnType: typing.TypingResult = Typed[String]
 
@@ -1053,11 +1067,11 @@ object InterpreterSpec {
 
   object ServiceUsingSpelTemplate extends EagerServiceWithStaticParametersAndReturnType {
 
-    private val spelTemplateParameter = api.definition.Parameter
+    private val spelTemplateParameter = Parameter
       .optional[String]("template")
       .copy(isLazyParameter = true, editor = Some(SpelTemplateParameterEditor))
 
-    override def parameters: List[api.definition.Parameter] = List(spelTemplateParameter)
+    override def parameters: List[Parameter] = List(spelTemplateParameter)
 
     override def returnType: typing.TypingResult = Typed[String]
 
@@ -1089,11 +1103,11 @@ object InterpreterSpec {
     override def parseWithoutContextValidation(
         original: String,
         expectedType: TypingResult
-    ): Validated[NonEmptyList[ExpressionParseError], pl.touk.nussknacker.engine.api.expression.Expression] = Valid(
+    ): Validated[NonEmptyList[ExpressionParseError], CompiledExpression] = Valid(
       LiteralExpression(original)
     )
 
-    case class LiteralExpression(original: String) extends pl.touk.nussknacker.engine.api.expression.Expression {
+    case class LiteralExpression(original: String) extends CompiledExpression {
       override def language: String = languageId
 
       override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = original.asInstanceOf[T]

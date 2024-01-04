@@ -21,9 +21,9 @@ import org.hamcrest.Matchers.equalTo
 import org.scalatest.matchers.must.Matchers.contain
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.definition.component.{ComponentIdProvider, DefaultComponentIdProvider}
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
+import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider}
 
 class ComponentApiSpec
     extends AnyFreeSpecLike
@@ -308,9 +308,7 @@ class ComponentApiSpec
           .body(
             matchJsonWithRegexValues(
               s"""[{
-                 |  "id": "${processName.value}",
-                 |  "name": "${processName.value}",
-                 |  "processId": ${processId.value},
+                 |  "name": "$processName",
                  |  "nodesUsagesData": [ { "nodeId": "source", "type": "ScenarioUsageData" } ],
                  |  "isFragment": false,
                  |  "processCategory": "$Category1",

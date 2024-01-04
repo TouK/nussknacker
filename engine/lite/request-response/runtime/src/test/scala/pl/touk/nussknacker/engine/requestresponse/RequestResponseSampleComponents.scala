@@ -230,7 +230,8 @@ class CustomExtractor(outputVariableName: String, expression: LazyParameter[AnyR
       continuation: DataBatch => F[ResultType[Result]],
       context: CustomComponentContext[F]
   ): DataBatch => F[ResultType[Result]] = {
-    val exprInterpreter: engine.api.Context => Any = context.interpreter.syncInterpretationFunction(expression)
+    val exprInterpreter: engine.api.Context => Any =
+      context.interpreter.syncInterpretationFunction(expression)
     (ctxs: DataBatch) => {
       val exprResults = ctxs.map(ctx => ctx.withVariable(outputVariableName, exprInterpreter(ctx)))
       continuation(DataBatch(exprResults))

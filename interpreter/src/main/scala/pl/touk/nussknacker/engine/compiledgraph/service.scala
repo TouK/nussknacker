@@ -7,10 +7,9 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
   TransmissionNames
 }
 import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, ServiceInvoker}
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
@@ -21,21 +20,32 @@ object service {
   case class ServiceRef(
       id: String,
       invoker: ServiceInvoker,
-      parameters: List[Parameter],
-      resultCollector: ResultCollector
+      parameters: List[CompiledParameter],
+      resultCollector: ResultCollector,
   ) {
 
-    def invoke(ctx: Context, expressionEvaluator: ExpressionEvaluator)(
+    def invoke(
+        ctx: Context,
+        expressionEvaluator: ExpressionEvaluator,
+        serviceExecutionContext: ServiceExecutionContext
+    )(
         implicit nodeId: NodeId,
         metaData: MetaData,
-        ec: ExecutionContext,
         componentUseCase: ComponentUseCase
     ): (Map[String, AnyRef], Future[Any]) = {
 
       val (_, preparedParams) = expressionEvaluator.evaluateParameters(parameters, ctx)
       val contextId           = ContextId(ctx.id)
       val collector           = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
-      (preparedParams, invoker.invokeService(preparedParams)(ec, collector, contextId, componentUseCase))
+      (
+        preparedParams,
+        invoker.invokeService(preparedParams)(
+          serviceExecutionContext.executionContext,
+          collector,
+          contextId,
+          componentUseCase
+        )
+      )
     }
 
   }

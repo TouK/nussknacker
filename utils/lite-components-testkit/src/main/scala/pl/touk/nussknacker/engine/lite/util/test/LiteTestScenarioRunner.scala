@@ -6,14 +6,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency, WithExplicitTypesToExtract}
-import pl.touk.nussknacker.engine.api.process.{
-  BasicContextInitializer,
-  ComponentUseCase,
-  SinkFactory,
-  Source,
-  SourceFactory,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -128,7 +121,11 @@ private[test] class SimpleSourceFactory(result: TypingResult)
       override val nodeId: NodeId = TypedNodeDependency[NodeId].extract(dependencies)
 
       override def transform(record: Any): Context =
-        Context(contextIdGenerator.nextContextId(), Map(VariableConstants.InputVariableName -> record), None)
+        Context(
+          contextIdGenerator.nextContextId(),
+          Map(VariableConstants.InputVariableName -> record),
+          None
+        )
     }
   }
 

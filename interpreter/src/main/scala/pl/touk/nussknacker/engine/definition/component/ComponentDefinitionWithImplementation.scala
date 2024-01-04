@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.definition.component
 
 import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition}
 import pl.touk.nussknacker.engine.api.process.WithCategories
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 // This class represents component's definition and implementation.
@@ -21,10 +20,6 @@ trait ComponentDefinitionWithImplementation extends BaseComponentDefinition {
 
   // TODO In should be of type Component, but currently this class is used also for global variables
   def implementation: Any
-
-  // TODO: it should be only available for MethodBasedComponentDefinitionWithImplementation for purpose of collecting
-  //       ClassDefinition, but currently it is also served to FE - see a comment next to UIComponentDefinition
-  def returnType: Option[TypingResult]
 
   def componentTypeSpecificData: ComponentTypeSpecificData
 

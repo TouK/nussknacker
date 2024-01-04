@@ -10,11 +10,12 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
@@ -88,8 +89,8 @@ class NodesResourcesSpec
   test("it should return additional info for process") {
     saveProcess(testProcess) {
       val data: NodeData =
-        Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression.spel("'a'")))), "out", None)
-      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(
+        Enricher("1", ServiceRef("paramService", List(NodeParameter("id", Expression.spel("'a'")))), "out", None)
+      Post(s"/nodes/${testProcess.name}/additionalInfo", toEntity(data)) ~> withPermissions(
         nodeRoute,
         testPermissionRead
       ) ~> check {
@@ -99,7 +100,7 @@ class NodesResourcesSpec
       }
 
       val dataEmpty: NodeData = Enricher("1", ServiceRef("otherService", List()), "out", None)
-      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(
+      Post(s"/nodes/${testProcess.name}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(
         nodeRoute,
         testPermissionRead
       ) ~> check {
@@ -119,7 +120,7 @@ class NodesResourcesSpec
         None
       )
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+      Post(s"/nodes/${testProcess.name}/validation", toEntity(request)) ~> withPermissions(
         nodeRoute,
         testPermissionRead
       ) ~> check {
@@ -149,8 +150,8 @@ class NodesResourcesSpec
         SinkRef(
           "kafka-string",
           List(
-            Parameter(SinkValueParamName, Expression.spel("notvalidspelexpression")),
-            Parameter(TopicParamName, Expression.spel("'test-topic'"))
+            NodeParameter(SinkValueParamName, Expression.spel("notvalidspelexpression")),
+            NodeParameter(TopicParamName, Expression.spel("'test-topic'"))
           )
         ),
         None,
@@ -164,7 +165,7 @@ class NodesResourcesSpec
         None
       )
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+      Post(s"/nodes/${testProcess.name}/validation", toEntity(request)) ~> withPermissions(
         nodeRoute,
         testPermissionRead
       ) ~> check {
@@ -190,7 +191,7 @@ class NodesResourcesSpec
       val data: node.Filter = node.Filter("id", Expression.spel("#DICT.Bar != #DICT.Foo"))
       val request           = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+      Post(s"/nodes/${testProcess.name}/validation", toEntity(request)) ~> withPermissions(
         nodeRoute,
         testPermissionRead
       ) ~> check {
@@ -207,7 +208,7 @@ class NodesResourcesSpec
   test("it should return additional info for process properties") {
     saveProcess(testProcess) {
 
-      Post(s"/properties/${testProcess.id}/additionalInfo", toEntity(processProperties)) ~> withPermissions(
+      Post(s"/properties/${testProcess.name}/additionalInfo", toEntity(processProperties)) ~> withPermissions(
         nodeRoute,
         testPermissionRead
       ) ~> check {
@@ -224,7 +225,7 @@ class NodesResourcesSpec
       val data: node.Filter = node.Filter(blankValue, Expression.spel("true"))
       val request           = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+      Post(s"/nodes/${testProcess.name}/validation", toEntity(request)) ~> withPermissions(
         nodeRoute,
         testPermissionRead
       ) ~> check {
@@ -243,10 +244,10 @@ class NodesResourcesSpec
           metaDataType = StreamMetaData.typeName,
           description = None
         ),
-        id = testProcess.id
+        name = testProcess.name
       )
 
-      Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+      Post(s"/properties/${testProcess.name}/validation", toEntity(request)) ~> withPermissions(
         nodeRoute,
         testPermissionRead
       ) ~> check {
@@ -266,14 +267,14 @@ class NodesResourcesSpec
 
   test("validate scenario id") {
     saveProcess(testProcess) {
-      val blankValue = " "
+      val blankValue = ProcessName(" ")
       val request = PropertiesValidationRequest(
         additionalFields = ProcessAdditionalFields(
           properties = StreamMetaData().toMap ++ Map("numberOfThreads" -> "a", "environment" -> "test"),
           metaDataType = StreamMetaData.typeName,
           description = None
         ),
-        id = blankValue
+        name = blankValue
       )
 
       val expectedErrors = List(
@@ -287,10 +288,10 @@ class NodesResourcesSpec
           )
         ),
         PrettyValidationErrors.formatErrorMessage(
-          ScenarioIdError(BlankId, blankValue, isFragment = false)
+          ScenarioNameError(BlankId, blankValue, isFragment = false)
         )
       )
-      Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+      Post(s"/properties/${testProcess.name}/validation", toEntity(request)) ~> withPermissions(
         nodeRoute,
         testPermissionRead
       ) ~> check {

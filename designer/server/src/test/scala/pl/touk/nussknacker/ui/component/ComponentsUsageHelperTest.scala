@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.definition.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
@@ -127,8 +126,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     .source("source", existingSourceFactory)
     .customNode("custom", "outCustom", otherExistingStreamTransformer2)
     .fragment(
-      fragment.metaData.id,
-      fragment.metaData.id,
+      fragment.name.value,
+      fragment.name.value,
       Nil,
       Map.empty,
       Map(
@@ -214,7 +213,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         Map(
           sid(Source, existingSourceFactory)                    -> 1,
           sid(Sink, existingSinkFactory)                        -> 1,
-          sid(Fragment, fragment.metaData.id)                   -> 1,
+          sid(Fragment, fragment.name.value)                    -> 1,
           sid(CustomComponent, otherExistingStreamTransformer2) -> 2,
           bid(BuiltInComponentInfo.FragmentInputDefinition)     -> 1,
           bid(BuiltInComponentInfo.FragmentOutputDefinition)    -> 1
@@ -317,8 +316,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
             (fragmentDetails, List(ScenarioUsageData("f1")))
           ),
           sid(Sink, existingSinkFactory) -> List((processDetailsWithFragment, List(ScenarioUsageData("sink")))),
-          sid(Fragment, fragment.metaData.id) -> List(
-            (processDetailsWithFragment, List(ScenarioUsageData(fragment.metaData.id)))
+          sid(Fragment, fragment.name.value) -> List(
+            (processDetailsWithFragment, List(ScenarioUsageData(fragment.name.value)))
           ),
           bid(BuiltInComponentInfo.FragmentInputDefinition) -> List(
             (fragmentDetails, List(ScenarioUsageData("start")))

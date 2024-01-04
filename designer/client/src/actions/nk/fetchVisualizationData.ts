@@ -4,9 +4,9 @@ import { displayProcessActivity } from "./displayProcessActivity";
 import { fetchProcessDefinition } from "./processDefinitionData";
 import { handleHTTPError } from "./errors";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
-import { ProcessId } from "../../types";
+import { ProcessName } from "../../types";
 
-export function fetchVisualizationData(processName: ProcessId): ThunkAction {
+export function fetchVisualizationData(processName: ProcessName): ThunkAction {
     return async (dispatch) => {
         try {
             const fetchedProcessDetails = await dispatch(displayCurrentProcessVersion(processName));

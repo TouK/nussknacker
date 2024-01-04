@@ -42,15 +42,15 @@ object FlinkExceptionHandler {
 
 class FlinkExceptionHandler(
     metaData: MetaData,
-    processObjectDependencies: ProcessObjectDependencies,
+    modelDependencies: ProcessObjectDependencies,
     listeners: Seq[ProcessListener],
     classLoader: ClassLoader
 ) extends ExceptionHandler {
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration =
-    RestartStrategyFromConfiguration.readFromConfiguration(processObjectDependencies.config, metaData)
+    RestartStrategyFromConfiguration.readFromConfiguration(modelDependencies.config, metaData)
 
-  private val baseConfig = processObjectDependencies.config.getConfig(exceptionHandlerConfigPath)
+  private val baseConfig = modelDependencies.config.getConfig(exceptionHandlerConfigPath)
 
   protected val consumer: FlinkEspExceptionConsumer = {
     val baseConsumer: FlinkEspExceptionConsumer = extractBaseConsumer(baseConfig)
@@ -68,7 +68,9 @@ class FlinkExceptionHandler(
     consumer.consume(extractor.extractOrThrow(exceptionInfo))
   }
 
-  override def handling[T](nodeComponentInfo: Option[NodeComponentInfo], context: Context)(action: => T): Option[T] =
+  override def handling[T](nodeComponentInfo: Option[NodeComponentInfo], context: Context)(
+      action: => T
+  ): Option[T] =
     try {
       Some(action)
     } catch {

@@ -5,8 +5,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, UserDefinedAdditionalNodeFields}
@@ -16,7 +17,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
 
   test("displayable process encode and decode") {
     val process = DisplayableProcess(
-      "",
+      ProcessName(""),
       ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(),
         ProcessAdditionalFields(Some("a"), Map("field1" -> "value1"), StreamMetaData.typeName)
@@ -27,7 +28,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
           "id",
           Some("out1"),
           "typ1",
-          List(Parameter("name1", Expression.spel("11"))),
+          List(NodeParameter("name1", Expression.spel("11"))),
           Some(UserDefinedAdditionalNodeFields(Some("desc"), None))
         )
       ),
@@ -54,13 +55,13 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
   }
 
   test("decode displayable process in legacy format with typeSpecificProperties") {
-    val givenProcessName    = "foo1"
+    val givenProcessName    = ProcessName("foo1")
     val givenProcessingType = "fooProcessingType"
     val givenCategory       = "FooCategory"
     val givenParallelism    = 10
     val legacyJsonWithNoFields =
       s"""{
-         |  "id" : "$givenProcessName",
+         |  "name" : "$givenProcessName",
          |  "properties" : {
          |    "typeSpecificProperties" : {
          |      "parallelism" : $givenParallelism,

@@ -14,7 +14,7 @@ object MetaVariables {
 
   @Hidden
   def apply(metaData: MetaData): MetaVariables =
-    MetaVariables(metaData.id, properties(metaData))
+    MetaVariables(metaData.name.value, properties(metaData))
 
   @Hidden
   def typingResult(metaData: MetaData): TypingResult =

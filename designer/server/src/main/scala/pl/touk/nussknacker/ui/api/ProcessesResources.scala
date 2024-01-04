@@ -53,13 +53,13 @@ class ProcessesResources(
         get {
           complete {
             processService
-              .getProcessesWithDetails(
+              .getLatestProcessesWithDetails(
                 ScenarioQuery(isArchived = Some(true)),
                 GetScenarioWithDetailsOptions.detailsOnly
               )
           }
         }
-      } ~ path("unarchive" / Segment) { processName =>
+      } ~ path("unarchive" / ProcessNameSegment) { processName =>
         (post & processId(processName)) { processId =>
           canWrite(processId) {
             complete {
@@ -69,7 +69,7 @@ class ProcessesResources(
             }
           }
         }
-      } ~ path("archive" / Segment) { processName =>
+      } ~ path("archive" / ProcessNameSegment) { processName =>
         (post & processId(processName)) { processId =>
           canWrite(processId) {
             complete {
@@ -83,7 +83,7 @@ class ProcessesResources(
         get {
           processesQuery { query =>
             complete {
-              processService.getProcessesWithDetails(
+              processService.getLatestProcessesWithDetails(
                 query,
                 GetScenarioWithDetailsOptions.detailsOnly.withFetchState
               )
@@ -93,7 +93,7 @@ class ProcessesResources(
       } ~ path("processesDetails") {
         (get & processesQuery & skipValidateAndResolveParameter) { (query, skipValidateAndResolve) =>
           complete {
-            processService.getProcessesWithDetails(
+            processService.getLatestProcessesWithDetails(
               query,
               GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = false)
             )
@@ -103,14 +103,14 @@ class ProcessesResources(
         get {
           complete {
             processService
-              .getProcessesWithDetails(
+              .getLatestProcessesWithDetails(
                 ScenarioQuery(isFragment = Some(false), isArchived = Some(false)),
                 GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
               )
               .map(_.flatMap(details => details.state.map(details.name -> _)).toMap)
           }
         }
-      } ~ path("processes" / "import" / Segment) { processName =>
+      } ~ path("processes" / "import" / ProcessNameSegment) { processName =>
         processId(processName) { processId =>
           (canWrite(processId) & post) {
             fileUpload("process") { case (_, byteSource) =>
@@ -122,14 +122,14 @@ class ProcessesResources(
             }
           }
         }
-      } ~ path("processes" / Segment / "deployments") { processName =>
+      } ~ path("processes" / ProcessNameSegment / "deployments") { processName =>
         processId(processName) { processId =>
           complete {
             // FIXME: We should provide Deployment definition and return there all deployments, not actions..
             processService.getProcessActions(processId.id)
           }
         }
-      } ~ path("processes" / Segment) { processName =>
+      } ~ path("processes" / ProcessNameSegment) { processName =>
         processId(processName) { processId =>
           (delete & canWrite(processId)) {
             complete {
@@ -152,24 +152,24 @@ class ProcessesResources(
             }
           } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
             complete {
-              processService.getProcessWithDetails(
+              processService.getLatestProcessWithDetails(
                 processId,
                 GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = true)
               )
             }
           }
         }
-      } ~ path("processes" / Segment / "rename" / Segment) { (processName, newName) =>
+      } ~ path("processes" / ProcessNameSegment / "rename" / ProcessNameSegment) { (processName, newName) =>
         (put & processId(processName)) { processId =>
           canWrite(processId) {
             complete {
               processService
-                .renameProcess(processId, ProcessName(newName))
+                .renameProcess(processId, newName)
                 .withListenerNotifySideEffect(response => OnRenamed(processId.id, response.oldName, response.newName))
             }
           }
         }
-      } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
+      } ~ path("processes" / ProcessNameSegment / VersionIdSegment) { (processName, versionId) =>
         (get & processId(processName) & skipValidateAndResolveParameter) { (processId, skipValidateAndResolve) =>
           complete {
             processService.getProcessWithDetails(
@@ -180,7 +180,7 @@ class ProcessesResources(
             )
           }
         }
-      } ~ path("processes" / Segment / Segment) { (processName, category) =>
+      } ~ path("processes" / ProcessNameSegment / Segment) { (processName, category) =>
         authorize(user.can(category, Permission.Write)) {
           optionalHeaderValue(RemoteUserName.extractFromHeader) { remoteUserName =>
             canOverrideUsername(category, remoteUserName)(user) {
@@ -189,7 +189,7 @@ class ProcessesResources(
                   complete {
                     processService
                       .createProcess(
-                        CreateProcessCommand(ProcessName(processName), category, isFragment, remoteUserName)
+                        CreateProcessCommand(processName, category, isFragment, remoteUserName)
                       )
                       .withListenerNotifySideEffect(response => OnSaved(response.id, response.versionId))
                       .map(response =>
@@ -204,23 +204,23 @@ class ProcessesResources(
             }
           }
         }
-      } ~ path("processes" / Segment / "status") { processName =>
+      } ~ path("processes" / ProcessNameSegment / "status") { processName =>
         (get & processId(processName)) { processId =>
           complete {
             implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
             deploymentService.getProcessState(processId).map(ToResponseMarshallable(_))
           }
         }
-      } ~ path("processes" / Segment / "toolbars") { processName =>
+      } ~ path("processes" / ProcessNameSegment / "toolbars") { processName =>
         (get & processId(processName)) { processId =>
           complete {
             processService
-              .getProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
+              .getLatestProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
               .map(_.toEntity)
               .map(processToolbarService.getProcessToolbarSettings)
           }
         }
-      } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
+      } ~ path("processes" / "category" / ProcessNameSegment / Segment) { (processName, category) =>
         (post & processId(processName)) { processId =>
           hasAdminPermission(user) {
             complete {
@@ -232,7 +232,7 @@ class ProcessesResources(
             }
           }
         }
-      } ~ path("processes" / Segment / VersionIdSegment / "compare" / VersionIdSegment) {
+      } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
         (processName, thisVersion, otherVersion) =>
           (get & processId(processName)) { processId =>
             complete {

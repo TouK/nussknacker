@@ -10,7 +10,7 @@ import { NodeRow } from "./graph/node-modal/NodeDetailsContent/NodeStyled";
 import { NodeLabelStyled } from "./graph/node-modal/node";
 import { FieldError } from "./graph/node-modal/editors/Validators";
 
-export type FormValue = { processId: string; processCategory: string };
+export type FormValue = { processName: string; processCategory: string };
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
     fieldErrors: FieldError[];
@@ -44,9 +44,9 @@ export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormP
                         <div className="node-value">
                             <NodeInput
                                 type="text"
-                                id="newProcessId"
-                                value={value.processId}
-                                onChange={(e) => onFieldChange("processId", e.target.value)}
+                                id="newProcessName"
+                                value={value.processName}
+                                onChange={(e) => onFieldChange("processName", e.target.value)}
                             />
                             <ValidationLabels fieldErrors={fieldErrors} />
                         </div>

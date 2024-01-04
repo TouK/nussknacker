@@ -3,31 +3,30 @@ package pl.touk.nussknacker.engine.management
 import java.io.{File, FileOutputStream}
 import java.net.URL
 import java.nio.file.Files
-import java.util.jar.{JarEntry, JarInputStream, JarOutputStream}
+import java.util.jar.{JarEntry, JarOutputStream}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.{FileUtils, IOUtils}
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
 
 import scala.util.Using
 
-class FlinkModelJar extends LazyLogging {
+class FlinkModelJarProvider(modelUrls: List[URL], includeDropwizardLibsImplicitly: Boolean = true) extends LazyLogging {
 
-  // TODO: handle multiple models?
   private var modelFile: Option[File] = None
 
   // we want to have *different* file names for *different* model data (e.g. after rebuild etc.)
   // currently we just generate random file names
-  def buildJobJar(modelData: BaseModelData, includeDropwizardLibsImplicitly: Boolean = true): File = synchronized {
+  def getJobJar(): File = synchronized {
     modelFile match {
-      case Some(file) => file
-      case None =>
-        val newFile = prepareModelFile(modelData, includeDropwizardLibsImplicitly)
+      // check whether model file exists - temp files may disappear if application has been running for a long time
+      case Some(file) if file.exists() => file
+      case _ =>
+        val newFile = prepareModelFile()
         modelFile = Some(newFile)
         newFile
     }
   }
 
-  protected def generateModelFileName(): File = {
+  private def generateModelFileName(): File = {
     // currently we want to have one such file for one nussknacker execution
     val tempFile = Files.createTempFile("tempModelJar", ".jar").toFile
     tempFile.deleteOnExit()
@@ -48,11 +47,11 @@ class FlinkModelJar extends LazyLogging {
     additionalJarUrls
   }
 
-  private def prepareModelFile(modelData: BaseModelData, includeDropwizardLibsImplicitly: Boolean): File = {
+  private def prepareModelFile(): File = {
     val tempFile = generateModelFileName()
     val implicitlyIncludedArtifacts =
       if (includeDropwizardLibsImplicitly)
-        additionalArtifactsToIncludeInJar().toSet -- modelData.modelClassLoaderUrls.toSet
+        additionalArtifactsToIncludeInJar().toSet -- modelUrls.toSet
       else Nil
     if (implicitlyIncludedArtifacts.nonEmpty) {
       logger.warn(s"""Including these files to model jar implicitly: [${implicitlyIncludedArtifacts.mkString(
@@ -62,12 +61,12 @@ class FlinkModelJar extends LazyLogging {
         s"""This implicit inclusion is only transitional, and you should add above files to classPath field in your configuration!!!"""
       )
     }
-    implicitlyIncludedArtifacts.toList ++ modelData.modelClassLoaderUrls match {
+    implicitlyIncludedArtifacts.toList ++ modelUrls match {
       case single :: Nil if single.getPath.endsWith(".jar") =>
-        logger.debug("Single jar file detected, using directly to upload to Flink")
+        logger.info(s"Single model URL detected, writing to ${tempFile.getAbsolutePath}")
         FileUtils.copyInputStreamToFile(single.openStream(), tempFile)
       case other =>
-        logger.info("Multiple URL detected in classpath, embedding in lib folder")
+        logger.info(s"Multiple model URLs detected, embedding in lib folder and writing to ${tempFile.getAbsolutePath}")
         copyEntriesToLib(tempFile, other)
     }
     tempFile

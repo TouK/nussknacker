@@ -13,7 +13,7 @@ import pl.touk.nussknacker.test.{
 }
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
 
-class NotificationApiTest
+class NotificationApiSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager
@@ -50,29 +50,8 @@ class NotificationApiTest
             equalTo("[]")
           )
 
-        val deployedProcessName = ProcessName("process-execution-canceled")
-        val processId           = createDeployedProcess(deployedProcessName)
-
-        given()
-          .auth()
-          .basic("admin", "admin")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/notifications")
-          .Then()
-          .statusCode(200)
-          .body(
-            matchJsonWithRegexValues(
-              s"""[{
-                   |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                   |  "scenarioName": "$deployedProcessName",
-                   |  "message": "Deployment finished",
-                   |  "type": null,
-                   |  "toRefresh": [ "versions", "activity", "state" ]
-                   |}]""".stripMargin
-            )
-          )
-
-        prepareCancel(processId)
+        val processName = ProcessName("process-execution-canceled")
+        createDeployedCanceledProcess(processName)
 
         given()
           .auth()
@@ -85,14 +64,14 @@ class NotificationApiTest
             matchJsonWithRegexValues(
               s"""[{
                  |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                 |  "scenarioName": "$deployedProcessName",
+                 |  "scenarioName": "$processName",
                  |  "message": "Deployment finished",
                  |  "type": null,
                  |  "toRefresh": [ "versions", "activity", "state" ]
                  |},
                  |{
                  |   "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                 |   "scenarioName": "$deployedProcessName",
+                 |   "scenarioName": "$processName",
                  |   "message": "Cancel finished",
                  |   "type": null,
                  |   "toRefresh": [ "versions", "activity", "state" ]

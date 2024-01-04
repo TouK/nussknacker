@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addComment, deleteComment } from "../../actions/nk";
-import { getProcessId, getProcessVersionId } from "../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
 import CommentInput from "./CommentInput";
 import { useWindows } from "../../windowManager";
 import * as DialogMessages from "../../common/DialogMessages";
@@ -15,7 +15,7 @@ function ProcessComments(): JSX.Element {
     const dispatch = useDispatch();
     const { confirm } = useWindows();
 
-    const processId = useSelector(getProcessId);
+    const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
 
@@ -28,21 +28,21 @@ function ProcessComments(): JSX.Element {
                 denyText: "NO",
                 onConfirmCallback: async (confirmed) => {
                     if (confirmed) {
-                        await dispatch(deleteComment(processId, comment.id));
+                        await dispatch(deleteComment(processName, comment.id));
                     }
                     setPending(false);
                 },
             });
         },
-        [confirm, dispatch, processId],
+        [confirm, dispatch, processName],
     );
 
     const _addComment = useCallback(async () => {
         setPending(true);
-        await dispatch(addComment(processId, processVersionId, comment));
+        await dispatch(addComment(processName, processVersionId, comment));
         setPending(false);
         setComment("");
-    }, [dispatch, processId, processVersionId, comment]);
+    }, [dispatch, processName, processVersionId, comment]);
 
     const onInputChange = useCallback((e) => setComment(e.target.value), []);
 

@@ -10,7 +10,12 @@ import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInf
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies, Source}
+import pl.touk.nussknacker.engine.api.process.{
+  ComponentUseCase,
+  ProcessObjectDependencies,
+  ServiceExecutionContext,
+  Source
+}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -55,7 +60,7 @@ object ScenarioInterpreterFactory {
 
   private type ScenarioInterpreterType[F[_], Input] = ScenarioInputBatch[Input] => InterpreterOutputType[F]
 
-  def createInterpreter[F[_], Input, Res <: AnyRef](
+  def createInterpreter[F[_]: Monad, Input, Res <: AnyRef](
       process: CanonicalProcess,
       modelData: ModelData,
       additionalListeners: List[ProcessListener] = Nil,
@@ -68,10 +73,8 @@ object ScenarioInterpreterFactory {
   ): ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Input, Res]] =
     modelData.withThisAsContextClassLoader {
 
-      implicit val monad: Monad[F] = shape.monad
-
-      val creator                   = modelData.configCreator
-      val processObjectDependencies = ProcessObjectDependencies(modelData.modelConfig, modelData.objectNaming)
+      val creator           = modelData.configCreator
+      val modelDependencies = ProcessObjectDependencies(modelData.modelConfig, modelData.objectNaming)
 
       val allNodes = process.collectAllNodes
       val countingListeners = List(
@@ -79,10 +82,9 @@ object ScenarioInterpreterFactory {
         new ExceptionCountingListener,
         new EndCountingListener(allNodes)
       )
-      val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
+      val listeners = creator.listeners(modelDependencies) ++ additionalListeners ++ countingListeners
 
       val compilerData = ProcessCompilerData.prepare(
-        modelData.modelConfig,
         modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
         listeners,
@@ -154,7 +156,7 @@ object ScenarioInterpreterFactory {
 
   }
 
-  private case class InvokerCompiler[F[_], Input, Res <: AnyRef](
+  private case class InvokerCompiler[F[_]: Monad, Input, Res <: AnyRef](
       compiledProcess: CompiledProcessParts,
       processCompilerData: ProcessCompilerData,
       componentUseCase: ComponentUseCase,
@@ -169,8 +171,6 @@ object ScenarioInterpreterFactory {
 
     private type PartInterpreterType = DataBatch => InterpreterOutputType
 
-    private implicit val monad: Monad[F] = shape.monad
-
     private val lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
       override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps
 
@@ -182,7 +182,7 @@ object ScenarioInterpreterFactory {
     def compile: CompilationResult[ScenarioInterpreterType] = {
       val emptyPartInvocation: ScenarioInterpreterType = (inputs: ScenarioInputBatch[Input]) =>
         Monoid.combineAll(inputs.value.map { case (source, input) =>
-          monad.pure[ResultType[PartResult]](
+          Monad[F].pure[ResultType[PartResult]](
             Writer(
               NuExceptionInfo(
                 Some(NodeComponentInfo(source.value, ComponentType.Source, "source")),
@@ -226,8 +226,10 @@ object ScenarioInterpreterFactory {
                       interpreter,
                       a,
                       compiledSource andThen { validatedCtx =>
-                        validatedCtx
-                          .fold(errs => monad.pure(Writer(errs.toList, List.empty)), ctx => part(DataBatch(List(ctx))))
+                        validatedCtx.fold(
+                          errs => Monad[F].pure(Writer(errs.toList, List.empty)),
+                          ctx => part(DataBatch(List(ctx)))
+                        )
                       }
                     )
                   )
@@ -323,7 +325,7 @@ object ScenarioInterpreterFactory {
 
     private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
       processCompilerData.interpreter
-        .interpret[F](node, compiledProcess.metaData, ctx)
+        .interpret[F](node, compiledProcess.metaData, ctx, ServiceExecutionContext(ec))
         .map(listOfResults => {
           val results = listOfResults.collect { case Left(value) =>
             value
@@ -340,13 +342,13 @@ object ScenarioInterpreterFactory {
     )(pr: PartReference, irs: List[InterpretationResult]): InterpreterOutputType = {
       val results: InterpreterOutputType = pr match {
         case _: DeadEndReference =>
-          monad.pure[ResultType[PartResult]](Writer.value(Nil))
-        case r: JoinReference =>
-          monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => JoinResult(r, ir.finalContext))))
+          Monad[F].pure[ResultType[PartResult]](Writer.value(Nil))
         case NextPartReference(id) =>
           partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(DataBatch(irs.map(_.finalContext)))
+        case r: JoinReference =>
+          Monad[F].pure[ResultType[PartResult]](Writer.value(irs.map(ir => JoinResult(r, ir.finalContext))))
         case er: EndingReference => // FIXME: do we need it at all
-          monad.pure[ResultType[PartResult]](
+          Monad[F].pure[ResultType[PartResult]](
             Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, null.asInstanceOf[Res])))
           )
       }
@@ -427,7 +429,7 @@ object ScenarioInterpreterFactory {
         list: ResultType[In],
         action: List[In] => F[ResultType[Out]]
     ): F[ResultType[Out]] = {
-      WriterT(monad.pure(list.run))
+      WriterT(Monad[F].pure(list.run))
         .flatMap(l => WriterT(action(l).map(_.run)))
         .run
         .map(k => Writer.apply(k._1, k._2))

@@ -75,7 +75,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
-        .getRawProcessesWithDetails[DisplayableProcess](ScenarioQuery(isArchived = Some(false)))
+        .getLatestRawProcessesWithDetails[DisplayableProcess](ScenarioQuery(isArchived = Some(false)))
         .futureValue
       result shouldBe expected
     }
@@ -95,7 +95,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
-        .getRawProcessesWithDetails[DisplayableProcess](ScenarioQuery(isArchived = Some(true)))
+        .getLatestRawProcessesWithDetails[DisplayableProcess](ScenarioQuery(isArchived = Some(true)))
         .futureValue
       result shouldBe expected
     }
@@ -114,7 +114,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
       implicit val implicitUser: LoggedUser = user
       val result = dBProcessService
-        .getRawProcessesWithDetails[DisplayableProcess](
+        .getLatestRawProcessesWithDetails[DisplayableProcess](
           ScenarioQuery(isFragment = Some(true), isArchived = Some(false))
         )
         .futureValue
@@ -126,7 +126,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     val dBProcessService = createDbProcessService(processes)
 
     val categoryDisplayable =
-      ProcessTestData.sampleDisplayableProcess.copy(id = category1Process.name.value, category = Category1)
+      ProcessTestData.sampleDisplayableProcess.copy(name = category1Process.name, category = Category1)
     val categoryStringData = ProcessConverter.fromDisplayable(categoryDisplayable).asJson.spaces2
     val baseProcessData    = ProcessConverter.fromDisplayable(ProcessTestData.sampleDisplayableProcess).asJson.spaces2
 
