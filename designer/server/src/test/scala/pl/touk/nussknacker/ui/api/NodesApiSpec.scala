@@ -62,7 +62,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/additionalInfo")
             .Then()
             .statusCode(200)
             .body(
@@ -88,7 +88,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/additionalInfo")
             .Then()
             .statusCode(200)
             .body(
@@ -141,7 +141,7 @@ class NodesApiSpec
                  |    "type": "Enricher"
                  |}""".stripMargin)
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/additionalInfo")
             .Then()
             .statusCode(401)
             .body(
@@ -202,7 +202,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
             .Then()
             .statusCode(200)
             .body(
@@ -269,7 +269,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
             .Then()
             .statusCode(200)
             .body(
@@ -362,7 +362,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
             .Then()
             .statusCode(200)
             .body("validationErrors[0].typ", equalTo("ExpressionParserCompilationError"))
@@ -411,7 +411,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
             .Then()
             .statusCode(200)
             .body(equalsJson(s"""{
@@ -463,7 +463,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
             .Then()
             .statusCode(200)
             .body(equalsJson(s"""{
@@ -540,7 +540,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
             .Then()
             .statusCode(401)
             .body(
@@ -578,7 +578,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/additionalInfo")
             .Then()
             .statusCode(200)
             .body(
@@ -615,7 +615,7 @@ class NodesApiSpec
             .auth()
             .none()
             .when()
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/additionalInfo")
             .Then()
             .statusCode(401)
             .body(
@@ -646,10 +646,10 @@ class NodesApiSpec
                  |        },
                  |        "metaDataType": "StreamMetaData"
                  |    },
-                 |    "id": "test"
+                 |    "name": "test"
                  |}""".stripMargin
             )
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/validation")
+            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
             .Then()
             .statusCode(200)
             .body("validationErrors[0].typ", equalTo("InvalidPropertyFixedValue"))
@@ -681,10 +681,10 @@ class NodesApiSpec
                  |        },
                  |        "metaDataType": "StreamMetaData"
                  |    },
-                 |    "id": " "
+                 |    "name": " "
                  |}""".stripMargin
             )
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/validation")
+            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
             .Then()
             .statusCode(200)
             .body(
@@ -693,7 +693,7 @@ class NodesApiSpec
                    |    "expressionType": null,
                    |    "validationErrors": [
                    |        {
-                   |            "typ": "ScenarioIdError",
+                   |            "typ": "ScenarioNameError",
                    |            "message": "Scenario name cannot be blank",
                    |            "description": "Blank scenario name",
                    |            "fieldName": "$$id",
@@ -765,7 +765,7 @@ class NodesApiSpec
             .and()
             .auth()
             .none()
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/validation")
+            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
             .Then()
             .statusCode(401)
             .body(
