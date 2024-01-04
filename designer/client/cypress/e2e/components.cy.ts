@@ -104,7 +104,9 @@ describe("Components list", () => {
         cy.get("[data-id=builtin-filter] [data-testid=LinkIcon]").click();
         cy.contains(/^status$/i).click();
         cy.contains(/^running$/i).click();
+        cy.get("body").click();
         cy.contains(/^no rows$/i).should("be.visible");
+        cy.contains(/^status$/i).click();
         cy.contains(/^not deployed$/i).click();
         cy.matchQuery("?STATUS=RUNNING&STATUS=NOT_DEPLOYED");
         cy.get("body").click();
