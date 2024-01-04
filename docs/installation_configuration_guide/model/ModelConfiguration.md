@@ -98,6 +98,7 @@ in most cases you should not need to defined these settings. The settings you ca
   * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `RegexpParameterValidator`
   * `defaultValue`
   * `label`
+  * `hintText`
 
 Example (see [dev application config](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/resources/defaultModelConfig.conf#L18) for more examples):
 ```
@@ -115,7 +116,8 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
                 description: "really has to match..."
               }
             ]
-            label: "Customer id (from CRM!)
+            label: "Customer id (from CRM!)"
+            hintText: "Input customerID in proper format"
         }
       }
       docsUrl: "https://en.wikipedia.org/wiki/Customer_service"

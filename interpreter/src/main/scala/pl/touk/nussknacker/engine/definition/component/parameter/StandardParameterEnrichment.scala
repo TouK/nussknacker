@@ -34,7 +34,14 @@ object StandardParameterEnrichment {
         DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, finalEditor)
       )
     )
-    original.copy(editor = finalEditor, validators = finalValidators, defaultValue = finalDefaultValue)
+    val finalHintText = original.hintText.orElse(parameterConfig.hintText)
+
+    original.copy(
+      editor = finalEditor,
+      validators = finalValidators,
+      defaultValue = finalDefaultValue,
+      hintText = finalHintText
+    )
   }
 
   private def extractAdditionalValidator(

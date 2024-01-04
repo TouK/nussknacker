@@ -14,7 +14,7 @@ describe("Fragment", () => {
 
     it("should allow adding input parameters and display used fragment graph in modal", () => {
         const toggleSettings = (fieldNumber: number) => {
-            cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='SettingsButton']").click();
+            cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
         };
 
         cy.visitNewFragment(seed, "fragment").as("fragmentName");
@@ -115,7 +115,7 @@ describe("Fragment", () => {
             .siblings()
             .eq(0)
             .find("[type='ERROR']")
-            .should("exist");
+            .should("not.exist");
 
         cy.get("@window").find("[data-testid='settings:6']").matchImage();
 
