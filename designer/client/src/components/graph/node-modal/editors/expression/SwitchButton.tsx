@@ -3,6 +3,11 @@ import { ButtonWithFocus } from "../../../../withFocus";
 import { styled, useTheme } from "@mui/material";
 import { EditorType } from "./Editor";
 import { css } from "@emotion/css";
+import CodeIcon from "./icons/code.svg";
+import TextIcon from "./icons/code_off.svg";
+import ListIcon from "./icons/list.svg";
+import ScheduleIcon from "./icons/schedule.svg";
+import DateIcon from "./icons/date_range.svg";
 
 export const SwitchButton = styled(ButtonWithFocus)(({ disabled, theme }) => ({
     width: 35,
@@ -15,13 +20,10 @@ export const SwitchButton = styled(ButtonWithFocus)(({ disabled, theme }) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    "& > svg": {
+        width: "100%",
+    },
 }));
-
-import CodeIcon from "./icons/code.svg";
-import TextIcon from "./icons/code_off.svg";
-import ListIcon from "./icons/list.svg";
-import ScheduleIcon from "./icons/schedule.svg";
-import DateIcon from "./icons/date_range.svg";
 
 function getTypeIcon(type: EditorType) {
     switch (type) {
