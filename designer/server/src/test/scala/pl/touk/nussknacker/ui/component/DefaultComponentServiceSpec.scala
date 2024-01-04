@@ -5,9 +5,18 @@ import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{
+  AdditionalUIConfigProvider,
+  BuiltInComponentInfo,
+  ComponentGroupName,
+  ComponentId,
+  ComponentInfo
+}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{CategoryConfig, ProcessingTypeData}
@@ -25,18 +34,16 @@ import pl.touk.nussknacker.ui.api.helpers.{
 }
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
-import pl.touk.nussknacker.ui.component.DefaultsComponentGroupName._
-import pl.touk.nussknacker.ui.component.DefaultsComponentIcon._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, ModelDefinitionEnricher}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import java.net.URI
 
@@ -250,7 +257,7 @@ class DefaultComponentServiceSpec
       ),
       sharedComponent(
         ComponentInfo(Service, SharedProvidedComponentName),
-        ProcessorIcon,
+        ServiceIcon,
         executionGroupName,
       ),
       sharedComponent(
@@ -282,7 +289,7 @@ class DefaultComponentServiceSpec
     ),
     marketingComponent(
       ComponentInfo(Service, FuseBlockServiceName),
-      ProcessorIcon,
+      ServiceIcon,
       executionGroupName
     ),
     marketingComponent(ComponentInfo(Sink, MonitorName), SinkIcon, executionGroupName),
@@ -295,7 +302,7 @@ class DefaultComponentServiceSpec
     marketingComponent(ComponentInfo(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
     marketingComponent(
       ComponentInfo(Service, SingleProvidedComponentName),
-      ProcessorIcon,
+      ServiceIcon,
       executionGroupName
     ),
   )
@@ -303,14 +310,14 @@ class DefaultComponentServiceSpec
   private def prepareFraudComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
     fraudComponent(ComponentInfo(CustomComponent, CustomStreamName), CustomComponentIcon, CustomGroupName),
     fraudComponent(ComponentInfo(Service, CustomerDataEnricherName), EnricherIcon, EnrichersGroupName),
-    fraudComponent(ComponentInfo(Service, FuseBlockServiceName), ProcessorIcon, executionGroupName),
+    fraudComponent(ComponentInfo(Service, FuseBlockServiceName), ServiceIcon, executionGroupName),
     fraudComponent(
       ComponentInfo(CustomComponent, OptionalCustomStreamName),
       CustomComponentIcon,
       OptionalEndingCustomGroupName
     ),
     fraudComponent(ComponentInfo(Sink, SecondMonitorName), SinkIcon, executionGroupName),
-    fraudComponent(ComponentInfo(Service, SingleProvidedComponentName), ProcessorIcon, executionGroupName),
+    fraudComponent(ComponentInfo(Service, SingleProvidedComponentName), ServiceIcon, executionGroupName),
     fraudComponent(ComponentInfo(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
     fraudComponent(ComponentInfo(Sink, FraudSinkName), SinkIcon, executionGroupName),
   )
@@ -472,7 +479,7 @@ class DefaultComponentServiceSpec
   private val providerComponents =
     new DynamicComponentProvider().create(ConfigFactory.empty, ProcessObjectDependencies.empty)
 
-  private val processingTypeDataMap: Map[Category, ProcessingTypeData] = Map(
+  private val processingTypeDataMap: Map[ProcessingType, ProcessingTypeData] = Map(
     Streaming -> (LocalModelData(
       streamingConfig,
       providerComponents,
@@ -492,7 +499,15 @@ class DefaultComponentServiceSpec
   private val processingTypeDataProvider = ProcessingTypeDataProvider(
     processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
     (ComponentIdProviderFactory.createUnsafe(processingTypeDataMap, categoryService), categoryService)
-  )
+  ).mapValues { processingTypeData =>
+    val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(AdditionalUIConfigProvider.empty)
+    val modelDefinitionEnricher = ModelDefinitionEnricher(
+      processingTypeData.modelData,
+      additionalUIConfigFinalizer,
+      processingTypeData.staticModelDefinition
+    )
+    (processingTypeData, modelDefinitionEnricher)
+  }
 
   it should "return components for each user" in {
     val processes      = List(MarketingProcess, FraudProcess, ArchivedFraudProcess)
@@ -502,8 +517,7 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        createFragmentRepository(fragmentFromCategories.toList),
-        TestAdditionalUIConfigProvider
+        createFragmentRepository(fragmentFromCategories.toList)
       )
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
@@ -578,19 +592,26 @@ class DefaultComponentServiceSpec
       ), CategoryMarketing),
       Fraud -> (LocalModelData(wrongConfig, providerComponents, WronglyConfiguredConfigCreator), CategoryFraud)
     ).map { case (processingType, (modelData, category)) =>
-      processingType -> ProcessingTypeData.createProcessingTypeData(
+      val processingTypeData = ProcessingTypeData.createProcessingTypeData(
         MockManagerProvider,
         new MockDeploymentManager,
         modelData,
         ConfigFactory.empty(),
         CategoryConfig(category)
       )
+      // FIXME: remove this duplication, higher level of test (validations are still not used in production code)
+      val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(AdditionalUIConfigProvider.empty)
+      val modelDefinitionEnricher = ModelDefinitionEnricher(
+        processingTypeData.modelData,
+        additionalUIConfigFinalizer,
+        processingTypeData.staticModelDefinition
+      )
+      processingType -> (processingTypeData, modelDefinitionEnricher)
     }
-    val componentObjectsService = new ComponentObjectsService(categoryService)
-    val componentObjectsMap =
-      badProcessingTypeDataMap.transform(componentObjectsService.prepareWithoutFragmentsAndAdditionalUIConfigs)
-    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.transform {
-      case (_, componentsObjects) => componentsObjects.config
+    val staticDefinitions = badProcessingTypeDataMap.mapValuesNow(_._1.staticModelDefinition)
+
+    val componentIdProvider = new DefaultComponentIdProvider({ case (processingType, info) =>
+      staticDefinitions.get(processingType).flatMap(_.getComponent(info)).map(_.componentConfig)
     })
 
     val expectedWrongConfigurations = List(
@@ -632,6 +653,17 @@ class DefaultComponentServiceSpec
       )
     )
 
+    val componentObjectsService = new ComponentObjectsService(categoryService)
+    val componentObjectsMap =
+      badProcessingTypeDataMap.transform { case (processingType, (processingTypeData, modelDefinitionEnricher)) =>
+        componentObjectsService.prepare(
+          processingType,
+          processingTypeData,
+          modelDefinitionEnricher,
+          AdminUser("admin", "admin"),
+          List.empty
+        )
+      }
     val wrongConfigurations = intercept[ComponentConfigurationException] {
       ComponentsValidator.checkUnsafe(componentObjectsMap, componentIdProvider)
     }.wrongConfigurations
@@ -663,8 +695,7 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        createFragmentRepository(List(FraudFragment)),
-        TestAdditionalUIConfigProvider
+        createFragmentRepository(List(FraudFragment))
       )
 
     val testingData = Table(
@@ -737,8 +768,7 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        createFragmentRepository(List.empty),
-        TestAdditionalUIConfigProvider
+        createFragmentRepository(List.empty)
       )
     val notExistComponentId = ComponentId("not-exist")
     val result              = defaultComponentService.getComponentUsages(notExistComponentId)(admin).futureValue

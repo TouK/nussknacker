@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
@@ -22,17 +21,15 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
 
   private val overriddenId = ComponentId("overriddenId")
 
-  private val componentIdProvider = new DefaultComponentIdProvider(
-    Map(
-      processingType -> ComponentsUiConfig(
-        Map(
-          componentNameToOverride -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId))
-        )
-      )
-    )
-  )
+  private val componentIdProvider = new DefaultComponentIdProvider({
+    case (_, ComponentInfo(_, `componentNameToOverride`)) =>
+      Some(SingleComponentConfig.zero.copy(componentId = Some(overriddenId)))
+    case _ =>
+      None
+  })
 
-  private val notBuiltIntComponents = ComponentType.NotBuiltInComponentTypes.map(ComponentInfo(_, componentName))
+  private val notBuiltIntComponents = (ComponentType.values - ComponentType.BuiltIn).toList
+    .map(ComponentInfo(_, componentName))
 
   it should "create ComponentId" in {
     val testingData = Table(
@@ -57,15 +54,9 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
     val componentsWithRestrictedType =
       BuiltInComponentInfo.All ++ List(ComponentInfo(ComponentType.Fragment, componentName))
 
-    val provider = new DefaultComponentIdProvider(
-      Map(
-        processingType -> ComponentsUiConfig(
-          componentsWithRestrictedType
-            .map(_.name -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId)))
-            .toMap
-        )
-      )
-    )
+    val provider = new DefaultComponentIdProvider({ (_, _) =>
+      Some(SingleComponentConfig.zero.copy(componentId = Some(overriddenId)))
+    })
 
     componentsWithRestrictedType.foreach(componentInfo => {
       intercept[IllegalArgumentException] {

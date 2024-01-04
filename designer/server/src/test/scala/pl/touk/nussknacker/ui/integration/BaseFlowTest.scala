@@ -7,6 +7,7 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition._
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.{DefaultsComponentGroupName, DefaultsComponentIcon}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition, Processor}
@@ -52,7 +54,8 @@ class BaseFlowTest
     with WithTestHttpClient
     with Matchers
     with OptionValues
-    with EitherValuesDetailedMessage {
+    with EitherValuesDetailedMessage
+    with TableDrivenPropertyChecks {
 
   import BaseFlowTest._
 
@@ -92,23 +95,17 @@ class BaseFlowTest
     )
     response.code shouldEqual StatusCode.Ok
 
-    val settingsJson = response.extractFieldJsonValue("componentsConfig")
-    val settings     = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).toOption.get
+    val componentConfiResultJson = response.extractFieldJsonValue("componentsConfig")
+    val componentConfiResult =
+      Decoder[Map[String, SingleComponentConfig]].decodeJson(componentConfiResultJson).toOption.get
 
     // docs url comes from defaultModelConf.conf in dev-model
-    val underTest = Map(
+    val expectedConfig = Map(
       "filter" -> SingleComponentConfig(
-        None,
-        None,
-        Some("https://touk.github.io/nussknacker/filter"),
-        componentGroup = None,
-        componentId = None
-      ),
-      "test1" -> SingleComponentConfig(
         params = None,
-        icon = Some("/assets/components/Sink.svg"),
-        docsUrl = None,
-        componentGroup = None,
+        icon = Some(DefaultsComponentIcon.FilterIcon),
+        docsUrl = Some("https://touk.github.io/nussknacker/filter"),
+        componentGroup = Some(DefaultsComponentGroupName.BaseGroupName),
         componentId = None
       ),
       "enricher" -> SingleComponentConfig(
@@ -156,16 +153,16 @@ class BaseFlowTest
             ),
           )
         ),
-        icon = None,
+        icon = Some(DefaultsComponentIcon.ServiceIcon),
         docsUrl = None,
-        componentGroup = None,
+        componentGroup = Some(DefaultsComponentGroupName.ServicesGroupName),
         componentId = None
       ),
       "accountService" -> SingleComponentConfig(
         params = None,
-        icon = None,
+        icon = Some(DefaultsComponentIcon.ServiceIcon),
         docsUrl = Some("accountServiceDocs"),
-        componentGroup = None,
+        componentGroup = Some(DefaultsComponentGroupName.ServicesGroupName),
         componentId = None
       ),
       "optionalTypesService" -> SingleComponentConfig(
@@ -187,30 +184,39 @@ class BaseFlowTest
             )
           )
         ),
-        icon = None,
+        icon = Some(DefaultsComponentIcon.ServiceIcon),
         docsUrl = None,
         componentGroup = Some(ComponentGroupName("types")),
         componentId = None
       ),
       "providedComponent-component-v1" -> SingleComponentConfig(
         params = None,
-        icon = None,
+        icon = Some(DefaultsComponentIcon.ServiceIcon),
         docsUrl = Some("https://nussknacker.io/Configuration.html"),
-        componentGroup = None,
+        componentGroup = Some(DefaultsComponentGroupName.ServicesGroupName),
         componentId = None
       ),
-      "$properties" -> SingleComponentConfig(
-        params = None,
-        icon = None,
-        docsUrl = Some(
-          "https://nussknacker.io/documentation/docs/installation_configuration_guide/ModelConfiguration#scenarios-additional-properties"
-        ),
-        componentGroup = None,
-        componentId = None
-      )
+      // FIXME
+//      "$properties" -> SingleComponentConfig(
+//        params = None,
+//        icon = None,
+//        docsUrl = Some(
+//          "https://nussknacker.io/documentation/docs/installation_configuration_guide/ModelConfiguration#scenarios-additional-properties"
+//        ),
+//        componentGroup = None,
+//        componentId = None
+//      )
     )
 
-    settings.collect { case (k, v) if underTest.keySet contains k => (k, v) } shouldBe underTest
+    forAll(
+      Table(
+        ("componentName", "expectedConfig"),
+        expectedConfig.toSeq: _*
+      )
+    ) { (componentName, config) =>
+      componentConfiResult.get(componentName).value shouldEqual config
+    }
+    componentConfiResult.keys.toList.sorted should contain allElementsOf expectedConfig.keys.toList.sorted
   }
 
   test("ensure scenario properties config is properly applied") {

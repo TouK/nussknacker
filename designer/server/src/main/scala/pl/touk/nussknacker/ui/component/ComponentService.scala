@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
@@ -20,6 +21,7 @@ import pl.touk.nussknacker.ui.component.DefaultComponentService.{
   toComponentUsagesInScenario
 }
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
+import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, ModelDefinitionEnricher}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -74,12 +76,11 @@ object DefaultComponentService {
 class DefaultComponentService(
     componentLinksConfig: ComponentLinksConfig,
     processingTypeDataProvider: ProcessingTypeDataProvider[
-      ProcessingTypeData,
+      (ProcessingTypeData, ModelDefinitionEnricher),
       (ComponentIdProvider, ProcessCategoryService)
     ],
     processService: ProcessService,
-    fragmentsRepository: FragmentRepository,
-    additionalUIConfigProvider: AdditionalUIConfigProvider
+    fragmentsRepository: FragmentRepository
 )(implicit ec: ExecutionContext)
     extends ComponentService {
 
@@ -124,7 +125,7 @@ class DefaultComponentService(
       }
 
   private def extractComponentsFromProcessingType(
-      processingTypeData: ProcessingTypeData,
+      processingTypeData: (ProcessingTypeData, ModelDefinitionEnricher),
       processingType: ProcessingType,
       user: LoggedUser
   ): Future[List[ComponentListElement]] = {
@@ -150,7 +151,7 @@ class DefaultComponentService(
   }
 
   private def extractUserComponentsFromProcessingType(
-      processingTypeData: ProcessingTypeData,
+      processingTypeData: (ProcessingTypeData, ModelDefinitionEnricher),
       processingType: ProcessingType,
       user: LoggedUser
   ): Future[List[ComponentListElement]] = {
@@ -162,10 +163,10 @@ class DefaultComponentService(
         // We assume that fragments have unique component ids ($processing-type-fragment-$name) thus we do not need to validate them.
         val componentObjects = componentObjectsService.prepare(
           processingType,
-          processingTypeData,
+          processingTypeData._1,
+          processingTypeData._2,
           user,
           fragments,
-          additionalUIConfigProvider
         )
         createComponents(componentObjects, processingType, componentIdProvider)
       }

@@ -35,7 +35,7 @@ class ComponentApiSpec
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
 
-  private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map.empty)
+  private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider({ (_, _) => None })
 
   "The endpoint for getting components when" - {
     "authenticated should" - {

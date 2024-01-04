@@ -11,6 +11,9 @@ import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer
+import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
+import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
@@ -69,10 +72,6 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   }
 
-  private val mockDeploymentManager = new MockDeploymentManager
-
-  private val initialData = MetaDataInitializer(StreamMetaData.typeName)
-
   test("should read editor from annotations") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
@@ -96,9 +95,8 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   }
 
   test("should hide node in hidden category") {
-
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model: ModelData = LocalModelData(
+    val model = LocalModelData(
       typeConfig.modelConfig.resolved,
       List.empty,
       // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
@@ -122,30 +120,31 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     processObjects.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
   }
 
-  test("should be able to assign generic node to some category") {
-    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model: ModelData = LocalModelData(
+  test("should be able to setup component group name programmatically") {
+    val typeConfig      = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    val targetGroupName = ComponentGroupName("someGroup")
+    val model = LocalModelData(
       typeConfig.modelConfig.resolved,
       List.empty,
       // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
       new EmptyProcessConfigCreator {
         override def customStreamTransformers(
             modelDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[CustomStreamTransformer]] =
+        ): Map[String, WithCategories[CustomStreamTransformer]] = {
           Map(
             "someGenericNode" -> WithCategories
               .anyCategory(SampleGenericNodeTransformation)
               .withComponentConfig(
-                SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("someCategory")))
+                SingleComponentConfig.zero.copy(componentGroup = Some(targetGroupName))
               )
           )
+        }
       }
     )
 
-    val processObjects = prepareUIProcessObjects(model, List.empty)
+    val componentsGroups = prepareUIProcessObjects(model, List.empty).componentGroups
 
-    val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
-    componentsGroups should not be empty
+    componentsGroups.map(_.name) should contain(targetGroupName)
   }
 
   test("should override fragment's docsUrl from config with value from 'properties'") {
@@ -213,18 +212,36 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   private def prepareUIProcessObjects(model: ModelData, fragmentDetails: List[FragmentDetails]) = {
     val staticModelDefinition =
-      ToStaticComponentDefinitionTransformer.transformModel(model, initialData.create(_, Map.empty))
+      ToStaticComponentDefinitionTransformer.transformModel(
+        model,
+        MetaDataInitializer(StreamMetaData.typeName).create(_, Map.empty)
+      )
+    val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(TestAdditionalUIConfigProvider)
+    val modelDefinitionEnricher = new ModelDefinitionEnricher(
+      new BuiltInComponentsStaticDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
+      new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
+      additionalUIConfigFinalizer,
+      staticModelDefinition
+    )
+    // TODO: remove duplication with DefinitionResources - extract DefinitionService
+    val enrichedModelDefinition =
+      modelDefinitionEnricher
+        .modelDefinitionWithBuiltInComponentsAndFragments(
+          forFragment = false,
+          fragmentsDetails = fragmentDetails,
+          TestProcessingTypes.Streaming
+        )
+    val finalizedScenarioPropertiesConfig = additionalUIConfigFinalizer
+      .finalizeScenarioProperties(Map.empty, TestProcessingTypes.Streaming)
     UIProcessObjectsFactory.prepareUIProcessObjects(
+      enrichedModelDefinition,
       model,
-      staticModelDefinition,
-      mockDeploymentManager,
+      new MockDeploymentManager,
       TestFactory.user("userId"),
-      fragmentDetails,
-      isFragment = false,
+      forFragment = false,
       TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig),
-      Map.empty,
-      TestProcessingTypes.Streaming,
-      TestAdditionalUIConfigProvider
+      finalizedScenarioPropertiesConfig,
+      TestProcessingTypes.Streaming
     )
   }
 
