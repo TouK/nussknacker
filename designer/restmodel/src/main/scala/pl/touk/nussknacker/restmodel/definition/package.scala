@@ -100,7 +100,6 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class ComponentNodeTemplate(
       `type`: ComponentType,
-      // TODO: Rename to name
       label: String,
       node: NodeData,
       // TODO: remove

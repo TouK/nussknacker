@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 final case class ComponentStaticDefinition(
     parameters: List[Parameter],
     returnType: Option[TypingResult],
+    // TODO: remove
     categories: Option[List[String]],
     componentConfig: SingleComponentConfig,
     componentTypeSpecificData: ComponentTypeSpecificData

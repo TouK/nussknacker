@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
   DynamicComponentDefinitionWithImplementation,
   DynamicComponentImplementationInvoker
@@ -59,15 +60,18 @@ object ComponentDefinitionExtractor {
         case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
       }
 
+    def defaultComponentConfig(returnType: Option[TypingResult]) =
+      DefaultComponentConfigDeterminer.forNotBuiltInComponentType(componentTypeSpecificData, returnType.isDefined)
     (component match {
       case e: GenericNodeTransformation[_] =>
         val implementationInvoker = new DynamicComponentImplementationInvoker(e)
+        val defaultConfig         = defaultComponentConfig(ToStaticComponentDefinitionTransformer.staticReturnType(e))
         Right(
           DynamicComponentDefinitionWithImplementation(
             implementationInvoker,
             e,
             componentWithConfig.categories,
-            componentWithConfig.componentConfig,
+            defaultConfig |+| componentWithConfig.componentConfig,
             componentTypeSpecificData
           )
         )
@@ -77,11 +81,13 @@ object ComponentDefinitionExtractor {
           .map { methodDef =>
             def notReturnAnything(typ: TypingResult) =
               Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
+            val returnType    = Option(methodDef.returnType).filterNot(notReturnAnything)
+            val defaultConfig = defaultComponentConfig(returnType)
             val staticDefinition = ComponentStaticDefinition(
               methodDef.definedParameters,
-              Option(methodDef.returnType).filterNot(notReturnAnything),
+              returnType,
               componentWithConfig.categories,
-              componentWithConfig.componentConfig,
+              defaultConfig |+| componentWithConfig.componentConfig,
               componentTypeSpecificData
             )
             val implementationInvoker = extractImplementationInvoker(component, methodDef)

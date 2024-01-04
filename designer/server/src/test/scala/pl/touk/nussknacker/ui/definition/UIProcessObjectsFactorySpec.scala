@@ -215,12 +215,11 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val staticModelDefinition =
       ToStaticComponentDefinitionTransformer.transformModel(model, initialData.create(_, Map.empty))
     UIProcessObjectsFactory.prepareUIProcessObjects(
-      model,
       staticModelDefinition,
+      model,
       mockDeploymentManager,
       TestFactory.user("userId"),
-      fragmentDetails,
-      isFragment = false,
+      forFragment = false,
       TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig),
       Map.empty,
       TestProcessingTypes.Streaming,

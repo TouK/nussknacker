@@ -94,8 +94,6 @@ class FragmentWithoutValidatorsDefinitionExtractor(
       )
       .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty), List.empty))
 
-    val isOptional = !fragmentParameter.required
-
     val param = Parameter
       .optional(fragmentParameter.name, typ)
       .copy(

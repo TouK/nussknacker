@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{
@@ -14,11 +13,12 @@ import pl.touk.nussknacker.engine.api.process.{
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData, methodbased}
-import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.{
+  FragmentComponentDefinition,
+  FragmentWithoutValidatorsDefinitionExtractor
+}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
@@ -29,22 +29,18 @@ class StubbedFragmentSourceDefinitionPreparer(
     fragmentDefinitionExtractor: FragmentWithoutValidatorsDefinitionExtractor
 ) {
 
-  private val fragmentReturnType = Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))
-
-  private val stubbedStaticDefinition = ComponentStaticDefinition(
-    parameters = Nil,
-    returnType = Some(fragmentReturnType),
-    categories = None,
-    componentConfig = SingleComponentConfig.zero,
-    componentTypeSpecificData = FragmentSpecificData
-  )
-
   def createSourceDefinition(frag: FragmentInputDefinition): MethodBasedComponentDefinitionWithImplementation = {
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
+    val staticDefinition = FragmentComponentDefinition.prepareStaticDefinition(
+      parameters = inputParameters,
+      categories = None,
+      docsUrl = None,
+      outputNames = List.empty
+    )
     MethodBasedComponentDefinitionWithImplementation(
       (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
       null,
-      stubbedStaticDefinition
+      staticDefinition
     )
   }
 

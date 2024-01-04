@@ -188,33 +188,6 @@ object ProcessTestData {
       )
   )
 
-  val technicalValidProcess: CanonicalProcess =
-    ScenarioBuilder
-      .streaming("fooProcess")
-      .source("source", existingSourceFactory)
-      .buildSimpleVariable("var1", "var1", "'foo'")
-      .filter("filter1", "#var1 == 'foo'")
-      .enricher("enricher1", "output1", existingServiceId)
-      .switch(
-        "switch1",
-        "1 == 1",
-        "switchVal",
-        Case(
-          "true",
-          GraphBuilder
-            .filter("filter2", "1 != 0")
-            .enricher("enricher2", "output2", existingServiceId)
-            .emptySink("sink1", existingSinkFactory)
-        ),
-        Case(
-          "false",
-          GraphBuilder
-            .filter("filter3", "1 != 0")
-            .enricher("enricher3", "output3", existingServiceId)
-            .emptySink("sink2", existingSinkFactory)
-        )
-      )
-
   val invalidProcess: CanonicalProcess = {
     val missingSourceFactory = "missingSource"
     val missingSinkFactory   = "fooSink"

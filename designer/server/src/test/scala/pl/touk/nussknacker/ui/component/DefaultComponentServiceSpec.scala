@@ -25,8 +25,9 @@ import pl.touk.nussknacker.ui.api.helpers.{
 }
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
-import pl.touk.nussknacker.ui.component.DefaultsComponentGroupName._
-import pl.touk.nussknacker.ui.component.DefaultsComponentIcon._
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
@@ -250,7 +251,7 @@ class DefaultComponentServiceSpec
       ),
       sharedComponent(
         ComponentInfo(Service, SharedProvidedComponentName),
-        ProcessorIcon,
+        ServiceIcon,
         executionGroupName,
       ),
       sharedComponent(
@@ -282,7 +283,7 @@ class DefaultComponentServiceSpec
     ),
     marketingComponent(
       ComponentInfo(Service, FuseBlockServiceName),
-      ProcessorIcon,
+      ServiceIcon,
       executionGroupName
     ),
     marketingComponent(ComponentInfo(Sink, MonitorName), SinkIcon, executionGroupName),
@@ -295,7 +296,7 @@ class DefaultComponentServiceSpec
     marketingComponent(ComponentInfo(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
     marketingComponent(
       ComponentInfo(Service, SingleProvidedComponentName),
-      ProcessorIcon,
+      ServiceIcon,
       executionGroupName
     ),
   )
@@ -303,14 +304,14 @@ class DefaultComponentServiceSpec
   private def prepareFraudComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
     fraudComponent(ComponentInfo(CustomComponent, CustomStreamName), CustomComponentIcon, CustomGroupName),
     fraudComponent(ComponentInfo(Service, CustomerDataEnricherName), EnricherIcon, EnrichersGroupName),
-    fraudComponent(ComponentInfo(Service, FuseBlockServiceName), ProcessorIcon, executionGroupName),
+    fraudComponent(ComponentInfo(Service, FuseBlockServiceName), ServiceIcon, executionGroupName),
     fraudComponent(
       ComponentInfo(CustomComponent, OptionalCustomStreamName),
       CustomComponentIcon,
       OptionalEndingCustomGroupName
     ),
     fraudComponent(ComponentInfo(Sink, SecondMonitorName), SinkIcon, executionGroupName),
-    fraudComponent(ComponentInfo(Service, SingleProvidedComponentName), ProcessorIcon, executionGroupName),
+    fraudComponent(ComponentInfo(Service, SingleProvidedComponentName), ServiceIcon, executionGroupName),
     fraudComponent(ComponentInfo(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
     fraudComponent(ComponentInfo(Sink, FraudSinkName), SinkIcon, executionGroupName),
   )

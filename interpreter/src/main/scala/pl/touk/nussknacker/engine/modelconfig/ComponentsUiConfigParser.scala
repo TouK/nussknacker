@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.modelconfig
 
-import cats.Semigroup
-import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
@@ -45,10 +43,5 @@ case class ComponentsUiConfig(config: Map[String, SingleComponentConfig]) {
 object ComponentsUiConfig {
 
   val Empty: ComponentsUiConfig = ComponentsUiConfig(Map.empty)
-
-  implicit object ComponentsUiConfigSemigroup extends Semigroup[ComponentsUiConfig] {
-    override def combine(x: ComponentsUiConfig, y: ComponentsUiConfig): ComponentsUiConfig =
-      ComponentsUiConfig(x.config |+| y.config)
-  }
 
 }
