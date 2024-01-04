@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.restmodel.validation
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.graph.node.NodeData._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 @JsonCodec final case class ValidatedDisplayableProcess(
-    // TODO: remove - it is already available in ScenarioWithDetails
+    // TODO: remove - it is already available in ScenarioWithDetails, it is never used in BE, we only need to change FE
+    //       to doesn't use it as well
     name: ProcessName,
     properties: ProcessProperties,
     nodes: List[NodeData],
@@ -20,8 +19,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
     category: String,
     validationResult: Option[ValidationResult]
 ) {
-
-  def toDisplayable: DisplayableProcess = DisplayableProcess(name, properties, nodes, edges, processingType, category)
+  def toDisplayable(processName: ProcessName): DisplayableProcess =
+    DisplayableProcess(processName, properties, nodes, edges, processingType, category)
 
 }
 

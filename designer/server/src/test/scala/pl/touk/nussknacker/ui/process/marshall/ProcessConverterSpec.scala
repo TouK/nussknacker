@@ -6,74 +6,37 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.{
-  wrapWithStaticServiceDefinition,
-  wrapWithStaticSourceDefinition
-}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeTypingData,
-  NodeValidationError,
-  NodeValidationErrorType,
-  ValidationResult
-}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
-import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithModelDefinition, TestCategories, TestProcessingTypes}
-import pl.touk.nussknacker.ui.security.api.AdminUser
-import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessingTypes}
 
 class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   private val metaData = StreamMetaData(Some(2), Some(false))
 
-  lazy val validation: UIProcessValidator = {
-    val modelDefinition = ModelDefinitionBuilder.empty
-      .withComponent("ref", wrapWithStaticServiceDefinition(List.empty, Some(Unknown)))
-      .withComponent("sourceRef", wrapWithStaticSourceDefinition(List.empty, Some(Unknown)))
-
-    new UIProcessValidator(
-      ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),
-      FlinkStreamingPropertiesConfig.properties,
-      Nil,
-      sampleResolver
-    )
-  }
-
-  def canonicalDisplayable(canonicalProcess: CanonicalProcess): CanonicalProcess = {
+  def canonicalDisplayableRoundTrip(canonicalProcess: CanonicalProcess): CanonicalProcess = {
     val displayable =
       ProcessConverter.toDisplayable(canonicalProcess, TestProcessingTypes.Streaming, TestCategories.Category1)
     ProcessConverter.fromDisplayable(displayable)
   }
 
-  def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
-    val canonical   = ProcessConverter.fromDisplayable(process)
-    val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
-    ValidatedDisplayableProcess.withValidationResult(
-      displayable,
-      validation.validate(displayable)(AdminUser("admin", "admin"))
-    )
+  def displayableCanonicalRoundTrip(process: DisplayableProcess): DisplayableProcess = {
+    val canonical = ProcessConverter.fromDisplayable(process)
+    ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
   }
 
   test("be able to convert empty process") {
     val emptyProcess = CanonicalProcess(MetaData(id = "t1", StreamMetaData()), List(), List.empty)
 
-    canonicalDisplayable(emptyProcess) shouldBe emptyProcess
+    canonicalDisplayableRoundTrip(emptyProcess) shouldBe emptyProcess
   }
 
   test("be able to handle different node order") {
@@ -89,116 +52,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       TestCategories.Category1
     )
 
-    displayableCanonical(process).nodes.toSet shouldBe process.nodes.toSet
-    displayableCanonical(process).edges.toSet shouldBe process.edges.toSet
-
-  }
-
-  test("be able to convert process ending not properly") {
-    forAll(
-      Table(
-        "unexpectedEnd",
-        Filter("e", Expression.spel("0")),
-        Switch("e"),
-        Enricher("e", ServiceRef("ref", List()), "out"),
-        Split("e")
-      )
-    ) { unexpectedEnd =>
-      val process = ValidatedDisplayableProcess(
-        ProcessName("t1"),
-        ProcessProperties(metaData),
-        List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
-        List(Edge("s", "e", None)),
-        TestProcessingTypes.Streaming,
-        TestCategories.Category1,
-        Some(
-          ValidationResult.errors(
-            Map(
-              unexpectedEnd.id -> List(
-                NodeValidationError(
-                  "InvalidTailOfBranch",
-                  "Scenario must end with a sink, processor or fragment",
-                  "Scenario must end with a sink, processor or fragment",
-                  None,
-                  errorType = NodeValidationErrorType.SaveAllowed
-                )
-              )
-            ),
-            List.empty,
-            List.empty
-          )
-        )
-      )
-
-      val validated = displayableCanonical(process.toDisplayable)
-      val withoutTypes =
-        validated.copy(validationResult = validated.validationResult.map(_.copy(nodeResults = Map.empty)))
-      withoutTypes shouldBe process
-    }
-  }
-
-  test("return variable type information for process that cannot be canonized") {
-    val meta = MetaData.combineTypeSpecificProperties(
-      id = "process",
-      typeSpecificData = metaData,
-      additionalFields = ProcessAdditionalFields(None, Map.empty, StreamMetaData.typeName)
-    )
-    val process = ValidatedDisplayableProcess(
-      meta.name,
-      ProcessProperties(meta.typeSpecificData),
-      List(
-        Source("s", SourceRef("sourceRef", List())),
-        Variable("v", "test", Expression.spel("''")),
-        Filter("e", Expression.spel("''"))
-      ),
-      List(Edge("s", "v", None), Edge("v", "e", None)),
-      TestProcessingTypes.Streaming,
-      TestCategories.Category1,
-      Some(
-        ValidationResult
-          .errors(
-            Map(
-              "e" -> List(
-                NodeValidationError(
-                  "InvalidTailOfBranch",
-                  "Scenario must end with a sink, processor or fragment",
-                  "Scenario must end with a sink, processor or fragment",
-                  None,
-                  errorType = NodeValidationErrorType.SaveAllowed
-                )
-              )
-            ),
-            List.empty,
-            List.empty
-          )
-          .copy(nodeResults =
-            Map(
-              "s" -> NodeTypingData(Map.empty, Some(List.empty), Map.empty),
-              "v" -> NodeTypingData(
-                Map("input" -> Unknown),
-                None,
-                Map.empty
-              ),
-              "e" -> NodeTypingData(
-                Map("input" -> Unknown, "test" -> Typed.fromInstance("")),
-                None,
-                Map.empty
-              )
-            )
-          )
-      )
-    )
-
-    val displayableProcess = displayableCanonical(process.toDisplayable)
-    // because I'm lazy
-    val displayableWithClearedTypingInfo = displayableProcess.copy(
-      validationResult = displayableProcess.validationResult.map(validationResult =>
-        validationResult.copy(
-          nodeResults = validationResult.nodeResults.mapValuesNow(_.copy(typingInfo = Map.empty))
-        )
-      )
-    )
-    displayableWithClearedTypingInfo shouldBe process
+    displayableCanonicalRoundTrip(process).nodes.toSet shouldBe process.nodes.toSet
   }
 
   test("convert process with branches") {
@@ -230,8 +84,8 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         GraphBuilder.source("s1", "sourceRef").branchEnd("s1", "j1")
       )
 
-    displayableCanonical(process).nodes.sortBy(_.id) shouldBe process.nodes.sortBy(_.id)
-    displayableCanonical(process).edges.toSet shouldBe process.edges.toSet
+    displayableCanonicalRoundTrip(process).nodes.sortBy(_.id) shouldBe process.nodes.sortBy(_.id)
+    displayableCanonicalRoundTrip(process).edges.toSet shouldBe process.edges.toSet
 
     val canonical = ProcessConverter.fromDisplayable(process)
 

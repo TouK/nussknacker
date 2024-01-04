@@ -10,8 +10,6 @@ trait ProcessMigration {
 
   def description: String
 
-  def failOnNewValidationError: Boolean
-
   def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess
 }
 

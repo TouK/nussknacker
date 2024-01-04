@@ -1,25 +1,22 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
-import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   ValidationErrors,
   ValidationResult,
   ValidationWarnings
 }
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
+import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import scala.concurrent.Future
 
@@ -44,9 +41,8 @@ class TestModelMigrations(
         validator.forTypeUnsafe(migrationDetails.newProcess.processingType).validate(migrationDetails.newProcess)
       val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
-        ValidatedDisplayableProcess.withValidationResult(migrationDetails.newProcess, validationResult),
-        newErrors,
-        migrationDetails.shouldFail
+        migrationDetails.newProcess.name,
+        newErrors
       )
     }
   }
@@ -56,7 +52,7 @@ class TestModelMigrations(
   )(implicit user: LoggedUser): Option[MigratedProcessDetails] = {
     val migrator = new ProcessModelMigrator(migrations)
     for {
-      MigrationResult(newProcess, migrations) <- migrator.migrateProcess(
+      MigrationResult(newProcess, _) <- migrator.migrateProcess(
         process.toEntityWithScenarioGraphUnsafe,
         skipEmptyMigrations = false
       )
@@ -65,7 +61,6 @@ class TestModelMigrations(
       MigratedProcessDetails(
         displayable,
         process.validationResultUnsafe,
-        migrations.exists(_.failOnNewValidationError),
         process.processCategory
       )
     }
@@ -121,21 +116,10 @@ class TestModelMigrations(
 
 }
 
-@JsonCodec final case class TestMigrationResult(
-    converted: ValidatedDisplayableProcess,
-    newErrors: ValidationResult,
-    shouldFailOnNewErrors: Boolean
-) {
-
-  def shouldFail: Boolean = {
-    shouldFailOnNewErrors && (newErrors.hasErrors || newErrors.hasWarnings)
-  }
-
-}
+final case class TestMigrationResult(processName: ProcessName, newErrors: ValidationResult)
 
 private final case class MigratedProcessDetails(
     newProcess: DisplayableProcess,
     oldProcessErrors: ValidationResult,
-    shouldFail: Boolean,
     processCategory: String
 )
