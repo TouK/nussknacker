@@ -7,7 +7,6 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.kafka.KafkaFactory.SinkValueParamName
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
@@ -373,7 +372,7 @@ class NodesApiSpec
                 "Failed to parse expression: Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?"
               )
             )
-            .body("validationErrors[0].fieldName", equalTo(SinkValueParamName))
+            .body("validationErrors[0].fieldName", equalTo("Value"))
         }
         "validate node using dictionaries" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
