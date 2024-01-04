@@ -108,15 +108,16 @@ class ProcessesResources(
           }
         }
       } ~ path("processesDetails") {
-        (get & processesQuery & skipValidateAndResolveParameter) { (query, skipValidateAndResolve) =>
-          complete {
-            val processes = processRepository.fetchProcessesDetails[CanonicalProcess](query.toRepositoryQuery)
-            if (skipValidateAndResolve) {
-              toProcessDetailsAll(processes)
-            } else {
-              validateAndReverseResolveAll(processes)
+        (get & processesQuery & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+          (query, skipValidateAndResolve, skipNodeResults) =>
+            complete {
+              val processes = processRepository.fetchProcessesDetails[CanonicalProcess](query.toRepositoryQuery)
+              if (skipValidateAndResolve) {
+                toProcessDetailsAll(processes)
+              } else {
+                validateAndReverseResolveAll(processes, !skipNodeResults)
+              }
             }
-          }
         }
       } ~ path("processes" / "status") {
         get {
@@ -172,19 +173,21 @@ class ProcessesResources(
                 }
               }
             }
-          } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
-            complete {
-              implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-              processRepository
-                .fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id)
-                .flatMap[ToResponseMarshallable] {
-                  case Some(process) if skipValidateAndResolve =>
-                    enrichDetailsWithProcessState(process).map(toProcessDetails)
-                  case Some(process) => enrichDetailsWithProcessState(process).map(validateAndReverseResolve)
-                  case None =>
-                    Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
-                }
-            }
+          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+            (skipValidateAndResolve, skipNodeResults) =>
+              complete {
+                implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+                processRepository
+                  .fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id)
+                  .flatMap[ToResponseMarshallable] {
+                    case Some(process) if skipValidateAndResolve =>
+                      enrichDetailsWithProcessState(process).map(toProcessDetails)
+                    case Some(process) =>
+                      enrichDetailsWithProcessState(process).map(validateAndReverseResolve(_, !skipNodeResults))
+                    case None =>
+                      Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
+                  }
+              }
           }
         }
       } ~ path("processes" / Segment / "rename" / Segment) { (processName, newName) =>
@@ -203,19 +206,21 @@ class ProcessesResources(
           }
         }
       } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
-        (get & processId(processName) & skipValidateAndResolveParameter) { (processId, skipValidateAndResolve) =>
-          complete {
-            implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-            processRepository
-              .fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId)
-              .flatMap[ToResponseMarshallable] {
-                case Some(process) if skipValidateAndResolve =>
-                  enrichDetailsWithProcessState(process).map(toProcessDetails)
-                case Some(process) => enrichDetailsWithProcessState(process).map(validateAndReverseResolve)
-                case None =>
-                  Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
-              }
-          }
+        (get & processId(processName) & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+          (processId, skipValidateAndResolve, skipNodeResults) =>
+            complete {
+              implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+              processRepository
+                .fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId)
+                .flatMap[ToResponseMarshallable] {
+                  case Some(process) if skipValidateAndResolve =>
+                    enrichDetailsWithProcessState(process).map(toProcessDetails)
+                  case Some(process) =>
+                    enrichDetailsWithProcessState(process).map(validateAndReverseResolve(_, !skipNodeResults))
+                  case None =>
+                    Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
+                }
+            }
         }
       } ~ path("processes" / Segment / Segment) { (processName, category) =>
         authorize(user.can(category, Permission.Write)) {
@@ -331,24 +336,32 @@ class ProcessesResources(
     }
 
   private def validateAndReverseResolveAll(
-      processDetails: Future[List[BaseProcessDetails[CanonicalProcess]]]
+      processDetails: Future[List[BaseProcessDetails[CanonicalProcess]]],
+      includeValidationNodeResults: Boolean
   ): Future[List[ValidatedProcessDetails]] = {
-    processDetails.flatMap(all => Future.sequence(all.map(validateAndReverseResolve)))
+    processDetails.flatMap(all => Future.sequence(all.map(validateAndReverseResolve(_, includeValidationNodeResults))))
   }
 
   private def validateAndReverseResolve(
-      processDetails: BaseProcessDetails[CanonicalProcess]
+      processDetails: BaseProcessDetails[CanonicalProcess],
+      includeValidationNodeResults: Boolean
   ): Future[ValidatedProcessDetails] = {
     val validatedDetails = processDetails.mapProcess { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType
       val validationResult =
         processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
-      processResolving.reverseResolveExpressions(
+      val result = processResolving.reverseResolveExpressions(
         canonical,
         processingType,
         processDetails.processCategory,
         validationResult
       )
+      if (includeValidationNodeResults) {
+        result
+      } else {
+        // reduce serialized response JSON by ~5-10 MB (typical typing information size in production use)
+        result.copy(validationResult = result.validationResult.copy(nodeResults = Map.empty))
+      }
     }
     Future.successful(validatedDetails)
   }
@@ -389,6 +402,10 @@ class ProcessesResources(
 
   private def skipValidateAndResolveParameter = {
     parameters(Symbol("skipValidateAndResolve").as[Boolean].withDefault(false))
+  }
+
+  private def skipNodeResultsParameter = {
+    parameters(Symbol("skipNodeResults").as[Boolean].withDefault(false))
   }
 
 }
