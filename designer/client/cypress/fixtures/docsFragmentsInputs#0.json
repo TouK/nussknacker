@@ -19,55 +19,55 @@
             "id": "input",
             "parameters": [
                 {
-                  "name": "parameter1",
-                  "typ": {
-                    "refClazzName": "java.lang.Long"
-                  },
-                  "required": false,
-                  "initialValue": {
-                    "label": "42",
-                    "expression": "42"
-                  },
-                  "hintText": "Please input your shoe size",
-                  "valueEditor": null,
-                  "valueCompileTimeValidation": {
-                    "validationExpression": {
-                      "language": "spel",
-                      "expression": "#value < 100"
+                    "name": "parameter1",
+                    "typ": {
+                        "refClazzName": "java.lang.Long"
                     },
-                    "validationFailedMessage": "Your shoe size is too large"
-                  }
+                    "required": false,
+                    "initialValue": {
+                        "label": "42",
+                        "expression": "42"
+                    },
+                    "hintText": "Please input your shoe size",
+                    "valueEditor": null,
+                    "valueCompileTimeValidation": {
+                        "validationExpression": {
+                            "language": "spel",
+                            "expression": "#value < 100"
+                        },
+                        "validationFailedMessage": "Your shoe size is too large"
+                    }
                 },
                 {
                     "name": "parameter2",
                     "typ": {
                         "refClazzName": "java.lang.String"
                     },
-                    "required": false,
+                    "required": true,
                     "initialValue": {
-                      "expression": "\"item1\"",
-                      "label": "\"item1\""
+                        "expression": "\"item1\"",
+                        "label": "\"item1\""
                     },
                     "hintText": "Pick one or input any string you want.",
                     "valueEditor": {
-                      "fixedValuesList": [
-                        {
-                          "expression": "\"item1\"",
-                          "label": "\"item1\""
-                        },
-                        {
-                          "expression": "#meta.processName",
-                          "label": "#meta.processName"
-                        }
-                      ],
-                      "allowOtherValue": true,
-                      "type": "ValueInputWithFixedValuesProvided"
+                        "fixedValuesList": [
+                            {
+                                "expression": "\"item1\"",
+                                "label": "\"item1\""
+                            },
+                            {
+                                "expression": "#meta.processName",
+                                "label": "#meta.processName"
+                            }
+                        ],
+                        "allowOtherValue": true,
+                        "type": "ValueInputWithFixedValuesProvided"
                     },
                     "valueCompileTimeValidation": null
                 }
             ],
             "additionalFields": {
-                "description": null,
+                "description": "some description",
                 "layoutData": {
                     "x": 180,
                     "y": 0
