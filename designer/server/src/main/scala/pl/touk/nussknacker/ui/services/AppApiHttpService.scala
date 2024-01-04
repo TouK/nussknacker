@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.api.AppApiEndpoints
-import pl.touk.nussknacker.ui.process.ProcessService.{FetchScenarioGraph, GetScenarioWithDetailsOptions}
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}

@@ -263,6 +263,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       Query(
         ("names", names.map(ns => URLEncoder.encode(ns.value, StandardCharsets.UTF_8)).mkString(",")),
         ("isArchived", "false"),
+        ("skipNodeResults", "true"),
       )
     )
   }
