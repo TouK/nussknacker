@@ -4,11 +4,10 @@ import React, { SetStateAction, useCallback, useEffect, useMemo, useState } from
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { editNode } from "../../../../actions/nk";
-import { setAndPreserveLocationParams, visualizationUrl } from "../../../../common/VisualizationUrl";
+import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { getProcessToDisplay } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType, Process } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
-import { parseWindowsQueryParams } from "../../../../windowManager/useWindows";
 import ErrorBoundary from "../../../common/ErrorBoundary";
 import NodeUtils from "../../NodeUtils";
 import NodeDetailsModalHeader from "../nodeDetails/NodeDetailsModalHeader";
@@ -18,11 +17,9 @@ import urljoin from "url-join";
 import { BASE_PATH } from "../../../../config";
 import { RootState } from "../../../../reducers";
 import { applyIdFromFakeName } from "../IdField";
-import { mapValues } from "lodash";
-import { ensureArray } from "../../../../common/arrayUtils";
-import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material";
 import { alpha, tint } from "../../../../containers/theme/helpers";
+import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; process: Process }> {
     readOnly?: boolean;
@@ -42,21 +39,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }, []);
 
     const dispatch = useDispatch();
-
-    const navigate = useNavigate();
-    const replaceWindowsQueryParams = useCallback(
-        <P extends Record<string, string | string[]>>(add: P, remove?: P): void => {
-            const params = parseWindowsQueryParams(add, remove);
-            const search = setAndPreserveLocationParams(mapValues(params, (v) => ensureArray(v).map(encodeURIComponent)));
-            navigate({ search }, { replace: true });
-        },
-        [navigate],
-    );
-
-    useEffect(() => {
-        replaceWindowsQueryParams({ nodeId: node.id });
-        return () => replaceWindowsQueryParams({}, { nodeId: node.id });
-    }, [node.id]);
 
     const performNodeEdit = useCallback(async () => {
         await dispatch(editNode(process, node, applyIdFromFakeName(editedNode), outputEdges));
@@ -119,6 +101,16 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
         const HeaderTitle = () => <NodeDetailsModalHeader node={node} />;
         return { HeaderTitle };
     }, [node]);
+
+    useEffect(() => {
+        function mergeQuery(changes: Record<string, string[]>) {
+            return replaceSearchQuery((current) => ({ ...current, ...changes }));
+        }
+        mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
+        return () => {
+            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+        };
+    }, [node.id]);
 
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!processFromGlobalStore?.nodes) {
