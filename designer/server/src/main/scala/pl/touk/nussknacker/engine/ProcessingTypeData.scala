@@ -17,6 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 final case class ProcessingTypeData private (
     deploymentManager: DeploymentManager,
     modelData: ModelData,
+    // FIXME: remove from here
     staticModelDefinition: ModelDefinition[ComponentStaticDefinition],
     metaDataInitializer: MetaDataInitializer,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],

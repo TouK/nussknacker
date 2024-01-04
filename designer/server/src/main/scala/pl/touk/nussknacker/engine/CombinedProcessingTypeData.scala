@@ -27,9 +27,7 @@ object CombinedProcessingTypeData {
     CombinedProcessingTypeData(
       statusNameToStateDefinitionsMapping =
         ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypes),
-      // While creation of component id provider, we validate all component ids but fragments.
-      // We assume that fragments cannot have overridden component id thus are not merged/deduplicated across processing types.
-      componentIdProvider = ComponentIdProviderFactory.createUnsafe(processingTypes, categoryService),
+      componentIdProvider = ComponentIdProviderFactory.create(processingTypes),
       categoryService = categoryService
     )
   }

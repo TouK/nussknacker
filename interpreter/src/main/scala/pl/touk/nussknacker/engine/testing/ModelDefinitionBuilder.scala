@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component._
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -175,11 +176,15 @@ object ModelDefinitionBuilder {
       returnType: Option[TypingResult],
       componentTypeSpecificData: ComponentTypeSpecificData
   ): ComponentStaticDefinition = {
+    val componentConfig = componentTypeSpecificData match {
+      case GlobalVariablesSpecificData => SingleComponentConfig.zero
+      case other => DefaultComponentConfigDeterminer.forNotBuiltInComponentType(other, returnType.isDefined)
+    }
     ComponentStaticDefinition(
       parameters,
       returnType,
       None,
-      SingleComponentConfig.zero,
+      componentConfig,
       componentTypeSpecificData
     )
   }

@@ -13,6 +13,7 @@ import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{
   WrongConfigurationAttribute
 }
 
+// FIXME: use it
 private[component] object ComponentsValidator {
 
   def checkUnsafe(

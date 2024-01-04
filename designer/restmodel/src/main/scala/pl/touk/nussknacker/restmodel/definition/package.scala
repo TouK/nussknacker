@@ -23,6 +23,7 @@ package object definition {
       componentGroups: List[ComponentGroup],
       components: Map[ComponentInfo, UIComponentDefinition],
       classes: List[TypingResult],
+      // TODO: remove from here
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
@@ -90,17 +91,23 @@ package object definition {
 
     def create(
         componentInfo: ComponentInfo,
-        node: NodeData,
+        nodeTemplate: NodeData,
         categories: List[String],
-        branchParametersTemplate: List[NodeParameter] = List.empty
+        branchParametersTemplate: List[NodeParameter]
     ): ComponentNodeTemplate =
-      ComponentNodeTemplate(componentInfo.`type`, componentInfo.name, node, categories, branchParametersTemplate)
+      ComponentNodeTemplate(
+        componentInfo.`type`,
+        componentInfo.name,
+        nodeTemplate,
+        categories,
+        branchParametersTemplate
+      )
 
   }
 
   @JsonCodec(encodeOnly = true) final case class ComponentNodeTemplate(
+      // This field is used to generate unique key in DOM model on FE side (the label isn't unique)
       `type`: ComponentType,
-      // TODO: Rename to name
       label: String,
       node: NodeData,
       // TODO: remove

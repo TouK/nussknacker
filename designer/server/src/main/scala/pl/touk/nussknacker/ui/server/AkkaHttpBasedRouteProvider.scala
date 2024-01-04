@@ -9,9 +9,6 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProviderFactory,
@@ -19,6 +16,9 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
+import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
@@ -31,6 +31,7 @@ import pl.touk.nussknacker.ui.config.{
   UsageStatisticsReportsConfig
 }
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, ModelDefinitionEnricher}
 import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -45,19 +46,13 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReloa
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.services.{
-  AppApiHttpService,
-  ComponentApiHttpService,
-  NotificationApiHttpService,
-  NuDesignerExposedApiHttpService,
-  UserApiHttpService
-}
 import pl.touk.nussknacker.ui.security.api.{
   AuthenticationConfiguration,
   AuthenticationResources,
   LoggedUser,
   NussknackerInternalUser
 }
+import pl.touk.nussknacker.ui.services._
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -207,14 +202,23 @@ class AkkaHttpBasedRouteProvider(
         () => getProcessCategoryService().getAllCategories
       )
 
-      val additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
+      val additionalUIConfigProvider  = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
+      val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(additionalUIConfigProvider)
 
       val componentService = new DefaultComponentService(
         ComponentLinksConfigExtractor.extract(resolvedConfig),
-        typeToConfig.mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
+        typeToConfig
+          .mapValues { processingTypeData =>
+            val modelDefinitionEnricher = ModelDefinitionEnricher(
+              processingTypeData.modelData,
+              additionalUIConfigFinalizer,
+              processingTypeData.staticModelDefinition
+            )
+            (processingTypeData, modelDefinitionEnricher)
+          }
+          .mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
         processService,
-        fragmentRepository,
-        additionalUIConfigProvider
+        fragmentRepository
       )
       val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
       val processAuthorizer   = new AuthorizeProcess(futureProcessRepository)
@@ -284,11 +288,16 @@ class AkkaHttpBasedRouteProvider(
           ),
           new ValidationResources(processService, processResolver),
           new DefinitionResources(
-            modelData,
-            typeToConfig,
+            typeToConfig.mapValues { processingTypeData =>
+              val modelDefinitionEnricher = ModelDefinitionEnricher(
+                processingTypeData.modelData,
+                additionalUIConfigFinalizer,
+                processingTypeData.staticModelDefinition
+              )
+              (processingTypeData, modelDefinitionEnricher, additionalUIConfigFinalizer)
+            },
             fragmentRepository,
-            getProcessCategoryService,
-            additionalUIConfigProvider
+            getProcessCategoryService
           ),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
           new AttachmentResources(
