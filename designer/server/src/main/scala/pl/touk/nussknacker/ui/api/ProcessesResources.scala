@@ -91,13 +91,17 @@ class ProcessesResources(
           }
         }
       } ~ path("processesDetails") {
-        (get & processesQuery & skipValidateAndResolveParameter) { (query, skipValidateAndResolve) =>
-          complete {
-            processService.getProcessesWithDetails(
-              query,
-              GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = false)
-            )
-          }
+        (get & processesQuery & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+          (query, skipValidateAndResolve, skipNodeResults) =>
+            complete {
+              processService.getProcessesWithDetails(
+                query,
+                GetScenarioWithDetailsOptions(
+                  FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
+                  fetchState = false
+                )
+              )
+            }
         }
       } ~ path("processes" / "status") {
         get {
@@ -150,13 +154,17 @@ class ProcessesResources(
                 }
               }
             }
-          } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
-            complete {
-              processService.getProcessWithDetails(
-                processId,
-                GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = true)
-              )
-            }
+          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+            (skipValidateAndResolve, skipNodeResults) =>
+              complete {
+                processService.getProcessWithDetails(
+                  processId,
+                  GetScenarioWithDetailsOptions(
+                    FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
+                    fetchState = true
+                  )
+                )
+              }
           }
         }
       } ~ path("processes" / Segment / "rename" / Segment) { (processName, newName) =>
@@ -170,15 +178,19 @@ class ProcessesResources(
           }
         }
       } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
-        (get & processId(processName) & skipValidateAndResolveParameter) { (processId, skipValidateAndResolve) =>
-          complete {
-            processService.getProcessWithDetails(
-              processId,
-              versionId,
-              // TODO: disable fetching state when FE is ready
-              GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = true)
-            )
-          }
+        (get & processId(processName) & skipValidateAndResolveParameter & skipNodeResultsParameter) {
+          (processId, skipValidateAndResolve, skipNodeResults) =>
+            complete {
+              processService.getProcessWithDetails(
+                processId,
+                versionId,
+                // TODO: disable fetching state when FE is ready
+                GetScenarioWithDetailsOptions(
+                  FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
+                  fetchState = true
+                )
+              )
+            }
         }
       } ~ path("processes" / Segment / Segment) { (processName, category) =>
         authorize(user.can(category, Permission.Write)) {
@@ -284,6 +296,15 @@ class ProcessesResources(
 
   private def skipValidateAndResolveParameter = {
     parameters(Symbol("skipValidateAndResolve").as[Boolean].withDefault(false))
+  }
+
+  private def skipNodeResultsParameter = {
+    parameters(Symbol("skipNodeResults").as[Boolean].withDefault(false))
+  }
+
+  private def validationFlagsToMode(skipValidateAndResolve: Boolean, skipNodeResults: Boolean) = {
+    if (skipValidateAndResolve) FetchScenarioGraph.DontValidate
+    else FetchScenarioGraph.ValidateAndResolve(!skipNodeResults)
   }
 
 }

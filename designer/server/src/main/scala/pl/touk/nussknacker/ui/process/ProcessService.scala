@@ -60,7 +60,7 @@ object ProcessService {
       new GetScenarioWithDetailsOptions(SkipScenarioGraph, fetchState = false)
 
     val withsScenarioGraph: GetScenarioWithDetailsOptions =
-      new GetScenarioWithDetailsOptions(FetchScenarioGraph(validateAndResolve = false), fetchState = false)
+      new GetScenarioWithDetailsOptions(FetchScenarioGraph(), fetchState = false)
   }
 
   final case class GetScenarioWithDetailsOptions(fetchGraphOptions: ScenarioGraphOptions, fetchState: Boolean) {
@@ -68,7 +68,7 @@ object ProcessService {
     def withValidation: GetScenarioWithDetailsOptions = {
       val newFetchGraphOptions = fetchGraphOptions match {
         case SkipScenarioGraph => throw new IllegalStateException("withValidation used with SkipScenarioGraph option")
-        case fetch: FetchScenarioGraph => fetch.copy(validateAndResolve = true)
+        case fetch: FetchScenarioGraph => fetch.copy(validate = FetchScenarioGraph.ValidateAndResolve())
       }
       copy(fetchGraphOptions = newFetchGraphOptions)
     }
@@ -80,7 +80,16 @@ object ProcessService {
 
   case object SkipScenarioGraph extends ScenarioGraphOptions
 
-  case class FetchScenarioGraph(validateAndResolve: Boolean) extends ScenarioGraphOptions
+  case class FetchScenarioGraph(validate: FetchScenarioGraph.ValidationMode = FetchScenarioGraph.DontValidate)
+      extends ScenarioGraphOptions
+
+  object FetchScenarioGraph {
+    sealed trait ValidationMode {}
+
+    case object DontValidate extends ValidationMode
+
+    case class ValidateAndResolve(includeValidationNodeResults: Boolean = true) extends ValidationMode
+  }
 
 }
 
@@ -217,9 +226,9 @@ class DBProcessService(
       case SkipScenarioGraph =>
         fetchScenario[Unit]
           .map(_.map(ScenarioWithDetailsConversions.fromEntityIgnoringGraphAndValidationResult))
-      case FetchScenarioGraph(validateAndResolve) =>
+      case FetchScenarioGraph(validate) =>
         fetchScenario[CanonicalProcess]
-          .map(_.map(validateAndReverseResolve(_, validateAndResolve)))
+          .map(_.map(validateAndReverseResolve(_, validate)))
     }).flatMap { details =>
       if (options.fetchState)
         deploymentService.enrichDetailsWithProcessState(details)
@@ -236,12 +245,21 @@ class DBProcessService(
 
   private def validateAndReverseResolve(
       entity: ScenarioWithDetailsEntity[CanonicalProcess],
-      validateAndResolve: Boolean
+      validate: FetchScenarioGraph.ValidationMode
   )(implicit user: LoggedUser): ScenarioWithDetails = {
-    if (validateAndResolve) {
-      validateAndReverseResolve(entity)
-    } else {
-      toDisplayableProcessDetailsWithoutValidation(entity)
+    validate match {
+      case FetchScenarioGraph.ValidateAndResolve(true) =>
+        validateAndReverseResolve(entity)
+      case FetchScenarioGraph.ValidateAndResolve(false) =>
+        // reduce serialized response JSON by ~5-10 MB (typical typing information size in production use)
+        val result = validateAndReverseResolve(entity)
+        result.copy(json = result.json.map { validatedProcess =>
+          validatedProcess.copy(validationResult =
+            validatedProcess.validationResult.map(_.copy(nodeResults = Map.empty))
+          )
+        })
+      case FetchScenarioGraph.DontValidate =>
+        toDisplayableProcessDetailsWithoutValidation(entity)
     }
   }
 
