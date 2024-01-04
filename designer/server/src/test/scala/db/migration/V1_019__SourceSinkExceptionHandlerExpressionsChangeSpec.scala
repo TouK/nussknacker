@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -68,7 +68,10 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
     val converted = migrateAndConvert(oldJson)
     val source    = converted.nodes.head.asInstanceOf[FlatNode].data.asInstanceOf[Source]
 
-    source shouldBe Source("start", SourceRef("source1", List(Parameter("param1", Expression("spel", "'string1'")))))
+    source shouldBe Source(
+      "start",
+      SourceRef("source1", List(NodeParameter("param1", Expression("spel", "'string1'"))))
+    )
   }
 
   it should "convert sink in filter false" in {
@@ -220,7 +223,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
   }
 
   private def sinkToVerify(id: String) = {
-    Sink(id, SinkRef("sink", List(Parameter("param1", Expression("spel", "'string1'")))))
+    Sink(id, SinkRef("sink", List(NodeParameter("param1", Expression("spel", "'string1'")))))
   }
 
   private def migrateAndConvert(oldJson: Json): CanonicalProcess = {

@@ -70,7 +70,7 @@ trait ProcessValidator extends LazyLogging {
       })
     } catch {
       case NonFatal(e) =>
-        logger.warn(s"Unexpected error during compilation of ${process.id}", e)
+        logger.warn(s"Unexpected error during compilation of ${process.name}", e)
         CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage))))
     }
   }
@@ -108,7 +108,7 @@ protected trait ProcessCompilerBase {
   }
 
   private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext =
-    globalVariablesPreparer.emptyLocalVariablesValidationContext(metaData)
+    globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(metaData)
 
   private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] =
     CompilationResult.map2(

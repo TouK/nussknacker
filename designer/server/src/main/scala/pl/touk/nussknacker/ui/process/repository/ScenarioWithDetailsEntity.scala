@@ -18,15 +18,15 @@ import java.time.Instant
 
 // TODO we should split ScenarioDetails and ScenarioShape (json)
 final case class ScenarioWithDetailsEntity[ScenarioShape](
-    id: String, // It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
     name: ProcessName,
-    processId: ProcessId, // TODO: Remove it when we will support Long / ProcessId
+    processId: ProcessId,
     processVersionId: VersionId,
     isLatestVersion: Boolean,
     description: Option[String],
     isArchived: Boolean,
     isFragment: Boolean,
     processingType: ProcessingType,
+    // FIXME: remove
     processCategory: String,
     modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
     modifiedAt: Instant,
@@ -52,7 +52,7 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
 
   def toEngineProcessVersion: EngineProcessVersion = EngineProcessVersion(
     versionId = processVersionId,
-    processName = idWithName.name,
+    processName = name,
     processId = processId,
     user = modifiedBy,
     modelVersion = modelVersion

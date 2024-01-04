@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterCo
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -125,7 +126,7 @@ class BaseFlowTest
               editor = None,
               validators = None,
               label = None,
-              hintText = None
+              hintText = Some("hint-text-from-additional-ui-config-provider")
             ),
           )
         ),
@@ -259,7 +260,7 @@ class BaseFlowTest
     val response1 = httpClient.send(
       quickRequest
         .post(
-          uri"$nuDesignerHttpAddress/api/processes/${scenario.id}/Category1?isFragment=${scenario.metaData.isFragment}"
+          uri"$nuDesignerHttpAddress/api/processes/${scenario.name}/Category1?isFragment=${scenario.metaData.isFragment}"
         )
         .auth
         .basic("admin", "admin")
@@ -286,7 +287,7 @@ class BaseFlowTest
     val processId = UUID.randomUUID().toString
 
     val process = DisplayableProcess(
-      id = processId,
+      name = ProcessName(processId),
       properties = ProcessProperties(FragmentSpecificData()),
       nodes = List(
         FragmentInputDefinition("input1", List(FragmentParameter("badParam", FragmentClazzRef("i.do.not.exist")))),
@@ -351,7 +352,7 @@ class BaseFlowTest
 
     val response = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${process.id}")
+        .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${process.name}")
         .contentType(MediaType.MultipartFormData)
         .multipartBody(
           sttpPrepareMultiParts(
@@ -491,14 +492,14 @@ class BaseFlowTest
     val response = httpClient.send(
       quickRequest.auth
         .basic("admin", "admin")
-        .post(uri"$nuDesignerHttpAddress/api/processes/${process.id}/Category1?isFragment=false")
+        .post(uri"$nuDesignerHttpAddress/api/processes/${process.name}/Category1?isFragment=false")
     )
     response.code shouldEqual StatusCode.Created
     updateProcess(process)
   }
 
   private def updateProcess(process: CanonicalProcess) = {
-    val processId = process.id
+    val processId = process.name
     val response = httpClient.send(
       quickRequest.auth
         .basic("admin", "admin")
@@ -517,7 +518,7 @@ class BaseFlowTest
 
     val response = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${process.id}")
+        .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${process.name}")
         .contentType(MediaType.MultipartFormData)
         .multipartBody(
           sttpPrepareMultiParts(

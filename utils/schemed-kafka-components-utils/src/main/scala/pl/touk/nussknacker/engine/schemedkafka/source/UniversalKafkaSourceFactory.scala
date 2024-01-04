@@ -36,7 +36,7 @@ import scala.reflect.ClassTag
 class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-    val processObjectDependencies: ProcessObjectDependencies,
+    val modelDependencies: ProcessObjectDependencies,
     protected val implProvider: KafkaSourceImplFactory[K, V]
 ) extends SourceFactory
     with KafkaUniversalComponentTransformer[Source]

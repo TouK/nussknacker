@@ -39,7 +39,7 @@ trait FlinkStubbedRunner {
     env.getCheckpointConfig.disableCheckpointing()
 
     val streamGraph = env.getStreamGraph
-    streamGraph.setJobName(process.id)
+    streamGraph.setJobName(process.name.value)
 
     val jobGraph = streamGraph.getJobGraph()
     jobGraph.setClasspaths(modelData.modelClassLoader.urls.asJava)

@@ -10,30 +10,30 @@ export function makeRelative(href: string): string {
     return href.replace(BASE_HREF, (match, offset) => (offset > 0 ? match : "/"));
 }
 
-function nuHref(path: string, scenarioId: string): string {
-    // , and / allowed in scenarioId
-    const sid = encodeURIComponent(scenarioId);
+function nuHref(path: string, scenarioName: string): string {
+    // , and / allowed in scenarioName
+    const sid = encodeURIComponent(scenarioName);
     return urljoin(BASE_HREF, path, sid);
 }
 
-export function scenarioHref(scenarioId: string): string {
-    return nuHref("visualization", scenarioId);
+export function scenarioHref(scenarioName: string): string {
+    return nuHref("visualization", scenarioName);
 }
 
-function scenarioWithNodesHref(scenarioId: string, nodeIds: string[]): string {
+function scenarioWithNodesHref(scenarioName: string, nodeIds: string[]): string {
     // , and / allowed in nodeId
     const ids = nodeIds.map((nodeId: string): string => encodeURIComponent(encodeURIComponent(nodeId)));
-    return urljoin(scenarioHref(scenarioId), `?nodeId=${ids.join(",")}`);
+    return urljoin(scenarioHref(scenarioName), `?nodeId=${ids.join(",")}`);
 }
 
-export function nodeHref(scenarioId: string, nodeId: string): string {
-    return scenarioWithNodesHref(scenarioId, [nodeId]);
+export function nodeHref(scenarioName: string, nodeId: string): string {
+    return scenarioWithNodesHref(scenarioName, [nodeId]);
 }
 
-export function fragmentNodeHref(scenarioId: string, fragmentNodeId: string, nodeId: string): string {
-    return scenarioWithNodesHref(scenarioId, [fragmentNodeId, `${fragmentNodeId}-${nodeId}`]);
+export function fragmentNodeHref(scenarioName: string, fragmentNodeId: string, nodeId: string): string {
+    return scenarioWithNodesHref(scenarioName, [fragmentNodeId, `${fragmentNodeId}-${nodeId}`]);
 }
 
-export function metricsHref(scenarioId: string): string {
-    return nuHref("metrics", scenarioId);
+export function metricsHref(scenarioName: string): string {
+    return nuHref("metrics", scenarioName);
 }

@@ -40,7 +40,7 @@ object NodeDataValidator {
 
 }
 
-class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver) {
+class NodeDataValidator(modelData: ModelData) {
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
     case spel: SpelExpressionParser => spel.typingDictLabels
@@ -62,7 +62,8 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       nodeData: NodeData,
       validationContext: ValidationContext,
       branchContexts: Map[String, ValidationContext],
-      outgoingEdges: List[OutgoingEdge]
+      outgoingEdges: List[OutgoingEdge],
+      fragmentResolver: FragmentResolver
   )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
       implicit val nodeId: NodeId = NodeId(nodeData.id)
@@ -102,7 +103,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
               validationContext
             )
           )
-        case a: FragmentInput => validateFragment(validationContext, outgoingEdges, compiler, a)
+        case a: FragmentInput => validateFragment(validationContext, outgoingEdges, a, fragmentResolver)
         case Split(_, _) | FragmentUsageOutput(_, _, _, _) | BranchEndData(_) =>
           ValidationNotPerformed
       }
@@ -122,8 +123,8 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
   private def validateFragment(
       validationContext: ValidationContext,
       outgoingEdges: List[OutgoingEdge],
-      compiler: NodeCompiler,
-      a: FragmentInput
+      a: FragmentInput,
+      fragmentResolver: FragmentResolver
   )(implicit nodeId: NodeId) = {
     fragmentResolver
       .resolveInput(a)

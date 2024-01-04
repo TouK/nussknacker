@@ -17,7 +17,7 @@ interface NodeErrorsLinkSectionProps {
 
 export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps): JSX.Element {
     const { nodeIds, message, showDetails, currentProcess, errorsOnTop } = props;
-    const name = useSelector(getProcessUnsavedNewName);
+    const unsavedName = useSelector(getProcessUnsavedNewName);
     const separator = ", ";
 
     return (
@@ -27,7 +27,7 @@ export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps)
                 {nodeIds.map((nodeId, index) => {
                     const details =
                         nodeId === "properties"
-                            ? NodeUtils.getProcessProperties(currentProcess, name)
+                            ? NodeUtils.getProcessPropertiesNode(currentProcess, unsavedName)
                             : NodeUtils.getNodeById(nodeId, currentProcess);
                     return (
                         <React.Fragment key={nodeId}>

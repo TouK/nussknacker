@@ -1,24 +1,23 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, Fragment}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 
 class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
 
@@ -45,7 +44,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List.empty
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
@@ -84,14 +83,14 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List(
         FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
         canonicalnode.Fragment(
-          FragmentInput("sub2", FragmentRef("fragment2", List(Parameter("param", "#param")))),
+          FragmentInput("sub2", FragmentRef("fragment2", List(NodeParameter("param", "#param")))),
           Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty))))
         )
       ),
       List.empty
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment, nested)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment, nested)).resolve(process)
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
@@ -124,7 +123,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List.empty
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(FragmentOutputNotDefined("badoutput", Set("sub-out1", "sub"))))
 
@@ -161,7 +160,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List.empty
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingManyOutputsFragment("sub", Set("output1", "output2"))))
 
@@ -184,7 +183,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List.empty
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingNoOutputsFragment("sub")))
 
@@ -223,9 +222,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       ),
       List.empty
     )
-    val resolver = FragmentResolver(Set(fragment, emptyFragment))
+    val resolver = FragmentResolver(List(fragment, emptyFragment))
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
-      case Valid(CanonicalProcess(_, flatNodes, additional)) =>
+      case Valid(CanonicalProcess(_, flatNodes, _)) =>
         flatNodes(0) match {
           case FlatNode(Source(id, _, _)) =>
             id shouldBe "source"
@@ -267,7 +266,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .filter("f1", "false")
       .emptySink("end", "sink1")
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
@@ -282,7 +281,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .fragmentOneOut("nodeFragmentId", "fragmentId", "fragmentResult", "output")
       .emptySink("id2", "sink")
 
-    val resolvedValidated = FragmentResolver(fragments = Set()).resolve(process)
+    val resolvedValidated = FragmentResolver(List.empty).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownFragment(id = "fragmentId", nodeId = "nodeFragmentId")))
   }
@@ -323,7 +322,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       ) :: Nil
     )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process).toOption.get.allStartNodes
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(process).toOption.get.allStartNodes
     resolvedValidated should have length 2
   }
 
@@ -349,7 +348,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
         )
       )
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(scenario)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(scenario)
     resolvedValidated shouldBe Symbol("valid")
 
   }
@@ -364,7 +363,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .fragmentOneOut("fragment", "fragment1", "output1", "outVar1")
       .emptySink("id1", "sink")
 
-    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(scenario)
+    val resolvedValidated = FragmentResolver(List(fragment)).resolve(scenario)
     resolvedValidated shouldBe Invalid(NonEmptyList.of(MultipleOutputsForName("output1", "fragment")))
 
   }
@@ -381,7 +380,11 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       build(node =>
         builder.creator(
           FragmentNode(
-            FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled).toList), isDisabled = Some(true)),
+            FragmentInput(
+              id,
+              FragmentRef(fragmentId, params.map(NodeParameter.tupled).toList),
+              isDisabled = Some(true)
+            ),
             Map(output -> node)
           )
         )
@@ -395,7 +398,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     ): R =
       creator(
         FragmentNode(
-          FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled)), isDisabled = Some(true)),
+          FragmentInput(id, FragmentRef(fragmentId, params.map(NodeParameter.tupled)), isDisabled = Some(true)),
           outputs
         )
       )
@@ -403,7 +406,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     def fragmentDisabledEnd(id: String, fragmentId: String, params: (String, Expression)*): R =
       creator(
         FragmentNode(
-          FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled).toList), isDisabled = Some(true)),
+          FragmentInput(id, FragmentRef(fragmentId, params.map(NodeParameter.tupled).toList), isDisabled = Some(true)),
           Map()
         )
       )

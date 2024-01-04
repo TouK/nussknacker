@@ -2,9 +2,7 @@ import reducer from "../src/reducers/index";
 import NodeUtils from "../src/components/graph/NodeUtils";
 
 const baseProcessState = {
-    id: "DEFGH",
     name: "DEFGH",
-    processVersionId: 23,
     isLatestVersion: true,
     processType: "graph",
     processCategory: "Category1",
@@ -14,7 +12,7 @@ const baseProcessState = {
     tags: [],
     currentlyDeployedAt: ["test"],
     json: {
-        id: "DEFGH",
+        name: "DEFGH",
         properties: {
             parallelism: 3,
             additionalFields: {
@@ -116,7 +114,7 @@ const reduceAll = (actions) => actions.reduce((state, action) => reducer(state, 
 
 describe("Reducer suite", () => {
     it("Display process", () => {
-        expect(baseStateWithProcess.graphReducer.processToDisplay.id).toEqual(baseProcessState.id);
+        expect(baseStateWithProcess.graphReducer.processToDisplay.name).toEqual(baseProcessState.name);
     });
 });
 

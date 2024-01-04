@@ -38,7 +38,7 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
-import pl.touk.nussknacker.ui.process.fragment.DbFragmentRepository
+import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
@@ -86,7 +86,7 @@ trait NuResourcesTest
 
   protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(testDbRef)
 
-  protected val fragmentRepository: DbFragmentRepository = newFragmentRepository(testDbRef)
+  protected val fragmentRepository: DefaultFragmentRepository = newFragmentRepository(testDbRef)
 
   protected val actionRepository: DbProcessActionRepository[DB] = newActionProcessRepository(testDbRef)
 
@@ -227,11 +227,11 @@ trait NuResourcesTest
   }
 
   protected def saveProcessAndAssertSuccess(
-      processId: String,
+      processName: ProcessName,
       process: CanonicalProcess,
       category: String = Category1
   ): Assertion =
-    saveProcess(ProcessName(processId), process, category) {
+    saveProcess(processName, process, category) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -248,7 +248,7 @@ trait NuResourcesTest
     }
 
   protected def saveProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
-    createProcessRequest(ProcessName(process.id), process.category) { code =>
+    createProcessRequest(process.name, process.category) { code =>
       code shouldBe StatusCodes.Created
       updateProcess(process)(testCode)
     }
@@ -257,7 +257,7 @@ trait NuResourcesTest
   protected def createProcessRequest(processName: ProcessName, category: String = Category1)(
       callback: StatusCode => Assertion
   ): Assertion =
-    Post(s"/processes/${processName.value}/$category?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/$processName/$category?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
       callback(status)
     }
 
@@ -267,7 +267,9 @@ trait NuResourcesTest
   }
 
   protected def savefragment(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
-    Post(s"/processes/${process.id}/${process.category}?isFragment=true") ~> processesRouteWithAllPermissions ~> check {
+    Post(
+      s"/processes/${process.name}/${process.category}?isFragment=true"
+    ) ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(process)(testCode)
     }
@@ -275,7 +277,7 @@ trait NuResourcesTest
 
   protected def updateProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion =
     Put(
-      s"/processes/${process.id}",
+      s"/processes/${process.name}",
       TestFactory.posting.toEntityAsProcessToSave(process)
     ) ~> processesRouteWithAllPermissions ~> check {
       testCode
@@ -283,14 +285,14 @@ trait NuResourcesTest
 
   protected def updateProcess(process: UpdateProcessCommand)(testCode: => Assertion): Assertion =
     Put(
-      s"/processes/${process.process.id}",
+      s"/processes/${process.process.name}",
       TestFactory.posting.toEntity(process)
     ) ~> processesRouteWithAllPermissions ~> check {
       testCode
     }
 
-  protected def updateProcessAndAssertSuccess(processId: String, process: CanonicalProcess): Assertion =
-    updateProcess(ProcessName(processId), process) {
+  protected def updateProcessAndAssertSuccess(processName: ProcessName, process: CanonicalProcess): Assertion =
+    updateProcess(processName, process) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -298,14 +300,14 @@ trait NuResourcesTest
       testCode: => Assertion
   ): Assertion =
     Put(
-      s"/processes/${processName.value}",
+      s"/processes/$processName",
       TestFactory.posting.toEntityAsProcessToSave(process, comment)
     ) ~> processesRouteWithAllPermissions ~> check {
       testCode
     }
 
   protected def deployProcess(
-      processName: String,
+      processName: ProcessName,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
       comment: Option[String] = None
   ): RouteTestResult =
@@ -316,20 +318,23 @@ trait NuResourcesTest
       withPermissions(deployRoute(deploymentCommentSettings), testPermissionDeploy |+| testPermissionRead)
 
   protected def cancelProcess(
-      id: String,
+      processName: ProcessName,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
       comment: Option[String] = None
   ): RouteTestResult =
-    Post(s"/processManagement/cancel/$id", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
+    Post(
+      s"/processManagement/cancel/$processName",
+      HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
+    ) ~>
       withPermissions(deployRoute(deploymentCommentSettings), testPermissionDeploy |+| testPermissionRead)
 
-  protected def snapshot(processName: String): RouteTestResult =
+  protected def snapshot(processName: ProcessName): RouteTestResult =
     Post(s"/adminProcessManagement/snapshot/$processName") ~> withPermissions(
       deployRoute(),
       testPermissionDeploy |+| testPermissionRead
     )
 
-  protected def stop(processName: String): RouteTestResult =
+  protected def stop(processName: ProcessName): RouteTestResult =
     Post(s"/adminProcessManagement/stop/$processName") ~> withPermissions(
       deployRoute(),
       testPermissionDeploy |+| testPermissionRead
@@ -345,17 +350,17 @@ trait NuResourcesTest
       "testData"    -> testDataContent,
       "processJson" -> displayableProcess.asJson.noSpaces
     )()
-    Post(s"/processManagement/test/${scenario.id}", multiPart) ~> withPermissions(
+    Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
       deployRoute(),
       testPermissionDeploy |+| testPermissionRead
     )
   }
 
   protected def getProcess(processName: ProcessName): RouteTestResult =
-    Get(s"/processes/${processName.value}") ~> withPermissions(processesRoute, testPermissionRead)
+    Get(s"/processes/$processName") ~> withPermissions(processesRoute, testPermissionRead)
 
   protected def getActivity(processName: ProcessName): RouteTestResult =
-    Get(s"/processes/${processName.value}/activity") ~> processActivityRouteWithAllPermissions
+    Get(s"/processes/$processName/activity") ~> processActivityRouteWithAllPermissions
 
   protected def forScenarioReturned(processName: ProcessName, isAdmin: Boolean = false)(
       callback: ProcessJson => Unit
@@ -369,7 +374,7 @@ trait NuResourcesTest
   protected def tryForScenarioReturned(processName: ProcessName, isAdmin: Boolean = false)(
       callback: (StatusCode, String) => Unit
   ): Unit =
-    Get(s"/processes/${processName.value}") ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
+    Get(s"/processes/$processName") ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       callback(status, responseAs[String])
     }
 
@@ -427,7 +432,7 @@ trait NuResourcesTest
       category: String,
       isFragment: Boolean
   ): Future[ProcessId] = {
-    val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName.value, Streaming, isFragment)
+    val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName, Streaming, isFragment)
     saveAndGetId(emptyProcess, category, isFragment)
   }
 
@@ -437,7 +442,7 @@ trait NuResourcesTest
       isFragment: Boolean,
       processingType: ProcessingType = Streaming
   ): Future[ProcessId] = {
-    val processName = ProcessName(process.id)
+    val processName = process.name
     val action =
       CreateProcessAction(processName, category, process, processingType, isFragment, forwardedUserName = None)
     for {
@@ -508,9 +513,7 @@ object ProcessJson extends OptionValues {
     val state      = process.hcursor.downField("state").as[Option[Json]].toOption.value
 
     new ProcessJson(
-      process.hcursor.downField("id").as[String].toOption.value,
       process.hcursor.downField("name").as[String].toOption.value,
-      process.hcursor.downField("processId").as[Long].toOption.value,
       lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
       lastAction.map(_.hcursor.downField("actionType").as[String].toOption.value),
       state.map(StateJson(_)),
@@ -523,9 +526,7 @@ object ProcessJson extends OptionValues {
 }
 
 final case class ProcessJson(
-    id: String,
     name: String,
-    processId: Long,
     lastActionVersionId: Option[Long],
     lastActionType: Option[String],
     state: Option[StateJson],

@@ -1,20 +1,20 @@
 import HttpService from "../../http/HttpService";
 import { displayProcessActivity } from "./displayProcessActivity";
-import { ProcessId } from "../../types";
+import { ProcessName } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 
-export function addComment(processId: ProcessId, processVersionId, comment): ThunkAction {
+export function addComment(processName: ProcessName, processVersionId, comment): ThunkAction {
     return (dispatch) => {
-        return HttpService.addComment(processId, processVersionId, comment).then(() => {
-            return dispatch(displayProcessActivity(processId));
+        return HttpService.addComment(processName, processVersionId, comment).then(() => {
+            return dispatch(displayProcessActivity(processName));
         });
     };
 }
 
-export function deleteComment(processId: ProcessId, commentId): ThunkAction {
+export function deleteComment(processName: ProcessName, commentId): ThunkAction {
     return (dispatch) => {
-        return HttpService.deleteComment(processId, commentId).then(() => {
-            return dispatch(displayProcessActivity(processId));
+        return HttpService.deleteComment(processName, commentId).then(() => {
+            return dispatch(displayProcessActivity(processName));
         });
     };
 }

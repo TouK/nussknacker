@@ -28,7 +28,7 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
       .withValue("namespace", fromAnyRef(namespace))
   }
 
-  override protected lazy val testProcessObjectDependencies: ProcessObjectDependencies =
+  override protected lazy val testModelDependencies: ProcessObjectDependencies =
     ProcessObjectDependencies(config, objectNaming)
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient

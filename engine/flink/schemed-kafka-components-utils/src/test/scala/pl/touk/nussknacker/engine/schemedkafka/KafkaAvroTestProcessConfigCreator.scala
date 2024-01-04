@@ -22,18 +22,18 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
   private val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
   override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
+      modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = {
     val universalSourceFactory = new UniversalKafkaSourceFactory[Any, Any](
       schemaRegistryClientFactory,
       universalPayload,
-      processObjectDependencies,
+      modelDependencies,
       new FlinkKafkaSourceImplFactory(None)
     )
     val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory[Any, Any](
       schemaRegistryClientFactory,
       universalPayload,
-      processObjectDependencies,
+      modelDependencies,
       new FlinkKafkaSourceImplFactory(None)
     ) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)
@@ -46,20 +46,20 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
   }
 
   override def customStreamTransformers(
-      processObjectDependencies: ProcessObjectDependencies
+      modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] = {
     Map("extractAndTransformTimestamp" -> defaultCategory(ExtractAndTransformTimestamp))
   }
 
   override def sinkFactories(
-      processObjectDependencies: ProcessObjectDependencies
+      modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] = {
     Map(
       "kafka" -> defaultCategory(
         new UniversalKafkaSinkFactory(
           schemaRegistryClientFactory,
           universalPayload,
-          processObjectDependencies,
+          modelDependencies,
           FlinkKafkaUniversalSinkImplFactory
         )
       ),

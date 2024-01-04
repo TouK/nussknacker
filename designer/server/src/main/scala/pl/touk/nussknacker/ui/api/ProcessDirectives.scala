@@ -6,28 +6,29 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.NuPathMatchers
 
 import scala.concurrent.ExecutionContext
 
-trait ProcessDirectives {
+trait ProcessDirectives extends NuPathMatchers {
   import akka.http.scaladsl.server.Directives._
 
   protected val processService: ProcessService
   implicit val ec: ExecutionContext
 
   def processDetailsForName(
-      processName: String
+      processName: ProcessName
   )(implicit loggedUser: LoggedUser): Directive1[ScenarioWithDetails] = {
     processId(processName).flatMap { processIdWithName =>
       onSuccess(
-        processService.getProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly)
+        processService.getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly)
       ).flatMap(provide)
     }
   }
 
-  def processId(processName: String): Directive1[ProcessIdWithName] = {
-    onSuccess(processService.getProcessId(ProcessName(processName)))
-      .map(ProcessIdWithName(_, ProcessName(processName)))
+  def processId(processName: ProcessName): Directive1[ProcessIdWithName] = {
+    onSuccess(processService.getProcessId(processName))
+      .map(ProcessIdWithName(_, processName))
       .flatMap(provide)
   }
 

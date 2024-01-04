@@ -31,24 +31,25 @@ class ProcessActivityResource(
     Unmarshaller.byteArrayUnmarshaller
 
   def securedRoute(implicit user: LoggedUser): Route = {
-    path("processes" / Segment / "activity") { processName =>
+    path("processes" / ProcessNameSegment / "activity") { processName =>
       (get & processId(processName)) { processId =>
         complete {
-          processActivityRepository.findActivity(processId)
+          processActivityRepository.findActivity(processId.id)
         }
       }
-    } ~ path("processes" / Segment / VersionIdSegment / "activity" / "comments") { (processName, versionId) =>
-      (post & processId(processName)) { processId =>
-        canWrite(processId) {
-          entity(as[Array[Byte]]) { commentBytes =>
-            complete {
-              val comment = UserComment(new String(commentBytes, java.nio.charset.StandardCharsets.UTF_8))
-              processActivityRepository.addComment(processId.id, versionId, comment)
+    } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "activity" / "comments") {
+      (processName, versionId) =>
+        (post & processId(processName)) { processId =>
+          canWrite(processId) {
+            entity(as[Array[Byte]]) { commentBytes =>
+              complete {
+                val comment = UserComment(new String(commentBytes, java.nio.charset.StandardCharsets.UTF_8))
+                processActivityRepository.addComment(processId.id, versionId, comment)
+              }
             }
           }
         }
-      }
-    } ~ path("processes" / Segment / "activity" / "comments" / LongNumber) { (processName, commentId) =>
+    } ~ path("processes" / ProcessNameSegment / "activity" / "comments" / LongNumber) { (processName, commentId) =>
       (delete & processId(processName)) { processId =>
         canWrite(processId) {
           complete {
@@ -74,7 +75,7 @@ class AttachmentResources(
     with NuPathMatchers {
 
   def securedRoute(implicit user: LoggedUser): Route = {
-    path("processes" / Segment / VersionIdSegment / "activity" / "attachments") { (processName, versionId) =>
+    path("processes" / ProcessNameSegment / VersionIdSegment / "activity" / "attachments") { (processName, versionId) =>
       (post & processId(processName)) { processId =>
         canWrite(processId) {
           withoutSizeLimit { // we have separate size limit validation inside attachmentService
@@ -86,8 +87,8 @@ class AttachmentResources(
           }
         }
       }
-    } ~ path("processes" / Segment / VersionIdSegment / "activity" / "attachments" / LongNumber) {
-      (processName, versionId, attachmentId) => // FIXME: are we sure about pass here versionId?
+    } ~ path("processes" / ProcessNameSegment / "activity" / "attachments" / LongNumber) {
+      (processName, attachmentId) =>
         (get & processId(processName)) { _ =>
           complete {
             CatsSyntax.futureOpt.map(attachmentService.readAttachment(attachmentId)) { case (name, data) =>

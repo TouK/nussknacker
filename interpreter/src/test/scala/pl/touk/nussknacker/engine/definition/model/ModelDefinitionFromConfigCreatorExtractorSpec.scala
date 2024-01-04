@@ -90,10 +90,12 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerReturningContextTransformationWithOutputVariable")
       .value
+      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
       .returnType shouldBe defined
     modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerReturningContextTransformationWithoutOutputVariable")
       .value
+      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
       .returnType shouldBe empty
   }
 
@@ -155,7 +157,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   test("extract basic global variable") {
     val definition = modelDefinitionWithTypes(None).modelDefinition.expressionConfig.globalVariables
 
-    val helperDef = definition("helper")
+    val helperDef = definition("helper").asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
     helperDef.implementation shouldBe SampleHelper
     helperDef.returnType.value shouldBe Typed(SampleHelper.getClass)
   }
@@ -163,7 +165,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   test("extract typed global variable") {
     val definition = modelDefinitionWithTypes(None).modelDefinition.expressionConfig.globalVariables
 
-    val typedGlobalDef = definition("typedGlobal")
+    val typedGlobalDef = definition("typedGlobal").asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
     typedGlobalDef.implementation shouldBe SampleTypedVariable
     typedGlobalDef.returnType.value shouldBe Typed(classOf[Int])
   }
@@ -208,7 +210,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   object TestCreator extends ProcessConfigCreator {
 
     override def customStreamTransformers(
-        processObjectDependencies: ProcessObjectDependencies
+        modelDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
         "transformer1"                -> WithCategories.anyCategory(Transformer1),
@@ -231,7 +233,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         "transformedInSomeOtherCategory" -> WithCategories(Transformer1, SomeOtherCategory),
       )
 
-    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+    override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
       Map(
         "configurable1" -> WithCategories.anyCategory(
           EmptyExplicitMethodToInvoke(
@@ -242,16 +244,16 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       )
 
     override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
+        modelDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] = Map()
 
     override def sinkFactories(
-        processObjectDependencies: ProcessObjectDependencies
+        modelDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SinkFactory]] = Map()
 
-    override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
+    override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
 
-    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
+    override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig =
       ExpressionConfig(
         globalProcessVariables = Map(
           "helper"      -> WithCategories.anyCategory(SampleHelper),

@@ -6,8 +6,10 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
@@ -87,7 +89,7 @@ object node {
     // TODO: rename to componentId
     def nodeType: String
 
-    def parameters: List[Parameter]
+    def parameters: List[NodeParameter]
 
     def outputVar: Option[String]
   }
@@ -102,7 +104,7 @@ object node {
   See: ParametersUtils.ts/#parametersPath and ParametersUtils.ts/#adjustParameters
    */
   trait WithParameters {
-    def parameters: List[Parameter]
+    def parameters: List[NodeParameter]
   }
 
   sealed trait OneOutputSubsequentNodeData extends NodeData with RealNodeData
@@ -122,7 +124,7 @@ object node {
       with WithParameters {
     override val componentId: String = ref.typ
 
-    override def parameters: List[Parameter] = ref.parameters
+    override def parameters: List[NodeParameter] = ref.parameters
   }
 
   // TODO JOIN: move branchParameters to BranchEnd
@@ -131,7 +133,7 @@ object node {
       outputVar: Option[String],
       // TODO: rename to componentId
       nodeType: String,
-      parameters: List[Parameter],
+      parameters: List[NodeParameter],
       branchParameters: List[BranchParameters],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends StartingNodeData
@@ -195,7 +197,7 @@ object node {
       with WithParameters {
     override val componentId: String = service.id
 
-    override def parameters: List[Parameter] = service.parameters
+    override def parameters: List[NodeParameter] = service.parameters
   }
 
   case class CustomNode(
@@ -203,7 +205,7 @@ object node {
       outputVar: Option[String],
       // TODO: rename to componentId
       nodeType: String,
-      parameters: List[Parameter],
+      parameters: List[NodeParameter],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   ) extends OneOutputSubsequentNodeData
       with CustomNodeData
@@ -223,7 +225,7 @@ object node {
       with WithParameters {
     override val componentId: String = service.id
 
-    override def parameters: List[Parameter] = service.parameters
+    override def parameters: List[NodeParameter] = service.parameters
   }
 
   case class BranchEndData(definition: BranchEndDefinition) extends EndingNodeData {
@@ -260,7 +262,7 @@ object node {
       with WithParameters {
     override val componentId: String = ref.typ
 
-    override def parameters: List[Parameter] = ref.parameters
+    override def parameters: List[NodeParameter] = ref.parameters
   }
 
   // TODO: A better way of passing information regarding fragment parameter definition
@@ -310,15 +312,6 @@ object node {
   object FragmentInputDefinition {
 
     @ConfiguredJsonCodec
-    sealed trait ValueInputWithFixedValues {
-      def allowOtherValue: Boolean
-      def fixedValuesList: List[FixedExpressionValue]
-    }
-
-    case class ValueInputWithFixedValuesProvided(fixedValuesList: List[FixedExpressionValue], allowOtherValue: Boolean)
-        extends ValueInputWithFixedValues
-
-    @ConfiguredJsonCodec
     case class FragmentParameter(
         name: String,
         typ: FragmentClazzRef,
@@ -328,8 +321,6 @@ object node {
         valueEditor: Option[ValueInputWithFixedValues],
         valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
     )
-
-    @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
     object FragmentParameter {
 
@@ -352,11 +343,6 @@ object node {
       def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
 
     }
-
-    @JsonCodec case class ParameterValueCompileTimeValidation(
-        validationExpression: Expression,
-        validationFailedMessage: Option[String]
-    )
 
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 

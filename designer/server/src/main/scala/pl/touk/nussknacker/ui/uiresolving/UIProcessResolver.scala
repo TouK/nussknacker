@@ -26,12 +26,12 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
       spel.typingDictLabels
   })
 
-  def validateAndResolve(displayable: DisplayableProcess): CanonicalProcess = {
+  def validateAndResolve(displayable: DisplayableProcess)(implicit loggedUser: LoggedUser): CanonicalProcess = {
     val validationResult = validateBeforeUiResolving(displayable)
     resolveExpressions(displayable, validationResult.typingInfo)
   }
 
-  def validateBeforeUiResolving(displayable: DisplayableProcess): ValidationResult = {
+  def validateBeforeUiResolving(displayable: DisplayableProcess)(implicit loggedUser: LoggedUser): ValidationResult = {
     beforeUiResolvingValidator.validate(displayable)
   }
 
@@ -47,13 +47,15 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
       canonical: CanonicalProcess,
       processingType: ProcessingType,
       category: Category
-  ): ValidatedDisplayableProcess = {
-    val validationResult = validateBeforeUiReverseResolving(canonical, category)
+  )(implicit loggedUser: LoggedUser): ValidatedDisplayableProcess = {
+    val validationResult = validateBeforeUiReverseResolving(canonical, processingType)
     reverseResolveExpressions(canonical, processingType, category, validationResult)
   }
 
-  def validateBeforeUiReverseResolving(canonical: CanonicalProcess, category: Category): ValidationResult =
-    uiValidator.validateCanonicalProcess(canonical, category)
+  def validateBeforeUiReverseResolving(canonical: CanonicalProcess, processingType: ProcessingType)(
+      implicit loggedUser: LoggedUser
+  ): ValidationResult =
+    uiValidator.validateCanonicalProcess(canonical, processingType)
 
   private def reverseResolveExpressions(
       canonical: CanonicalProcess,

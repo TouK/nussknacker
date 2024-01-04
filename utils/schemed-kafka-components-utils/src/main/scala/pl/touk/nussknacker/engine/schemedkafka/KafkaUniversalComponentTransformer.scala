@@ -10,10 +10,11 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{TopicParamName, nullTopicOption}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.TopicParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
@@ -29,10 +30,6 @@ object KafkaUniversalComponentTransformer {
   def extractValidationMode(value: String): ValidationMode =
     ValidationMode.fromString(value, SinkValidationModeParameterName)
 
-  // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
-  // TODO: add addNullOption feature flag to FixedValuesParameterEditor
-  private val nullTopicOption: FixedExpressionValue = FixedExpressionValue("", "")
-
 }
 
 trait KafkaUniversalComponentTransformer[T]
@@ -43,7 +40,7 @@ trait KafkaUniversalComponentTransformer[T]
 
   def schemaRegistryClientFactory: SchemaRegistryClientFactory
 
-  def processObjectDependencies: ProcessObjectDependencies
+  def modelDependencies: ProcessObjectDependencies
 
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
@@ -58,7 +55,7 @@ trait KafkaUniversalComponentTransformer[T]
     )
 
   protected def prepareKafkaConfig: KafkaConfig = {
-    KafkaConfig.parseConfig(processObjectDependencies.config)
+    KafkaConfig.parseConfig(modelDependencies.config)
   }
 
   protected def getTopicParam(implicit nodeId: NodeId): WithError[Parameter] = {
@@ -80,10 +77,12 @@ trait KafkaUniversalComponentTransformer[T]
     Parameter[String](topicParamName).copy(editor =
       Some(
         FixedValuesParameterEditor(
-          nullTopicOption +: topics
+          // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
+          // TODO: add addNullOption feature flag to FixedValuesParameterEditor
+          nullFixedValue +: topics
             .flatMap(topic =>
-              processObjectDependencies.objectNaming
-                .decodeName(topic, processObjectDependencies.config, KafkaComponentsUtils.KafkaTopicUsageKey)
+              modelDependencies.objectNaming
+                .decodeName(topic, modelDependencies.config, KafkaComponentsUtils.KafkaTopicUsageKey)
             )
             .sorted
             .map(v => FixedExpressionValue(s"'$v'", v))
@@ -118,7 +117,7 @@ trait KafkaUniversalComponentTransformer[T]
   )
 
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
-    KafkaComponentsUtils.prepareKafkaTopic(topic, processObjectDependencies)
+    KafkaComponentsUtils.prepareKafkaTopic(topic, modelDependencies)
 
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)

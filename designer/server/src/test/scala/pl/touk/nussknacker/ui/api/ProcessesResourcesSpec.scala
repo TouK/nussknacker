@@ -106,7 +106,6 @@ class ProcessesResourcesSpec
 
     deploymentManager.withProcessRunning(processName) {
       forScenarioReturned(processName) { process =>
-        process.processId shouldBe processId.value
         process.name shouldBe processName.value
         process.state.map(_.name) shouldBe Some(SimpleStateStatus.Running.name)
         process.state.map(_.tooltip) shouldBe Some(
@@ -125,7 +124,7 @@ class ProcessesResourcesSpec
   test("spel template expression is validated properly") {
     createDeployedProcessFromProcess(SampleSpelTemplateProcess.process)
 
-    Get(s"/processes/${SampleSpelTemplateProcess.processName.value}") ~> routeWithRead ~> check {
+    Get(s"/processes/${SampleSpelTemplateProcess.processName}") ~> routeWithRead ~> check {
       val newProcessDetails = responseAs[ScenarioWithDetails]
       newProcessDetails.processVersionId shouldBe VersionId.initialVersionId
 
@@ -137,14 +136,14 @@ class ProcessesResourcesSpec
   test("return validated and non-validated process") {
     createEmptyProcess(processName)
 
-    Get(s"/processes/${processName.value}") ~> routeWithRead ~> check {
+    Get(s"/processes/$processName") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
       val validated = responseAs[ScenarioWithDetails]
       validated.name shouldBe processName
       validated.validationResult.value.errors should not be empty
     }
 
-    Get(s"/processes/${processName.value}?skipValidateAndResolve=true") ~> routeWithRead ~> check {
+    Get(s"/processes/$processName?skipValidateAndResolve=true") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
       val validated = responseAs[ScenarioWithDetails]
       validated.name shouldBe processName
@@ -160,7 +159,7 @@ class ProcessesResourcesSpec
     savefragment(displayableFragment)(succeed)
     saveProcess(processName, processWithFragment.process, Category1)(succeed)
 
-    archiveProcess(ProcessName(displayableFragment.id)) { status =>
+    archiveProcess(displayableFragment.name) { status =>
       status shouldEqual StatusCodes.Conflict
     }
   }
@@ -186,7 +185,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    archiveProcess(ProcessName(displayableFragment.id)) { status =>
+    archiveProcess(displayableFragment.name) { status =>
       status shouldEqual StatusCodes.OK
     }
   }
@@ -199,9 +198,9 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    Post(s"/processes/${processName.value}/$Category1?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/$processName/$Category1?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.BadRequest
-      responseAs[String] shouldEqual s"Scenario ${processName.value} already exists"
+      responseAs[String] shouldEqual s"Scenario $processName already exists"
     }
   }
 
@@ -360,7 +359,6 @@ class ProcessesResourcesSpec
 
     forScenarioReturned(processName) { process =>
       process.processCategory shouldBe Category1
-      process.processId shouldBe processId.value
     }
   }
 
@@ -395,10 +393,10 @@ class ProcessesResourcesSpec
     }
 
     forScenariosReturned(ScenarioQuery.empty, isAdmin = true) { processes =>
-      processes.exists(_.processId == processId.value) shouldBe true
+      processes.exists(_.name == processName.value) shouldBe true
     }
     forScenariosDetailsReturned(ScenarioQuery.empty, isAdmin = true) { processes =>
-      processes.exists(_.processId.value == processId.value) shouldBe true
+      processes.exists(_.name == processName) shouldBe true
     }
   }
 
@@ -628,7 +626,7 @@ class ProcessesResourcesSpec
 
   test("return details of process with empty expression") {
     saveProcess(processName, ProcessTestData.validProcessWithEmptySpelExpr, Category1) {
-      Get(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
+      Get(s"/processes/$processName") ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[String] should include(processName.value)
       }
@@ -653,14 +651,14 @@ class ProcessesResourcesSpec
     }
 
     forScenariosReturned(ScenarioQuery.empty) { processes =>
-      val process = processes.find(_.name == SampleProcess.process.id)
+      val process = processes.find(_.name == SampleProcess.process.name.value)
 
       withClue(process) {
         process.isDefined shouldBe true
       }
     }
     forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
-      processes.exists(_.name.value == SampleProcess.process.id) shouldBe true
+      processes.exists(_.name == SampleProcess.process.name) shouldBe true
     }
   }
 
@@ -679,7 +677,7 @@ class ProcessesResourcesSpec
 
     getProcess(processName) ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
-      processDetails.name.value shouldBe SampleProcess.process.id
+      processDetails.name shouldBe SampleProcess.process.name
       processDetails.historyUnsafe.length shouldBe 3
       // processDetails.history.forall(_.processId == processDetails.id) shouldBe true //TODO: uncomment this when we will support id as Long / ProcessId
     }
@@ -694,19 +692,19 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processes/${SampleProcess.process.id}/1") ~> routeWithAllPermissions ~> check {
+    Get(s"/processes/${SampleProcess.process.name}/1") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
       processDetails.isLatestVersion shouldBe false
     }
 
-    Get(s"/processes/${SampleProcess.process.id}/2") ~> routeWithAllPermissions ~> check {
+    Get(s"/processes/${SampleProcess.process.name}/2") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(2)
       processDetails.isLatestVersion shouldBe false
     }
 
-    Get(s"/processes/${SampleProcess.process.id}/3") ~> routeWithAllPermissions ~> check {
+    Get(s"/processes/${SampleProcess.process.name}/3") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(3)
       processDetails.isLatestVersion shouldBe true
@@ -724,11 +722,11 @@ class ProcessesResourcesSpec
   }
 
   test("perform idempotent process save") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)
-    Get(s"/processes/${SampleProcess.process.id}") ~> routeWithAllPermissions ~> check {
+    saveProcessAndAssertSuccess(SampleProcess.process.name, ProcessTestData.validProcess)
+    Get(s"/processes/${SampleProcess.process.name}") ~> routeWithAllPermissions ~> check {
       val processHistoryBeforeDuplicatedWrite = responseAs[ScenarioWithDetails].historyUnsafe
-      updateProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)
-      Get(s"/processes/${SampleProcess.process.id}") ~> routeWithAllPermissions ~> check {
+      updateProcessAndAssertSuccess(SampleProcess.process.name, ProcessTestData.validProcess)
+      Get(s"/processes/${SampleProcess.process.name}") ~> routeWithAllPermissions ~> check {
         val processHistoryAfterDuplicatedWrite = responseAs[ScenarioWithDetails].historyUnsafe
         processHistoryAfterDuplicatedWrite shouldBe processHistoryBeforeDuplicatedWrite
       }
@@ -737,7 +735,7 @@ class ProcessesResourcesSpec
 
   test("not authorize user with read permissions to modify node") {
     Put(
-      s"/processes/$Category1/${processName.value}",
+      s"/processes/$Category1/$processName",
       posting.toEntityAsProcessToSave(ProcessTestData.validProcess)
     ) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
@@ -745,7 +743,7 @@ class ProcessesResourcesSpec
 
     val modifiedParallelism = 123
     val props               = ProcessProperties(StreamMetaData(Some(modifiedParallelism)))
-    Put(s"/processes/$Category1/${processName.value}", posting.toEntity(props)) ~> routeWithRead ~> check {
+    Put(s"/processes/$Category1/$processName", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
   }
@@ -796,14 +794,13 @@ class ProcessesResourcesSpec
 
   test("allow to delete process") {
     val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
-    val processName   = ProcessName(processToSave.id)
 
-    createArchivedProcess(processName)
+    createArchivedProcess(processToSave.name)
 
-    deleteProcess(processName) { status =>
+    deleteProcess(processToSave.name) { status =>
       status shouldEqual StatusCodes.OK
 
-      tryForScenarioReturned(processName) { (status, _) =>
+      tryForScenarioReturned(processToSave.name) { (status, _) =>
         status shouldEqual StatusCodes.NotFound
       }
     }
@@ -854,7 +851,7 @@ class ProcessesResourcesSpec
     val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
-      Post(s"/processes/${processToSave.id}/$Category1?isFragment=false") ~> routeWithWrite ~> check {
+      Post(s"/processes/${processToSave.name}/$Category1?isFragment=false") ~> routeWithWrite ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
     }
@@ -872,8 +869,8 @@ class ProcessesResourcesSpec
     val firstProcessName  = ProcessName("firstProcessName")
     val secondProcessName = ProcessName("secondProcessName")
 
-    saveProcess(firstProcessName, ProcessTestData.validProcessWithId(firstProcessName.value), Category1) {
-      saveProcess(secondProcessName, ProcessTestData.validProcessWithId(secondProcessName.value), Category1) {
+    saveProcess(firstProcessName, ProcessTestData.validProcessWithName(firstProcessName), Category1) {
+      saveProcess(secondProcessName, ProcessTestData.validProcessWithName(secondProcessName), Category1) {
         Get("/processesDetails?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
           status shouldEqual StatusCodes.OK
           val processes = responseAs[List[ScenarioWithDetails]]
@@ -957,7 +954,7 @@ class ProcessesResourcesSpec
                 ToolbarButton(
                   CustomLink,
                   Some("custom"),
-                  Some(s"Custom link for ${processName.value}"),
+                  Some(s"Custom link for $processName"),
                   None,
                   Some(s"/test/${id.value}"),
                   disabled = false
@@ -1017,7 +1014,7 @@ class ProcessesResourcesSpec
     futureFetchingProcessRepository.fetchProcessId(processName).futureValue.get
 
   private def renameProcess(processName: ProcessName, newName: ProcessName)(callback: StatusCode => Any): Any =
-    Put(s"/processes/${processName.value}/rename/${newName.value}") ~> routeWithAllPermissions ~> check {
+    Put(s"/processes/$processName/rename/$newName") ~> routeWithAllPermissions ~> check {
       callback(status)
     }
 
@@ -1031,12 +1028,12 @@ class ProcessesResourcesSpec
     }
 
   private def getProcessToolbars(processName: ProcessName, isAdmin: Boolean = false): RouteTestResult =
-    Get(s"/processes/${processName.value}/toolbars") ~> routeWithPermissions(processesRoute, isAdmin)
+    Get(s"/processes/$processName/toolbars") ~> routeWithPermissions(processesRoute, isAdmin)
 
   private def changeProcessCategory(processName: ProcessName, category: String, isAdmin: Boolean = false)(
       callback: StatusCode => Any
   ): Any =
-    Post(s"/processes/category/${processName.value}/$category") ~> routeWithPermissions(
+    Post(s"/processes/category/$processName/$category") ~> routeWithPermissions(
       processesRoute,
       isAdmin
     ) ~> check {
@@ -1048,7 +1045,7 @@ class ProcessesResourcesSpec
     }
 
   private def archiveProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
-    Post(s"/archive/${processName.value}") ~> withPermissions(
+    Post(s"/archive/$processName") ~> withPermissions(
       processesRoute,
       testPermissionWrite |+| testPermissionRead
     ) ~> check {
@@ -1056,7 +1053,7 @@ class ProcessesResourcesSpec
     }
 
   private def unArchiveProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
-    Post(s"/unarchive/${processName.value}") ~> withPermissions(
+    Post(s"/unarchive/$processName") ~> withPermissions(
       processesRoute,
       testPermissionWrite |+| testPermissionRead
     ) ~> check {
@@ -1064,7 +1061,7 @@ class ProcessesResourcesSpec
     }
 
   private def deleteProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
-    Delete(s"/processes/${processName.value}") ~> withPermissions(
+    Delete(s"/processes/$processName") ~> withPermissions(
       processesRoute,
       testPermissionWrite |+| testPermissionRead
     ) ~> check {
@@ -1084,7 +1081,7 @@ class ProcessesResourcesSpec
   private def tryForScenarioStatus(processName: ProcessName, isAdmin: Boolean = false)(
       callback: (StatusCode, String) => Unit
   ): Unit =
-    Get(s"/processes/${processName.value}/status") ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
+    Get(s"/processes/$processName/status") ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       callback(status, responseAs[String])
     }
 

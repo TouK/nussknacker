@@ -9,7 +9,7 @@ import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioP
 import { FixedValuesOption } from "../components/graph/node-modal/fragment-input-definition/item";
 
 export type Process = {
-    id: string;
+    name: string;
     nodes: NodeType[];
     edges: Edge[];
     properties: PropertiesType;
@@ -18,7 +18,7 @@ export type Process = {
     category?: string; // optional - see the comment for a field with the same name in DisplayableProcess.scala
 };
 
-export type ProcessId = Process["id"];
+export type ProcessName = Process["name"];
 
 export type Category = string;
 
@@ -50,19 +50,11 @@ export interface ReturnedType {
     params: [];
 }
 
-export interface NodeObjectTypeDefinition {
+export interface ComponentDefinition {
     parameters: UIParameter[] | null;
-    outputParameters?: string[] | null;
     returnType: ReturnedType | null;
-}
-
-export interface ProcessDefinition {
-    services?: Record<string, NodeObjectTypeDefinition>;
-    sourceFactories?: Record<string, NodeObjectTypeDefinition>;
-    sinkFactories?: Record<string, NodeObjectTypeDefinition>;
-    customStreamTransformers?: Record<string, NodeObjectTypeDefinition>;
-    fragmentInputs?: Record<string, NodeObjectTypeDefinition>;
-    typesInformation?: ClassDefinition[];
+    // For fragments only
+    outputParameters?: string[] | null;
 }
 
 export type ComponentsConfig = Record<string, SingleComponentConfig>;
@@ -71,27 +63,18 @@ export type FixedValuesPresets = Record<string, FixedValuesOption[]>;
 
 export interface ProcessDefinitionData {
     componentsConfig?: ComponentsConfig;
-    processDefinition?: ProcessDefinition;
+    components?: Record<string, ComponentDefinition>;
+    classes?: TypingResult[];
     componentGroups?: ComponentGroup[];
     scenarioPropertiesConfig?: ScenarioPropertiesConfig;
     edgesForNodes?: EdgesForNode[];
     customActions?: Array<CustomAction>;
-    defaultAsyncInterpretation?: boolean;
     fixedValuesPresets?: FixedValuesPresets;
 }
 
 export type EdgesForNode = {
-    nodeId: NodeTypeId;
+    componentId: string;
     edges: EdgeType[];
     canChooseNodes: boolean;
     isForInputDefinition: boolean;
-};
-
-export type NodeTypeId = {
-    type: string;
-    id?: string;
-};
-
-export type ClassDefinition = {
-    clazzName: TypingResult;
 };

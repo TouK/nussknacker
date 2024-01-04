@@ -17,12 +17,12 @@ import scala.reflect.ClassTag
 class DelayedUniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
     schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-    processObjectDependencies: ProcessObjectDependencies,
+    modelDependencies: ProcessObjectDependencies,
     implProvider: KafkaSourceImplFactory[K, V]
 ) extends UniversalKafkaSourceFactory[K, V](
       schemaRegistryClientFactory,
       schemaBasedMessagesSerdeProvider,
-      processObjectDependencies,
+      modelDependencies,
       implProvider
     ) {
 

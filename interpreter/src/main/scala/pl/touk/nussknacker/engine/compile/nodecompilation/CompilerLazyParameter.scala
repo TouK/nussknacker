@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.lazyparam.EvaluableLazyParameter
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compiledgraph
+import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.api.NodeId
@@ -33,7 +33,7 @@ case class ExpressionLazyParameter[T <: AnyRef](
       )
     val evaluator = compilerLazyInterpreter.deps.expressionEvaluator
     val compiledParameter =
-      compiledgraph.evaluatedparam.Parameter(TypedExpression(compiledExpression, Unknown, null), parameterDef)
+      CompiledParameter(TypedExpression(compiledExpression, Unknown, null), parameterDef)
     context: Context =>
       Future
         .successful(evaluator.evaluateParameter(compiledParameter, context)(nodeId, compilerLazyInterpreter.metaData))

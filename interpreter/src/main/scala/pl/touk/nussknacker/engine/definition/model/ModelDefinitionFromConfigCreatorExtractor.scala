@@ -67,7 +67,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
   ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] = {
     val filteredVariables = filterUsingComponentConfig(expressionConfig.globalProcessVariables.toList, categoryOpt)
     val variables = filteredVariables.map { case (name, variable) =>
-      name -> GlobalVariableDefinitionExtractor.extractDefinition(variable)
+      name -> GlobalVariableDefinitionExtractor.extractDefinition(variable.value, variable.categories)
     }.toMap
     ExpressionConfigDefinition(
       variables,

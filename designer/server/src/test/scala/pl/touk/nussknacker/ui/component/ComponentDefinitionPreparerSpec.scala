@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, CustomComponentSpecificData}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentStaticDefinition
-import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithComponentIds
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
@@ -17,8 +17,7 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ComponentDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.SimpleTestComponentIdProvider
+import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
@@ -54,39 +53,50 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     )
   }
 
-  test("return edge types for fragment, filters and switches") {
-    val fragmentsDetails = TestFactory.prepareSampleFragmentRepository.loadFragments(Map.empty)
+  test("return edge types for fragment, filters, switches and components with multiple inputs") {
+    val fragmentsDetails = TestFactory.prepareSampleFragmentRepository.fragmentsByProcessingType.head._2
 
     val edgeTypes = ComponentDefinitionPreparer.prepareEdgeTypes(
-      modelDefinition = ProcessTestData.modelDefinitionWithIds,
+      modelDefinition = ProcessTestData.modelDefinition,
       isFragment = false,
       fragmentsDetails = fragmentsDetails
     )
 
     edgeTypes.toSet shouldBe Set(
-      NodeEdges(NodeTypeId("Split", Some(BuiltInComponentInfo.Split.name)), List(), true, false),
       NodeEdges(
-        NodeTypeId("Switch", Some(BuiltInComponentInfo.Choice.name)),
+        BuiltInComponentInfo.Split,
+        List.empty,
+        canChooseNodes = true,
+        isForInputDefinition = false
+      ),
+      NodeEdges(
+        BuiltInComponentInfo.Choice,
         List(NextSwitch(Expression.spel("true")), SwitchDefault),
-        true,
-        false
+        canChooseNodes = true,
+        isForInputDefinition = false
       ),
       NodeEdges(
-        NodeTypeId("Filter", Some(BuiltInComponentInfo.Filter.name)),
+        BuiltInComponentInfo.Filter,
         List(FilterTrue, FilterFalse),
-        false,
-        false
+        canChooseNodes = false,
+        isForInputDefinition = false
       ),
       NodeEdges(
-        NodeTypeId("FragmentInput", Some("sub1")),
+        ComponentInfo(ComponentType.Fragment, "sub1"),
         List(FragmentOutput("out1"), FragmentOutput("out2")),
-        false,
-        false
+        canChooseNodes = false,
+        isForInputDefinition = false
+      ),
+      NodeEdges(
+        ComponentInfo(ComponentType.CustomComponent, "union"),
+        List.empty,
+        canChooseNodes = true,
+        isForInputDefinition = true
       )
     )
   }
 
-  test("return objects sorted by label with mapped categories") {
+  test("return objects with mapped groups") {
     val groups = prepareGroups(
       Map(),
       Map(
@@ -103,51 +113,30 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     baseComponentsGroups should have size 1
 
     val baseComponents = baseComponentsGroups.flatMap(_.components)
-    // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
-    baseComponents should have size (5 + 3 + 1)
-    baseComponents.filter(n => n.componentInfo == BuiltInComponentInfo.Filter) should have size 1
-    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 4
-
+    baseComponents
+      .filter(n => n.`type` == ComponentType.BuiltIn)
+      .map(_.label) should contain allElementsOf BuiltInComponentInfo.AllAvailableForScenario.map(_.name)
+    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 5
   }
 
-  test("return objects sorted by label with mapped categories and mapped nodes") {
-
+  test("return objects with mapped nodes") {
     val groups = prepareGroups(
       Map("barService" -> "foo", "barSource" -> "fooBar"),
-      Map(
-        ComponentGroupName("custom")               -> Some(ComponentGroupName("base")),
-        ComponentGroupName("optionalEndingCustom") -> Some(ComponentGroupName("base"))
-      )
+      Map.empty
     )
-
-    validateGroups(groups, 7)
-
-    groups.exists(_.name == ComponentGroupName("custom")) shouldBe false
-
-    val baseComponentsGroups = groups.filter(_.name == ComponentGroupName("base"))
-    baseComponentsGroups should have size 1
-
-    val baseComponents = baseComponentsGroups.flatMap(_.components)
-    // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
-    baseComponents should have size (5 + 3 + 1)
-    baseComponents.filter(n => n.componentInfo == BuiltInComponentInfo.Filter) should have size 1
-    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 4
 
     val fooNodes = groups.filter(_.name == ComponentGroupName("foo")).flatMap(_.components)
     fooNodes should have size 1
     fooNodes.filter(_.label == "barService") should have size 1
-
   }
 
   test("return custom nodes with correct group") {
-    val definitionWithCustomNodesInSomeCategory = ProcessTestData.modelDefinitionWithIds.copy(
-      components = ProcessTestData.modelDefinitionWithIds.components.map {
-        case (idWithName, component) if component.componentType == ComponentType.CustomComponent =>
-          val updatedComponentConfig = component.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
-          (idWithName, component.copy(componentConfig = updatedComponentConfig))
-        case other => other
-      }
-    )
+    val definitionWithCustomNodesInSomeCategory = ProcessTestData.modelDefinition.transform {
+      case component if component.componentType == ComponentType.CustomComponent =>
+        val updatedComponentConfig = component.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
+        component.copy(componentConfig = updatedComponentConfig)
+      case other => other
+    }
     val groups = prepareGroups(Map.empty, Map.empty, definitionWithCustomNodesInSomeCategory)
 
     groups.exists(_.name == ComponentGroupName("custom")) shouldBe false
@@ -164,7 +153,6 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
         CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
         parameter
       )
-      .withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
 
     val groups           = prepareGroups(Map.empty, Map.empty, definition)
     val transformerGroup = groups.find(_.name == ComponentGroupName("optionalEndingCustom")).value
@@ -253,13 +241,12 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   private def prepareGroups(
       fixedConfig: Map[String, String],
       componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
-      modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition] =
-        ProcessTestData.modelDefinitionWithIds
+      modelDefinition: ModelDefinition[ComponentStaticDefinition] = ProcessTestData.modelDefinition
   ): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val fragmentInputs = Map[String, FragmentStaticDefinition]()
-    val dynamicComponentsConfig = ComponentsUiConfig(modelDefinition.components.toMap.map { case (idWithName, value) =>
-      idWithName.name -> value.componentConfig
+    val dynamicComponentsConfig = ComponentsUiConfig(modelDefinition.components.map { case (info, value) =>
+      info.name -> value.componentConfig
     })
     val fixedComponentsConfig =
       ComponentsUiConfig(
@@ -284,7 +271,6 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   private def prepareGroupsOfNodes(services: List[String]): List[ComponentGroup] = {
     val modelDefinition = services
       .foldRight(ModelDefinitionBuilder.empty)((s, p) => p.withService(s))
-      .withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
       modelDefinition = modelDefinition,

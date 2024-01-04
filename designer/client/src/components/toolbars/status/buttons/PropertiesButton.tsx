@@ -17,7 +17,7 @@ function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
     const propertiesErrors = useSelector(hasPropertiesErrors);
     const errors = useSelector(hasError);
 
-    const processProperties = useMemo(() => NodeUtils.getProcessProperties(processToDisplay, name), [name, processToDisplay]);
+    const processProperties = useMemo(() => NodeUtils.getProcessPropertiesNode(processToDisplay, name), [name, processToDisplay]);
 
     const onClick = useCallback(
         () => openNodeWindow(processProperties, processToDisplay),

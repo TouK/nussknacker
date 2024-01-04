@@ -33,7 +33,7 @@ object LoggingListener extends ProcessListener with Serializable {
   }
 
   override def nodeEntered(nodeId: String, context: Context, metadata: MetaData): Unit = {
-    debug(List(metadata.id, nodeId), s"Node entered. Context: $context")
+    debug(List(metadata.name.value, nodeId), s"Node entered. Context: $context")
   }
 
   override def endEncountered(
@@ -42,11 +42,11 @@ object LoggingListener extends ProcessListener with Serializable {
       context: Context,
       metadata: MetaData
   ): Unit = {
-    debug(List(metadata.id, nodeId, "end", ref), s"End encountered. Context: $context")
+    debug(List(metadata.name.value, nodeId, "end", ref), s"End encountered. Context: $context")
   }
 
   override def deadEndEncountered(lastNodeId: String, context: Context, metadata: MetaData): Unit = {
-    debug(List(metadata.id, lastNodeId, "deadEnd"), s"Dead end encountered. Context: $context")
+    debug(List(metadata.name.value, lastNodeId, "deadEnd"), s"Dead end encountered. Context: $context")
   }
 
   override def expressionEvaluated(
@@ -57,7 +57,10 @@ object LoggingListener extends ProcessListener with Serializable {
       metadata: MetaData,
       result: Any
   ): Unit = {
-    debug(List(metadata.id, nodeId, "expression"), s"invoked expression: $expr with result $result. Context: $context")
+    debug(
+      List(metadata.name.value, nodeId, "expression"),
+      s"invoked expression: $expr with result $result. Context: $context"
+    )
   }
 
   override def serviceInvoked(
@@ -68,7 +71,10 @@ object LoggingListener extends ProcessListener with Serializable {
       params: Map[String, Any],
       result: Try[Any]
   ): Unit = {
-    debug(List(metadata.id, nodeId, "service", id), s"Invocation ended-up with result: $result. Context: $context")
+    debug(
+      List(metadata.name.value, nodeId, "service", id),
+      s"Invocation ended-up with result: $result. Context: $context"
+    )
   }
 
   override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {

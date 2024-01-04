@@ -21,7 +21,8 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, Va
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
+import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -48,11 +49,12 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
       List(ComponentDefinition("one", new IncorrectService2))
     )
     val fragmentResolver = FragmentResolver(List.empty)
-    val result = new NodeDataValidator(modelData, fragmentResolver).validate(
-      node.Source("sid", SourceRef("one", evaluatedparam.Parameter("toFail", "''") :: Nil)),
+    val result = new NodeDataValidator(modelData).validate(
+      node.Source("sid", SourceRef("one", NodeParameter("toFail", "''") :: Nil)),
       ValidationContext.empty,
       Map.empty,
-      Nil
+      Nil,
+      fragmentResolver
     )(MetaData("scenario", StreamMetaData()))
     result.asInstanceOf[ValidationPerformed].errors.distinct shouldBe CannotCreateObjectError(
       "AdditionalVariableWithFixedValue should not be used with LazyParameters",

@@ -7,26 +7,26 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.BeMatcher
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.kafka.KafkaFactory
-import pl.touk.nussknacker.ui.process.ScenarioQuery
 
 import java.time.Instant
 
@@ -41,13 +41,13 @@ class ManagementResourcesSpec
     with BeforeAndAfterAll
     with NuResourcesTest {
 
-  import TestCategories._
   import KafkaFactory._
+  import TestCategories._
 
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val processName: ProcessName = ProcessName(SampleProcess.process.id)
+  private val processName: ProcessName = SampleProcess.process.name
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] = {
     BeMatcher[(ProcessActionType, VersionId)](equal((ProcessActionType.Deploy, VersionId(versionId))))
@@ -56,13 +56,13 @@ class ManagementResourcesSpec
   }
 
   test("process deployment should be visible in process history") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
+    saveProcessAndAssertSuccess(processName, SampleProcess.process)
+    deployProcess(processName) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
-        updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-        deployProcess(SampleProcess.process.id) ~> checkThatEventually {
+        updateProcessAndAssertSuccess(processName, SampleProcess.process)
+        deployProcess(processName) ~> checkThatEventually {
           getProcess(processName) ~> check {
             decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
           }
@@ -75,7 +75,7 @@ class ManagementResourcesSpec
     createDeployedProcess(processName, Category1)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
-      deployProcess(processName.value) ~> check {
+      deployProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
       }
     }
@@ -85,48 +85,45 @@ class ManagementResourcesSpec
     createDeployedCanceledProcess(processName, Category1)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
-      cancelProcess(processName.value) ~> check {
+      cancelProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
       }
     }
   }
 
   test("can't deploy archived process") {
-    val id                = createArchivedProcess(processName)
-    val processIdWithName = ProcessIdWithName(id, processName)
+    createArchivedProcess(processName)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
-      deployProcess(processName.value) ~> check {
+      deployProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
-        responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy, processIdWithName).message
+        responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy, processName).message
       }
     }
   }
 
   test("can't deploy fragment") {
-    val id                = createValidProcess(processName, Category1, isFragment = true)
-    val processIdWithName = ProcessIdWithName(id, processName)
+    createValidProcess(processName, Category1, isFragment = true)
 
-    deployProcess(processName.value) ~> check {
+    deployProcess(processName) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processIdWithName).message
+      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processName).message
     }
   }
 
   test("can't cancel fragment") {
-    val id                = createValidProcess(processName, Category1, isFragment = true)
-    val processIdWithName = ProcessIdWithName(id, processName)
+    createValidProcess(processName, Category1, isFragment = true)
 
-    deployProcess(processName.value) ~> check {
+    deployProcess(processName) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processIdWithName).message
+      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processName).message
     }
   }
 
   test("deploys and cancels with comment") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
     deployProcess(
-      SampleProcess.process.id,
+      SampleProcess.process.name,
       Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))),
       comment = Some("deployComment")
     ) ~> checkThatEventually {
@@ -135,7 +132,7 @@ class ManagementResourcesSpec
         processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)) shouldBe true
       }
       cancelProcess(
-        SampleProcess.process.id,
+        SampleProcess.process.name,
         Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))),
         comment = Some("cancelComment")
       ) ~> check {
@@ -143,13 +140,13 @@ class ManagementResourcesSpec
         // TODO: remove Deployment:, Stop: after adding custom icons
         val expectedDeployComment = "Deployment: deployComment"
         val expectedStopComment   = "Stop: cancelComment"
-        getActivity(ProcessName(SampleProcess.process.id)) ~> check {
+        getActivity(SampleProcess.process.name) ~> check {
           val comments = responseAs[ProcessActivity].comments.sortBy(_.id)
           comments.map(_.content) shouldBe List(expectedDeployComment, expectedStopComment)
 
           val firstCommentId :: secondCommentId :: Nil = comments.map(_.id)
 
-          Get(s"/processes/${SampleProcess.process.id}/deployments") ~> withAllPermissions(processesRoute) ~> check {
+          Get(s"/processes/${SampleProcess.process.name}/deployments") ~> withAllPermissions(processesRoute) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
             val curTime           = Instant.now()
             deploymentHistory.map(a =>
@@ -179,9 +176,9 @@ class ManagementResourcesSpec
   }
 
   test("rejects deploy without comment if comment required") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
     deployProcess(
-      SampleProcess.process.id,
+      SampleProcess.process.name,
       deploymentCommentSettings =
         Some(DeploymentCommentSettings.unsafe("requiredCommentPattern", Some("exampleRequiredComment")))
     ) ~> check {
@@ -192,7 +189,7 @@ class ManagementResourcesSpec
   test("deploy technical process and mark it as deployed") {
     createValidProcess(processName, Category1, false)
 
-    deployProcess(processName.value) ~> checkThatEventually {
+    deployProcess(processName) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         val processDetails = responseAs[ScenarioWithDetails]
@@ -203,12 +200,12 @@ class ManagementResourcesSpec
   }
 
   test("recognize process cancel in deployment list") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
+    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
+    deployProcess(SampleProcess.process.name) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
-        cancelProcess(SampleProcess.process.id) ~> check {
+        cancelProcess(SampleProcess.process.name) ~> check {
           getProcess(processName) ~> check {
             decodeDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
           }
@@ -218,18 +215,18 @@ class ManagementResourcesSpec
   }
 
   test("recognize process deploy and cancel in global process list") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
+    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
+    deployProcess(SampleProcess.process.name) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
 
       forScenariosReturned(ScenarioQuery.empty) { processes =>
-        val process = processes.find(_.name == SampleProcess.process.id).head
+        val process = processes.find(_.name == SampleProcess.process.name.value).head
         process.lastActionVersionId shouldBe Some(2L)
         process.isDeployed shouldBe true
 
-        cancelProcess(SampleProcess.process.id) ~> check {
+        cancelProcess(SampleProcess.process.name) ~> check {
           forScenariosReturned(ScenarioQuery.empty) { processes =>
-            val process = processes.find(_.name == SampleProcess.process.id).head
+            val process = processes.find(_.name == SampleProcess.process.name.value).head
             process.lastActionVersionId shouldBe Some(2L)
             process.isCanceled shouldBe true
           }
@@ -239,8 +236,8 @@ class ManagementResourcesSpec
   }
 
   test("not authorize user with write permission to deploy") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    Post(s"/processManagement/deploy/${SampleProcess.process.id}") ~> withPermissions(
+    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
+    Post(s"/processManagement/deploy/${SampleProcess.process.name}") ~> withPermissions(
       deployRoute(),
       testPermissionWrite
     ) ~> check {
@@ -256,8 +253,8 @@ class ManagementResourcesSpec
       .filter("input", "#input != null", Some(true))
       .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#input")
 
-    saveProcessAndAssertSuccess(SampleProcess.process.id, processWithDisabledFilter)
-    deployProcess(processName.value) ~> check {
+    saveProcessAndAssertSuccess(SampleProcess.process.name, processWithDisabledFilter)
+    deployProcess(processName) ~> check {
       status shouldBe StatusCodes.OK
     }
   }
@@ -268,14 +265,14 @@ class ManagementResourcesSpec
       .parallelism(1)
       .source("start", "not existing")
       .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#output")
-    saveProcessAndAssertSuccess(invalidScenario.id, invalidScenario)
+    saveProcessAndAssertSuccess(invalidScenario.name, invalidScenario)
 
-    deploymentManager.withEmptyProcessState(ProcessName(invalidScenario.id)) {
-      deployProcess(invalidScenario.id) ~> check {
+    deploymentManager.withEmptyProcessState(invalidScenario.name) {
+      deployProcess(invalidScenario.name) ~> check {
         responseAs[String] shouldBe "Cannot deploy invalid scenario"
         status shouldBe StatusCodes.Conflict
       }
-      getProcess(ProcessName(invalidScenario.id)) ~> check {
+      getProcess(invalidScenario.name) ~> check {
         decodeDetails.state.value.status shouldEqual SimpleStateStatus.NotDeployed
       }
     }
@@ -283,12 +280,15 @@ class ManagementResourcesSpec
 
   test("should return failure for not validating deployment") {
     val largeParallelismScenario = SampleProcess.process.copy(metaData =
-      MetaData(SampleProcess.process.id, StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1)))
+      MetaData(
+        SampleProcess.process.name.value,
+        StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1))
+      )
     )
-    saveProcessAndAssertSuccess(largeParallelismScenario.id, largeParallelismScenario)
+    saveProcessAndAssertSuccess(largeParallelismScenario.name, largeParallelismScenario)
 
-    deploymentManager.withFailingDeployment(ProcessName(largeParallelismScenario.id)) {
-      deployProcess(largeParallelismScenario.id) ~> check {
+    deploymentManager.withFailingDeployment(largeParallelismScenario.name) {
+      deployProcess(largeParallelismScenario.name) ~> check {
         status shouldBe StatusCodes.BadRequest
         responseAs[String] shouldBe "Parallelism too large"
       }
@@ -296,19 +296,19 @@ class ManagementResourcesSpec
   }
 
   test("return from deploy before deployment manager proceeds") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
 
-    deploymentManager.withWaitForDeployFinish(ProcessName(SampleProcess.process.id)) {
-      deployProcess(SampleProcess.process.id) ~> check {
+    deploymentManager.withWaitForDeployFinish(SampleProcess.process.name) {
+      deployProcess(SampleProcess.process.name) ~> check {
         status shouldBe StatusCodes.OK
       }
     }
   }
 
   test("snapshots process") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deploymentManager.withProcessRunning(ProcessName(SampleProcess.process.id)) {
-      snapshot(SampleProcess.process.id) ~> check {
+    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
+    deploymentManager.withProcessRunning(SampleProcess.process.name) {
+      snapshot(SampleProcess.process.name) ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe MockDeploymentManager.savepointPath
       }
@@ -316,9 +316,9 @@ class ManagementResourcesSpec
   }
 
   test("stops process") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deploymentManager.withProcessRunning(ProcessName(SampleProcess.process.id)) {
-      stop(SampleProcess.process.id) ~> check {
+    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
+    deploymentManager.withProcessRunning(SampleProcess.process.name) {
+      stop(SampleProcess.process.name) ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe MockDeploymentManager.stopSavepointPath
       }
@@ -329,7 +329,7 @@ class ManagementResourcesSpec
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
         |{"sourceId":"startProcess","record":"bela"}""".stripMargin
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
 
     testScenario(SampleProcess.process, testDataContent) ~> check {
 
@@ -369,7 +369,7 @@ class ManagementResourcesSpec
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
         |"bela"""".stripMargin
-    saveProcessAndAssertSuccess(process.id, process)
+    saveProcessAndAssertSuccess(process.name, process)
 
     testScenario(process, testDataContent) ~> check {
       status shouldEqual StatusCodes.OK
@@ -387,7 +387,7 @@ class ManagementResourcesSpec
         .source("startProcess", "csv-source")
         .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'")
     }
-    saveProcessAndAssertSuccess(process.id, process)
+    saveProcessAndAssertSuccess(process.name, process)
     val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))
 
     tooLargeTestDataContentList.foreach { tooLargeData =>
@@ -398,7 +398,7 @@ class ManagementResourcesSpec
   }
 
   test("rejects test record with non-existing source") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
         |{"sourceId":"unknown","record":"bela"}""".stripMargin

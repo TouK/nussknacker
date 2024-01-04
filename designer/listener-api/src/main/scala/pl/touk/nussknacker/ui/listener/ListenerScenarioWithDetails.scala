@@ -7,8 +7,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, Processin
 import java.time.Instant
 
 trait ListenerScenarioWithDetails {
-  def id: String
-
   def name: ProcessName
 
   def processId: ProcessId

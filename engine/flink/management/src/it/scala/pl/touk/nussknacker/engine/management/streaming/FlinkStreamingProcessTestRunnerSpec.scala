@@ -50,15 +50,15 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
   it should "run scenario in test mode" in {
     val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
 
-    val processId = UUID.randomUUID().toString
+    val processName = ProcessName(UUID.randomUUID().toString)
 
-    val process = SampleProcess.prepareProcess(processId)
+    val process = SampleProcess.prepareProcess(processName)
 
-    whenReady(deploymentManager.test(ProcessName(processId), process, scenarioTestData)) { r =>
+    whenReady(deploymentManager.test(processName, process, scenarioTestData)) { r =>
       r.nodeResults shouldBe Map(
-        "startProcess" -> List(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere"))),
-        "nightFilter"  -> List(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere"))),
-        "endSend"      -> List(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere")))
+        "startProcess" -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
+        "nightFilter"  -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
+        "endSend"      -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere")))
       )
     }
   }

@@ -12,10 +12,13 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   DualParameterEditor,
+  FixedExpressionValue,
+  Parameter,
   StringParameterEditor,
   ValidationExpressionParameterValidator
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -29,17 +32,11 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 }
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.graph.EdgeType.{FragmentOutput, NextSwitch}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
-  FixedExpressionValue,
-  FragmentClazzRef,
-  FragmentParameter,
-  ParameterValueCompileTimeValidation,
-  ValueInputWithFixedValuesProvided
-}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -468,7 +465,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(145).display}"
     inside(
       validate(
-        FragmentInput("frInput", FragmentRef("fragment1", List(Parameter("param1", "145")), Map("out1" -> "test1"))),
+        FragmentInput(
+          "frInput",
+          FragmentRef("fragment1", List(NodeParameter("param1", "145")), Map("out1" -> "test1"))
+        ),
         ValidationContext.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
@@ -485,7 +485,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     val defaultFragmentOutgoingEdges: List[OutgoingEdge] = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
     val fragmentId                                       = "fragmentInputId"
     val nodeToBeValidated =
-      FragmentInput("nameOfTheNode", FragmentRef(fragmentId, List(Parameter("P1", "123")), Map("out1" -> "test1")))
+      FragmentInput("nameOfTheNode", FragmentRef(fragmentId, List(NodeParameter("P1", "123")), Map("out1" -> "test1")))
     val fragmentDefinitionWithValidators: CanonicalProcess = CanonicalProcess(
       MetaData(fragmentId, FragmentSpecificData()),
       List(
@@ -511,7 +511,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   test("should validate fragment parameters with validators - P1 as mandatory param with missing actual value") {
     val fragmentId = "fragmentInputId"
     val nodeToBeValidated =
-      FragmentInput("nameOfTheNode", FragmentRef(fragmentId, List(Parameter("P1", "")), Map("out1" -> "test1")))
+      FragmentInput("nameOfTheNode", FragmentRef(fragmentId, List(NodeParameter("P1", "")), Map("out1" -> "test1")))
     val fragmentDefinitionWithValidators: CanonicalProcess = CanonicalProcess(
       MetaData(fragmentId, FragmentSpecificData()),
       List(
@@ -546,8 +546,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       FragmentRef(
         fragmentId,
         List(
-          Parameter("P1", ""),
-          Parameter("P2", ""),
+          NodeParameter("P1", ""),
+          NodeParameter("P2", ""),
         ),
         Map("out1" -> "test1")
       )
@@ -605,7 +605,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       validate(
         FragmentInput(
           nodeId,
-          FragmentRef("fragment1", List(Parameter("param1", "'someValue'")), Map("out1" -> incorrectVarName))
+          FragmentRef("fragment1", List(NodeParameter("param1", "'someValue'")), Map("out1" -> incorrectVarName))
         ),
         ValidationContext.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
@@ -623,7 +623,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       validate(
         FragmentInput(
           nodeId,
-          FragmentRef("fragment1", List(Parameter("param1", "'someValue'")), Map("out1" -> existingVar))
+          FragmentRef("fragment1", List(NodeParameter("param1", "'someValue'")), Map("out1" -> existingVar))
         ),
         ValidationContext(Map(existingVar -> Typed[String])),
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
@@ -637,7 +637,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     val nodes  = Set("aa")
     inside(
       validate(
-        FragmentInput(nodeId, FragmentRef("fragment1", List(Parameter("param1", "'someValue'")), Map("out1" -> "ok"))),
+        FragmentInput(
+          nodeId,
+          FragmentRef("fragment1", List(NodeParameter("param1", "'someValue'")), Map("out1" -> "ok"))
+        ),
         ValidationContext.empty
       )
     ) { case ValidationPerformed(List(FragmentOutputNotDefined("out1", nodes)), None, None) =>
@@ -724,7 +727,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               hintText = None,
               valueEditor = Some(
                 ValueInputWithFixedValuesProvided(
-                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("1", "someLabel")),
+                  fixedValuesList = List(FixedExpressionValue("1", "someLabel")),
                   allowOtherValue = false
                 )
               ),
@@ -763,7 +766,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               hintText = None,
               valueEditor = Some(
                 ValueInputWithFixedValuesProvided(
-                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                  fixedValuesList = List(FixedExpressionValue("'someValue'", "someValue")),
                   allowOtherValue = false
                 )
               ),
@@ -1160,15 +1163,14 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   }
 
   private def genericParameters = List(
-    definition
-      .Parameter[String]("par1")
+    Parameter[String]("par1")
       .copy(
         editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
         defaultValue = Some("'realDefault'")
       ),
-    definition.Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
-    definition.Parameter[Any]("a"),
-    definition.Parameter[Any]("b")
+    Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
+    Parameter[Any]("a"),
+    Parameter[Any]("b")
   )
 
   private def validate(
@@ -1180,12 +1182,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       aModelData: LocalModelData = modelData
   ): ValidationResponse = {
     val fragmentResolver = FragmentResolver(List(fragmentDefinition))
-    new NodeDataValidator(aModelData, fragmentResolver).validate(nodeData, ctx, branchCtxs, outgoingEdges)(
+    new NodeDataValidator(aModelData).validate(nodeData, ctx, branchCtxs, outgoingEdges, fragmentResolver)(
       MetaData("id", StreamMetaData())
     )
   }
 
-  private def par(name: String, expr: String): Parameter = Parameter(name, Expression.spel(expr))
+  private def par(name: String, expr: String): NodeParameter = NodeParameter(name, Expression.spel(expr))
 
 }
 

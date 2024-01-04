@@ -53,12 +53,12 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
-    env.withJobRunning(process.id) {
+    env.withJobRunning(process.name.value) {
       val consumed = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](topicName).take(1).head
       consumed.key() shouldBe "testProcess-shouldFail"
 
       consumed.message().nodeId shouldBe Some("shouldFail")
-      consumed.message().processName shouldBe "testProcess"
+      consumed.message().processName.value shouldBe "testProcess"
       consumed.message().message shouldBe Some("Expression [1/{0, 1}[0] != 10] evaluation failed, message: / by zero")
       consumed.message().exceptionInput shouldBe Some("1/{0, 1}[0] != 10")
       consumed.message().additionalData shouldBe Map("configurableKey" -> "sampleValue")

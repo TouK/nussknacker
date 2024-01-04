@@ -4,6 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context._
@@ -11,12 +12,10 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
-import pl.touk.nussknacker.engine.compiledgraph
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -24,44 +23,41 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 
-class GenericNodeTransformationValidator(
+class DynamicNodeValidator(
     expressionCompiler: ExpressionCompiler,
-    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation]
+    globalVariablesPreparer: GlobalVariablesPreparer,
+    parameterEvaluator: ParameterEvaluator
 ) {
 
-  private val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
-
-  private val parameterEvaluator = new ParameterEvaluator(
-    ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
-  )
-
   def validateNode(
-      transformer: GenericNodeTransformation[_],
-      parametersFromNode: List[evaluatedparam.Parameter],
-      branchParametersFromNode: List[evaluatedparam.BranchParameters],
+      component: GenericNodeTransformation[_],
+      parametersFromNode: List[NodeParameter],
+      branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
       componentConfig: SingleComponentConfig
   )(
-      inputContext: transformer.InputContext
+      inputContext: component.InputContext
   )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
     NodeValidationExceptionHandler.handleExceptionsInValidation {
-      val validation =
-        new NodeInstanceValidation(transformer, branchParametersFromNode, outputVariable, componentConfig)(inputContext)
-      validation.evaluatePart(Nil, None, Nil, parametersFromNode)
+      val processor =
+        new TransformationStepsProcessor(component, branchParametersFromNode, outputVariable, componentConfig)(
+          inputContext
+        )
+      processor.processRemainingTransformationSteps(Nil, None, Nil, parametersFromNode)
     }
   }
 
-  class NodeInstanceValidation(
-      transformer: GenericNodeTransformation[_],
-      branchParametersFromNode: List[evaluatedparam.BranchParameters],
+  private class TransformationStepsProcessor(
+      component: GenericNodeTransformation[_],
+      branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
       componentConfig: SingleComponentConfig
   )(inputContextRaw: Any)(implicit nodeId: NodeId, metaData: MetaData)
       extends LazyLogging {
 
-    private val inputContext = inputContextRaw.asInstanceOf[transformer.InputContext]
+    private val inputContext = inputContextRaw.asInstanceOf[component.InputContext]
 
-    private val definition = transformer.contextTransformation(
+    private val definition = component.contextTransformation(
       inputContext,
       List(TypedNodeDependencyValue(nodeId), TypedNodeDependencyValue(metaData)) ++ outputVariable
         .map(OutputVariableNameValue)
@@ -69,27 +65,27 @@ class GenericNodeTransformationValidator(
     )
 
     @tailrec
-    final def evaluatePart(
+    final def processRemainingTransformationSteps(
         evaluatedSoFar: List[(Parameter, BaseDefinedParameter)],
-        stateForFar: Option[transformer.State],
+        stateForFar: Option[component.State],
         errors: List[ProcessCompilationError],
-        nodeParameters: List[evaluatedparam.Parameter]
+        nodeParameters: List[NodeParameter]
     ): ValidatedNel[ProcessCompilationError, TransformationResult] = {
-      val transformationStep = transformer.TransformationStep(
+      val transformationStep = component.TransformationStep(
         evaluatedSoFar
           // unfortunatelly, this cast is needed as we have no easy way to statically check if Parameter definitions
           // are branch or not...
-          .map(a => (a._1.name, a._2.asInstanceOf[transformer.DefinedParameter])),
+          .map(a => (a._1.name, a._2.asInstanceOf[component.DefinedParameter])),
         stateForFar
       )
 
-      def returnUnmatchedFallback() = {
+      def returnUnmatchedFallback = {
         logger.debug(
-          s"Transformer $transformer hasn't handled context transformation step: $transformationStep. " +
-            s"Will return fallback result with fallback context and errors collected during parameters validation."
+          s"Component $component hasn't handled context transformation step: $transformationStep. " +
+            s"Fallback result with fallback context and errors collected during parameters validation will be returned."
         )
         val fallbackResult =
-          transformer.handleUnmatchedTransformationStep(transformationStep, inputContext, outputVariable)
+          component.handleUnmatchedTransformationStep(transformationStep, inputContext, outputVariable)
         Valid(
           TransformationResult(
             errors ++ fallbackResult.errors,
@@ -103,17 +99,17 @@ class GenericNodeTransformationValidator(
 
       Try(definition.lift.apply(transformationStep)) match {
         case Success(None) =>
-          returnUnmatchedFallback()
+          returnUnmatchedFallback
         case Success(Some(nextPart)) =>
           val errorsCombined = errors ++ nextPart.errors
           nextPart match {
-            case transformer.FinalResults(finalContext, errors, state) =>
+            case component.FinalResults(finalContext, errors, state) =>
               // we add distinct here, as multi-step, partial validation of parameters can cause duplicate errors if implementation is not v. careful
               val allErrors = (errorsCombined ++ errors).distinct
               Valid(TransformationResult(allErrors, evaluatedSoFar.map(_._1), finalContext, state, nodeParameters))
-            case transformer.NextParameters(Nil, _, _) =>
-              returnUnmatchedFallback()
-            case transformer.NextParameters(newParameters, newParameterErrors, state) =>
+            case component.NextParameters(Nil, _, _) =>
+              returnUnmatchedFallback
+            case component.NextParameters(newParameters, newParameterErrors, state) =>
               val enrichedParameters =
                 StandardParameterEnrichment.enrichParameterDefinitions(newParameters, componentConfig)
               val (parametersCombined, newErrorsCombined, newNodeParameters) =
@@ -131,7 +127,7 @@ class GenericNodeTransformationValidator(
                       nodeParametersAcc ++ extraNodeParamOpt
                     )
                 }
-              evaluatePart(parametersCombined, state, newErrorsCombined, newNodeParameters)
+              processRemainingTransformationSteps(parametersCombined, state, newErrorsCombined, newNodeParameters)
           }
         case Failure(ex) =>
           logger.debug(
@@ -140,7 +136,7 @@ class GenericNodeTransformationValidator(
             ex
           )
           val fallbackResult =
-            transformer.handleExceptionDuringTransformation(transformationStep, inputContext, outputVariable, ex)
+            component.handleExceptionDuringTransformation(transformationStep, inputContext, outputVariable, ex)
           Valid(
             TransformationResult(
               errors ++ fallbackResult.errors,
@@ -155,8 +151,8 @@ class GenericNodeTransformationValidator(
 
     private def prepareParameter(
         parameter: Parameter,
-        nodeParameters: List[evaluatedparam.Parameter]
-    ): ValidatedNel[ProcessCompilationError, (BaseDefinedParameter, Option[evaluatedparam.Parameter])] = {
+        nodeParameters: List[NodeParameter]
+    ): ValidatedNel[ProcessCompilationError, (BaseDefinedParameter, Option[NodeParameter])] = {
       val compiledParameter = compileParameter(parameter, nodeParameters)
       compiledParameter.map { case (typed, extraNodeParamOpt) =>
         val (_, definedParam) = parameterEvaluator.prepareParameter(typed, parameter)
@@ -164,11 +160,11 @@ class GenericNodeTransformationValidator(
       }
     }
 
-    // TODO: this method is a bit duplicating ExpressionCompiler.compileObjectParameters
-    // we should unify them a bit in the future
-    private def compileParameter(parameter: Parameter, nodeParameters: List[evaluatedparam.Parameter]): ValidatedNel[
+    // TODO: this method is a bit duplicating ExpressionCompiler.compileNodeParameters
+    //       we should unify them a bit in the future
+    private def compileParameter(parameter: Parameter, nodeParameters: List[NodeParameter]): ValidatedNel[
       ProcessCompilationError,
-      (compiledgraph.evaluatedparam.TypedParameter, Option[evaluatedparam.Parameter])
+      (TypedParameter, Option[NodeParameter])
     ] = {
 
       if (parameter.branchParam) {
@@ -190,15 +186,15 @@ class GenericNodeTransformationValidator(
       } else {
         val (singleParam, extraNodeParamOpt) = nodeParameters.find(_.name == parameter.name).map((_, None)).getOrElse {
           val paramToAdd =
-            evaluatedparam.Parameter(parameter.name, parameter.defaultValue.getOrElse(Expression.spel("")))
+            NodeParameter(parameter.name, parameter.defaultValue.getOrElse(Expression.spel("")))
           (paramToAdd, Some(paramToAdd))
         }
         val ctxToUse = inputContext match {
           case e: ValidationContext => e
-          case _                    => globalVariablesPreparer.emptyLocalVariablesValidationContext(metaData)
+          case _                    => globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(metaData)
         }
         expressionCompiler
-          .compileParam(singleParam, ctxToUse, parameter, eager = false)
+          .compileParam(singleParam, ctxToUse, parameter)
           .map((_, extraNodeParamOpt))
           .andThen(Validations.validate(parameter, _))
       }
@@ -208,10 +204,23 @@ class GenericNodeTransformationValidator(
 
 }
 
+object DynamicNodeValidator {
+
+  def apply(modelData: ModelData): DynamicNodeValidator = {
+    val globalVariablesPreparer = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+    new DynamicNodeValidator(
+      ExpressionCompiler.withoutOptimization(modelData),
+      globalVariablesPreparer,
+      new ParameterEvaluator(ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer))
+    )
+  }
+
+}
+
 case class TransformationResult(
     errors: List[ProcessCompilationError],
     parameters: List[Parameter],
     outputContext: ValidationContext,
     finalState: Option[Any],
-    nodeParameters: List[evaluatedparam.Parameter]
+    nodeParameters: List[NodeParameter]
 )

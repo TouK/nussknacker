@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.canonicalgraph
 
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
@@ -147,7 +148,9 @@ trait ExpressionRewriter {
       )
     )
 
-  private def rewriteParameters(list: List[Parameter])(implicit metaData: MetaData, nodeId: NodeId): List[Parameter] =
+  private def rewriteParameters(
+      list: List[NodeParameter]
+  )(implicit metaData: MetaData, nodeId: NodeId): List[NodeParameter] =
     list.map(p => p.copy(expression = rewriteExpressionInternal(p.expression, p.name)))
 
   private def rewriteDefaultExpressionInternal(e: Expression)(implicit metaData: MetaData, nodeId: NodeId): Expression =
@@ -162,7 +165,7 @@ trait ExpressionRewriter {
     } catch {
       case NonFatal(ex) =>
         throw new IllegalArgumentException(
-          s"Exception during expression rewriting: $e, with id: $expressionId in node: $nodeId in process: ${metaData.id}",
+          s"Exception during expression rewriting: $e, with id: $expressionId in node: $nodeId in process: ${metaData.name}",
           ex
         )
     }

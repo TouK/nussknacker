@@ -87,7 +87,7 @@ object ProcessService {
 trait ProcessService {
   def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId]
 
-  def getProcessWithDetails(processId: ProcessIdWithName, options: GetScenarioWithDetailsOptions)(
+  def getLatestProcessWithDetails(processId: ProcessIdWithName, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[ScenarioWithDetails]
 
@@ -95,11 +95,11 @@ trait ProcessService {
       implicit user: LoggedUser
   ): Future[ScenarioWithDetails]
 
-  def getProcessesWithDetails(query: ScenarioQuery, options: GetScenarioWithDetailsOptions)(
+  def getLatestProcessesWithDetails(query: ScenarioQuery, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[List[ScenarioWithDetails]]
 
-  def getRawProcessesWithDetails[PS: ScenarioShapeFetchStrategy](query: ScenarioQuery)(
+  def getLatestRawProcessesWithDetails[PS: ScenarioShapeFetchStrategy](query: ScenarioQuery)(
       implicit user: LoggedUser
   ): Future[List[ScenarioWithDetailsEntity[PS]]]
 
@@ -154,7 +154,10 @@ class DBProcessService(
       .map(_.getOrElse(throw ProcessNotFoundError(processName.toString)))
   }
 
-  override def getProcessWithDetails(processIdWithName: ProcessIdWithName, options: GetScenarioWithDetailsOptions)(
+  override def getLatestProcessWithDetails(
+      processIdWithName: ProcessIdWithName,
+      options: GetScenarioWithDetailsOptions
+  )(
       implicit user: LoggedUser
   ): Future[ScenarioWithDetails] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
@@ -188,7 +191,7 @@ class DBProcessService(
     )
   }
 
-  override def getProcessesWithDetails(query: ScenarioQuery, options: GetScenarioWithDetailsOptions)(
+  override def getLatestProcessesWithDetails(query: ScenarioQuery, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[List[ScenarioWithDetails]] = {
     // To not overload engine, for list of processes we provide statuses that can be cached
@@ -196,7 +199,7 @@ class DBProcessService(
     doGetProcessWithDetails(
       new FetchScenarioFun[List] {
         override def apply[PS: ScenarioShapeFetchStrategy]: Future[List[ScenarioWithDetailsEntity[PS]]] =
-          fetchingProcessRepository.fetchProcessesDetails(query)
+          fetchingProcessRepository.fetchLatestProcessesDetails(query)
       },
       options
     )
@@ -228,10 +231,10 @@ class DBProcessService(
     }
   }
 
-  override def getRawProcessesWithDetails[PS: ScenarioShapeFetchStrategy](
+  override def getLatestRawProcessesWithDetails[PS: ScenarioShapeFetchStrategy](
       query: ScenarioQuery
   )(implicit user: LoggedUser): Future[List[ScenarioWithDetailsEntity[PS]]] = {
-    fetchingProcessRepository.fetchProcessesDetails(query)
+    fetchingProcessRepository.fetchLatestProcessesDetails(query)
   }
 
   private def validateAndReverseResolve(
@@ -293,14 +296,14 @@ class DBProcessService(
   override def unArchiveProcess(
       processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser): Future[Unit] =
-    getProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
+    getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
         dbioRunner
           .runInTransaction(
             DBIOAction.seq(
-              processRepository.archive(processId = process.idWithName.id, isArchived = false),
+              processRepository.archive(processId = process.processIdUnsafe, isArchived = false),
               processActionRepository
-                .markProcessAsUnArchived(processId = process.idWithName.id, process.processVersionId)
+                .markProcessAsUnArchived(processId = process.processIdUnsafe, process.processVersionId)
             )
           )
       } else {
@@ -333,7 +336,7 @@ class DBProcessService(
   )(implicit user: LoggedUser): Future[ProcessResponse] =
     withProcessingType(command.category) { processingType =>
       val emptyCanonicalProcess =
-        newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isFragment)
+        newProcessPreparer.prepareEmptyProcess(command.processName, processingType, command.isFragment)
       val action = CreateProcessAction(
         command.processName,
         command.category,
@@ -396,7 +399,7 @@ class DBProcessService(
         .fromJson(jsonString)
         .valueOr(msg => throw ProcessUnmarshallingError(msg))
 
-      val canonical   = jsonCanonicalProcess.withProcessId(processId.name)
+      val canonical   = jsonCanonicalProcess.withProcessName(processId.name)
       val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
       val validationResult = processResolverByProcessingType
         .forTypeUnsafe(process.processingType)
@@ -433,7 +436,7 @@ class DBProcessService(
         if (state.allowedActions.contains(actionToCheck)) {
           callback
         } else {
-          throw ProcessIllegalAction(actionToCheck, process.idWithName, state)
+          throw ProcessIllegalAction(actionToCheck, process.name, state)
         }
       })
   }
@@ -442,8 +445,8 @@ class DBProcessService(
     dbioRunner
       .runInTransaction(
         DBIOAction.seq(
-          processRepository.archive(processId = process.idWithName.id, isArchived = true),
-          processActionRepository.markProcessAsArchived(processId = process.idWithName.id, process.processVersionId)
+          processRepository.archive(processId = process.processIdUnsafe, isArchived = true),
+          processActionRepository.markProcessAsArchived(processId = process.processIdUnsafe, process.processVersionId)
         )
       )
 
@@ -451,7 +454,7 @@ class DBProcessService(
     dbioRunner.runInTransaction(
       processRepository
         .renameProcess(processIdWithName, name)
-        .map(_ => UpdateProcessNameResponse.create(processIdWithName.name.value, name.value))
+        .map(_ => UpdateProcessNameResponse.create(processIdWithName.name, name))
     )
   }
 
@@ -465,7 +468,7 @@ class DBProcessService(
   private def withArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(
       callback: => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
-    getProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
+    getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
         callback
       } else {
@@ -477,7 +480,7 @@ class DBProcessService(
   private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(
       callback: ScenarioWithDetails => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
-    getProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
+    getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
         throw ProcessIllegalAction(errorMessage)
       } else {
@@ -489,9 +492,9 @@ class DBProcessService(
   private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, action: ProcessActionType)(
       callback: ScenarioWithDetails => Future[T]
   )(implicit user: LoggedUser): Future[T] =
-    getProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
+    getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
-        throw ProcessIllegalAction.archived(action, process.idWithName)
+        throw ProcessIllegalAction.archived(action, process.name)
       } else {
         callback(process)
       }

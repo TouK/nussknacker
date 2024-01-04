@@ -4,14 +4,13 @@ import { Attachment } from "../../reducers/processActivity";
 import HttpService from "../../http/HttpService";
 import Date from "../common/Date";
 import { AttachmentDetails, DownloadAttachment, DownloadButton, AttachHeader } from "./StyledAttach";
+import { ProcessName } from "../../types";
 
-export function AttachmentEl({ data }: { data: Attachment }) {
+export function AttachmentEl({ data, processName }: { data: Attachment; processName: ProcessName }) {
     return (
         <li style={{ display: "flex" }}>
             <DownloadAttachment className="download-attachment">
-                <DownloadButton
-                    onClick={() => HttpService.downloadAttachment(data.processId, data.processVersionId, data.id, data.fileName)}
-                >
+                <DownloadButton onClick={() => HttpService.downloadAttachment(processName, data.id, data.fileName)}>
                     <DownloadIcon sx={{ width: 13, height: 13 }} />
                 </DownloadButton>
             </DownloadAttachment>

@@ -113,7 +113,7 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
   private val interpreterConfig = modelData.modelConfig.as[KafkaInterpreterConfig]
 
   private val taskRunner: TaskRunner = new TaskRunner(
-    scenario.id,
+    scenario.name.value,
     liteKafkaJobData.tasksCount,
     createScenarioTaskRun,
     interpreterConfig.shutdownTimeout,
