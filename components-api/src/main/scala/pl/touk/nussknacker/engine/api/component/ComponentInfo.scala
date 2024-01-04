@@ -27,9 +27,12 @@ object BuiltInComponentInfo {
   val FragmentInputDefinition: ComponentInfo  = ComponentInfo(ComponentType.BuiltIn, "input")
   val FragmentOutputDefinition: ComponentInfo = ComponentInfo(ComponentType.BuiltIn, "output")
 
+  val FragmentDefinitionComponents: List[ComponentInfo] = List(FragmentInputDefinition, FragmentOutputDefinition)
+
   val AllAvailableForScenario: List[ComponentInfo] = List(Filter, Split, Choice, Variable, RecordVariable)
 
-  val All: List[ComponentInfo] =
-    AllAvailableForScenario ::: List(FragmentInputDefinition, FragmentOutputDefinition)
+  val All: List[ComponentInfo] = AllAvailableForScenario ::: FragmentDefinitionComponents
+
+  val AllAvailableForFragment: List[ComponentInfo] = All
 
 }

@@ -126,6 +126,15 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
   }
 ```
 
+As a key in the configuration you can use component name or full component identifier which is in the `componentType-componentName` format.
+The second approach is mostly useful when there is more than one component with the same name (e.g. `source-kafka` and `sink-kafka` components). 
+Available component types:
+- `source` - for components located in the `sources` toolbox panel
+- `sink` - for components located in the `sinks` toolbox panel
+- `service` - for components located in the `enrichers` and `services` toolbox panel
+- `custom` - for components located in the `custom` and `optionalEndingCustom` toolbox panel
+- `built-in` - for built-in components (`choice`, `filter`, `record-variable`, `split`, `variable`) located in the `base` toolbox panel
+
 ### Component links
 
 You can add additional links that will be shown in `Components` tab. They can be used e.g. to point to 
@@ -138,7 +147,7 @@ componentLinks: [
     title: "Source system"
     icon: "/assets/components/CustomNode.svg"
     url: "https://myCustom.com/dataSource/$componentName" 
-    supportedComponentTypes: ["openAPIEnricher1"]
+    supportedComponentTypes: ["service"]
   }
 ]
 ```

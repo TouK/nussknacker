@@ -26,9 +26,7 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefini
  * This class exists as a more lightweight alternative to FragmentComponentDefinitionExtractor - it doesn't rely on ExpressionCompiler and ValidationContext
  * However, it doesn't validate the parameters' initialValue and valueEditor and doesn't extract (and validate the correctness of) the parameters' validators - use in cases where it's not needed
  */
-class FragmentWithoutValidatorsDefinitionExtractor(
-    classLoader: ClassLoader
-) {
+class FragmentWithoutValidatorsDefinitionExtractor(classLoader: ClassLoader) {
 
   def extractFragmentComponentDefinition(
       fragment: CanonicalProcess
@@ -93,8 +91,6 @@ class FragmentWithoutValidatorsDefinitionExtractor(
         }
       )
       .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty), List.empty))
-
-    val isOptional = !fragmentParameter.required
 
     val param = Parameter
       .optional(fragmentParameter.name, typ)

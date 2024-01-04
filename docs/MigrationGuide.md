@@ -53,6 +53,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `processes/**/activity/comments` - `processId` fields was removed
   * GET `processes/$name/$version/activity/attachments` - `$version` segment is removed now
 
+### Configuration changes
+* [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
+  * `$processingType-$componentType-$componentName` format was replaced by `$componentType-$componentName` format
+
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
