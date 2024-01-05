@@ -21,18 +21,53 @@
                 {
                     "name": "parameter1",
                     "typ": {
-                        "refClazzName": "java.lang.String"
+                        "refClazzName": "java.lang.Long"
+                    },
+                    "required": false,
+                    "initialValue": {
+                        "label": "42",
+                        "expression": "42"
+                    },
+                    "hintText": "Please input your shoe size",
+                    "valueEditor": null,
+                    "valueCompileTimeValidation": {
+                        "validationExpression": {
+                            "language": "spel",
+                            "expression": "#value < 100"
+                        },
+                        "validationFailedMessage": "Your shoe size is too large"
                     }
                 },
                 {
                     "name": "parameter2",
                     "typ": {
-                        "refClazzName": "java.lang.Long"
-                    }
+                        "refClazzName": "java.lang.String"
+                    },
+                    "required": true,
+                    "initialValue": {
+                        "expression": "\"item1\"",
+                        "label": "\"item1\""
+                    },
+                    "hintText": "Pick one or input any string you want.",
+                    "valueEditor": {
+                        "fixedValuesList": [
+                            {
+                                "expression": "\"item1\"",
+                                "label": "\"item1\""
+                            },
+                            {
+                                "expression": "#meta.processName",
+                                "label": "#meta.processName"
+                            }
+                        ],
+                        "allowOtherValue": true,
+                        "type": "ValueInputWithFixedValuesProvided"
+                    },
+                    "valueCompileTimeValidation": null
                 }
             ],
             "additionalFields": {
-                "description": null,
+                "description": "some description",
                 "layoutData": {
                     "x": 180,
                     "y": 0
@@ -47,7 +82,7 @@
                     "outputName": "output",
                     "fields": [
                         {
-                            "name": "dsadasd",
+                            "name": "failureOutputField2",
                             "expression": {
                                 "language": "spel",
                                 "expression": "#parameter2"
@@ -84,7 +119,7 @@
             "outputName": "output",
             "fields": [
                 {
-                    "name": "jhkgk",
+                    "name": "successOutputField1",
                     "expression": {
                         "language": "spel",
                         "expression": "#parameter1"
