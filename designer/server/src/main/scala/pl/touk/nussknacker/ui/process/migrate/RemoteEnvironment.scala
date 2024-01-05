@@ -10,6 +10,7 @@ import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
 import cats.data.EitherT
 import cats.implicits._
+import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
@@ -84,6 +85,7 @@ class HttpRemoteEnvironment(
     val environmentId: String
 )(implicit as: ActorSystem, val materializer: Materializer, ec: ExecutionContext)
     extends StandardRemoteEnvironment
+    with LazyLogging
     with AutoCloseable {
   override val config: StandardRemoteEnvironmentConfig = httpConfig.remoteConfig
 
@@ -99,6 +101,7 @@ class HttpRemoteEnvironment(
       request: MessageEntity,
       headers: Seq[HttpHeader]
   ): Future[HttpResponse] = {
+    logger.debug("Sending request to remote environment: {} {}", method.value, uri)
     http.singleRequest(
       HttpRequest(
         uri = uri,
@@ -260,6 +263,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       Query(
         ("names", names.map(ns => URLEncoder.encode(ns.value, StandardCharsets.UTF_8)).mkString(",")),
         ("isArchived", "false"),
+        ("skipNodeResults", "true"),
       )
     )
   }
