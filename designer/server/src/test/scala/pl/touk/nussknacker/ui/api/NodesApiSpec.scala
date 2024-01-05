@@ -35,7 +35,7 @@ class NodesApiSpec
   "The endpoint for nodes" - {
     "additional info when" - {
       "authenticated should" - {
-        "return additional info for existing process" in {
+        "return additional info for node with expression in existing process" in {
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
 
           given()
@@ -64,20 +64,23 @@ class NodesApiSpec
             .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/additionalInfo")
             .Then()
             .statusCode(200)
-            .body(
-              equalsJson(s"""{
-                   |  "content": "\\nSamples:\\n\\n| id  | value |\\n| --- | ----- |\\n| a   | generated |\\n| b   | not existent |\\n\\nResults for a can be found [here](http://touk.pl?id=a)\\n",
-                   |  "type": "MarkdownAdditionalInfo"
-                   |}""".stripMargin)
+            .equalsJsonBody(
+              s"""{
+                 |  "content": "\\nSamples:\\n\\n| id  | value |\\n| --- | ----- |\\n| a   | generated |\\n| b   | not existent |\\n\\nResults for a can be found [here](http://touk.pl?id=a)\\n",
+                 |  "type": "MarkdownAdditionalInfo"
+                 |}""".stripMargin
             )
+        }
+        "return no additional info for node without expression in existing process" in {
+          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
 
           given()
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
-                 |    "id": "1",
+                 |    "id": "enricher",
                  |    "service": {
-                 |        "id": "otherService",
+                 |        "id": "paramService",
                  |        "parameters": []
                  |    },
                  |    "output": "out",
