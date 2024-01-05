@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.test
 
+import io.restassured.response.ValidatableResponse
 import io.restassured.specification.RequestSpecification
+import pl.touk.nussknacker.test.NuRestAssureMatchers.equalsJson
 
 trait NuRestAssureExtensions {
 
@@ -30,6 +32,12 @@ trait NuRestAssureExtensions {
         .basic(name, password)
     }
 
+    def noAuth(): RequestSpecification = {
+      requestSpecification
+        .auth()
+        .none()
+    }
+
   }
 
   implicit class JsonBody[T <: RequestSpecification](requestSpecification: T) {
@@ -38,6 +46,17 @@ trait NuRestAssureExtensions {
       requestSpecification
         .contentType("application/json")
         .body(json)
+    }
+
+  }
+
+  implicit class EqualsJsonBody[T <: ValidatableResponse](validatableResponse: T) {
+
+    def equalsJsonBody(json: String): ValidatableResponse = {
+      validatableResponse
+        .body(
+          equalsJson(json)
+        )
     }
 
   }

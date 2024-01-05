@@ -40,7 +40,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "id": "enricher",
@@ -74,7 +73,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "id": "1",
@@ -100,7 +98,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "id": "1",
@@ -127,9 +124,7 @@ class NodesApiSpec
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
 
           given()
-            .auth()
-            .none
-            .and()
+            .noAuth()
             .jsonBody(s"""{
                  |    "id": "1",
                  |    "service": {
@@ -157,7 +152,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "nodeData": {
@@ -224,7 +218,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "nodeData": {
@@ -301,7 +294,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "nodeData": {
@@ -379,7 +371,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "nodeData": {
@@ -431,7 +422,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "nodeData": {
@@ -493,9 +483,7 @@ class NodesApiSpec
           createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
 
           given()
-            .auth()
-            .none()
-            .and()
+            .noAuth()
             .jsonBody(
               s"""{
                  |    "nodeData": {
@@ -559,7 +547,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "isFragment": false,
@@ -611,9 +598,7 @@ class NodesApiSpec
                  |    }
                  |}""".stripMargin
             )
-            .and()
-            .auth()
-            .none()
+            .noAuth()
             .when()
             .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/additionalInfo")
             .Then()
@@ -631,7 +616,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "additionalFields": {
@@ -666,7 +650,6 @@ class NodesApiSpec
 
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "additionalFields": {
@@ -762,9 +745,7 @@ class NodesApiSpec
                  |    "id": "test"
                  |}""".stripMargin
             )
-            .and()
-            .auth()
-            .none()
+            .noAuth()
             .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
             .Then()
             .statusCode(401)
@@ -847,7 +828,6 @@ class NodesApiSpec
         "validate incorrect parameter" in {
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "parameters": [
@@ -968,8 +948,7 @@ class NodesApiSpec
                  |""".stripMargin
             )
             .and
-            .auth()
-            .none()
+            .noAuth()
             .when()
             .post(s"$nuDesignerHttpAddress/api/parameters/streaming/validate")
             .Then()
@@ -985,7 +964,6 @@ class NodesApiSpec
         "suggest the name of parameter" in {
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "expression": {
@@ -1038,7 +1016,6 @@ class NodesApiSpec
         "not suggest anything if no such parameters exist" in {
           given()
             .basicAuth("allpermuser", "allpermuser")
-            .and()
             .jsonBody(
               s"""{
                  |    "expression": {
@@ -1075,9 +1052,7 @@ class NodesApiSpec
                  |    "variableTypes": {}
                  |}""".stripMargin
             )
-            .and()
-            .auth()
-            .none()
+            .noAuth()
             .when()
             .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
             .Then()
