@@ -59,7 +59,7 @@ class NodesApiHttpService(
     nodesApiEndpoints.nodesValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogic { user => pair =>
-        val (processName, nodeValidationRequest) = pair
+        val (processName, nodeValidationRequestDto) = pair
 
         processService
           .getProcessId(processName)
@@ -70,7 +70,13 @@ class NodesApiHttpService(
                 GetScenarioWithDetailsOptions.detailsOnly
               )(user)
               .flatMap { process =>
-                //                here need to add decoding from string json to NodeValidationRequest
+                val nodeValidator = typeToNodeValidator.forTypeUnsafe(process.processingType)(user)
+                nodeValidationRequestDto.toRequest match {
+                  case Some(nodeData) =>
+                    Future(success(nodeValidator.validate(processName, nodeData).toDto()))
+                  case None =>
+                    Future(businessError(error = None))
+                }
 
               }
           }

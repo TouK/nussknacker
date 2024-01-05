@@ -1,26 +1,34 @@
 package pl.touk.nussknacker.ui.api
 
-import io.circe.{Decoder, Json, JsonNumber}
+import derevo.circe.{decoder, encoder}
+import derevo.derive
+import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
+import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.Ok
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir._
+import sttp.tapir.derevo.schema
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 
 class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  import NodesApiEndpoints.ProcessNameCodec._
-  import NodesApiEndpoints._
+  import NodesApiEndpoints.Dtos._
 
   lazy val nodesAdditionalInfoEndpoint: SecuredEndpoint[(ProcessName, NodeData), Unit, Option[AdditionalInfo], Any] = {
     baseNuApiEndpoint
@@ -37,16 +45,17 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
-  lazy val nodesValidationEndpoint: SecuredEndpoint[(ProcessName, String), Unit, String, Any] = {
+  lazy val nodesValidationEndpoint
+      : SecuredEndpoint[(ProcessName, NodeValidationRequestDto), Unit, NodeValidationResultDto, Any] = {
     baseNuApiEndpoint
       .summary("Validate provided Node")
       .tag("Nodes")
       .post
       .in("nodess" / path[ProcessName]("processName") / "validation")
-      .in(jsonBody[String])
+      .in(jsonBody[NodeValidationRequestDto])
       .out(
         statusCode(Ok).and(
-          jsonBody[String]
+          jsonBody[NodeValidationResultDto]
         )
       )
       .withSecurity(auth)
@@ -68,24 +77,162 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
-  object NodesApiEndpoints {
+}
 
-    object ProcessNameCodec {
-      def encode(processName: ProcessName): String = processName.value
+object NodesApiEndpoints {
 
-      def decode(s: String): DecodeResult[ProcessName] = {
-        val processName = ProcessName.apply(s)
-        DecodeResult.Value(processName)
-      }
+  object Dtos {
 
-      implicit val processNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
+    def encode(processName: ProcessName): String = processName.value
+
+    def decode(s: String): DecodeResult[ProcessName] = {
+      val processName = ProcessName.apply(s)
+      DecodeResult.Value(processName)
     }
 
+    implicit val processNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
+
     implicit val additionalInfoSchema: Schema[AdditionalInfo] = Schema.derived
+
+    final case class TypingResultDto(
+        value: Option[Any],
+        display: String,
+        `type`: String,
+        refClazzName: String,
+        params: List[String]
+    )
+
+    object TypingResultDto {
+
+      implicit val typingSchema: Schema[TypingResultDto] = {
+        Schema.any
+      }
+
+      def getTypingValue(value: Any): Json = {
+        value match {
+          case Some(inside) =>
+            inside match {
+              case x: String  => Json.fromString(x)
+              case x: Int     => Json.fromInt(x)
+              case x: Boolean => Json.fromBoolean(x)
+              case _          => Json.Null
+            }
+          case None => Json.Null
+        }
+      }
+
+      implicit val encoder: Encoder[TypingResultDto] = {
+        Encoder.encodeJson.contramap { typingResult =>
+          Json.obj(
+            "value"        -> getTypingValue(typingResult.value),
+            "display"      -> Json.fromString(typingResult.display),
+            "type"         -> Json.fromString(typingResult.`type`),
+            "refClazzName" -> Json.fromString(typingResult.refClazzName),
+            "params"       -> typingResult.params.asJson
+          )
+        }
+      }
+
+      implicit val decoder: Decoder[TypingResultDto] = {
+        Decoder.instance { c =>
+          for {
+            typ <- c.downField("type").as[String]
+//            variableType  <- giveType(typ, c)
+//            value         <- c.downField("value").
+            display      <- c.downField("display").as[String]
+            refClazzName <- c.downField("refClazzName").as[String]
+            params       <- c.downField("params").as[List[String]]
+          } yield TypingResultDto(None, display, typ, refClazzName, params)
+        }
+      }
+
+      type LoadClass = String => Class[_]
+
+      def loadClass(name: String): Class[_] = {
+        Class.forName(name)
+      }
+//      def giveType(typ: String, c: ACursor): Decoder.Result[Class[_]] = {
+//        println("-------")
+//        println(c)
+//        println("-------")
+//        Try(ClassLoader.getPlatformClassLoader.loadClass(typ)) match {
+//          case Success(value) => Right(value)
+//          case Failure(thr) => Left(DecodingFailure(s"Failed to load class $typ with ${thr.getMessage}", c.history))
+//        }
+//      }
+
+    }
+
+    @derive(encoder, decoder, schema)
+    final case class NodeValidationRequestDto(
+        nodeData: NodeData,
+        processProperties: ProcessProperties,
+        variableTypes: Map[String, TypingResultDto],                            // String -> TypingResult
+        branchVariableTypes: Option[Map[String, Map[String, TypingResultDto]]], // last map String -> TypingResult
+        outgoingEdges: Option[List[Edge]]
+    ) {
+
+      def toRequest: Option[NodeValidationRequest] = {
+        try {
+          Some(
+            NodeValidationRequest(
+              nodeData = nodeData,
+              processProperties = processProperties,
+              variableTypes = variableTypes.map { case (key, typingResultDto) =>
+                (key, Typed.apply(Class.forName(typingResultDto.refClazzName)))
+              },
+              branchVariableTypes = branchVariableTypes.map { outerMap =>
+                outerMap.map { case (name, innerMap) =>
+                  val changedMap = innerMap.map { case (key, typingResultDto) =>
+                    (key, Typed.apply(Class.forName(typingResultDto.refClazzName)))
+                  }
+                  (name, changedMap)
+                }
+              },
+              outgoingEdges = outgoingEdges
+            )
+          )
+        } catch {
+          case _: Throwable => None
+        }
+
+      }
+
+    }
+
+    object NodeValidationRequestDto {
+      implicit val nodeDataSchema: Schema[NodeData]                               = Schema.anyObject
+      implicit val processPropertiesSchema: Schema[ProcessProperties]             = Schema.any
+      implicit val processAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.any
+    }
+
+    @derive(encoder, decoder, schema)
+    final case class NodeValidationResultDto(
+        parameters: Option[List[UIParameterDto]],
+        expressionType: Option[TypingResultDto],
+        validationErrors: List[NodeValidationError],
+        validationPerformed: Boolean
+    )
+
+    @derive(encoder, decoder, schema)
+    final case class UIParameterDto(
+        name: String,
+        typ: TypingResultDto,
+        editor: ParameterEditor,
+        defaultValue: Expression,
+        additionalVariables: Map[String, TypingResultDto],
+        variablesToHide: Set[String],
+        branchParam: Boolean,
+        hintText: Option[String]
+    )
+
+    object UIParameterDto {
+      implicit val parameterEditorSchema: Schema[ParameterEditor]    = Schema.anyObject
+      implicit val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
+      implicit val expressionSchema: Schema[Expression]              = Schema.derived
+      implicit val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
+    }
+
   }
-
-  type LoadClass = String => Class[_]
-
-  implicit val decoder: Decoder[LoadClass => TypingResult] = {}
 
 }
