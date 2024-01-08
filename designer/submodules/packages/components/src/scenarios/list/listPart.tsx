@@ -4,7 +4,9 @@ import { ItemsList } from "./itemsList";
 import { ProcessType } from "nussknackerUi/components/Process/types";
 import { Box } from "@mui/material";
 
-export type RowType = ProcessType;
+export interface RowType extends ProcessType {
+    hide?: boolean;
+}
 
 export interface ListPartProps<T> {
     data: T[];

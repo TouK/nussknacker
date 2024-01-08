@@ -27,7 +27,7 @@ export const NodesCell = ({
 }): JSX.Element => {
     const {
         value,
-        row: { name },
+        rowNode: { id },
     } = props;
     const filterSegments = useMemo(() => filterText?.toLowerCase().toString().trim().split(/\s/) || [], [filterText]);
 
@@ -44,9 +44,10 @@ export const NodesCell = ({
                     (row) =>
                         rule(row, getFilter(key)),
             ),
-        [nodesFilterRules, getFilter],
+        [getFilter],
     );
-    const filtered = useMemo(() => value.filter((row) => filters.every((f) => f(row))), [value, filters]);
+
+    const filtered = useMemo(() => (Array.isArray(value) ? value.filter((row) => filters.every((f) => f(row))) : []), [value, filters]);
 
     const sorted = useMemo(
         () =>
@@ -62,7 +63,14 @@ export const NodesCell = ({
     );
 
     const elements = sorted.map(([match, node]) => (
-        <NodeChip key={getNodeName(node)} icon={icon} node={node} filterText={filterText} rowId={name} matched={filterText ? match : -1} />
+        <NodeChip
+            key={getNodeName(node)}
+            icon={icon}
+            node={node}
+            filterText={filterText}
+            rowId={id.toString()}
+            matched={filterText ? match : -1}
+        />
     ));
     return <TruncateWrapper {...props}>{elements}</TruncateWrapper>;
 };
@@ -102,6 +110,7 @@ const NodeChip = memo(function NodeChip({
             label={matched > 0 ? <HighlightNode value={nodeLabel} filterText={filterText} /> : nodeLabel}
             color={matched !== 0 ? (fragmentNodeId ? "secondary" : "primary") : "default"}
             icon={icon}
+            clickable
         />
     );
 });
