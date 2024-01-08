@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.Json.Null
+import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{
   Typed,
@@ -85,6 +86,22 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
+  lazy val propertiesValidationEndpoint
+      : SecuredEndpoint[(ProcessName, PropertiesValidationRequestDto), Unit, NodeValidationResultDto, Any] = {
+    baseNuApiEndpoint
+      .summary("Validate node properties")
+      .tag("Nodes")
+      .post
+      .in("propertiess" / path[ProcessName]("processName") / "validation")
+      .in(jsonBody[PropertiesValidationRequestDto])
+      .out(
+        statusCode(Ok).and(
+          jsonBody[NodeValidationResultDto]
+        )
+      )
+      .withSecurity(auth)
+  }
+
 }
 
 object NodesApiEndpoints {
@@ -99,8 +116,11 @@ object NodesApiEndpoints {
     }
 
     implicit val processNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
+    implicit val processNameSchema: Schema[ProcessName]    = Schema.derived
 
     implicit val additionalInfoSchema: Schema[AdditionalInfo] = Schema.derived
+
+    implicit val processAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
 
     final case class TypingResultDto(
         value: Option[Any],
@@ -272,9 +292,8 @@ object NodesApiEndpoints {
     }
 
     object NodeValidationRequestDto {
-      implicit val nodeDataSchema: Schema[NodeData]                               = Schema.anyObject
-      implicit val processPropertiesSchema: Schema[ProcessProperties]             = Schema.any
-      implicit val processAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.any
+      implicit val nodeDataSchema: Schema[NodeData]                   = Schema.anyObject
+      implicit val processPropertiesSchema: Schema[ProcessProperties] = Schema.any
     }
 
     @derive(encoder, decoder, schema)
@@ -303,6 +322,12 @@ object NodesApiEndpoints {
       implicit val expressionSchema: Schema[Expression]              = Schema.derived
       implicit val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
     }
+
+    @derive(schema, encoder, decoder)
+    final case class PropertiesValidationRequestDto(
+        additionalFields: ProcessAdditionalFields,
+        name: ProcessName
+    )
 
   }
 

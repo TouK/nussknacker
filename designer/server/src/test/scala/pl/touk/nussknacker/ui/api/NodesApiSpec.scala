@@ -179,7 +179,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodess/${process.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(
@@ -245,7 +245,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodess/${process.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(
@@ -335,7 +335,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodess/${process.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(
@@ -436,7 +436,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodess/${process.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(s"""{
@@ -487,7 +487,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodess/${process.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(s"""{
@@ -520,7 +520,7 @@ class NodesApiSpec
             .noAuth()
             .jsonBody(exampleNodesValidationRequestBody)
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodess/${process.name}/validation")
             .Then()
             .statusCode(401)
             .body(
@@ -609,7 +609,7 @@ class NodesApiSpec
                  |    "name": "test"
                  |}""".stripMargin
             )
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/propertiess/${process.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(s"""{
@@ -677,7 +677,7 @@ class NodesApiSpec
                  |    "name": " "
                  |}""".stripMargin
             )
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/propertiess/${process.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(s"""{
@@ -738,7 +738,7 @@ class NodesApiSpec
           given
             .jsonBody(examplePropertiesValidationRequestBody)
             .noAuth()
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/propertiess/${process.name}/validation")
             .Then()
             .statusCode(401)
             .body(
@@ -806,7 +806,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/validate")
+            .post(s"$nuDesignerHttpAddress/api/parameterss/streaming/validate")
             .Then()
             .statusCode(200)
             .equalsJsonBody(
@@ -870,7 +870,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/validate")
+            .post(s"$nuDesignerHttpAddress/api/parameterss/streaming/validate")
             .Then()
             .statusCode(200)
             .equalsJsonBody(s"""{
@@ -891,7 +891,7 @@ class NodesApiSpec
             .jsonBody(exampleParametersValidationRequestBody)
             .noAuth()
             .when()
-            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/validate")
+            .post(s"$nuDesignerHttpAddress/api/parameterss/streaming/validate")
             .Then()
             .statusCode(401)
             .body(
