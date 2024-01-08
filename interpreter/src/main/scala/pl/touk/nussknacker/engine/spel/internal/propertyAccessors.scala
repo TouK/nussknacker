@@ -169,7 +169,11 @@ object propertyAccessors {
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
       new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))
 
-    override def getSpecificTargetClasses: Array[Class[_]] = Array(classOf[java.util.Map[_, _]])
+    override def getSpecificTargetClasses: Array[Class[_]] = Array(
+      classOf[java.util.Map[_, _]],
+      getClass.getClassLoader.loadClass("java.util.Collections$UnmodifiableMap")
+    )
+
   }
 
   object TypedDictInstancePropertyAccessor extends PropertyAccessor with ReadOnly {
