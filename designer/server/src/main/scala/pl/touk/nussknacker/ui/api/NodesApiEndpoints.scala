@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.Json.Null
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -24,10 +24,14 @@ import pl.touk.nussknacker.engine.api.typed.typing.{
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
+import pl.touk.nussknacker.engine.spel.Parameter
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
+import pl.touk.nussknacker.restmodel.definition.UIValueParameter
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.toTypingResult
+import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.Ok
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir._
@@ -102,6 +106,39 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
+//  Almost -> error messages are almost correct, they are less specific for now
+  lazy val parametersValidationEndpoint
+      : SecuredEndpoint[(ProcessingType, ParametersValidationRequestDto), Unit, ParametersValidationResultDto, Any] = {
+    baseNuApiEndpoint
+      .summary("Validate node parameters")
+      .tag("Nodes")
+      .post
+      .in("parameterss" / path[ProcessingType]("processingType") / "validate")
+      .in(jsonBody[ParametersValidationRequestDto])
+      .out(
+        statusCode(Ok).and(
+          jsonBody[ParametersValidationResultDto]
+        )
+      )
+      .withSecurity(auth)
+  }
+
+  lazy val parametersSuggestionsEndpoint
+      : SecuredEndpoint[(ProcessingType, ExpressionSuggestionRequestDto), Unit, List[ExpressionSuggestionDto], Any] = {
+    baseNuApiEndpoint
+      .summary("Suggest possible variables")
+      .tag("Nodes")
+      .post
+      .in("parameterss" / path[ProcessingType]("processingType") / "suggestions")
+      .in(jsonBody[ExpressionSuggestionRequestDto])
+      .out(
+        statusCode(Ok).and(
+          jsonBody[List[ExpressionSuggestionDto]]
+        )
+      )
+      .withSecurity(auth)
+  }
+
 }
 
 object NodesApiEndpoints {
@@ -127,7 +164,7 @@ object NodesApiEndpoints {
         display: String,
         `type`: String,
         refClazzName: String,
-        params: List[String]
+        params: List[TypingResultDto]
     )
 
     object TypingResultDto {
@@ -157,7 +194,7 @@ object NodesApiEndpoints {
                 "display"      -> Json.fromString(typingResult.display),
                 "type"         -> Json.fromString(typingResult.`type`),
                 "refClazzName" -> Json.fromString(typingResult.refClazzName),
-                "params"       -> typingResult.params.asJson
+                "params"       -> Json.fromValues(typingResult.params.map { result => result.asJson(encoder) })
               )
             case value =>
               Json.obj(
@@ -165,7 +202,7 @@ object NodesApiEndpoints {
                 "display"      -> Json.fromString(typingResult.display),
                 "type"         -> Json.fromString(typingResult.`type`),
                 "refClazzName" -> Json.fromString(typingResult.refClazzName),
-                "params"       -> typingResult.params.asJson
+                "params"       -> Json.fromValues(typingResult.params.map { result => result.asJson(encoder) })
               )
           }
         }
@@ -175,11 +212,12 @@ object NodesApiEndpoints {
         Decoder.instance { c =>
           for {
             typ <- c.downField("type").as[String]
+
             //            variableType  <- giveType(typ, c)
             //            value         <- c.downField("value").
             display      <- c.downField("display").as[String]
             refClazzName <- c.downField("refClazzName").as[String]
-            params       <- c.downField("params").as[List[String]]
+            params <- c.downField("params").as[List[TypingResultDto]](Decoder.decodeList[TypingResultDto](decoder))
           } yield TypingResultDto(None, display, typ, refClazzName, params)
         }
       }
@@ -202,7 +240,7 @@ object NodesApiEndpoints {
               display = result.display,
               `type` = "TypedClass",
               refClazzName = result.klass.toString.stripPrefix("class "),
-              params = result.params.map(sth => sth.toString)
+              params = result.params.map(param => typingResultToDto(param))
             )
           case result: TypedTaggedValue =>
             println("TypedTaggedValue")
@@ -246,10 +284,17 @@ object NodesApiEndpoints {
           case typing.Unknown =>
             println("Unknown")
             TypingResultDto(None, "Unknown", "Unknown", "java.lang.Object", List.empty)
-          case _result: typing.KnownTypingResult =>
+          case _: typing.KnownTypingResult =>
             println("KnownTypingResult")
             TypingResultDto(None, "rest", "type", "refClazzName", List.empty)
         }
+      }
+
+      def toTypingResult(typeDto: TypingResultDto): TypingResult = {
+        Typed.genericTypeClass(
+          Class.forName(typeDto.refClazzName),
+          typeDto.params.map { result => toTypingResult(result) }
+        )
       }
 
     }
@@ -327,6 +372,70 @@ object NodesApiEndpoints {
     final case class PropertiesValidationRequestDto(
         additionalFields: ProcessAdditionalFields,
         name: ProcessName
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class ParametersValidationRequestDto(
+        parameters: List[UIValueParameterDto],
+        variableTypes: Map[String, TypingResultDto]
+    ) {
+
+      def withoutDto: ParametersValidationRequest = {
+//        println("halo from withoutDto")
+        ParametersValidationRequest(
+          parameters.map { parameter =>
+            UIValueParameter(
+              name = parameter.name,
+              typ = toTypingResult(parameter.typ),
+              expression = parameter.expression
+            )
+          },
+          variableTypes.map { case (key, typDto) => (key, toTypingResult(typDto)) }
+        )
+      }
+
+    }
+
+    @derive(schema, encoder, decoder)
+    final case class ParametersValidationResultDto(
+        validationErrors: List[NodeValidationError],
+        validationPerformed: Boolean
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class UIValueParameterDto(
+        name: String,
+        typ: TypingResultDto,
+        expression: Expression
+    )
+
+    implicit val expressionSchema: Schema[Expression]           = Schema.derived
+    implicit val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
+
+    @derive(schema, encoder, decoder)
+    final case class ExpressionSuggestionRequestDto(
+        expression: Expression,
+        caretPosition2d: CaretPosition2d,
+        variableTypes: Map[String, TypingResultDto]
+    )
+
+    object ExpressionSuggestionRequestDto {
+//      implicit val caretPosition2dEncoder: Encoder[CaretPosition2d] = deriveConfiguredEncoder[CaretPosition2d]
+    }
+
+    @derive(schema, encoder, decoder)
+    final case class ExpressionSuggestionDto(
+        methodName: String,
+        refClazz: TypingResultDto,
+        fromClass: Boolean,
+        description: Option[String],
+        parameters: List[ParameterDto]
+    )
+
+    @derive(schema, encoder, decoder)
+    final case class ParameterDto(
+        name: String,
+        refClazz: TypingResultDto
     )
 
   }

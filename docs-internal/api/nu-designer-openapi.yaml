@@ -481,6 +481,170 @@ paths:
                     resource
       security:
       - httpAuth: []
+  /api/nodess/{processName}/validation:
+    post:
+      tags:
+      - Nodes
+      summary: Validate provided Node
+      operationId: postApiNodessProcessnameValidation
+      parameters:
+      - name: processName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeValidationRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeValidationResultDto'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
+  /api/parameterss/{processingType}/suggestions:
+    post:
+      tags:
+      - Nodes
+      summary: Suggest possible variables
+      operationId: postApiParameterssProcessingtypeSuggestions
+      parameters:
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpressionSuggestionRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpressionSuggestionDto'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
+  /api/parameterss/{processingType}/validate:
+    post:
+      tags:
+      - Nodes
+      summary: Validate node parameters
+      operationId: postApiParameterssProcessingtypeValidate
+      parameters:
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParametersValidationRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParametersValidationResultDto'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
   /api/propertiess/{processName}/additionalInfo:
     post:
       tags:
@@ -506,6 +670,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdditionalInfo'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
+  /api/propertiess/{processName}/validation:
+    post:
+      tags:
+      - Nodes
+      summary: Validate node properties
+      operationId: postApiPropertiessProcessnameValidation
+      parameters:
+      - name: processName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropertiesValidationRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeValidationResultDto'
         '400':
           description: 'Invalid value for: body'
           content:
@@ -698,6 +916,18 @@ components:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
           $ref: '#/components/schemas/Map_String'
+    CaretPosition2d:
+      required:
+      - row
+      - column
+      type: object
+      properties:
+        row:
+          type: integer
+          format: int32
+        column:
+          type: integer
+          format: int32
     ComponentGroupName:
       required:
       - value
@@ -848,6 +1078,25 @@ components:
           type: array
           items:
             type: string
+    Edge:
+      required:
+      - from
+      - to
+      type: object
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        edgeType:
+          $ref: '#/components/schemas/EdgeType'
+    EdgeType:
+      oneOf:
+      - $ref: '#/components/schemas/FilterFalse'
+      - $ref: '#/components/schemas/FilterTrue'
+      - $ref: '#/components/schemas/FragmentOutput'
+      - $ref: '#/components/schemas/NextSwitch'
+      - $ref: '#/components/schemas/SwitchDefault'
     Enricher:
       required:
       - id
@@ -873,6 +1122,39 @@ components:
           type: string
         expression:
           type: string
+    ExpressionSuggestionDto:
+      required:
+      - methodName
+      - refClazz
+      - fromClass
+      type: object
+      properties:
+        methodName:
+          type: string
+        refClazz: {}
+        fromClass:
+          type: boolean
+        description:
+          type:
+          - string
+          - 'null'
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParameterDto'
+    ExpressionSuggestionRequestDto:
+      required:
+      - expression
+      - caretPosition2d
+      - variableTypes
+      type: object
+      properties:
+        expression:
+          $ref: '#/components/schemas/Expression'
+        caretPosition2d:
+          $ref: '#/components/schemas/CaretPosition2d'
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultDto'
     Field:
       required:
       - name
@@ -899,6 +1181,10 @@ components:
           - 'null'
         additionalFields:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    FilterFalse:
+      type: object
+    FilterTrue:
+      type: object
     FixedExpressionValue:
       required:
       - expression
@@ -951,6 +1237,13 @@ components:
             $ref: '#/components/schemas/FragmentParameter'
         additionalFields:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    FragmentOutput:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
     FragmentOutputDefinition:
       required:
       - id
@@ -1119,10 +1412,17 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_String'
+    Map_Map_String_TypingResultDto:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Map_TypingResultDto'
     Map_String:
       type: object
       additionalProperties:
         type: string
+    Map_TypingResultDto:
+      type: object
+      additionalProperties: {}
     MarkdownAdditionalInfo:
       required:
       - content
@@ -1130,6 +1430,13 @@ components:
       properties:
         content:
           type: string
+    NextSwitch:
+      required:
+      - condition
+      type: object
+      properties:
+        condition:
+          $ref: '#/components/schemas/Expression'
     NodeData:
       oneOf:
       - $ref: '#/components/schemas/BranchEndData'
@@ -1152,6 +1459,70 @@ components:
       oneOf:
       - $ref: '#/components/schemas/FragmentUsageData'
       - $ref: '#/components/schemas/ScenarioUsageData'
+    NodeValidationError:
+      required:
+      - typ
+      - message
+      - description
+      - errorType
+      type: object
+      properties:
+        typ:
+          type: string
+        message:
+          type: string
+        description:
+          type: string
+        fieldName:
+          type:
+          - string
+          - 'null'
+        errorType:
+          $ref: '#/components/schemas/NodeValidationErrorType'
+    NodeValidationErrorType:
+      type: string
+      enum:
+      - RenderNotAllowed
+      - SaveNotAllowed
+      - SaveAllowed
+    NodeValidationRequestDto:
+      required:
+      - nodeData
+      - processProperties
+      - variableTypes
+      type: object
+      properties:
+        nodeData:
+          type: object
+        processProperties: {}
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultDto'
+        branchVariableTypes:
+          $ref: '#/components/schemas/Map_Map_String_TypingResultDto'
+        outgoingEdges:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/Edge'
+    NodeValidationResultDto:
+      required:
+      - validationPerformed
+      type: object
+      properties:
+        parameters:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/UIParameterDto'
+        expressionType: {}
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeValidationError'
+        validationPerformed:
+          type: boolean
     Notification:
       required:
       - id
@@ -1188,6 +1559,15 @@ components:
           type: string
         expression:
           $ref: '#/components/schemas/Expression'
+    ParameterDto:
+      required:
+      - name
+      - refClazz
+      type: object
+      properties:
+        name:
+          type: string
+        refClazz: {}
     ParameterValueCompileTimeValidation:
       required:
       - validationExpression
@@ -1199,6 +1579,28 @@ components:
           type:
           - string
           - 'null'
+    ParametersValidationRequestDto:
+      required:
+      - variableTypes
+      type: object
+      properties:
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/UIValueParameterDto'
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultDto'
+    ParametersValidationResultDto:
+      required:
+      - validationPerformed
+      type: object
+      properties:
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeValidationError'
+        validationPerformed:
+          type: boolean
     ProcessAction:
       required:
       - id
@@ -1321,6 +1723,16 @@ components:
           - 'null'
         additionalFields:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    PropertiesValidationRequestDto:
+      required:
+      - additionalFields
+      - name
+      type: object
+      properties:
+        additionalFields:
+          $ref: '#/components/schemas/ProcessAdditionalFields'
+        name:
+          $ref: '#/components/schemas/ProcessName'
     ScenarioUsageData:
       required:
       - nodeId
@@ -1423,6 +1835,49 @@ components:
           - 'null'
         additionalFields:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    SwitchDefault:
+      type: object
+    UIParameterDto:
+      required:
+      - name
+      - typ
+      - editor
+      - defaultValue
+      - additionalVariables
+      - branchParam
+      type: object
+      properties:
+        name:
+          type: string
+        typ: {}
+        editor:
+          type: object
+        defaultValue:
+          $ref: '#/components/schemas/Expression'
+        additionalVariables:
+          $ref: '#/components/schemas/Map_TypingResultDto'
+        variablesToHide:
+          type: array
+          items:
+            type: string
+        branchParam:
+          type: boolean
+        hintText:
+          type:
+          - string
+          - 'null'
+    UIValueParameterDto:
+      required:
+      - name
+      - typ
+      - expression
+      type: object
+      properties:
+        name:
+          type: string
+        typ: {}
+        expression:
+          $ref: '#/components/schemas/Expression'
     UserDefinedAdditionalNodeFields:
       type: object
       properties:

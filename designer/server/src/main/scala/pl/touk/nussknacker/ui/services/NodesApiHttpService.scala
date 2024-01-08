@@ -7,13 +7,20 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, VersionId}
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodeValidationResultDto
-import pl.touk.nussknacker.ui.api.{NodeValidationRequest, NodesApiEndpoints, NodesResources}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
+  ExpressionSuggestionDto,
+  NodeValidationResultDto,
+  ParameterDto,
+  ParametersValidationResultDto
+}
+import pl.touk.nussknacker.ui.api.{NodeValidationRequest, NodesApiEndpoints, NodesResources, ParametersValidationResult}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
-import pl.touk.nussknacker.ui.validation.{NodeValidator, UIProcessValidator}
+import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
+import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,6 +31,8 @@ class NodesApiHttpService(
     typeToConfig: ProcessingTypeDataProvider[ModelData, _],
     typeToProcessValidator: ProcessingTypeDataProvider[UIProcessValidator, _],
     typeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
+    typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
+    typeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     protected val processService: ProcessService
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(config, getProcessCategoryService, authenticator)
@@ -154,7 +163,50 @@ class NodesApiHttpService(
                 )
               }
           }
+      }
+  }
 
+  expose {
+    nodesApiEndpoints.parametersValidationEndpoint
+      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverLogic { user => pair =>
+        val (processingType, request) = pair
+        val validator                 = typeToParametersValidator.forTypeUnsafe(processingType)(user)
+        val validationResults         = validator.validate(request.withoutDto)
+
+        Future(
+          success(
+            ParametersValidationResultDto(validationResults, validationPerformed = true)
+          )
+        )
+      }
+  }
+
+  expose {
+    nodesApiEndpoints.parametersSuggestionsEndpoint
+      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverLogic { user => pair =>
+        val (processingType, request) = pair
+        val expressionSuggester       = typeToExpressionSuggester.forTypeUnsafe(processingType)(user)
+        expressionSuggester
+          .expressionSuggestions(
+            request.expression,
+            request.caretPosition2d,
+            request.variableTypes.map { case (key, result) => (key, toTypingResult(result)) }
+          )
+          .map { suggestion =>
+            success(
+              suggestion.map { suggest =>
+                ExpressionSuggestionDto(
+                  suggest.methodName,
+                  typingResultToDto(suggest.refClazz),
+                  suggest.fromClass,
+                  suggest.description,
+                  suggest.parameters.map { param => ParameterDto(param.name, typingResultToDto(param.refClazz)) }
+                )
+              }
+            )
+          }
       }
   }
 

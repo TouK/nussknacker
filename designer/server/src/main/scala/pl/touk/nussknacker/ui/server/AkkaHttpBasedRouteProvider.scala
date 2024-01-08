@@ -252,6 +252,10 @@ class AkkaHttpBasedRouteProvider(
         typeToConfig = typeToConfig.mapValues(_.modelData),
         typeToProcessValidator = processValidator,
         typeToNodeValidator = typeToConfig.mapValues(v => new NodeValidator(v.modelData, fragmentRepository)),
+        typeToExpressionSuggester =
+          typeToConfig.mapValues(v => ExpressionSuggester(v.modelData, v.scenarioPropertiesConfig.keys)),
+        typeToParametersValidator =
+          typeToConfig.mapValues(v => new ParametersValidator(v.modelData, v.scenarioPropertiesConfig.keys)),
         processService = processService
       )
 
