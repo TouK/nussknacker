@@ -487,9 +487,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Int]("#obj.children[0].id") shouldBe Symbol("invalid")
   }
 
-  test("not allow accessing methods with name the same as key name in record") {
-    parse[String]("{getClass: 'val'}.getClass").validExpression.evaluateSync[String](ctx) shouldEqual "val"
-    parse[String]("{hashCode: 'val'}.hashCode").validExpression.evaluateSync[String](ctx) shouldEqual "val"
+  test("access fields with the same name as a no parameter method in record") {
+    parse[String]("{getClass: 'str'}.getClass").validExpression.evaluateSync[String](ctx) shouldEqual "str"
+    parse[String]("{empty: 'str'}.empty").validExpression.evaluateSync[String](ctx) shouldEqual "str"
   }
 
   test("access record elements by index") {
