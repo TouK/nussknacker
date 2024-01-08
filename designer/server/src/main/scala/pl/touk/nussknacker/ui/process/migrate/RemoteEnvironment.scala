@@ -47,7 +47,7 @@ trait RemoteEnvironment {
   ): Future[Either[NuDesignerError, Unit]]
 
   // TODO This method is used by an external project. We should move it to some api module
-  def testMigration(processToInclude: ScenarioWithDetails => Boolean = _ => true)(
+  def testMigration(processToInclude: ScenarioWithDetails => Boolean = _ => true, maxParallelism: Int)(
       implicit ec: ExecutionContext,
       user: LoggedUser
   ): Future[Either[NuDesignerError, List[TestMigrationResult]]]
@@ -208,7 +208,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   override def testMigration(
-      processToInclude: ScenarioWithDetails => Boolean = _ => true
+      processToInclude: ScenarioWithDetails => Boolean = _ => true,
+      maxParallelism: Int = 1
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
@@ -216,7 +217,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       basicFragments = allBasicProcesses.filter(_.isFragment).filter(processToInclude)
       processes <- fetchGroupByGroup(basicProcesses)
       fragments <- fetchGroupByGroup(basicFragments)
-    } yield testModelMigrations.testMigrations(processes, fragments)).value
+    } yield testModelMigrations.testMigrations(processes, fragments, maxParallelism)).value
   }
 
   private def fetchGroupByGroup(
