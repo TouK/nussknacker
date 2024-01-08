@@ -27,8 +27,7 @@ class NotificationApiSpec
     "authenticated should" - {
       "return empty list if no notifications are present" in {
         given()
-          .auth()
-          .basic("admin", "admin")
+          .basicAuth("admin", "admin")
           .when()
           .get(s"$nuDesignerHttpAddress/api/notifications")
           .Then()
@@ -40,8 +39,7 @@ class NotificationApiSpec
 
       "return a list of notifications" in {
         given()
-          .auth()
-          .basic("admin", "admin")
+          .basicAuth("admin", "admin")
           .when()
           .get(s"$nuDesignerHttpAddress/api/notifications")
           .Then()
@@ -54,8 +52,7 @@ class NotificationApiSpec
         createDeployedCanceledProcess(processName)
 
         given()
-          .auth()
-          .basic("admin", "admin")
+          .basicAuth("admin", "admin")
           .when()
           .get(s"$nuDesignerHttpAddress/api/notifications")
           .Then()
@@ -81,8 +78,7 @@ class NotificationApiSpec
       }
       "return 405 when invalid HTTP method is passed" in {
         given()
-          .auth()
-          .basic("admin", "admin")
+          .basicAuth("admin", "admin")
           .when()
           .put(s"$nuDesignerHttpAddress/api/notifications")
           .Then()

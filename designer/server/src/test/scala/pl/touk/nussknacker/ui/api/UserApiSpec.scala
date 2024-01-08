@@ -26,49 +26,42 @@ class UserApiSpec
     "authenticated should" - {
       "return user info" in {
         given()
-          .auth()
-          .basic("allpermuser", "allpermuser")
+          .basicAuth("allpermuser", "allpermuser")
           .when()
           .get(s"$nuDesignerHttpAddress/api/user")
           .Then()
           .statusCode(200)
-          .body(
-            equalsJson(s"""{
-               |  "id": "allpermuser",
-               |  "username": "allpermuser",
-               |  "isAdmin": false,
-               |  "categories": [ "Category1" ],
-               |  "categoryPermissions": {
-               |      "Category1": [ "Deploy", "Read", "Write" ]
-               |    },
-               |  "globalPermissions": []
-               |}""".stripMargin)
-          )
+          .equalsJsonBody(s"""{
+             |  "id": "allpermuser",
+             |  "username": "allpermuser",
+             |  "isAdmin": false,
+             |  "categories": [ "Category1" ],
+             |  "categoryPermissions": {
+             |      "Category1": [ "Deploy", "Read", "Write" ]
+             |    },
+             |  "globalPermissions": []
+             |}""".stripMargin)
       }
 
       "return admin info" in {
         given()
-          .auth()
-          .basic("admin", "admin")
+          .basicAuth("admin", "admin")
           .when()
           .get(s"$nuDesignerHttpAddress/api/user")
           .Then()
           .statusCode(200)
-          .body(
-            equalsJson(s"""{
-                 |  "id": "admin",
-                 |  "username": "admin",
-                 |  "isAdmin": true,
-                 |  "categories": [ "Category1", "Category2" ],
-                 |  "categoryPermissions": { },
-                 |  "globalPermissions": []
-                 |}""".stripMargin)
-          )
+          .equalsJsonBody(s"""{
+             |  "id": "admin",
+             |  "username": "admin",
+             |  "isAdmin": true,
+             |  "categories": [ "Category1", "Category2" ],
+             |  "categoryPermissions": { },
+             |  "globalPermissions": []
+             |}""".stripMargin)
       }
       "return 405 when invalid HTTP method is passed" in {
         given()
-          .auth()
-          .basic("admin", "admin")
+          .basicAuth("admin", "admin")
           .when()
           .put(s"$nuDesignerHttpAddress/api/user")
           .Then()
@@ -83,8 +76,7 @@ class UserApiSpec
     "not authenticated should" - {
       "forbid access" in {
         given()
-          .auth()
-          .none()
+          .noAuth()
           .when()
           .get(s"$nuDesignerHttpAddress/api/user")
           .Then()

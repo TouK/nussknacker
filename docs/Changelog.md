@@ -8,6 +8,7 @@
 * [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
 * [#5278](https://github.com/TouK/nussknacker/pull/5278) Recreate assembled model JAR for Flink if it got removed (e.g. by systemd-tmpfiles)
 * [#5280](https://github.com/TouK/nussknacker/pull/5280) Security improvement: Checking if user has access rights to fragment's Category for fragments served by definitions API
+* [#5303](https://github.com/TouK/nussknacker/pull/5303) Added `skipNodeResults` parameter to API endpoints that return scenario validation results
 
 1.13.0 (Not released yet)
 -------------------------

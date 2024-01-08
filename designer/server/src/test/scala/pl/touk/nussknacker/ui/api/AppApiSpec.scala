@@ -45,14 +45,12 @@ class AppApiSpec
         .get(s"$nuDesignerHttpAddress/api/app/healthCheck")
         .Then()
         .statusCode(200)
-        .body(
-          equalsJson(
-            s"""{
-             |  "status":"OK",
-             |  "processes":null,
-             |  "message":null
-             |}""".stripMargin
-          )
+        .equalsJsonBody(
+          s"""{
+           |  "status":"OK",
+           |  "processes":null,
+           |  "message":null
+           |}""".stripMargin
         )
     }
   }
@@ -74,20 +72,17 @@ class AppApiSpec
               )
             )
           }
-          .auth()
-          .basic("reader", "reader")
+          .basicAuth("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(500)
-          .body(
-            equalsJson(
-              s"""{
-               |  "status": "ERROR",
-               |  "message": "Scenarios with status PROBLEM",
-               |  "processes": [ "id1", "id3" ]
-               |}""".stripMargin
-            )
+          .equalsJsonBody(
+            s"""{
+             |  "status": "ERROR",
+             |  "message": "Scenarios with status PROBLEM",
+             |  "processes": [ "id1", "id3" ]
+             |}""".stripMargin
           )
       }
       "not return health check when scenario is canceled" in {
@@ -102,20 +97,17 @@ class AppApiSpec
               )
             )
           }
-          .auth()
-          .basic("reader", "reader")
+          .basicAuth("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(500)
-          .body(
-            equalsJson(
-              s"""{
+          .equalsJsonBody(
+            s"""{
                |  "status": "ERROR",
                |  "message": "Scenarios with status PROBLEM",
                |  "processes": [ "id2" ]
                |}""".stripMargin
-            )
           )
       }
       "return health check ok if statuses are ok" in {
@@ -131,20 +123,17 @@ class AppApiSpec
               )
             )
           }
-          .auth()
-          .basic("reader", "reader")
+          .basicAuth("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(200)
-          .body(
-            equalsJson(
-              s"""{
-               |  "status": "OK",
-               |  "message": null,
-               |  "processes": null
-               |}""".stripMargin
-            )
+          .equalsJsonBody(
+            s"""{
+             |  "status": "OK",
+             |  "message": null,
+             |  "processes": null
+             |}""".stripMargin
           )
       }
       "not report deployment in progress as fail" in {
@@ -159,19 +148,16 @@ class AppApiSpec
             )
           }
           .when()
-          .auth()
-          .basic("reader", "reader")
+          .basicAuth("reader", "reader")
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(200)
-          .body(
-            equalsJson(
-              s"""{
-               |  "status":"OK",
-               |  "processes":null,
-               |  "message":null
-               |}""".stripMargin
-            )
+          .equalsJsonBody(
+            s"""{
+             |  "status":"OK",
+             |  "processes":null,
+             |  "message":null
+             |}""".stripMargin
           )
       }
     }
@@ -213,8 +199,7 @@ class AppApiSpec
               )
             )
           }
-          .auth()
-          .basic("reader", "reader")
+          .basicAuth("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
@@ -232,8 +217,7 @@ class AppApiSpec
       "return OK status and empty list of processes where there are no validation errors" in {
         given()
           .applicationConfiguration {}
-          .auth()
-          .basic("reader", "reader")
+          .basicAuth("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
@@ -328,8 +312,7 @@ class AppApiSpec
     "not return config when" - {
       "user is an admin" in {
         given()
-          .auth()
-          .basic("reader", "reader")
+          .basicAuth("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/config")
           .Then()
@@ -364,8 +347,7 @@ class AppApiSpec
               )
             )
           }
-          .auth()
-          .basic("reader", "reader")
+          .basicAuth("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/config/categoriesWithProcessingType")
           .Then()
@@ -469,8 +451,7 @@ class AppApiSpec
               )
             )
           }
-          .auth()
-          .basic("reader", "reader")
+          .basicAuth("reader", "reader")
           .when()
           .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
           .Then()
