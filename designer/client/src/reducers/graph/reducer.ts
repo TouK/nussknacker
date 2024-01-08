@@ -14,7 +14,7 @@ import {
     enrichNodeWithProcessDependentData,
     prepareNewNodesWithLayout,
     updateAfterNodeDelete,
-    updateAfterNodeIdChange,
+    updateLayoutAfterNodeIdChange,
 } from "./utils";
 import { ValidationResult } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
@@ -27,7 +27,6 @@ import { correctFetchedDetails } from "./correctFetchedDetails";
 
 const emptyGraphState: GraphState = {
     graphLoading: false,
-    processToDisplay: null,
     fetchedProcessDetails: null,
     layout: [],
     testCapabilities: null,
@@ -43,7 +42,7 @@ export function updateValidationResult(state: GraphState, action: { validationRe
         ...action.validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
         nodeResults: {
-            ...ProcessUtils.getValidationResult(state.processToDisplay).nodeResults,
+            ...ProcessUtils.getValidationResult(state.fetchedProcessDetails.json).nodeResults,
             ...action.validationResult.nodeResults,
         },
     };
@@ -59,15 +58,18 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "UPDATE_IMPORTED_PROCESS": {
-            const oldNodeIds = sortBy(state.processToDisplay.nodes.map((n) => n.id));
+            const oldNodeIds = sortBy(state.fetchedProcessDetails.json.nodes.map((n) => n.id));
             const newNodeids = sortBy(action.processJson.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
             return {
                 ...state,
                 graphLoading: false,
-                processToDisplay: action.processJson,
                 layout: newLayout,
+                fetchedProcessDetails: {
+                    ...state.fetchedProcessDetails,
+                    json: action.processJson,
+                },
             };
         }
         case "UPDATE_TEST_CAPABILITIES": {
@@ -84,21 +86,17 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "DISPLAY_PROCESS": {
             const { fetchedProcessDetails } = action;
-            const processToDisplay = fetchedProcessDetails.json;
             return {
                 ...state,
-                processToDisplay,
                 fetchedProcessDetails,
                 graphLoading: false,
-                layout: LayoutUtils.fromMeta(processToDisplay),
+                layout: LayoutUtils.fromMeta(fetchedProcessDetails.json),
             };
         }
         case "CORRECT_INVALID_SCENARIO": {
             const fetchedProcessDetails = correctFetchedDetails(state.fetchedProcessDetails, action.processDefinitionData);
-            const processToDisplay = fetchedProcessDetails.json;
             return {
                 ...state,
-                processToDisplay,
                 fetchedProcessDetails,
             };
         }
@@ -133,15 +131,14 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return emptyGraphState;
         }
         case "EDIT_NODE": {
-            const stateAfterNodeRename = {
-                ...state,
-                ...updateAfterNodeIdChange(state.layout, action.processAfterChange, action.before.id, action.after.id),
-            };
+            const newLayout = updateLayoutAfterNodeIdChange(state.layout, action.before.id, action.after.id);
+
             return {
-                ...stateAfterNodeRename,
-                processToDisplay: {
-                    ...stateAfterNodeRename.processToDisplay,
-                    validationResult: updateValidationResult(state, action),
+                ...state,
+                layout: newLayout,
+                fetchedProcessDetails: {
+                    ...state.fetchedProcessDetails,
+                    json: { ...action.processAfterChange, validationResult: updateValidationResult(state, action) },
                 },
             };
         }
@@ -154,21 +151,24 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "DELETE_NODES": {
             return action.ids.reduce((state, idToDelete) => {
                 const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete);
-                const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.processToDisplay, idToDelete);
+                const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.fetchedProcessDetails.json, idToDelete);
                 return {
                     ...stateAfterNodeDelete,
-                    processToDisplay,
+                    fetchedProcessDetails: {
+                        ...stateAfterNodeDelete.fetchedProcessDetails,
+                        json: processToDisplay,
+                    },
                 };
             }, state);
         }
         case "NODES_CONNECTED": {
-            const currentEdges = NodeUtils.edgesFromProcess(state.processToDisplay);
+            const currentEdges = NodeUtils.edgesFromProcess(state.fetchedProcessDetails.json);
             const newEdge = NodeUtils.getEdgeForConnection({
                 fromNode: action.fromNode,
                 toNode: action.toNode,
                 edgeType: action.edgeType,
                 processDefinition: action.processDefinitionData,
-                process: state.processToDisplay,
+                process: state.fetchedProcessDetails.json,
             });
 
             const newEdges = currentEdges.includes(newEdge)
@@ -184,25 +184,31 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 
             return {
                 ...state,
-                processToDisplay: {
-                    ...state.processToDisplay,
-                    nodes: state.processToDisplay.nodes.map((n) =>
-                        action.toNode.id !== n.id ? n : enrichNodeWithProcessDependentData(n, action.processDefinitionData, newEdges),
-                    ),
-                    edges: newEdges,
+                fetchedProcessDetails: {
+                    ...state.fetchedProcessDetails,
+                    json: {
+                        ...state.fetchedProcessDetails.json,
+                        nodes: state.fetchedProcessDetails.json.nodes.map((n) =>
+                            action.toNode.id !== n.id ? n : enrichNodeWithProcessDependentData(n, action.processDefinitionData, newEdges),
+                        ),
+                        edges: newEdges,
+                    },
                 },
             };
         }
         case "NODES_DISCONNECTED": {
-            const nodesToSet = adjustBranchParametersAfterDisconnect(state.processToDisplay.nodes, [action]);
+            const nodesToSet = adjustBranchParametersAfterDisconnect(state.fetchedProcessDetails.json.nodes, [action]);
             return {
                 ...state,
-                processToDisplay: {
-                    ...state.processToDisplay,
-                    edges: state.processToDisplay.edges
-                        .map((e) => (e.from === action.from && e.to === action.to ? { ...e, to: "" } : e))
-                        .filter(Boolean),
-                    nodes: nodesToSet,
+                fetchedProcessDetails: {
+                    ...state.fetchedProcessDetails,
+                    json: {
+                        ...state.fetchedProcessDetails.json,
+                        edges: state.fetchedProcessDetails.json.edges
+                            .map((e) => (e.from === action.from && e.to === action.to ? { ...e, to: "" } : e))
+                            .filter(Boolean),
+                        nodes: nodesToSet,
+                    },
                 },
             };
         }
@@ -236,14 +242,17 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
                 const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, action.processDefinitionData);
                 return edges.concat(newEdge);
-            }, state.processToDisplay.edges);
+            }, state.fetchedProcessDetails.json.edges);
 
             const stateWithNodesAdded = addNodesWithLayout(state, { nodes, layout });
             return {
                 ...stateWithNodesAdded,
-                processToDisplay: {
-                    ...stateWithNodesAdded.processToDisplay,
-                    edges: updatedEdges,
+                fetchedProcessDetails: {
+                    ...stateWithNodesAdded.fetchedProcessDetails,
+                    json: {
+                        ...stateWithNodesAdded.fetchedProcessDetails.json,
+                        edges: updatedEdges,
+                    },
                 },
                 selectionState: uniqueIds,
             };
@@ -251,9 +260,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "VALIDATION_RESULT": {
             return {
                 ...state,
-                processToDisplay: {
-                    ...state.processToDisplay,
-                    validationResult: updateValidationResult(state, action),
+                fetchedProcessDetails: {
+                    ...state.fetchedProcessDetails,
+                    json: {
+                        ...state.fetchedProcessDetails.json,
+                        validationResult: updateValidationResult(state, action),
+                    },
                 },
             };
         }
@@ -308,15 +320,17 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 };
 
 const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
-    processToDisplay: {
-        nodes,
+    fetchedProcessDetails: {
+        json: {
+            nodes,
+        },
     },
 });
 
 const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
 const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
 
-const pickKeys: NestedKeyOf<GraphState>[] = ["fetchedProcessDetails", "processToDisplay", "unsavedNewName", "layout", "selectionState"];
+const pickKeys: NestedKeyOf<GraphState>[] = ["fetchedProcessDetails", "unsavedNewName", "layout", "selectionState"];
 const omitKeys: NestedKeyOf<GraphState>[] = [
     "fetchedProcessDetails.json.validationResult",
     "fetchedProcessDetails.lastDeployedAction",
@@ -324,7 +338,8 @@ const omitKeys: NestedKeyOf<GraphState>[] = [
     "fetchedProcessDetails.history",
 ];
 
-const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["processToDisplay.validationResult"]));
+const getUndoableState = (state: GraphState) =>
+    omit(pick(state, pickKeys), omitKeys.concat(["fetchedProcessDetails.json.validationResult"]));
 const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));
 
 const undoableReducer = undoable<GraphState, Action>(reducer, {
@@ -333,7 +348,7 @@ const undoableReducer = undoable<GraphState, Action>(reducer, {
     groupBy: batchGroupBy.init(),
     filter: combineFilters((action, nextState, prevState) => {
         return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
-    }, excludeAction(["VALIDATION_RESULT", "DISPLAY_PROCESS", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "DISPLAY_PROCESS_ACTIVITY", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS"])),
+    }, excludeAction(["VALIDATION_RESULT", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "DISPLAY_PROCESS_ACTIVITY", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS"])),
 });
 
 // apply only undoable changes for undo actions

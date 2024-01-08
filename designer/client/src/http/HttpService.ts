@@ -9,16 +9,7 @@ import { UserData } from "../common/models/User";
 import { ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import {
-    Expression,
-    Process,
-    ProcessAdditionalFields,
-    ProcessDefinitionData,
-    ProcessName,
-    PropertiesType,
-    TypingResult,
-    VariableTypes,
-} from "../types";
+import { Expression, Process, ProcessAdditionalFields, ProcessDefinitionData, ProcessName, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -281,7 +272,7 @@ class HttpService {
                         i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processName}}", { processName }),
                         error,
                         true,
-                    ).then((error) => {
+                    ).then(() => {
                         return { isSuccess: false };
                     });
                 } else {
@@ -314,7 +305,7 @@ class HttpService {
                     i18next.t("notification.error.failedToCancel", "Failed to cancel {{processName}}", { processName }),
                     error,
                     true,
-                ).then((error) => {
+                ).then(() => {
                     return { isSuccess: false };
                 });
             } else {
@@ -489,7 +480,7 @@ class HttpService {
         return promise;
     }
 
-    generateTestData(processName: string, testSampleSize: string, process: Process): Promise<AxiosResponse<any>> {
+    generateTestData(processName: string, testSampleSize: string, process: Process): Promise<AxiosResponse> {
         const promise = api.post(`/testInfo/generate/${testSampleSize}`, this.#sanitizeProcess(process), {
             responseType: "blob",
         });
@@ -677,10 +668,10 @@ class HttpService {
 
     #sanitizeProcess(process: Process) {
         //don't send validationResult, it's not needed and can be v. large,
-        const { name, nodes, edges, properties, processingType, category }: Omit<Process, "validationResult"> =
+        const { name, nodes, edges, properties, processingType, category, id }: Omit<Process, "validationResult"> =
             //don't send empty edges
             withoutHackOfEmptyEdges(process);
-        return { name, nodes, edges, properties, processingType, category };
+        return { name, nodes, edges, properties, processingType, category, id };
     }
 
     #requestCanceled(error: AxiosError<unknown>) {

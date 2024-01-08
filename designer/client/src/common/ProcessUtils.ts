@@ -18,8 +18,9 @@ import { isProcessRenamed } from "../reducers/selectors/graph";
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
         const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
-        const processToDisplay = state.graphReducer.processToDisplay;
-        //TODO: validationResult should be removed from processToDisplay...
+        const savedProcessState =
+            state.graphReducer.history.past[0]?.fetchedProcessDetails || state.graphReducer.history.present.fetchedProcessDetails;
+
         const omitValidation = (details: Process) => omit(details, ["validationResult"]);
         const processRenamed = isProcessRenamed(state);
 
@@ -31,7 +32,7 @@ class ProcessUtils {
             return true;
         }
 
-        return isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay));
+        return !savedProcessState || isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(savedProcessState.json));
     };
 
     canExport = (state: RootState): boolean => {

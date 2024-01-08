@@ -1,5 +1,5 @@
 import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
-import { getProcessToDisplay } from "../../../../reducers/selectors/graph";
+import { getFetchedProcessDetails, getProcessToDisplay } from "../../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { RootState } from "../../../../reducers";
@@ -48,7 +48,7 @@ export const getNodeExpressionType = createSelector(getExpressionType, getNodeTy
     };
 });
 export const getProcessProperties = createSelector(getProcessToDisplay, (s) => s.properties);
-export const getProcessName = createSelector(getProcessToDisplay, (s) => s.name);
+export const getProcessName = createSelector(getFetchedProcessDetails, (s) => s.name);
 export const getCurrentErrors = createSelector(
     getValidationPerformed,
     getValidationErrors,

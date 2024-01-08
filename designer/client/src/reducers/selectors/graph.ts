@@ -11,7 +11,7 @@ import { getProcessState } from "./scenarioState";
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
 export const getFetchedProcessDetails = createSelector(getGraph, (g) => g.fetchedProcessDetails);
-export const getProcessToDisplay = createSelector(getGraph, (g) => g.processToDisplay || ({} as Process));
+export const getProcessToDisplay = createSelector(getGraph, (g) => g.fetchedProcessDetails.json || ({} as Process));
 export const getProcessNodesIds = createSelector(getProcessToDisplay, (p) => NodeUtils.nodesFromProcess(p).map((n) => n.id));
 export const getProcessName = createSelector(getFetchedProcessDetails, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);

@@ -21,6 +21,10 @@ import { useTheme } from "@mui/material";
 import { alpha, tint } from "../../../../containers/theme/helpers";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 
+function mergeQuery(changes: Record<string, string[]>) {
+    return replaceSearchQuery((current) => ({ ...current, ...changes }));
+}
+
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; process: Process }> {
     readOnly?: boolean;
 }
@@ -43,6 +47,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const performNodeEdit = useCallback(async () => {
         await dispatch(editNode(process, node, applyIdFromFakeName(editedNode), outputEdges));
         props.close();
+        mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
     }, [process, node, editedNode, outputEdges, dispatch, props]);
 
     const { t } = useTranslation();
@@ -103,9 +108,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }, [node]);
 
     useEffect(() => {
-        function mergeQuery(changes: Record<string, string[]>) {
-            return replaceSearchQuery((current) => ({ ...current, ...changes }));
-        }
         mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
         return () => {
             mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));

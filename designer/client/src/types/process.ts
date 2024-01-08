@@ -9,6 +9,7 @@ import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioP
 import { FixedValuesOption } from "../components/graph/node-modal/fragment-input-definition/item";
 
 export type Process = {
+    id: string;
     name: string;
     nodes: NodeType[];
     edges: Edge[];
