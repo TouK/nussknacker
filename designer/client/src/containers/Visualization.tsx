@@ -19,7 +19,7 @@ import * as VisualizationUrl from "../common/VisualizationUrl";
 import { Graph } from "../components/graph/Graph";
 import { ErrorHandler } from "./ErrorHandler";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
+import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState, toggleSelection } from "../actions/nk";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import { DndProvider } from "react-dnd-multi-backend";
 import { useDecodedParams } from "../common/routerUtils";
@@ -124,9 +124,9 @@ function Visualization() {
     const openAndHighlightNodes = useCallback(
         async (process: ProcessType) => {
             const windows = await Promise.all(openNodes(process.json));
-            getGraphInstance()?.highlightNodes(windows.map((w) => w.meta.node.id));
+            windows.map((w) => dispatch(toggleSelection(w.meta.node.id)));
         },
-        [getGraphInstance, openNodes],
+        [dispatch, openNodes],
     );
 
     useEffect(() => {
