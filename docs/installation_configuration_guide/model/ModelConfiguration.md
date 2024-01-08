@@ -131,8 +131,8 @@ The second approach is mostly useful when there is more than one component with 
 Available component types:
 - `source` - for components located in the `sources` toolbox panel
 - `sink` - for components located in the `sinks` toolbox panel
-- `service` - for components located in the `enrichers` and `services` toolbox panel
-- `custom` - for components located in the `custom` and `optionalEndingCustom` toolbox panel
+- `service` - for components located in the `enrichers` and `services` toolbox panels
+- `custom` - for components located in the `custom` and `optionalEndingCustom` toolbox panels
 - `built-in` - for built-in components (`choice`, `filter`, `record-variable`, `split`, `variable`) located in the `base` toolbox panel
 
 ### Component links

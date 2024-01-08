@@ -33,7 +33,6 @@ class ComponentGroupsPreparer(componentsGroupMapping: Map[ComponentGroupName, Op
           (originalGroupName, mappedGroupName, nodeTemplates)
         }
       }
-      // We sort mostly by original group name because
       .sortBy {
         case (
               DefaultsComponentGroupName.SourcesGroupName | DefaultsComponentGroupName.FragmentsDefinitionGroupName,

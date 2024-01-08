@@ -535,7 +535,7 @@ class DefaultComponentServiceSpec
       (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
         val returnedComponents = defaultComponentService.getComponentsList(user).futureValue
 
-        returnedComponents.map(_.id).sortBy(_.value) should contain theSameElementsAs returnedComponents
+        returnedComponents.map(_.id).sortBy(_.value) should contain theSameElementsAs expectedComponents
           .map(_.id)
           .sortBy(
             _.value

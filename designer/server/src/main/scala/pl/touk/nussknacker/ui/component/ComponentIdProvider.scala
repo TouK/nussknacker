@@ -45,9 +45,8 @@ class DefaultComponentIdProvider(
       info: ComponentInfo,
       defaultComponentId: ComponentId
   ): ComponentId = {
-    val componentId = configByProcessingTypeAndInfo(processingType, info).flatMap(_.componentId)
-
-    componentId
+    configByProcessingTypeAndInfo(processingType, info)
+      .flatMap(_.componentId)
       .getOrElse(defaultComponentId)
   }
 

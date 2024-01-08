@@ -35,7 +35,7 @@ private[component] object ComponentNodeTemplatePreparer {
       )
 
     def parameterTemplates(componentDefinition: ComponentStaticDefinition): List[NodeParameter] =
-      NodeTemplateParameterPreparer.prepareNodeParameterTemplates(componentDefinition.parameters)
+      NodeParameterTemplatesPreparer.prepareNodeParameterTemplates(componentDefinition.parameters)
 
     def serviceRef(info: ComponentInfo, componentDefinition: ComponentStaticDefinition) =
       ServiceRef(info.name, parameterTemplates(componentDefinition))
@@ -86,7 +86,7 @@ private[component] object ComponentNodeTemplatePreparer {
           throw new IllegalStateException(s"Not expected component: $info with definition: $componentDefinition")
       }
       val branchParametersTemplate =
-        NodeTemplateParameterPreparer.prepareNodeBranchParameterTemplates(componentDefinition.parameters)
+        NodeParameterTemplatesPreparer.prepareNodeBranchParameterTemplates(componentDefinition.parameters)
       val componentNodeTemplate = ComponentNodeTemplate.create(
         info,
         nodeTemplate,

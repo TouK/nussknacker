@@ -95,9 +95,9 @@ class BaseFlowTest
     )
     response.code shouldEqual StatusCode.Ok
 
-    val componentConfiResultJson = response.extractFieldJsonValue("componentsConfig")
-    val componentConfiResult =
-      Decoder[Map[String, SingleComponentConfig]].decodeJson(componentConfiResultJson).toOption.get
+    val componentsConfigResultJson = response.extractFieldJsonValue("componentsConfig")
+    val componentsConfigResult =
+      Decoder[Map[String, SingleComponentConfig]].decodeJson(componentsConfigResultJson).toOption.get
 
     // docs url comes from defaultModelConf.conf in dev-model
     val expectedConfig = Map(
@@ -213,9 +213,9 @@ class BaseFlowTest
         expectedConfig.toSeq: _*
       )
     ) { (componentName, config) =>
-      componentConfiResult.get(componentName).value shouldEqual config
+      componentsConfigResult.get(componentName).value shouldEqual config
     }
-    componentConfiResult.keys.toList.sorted should contain allElementsOf expectedConfig.keys.toList.sorted
+    componentsConfigResult.keys.toList.sorted should contain allElementsOf expectedConfig.keys.toList.sorted
   }
 
   test("ensure scenario properties config is properly applied") {

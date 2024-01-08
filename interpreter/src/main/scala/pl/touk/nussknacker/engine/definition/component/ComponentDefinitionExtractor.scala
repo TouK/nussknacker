@@ -65,6 +65,7 @@ object ComponentDefinitionExtractor {
       }
 
     val componentInfo = ComponentInfo(componentTypeSpecificData.componentType, componentName)
+
     def withConfigForNotDisabledComponent[T](
         returnType: Option[TypingResult]
     )(f: SingleComponentConfig => T): Option[T] = {

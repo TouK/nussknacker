@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 class ModelDefinitionEnricher(
     builtInComponentsDefinitionsPreparer: BuiltInComponentsStaticDefinitionsPreparer,
     fragmentDefinitionExtractor: FragmentWithoutValidatorsDefinitionExtractor,
-    additionalUIConfigFromProviderEnricher: AdditionalUIConfigFinalizer,
+    additionalUIConfigFinalizer: AdditionalUIConfigFinalizer,
     modelDefinition: ModelDefinition[ComponentStaticDefinition]
 ) {
 
@@ -27,7 +27,7 @@ class ModelDefinitionEnricher(
       // TODO: Support for fragments using other fragments
       if (forFragment) List.empty
       else extractFragmentComponents(fragmentsDetails)
-    additionalUIConfigFromProviderEnricher.finalizeModelDefinition(
+    additionalUIConfigFinalizer.finalizeModelDefinition(
       modelDefinition
         .withComponents(builtInComponents)
         .withComponents(fragmentComponents.toList),
@@ -52,14 +52,14 @@ object ModelDefinitionEnricher {
 
   def apply(
       modelData: ModelData,
-      additionalUIConfigFromProviderEnricher: AdditionalUIConfigFinalizer,
+      additionalUIConfigFinalizer: AdditionalUIConfigFinalizer,
       modelDefinition: ModelDefinition[ComponentStaticDefinition]
   ): ModelDefinitionEnricher = {
     val builtInComponentConfig = ComponentsUiConfigParser.parse(modelData.modelConfig)
     new ModelDefinitionEnricher(
       new BuiltInComponentsStaticDefinitionsPreparer(builtInComponentConfig),
       new FragmentWithoutValidatorsDefinitionExtractor(modelData.modelClassLoader.classLoader),
-      additionalUIConfigFromProviderEnricher,
+      additionalUIConfigFinalizer,
       modelDefinition
     )
   }
