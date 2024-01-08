@@ -78,12 +78,15 @@ class LiteTestScenarioRunner(
     *  .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#result")
     *  }}}
     */
-  override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] =
+  override def runWithData[INPUT: ClassTag, OUTPUT](
+      scenario: CanonicalProcess,
+      data: List[INPUT]
+  ): RunnerListResult[OUTPUT] =
     runWithDataReturningDetails(scenario, data)
-      .map { result => RunListResult(result._1, result._2.map(_.result.asInstanceOf[R])) }
+      .map { result => RunListResult(result._1, result._2.map(_.result.asInstanceOf[OUTPUT])) }
 
-  def runWithDataReturningDetails[T: ClassTag](scenario: CanonicalProcess, data: List[T]): SynchronousResult = {
-    val testSource = ComponentDefinition(TestScenarioRunner.testDataSource, new SimpleSourceFactory(Typed[T]))
+  def runWithDataReturningDetails[INPUT: ClassTag](scenario: CanonicalProcess, data: List[INPUT]): SynchronousResult = {
+    val testSource = ComponentDefinition(TestScenarioRunner.testDataSource, new SimpleSourceFactory(Typed[INPUT]))
     val testSink   = ComponentDefinition(TestScenarioRunner.testResultSink, SimpleSinkFactory)
     val inputId    = scenario.nodes.head.id
     val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any)))

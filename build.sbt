@@ -1683,7 +1683,7 @@ lazy val decisionTableComponents = (project in component("decisiontable"))
     componentsApi          % Provided,
     commonUtils            % Provided,
     liteComponentsTestkit  % "test",
-    flinkComponentsTestkit % "test"
+    flinkComponentsTestkit % "test" // todo:
   )
 
 lazy val flinkBaseComponents = (project in flink("components/base"))

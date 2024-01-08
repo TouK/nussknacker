@@ -39,6 +39,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.metrics.common.{
   EndCountingListener,
   ExceptionCountingListener,
@@ -78,9 +79,10 @@ object ScenarioInterpreterFactory {
 
       val allNodes = process.collectAllNodes
       val countingListeners = List(
+        LoggingListener,
         new NodeCountingListener(allNodes.map(_.id)),
         new ExceptionCountingListener,
-        new EndCountingListener(allNodes)
+        new EndCountingListener(allNodes),
       )
       val listeners = creator.listeners(modelDependencies) ++ additionalListeners ++ countingListeners
 

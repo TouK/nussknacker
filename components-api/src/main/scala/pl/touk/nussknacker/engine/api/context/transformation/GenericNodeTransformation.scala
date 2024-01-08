@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
      - for sources OutputVariable *has* to be used for Flink sources, it's value is always equal to 'input' ATM, due to source API limitations
  */
 // TODO: rename to DynamicComponent
-sealed trait GenericNodeTransformation[T] {
+sealed trait GenericNodeTransformation[INVOKER] {
 
   // ValidationContext for single input, Map[String, ValidationContext] for joins
   type InputContext
@@ -37,7 +37,11 @@ sealed trait GenericNodeTransformation[T] {
       implicit nodeId: NodeId
   ): NodeTransformationDefinition
 
-  def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T
+  def implementation(
+      params: Map[String, Any],
+      dependencies: List[NodeDependencyValue],
+      finalState: Option[State]
+  ): INVOKER
 
   // Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]
