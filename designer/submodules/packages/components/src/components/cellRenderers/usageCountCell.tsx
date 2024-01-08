@@ -7,14 +7,7 @@ import { CellLink } from "./cellLink";
 
 export function UsageCountCell(props: GridRenderCellParams): JSX.Element {
     return (
-        <CellLink
-            sx={{ fontWeight: "bold" }}
-            disabled={!props.value}
-            color="primary"
-            cellProps={props}
-            component={RouterLink}
-            to={`usages/${props.row.id}`}
-        >
+        <CellLink sx={{ fontWeight: "bold" }} disabled={!props.value} color="primary" component={RouterLink} to={`usages/${props.row.id}`}>
             {!props.value ? (
                 <Box
                     sx={{

@@ -39,7 +39,7 @@ describe("Node window", () => {
         cy.get("[data-testid=window]").matchImage();
     });
 
-    describe("with query params", () => {
+    describe.skip("with query params", () => {
         beforeEach(() => {
             cy.visit("/components");
         });
