@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Decoder, Json}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, VersionId}
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.{NodeValidationRequest, NodesApiEndpoints, NodesResources}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
@@ -40,7 +40,7 @@ class NodesApiHttpService(
           .getProcessId(processName)
           .flatMap { processId =>
             processService
-              .getProcessWithDetails(
+              .getLatestProcessWithDetails(
                 ProcessIdWithName(processId, processName),
                 GetScenarioWithDetailsOptions.detailsOnly
               )(user)
@@ -65,7 +65,7 @@ class NodesApiHttpService(
           .getProcessId(processName)
           .flatMap { processId =>
             processService
-              .getProcessWithDetails(
+              .getLatestProcessWithDetails(
                 ProcessIdWithName(processId, processName),
                 GetScenarioWithDetailsOptions.detailsOnly
               )(user)
@@ -73,7 +73,7 @@ class NodesApiHttpService(
                 val nodeValidator = typeToNodeValidator.forTypeUnsafe(process.processingType)(user)
                 nodeValidationRequestDto.toRequest match {
                   case Some(nodeData) =>
-                    Future(success(nodeValidator.validate(processName, nodeData).toDto()))
+                    Future(success(nodeValidator.validate(processName, nodeData)(user).toDto()))
                   case None =>
                     Future(businessError(error = None))
                 }
@@ -94,7 +94,7 @@ class NodesApiHttpService(
           .getProcessId(processName)
           .flatMap { processId =>
             processService
-              .getProcessWithDetails(
+              .getLatestProcessWithDetails(
                 ProcessIdWithName(processId, processName),
                 GetScenarioWithDetailsOptions.detailsOnly
               )(user)

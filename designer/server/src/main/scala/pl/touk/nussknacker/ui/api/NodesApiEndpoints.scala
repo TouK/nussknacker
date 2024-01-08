@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import io.circe.Json.Null
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -11,7 +12,14 @@ import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{
+  Typed,
+  TypedClass,
+  TypedObjectWithValue,
+  TypedTaggedValue,
+  TypingResult
+}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
@@ -123,13 +131,23 @@ object NodesApiEndpoints {
 
       implicit val encoder: Encoder[TypingResultDto] = {
         Encoder.encodeJson.contramap { typingResult =>
-          Json.obj(
-            "value"        -> getTypingValue(typingResult.value),
-            "display"      -> Json.fromString(typingResult.display),
-            "type"         -> Json.fromString(typingResult.`type`),
-            "refClazzName" -> Json.fromString(typingResult.refClazzName),
-            "params"       -> typingResult.params.asJson
-          )
+          getTypingValue(typingResult.value) match {
+            case Null =>
+              Json.obj(
+                "display"      -> Json.fromString(typingResult.display),
+                "type"         -> Json.fromString(typingResult.`type`),
+                "refClazzName" -> Json.fromString(typingResult.refClazzName),
+                "params"       -> typingResult.params.asJson
+              )
+            case value =>
+              Json.obj(
+                "value"        -> value,
+                "display"      -> Json.fromString(typingResult.display),
+                "type"         -> Json.fromString(typingResult.`type`),
+                "refClazzName" -> Json.fromString(typingResult.refClazzName),
+                "params"       -> typingResult.params.asJson
+              )
+          }
         }
       }
 
@@ -137,8 +155,8 @@ object NodesApiEndpoints {
         Decoder.instance { c =>
           for {
             typ <- c.downField("type").as[String]
-//            variableType  <- giveType(typ, c)
-//            value         <- c.downField("value").
+            //            variableType  <- giveType(typ, c)
+            //            value         <- c.downField("value").
             display      <- c.downField("display").as[String]
             refClazzName <- c.downField("refClazzName").as[String]
             params       <- c.downField("params").as[List[String]]
@@ -146,20 +164,73 @@ object NodesApiEndpoints {
         }
       }
 
-      type LoadClass = String => Class[_]
-
-      def loadClass(name: String): Class[_] = {
-        Class.forName(name)
+      def typingResultToDto(typingResult: TypingResult): TypingResultDto = {
+        typingResult match {
+          case result: TypedObjectWithValue =>
+            println("TypedObjectWithValue")
+            TypingResultDto(
+              value = Some(result.value),
+              display = result.display,
+              `type` = typing.TypedObjectWithValue.toString(),
+              refClazzName = result.data.getClass.toString.stripPrefix("class "),
+              params = List.empty
+            )
+          case result: TypedClass =>
+            println("TypedClass")
+            TypingResultDto(
+              value = None,
+              display = result.display,
+              `type` = "TypedClass",
+              refClazzName = result.klass.toString.stripPrefix("class "),
+              params = result.params.map(sth => sth.toString)
+            )
+          case result: TypedTaggedValue =>
+            println("TypedTaggedValue")
+            TypingResultDto(
+              value = None,
+              display = result.display,
+              `type` = typing.TypedTaggedValue.toString(),
+              refClazzName = result.data.getClass.toString.stripPrefix("class "),
+              params = List.empty
+            )
+          case result: typing.TypedObjectTypingResult =>
+            println("TypedObjectTypingResult")
+            TypingResultDto(
+              value = None,
+              display = result.display,
+              `type` = typing.TypedObjectTypingResult.getClass.toString,
+              refClazzName = result.getClass.toString.stripPrefix("class "),
+              params = List.empty // maybe sth else?
+            )
+          case result: typing.TypedObjectWithData =>
+            println("TypedObjectWithData")
+            TypingResultDto(
+              value = None,
+              display = result.display,
+              `type` = typing.TypedObjectWithValue.toString(), // wrong
+              refClazzName = result.withoutValue.display.getClass.toString,
+              params = List.empty
+            )
+          case result: typing.SingleTypingResult =>
+            println("SingleTypingResult")
+            TypingResultDto(
+              value = None,
+              display = result.display,
+              `type` = typing.TypedObjectWithValue.toString(),
+              refClazzName = result.getClass.toString.stripPrefix("class "),
+              params = List.empty
+            )
+          case typing.TypedNull =>
+            println("TypedNull")
+            TypingResultDto(None, "null", "null", "null", List.empty)
+          case typing.Unknown =>
+            println("Unknown")
+            TypingResultDto(None, "Unknown", "Unknown", "java.lang.Object", List.empty)
+          case _result: typing.KnownTypingResult =>
+            println("KnownTypingResult")
+            TypingResultDto(None, "rest", "type", "refClazzName", List.empty)
+        }
       }
-//      def giveType(typ: String, c: ACursor): Decoder.Result[Class[_]] = {
-//        println("-------")
-//        println(c)
-//        println("-------")
-//        Try(ClassLoader.getPlatformClassLoader.loadClass(typ)) match {
-//          case Success(value) => Right(value)
-//          case Failure(thr) => Left(DecodingFailure(s"Failed to load class $typ with ${thr.getMessage}", c.history))
-//        }
-//      }
 
     }
 

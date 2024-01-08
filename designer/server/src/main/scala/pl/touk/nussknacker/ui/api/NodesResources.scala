@@ -14,9 +14,14 @@ import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{
+  Typed,
+  TypedClass,
+  TypedObjectWithValue,
+  TypedTaggedValue,
+  TypingResult
+}
 import pl.touk.nussknacker.engine.api.typed.{TypingResultDecoder, typing}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData._
@@ -24,6 +29,7 @@ import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.typingResultToDto
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{NodeValidationResultDto, TypingResultDto, UIParameterDto}
 import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareTypingResultDecoder}
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -215,26 +221,11 @@ object NodesResources {
         list.map { param =>
           UIParameterDto(
             name = param.name,
-            typ = TypingResultDto(
-              value = None,
-              display = param.typ.display,
-              `type` = param.typ.toString,
-              refClazzName = param.typ.getClass.toString,
-              params = List.empty
-            ),
+            typ = typingResultToDto(param.typ),
             editor = param.editor,
             defaultValue = param.defaultValue,
             additionalVariables = param.additionalVariables.map { case (key, typingResult) =>
-              (
-                key,
-                TypingResultDto(
-                  None,
-                  typingResult.display,
-                  typingResult.withoutValue.display,
-                  typingResult.getClass.toString,
-                  List()
-                )
-              )
+              (key, typingResultToDto(typingResult))
             },
             variablesToHide = param.variablesToHide,
             branchParam = param.branchParam,
@@ -242,26 +233,8 @@ object NodesResources {
           )
         }
       },
-      expressionType = expressionType.map {
-        case result: typing.TypedObjectWithValue =>
-          TypingResultDto(
-            value = Some(result.value),
-            display = result.display,
-            `type` = typing.TypedObjectWithValue.toString(),
-            refClazzName = result.data.getClass.toString.stripPrefix("class "),
-            params = List.empty
-          )
-        case result: typing.SingleTypingResult =>
-          TypingResultDto(
-            value = result.valueOpt,
-            display = result.display,
-            `type` = result.withoutValue.display,
-            refClazzName = result.withoutValue.display.getClass.toString,
-            params = List.empty
-          )
-        case typing.TypedNull => TypingResultDto(None, null, null, null, List.empty)
-        case typing.Unknown   => TypingResultDto(None, "Unknown", "Unknown", "java.lang.Object", List.empty)
-        case result: typing.KnownTypingResult => TypingResultDto(None, "rest", null, null, List.empty)
+      expressionType = expressionType.map { typingResult =>
+        typingResultToDto(typingResult)
       },
       validationErrors = validationErrors,
       validationPerformed = validationPerformed
