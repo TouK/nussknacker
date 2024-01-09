@@ -139,7 +139,7 @@ class ComponentGroupsPreparerSpec
           TestProcessingTypes.Streaming
         )
     new ComponentGroupsPreparer(componentsGroupMapping).prepareComponentGroups(
-      user = TestFactory.adminUser("aa"),
+      user = TestFactory.adminUser(),
       definitions = enrichedModelDefinition,
       processCategoryService = processCategoryService,
       TestProcessingTypes.Streaming
