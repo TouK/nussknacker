@@ -3,6 +3,7 @@ package pl.touk.nussknacker.decisiontable
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.{Cell, Row}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -35,16 +36,24 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
         "dtResult",
         "decision-table",
         "Basic Decision Table" -> decisionTableJson,
-        "Expression"           -> "true",
+        "Expression"           -> "#B == 'foo'",
       )
       .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#dtResult")
 
-    val validatedResult = testScenarioRunner.runWithData[TestMessage, String](process, List(TestMessage("1", 100)))
+    val validatedResult = testScenarioRunner.runWithData[TestMessage, Vector[Row]](process, List(TestMessage("1", 100)))
 
     val resultList = validatedResult.validValue.successes
     resultList should be(
       List {
-        Vector(Vector(null, null, "test"), Vector(Some(1), "foo", "bar"), Vector(null, null, "xxx"))
+        Vector(
+          Row(
+            Vector(
+              Cell(classOf[Option[Int]], Some(1)),
+              Cell(classOf[String], "foo"),
+              Cell(classOf[String], "bar"),
+            )
+          )
+        )
       }
     )
   }
@@ -53,7 +62,7 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
     s"""{
        |  "columns": [
        |    {
-       |      "name": "some name",
+       |      "name": "somename",
        |      "type": "java.lang.Double"
        |    },
        |    {

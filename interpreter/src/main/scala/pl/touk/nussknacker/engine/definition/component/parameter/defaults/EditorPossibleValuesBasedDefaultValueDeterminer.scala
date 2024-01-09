@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 
 import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData
-import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.Column
 import pl.touk.nussknacker.engine.api.definition.{
   DualParameterEditor,
   FixedValuesParameterEditor,

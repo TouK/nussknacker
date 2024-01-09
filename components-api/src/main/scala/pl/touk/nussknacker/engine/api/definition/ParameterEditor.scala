@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.ColumnWithValues
+import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.{Column, Row}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
 import java.time.temporal.ChronoUnit
@@ -37,15 +37,22 @@ case object SpelTemplateParameterEditor extends SimpleParameterEditor
 case object TabularTypedDataEditor extends SimpleParameterEditor {
 
   // todo: check + smart constructor
-  final case class TabularTypedData private (columns: Vector[ColumnWithValues]) {
-    val rows: Vector[Vector[Any]] = columns.transpose(_.values)
+  final case class TabularTypedData private (columns: Vector[Column]) {
+    val rows: Vector[Row] = columns.transpose(_.cells).map(Row.apply)
   }
 
   object TabularTypedData {
-    final case class Column(name: String, aType: Class[_])
-    final case class ColumnWithValues(column: Column, values: Vector[Any])
 
-    def create(columns: Vector[Column], rows: Vector[Vector[Any]]): Try[TabularTypedData] = Try {
+    final case class Column(definition: Column.Definition, cells: Vector[Cell])
+
+    object Column {
+      final case class Definition(name: String, aType: Class[_])
+    }
+
+    final case class Cell(aType: Class[_], value: Any)
+    final case class Row(cells: Vector[Cell])
+
+    def create(columns: Vector[Column.Definition], rows: Vector[Vector[Any]]): Try[TabularTypedData] = Try {
       TabularTypedData {
         columns.zipWithIndex
           .map { case (column, idx) =>
@@ -55,7 +62,7 @@ case object TabularTypedDataEditor extends SimpleParameterEditor {
                 case None        => throw new IllegalArgumentException("More columns than rows")
               }
             }
-            ColumnWithValues(column, valuesOfColumn)
+            Column(column, valuesOfColumn.map(Cell(column.aType, _)))
           }
       }
     }
@@ -103,13 +110,14 @@ case object TabularTypedDataEditor extends SimpleParameterEditor {
           data.columns
             .map { c =>
               Json.obj(
-                "name" -> Json.fromString(c.column.name),
-                "type" -> Json.fromString(c.column.aType.getCanonicalName)
+                "name" -> Json.fromString(c.definition.name),
+                "type" -> Json.fromString(c.definition.aType.getCanonicalName)
               )
             }: _*
         ),
         "rows" -> Json.arr(
           data.rows
+            .map(_.cells.map(_.value))
             .map { rowValues =>
               Json.arr(
                 rowValues.map {
@@ -134,7 +142,8 @@ case object TabularTypedDataEditor extends SimpleParameterEditor {
       implicit val classDecoder: Decoder[Class[_]] = Decoder.decodeString.emapTry { str =>
         Try(Class.forName(str))
       }
-      implicit val columnDecoder: Decoder[Column] = Decoder.forProduct2("name", "type")(Column.apply)
+      implicit val columnDecoder: Decoder[Column.Definition] =
+        Decoder.forProduct2("name", "type")(Column.Definition.apply)
       implicit val valueDecoder: Decoder[Any] = Decoder.decodeJson.emapTry { value =>
         Try {
           value.asNull.map(_ => null).getOrElse {
@@ -150,7 +159,7 @@ case object TabularTypedDataEditor extends SimpleParameterEditor {
       }
       Decoder.instance { c =>
         for {
-          columns <- c.downField("columns").as[Vector[Column]]
+          columns <- c.downField("columns").as[Vector[Column.Definition]]
           rows    <- c.downField("rows").as[Vector[Vector[Any]]]
         } yield TabularTypedData.create(columns, rows).get
       }
