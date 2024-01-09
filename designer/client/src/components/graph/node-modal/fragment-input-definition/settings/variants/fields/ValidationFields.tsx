@@ -6,6 +6,8 @@ import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../..
 import EditableEditor from "../../../../editors/EditableEditor";
 import { NodeInput } from "../../../../../../withFocus";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
+import { useSelector } from "react-redux";
+import { getProcessDefinitionData } from "../../../../../../../reducers/selectors/settings";
 
 interface ValidationFields extends ValueCompileTimeValidation {
     variableTypes: VariableTypes;
@@ -29,15 +31,18 @@ export default function ValidationFields({
     typ,
 }: ValidationFields) {
     const { t } = useTranslation();
+    const definitionData = useSelector(getProcessDefinitionData);
 
     const validationExpressionFieldName: FieldName = `$param.${name}.$validationExpression`;
 
     const extendedVariableType = useMemo(
         () => ({
             ...variableTypes,
-            value: { refClazzName: typ.refClazzName, type: "TypedClass", params: [] } as ReturnedType,
+            value: definitionData.processDefinition.typesInformation.find(
+                (typesInformationType) => typesInformationType.clazzName.refClazzName === typ.refClazzName,
+            ).clazzName,
         }),
-        [typ.refClazzName, variableTypes],
+        [definitionData.processDefinition.typesInformation, typ.refClazzName, variableTypes],
     );
 
     return (
