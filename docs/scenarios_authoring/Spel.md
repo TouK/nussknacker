@@ -148,12 +148,11 @@ For full list of available format options take a look at [DateTimeFormatter api 
 
 # SpEL syntax
 
-## Literals
+## Basics
                                   
 Most of the literals are similar to JSON ones, in fact in many cases JSON structure is valid SpEL. 
 There are a few notable exceptions:
 - Lists are written using curly braces: `{"firstElement", "secondElement"}`, as `[]` is used to access elements in array 
-- Empty record is `{:}`, to distinguish it from empty list: `{}`
 - Strings can be quoted with either `'` or `"`
 - Field names in records do not to be quoted (e.g. `{name: "John"}` is valid SpEL, but not valid JSON)
 
@@ -162,10 +161,10 @@ There are a few notable exceptions:
 | `'Hello World'`        | "Hello World"                  | String               |
 | `true`                 | true                           | Boolean              |
 | `null`                 | null                           | Null                 |
-| `{1,2,3,4}`            | a list of integers from 1 to 4 | List[Integer]        |
 | `{}`                   | an empty list                  | List[Unknown]        |
-| `{john:300, alex:400}` | a map (name-value collection)  | Map[String, Integer] |
+| `{1,2,3,4}`            | a list of integers from 1 to 4 | List[Integer]        |
 | `{:}`                  | an empty record                | Record{}             |
+| `{john:300, alex:400}` | a map (name-value collection)  | Map[String, Integer] |
 | `#input`               | variable                       |                      |
                                     
 ## Arithmetic Operators
