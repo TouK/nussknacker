@@ -64,7 +64,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
   }
 
   lazy val nodesValidationEndpoint
-      : SecuredEndpoint[(ProcessName, NodeValidationRequestDto), Unit, NodeValidationResultDto, Any] = {
+      : SecuredEndpoint[(ProcessName, NodeValidationRequestDto), String, NodeValidationResultDto, Any] = {
     baseNuApiEndpoint
       .summary("Validate provided Node")
       .tag("Nodes")
@@ -76,11 +76,16 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[NodeValidationResultDto]
         )
       )
+      .errorOut(
+        statusCode(NotFound).and(
+          stringBody
+        )
+      )
       .withSecurity(auth)
   }
 
   lazy val propertiesAdditionalInfoEndpoint
-      : SecuredEndpoint[(ProcessName, ProcessProperties), Unit, Option[AdditionalInfo], Any] = {
+      : SecuredEndpoint[(ProcessName, ProcessProperties), String, Option[AdditionalInfo], Any] = {
     baseNuApiEndpoint
       .summary("Additional info for provided properties")
       .tag("Nodes")
@@ -92,11 +97,16 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[Option[AdditionalInfo]]
         )
       )
+      .errorOut(
+        statusCode(NotFound).and(
+          stringBody
+        )
+      )
       .withSecurity(auth)
   }
 
   lazy val propertiesValidationEndpoint
-      : SecuredEndpoint[(ProcessName, PropertiesValidationRequestDto), Unit, NodeValidationResultDto, Any] = {
+      : SecuredEndpoint[(ProcessName, PropertiesValidationRequestDto), String, NodeValidationResultDto, Any] = {
     baseNuApiEndpoint
       .summary("Validate node properties")
       .tag("Nodes")
@@ -108,12 +118,21 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[NodeValidationResultDto]
         )
       )
+      .errorOut(
+        statusCode(NotFound).and(
+          stringBody
+        )
+      )
       .withSecurity(auth)
   }
 
   //  Almost -> error messages are almost correct, they are less specific for now
-  lazy val parametersValidationEndpoint
-      : SecuredEndpoint[(ProcessingType, ParametersValidationRequestDto), Unit, ParametersValidationResultDto, Any] = {
+  lazy val parametersValidationEndpoint: SecuredEndpoint[
+    (ProcessingType, ParametersValidationRequestDto),
+    String,
+    ParametersValidationResultDto,
+    Any
+  ] = {
     baseNuApiEndpoint
       .summary("Validate node parameters")
       .tag("Nodes")
@@ -125,11 +144,20 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[ParametersValidationResultDto]
         )
       )
+      .errorOut(
+        statusCode(NotFound).and(
+          stringBody
+        )
+      )
       .withSecurity(auth)
   }
 
-  lazy val parametersSuggestionsEndpoint
-      : SecuredEndpoint[(ProcessingType, ExpressionSuggestionRequestDto), Unit, List[ExpressionSuggestionDto], Any] = {
+  lazy val parametersSuggestionsEndpoint: SecuredEndpoint[
+    (ProcessingType, ExpressionSuggestionRequestDto),
+    String,
+    List[ExpressionSuggestionDto],
+    Any
+  ] = {
     baseNuApiEndpoint
       .summary("Suggest possible variables")
       .tag("Nodes")
@@ -139,6 +167,11 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .out(
         statusCode(Ok).and(
           jsonBody[List[ExpressionSuggestionDto]]
+        )
+      )
+      .errorOut(
+        statusCode(NotFound).and(
+          stringBody
         )
       )
       .withSecurity(auth)
