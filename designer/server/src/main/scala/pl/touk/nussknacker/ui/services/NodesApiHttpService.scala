@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.process
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
@@ -71,39 +72,38 @@ class NodesApiHttpService(
 
   expose {
     nodesApiEndpoints.nodesValidationEndpoint
-      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
         val (processName, nodeValidationRequestDto) = pair
 
         processService
           .getProcessId(processName)
           .flatMap { processId =>
-            println(processId)
-            println(ProcessIdWithName(processId, processName))
             processService
               .getLatestProcessWithDetails(
                 ProcessIdWithName(processId, processName),
                 GetScenarioWithDetailsOptions.detailsOnly
               )(user)
               .flatMap { process =>
-                println(process)
                 val nodeValidator = typeToNodeValidator.forTypeUnsafe(process.processingType)(user)
                 nodeValidationRequestDto.toRequest match {
                   case Some(nodeData) =>
                     Future(success(nodeValidator.validate(processName, nodeData)(user).toDto()))
                   case None =>
-                    Future(businessError(error = None))
+                    Future(businessError("None"))
                 }
 
               }
           }
-
+          .recover { case _ =>
+            businessError(s"No scenario $processName found")
+          }
       }
   }
 
   expose {
     nodesApiEndpoints.propertiesAdditionalInfoEndpoint
-      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
         val (processName, processProperties) = pair
 
@@ -126,12 +126,15 @@ class NodesApiHttpService(
                   }
               }
           }
+          .recover { _ =>
+            businessError(s"No scenario $processName found")
+          }
       }
   }
 
   expose {
     nodesApiEndpoints.propertiesValidationEndpoint
-      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
         val (processName, request) = pair
 
@@ -168,50 +171,63 @@ class NodesApiHttpService(
                 )
               }
           }
+          .recover { _ =>
+            businessError(s"No scenario $processName found")
+          }
       }
   }
 
   expose {
     nodesApiEndpoints.parametersValidationEndpoint
-      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
         val (processingType, request) = pair
-        val validator                 = typeToParametersValidator.forTypeUnsafe(processingType)(user)
-        val validationResults         = validator.validate(request.withoutDto)
-
-        Future(
-          success(
-            ParametersValidationResultDto(validationResults, validationPerformed = true)
+        try {
+          val validator         = typeToParametersValidator.forTypeUnsafe(processingType)(user)
+          val validationResults = validator.validate(request.withoutDto)
+          Future(
+            success(
+              ParametersValidationResultDto(validationResults, validationPerformed = true)
+            )
           )
-        )
+        } catch {
+          case _: Throwable =>
+            Future(businessError(s"ProcessingType type: $processingType not found"))
+        }
       }
   }
 
   expose {
     nodesApiEndpoints.parametersSuggestionsEndpoint
-      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
         val (processingType, request) = pair
-        val expressionSuggester       = typeToExpressionSuggester.forTypeUnsafe(processingType)(user)
-        expressionSuggester
-          .expressionSuggestions(
-            request.expression,
-            request.caretPosition2d,
-            request.variableTypes.map { case (key, result) => (key, toTypingResult(result)) }
-          )
-          .map { suggestion =>
-            success(
-              suggestion.map { suggest =>
-                ExpressionSuggestionDto(
-                  suggest.methodName,
-                  typingResultToDto(suggest.refClazz),
-                  suggest.fromClass,
-                  suggest.description,
-                  suggest.parameters.map { param => ParameterDto(param.name, typingResultToDto(param.refClazz)) }
-                )
-              }
+        try {
+          val expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)(user)
+          expressionSuggester
+            .expressionSuggestions(
+              request.expression,
+              request.caretPosition2d,
+              request.variableTypes.map { case (key, result) => (key, toTypingResult(result)) }
             )
-          }
+            .map { suggestion =>
+              success(
+                suggestion.map { suggest =>
+                  ExpressionSuggestionDto(
+                    suggest.methodName,
+                    typingResultToDto(suggest.refClazz),
+                    suggest.fromClass,
+                    suggest.description,
+                    suggest.parameters.map { param => ParameterDto(param.name, typingResultToDto(param.refClazz)) }
+                  )
+                }
+              )
+            }
+        } catch {
+          case _: Throwable =>
+            Future(businessError(s"ProcessingType type: $processingType not fond"))
+        }
+
       }
   }
 
