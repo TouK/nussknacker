@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../item";
 import { SettingRow, fieldLabel } from "./StyledSettingsComponnets";
-import { NodeValidationError, VariableTypes } from "../../../../../../../types";
+import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import EditableEditor from "../../../../editors/EditableEditor";
 import { NodeInput } from "../../../../../../withFocus";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
@@ -14,6 +14,7 @@ interface ValidationFields extends ValueCompileTimeValidation {
     readOnly: boolean;
     errors: NodeValidationError[];
     name: string;
+    typ: ReturnedType;
 }
 
 export default function ValidationFields({
@@ -25,10 +26,19 @@ export default function ValidationFields({
     readOnly,
     errors,
     name,
+    typ,
 }: ValidationFields) {
     const { t } = useTranslation();
 
     const validationExpressionFieldName: FieldName = `$param.${name}.$validationExpression`;
+
+    const extendedVariableType = useMemo(
+        () => ({
+            ...variableTypes,
+            value: { refClazzName: typ.refClazzName, type: "TypedClass", params: [] } as ReturnedType,
+        }),
+        [typ.refClazzName, variableTypes],
+    );
 
     return (
         <>
@@ -39,7 +49,7 @@ export default function ValidationFields({
                 }
                 expressionObj={validationExpression}
                 onValueChange={(value) => onChange(`${path}.valueCompileTimeValidation.validationExpression.expression`, value)}
-                variableTypes={variableTypes}
+                variableTypes={extendedVariableType}
                 readOnly={readOnly}
                 fieldErrors={getValidationErrorsForField(errors, validationExpressionFieldName)}
                 showValidation
