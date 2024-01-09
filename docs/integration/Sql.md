@@ -40,7 +40,7 @@ myDatabasePool {
 | url                  | string                   | true     |         | URL with your database resource                                        |
 | username             | string                   | true     |         | Authentication username                                                |
 | password             | string                   | true     |         | Authentication password                                                |
-| driverClassName      | string                   | true     |         | Java database driver class name - check your jdbc driver documentation |
+| driverClassName      | string                   | true     |         | Java database driver class name - check your JDBC driver documentation |
 | initialSize          | int                      | false    | 0       | Minimum idle size                                                      |
 | maxTotal             | int                      | false    | 10      | Maximum pool size                                                      |
 | timeout              | string (Duration format) | false    | 30s     | Connection timeout                                                     |

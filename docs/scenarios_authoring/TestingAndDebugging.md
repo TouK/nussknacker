@@ -56,7 +56,7 @@ For example, the below records can be used to test if the scenario has exactly o
 {"sourceId":"kafka1","record":{"keySchemaId":null,"valueSchemaId":null,"consumerRecord":{"key":null,"value":{"clientId":"4","amount":30,"eventDate":1674548921},"topic":"transactions","partition":0,"offset":58209,"timestamp":1674548933921,"timestampType":"CreateTime","headers":{},"leaderEpoch":0}},"timestamp":1674548933921}
 {"keySchemaId":null,"valueSchemaId":null,"consumerRecord":{"key":null,"value":{"clientId":"4","amount":30,"eventDate":1674548921},"topic":"transactions","partition":0,"offset":58209,"timestamp":1674548933921,"timestampType":"CreateTime","headers":{},"leaderEpoch":0}}
 ```
-The `sourceId` field contains name of the source node as specified in the scenario and the `record` field contains json representation of the event. 
+The `sourceId` field contains name of the source node as specified in the scenario; the `record` field contains the json representation of the event. 
 
 
 If you want to read more than 20 records from file, you will need to change [testing settings](../installation_configuration_guide/DesignerConfiguration.md#testing).
