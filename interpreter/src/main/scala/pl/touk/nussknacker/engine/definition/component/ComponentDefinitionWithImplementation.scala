@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition}
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentInfo}
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
@@ -31,16 +31,18 @@ object ComponentDefinitionWithImplementation {
       components: List[ComponentDefinition],
       additionalConfigs: ComponentsUiConfig
   ): List[(String, ComponentDefinitionWithImplementation)] = {
-    components.flatMap { component =>
-      val config = additionalConfigs.getConfigByComponentName(component.name)
-      if (config.disabled)
-        None
-      else
-        Some(ComponentDefinitionExtractor.extract(component, config))
-    }
+    components.flatMap(ComponentDefinitionExtractor.extract(_, additionalConfigs))
   }
 
-  def withEmptyConfig(obj: Component): ComponentDefinitionWithImplementation =
-    ComponentDefinitionExtractor.extract(WithCategories.anyCategory(obj))
+  // This method is mainly for the tests purpose. It doesn't take into an account additionalConfigs provided from the model configuration
+  def withEmptyConfig(component: Component): ComponentDefinitionWithImplementation = {
+    ComponentDefinitionExtractor
+      .extract("dumbName", WithCategories.anyCategory(component), ComponentsUiConfig.Empty)
+      .getOrElse(
+        throw new IllegalStateException(
+          s"ComponentDefinitionWithImplementation.withEmptyConfig returned None for: $component but component should be filtered for empty config"
+        )
+      )
+  }
 
 }

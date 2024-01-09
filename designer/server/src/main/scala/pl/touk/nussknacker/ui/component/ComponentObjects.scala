@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, Com
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.definition.{ComponentNodeTemplate, UIProcessObjects}
-import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
+import pl.touk.nussknacker.ui.definition.{ModelDefinitionEnricher, UIProcessObjectsFactory}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
@@ -33,51 +33,39 @@ private[component] object ComponentObjects {
  */
 private[component] class ComponentObjectsService(categoryService: ProcessCategoryService) {
 
-  def prepareWithoutFragmentsAndAdditionalUIConfigs(
-      processingType: ProcessingType,
-      processingTypeData: ProcessingTypeData
-  ): ComponentObjects = {
-    val uiProcessObjects = createUIProcessObjects(
-      processingType,
-      processingTypeData,
-      user = NussknackerInternalUser.instance, // We need admin user to receive all components info
-      fragments = List.empty,
-      additionalUIConfigProvider =
-        AdditionalUIConfigProvider.empty // this method is only used in ComponentIdProviderFactory, and because AdditionalUIConfigProvider can't change ComponentId, we don't need it
-    )
-    ComponentObjects(uiProcessObjects)
-  }
-
   def prepare(
       processingType: ProcessingType,
       processingTypeData: ProcessingTypeData,
+      modelDefinitionEnricher: ModelDefinitionEnricher,
       user: LoggedUser,
-      fragments: List[FragmentDetails],
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      fragments: List[FragmentDetails]
   ): ComponentObjects = {
     val uiProcessObjects =
-      createUIProcessObjects(processingType, processingTypeData, user, fragments, additionalUIConfigProvider)
+      createUIProcessObjects(processingType, processingTypeData, modelDefinitionEnricher, user, fragments)
     ComponentObjects(uiProcessObjects)
   }
 
   private def createUIProcessObjects(
       processingType: ProcessingType,
       processingTypeData: ProcessingTypeData,
+      modelDefinitionEnricher: ModelDefinitionEnricher,
       user: LoggedUser,
       fragments: List[FragmentDetails],
-      additionalUIConfigProvider: AdditionalUIConfigProvider
   ): UIProcessObjects = {
+    val enrichedModelDefinition = modelDefinitionEnricher.modelDefinitionWithBuiltInComponentsAndFragments(
+      forFragment = false, // It excludes fragment's components: input / output
+      fragments,
+      processingType
+    )
     UIProcessObjectsFactory.prepareUIProcessObjects(
-      modelDataForType = processingTypeData.modelData,
-      modelDefinition = processingTypeData.staticModelDefinition,
+      modelData = processingTypeData.modelData,
+      modelDefinitionWithBuiltInComponentsAndFragments = enrichedModelDefinition,
       deploymentManager = processingTypeData.deploymentManager,
       user = user,
-      fragmentsDetails = fragments,
-      isFragment = false, // It excludes fragment's components: input / output
+      forFragment = false,
       processCategoryService = categoryService,
       scenarioPropertiesConfig = processingTypeData.scenarioPropertiesConfig,
       processingType = processingType,
-      additionalUIConfigProvider = additionalUIConfigProvider
     )
   }
 

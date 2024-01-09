@@ -1,204 +1,84 @@
 package pl.touk.nussknacker.ui.definition
 
-import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
-import pl.touk.nussknacker.engine.definition.fragment.{
-  FragmentStaticDefinition,
-  FragmentWithoutValidatorsDefinitionExtractor
-}
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, ComponentsUiConfigParser}
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.component.{
-  ComponentAdditionalConfigConverter,
-  ComponentDefinitionPreparer,
-  DefaultComponentIdProvider
-}
+import pl.touk.nussknacker.ui.component.{ComponentGroupsPreparer, EdgeTypesPreparer}
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
-import pl.touk.nussknacker.ui.definition.scenarioproperty.UiScenarioPropertyEditorDeterminer
+import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 object UIProcessObjectsFactory {
 
   def prepareUIProcessObjects(
-      modelDataForType: ModelData,
-      modelDefinition: ModelDefinition[ComponentStaticDefinition],
+      modelDefinitionWithBuiltInComponentsAndFragments: ModelDefinition[ComponentStaticDefinition],
+      modelData: ModelData,
       deploymentManager: DeploymentManager,
       user: LoggedUser,
-      fragmentsDetails: List[FragmentDetails],
-      isFragment: Boolean,
+      forFragment: Boolean,
       processCategoryService: ProcessCategoryService,
       scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-      processingType: ProcessingType,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      processingType: ProcessingType
   ): UIProcessObjects = {
-    val fixedComponentsUiConfig = ComponentsUiConfigParser.parse(modelDataForType.modelConfig)
-
-    val combinedComponentsConfig = getCombinedComponentsConfig(fixedComponentsUiConfig, modelDefinition)
-
-    val componentIdProvider = new DefaultComponentIdProvider(
-      Map(processingType -> combinedComponentsConfig)
-    ) // combinedComponentsConfig potentially changes componentIds
-
-    val finalModelDefinition = finalizeModelDefinition(
-      ModelDefinitionWithComponentIds(modelDefinition, componentIdProvider, processingType),
-      combinedComponentsConfig,
-      additionalUIConfigProvider
-        .getAllForProcessingType(processingType)
-        .mapValuesNow(ComponentAdditionalConfigConverter.toSingleComponentConfig)
+    val componentGroupsPreparer = new ComponentGroupsPreparer(
+      ComponentsGroupMappingConfigExtractor.extract(modelData.modelConfig)
     )
-
-    val fragmentComponents = extractFragmentComponents(modelDataForType.modelClassLoader.classLoader, fragmentsDetails)
-
-    // merging because ModelDefinition doesn't contain configs for built-in components
-    val finalComponentsConfig =
-      toComponentsUiConfig(finalModelDefinition) |+| combinedComponentsConfig |+| ComponentsUiConfig(
-        fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
-      )
-
     UIProcessObjects(
-      componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
+      componentGroups = componentGroupsPreparer.prepareComponentGroups(
         user = user,
-        modelDefinition = finalModelDefinition,
-        fragmentComponents = fragmentComponents,
-        isFragment = isFragment,
-        componentsConfig = finalComponentsConfig,
-        componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(modelDataForType.modelConfig),
+        definitions = modelDefinitionWithBuiltInComponentsAndFragments,
         processCategoryService = processCategoryService,
         processingType
       ),
-      components = createUIComponentsDefinitions(
-        finalModelDefinition,
-        fragmentComponents,
-        processCategoryService
-      ),
-      classes = modelDataForType.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
-      componentsConfig = finalComponentsConfig.config,
-      scenarioPropertiesConfig =
-        if (!isFragment) {
-          (additionalUIConfigProvider.getScenarioPropertiesUIConfigs(processingType) |+| scenarioPropertiesConfig)
-            .mapValuesNow(createUIScenarioPropertyConfig)
-        } else
-          Map.empty, // fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
-      edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
-        modelDefinition = finalModelDefinition,
-        isFragment = isFragment,
-        fragmentsDetails = fragmentsDetails
-      ),
+      components =
+        modelDefinitionWithBuiltInComponentsAndFragments.components.mapValuesNow(createUIComponentDefinition),
+      classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
+      componentsConfig = prepareComponentConfig(modelDefinitionWithBuiltInComponentsAndFragments, modelData),
+      scenarioPropertiesConfig = (if (forFragment) FragmentPropertiesConfig.properties else scenarioPropertiesConfig)
+        .mapValuesNow(createUIScenarioPropertyConfig),
+      edgesForNodes =
+        EdgeTypesPreparer.prepareEdgeTypes(definitions = modelDefinitionWithBuiltInComponentsAndFragments),
       customActions = deploymentManager.customActions.map(UICustomAction(_))
     )
   }
 
-  private def toComponentsUiConfig(
-      modelDefinition: ModelDefinition[ComponentStaticDefinition]
-  ): ComponentsUiConfig = {
-    ComponentsUiConfig(
-      modelDefinition.components.map { case (info, value) => info.name -> value.componentConfig }.toMap
-    )
+  private def prepareComponentConfig(
+      modelDefinitionWithBuiltInComponentsAndFragments: ModelDefinition[ComponentStaticDefinition],
+      modelData: ModelData
+  ) = {
+    modelDefinitionWithBuiltInComponentsAndFragments.components.map { case (info, value) =>
+      info.name -> value.componentConfig
+    } ++ preparePropertiesConfig(modelData)
   }
 
-  private def finalizeModelDefinition(
-      modelDefinitionWithIds: ModelDefinitionWithComponentIds,
-      combinedComponentsConfig: ComponentsUiConfig,
-      additionalComponentsUiConfig: Map[ComponentId, SingleComponentConfig]
-  ): ModelDefinition[ComponentStaticDefinition] = {
-
-    def finalizeComponentConfig(
-        idWithInfo: ComponentIdWithInfo,
-        staticDefinition: ComponentStaticDefinition
-    ): (String, ComponentStaticDefinition) = {
-      val finalConfig = additionalComponentsUiConfig.getOrElse(idWithInfo.id, SingleComponentConfig.zero) |+|
-        combinedComponentsConfig.getConfigByComponentName(idWithInfo.name) |+|
-        staticDefinition.componentConfig
-
-      idWithInfo.name -> staticDefinition.withComponentConfig(finalConfig)
-    }
-
-    ModelDefinition[ComponentStaticDefinition](
-      modelDefinitionWithIds.components.map(finalizeComponentConfig _ tupled),
-      modelDefinitionWithIds.expressionConfig,
-      modelDefinitionWithIds.settings
-    )
-  }
-
-  private def getCombinedComponentsConfig(
-      fixedComponentsUiConfig: ComponentsUiConfig,
-      modelDefinition: ModelDefinition[ComponentStaticDefinition],
-  ): ComponentsUiConfig = {
-    val modelDefinitionComponentsConfig = ComponentsUiConfig(modelDefinition.components.map { case (info, component) =>
-      info.name -> component.componentConfig
-    })
-
-    // we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in modelDefinitionComponentsConfig...
-    // maybe we can put them also in uiProcessDefinition.allDefinitions?
-    ComponentDefinitionPreparer.combineComponentsConfig(
-      fixedComponentsUiConfig,
-      modelDefinitionComponentsConfig
-    )
-  }
-
-  private def extractFragmentComponents(
-      classLoader: ClassLoader,
-      fragmentsDetails: List[FragmentDetails],
-  ): Map[String, FragmentStaticDefinition] = {
-    val definitionExtractor = new FragmentWithoutValidatorsDefinitionExtractor(classLoader)
-    (for {
-      details    <- fragmentsDetails
-      definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption
-    } yield {
-      details.canonical.name.value -> definition.toStaticDefinition(details.category)
-    }).toMap
+  // TODO - Extract to the separate, named field in UIProcessObjects
+  //      - Stop treating properties as a node on FE side
+  //      - Other way to configure it - it should be somewhere around scenarioPropertiesConfig
+  //      - Documentation
+  // TODO (alternative): get rid of support fot that, we can configure only icon and docsUrl thanks to that?
+  private def preparePropertiesConfig(modelData: ModelData) = {
+    val componentsUiConfig          = ComponentsUiConfigParser.parse(modelData.modelConfig)
+    val propertiesFakeComponentName = "$properties"
+    componentsUiConfig.config.get(propertiesFakeComponentName).map(propertiesFakeComponentName -> _)
   }
 
   private def createUIComponentDefinition(
-      componentDefinition: ComponentStaticDefinition,
-      processCategoryService: ProcessCategoryService
+      componentDefinition: ComponentStaticDefinition
   ): UIComponentDefinition = {
     UIComponentDefinition(
       parameters = componentDefinition.parameters.map(createUIParameter),
       returnType = componentDefinition.returnType,
-      categories = componentDefinition.categories.getOrElse(processCategoryService.getAllCategories),
       outputParameters = None
     )
-  }
-
-  private def createUIFragmentComponentDefinition(
-      fragmentDefinition: FragmentStaticDefinition,
-      processCategoryService: ProcessCategoryService
-  ): UIComponentDefinition = {
-    UIComponentDefinition(
-      parameters = fragmentDefinition.componentDefinition.parameters.map(createUIParameter),
-      outputParameters = Some(fragmentDefinition.outputNames),
-      returnType = fragmentDefinition.componentDefinition.returnType,
-      categories = fragmentDefinition.componentDefinition.categories.getOrElse(processCategoryService.getAllCategories)
-    )
-  }
-
-  private def createUIComponentsDefinitions(
-      modelDefinition: ModelDefinition[ComponentStaticDefinition],
-      // TODO: pass modelDefinition already enriched with components
-      fragmentInputs: Map[String, FragmentStaticDefinition],
-      processCategoryService: ProcessCategoryService
-  ): Map[ComponentInfo, UIComponentDefinition] = {
-    def createUIFragmentComponentDef(fragmentName: String, fragmentDef: FragmentStaticDefinition) =
-      ComponentInfo(ComponentType.Fragment, fragmentName) -> createUIFragmentComponentDefinition(
-        fragmentDef,
-        processCategoryService
-      )
-
-    val transformedDefinition: Map[ComponentInfo, UIComponentDefinition] =
-      modelDefinition.components.mapValuesNow(createUIComponentDefinition(_, processCategoryService))
-
-    transformedDefinition ++ fragmentInputs.map(createUIFragmentComponentDef _ tupled)
   }
 
   def createUIParameter(parameter: Parameter): UIParameter = {
@@ -220,9 +100,4 @@ object UIProcessObjectsFactory {
     UiScenarioPropertyConfig(config.defaultValue, editor, config.label)
   }
 
-}
-
-object SortedComponentGroup {
-  def apply(name: ComponentGroupName, components: List[ComponentNodeTemplate]): ComponentGroup =
-    ComponentGroup(name, components.sortBy(_.label.toLowerCase))
 }

@@ -52,12 +52,8 @@ object ModelDefinitionFromConfigCreatorExtractor {
       categoryOpt: Option[String],
       componentsUiConfig: ComponentsUiConfig
   ): List[(String, ComponentDefinitionWithImplementation)] = {
-    val componentsWithEnricherConfig = components.map { case (componentName, component) =>
-      val config = componentsUiConfig.getConfigByComponentName(componentName) |+| component.componentConfig
-      componentName -> component.withComponentConfig(config)
-    }
-    filterUsingComponentConfig(componentsWithEnricherConfig, categoryOpt).map { case (componentName, component) =>
-      componentName -> ComponentDefinitionExtractor.extract(component)
+    filterAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component) =>
+      ComponentDefinitionExtractor.extract(componentName, component, componentsUiConfig).map(componentName -> _)
     }
   }
 
@@ -65,7 +61,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       expressionConfig: ExpressionConfig,
       categoryOpt: Option[String],
   ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] = {
-    val filteredVariables = filterUsingComponentConfig(expressionConfig.globalProcessVariables.toList, categoryOpt)
+    val filteredVariables = filterAvailableForCategory(expressionConfig.globalProcessVariables.toList, categoryOpt)
     val variables = filteredVariables.map { case (name, variable) =>
       name -> GlobalVariableDefinitionExtractor.extractDefinition(variable.value, variable.categories)
     }.toMap
@@ -87,13 +83,11 @@ object ModelDefinitionFromConfigCreatorExtractor {
     )
   }
 
-  private def filterUsingComponentConfig[T](list: List[(String, WithCategories[T])], categoryOpt: Option[String]) = {
+  private def filterAvailableForCategory[T](list: List[(String, WithCategories[T])], categoryOpt: Option[String]) = {
     def availableForCategory(component: WithCategories[_]): Boolean =
       component.categories.isEmpty ||
         categoryOpt.forall(category => component.categories.exists(_.contains(category)))
-    list.filter { case (_, withComponentConfig) =>
-      !withComponentConfig.componentConfig.disabled && availableForCategory(withComponentConfig)
-    }
+    list.filter { case (_, withComponentConfig) => availableForCategory(withComponentConfig) }
   }
 
 }

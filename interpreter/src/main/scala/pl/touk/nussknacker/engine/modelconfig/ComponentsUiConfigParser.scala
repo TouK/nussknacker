@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.modelconfig
 
-import cats.Semigroup
-import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo, SingleComponentConfig}
 
 /**
   * TODO: It's temporary solution until we migrate to ComponentProvider
@@ -38,17 +36,19 @@ object ComponentsUiConfigParser {
 }
 
 case class ComponentsUiConfig(config: Map[String, SingleComponentConfig]) {
-  def getConfigByComponentName(componentName: String): SingleComponentConfig =
-    config.getOrElse(componentName, SingleComponentConfig.zero)
+
+  def getConfig(info: ComponentInfo): SingleComponentConfig = {
+    config
+      .get(info.toString)
+      // Should we still support lookup by name?
+      .orElse(config.get(info.name))
+      .getOrElse(SingleComponentConfig.zero)
+  }
+
 }
 
 object ComponentsUiConfig {
 
   val Empty: ComponentsUiConfig = ComponentsUiConfig(Map.empty)
-
-  implicit object ComponentsUiConfigSemigroup extends Semigroup[ComponentsUiConfig] {
-    override def combine(x: ComponentsUiConfig, y: ComponentsUiConfig): ComponentsUiConfig =
-      ComponentsUiConfig(x.config |+| y.config)
-  }
 
 }

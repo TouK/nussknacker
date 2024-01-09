@@ -9,10 +9,10 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import scala.concurrent.Future
 
 object DynamicComponentProvider {
-  val SharedProvidedComponentName    = "sharedProvidedComponent"
-  val SingleProvidedComponentName    = "singleProvidedComponent"
-  val KafkaAvroProvidedComponentName = "kafkaAvroSameName"
-  val ProviderName                   = "dynamicComponent"
+  val SharedProvidedComponentName     = "sharedProvidedComponent"
+  val SingleProvidedComponentName     = "singleProvidedComponent"
+  val SourceSinkSameNameComponentName = "sourceSinkSameNameComponent"
+  val ProviderName                    = "dynamicComponent"
 }
 
 class DynamicComponentProvider extends ComponentProvider {
@@ -26,8 +26,8 @@ class DynamicComponentProvider extends ComponentProvider {
     List(
       ComponentDefinition(SharedProvidedComponentName, DynamicProvidedService),
       ComponentDefinition(SingleProvidedComponentName, DynamicProvidedService),
-      ComponentDefinition(KafkaAvroProvidedComponentName, SinkFactory.noParam(new Sink {})),
-      ComponentDefinition(KafkaAvroProvidedComponentName, SourceFactory.noParam(new Source {}, Unknown)),
+      ComponentDefinition(SourceSinkSameNameComponentName, SinkFactory.noParam(new Sink {})),
+      ComponentDefinition(SourceSinkSameNameComponentName, SourceFactory.noParam(new Source {}, Unknown)),
     )
   }
 
