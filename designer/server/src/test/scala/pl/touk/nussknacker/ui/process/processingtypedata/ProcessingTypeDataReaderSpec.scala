@@ -7,8 +7,8 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
@@ -120,18 +120,17 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         Map.empty,
         Nil,
         ProcessingTypeUsageStatistics(None, None),
-        CategoryConfig(typeConfig.category)
+        typeConfig.category
       )
     }
 
     override protected def createCombinedData(
-        valueMap: Map[ProcessingType, ProcessingTypeData],
-        designerConfig: ConfigWithUnresolvedVersion
+        valueMap: Map[ProcessingType, ProcessingTypeData]
     ): CombinedProcessingTypeData = {
       CombinedProcessingTypeData(
         statusNameToStateDefinitionsMapping = Map.empty,
         componentIdProvider = new DefaultComponentIdProvider({ (_, _) => None }),
-        categoryService = ConfigProcessCategoryService(designerConfig.resolved, valueMap.mapValuesNow(_.categoryConfig))
+        categoryService = ConfigProcessCategoryService(valueMap.mapValuesNow(_.category))
       )
     }
 

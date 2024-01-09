@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsCom
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{CategoryConfig, ProcessingTypeData}
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.security.Permission
@@ -216,10 +216,9 @@ class DefaultComponentServiceSpec
        |""".stripMargin)
 
   private val categoryService = ConfigProcessCategoryService(
-    ConfigFactory.empty,
     Map(
-      Streaming -> CategoryConfig(CategoryMarketing),
-      Fraud     -> CategoryConfig(CategoryFraud)
+      Streaming -> CategoryMarketing,
+      Fraud     -> CategoryFraud
     )
   )
 
@@ -486,7 +485,7 @@ class DefaultComponentServiceSpec
       new MockDeploymentManager,
       modelData,
       ConfigFactory.empty(),
-      CategoryConfig(category)
+      category
     )
   }
 
@@ -601,7 +600,7 @@ class DefaultComponentServiceSpec
         new MockDeploymentManager,
         modelData,
         ConfigFactory.empty(),
-        CategoryConfig(category)
+        category
       )
       // FIXME: remove this code duplication, higher level of test (validations are still not used in production code)
       val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(AdditionalUIConfigProvider.empty)

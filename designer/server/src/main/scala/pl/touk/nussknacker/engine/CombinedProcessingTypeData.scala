@@ -19,11 +19,10 @@ final case class CombinedProcessingTypeData(
 object CombinedProcessingTypeData {
 
   def create(
-      processingTypes: Map[ProcessingType, ProcessingTypeData],
-      designerConfig: ConfigWithUnresolvedVersion
+      processingTypes: Map[ProcessingType, ProcessingTypeData]
   ): CombinedProcessingTypeData = {
     val categoryService: ProcessCategoryService =
-      ConfigProcessCategoryService(designerConfig.resolved, processingTypes.mapValuesNow(_.categoryConfig))
+      ConfigProcessCategoryService(processingTypes.mapValuesNow(_.category))
     CombinedProcessingTypeData(
       statusNameToStateDefinitionsMapping =
         ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypes),
