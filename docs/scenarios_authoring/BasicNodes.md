@@ -130,7 +130,7 @@ Example:
 
 Entry fields:
 - Output Variable Name - the name of the variable containing results of the merge (replacing previously defined variables, in particular #input).
-- Output Expression - there is one expression for each of the input branches. When there is an incoming event from a particular input branch, the expression defined for that branch is evaluated and passed to the output branch.
+- Output Expression - there is one expression for each of the input branches. When there is an incoming event from a particular input branch, the expression defined for that branch is evaluated and passed to the output branch. The expressions defined for respective branches need to be of identical data type. In the example above it is always a record containing fields `branchName` and `value`.
 
-Please note, that the #input variable used in the Output expression field refers to the content of the respective incoming branch.
+Note, that the #input variable used in the Output expression field refers to the content of the respective incoming branch.
 
