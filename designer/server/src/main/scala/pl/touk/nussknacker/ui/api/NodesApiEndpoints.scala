@@ -31,7 +31,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidation
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.toTypingResult
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
-import sttp.model.StatusCode.Ok
+import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir._
 import sttp.tapir.derevo.schema
@@ -42,7 +42,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
 
   import NodesApiEndpoints.Dtos._
 
-  lazy val nodesAdditionalInfoEndpoint: SecuredEndpoint[(ProcessName, NodeData), Unit, Option[AdditionalInfo], Any] = {
+  lazy val nodesAdditionalInfoEndpoint
+      : SecuredEndpoint[(ProcessName, NodeData), String, Option[AdditionalInfo], Any] = {
     baseNuApiEndpoint
       .summary("Additional info for provided node")
       .tag("Nodes")
@@ -52,6 +53,11 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .out(
         statusCode(Ok).and(
           jsonBody[Option[AdditionalInfo]]
+        )
+      )
+      .errorOut(
+        statusCode(NotFound).and(
+          stringBody
         )
       )
       .withSecurity(auth)
