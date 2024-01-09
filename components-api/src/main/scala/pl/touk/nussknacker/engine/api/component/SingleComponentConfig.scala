@@ -19,6 +19,9 @@ import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterVali
     disabled: Boolean = false
 ) {
   def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
+
+  def componentGroupUnsafe: ComponentGroupName =
+    componentGroup.getOrElse(throw new IllegalStateException(s"Component group not defined in $this"))
 }
 
 object SingleComponentConfig {

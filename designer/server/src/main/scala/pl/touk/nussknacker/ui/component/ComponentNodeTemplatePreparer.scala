@@ -23,7 +23,7 @@ private[component] object ComponentNodeTemplatePreparer {
       definitions: ModelDefinition[ComponentStaticDefinition],
       processCategoryService: ProcessCategoryService,
       processingType: ProcessingType
-  ): List[(ComponentGroupName, ComponentNodeTemplate)] = {
+  ): List[ComponentNodeTemplateWithGroupNames] = {
     val userCategoryService          = new UserCategoryService(processCategoryService)
     val userCategories               = userCategoryService.getUserCategories(user)
     val processingTypeCategories     = List(processCategoryService.getProcessingTypeCategoryUnsafe(processingType))
@@ -93,11 +93,20 @@ private[component] object ComponentNodeTemplatePreparer {
         filterCategories(componentDefinition),
         branchParametersTemplate
       )
-      val componentGroup = componentDefinition.componentGroupUnsafe
-      (componentGroup, componentNodeTemplate)
+      ComponentNodeTemplateWithGroupNames(
+        componentNodeTemplate,
+        componentDefinition.originalGroupName,
+        componentDefinition.componentGroupUnsafe
+      )
     }
 
     definitions.components.toList.map(prepareComponentNodeTemplateWithGroup _ tupled)
   }
 
 }
+
+private[component] case class ComponentNodeTemplateWithGroupNames(
+    nodeTemplate: ComponentNodeTemplate,
+    originalGroupName: ComponentGroupName,
+    mappedGroupName: ComponentGroupName
+)

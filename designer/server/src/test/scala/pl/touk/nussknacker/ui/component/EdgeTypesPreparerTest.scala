@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, Component
 import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, FragmentOutput, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinitionConverter
 import pl.touk.nussknacker.restmodel.definition.NodeEdges
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories}
@@ -17,10 +18,13 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
       .extractFragmentComponentDefinition(ProcessTestData.sampleFragment)
       .validValue
       .toStaticDefinition(TestCategories.Category1)
-    val definitionsWithFragments = ProcessTestData.modelDefinition.withComponent(
-      ProcessTestData.sampleFragment.name.value,
-      sampleFragmentDef
-    )
+    val definitionsWithFragments = ProcessTestData
+      .modelDefinition()
+      .toStaticComponentsDefinition
+      .withComponent(
+        ProcessTestData.sampleFragment.name.value,
+        sampleFragmentDef
+      )
 
     val edgeTypes = EdgeTypesPreparer.prepareEdgeTypes(definitionsWithFragments)
 

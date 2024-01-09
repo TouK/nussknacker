@@ -1,54 +1,64 @@
 package pl.touk.nussknacker.engine.modelconfig
 
 import com.typesafe.config.Config
-import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
+import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo, SingleComponentConfig}
 
-/**
-  * TODO: It's temporary solution until we migrate to ComponentProvider
-  */
 object ComponentsUiConfigParser {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
-  private implicit val componentsUiGroupNameReader: ValueReader[Option[ComponentGroupName]] =
-    (config: Config, path: String) =>
-      OptionReader
-        .optionValueReader[String]
-        .read(config, path)
-        .map(ComponentGroupName(_))
+  private implicit val componentsUiGroupNameReader: ValueReader[ComponentGroupName] =
+    ValueReader[String].map(ComponentGroupName(_))
 
-  private implicit val componentsUiComponentIdReader: ValueReader[Option[ComponentId]] =
-    (config: Config, path: String) =>
-      OptionReader
-        .optionValueReader[String]
-        .read(config, path)
-        .map(ComponentId.apply)
+  private implicit val componentsUiComponentIdReader: ValueReader[ComponentId] =
+    ValueReader[String].map(ComponentId.apply)
+
+  implicit val componentsGroupNameReader: ValueReader[Map[ComponentGroupName, Option[ComponentGroupName]]] =
+    ValueReader[Map[String, Option[String]]]
+      .map { mapping =>
+        mapping.map { case (key, value) =>
+          ComponentGroupName(key) -> value.map(ComponentGroupName(_))
+        }
+      }
 
   private val ComponentsUiConfigPath = "componentsUiConfig"
 
+  private val MappingNamespace = "componentsGroupMapping"
+
   def parse(config: Config): ComponentsUiConfig = {
-    ComponentsUiConfig(config.getOrElse[Map[String, SingleComponentConfig]](ComponentsUiConfigPath, Map.empty))
+    val componentsConfig = config.getOrElse[Map[String, SingleComponentConfig]](ComponentsUiConfigPath, Map.empty)
+    val groupNameMapping =
+      config.getOrElse[Map[ComponentGroupName, Option[ComponentGroupName]]](MappingNamespace, Map.empty)
+    new ComponentsUiConfig(componentsConfig, groupNameMapping)
   }
 
 }
 
-case class ComponentsUiConfig(config: Map[String, SingleComponentConfig]) {
+class ComponentsUiConfig(
+    // TODO: It is public for a special, $properties faked component - see UIProcessObjectsFactory.preparePropertiesConfig
+    val componentsConfig: Map[String, SingleComponentConfig],
+    groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
+) {
 
   def getConfig(info: ComponentInfo): SingleComponentConfig = {
-    config
+    componentsConfig
       .get(info.toString)
       // Should we still support lookup by name?
-      .orElse(config.get(info.name))
+      .orElse(componentsConfig.get(info.name))
       .getOrElse(SingleComponentConfig.zero)
   }
+
+  // None mean, special "null" group name which hides components
+  def groupName(groupName: ComponentGroupName): Option[ComponentGroupName] =
+    groupNameMapping.getOrElse(groupName, Some(groupName))
 
 }
 
 object ComponentsUiConfig {
 
-  val Empty: ComponentsUiConfig = ComponentsUiConfig(Map.empty)
+  val Empty: ComponentsUiConfig = new ComponentsUiConfig(Map.empty, Map.empty)
 
 }

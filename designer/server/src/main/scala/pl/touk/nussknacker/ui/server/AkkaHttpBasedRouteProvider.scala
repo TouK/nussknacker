@@ -216,7 +216,7 @@ class AkkaHttpBasedRouteProvider(
             )
             (processingTypeData, modelDefinitionEnricher)
           }
-          .mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
+          .mapCombined(combined => combined.componentIdProvider),
         processService,
         fragmentRepository
       )

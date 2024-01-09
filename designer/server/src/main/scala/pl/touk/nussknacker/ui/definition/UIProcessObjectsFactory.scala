@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.{ComponentGroupsPreparer, EdgeTypesPreparer}
-import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -29,11 +28,8 @@ object UIProcessObjectsFactory {
       scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
       processingType: ProcessingType
   ): UIProcessObjects = {
-    val componentGroupsPreparer = new ComponentGroupsPreparer(
-      ComponentsGroupMappingConfigExtractor.extract(modelData.modelConfig)
-    )
     UIProcessObjects(
-      componentGroups = componentGroupsPreparer.prepareComponentGroups(
+      componentGroups = ComponentGroupsPreparer.prepareComponentGroups(
         user = user,
         definitions = modelDefinitionWithBuiltInComponentsAndFragments,
         processCategoryService = processCategoryService,
@@ -68,7 +64,7 @@ object UIProcessObjectsFactory {
   private def preparePropertiesConfig(modelData: ModelData) = {
     val componentsUiConfig          = ComponentsUiConfigParser.parse(modelData.modelConfig)
     val propertiesFakeComponentName = "$properties"
-    componentsUiConfig.config.get(propertiesFakeComponentName).map(propertiesFakeComponentName -> _)
+    componentsUiConfig.componentsConfig.get(propertiesFakeComponentName).map(propertiesFakeComponentName -> _)
   }
 
   private def createUIComponentDefinition(

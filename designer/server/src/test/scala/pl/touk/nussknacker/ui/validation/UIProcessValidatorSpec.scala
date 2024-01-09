@@ -9,7 +9,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{BeMatcher, MatchResult}
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -25,7 +24,9 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -34,8 +35,6 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.engine.graph.EdgeType
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -46,7 +45,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidation
   SaveNotAllowed
 }
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeTypingData,
   NodeValidationError,
   NodeValidationErrorType,
   ValidationErrors,
@@ -1322,11 +1320,10 @@ private object UIProcessValidatorSpec {
       fragment: CanonicalProcess,
       execConfig: Config = ConfigFactory.empty()
   ): UIProcessValidator = {
-    import ModelDefinitionBuilder._
-
     val modelDefinition = ModelDefinitionBuilder.empty
-      .withSourceFactory(sourceTypeName)
-      .withSinkFactory(sinkTypeName)
+      .withSource(sourceTypeName)
+      .withSink(sinkTypeName)
+      .build
 
     new UIProcessValidator(
       ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition, execConfig)),

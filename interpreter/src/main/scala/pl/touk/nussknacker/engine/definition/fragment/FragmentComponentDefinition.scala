@@ -24,13 +24,16 @@ object FragmentComponentDefinition {
       categories: Option[List[String]],
       docsUrl: Option[String],
       outputNames: List[String]
-  ): ComponentStaticDefinition =
+  ): ComponentStaticDefinition = {
+    val config = DefaultComponentConfigDeterminer.forFragment(docsUrl)
     ComponentStaticDefinition(
       parameters,
       Some(Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))),
       categories,
-      DefaultComponentConfigDeterminer.forFragment(docsUrl),
+      config,
+      config.componentGroupUnsafe,
       FragmentSpecificData(outputNames)
     )
+  }
 
 }

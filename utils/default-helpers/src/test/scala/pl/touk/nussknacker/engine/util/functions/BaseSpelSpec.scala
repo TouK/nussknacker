@@ -30,7 +30,7 @@ trait BaseSpelSpec {
 
   private val parser = SpelExpressionParser.default(
     getClass.getClassLoader,
-    ModelDefinitionBuilder.empty.expressionConfig,
+    ModelDefinitionBuilder.emptyExpressionConfig,
     new SimpleDictRegistry(Map.empty),
     enableSpelForceCompile = false,
     SpelExpressionParser.Standard,

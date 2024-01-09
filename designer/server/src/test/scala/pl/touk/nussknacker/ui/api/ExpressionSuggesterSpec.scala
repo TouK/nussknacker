@@ -7,13 +7,7 @@ import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  Typed,
-  TypedObjectTypingResult,
-  TypedObjectWithValue,
-  TypingResult,
-  Unknown
-}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinition,
@@ -21,13 +15,12 @@ import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinitionSet,
   StaticMethodDefinition
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder._
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
@@ -125,13 +118,14 @@ class ExpressionSuggesterSpec
     )
   )
 
-  private val expressionConfig: ExpressionConfigDefinition[ComponentStaticDefinition] =
+  private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
     ModelDefinitionBuilder.empty
-      .withGlobalVariable("util", Typed[Util])
+      .withGlobalVariable("util", classOf[Util])
+      .build
       .expressionConfig
 
   private val expressionSuggester = new ExpressionSuggester(
-    ModelDefinitionBuilder.toDefinitionWithImpl(expressionConfig),
+    expressionConfig,
     clazzDefinitions,
     dictServices,
     getClass.getClassLoader,

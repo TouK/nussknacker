@@ -118,7 +118,7 @@ class SpelExpressionGenSpec
   private def validate(expr: String, a: Any, b: Any): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val parser = SpelExpressionParser.default(
       getClass.getClassLoader,
-      ModelDefinitionBuilder.empty.expressionConfig,
+      ModelDefinitionBuilder.emptyExpressionConfig,
       new SimpleDictRegistry(Map.empty),
       enableSpelForceCompile = false,
       SpelExpressionParser.Standard,
