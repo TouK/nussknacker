@@ -6,12 +6,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
-  ExpressionSuggestionDto,
-  NodeValidationResultDto,
-  ParameterDto,
-  ParametersValidationResultDto
-}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{ExpressionSuggestionDto, NodeValidationResultDto, ParameterDto, ParametersValidationResultDto}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
@@ -41,7 +36,7 @@ class NodesApiHttpService(
 
   expose {
     nodesApiEndpoints.nodesAdditionalInfoEndpoint
-      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
         val (processName, nodeData) = pair
 
@@ -60,6 +55,9 @@ class NodesApiHttpService(
                     success(additionalInfo)
                   }
               }
+          }
+          .recover { case _ =>
+            businessError(s"No scenario $processName found")
           }
       }
   }
