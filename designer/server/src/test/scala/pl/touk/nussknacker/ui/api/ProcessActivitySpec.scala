@@ -33,6 +33,7 @@ class ProcessActivitySpec
 
   val processName    = ProcessName(UUID.randomUUID().toString)
   val commentContent = "test message"
+  val doubleQuote    = '"'
 
   val process: CanonicalProcess = ScenarioBuilder
     .streaming(processName.value)
@@ -183,10 +184,13 @@ class ProcessActivitySpec
       .multiPart(
         new MultiPartSpecBuilder(fileContent)
           // https://github.com/rest-assured/rest-assured/issues/866#issuecomment-617127889
-          .header("Content-Disposition", s"form-data; name=\"attachment\"; filename=\"$fileName\"")
+          .header(
+            "Content-Disposition",
+            s"form-data; name=${doubleQuote}attachment${doubleQuote}; filename=${doubleQuote}${fileName}${doubleQuote}"
+          )
           .build()
       )
-      .contentType(ContentType.MULTIPART)
+      .contentType("multipart/form-data")
       .basicAuth("writer", "writer")
       .when()
       .post(s"$nuDesignerHttpAddress/api/processes/${processName.value}/1/activity/attachments")
