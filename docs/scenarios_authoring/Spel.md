@@ -148,12 +148,11 @@ For full list of available format options take a look at [DateTimeFormatter api 
 
 # SpEL syntax
 
-## Literals
+## Basics
                                   
 Most of the literals are similar to JSON ones, in fact in many cases JSON structure is valid SpEL. 
 There are a few notable exceptions:
 - Lists are written using curly braces: `{"firstElement", "secondElement"}`, as `[]` is used to access elements in array 
-- Empty record is `{:}`, to distinguish it from empty list: `{}`
 - Strings can be quoted with either `'` or `"`
 - Field names in records do not to be quoted (e.g. `{name: "John"}` is valid SpEL, but not valid JSON)
 
@@ -162,7 +161,9 @@ There are a few notable exceptions:
 | `'Hello World'`        | "Hello World"                  | String               |
 | `true`                 | true                           | Boolean              |
 | `null`                 | null                           | Null                 |
+| `{}`                   | an empty list                  | List[Unknown]        |
 | `{1,2,3,4}`            | a list of integers from 1 to 4 | List[Integer]        |
+| `{:}`                  | an empty record                | Record{}             |
 | `{john:300, alex:400}` | a map (name-value collection)  | Map[String, Integer] |
 | `#input`               | variable                       |                      |
                                     
@@ -217,12 +218,13 @@ are shown in code completion hints.
 
 ## Accessing elements of a list or a record
 
-| Expression                                        | Result                                | Type    |
-|---------------------------------------------------|---------------------------------------|---------|
-| `{1,2,3,4}[0]`                                    | 1                                     | Integer |
-| `{jan:300, alex:400}[alex]`                       | a value of field 'alex', which is 400 | Integer |
-| `{jan:300, alex:400}['alex']`                     | 400                                   | Integer |
-| `{jan:{age:24}}, alex:{age: 30}}}['alex']['age']` | 30                                    | Integer |
+| Expression                                                              | Result                                | Type              |
+|-------------------------------------------------------------------------|---------------------------------------|-------------------|
+| `{1,2,3,4}[0]`                                                          | 1                                     | Integer           |
+| `{jan:300, alex:400}[alex]`                                             | a value of field 'alex', which is 400 | Integer           |
+| `{jan:300, alex:400}['alex']`                                           | 400                                   | Integer           |
+| `{jan:{age:24}}, alex:{age: 30}}}['alex']['age']`                       | 30                                    | Integer           |
+| `{foo: 1L, bar: 2L, tar: 3L}.?[#this.key == "foo" OR #this.value > 2L]` |  {'tar': 3, 'foo': 1}                 | Map[String, Long] |
 
 
 Attempting to access non-present elements will cause exceptions. For lists, they are thrown in runtime and for records
@@ -248,7 +250,7 @@ To obtain the last matching element, the syntax is `.$`.
 | `{1,2,3,4}.^[#this ge 3]`                 | {3}          | Integer       |
 | `{1,2,3,4}.$[#this ge 3]`                 | {4}          | Integer       |
 
-## Mapping lists
+## Transforming lists
 
 Special variable `#this` is used to operate on single element of list.
             
@@ -266,6 +268,7 @@ listOfPersons = {person1, person2}
 | `#listOfPersons.![#this.name]` | {'Alex', 'John'} | List[String]  |
 | `#listOfPersons.![#this.age]`  | {42, 24}         | List[Integer] |
 | `#listOfPersons.![7]`          | {7, 7}           | List[Integer] |
+
 
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
 
