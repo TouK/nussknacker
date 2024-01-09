@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
@@ -43,7 +43,7 @@ class NodesApiHttpService(
 
   expose {
     nodesApiEndpoints.nodesAdditionalInfoEndpoint
-      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
         val (processName, nodeData) = pair
 
@@ -62,6 +62,9 @@ class NodesApiHttpService(
                     success(additionalInfo)
                   }
               }
+          }
+          .recover { case _ =>
+            businessError(s"No scenario $processName found")
           }
       }
   }
