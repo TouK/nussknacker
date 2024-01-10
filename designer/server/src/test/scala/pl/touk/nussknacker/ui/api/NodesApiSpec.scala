@@ -36,9 +36,10 @@ class NodesApiSpec
     "additional info when" - {
       "authenticated should" - {
         "return additional info for node with expression in existing process" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
-          given()
+          given
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
@@ -72,9 +73,10 @@ class NodesApiSpec
             )
         }
         "return no additional info for node without expression in existing process" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
@@ -113,9 +115,10 @@ class NodesApiSpec
       }
       "not authenticated should" - {
         "forbid access" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .noAuth()
             .jsonBody(exampleNodesAdditionalInfoRequestBody)
             .when()
@@ -131,9 +134,10 @@ class NodesApiSpec
     "validation when" - {
       "authenticated should" - {
         "validate correct node without errors" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
@@ -197,9 +201,10 @@ class NodesApiSpec
             )
         }
         "validate filter node when wrong parameter type is given" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
@@ -271,9 +276,10 @@ class NodesApiSpec
             )
         }
         "validate incorrect sink expression" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
@@ -401,9 +407,10 @@ class NodesApiSpec
             )
         }
         "validate node using dictionaries" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
@@ -452,9 +459,10 @@ class NodesApiSpec
                  |}""".stripMargin)
         }
         "validate node id" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
@@ -514,9 +522,10 @@ class NodesApiSpec
       }
       "not authenticated should" - {
         "forbid access" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .noAuth()
             .jsonBody(exampleNodesValidationRequestBody)
             .when()
@@ -535,9 +544,10 @@ class NodesApiSpec
     "additional info when" - {
       "authenticated should" - {
         "return additional info for process properties" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
@@ -570,9 +580,10 @@ class NodesApiSpec
       }
       "not authenticated should" - {
         "forbid access" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .jsonBody(examplePropertiesAdditionalInfoRequestBody)
             .noAuth()
             .when()
@@ -588,9 +599,10 @@ class NodesApiSpec
     "validation when" - {
       "authenticated should" - {
         "validate properties" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
@@ -656,9 +668,10 @@ class NodesApiSpec
                  |}""".stripMargin)
         }
         "validate scenario id" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given()
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
               s"""{
@@ -733,9 +746,10 @@ class NodesApiSpec
       }
       "not authenticated should" - {
         "forbid access" in {
-          createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-
           given
+            .applicationConfiguration {
+              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            }
             .jsonBody(examplePropertiesValidationRequestBody)
             .noAuth()
             .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
@@ -994,7 +1008,7 @@ class NodesApiSpec
     }
   }
 
-  private val exampleNodesAdditionalInfoRequestBody =
+  private lazy val exampleNodesAdditionalInfoRequestBody =
     s"""{
        |    "id": "1",
        |    "service": {
@@ -1006,7 +1020,7 @@ class NodesApiSpec
        |    "type": "Enricher"
        |}""".stripMargin
 
-  private val exampleNodesValidationRequestBody =
+  private lazy val exampleNodesValidationRequestBody =
     s"""{
        |    "nodeData": {
        |        "id": "id",
@@ -1049,7 +1063,7 @@ class NodesApiSpec
        |    "outgoingEdges": null
        |}""".stripMargin
 
-  private val examplePropertiesAdditionalInfoRequestBody =
+  private lazy val examplePropertiesAdditionalInfoRequestBody =
     s"""{
        |    "isFragment": false,
        |    "additionalFields": {
@@ -1066,7 +1080,7 @@ class NodesApiSpec
        |    }
        |}""".stripMargin
 
-  private val examplePropertiesValidationRequestBody =
+  private lazy val examplePropertiesValidationRequestBody =
     s"""{
        |    "additionalFields": {
        |        "description": null,
@@ -1083,7 +1097,7 @@ class NodesApiSpec
        |    "id": "test"
        |}""".stripMargin
 
-  private val exampleParametersValidationRequestBody =
+  private lazy val exampleParametersValidationRequestBody =
     s"""{
        |    "parameters": [
        |        {
@@ -1133,17 +1147,17 @@ class NodesApiSpec
        |    }
        |""".stripMargin
 
-  private val exampleParametersSuggestionsRequestBody =
+  private lazy val exampleParametersSuggestionsRequestBody =
     s"""{
-            |    "expression": {
-            |        "language": "spel",
-            |        "expression": "#inpu"
-            |    },
-            |    "caretPosition2d": {
-            |        "row": 0,
-            |        "column": 5
-            |    },
-            |    "variableTypes": {}
-            |}""".stripMargin
+       |    "expression": {
+       |        "language": "spel",
+       |        "expression": "#inpu"
+       |    },
+       |    "caretPosition2d": {
+       |        "row": 0,
+       |        "column": 5
+       |    },
+       |    "variableTypes": {}
+       |}""".stripMargin
 
 }
