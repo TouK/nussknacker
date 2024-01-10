@@ -1,7 +1,7 @@
 import { SourceSinkCommon } from "./SourceSinkCommon";
 import React from "react";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ScenarioUtils";
+import ProcessUtils from "../../../common/ProcessUtils";
 
 interface SourceProps {
     errors: NodeValidationError[];

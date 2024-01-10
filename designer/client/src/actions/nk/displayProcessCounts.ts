@@ -16,9 +16,9 @@ export function displayProcessCounts(processCounts: ProcessCounts): DisplayProce
     };
 }
 
-const checkPossibleCountsToCalculate = (processCounts: ProcessCounts, scenarioGraph: ScenarioGraph) => {
+const checkPossibleCountsToCalculate = (processCounts: ProcessCounts, processToDisplay: ScenarioGraph) => {
     const processCountsName = Object.keys(processCounts).sort((a, b) => a.localeCompare(b));
-    const uncountableNodes = scenarioGraph.nodes
+    const uncountableNodes = processToDisplay.nodes
         .sort((a, b) => a.id.localeCompare(b.id))
         .filter((node, index) => node.id !== processCountsName[index]);
     const newProcessCounts = { ...processCounts };

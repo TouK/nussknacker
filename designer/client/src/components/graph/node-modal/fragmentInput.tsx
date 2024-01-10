@@ -1,5 +1,5 @@
 import { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ScenarioUtils";
+import ProcessUtils from "../../../common/ProcessUtils";
 import React, { useCallback } from "react";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";

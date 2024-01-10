@@ -11,7 +11,7 @@ export const unknownIcon = "/assets/states/status-unknown.svg";
 const fragmentIcon = "/assets/process/fragment.svg";
 const archivedIcon = "/assets/process/archived.svg";
 
-class ScenarioStateUtils {
+class ProcessStateUtils {
     public canDeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Deploy);
 
     public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Cancel);
@@ -62,4 +62,4 @@ class ScenarioStateUtils {
     }
 }
 
-export default new ScenarioStateUtils();
+export default new ProcessStateUtils();

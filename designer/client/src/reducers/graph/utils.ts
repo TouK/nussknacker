@@ -1,6 +1,6 @@
 import { cloneDeep, map, reject, zipWith } from "lodash";
 import { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
-import ProcessUtils from "../../common/ScenarioUtils";
+import ProcessUtils from "../../common/ProcessUtils";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";

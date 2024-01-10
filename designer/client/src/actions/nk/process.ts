@@ -10,7 +10,7 @@ export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
     | { type: "DISPLAY_PROCESS"; fetchedProcessDetails: Scenario };
 
-export function fetchScenario(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
+export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
     return (dispatch) => {
         dispatch({ type: "PROCESS_FETCH" });
 
@@ -56,12 +56,12 @@ export function displayTestCapabilities(processDetails: ScenarioGraph) {
 }
 
 export function displayCurrentProcessVersion(processName: ProcessName) {
-    return fetchScenario(processName);
+    return fetchProcessToDisplay(processName);
 }
 
 export function displayScenarioVersion(processName: ProcessName, versionId: ProcessVersionId): ThunkAction {
     return async (dispatch, getState) => {
-        await dispatch(fetchScenario(processName, versionId));
+        await dispatch(fetchProcessToDisplay(processName, versionId));
         const processDefinitionData = getProcessDefinitionData(getState());
         dispatch({ type: "CORRECT_INVALID_SCENARIO", processDefinitionData });
     };

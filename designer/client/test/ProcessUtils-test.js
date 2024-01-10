@@ -1,4 +1,4 @@
-import ProcessUtils from "../src/common/ScenarioUtils";
+import ProcessUtils from "../src/common/ProcessUtils";
 import { reject } from "lodash";
 
 const unknown = { display: "Unknown", params: [], type: "Unknown", refClazzName: "java.lang.Object" };

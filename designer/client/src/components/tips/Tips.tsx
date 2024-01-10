@@ -3,7 +3,7 @@ import React, { useCallback } from "react";
 import { Scrollbars } from "react-custom-scrollbars";
 import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
-import ProcessUtils from "../../common/ScenarioUtils";
+import ProcessUtils from "../../common/ProcessUtils";
 import { getScenario, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import { useWindows } from "../../windowManager";

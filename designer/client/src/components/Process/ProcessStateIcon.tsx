@@ -1,6 +1,6 @@
 import React from "react";
 import { ProcessStateType, Scenario } from "./types";
-import ProcessStateUtils from "./ScenarioStateUtils";
+import ProcessStateUtils from "./ProcessStateUtils";
 import UrlIcon from "../UrlIcon";
 import { Box, Divider, Popover, Typography } from "@mui/material";
 import { Errors } from "./ProcessErrors";

@@ -8,7 +8,7 @@ import {
     getTestCapabilities,
     getTestParameters,
     isLatestScenarioVersion,
-    isScenarioRenamed,
+    isProcessRenamed,
 } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButtonProps } from "../../types";
@@ -30,7 +30,7 @@ function TestWithFormButton(props: Props) {
     const { open, inform } = useWindows();
     const processIsLatestVersion = useSelector(isLatestScenarioVersion);
     const testCapabilities = useSelector(getTestCapabilities);
-    const isRenamed = useSelector(isScenarioRenamed);
+    const isRenamed = useSelector(isProcessRenamed);
     const testFormParameters: TestFormParameters[] = useSelector(getTestParameters);
     const scenarioName = useSelector(getScenarioName);
     const processToDisplay = useSelector(getScenarioGraph);

@@ -1,6 +1,6 @@
 import React from "react";
 import ExpressionField from "./editors/expression/ExpressionField";
-import ProcessUtils from "../../../common/ScenarioUtils";
+import ProcessUtils from "../../../common/ProcessUtils";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";

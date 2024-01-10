@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ArchivedPath } from "../../../../containers/paths";
 import HttpService from "../../../../http/HttpService";
 import { useWindows } from "../../../../windowManager";
-import ProcessUtils from "../../../../common/ScenarioUtils";
+import ProcessUtils from "../../../../common/ProcessUtils";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";

@@ -3,7 +3,7 @@ import ExpressionField from "./editors/expression/ExpressionField";
 import { findParamDefinitionByName } from "./FieldLabel";
 import React from "react";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ScenarioUtils";
+import ProcessUtils from "../../../common/ProcessUtils";
 import { getValidationErrorsForField } from "./editors/Validators";
 
 //this is for "static" fields like expressions in filters, switches etc.

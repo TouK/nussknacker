@@ -5,7 +5,7 @@ import { IdField } from "./IdField";
 import { DescriptionField } from "./DescriptionField";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ScenarioUtils";
+import ProcessUtils from "../../../common/ProcessUtils";
 
 interface SourceSinkCommonProps {
     errors: NodeValidationError[];

@@ -81,7 +81,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
     return (dispatch, getState) => {
         const state = getState();
         const processDefinitionData = getProcessDefinitionData(state);
-        const scenarioGraph = getScenarioGraph(state);
+        const processToDisplay = getScenarioGraph(state);
 
         batchGroupBy.startOrContinue();
         dispatch({
@@ -90,7 +90,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
             to: to.id,
         });
 
-        const inputs = NodeUtils.nodeInputs(middle.id, scenarioGraph);
+        const inputs = NodeUtils.nodeInputs(middle.id, processToDisplay);
         if (NodeUtils.canHaveMoreInputs(middle, inputs, processDefinitionData)) {
             dispatch({
                 type: "NODES_CONNECTED",
@@ -101,7 +101,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
             });
         }
 
-        const outputs = NodeUtils.nodeOutputs(middle.id, scenarioGraph);
+        const outputs = NodeUtils.nodeOutputs(middle.id, processToDisplay);
         if (NodeUtils.canHaveMoreOutputs(middle, outputs, processDefinitionData)) {
             dispatch({
                 type: "NODES_CONNECTED",

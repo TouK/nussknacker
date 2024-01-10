@@ -7,7 +7,7 @@ import { displayCurrentProcessVersion, displayProcessActivity, loadProcessToolba
 import { PromptContent } from "../../windowManager";
 import { CommentInput } from "../comment/CommentInput";
 import { ThunkAction } from "../../actions/reduxTypes";
-import { getScenario, getScenarioGraph, getScenarioUnsavedNewName, isScenarioRenamed } from "../../reducers/selectors/graph";
+import { getScenario, getScenarioGraph, getScenarioUnsavedNewName, isProcessRenamed } from "../../reducers/selectors/graph";
 import HttpService from "../../http/HttpService";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { visualizationUrl } from "../../common/VisualizationUrl";
@@ -27,7 +27,7 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
                 await HttpService.saveProcess(currentProcessName, processToDisplay, comment);
 
                 const unsavedNewName = getScenarioUnsavedNewName(state);
-                const isRenamed = isScenarioRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
+                const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
                 const processName = isRenamed ? unsavedNewName : currentProcessName;
 
                 await dispatch(UndoActionCreators.clearHistory());

@@ -1,7 +1,7 @@
 import { isEmpty, overSome } from "lodash";
 import React from "react";
 import { ExpressionSuggester, ExpressionSuggestion } from "./ExpressionSuggester";
-import ProcessUtils from "../../../../../common/ScenarioUtils";
+import ProcessUtils from "../../../../../common/ProcessUtils";
 import ReactDOMServer from "react-dom/server";
 import type { Ace } from "ace-builds";
 import ace from "ace-builds/src-noconflict/ace";

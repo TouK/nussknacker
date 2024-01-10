@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import React, { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
-import ProcessUtils from "../../../../common/ScenarioUtils";
+import ProcessUtils from "../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";

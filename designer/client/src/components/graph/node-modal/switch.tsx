@@ -1,5 +1,5 @@
 import { Edge, EdgeKind, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
-import ProcessUtils from "../../../common/ScenarioUtils";
+import ProcessUtils from "../../../common/ProcessUtils";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { isEmpty, isEqual } from "lodash";
 import { useDiffMark } from "./PathsToMark";

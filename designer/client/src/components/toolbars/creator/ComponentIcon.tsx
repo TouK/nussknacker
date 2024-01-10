@@ -1,7 +1,7 @@
 import { isString, memoize } from "lodash";
 import React from "react";
 import { useSelector } from "react-redux";
-import ProcessUtils from "../../../common/ScenarioUtils";
+import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { NodeType, ProcessDefinitionData } from "../../../types";
 import PropertiesSvg from "../../../assets/img/properties.svg";
