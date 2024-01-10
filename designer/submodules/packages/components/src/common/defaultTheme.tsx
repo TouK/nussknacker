@@ -73,6 +73,15 @@ export const useDefaultTheme = (parent = {}): Theme => {
                                     root.palette.mode
                                 ],
                             },
+                            cell: {
+                                "&:focus-within": {
+                                    outlineColor: root.palette.primary.main,
+                                },
+                                ".Mui-focusVisible": {
+                                    outline: "none", // Remove the white cell outline when the cell is focused via the keyboard, a link is clicked, and the user returns to the previous page
+                                },
+                            },
+
                             columnHeaderTitleContainer: {
                                 padding: "0 6px",
                             },

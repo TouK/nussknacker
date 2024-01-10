@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import cats.implicits.catsSyntaxSemigroup
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentInfo, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
   DynamicComponentDefinitionWithImplementation,
   DynamicComponentImplementationInvoker
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.{
   MethodDefinition,
   MethodDefinitionExtractor
 }
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
@@ -26,24 +28,27 @@ object ComponentDefinitionExtractor {
 
   def extract(
       inputComponentDefinition: ComponentDefinition,
-      additionalConfig: SingleComponentConfig
-  ): (String, ComponentDefinitionWithImplementation) = {
+      additionalConfigs: ComponentsUiConfig
+  ): Option[(String, ComponentDefinitionWithImplementation)] = {
     val configBasedOnDefinition = SingleComponentConfig.zero
       .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
     val componentWithConfig = WithCategories(
       inputComponentDefinition.component,
       None,
-      configBasedOnDefinition |+| additionalConfig
+      configBasedOnDefinition
     )
-    val componentDefWithImpl = ComponentDefinitionExtractor.extract(componentWithConfig)
-    inputComponentDefinition.name -> componentDefWithImpl
+    ComponentDefinitionExtractor
+      .extract(inputComponentDefinition.name, componentWithConfig, additionalConfigs)
+      .map(inputComponentDefinition.name -> _)
   }
 
   // TODO: Move this WithCategories extraction to ModelDefinitionFromConfigCreatorExtractor. Here should be passed
   //       Component and SingleComponentConfig. It will possible when we remove categories from ComponentDefinitionWithImplementation
   def extract(
-      componentWithConfig: WithCategories[Component]
-  ): ComponentDefinitionWithImplementation = {
+      componentName: String,
+      componentWithConfig: WithCategories[Component],
+      additionalConfigs: ComponentsUiConfig
+  ): Option[ComponentDefinitionWithImplementation] = {
     val component = componentWithConfig.value
 
     val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
@@ -59,37 +64,57 @@ object ComponentDefinitionExtractor {
         case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
       }
 
+    val componentInfo = ComponentInfo(componentTypeSpecificData.componentType, componentName)
+
+    def withConfigForNotDisabledComponent[T](
+        returnType: Option[TypingResult]
+    )(f: SingleComponentConfig => T): Option[T] = {
+      val defaultConfig =
+        DefaultComponentConfigDeterminer.forNotBuiltInComponentType(componentTypeSpecificData, returnType.isDefined)
+      val configFromAdditional = additionalConfigs.getConfig(componentInfo)
+      val determinedConfig     = configFromAdditional |+| componentWithConfig.componentConfig |+| defaultConfig
+      Option(determinedConfig).filterNot(_.disabled).map(f)
+    }
+
     (component match {
       case e: GenericNodeTransformation[_] =>
         val implementationInvoker = new DynamicComponentImplementationInvoker(e)
         Right(
-          DynamicComponentDefinitionWithImplementation(
-            implementationInvoker,
-            e,
-            componentWithConfig.categories,
-            componentWithConfig.componentConfig,
-            componentTypeSpecificData
-          )
+          withConfigForNotDisabledComponent(ToStaticComponentDefinitionTransformer.staticReturnType(e)) {
+            componentConfig =>
+              DynamicComponentDefinitionWithImplementation(
+                implementationInvoker,
+                e,
+                componentWithConfig.categories,
+                componentConfig,
+                componentTypeSpecificData
+              )
+          }
         )
       case _ =>
+        val configCombinedForParameters =
+          additionalConfigs.getConfig(componentInfo) |+| componentWithConfig.componentConfig
         methodDefinitionExtractor
-          .extractMethodDefinition(component, findMainComponentMethod(component), componentWithConfig.componentConfig)
+          .extractMethodDefinition(component, findMainComponentMethod(component), configCombinedForParameters)
           .map { methodDef =>
             def notReturnAnything(typ: TypingResult) =
               Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
-            val staticDefinition = ComponentStaticDefinition(
-              methodDef.definedParameters,
-              Option(methodDef.returnType).filterNot(notReturnAnything),
-              componentWithConfig.categories,
-              componentWithConfig.componentConfig,
-              componentTypeSpecificData
-            )
-            val implementationInvoker = extractImplementationInvoker(component, methodDef)
-            MethodBasedComponentDefinitionWithImplementation(
-              implementationInvoker,
-              component,
-              staticDefinition
-            )
+            val returnType = Option(methodDef.returnType).filterNot(notReturnAnything)
+            withConfigForNotDisabledComponent(returnType) { finalComponentConfig =>
+              val staticDefinition = ComponentStaticDefinition(
+                methodDef.definedParameters,
+                returnType,
+                componentWithConfig.categories,
+                finalComponentConfig,
+                componentTypeSpecificData
+              )
+              val implementationInvoker = extractImplementationInvoker(component, methodDef)
+              MethodBasedComponentDefinitionWithImplementation(
+                implementationInvoker,
+                component,
+                staticDefinition
+              )
+            }
           }
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 

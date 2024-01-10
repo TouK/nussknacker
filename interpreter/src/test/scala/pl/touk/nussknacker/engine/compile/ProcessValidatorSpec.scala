@@ -14,19 +14,13 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{
-  ClassExtractionSettings,
-  ComponentUseCase,
-  LanguageConfiguration,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ComponentUseCase, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation,
   ComponentStaticDefinition,
   CustomComponentSpecificData
@@ -1304,7 +1298,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val base = ModelDefinitionBuilder.withNullImplementation(baseDefinition)
     val withServiceRef = base.withComponent(
       "returningTypeService",
-      ComponentDefinitionExtractor.extract(WithCategories.anyCategory(ServiceReturningTypeSample))
+      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceReturningTypeSample)
     )
 
     val process =
@@ -1333,7 +1327,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val base = ModelDefinitionBuilder.withNullImplementation(baseDefinition)
     val withServiceRef = base.withComponent(
       "returningTypeService",
-      ComponentDefinitionExtractor.extract(WithCategories.anyCategory(ServiceReturningTypeWithExplicitMethodSample))
+      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceReturningTypeWithExplicitMethodSample)
     )
 
     val process =
@@ -1361,7 +1355,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val base = ModelDefinitionBuilder.withNullImplementation(baseDefinition)
     val withServiceRef = base.withComponent(
       "withCustomValidation",
-      ComponentDefinitionExtractor.extract(WithCategories.anyCategory(ServiceWithCustomValidation))
+      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceWithCustomValidation)
     )
 
     val process =

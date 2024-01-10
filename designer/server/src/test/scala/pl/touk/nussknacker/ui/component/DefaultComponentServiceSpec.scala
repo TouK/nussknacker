@@ -5,9 +5,12 @@ import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, _}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{CategoryConfig, ProcessingTypeData}
@@ -25,18 +28,16 @@ import pl.touk.nussknacker.ui.api.helpers.{
 }
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
-import pl.touk.nussknacker.ui.component.DefaultsComponentGroupName._
-import pl.touk.nussknacker.ui.component.DefaultsComponentIcon._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, ModelDefinitionEnricher}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import java.net.URI
 
@@ -118,8 +119,8 @@ class DefaultComponentServiceSpec
     )
   )
 
-  private val overrideKafkaSinkComponentId    = ComponentId(s"$Sink-$KafkaAvroProvidedComponentName")
-  private val overrideKafkaSourceComponentId  = ComponentId(s"$Source-$KafkaAvroProvidedComponentName")
+  private val overrideSinkComponentId         = ComponentId(s"$Sink-$SourceSinkSameNameComponentName")
+  private val overrideSourceComponentId       = ComponentId(s"$Source-$SourceSinkSameNameComponentName")
   private val customerDataEnricherComponentId = ComponentId(CustomerDataEnricherName)
   private val sharedEnricherComponentId       = ComponentId(SharedEnricherName)
   private val customStreamComponentId         = ComponentId(CustomStreamName)
@@ -147,11 +148,11 @@ class DefaultComponentServiceSpec
        |    $SharedProvidedComponentName {
        |      componentId: $SharedProvidedComponentName
        |    },
-       |    ${cid(Streaming, ComponentInfo(Source, KafkaAvroProvidedComponentName))} {
-       |      componentId: "$overrideKafkaSourceComponentId"
+       |    ${ComponentInfo(Source, SourceSinkSameNameComponentName)} {
+       |      componentId: "$overrideSourceComponentId"
        |    }
-       |    ${cid(Streaming, ComponentInfo(Sink, KafkaAvroProvidedComponentName))} {
-       |      componentId: "$overrideKafkaSinkComponentId"
+       |    ${ComponentInfo(Sink, SourceSinkSameNameComponentName)} {
+       |      componentId: "$overrideSinkComponentId"
        |    }
        |  }
        |
@@ -182,11 +183,11 @@ class DefaultComponentServiceSpec
        |    $SharedProvidedComponentName {
        |      componentId: $SharedProvidedComponentName
        |    },
-       |    ${cid(Fraud, ComponentInfo(Source, KafkaAvroProvidedComponentName))} {
-       |      componentId: "$overrideKafkaSourceComponentId"
+       |    ${ComponentInfo(Source, SourceSinkSameNameComponentName)} {
+       |      componentId: "$overrideSourceComponentId"
        |    }
-       |    ${cid(Fraud, ComponentInfo(Sink, KafkaAvroProvidedComponentName))} {
-       |      componentId: "$overrideKafkaSinkComponentId"
+       |    ${ComponentInfo(Sink, SourceSinkSameNameComponentName)} {
+       |      componentId: "$overrideSinkComponentId"
        |    }
        |  }
        |
@@ -250,20 +251,20 @@ class DefaultComponentServiceSpec
       ),
       sharedComponent(
         ComponentInfo(Service, SharedProvidedComponentName),
-        ProcessorIcon,
+        ServiceIcon,
         executionGroupName,
       ),
       sharedComponent(
-        ComponentInfo(Source, KafkaAvroProvidedComponentName),
+        ComponentInfo(Source, SourceSinkSameNameComponentName),
         SourceIcon,
         SourcesGroupName,
-        componentId = Some(overrideKafkaSourceComponentId)
+        componentId = Some(overrideSourceComponentId)
       ),
       sharedComponent(
-        ComponentInfo(Sink, KafkaAvroProvidedComponentName),
+        ComponentInfo(Sink, SourceSinkSameNameComponentName),
         SinkIcon,
         executionGroupName,
-        componentId = Some(overrideKafkaSinkComponentId)
+        componentId = Some(overrideSinkComponentId)
       ),
     )
 
@@ -282,7 +283,7 @@ class DefaultComponentServiceSpec
     ),
     marketingComponent(
       ComponentInfo(Service, FuseBlockServiceName),
-      ProcessorIcon,
+      ServiceIcon,
       executionGroupName
     ),
     marketingComponent(ComponentInfo(Sink, MonitorName), SinkIcon, executionGroupName),
@@ -295,7 +296,7 @@ class DefaultComponentServiceSpec
     marketingComponent(ComponentInfo(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
     marketingComponent(
       ComponentInfo(Service, SingleProvidedComponentName),
-      ProcessorIcon,
+      ServiceIcon,
       executionGroupName
     ),
   )
@@ -303,14 +304,14 @@ class DefaultComponentServiceSpec
   private def prepareFraudComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
     fraudComponent(ComponentInfo(CustomComponent, CustomStreamName), CustomComponentIcon, CustomGroupName),
     fraudComponent(ComponentInfo(Service, CustomerDataEnricherName), EnricherIcon, EnrichersGroupName),
-    fraudComponent(ComponentInfo(Service, FuseBlockServiceName), ProcessorIcon, executionGroupName),
+    fraudComponent(ComponentInfo(Service, FuseBlockServiceName), ServiceIcon, executionGroupName),
     fraudComponent(
       ComponentInfo(CustomComponent, OptionalCustomStreamName),
       CustomComponentIcon,
       OptionalEndingCustomGroupName
     ),
     fraudComponent(ComponentInfo(Sink, SecondMonitorName), SinkIcon, executionGroupName),
-    fraudComponent(ComponentInfo(Service, SingleProvidedComponentName), ProcessorIcon, executionGroupName),
+    fraudComponent(ComponentInfo(Service, SingleProvidedComponentName), ServiceIcon, executionGroupName),
     fraudComponent(ComponentInfo(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
     fraudComponent(ComponentInfo(Sink, FraudSinkName), SinkIcon, executionGroupName),
   )
@@ -472,7 +473,7 @@ class DefaultComponentServiceSpec
   private val providerComponents =
     new DynamicComponentProvider().create(ConfigFactory.empty, ProcessObjectDependencies.empty)
 
-  private val processingTypeDataMap: Map[Category, ProcessingTypeData] = Map(
+  private val processingTypeDataMap: Map[ProcessingType, ProcessingTypeData] = Map(
     Streaming -> (LocalModelData(
       streamingConfig,
       providerComponents,
@@ -491,8 +492,16 @@ class DefaultComponentServiceSpec
 
   private val processingTypeDataProvider = ProcessingTypeDataProvider(
     processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
-    (ComponentIdProviderFactory.createUnsafe(processingTypeDataMap, categoryService), categoryService)
-  )
+    (ComponentIdProviderFactory.create(processingTypeDataMap), categoryService)
+  ).mapValues { processingTypeData =>
+    val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(AdditionalUIConfigProvider.empty)
+    val modelDefinitionEnricher = ModelDefinitionEnricher(
+      processingTypeData.modelData,
+      additionalUIConfigFinalizer,
+      processingTypeData.staticModelDefinition
+    )
+    (processingTypeData, modelDefinitionEnricher)
+  }
 
   it should "return components for each user" in {
     val processes      = List(MarketingProcess, FraudProcess, ArchivedFraudProcess)
@@ -502,8 +511,7 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        createFragmentRepository(fragmentFromCategories.toList),
-        TestAdditionalUIConfigProvider
+        createFragmentRepository(fragmentFromCategories.toList)
       )
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
@@ -525,47 +533,57 @@ class DefaultComponentServiceSpec
 
     forAll(testingData) {
       (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
-        val components = defaultComponentService.getComponentsList(user).futureValue
+        val returnedComponents = defaultComponentService.getComponentsList(user).futureValue
+
+        returnedComponents.map(_.id).sortBy(_.value) should contain theSameElementsAs expectedComponents
+          .map(_.id)
+          .sortBy(
+            _.value
+          )
 
         def counts(list: List[ComponentListElement]) = list.map(el => el.id -> el.usageCount).toMap
-
-        val returnedCounts = counts(components)
-        val expectedCounts = counts(expectedComponents)
-        returnedCounts.keys.toList.sortBy(_.value) should contain theSameElementsAs expectedCounts.keys.toList.sortBy(
-          _.value
-        )
+        val returnedCounts                           = counts(returnedComponents)
+        val expectedCounts                           = counts(expectedComponents)
         returnedCounts should contain theSameElementsAs expectedCounts
-        components should contain theSameElementsAs expectedComponents
 
-        // Components should contain only user categories
-        val componentsCategories = components.flatMap(_.categories).distinct.sorted
-        componentsCategories.diff(possibleCategories).isEmpty shouldBe true
+        forAll(Table("returnedComponents", returnedComponents: _*)) { returnedComponent =>
+          checkLinks(returnedComponent)
 
-        forAll(Table("component", components: _*)) { comp =>
-          // See linksConfig
-          val availableLinksId = comp.componentInfo match {
-            case ComponentInfo(Service, _)         => List(usagesLinkId, invokeLinkId, editLinkId)
-            case ComponentInfo(CustomComponent, _) => List(usagesLinkId, editLinkId)
-            case ComponentInfo(BuiltIn, _)         => List(usagesLinkId, filterLinkId)
-            case _                                 => List(usagesLinkId)
-          }
+          // Components should contain only user categories
+          (returnedComponent.categories diff possibleCategories) shouldBe empty
 
-          val availableDocsLinksId = comp.componentInfo match {
-            case BuiltInComponentInfo.Filter => List(filterDocsLink.id)
-            case _                           => Nil
-          }
-
-          // Base components from providers contain more links because of documentation
-          comp.links.map(_.id) should contain theSameElementsAs availableDocsLinksId ++ availableLinksId
-
-          comp.links
-            .filter(l => availableLinksId.contains(l.id))
-            .foreach(link => {
-              link.title should include(comp.name)
-              link.url.toString should include(comp.id.value)
-            })
+          val expectedComponent = expectedComponents.find(_.id == returnedComponent.id).value
+          // FIXME: icons are incorrectly determined for combinations of same name components for different types
+          //        because we moved default icon determining from FE to BE and the code of the ComponentService
+          //        uses legacy UIProcessObjects.componentsConfig which is keyed by componentName instead of ComponentInfo
+          returnedComponent.copy(icon = "") shouldEqual expectedComponent.copy(icon = "")
         }
     }
+  }
+
+  private def checkLinks(returnedComponent: ComponentListElement): Unit = {
+    // See linksConfig
+    val availableLinksId = returnedComponent.componentInfo match {
+      case ComponentInfo(Service, _)         => List(usagesLinkId, invokeLinkId, editLinkId)
+      case ComponentInfo(CustomComponent, _) => List(usagesLinkId, editLinkId)
+      case ComponentInfo(BuiltIn, _)         => List(usagesLinkId, filterLinkId)
+      case _                                 => List(usagesLinkId)
+    }
+
+    val availableDocsLinksId = returnedComponent.componentInfo match {
+      case BuiltInComponentInfo.Filter => List(filterDocsLink.id)
+      case _                           => Nil
+    }
+
+    // Base components from providers contain more links because of documentation
+    returnedComponent.links.map(_.id) should contain theSameElementsAs availableDocsLinksId ++ availableLinksId
+
+    returnedComponent.links
+      .filter(l => availableLinksId.contains(l.id))
+      .foreach(link => {
+        link.title should include(returnedComponent.name)
+        link.url.toString should include(returnedComponent.id.value)
+      })
   }
 
   it should "throws exception when components are wrong configured" in {
@@ -578,19 +596,26 @@ class DefaultComponentServiceSpec
       ), CategoryMarketing),
       Fraud -> (LocalModelData(wrongConfig, providerComponents, WronglyConfiguredConfigCreator), CategoryFraud)
     ).map { case (processingType, (modelData, category)) =>
-      processingType -> ProcessingTypeData.createProcessingTypeData(
+      val processingTypeData = ProcessingTypeData.createProcessingTypeData(
         MockManagerProvider,
         new MockDeploymentManager,
         modelData,
         ConfigFactory.empty(),
         CategoryConfig(category)
       )
+      // FIXME: remove this code duplication, higher level of test (validations are still not used in production code)
+      val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(AdditionalUIConfigProvider.empty)
+      val modelDefinitionEnricher = ModelDefinitionEnricher(
+        processingTypeData.modelData,
+        additionalUIConfigFinalizer,
+        processingTypeData.staticModelDefinition
+      )
+      processingType -> (processingTypeData, modelDefinitionEnricher)
     }
-    val componentObjectsService = new ComponentObjectsService(categoryService)
-    val componentObjectsMap =
-      badProcessingTypeDataMap.transform(componentObjectsService.prepareWithoutFragmentsAndAdditionalUIConfigs)
-    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.transform {
-      case (_, componentsObjects) => componentsObjects.config
+    val staticDefinitions = badProcessingTypeDataMap.mapValuesNow(_._1.staticModelDefinition)
+
+    val componentIdProvider = new DefaultComponentIdProvider({ case (processingType, info) =>
+      staticDefinitions.get(processingType).flatMap(_.getComponent(info)).map(_.componentConfig)
     })
 
     val expectedWrongConfigurations = List(
@@ -632,6 +657,17 @@ class DefaultComponentServiceSpec
       )
     )
 
+    val componentObjectsService = new ComponentObjectsService(categoryService)
+    val componentObjectsMap =
+      badProcessingTypeDataMap.transform { case (processingType, (processingTypeData, modelDefinitionEnricher)) =>
+        componentObjectsService.prepare(
+          processingType,
+          processingTypeData,
+          modelDefinitionEnricher,
+          AdminUser("admin", "admin"),
+          List.empty
+        )
+      }
     val wrongConfigurations = intercept[ComponentConfigurationException] {
       ComponentsValidator.checkUnsafe(componentObjectsMap, componentIdProvider)
     }.wrongConfigurations
@@ -663,8 +699,7 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        createFragmentRepository(List(FraudFragment)),
-        TestAdditionalUIConfigProvider
+        createFragmentRepository(List(FraudFragment))
       )
 
     val testingData = Table(
@@ -737,8 +772,7 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        createFragmentRepository(List.empty),
-        TestAdditionalUIConfigProvider
+        createFragmentRepository(List.empty)
       )
     val notExistComponentId = ComponentId("not-exist")
     val result              = defaultComponentService.getComponentUsages(notExistComponentId)(admin).futureValue

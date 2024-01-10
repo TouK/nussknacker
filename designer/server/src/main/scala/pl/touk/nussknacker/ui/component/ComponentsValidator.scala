@@ -13,6 +13,7 @@ import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{
   WrongConfigurationAttribute
 }
 
+// FIXME: rewrite to domain based approach, use it the ComponentService then
 private[component] object ComponentsValidator {
 
   def checkUnsafe(

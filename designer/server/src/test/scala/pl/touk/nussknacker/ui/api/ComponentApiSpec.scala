@@ -35,7 +35,7 @@ class ComponentApiSpec
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
 
-  private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map.empty)
+  private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider({ (_, _) => None })
 
   "The endpoint for getting components when" - {
     "authenticated should" - {
@@ -106,8 +106,7 @@ class ComponentApiSpec
       "return component list for current user" in {
         val componentIdListForTestUser: List[String] =
           given()
-            .auth()
-            .basic("allpermuser", "allpermuser")
+            .basicAuth("allpermuser", "allpermuser")
             .when()
             .get(s"$nuDesignerHttpAddress/api/components")
             .Then()
@@ -240,8 +239,7 @@ class ComponentApiSpec
 
         val componentIdListForTestUser: List[String] =
           given()
-            .auth()
-            .basic("allpermuser", "allpermuser")
+            .basicAuth("allpermuser", "allpermuser")
             .when()
             .get(s"$nuDesignerHttpAddress/api/components")
             .Then()
@@ -250,8 +248,7 @@ class ComponentApiSpec
 
         val componentIdListForAdminUser: List[String] =
           given()
-            .auth()
-            .basic("admin", "admin")
+            .basicAuth("admin", "admin")
             .when()
             .get(s"$nuDesignerHttpAddress/api/components")
             .Then()
@@ -266,8 +263,7 @@ class ComponentApiSpec
     "not authenticated should" - {
       "forbid access" in {
         given()
-          .auth()
-          .none()
+          .noAuth()
           .get(s"$nuDesignerHttpAddress/api/components")
           .Then()
           .statusCode(401)
@@ -297,9 +293,7 @@ class ComponentApiSpec
         )
 
         given()
-          .auth()
-          .basic("admin", "admin")
-          .and()
+          .basicAuth("admin", "admin")
           .pathParam("componentId", componentId.value)
           .when()
           .get(s"$nuDesignerHttpAddress/api/components/{componentId}/usages")
@@ -328,9 +322,7 @@ class ComponentApiSpec
 
         given()
           .pathParam("componentId", badComponent.value)
-          .and()
-          .auth()
-          .basic("admin", "admin")
+          .basicAuth("admin", "admin")
           .when()
           .get(s"$nuDesignerHttpAddress/api/components/{componentId}/usages")
           .Then()
@@ -339,8 +331,7 @@ class ComponentApiSpec
       }
       "return 405 when invalid HTTP method is passed" in {
         given()
-          .auth()
-          .basic("admin", "admin")
+          .basicAuth("admin", "admin")
           .when()
           .put(s"$nuDesignerHttpAddress/api/components/id/usages")
           .Then()
@@ -356,8 +347,7 @@ class ComponentApiSpec
     "not authenticated should" - {
       "forbid access" in {
         given()
-          .auth()
-          .none()
+          .noAuth()
           .when()
           .get(s"$nuDesignerHttpAddress/api/components/id/usages")
           .Then()

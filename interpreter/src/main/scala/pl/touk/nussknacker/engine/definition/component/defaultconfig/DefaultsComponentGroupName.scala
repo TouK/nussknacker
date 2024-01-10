@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.engine.definition.component.defaultconfig
 
 import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 
-private[component] object DefaultsComponentGroupName {
+object DefaultsComponentGroupName {
   val BaseGroupName: ComponentGroupName                 = ComponentGroupName("base")
   val ServicesGroupName: ComponentGroupName             = ComponentGroupName("services")
   val EnrichersGroupName: ComponentGroupName            = ComponentGroupName("enrichers")
@@ -12,4 +12,5 @@ private[component] object DefaultsComponentGroupName {
   val SourcesGroupName: ComponentGroupName              = ComponentGroupName("sources")
   val FragmentsGroupName: ComponentGroupName            = ComponentGroupName("fragments")
   val FragmentsDefinitionGroupName: ComponentGroupName  = ComponentGroupName("fragmentDefinition")
+
 }

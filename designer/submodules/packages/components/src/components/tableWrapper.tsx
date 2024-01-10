@@ -1,6 +1,14 @@
 import { Box, BoxProps, Paper, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { DataGrid, DataGridProps, GridActionsColDef, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import {
+    DataGrid,
+    DataGridProps,
+    GridActionsColDef,
+    GridColDef,
+    GridRenderCellParams,
+    GridSlotsComponentsProps,
+    useGridApiRef,
+} from "@mui/x-data-grid";
 import React, { memo, PropsWithChildren, useCallback, useMemo } from "react";
 import { CustomPagination } from "./customPagination";
 import { FilterRules, useFilterContext } from "../common/filters";
@@ -12,8 +20,9 @@ export type CellRendererParams<R = any, K = unknown> = GridRenderCellParams<K ex
 export type ColumnDef<R = unknown, K = unknown> = GridColDef & {
     field?: K;
     renderCell?: (params: CellRendererParams<R, K>) => React.ReactNode;
+    hide?: boolean;
 };
-export type Column<R> = ColumnDef<R, keyof R> | ColumnDef<R, string> | GridActionsColDef;
+export type Column<R> = ColumnDef<R, keyof R> | ColumnDef<R, string> | (GridActionsColDef & { hide?: boolean });
 export type Columns<R> = Column<R>[];
 
 export interface TableViewData<T> extends Partial<DataGridProps> {
@@ -27,6 +36,7 @@ interface TableViewProps<T, M> extends TableViewData<T>, Pick<BoxProps, "sx"> {
 }
 
 export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
+    const apiRef = useGridApiRef();
     const { data = [], filterRules, isLoading, ...passProps } = props;
     const { t } = useTranslation();
 
@@ -52,35 +62,38 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
         }),
         [t],
     );
-    const componentsProps = useMemo(
+    const slotProps: GridSlotsComponentsProps & { pagination: { allRows?: number } } = useMemo(
         () => ({
             pagination: {
                 allRows: data.length,
             },
-            ...passProps.componentsProps,
+            ...passProps.slotProps,
         }),
-        [data.length, passProps.componentsProps],
+        [data.length, passProps.slotProps],
     );
-    const components = useMemo(
+    const slots = useMemo(
         () => ({
-            Pagination: CustomPagination,
-            ...passProps.components,
+            pagination: CustomPagination,
+            ...passProps.slots,
         }),
-        [passProps.components],
+        [passProps.slots],
     );
+
     return (
         <Layout>
             <DataGrid
+                apiRef={apiRef}
                 isRowSelectable={rowSelectable}
                 autoPageSize
                 rows={rows}
+                getRowHeight={() => 50} // In the case of a default 52px row height, there is a problem with correctly resizing the table when the window height changes.
                 loading={loading}
                 localeText={localeText}
                 disableColumnFilter
-                disableSelectionOnClick
+                disableRowSelectionOnClick
                 {...passProps}
-                componentsProps={componentsProps}
-                components={components}
+                slotProps={slotProps}
+                slots={slots}
             />
         </Layout>
     );

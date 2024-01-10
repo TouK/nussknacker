@@ -9,7 +9,7 @@ import Stack from "@mui/material/Stack";
 export function ScenarioCell({ filterText, ...props }: GridRenderCellParams & { filterText: string }): JSX.Element {
     const { row, value } = props;
     return (
-        <CellLink component={ExternalLink} underline="hover" disabled={!value} cellProps={props} href={scenarioHref(row.name)}>
+        <CellLink component={ExternalLink} underline="hover" disabled={!value} href={scenarioHref(row.name)}>
             <Stack direction="row" alignItems="center">
                 <ScenarioAvatar process={row} />
                 <Highlight value={value} filterText={filterText} />

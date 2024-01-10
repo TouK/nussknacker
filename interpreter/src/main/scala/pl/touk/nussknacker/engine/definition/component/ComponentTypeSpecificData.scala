@@ -24,11 +24,15 @@ final case class CustomComponentSpecificData(manyInputs: Boolean, canBeEnding: B
   override def componentType: ComponentType = ComponentType.CustomComponent
 }
 
+case object BuiltInComponentSpecificData extends ComponentTypeSpecificData {
+  override def componentType: ComponentType = ComponentType.BuiltIn
+}
+
 case object GlobalVariablesSpecificData extends ComponentTypeSpecificData {
   override def componentType: ComponentType = ComponentType.BuiltIn
 }
 
-case object FragmentSpecificData extends ComponentTypeSpecificData {
+case class FragmentSpecificData(outputNames: List[String]) extends ComponentTypeSpecificData {
   override def componentType: ComponentType = ComponentType.Fragment
 }
 

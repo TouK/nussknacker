@@ -130,7 +130,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
     ): CombinedProcessingTypeData = {
       CombinedProcessingTypeData(
         statusNameToStateDefinitionsMapping = Map.empty,
-        componentIdProvider = new DefaultComponentIdProvider(Map.empty),
+        componentIdProvider = new DefaultComponentIdProvider({ (_, _) => None }),
         categoryService = ConfigProcessCategoryService(designerConfig.resolved, valueMap.mapValuesNow(_.categoryConfig))
       )
     }

@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{
   BuiltInComponentInfo,
   ComponentId,
   ComponentInfo,
+  ComponentType,
   SingleComponentConfig
 }
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
@@ -137,23 +138,12 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   private val processDetailsWithFragment = displayableToProcess(TestProcessUtil.toDisplayable(processWithFragment))
 
-  private val defaultComponentIdProvider = new DefaultComponentIdProvider(
-    Map(
-      Streaming -> ComponentsUiConfig(
-        Map(
-          otherExistingStreamTransformer -> SingleComponentConfig.zero
-            .copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer)))
-        )
-      ),
-      Fraud -> ComponentsUiConfig(
-        Map(
-          otherExistingStreamTransformer -> SingleComponentConfig.zero.copy(componentId =
-            Some(ComponentId(overriddenOtherExistingStreamTransformer))
-          )
-        )
-      )
-    )
-  )
+  private val defaultComponentIdProvider = new DefaultComponentIdProvider({
+    case (_, ComponentInfo(ComponentType.CustomComponent, `otherExistingStreamTransformer`)) =>
+      Some(SingleComponentConfig.zero.copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer))))
+    case _ =>
+      None
+  })
 
   test("should compute components usage count") {
     val table = Table(
