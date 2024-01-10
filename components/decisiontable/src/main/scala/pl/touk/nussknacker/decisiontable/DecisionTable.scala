@@ -11,10 +11,11 @@ import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularT
 import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.Row
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.lazyparam.EvaluableLazyParameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -52,15 +53,19 @@ object DecisionTable2 extends EagerService with SingleInputGenericNodeTransforma
           Some(DecisionTableComponentState.Initiated)
         ) =>
       NextParameters(
-        parameters = filterDecisionTableExpression(data) :: Nil,
+        parameters = filterDecisionTableExpressionParameter(data) :: Nil,
         errors = List.empty,
         state = Some(DecisionTableComponentState.Configured)
       )
-    case TransformationStep(_, Some(DecisionTableComponentState.Configured)) =>
+    case TransformationStep(
+          (`decisionTableParameterName`, DefinedEagerParameter(data: TabularTypedData, _)) ::
+          (`filterDecisionTableExpressionParameterName`, _) :: Nil,
+          Some(DecisionTableComponentState.Configured)
+        ) =>
       FinalResults.forValidation(context, errors = List.empty)(
         _.withVariable(
           name = OutputVariableNameDependency.extract(dependencies),
-          value = typing.Unknown,
+          value = Typed.fromInstance(data.rows), // todo: do it better
           paramName = None
         )
       )
@@ -72,7 +77,8 @@ object DecisionTable2 extends EagerService with SingleInputGenericNodeTransforma
       finalState: Option[DecisionTableComponentState]
   ): ServiceInvoker =
     new DecisionTableComponentLogic(
-      params(decisionTableParameterName).asInstanceOf[TabularTypedData]
+      params(decisionTableParameterName).asInstanceOf[TabularTypedData],
+      params(filterDecisionTableExpressionParameterName).asInstanceOf[EvaluableLazyParameter[java.lang.Boolean]]
     )
 
   private lazy val decisionTableParameterName = "Basic Decision Table"
@@ -85,15 +91,26 @@ object DecisionTable2 extends EagerService with SingleInputGenericNodeTransforma
       editor = Some(TabularTypedDataEditor)
     )
 
-  private def filterDecisionTableExpression(data: TabularTypedData) =
+  private lazy val filterDecisionTableExpressionParameterName = "Expression"
+
+  private def filterDecisionTableExpressionParameter(data: TabularTypedData) =
     Parameter(
-      "Expression",
+      filterDecisionTableExpressionParameterName,
       Typed[java.lang.Boolean]
     ).copy(
       isLazyParameter = true,
-      additionalVariables = data.columns.map { column =>
-        column.definition.name -> AdditionalVariableProvidedInRuntime(Typed.typedClass(column.definition.aType))
-      }.toMap
+      additionalVariables = Map(
+        "DecisionTable" -> AdditionalVariableProvidedInRuntime(
+          TypedObjectTypingResult(
+            data.columns
+              .map(_.definition)
+              .map { columnDef =>
+                columnDef.name -> Typed.typedClass(columnDef.aType)
+              }
+              .toMap
+          )
+        )
+      )
     )
 
   sealed trait DecisionTableComponentState
@@ -103,7 +120,10 @@ object DecisionTable2 extends EagerService with SingleInputGenericNodeTransforma
     case object Configured extends DecisionTableComponentState
   }
 
-  private class DecisionTableComponentLogic(tabularData: TabularTypedData) extends ServiceInvoker {
+  private class DecisionTableComponentLogic(
+      tabularData: TabularTypedData,
+      filterTabularDataExpression: EvaluableLazyParameter[java.lang.Boolean]
+  ) extends ServiceInvoker {
 
     override def invokeService(params: Map[String, Any])(
         implicit ec: ExecutionContext,
@@ -111,6 +131,7 @@ object DecisionTable2 extends EagerService with SingleInputGenericNodeTransforma
         contextId: ContextId,
         componentUseCase: ComponentUseCase
     ): Future[Any] = Future.successful {
+      filterTabularDataExpression.prepareEvaluator(???)
       ???
     }
 

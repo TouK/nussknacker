@@ -34,9 +34,11 @@ object service {
         componentUseCase: ComponentUseCase
     ): (Map[String, AnyRef], Future[Any]) = {
 
-      val (_, preparedParams) = expressionEvaluator.evaluateParameters(parameters, ctx)
-      val contextId           = ContextId(ctx.id)
-      val collector           = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
+      val preparedParams = Map.empty[String, AnyRef]
+      // todo:
+//      val (_, preparedParams) = expressionEvaluator.evaluateParameters(parameters, ctx)
+      val contextId = ContextId(ctx.id)
+      val collector = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
       (
         preparedParams,
         invoker.invokeService(preparedParams)(

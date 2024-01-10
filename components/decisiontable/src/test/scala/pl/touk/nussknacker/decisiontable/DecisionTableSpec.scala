@@ -36,7 +36,7 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
         "dtResult",
         "decision-table",
         "Basic Decision Table" -> decisionTableJson,
-        "Expression"           -> "#B == 'foo'",
+        "Expression"           -> "#DecisionTable.B == 'foo'",
       )
       .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#dtResult")
 
