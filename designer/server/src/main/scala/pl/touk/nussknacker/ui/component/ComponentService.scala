@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
+import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
@@ -182,15 +183,19 @@ class DefaultComponentService(
       components: Iterable[ComponentListElement]
   ): List[ComponentListElement] = {
     val sameComponentsByComponentId = components.groupBy(_.id)
-    sameComponentsByComponentId.values.map {
-      case head :: Nil => head
-      case components @ (head :: _) =>
-        ComponentsValidator.validateComponents(components)
-        val categories = components.flatMap(_.categories).toList.distinct.sorted
-        // We don't need to validate if deduplicated components has the same attributes, because it is already validated in ComponentsValidator
-        // during processing type data loading
-        head.copy(categories = categories)
-    }.toList
+    sameComponentsByComponentId.values.toList
+      .map {
+        case head :: Nil => Valid(head)
+        case components @ (head :: _) =>
+          ComponentsValidator.validateComponents(components).map { _ =>
+            val categories = components.flatMap(_.categories).toList.distinct.sorted
+            // We don't need to validate if deduplicated components has the same attributes, because it is already validated in ComponentsValidator
+            // during processing type data loading
+            head.copy(categories = categories)
+          }
+      }
+      .sequence
+      .valueOr(errors => throw ComponentConfigurationException(s"Wrong configured components were found.", errors))
   }
 
 }
