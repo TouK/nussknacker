@@ -20,6 +20,9 @@ import pl.touk.nussknacker.engine.graph.node.NodeData._
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{NodeValidationResultDto, UIParameterDto}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.typingResultToDto
 import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareTypingResultDecoder}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
@@ -207,7 +210,35 @@ object NodesResources {
     expressionType: Option[TypingResult],
     validationErrors: List[NodeValidationError],
     validationPerformed: Boolean
-)
+) {
+
+  def toDto(): Dtos.NodeValidationResultDto = {
+    NodeValidationResultDto(
+      parameters = parameters.map { list =>
+        list.map { param =>
+          UIParameterDto(
+            name = param.name,
+            typ = typingResultToDto(param.typ),
+            editor = param.editor,
+            defaultValue = param.defaultValue,
+            additionalVariables = param.additionalVariables.map { case (key, typingResult) =>
+              (key, typingResultToDto(typingResult))
+            },
+            variablesToHide = param.variablesToHide,
+            branchParam = param.branchParam,
+            hintText = param.hintText
+          )
+        }
+      },
+      expressionType = expressionType.map { typingResult =>
+        typingResultToDto(typingResult)
+      },
+      validationErrors = validationErrors,
+      validationPerformed = validationPerformed
+    )
+  }
+
+}
 
 @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
     nodeData: NodeData,
