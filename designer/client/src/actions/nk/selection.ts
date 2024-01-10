@@ -1,5 +1,5 @@
 import NodeUtils from "../../components/graph/NodeUtils";
-import { getProcessToDisplay } from "../../reducers/selectors/graph";
+import { getScenarioGraph } from "../../reducers/selectors/graph";
 import { ThunkAction } from "../reduxTypes";
 import { deleteNodes } from "./node";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
@@ -41,7 +41,7 @@ export function pasteSelection(pasteFunction: Callback): ThunkAction {
 
 export function deleteSelection(selectionState: string[]): ThunkAction {
     return (dispatch, getState) => {
-        const process = getProcessToDisplay(getState());
+        const process = getScenarioGraph(getState());
         const selectedNodes = NodeUtils.getAllNodesById(selectionState, process).map((n) => n.id);
 
         batchGroupBy.startOrContinue();
@@ -83,7 +83,7 @@ export function resetSelection(...nodeIds: string[]): ThunkAction {
 export function selectAll(): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
-        const process = getProcessToDisplay(state);
+        const process = getScenarioGraph(state);
         const nodeIds = process.nodes.map((n) => n.id);
         dispatch(resetSelection(...nodeIds));
     };

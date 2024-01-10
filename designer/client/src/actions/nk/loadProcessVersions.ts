@@ -1,6 +1,5 @@
 import HttpService from "../../http/HttpService";
-import { ProcessName } from "../../types";
-import { ProcessActionType, ProcessVersionType } from "../../components/Process/types";
+import { ProcessActionType, ProcessName, ProcessVersionType } from "../../components/Process/types";
 import { ThunkAction } from "../reduxTypes";
 
 export type LoadProcessVersionsAction = {

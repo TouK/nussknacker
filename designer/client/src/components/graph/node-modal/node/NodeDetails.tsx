@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { editNode } from "../../../../actions/nk";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
-import { getProcessToDisplay } from "../../../../reducers/selectors/graph";
-import { Edge, NodeType, Process } from "../../../../types";
+import { getScenarioGraph } from "../../../../reducers/selectors/graph";
+import { Edge, NodeType, ScenarioGraph } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
 import ErrorBoundary from "../../../common/ErrorBoundary";
 import NodeUtils from "../../NodeUtils";
@@ -25,12 +25,12 @@ function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
 }
 
-interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; process: Process }> {
+interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; process: ScenarioGraph }> {
     readOnly?: boolean;
 }
 
 export function NodeDetails(props: NodeDetailsProps): JSX.Element {
-    const processFromGlobalStore = useSelector(getProcessToDisplay);
+    const processFromGlobalStore = useSelector(getScenarioGraph);
     const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly));
 
     const { node, process = processFromGlobalStore } = props.data.meta;

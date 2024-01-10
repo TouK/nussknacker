@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, routers } from "jointjs";
-import { Edge, EdgeKind, Process, ProcessDefinitionData } from "../../../types";
+import { Edge, EdgeKind, ScenarioGraph, ProcessDefinitionData } from "../../../types";
 import NodeUtils from "../NodeUtils";
 
 const LINK_TEXT_COLOR = "#686868";
@@ -79,7 +79,7 @@ export const defaultRouter: routers.RouterJSON = {
     },
 };
 
-export function getDefaultLinkCreator(arrowMarkerId: string, process: Process, processDefinition: ProcessDefinitionData) {
+export function getDefaultLinkCreator(arrowMarkerId: string, process: ScenarioGraph, processDefinition: ProcessDefinitionData) {
     return (cellView: dia.CellView, magnet: SVGElement) => {
         const isReversed = magnet?.getAttribute("port") === "In";
 

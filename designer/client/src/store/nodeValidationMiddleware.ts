@@ -10,7 +10,7 @@ type ActionType = Action["type"];
 
 const debouncedValidate = debounce(
     (dispatch: ThunkDispatch, getState: () => RootState) =>
-        HttpService.validateProcess(getProcessToDisplayWithUnsavedName(getState())).then(({ data }) =>
+        HttpService.validateProcess(getProcessToDisplayWithUnsavedName(getState()).json).then(({ data }) =>
             dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
         ),
     500,

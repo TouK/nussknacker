@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getFetchedProcessDetails, getGraph, getProcessToDisplay } from "../reducers/selectors/graph";
+import { getProcess, getGraph, getScenarioGraph } from "../reducers/selectors/graph";
 import { isEmpty } from "lodash";
 import { getProcessDefinitionData } from "../reducers/selectors/settings";
 import { getCapabilities } from "../reducers/selectors/other";
@@ -25,7 +25,7 @@ import { DndProvider } from "react-dnd-multi-backend";
 import { useDecodedParams } from "../common/routerUtils";
 import { RootState } from "../reducers";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
-import { ProcessType } from "../components/Process/types";
+import { Process } from "../components/Process/types";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -47,7 +47,7 @@ function useUnmountCleanup() {
 
 function useProcessState(time = 10000) {
     const dispatch = useDispatch();
-    const fetchedProcessDetails = useSelector(getFetchedProcessDetails);
+    const fetchedProcessDetails = useSelector(getProcess);
     const { isFragment, isArchived, name } = fetchedProcessDetails || {};
 
     const fetch = useCallback(() => dispatch(loadProcessState(name)), [dispatch, name]);
@@ -65,8 +65,8 @@ function useProcessState(time = 10000) {
 
 function useCountsIfNeeded() {
     const dispatch = useDispatch();
-    const name = useSelector(getFetchedProcessDetails)?.name;
-    const processToDisplay = useSelector(getProcessToDisplay);
+    const name = useSelector(getProcess)?.name;
+    const processToDisplay = useSelector(getScenarioGraph);
 
     const [searchParams] = useSearchParams();
     const from = searchParams.get("from");
@@ -96,11 +96,11 @@ function Visualization() {
         [dispatch],
     );
 
-    const { graphLoading } = useSelector(getGraph);
-    const fetchedProcessDetails = useSelector(getFetchedProcessDetails);
+    const { scenarioLoading } = useSelector(getGraph);
+    const fetchedProcessDetails = useSelector(getProcess);
     const graphNotReady = useMemo(
-        () => !dataResolved || isEmpty(fetchedProcessDetails) || graphLoading,
-        [dataResolved, fetchedProcessDetails, graphLoading],
+        () => !dataResolved || isEmpty(fetchedProcessDetails) || scenarioLoading,
+        [dataResolved, fetchedProcessDetails, scenarioLoading],
     );
 
     const processDefinitionData = useSelector(getProcessDefinitionData);
@@ -122,8 +122,8 @@ function Visualization() {
 
     const { openNodes } = useModalDetailsIfNeeded();
     const openAndHighlightNodes = useCallback(
-        async (process: ProcessType) => {
-            const windows = await Promise.all(openNodes(process.json));
+        async (process: Process) => {
+            const windows = await Promise.all(openNodes(process));
             windows.map((w) => dispatch(toggleSelection(w.meta.node.id)));
         },
         [dispatch, openNodes],

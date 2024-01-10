@@ -18,7 +18,7 @@ import { handleGraphEvent } from "./utils/graphUtils";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import { rafThrottle } from "./rafThrottle";
 import { isEdgeEditable } from "../../common/EdgeUtils";
-import { NodeId, NodeType, Process, ProcessDefinitionData } from "../../types";
+import { NodeId, NodeType, ScenarioGraph, ProcessDefinitionData } from "../../types";
 import { Layout, NodePosition, Position } from "../../actions/nk";
 import { UserSettings } from "../../reducers/userSettings";
 import User from "../../common/models/User";
@@ -35,7 +35,7 @@ type Props = GraphProps & {
     loggedUser: Partial<User>;
     selectionState: NodeId[];
     userSettings: UserSettings;
-    showModalNodeDetails: (node: NodeType, process: Process, readonly?: boolean) => void;
+    showModalNodeDetails: (node: NodeType, scenarioGraph: ScenarioGraph, readonly?: boolean) => void;
     isPristine?: boolean;
 };
 
@@ -114,7 +114,7 @@ export class Graph extends React.Component<Props> {
         // arrow id from paper is needed, so we have to mutate this
         paper.options.defaultLink = (cellView, magnet) => {
             // actual props are needed when link is created
-            const linkCreator = getDefaultLinkCreator(uniqueArrowMarker, this.props.processToDisplay, this.props.processDefinitionData);
+            const linkCreator = getDefaultLinkCreator(uniqueArrowMarker, this.props.process.json, this.props.processDefinitionData);
             return linkCreator(cellView, magnet);
         };
 
@@ -169,7 +169,7 @@ export class Graph extends React.Component<Props> {
         return linkBelowCell;
     }
 
-    drawGraph = (process: Process, layout: Layout, processDefinitionData: ProcessDefinitionData): void => {
+    drawGraph = (process: ScenarioGraph, layout: Layout, processDefinitionData: ProcessDefinitionData): void => {
         this.redrawing = true;
 
         applyCellChanges(this.processGraphPaper, process, processDefinitionData);
@@ -236,16 +236,16 @@ export class Graph extends React.Component<Props> {
 
     bindEventHandlers(): void {
         const showNodeDetails = (cellView: dia.CellView) => {
-            const { processToDisplay, readonly, nodeIdPrefixForFragmentTests = "" } = this.props;
+            const { process, readonly, nodeIdPrefixForFragmentTests = "" } = this.props;
             const { nodeData, edgeData } = cellView.model.attributes;
             const nodeId = nodeData?.id || (isEdgeEditable(edgeData) ? edgeData.from : null);
             if (nodeId) {
                 this.props.showModalNodeDetails(
                     {
-                        ...NodeUtils.getNodeById(nodeId, processToDisplay),
+                        ...NodeUtils.getNodeById(nodeId, process.json),
                         id: nodeIdPrefixForFragmentTests + nodeId,
                     },
-                    processToDisplay,
+                    process.json,
                     readonly,
                 );
             }
@@ -297,7 +297,7 @@ export class Graph extends React.Component<Props> {
 
     componentDidMount(): void {
         this.processGraphPaper = this.createPaper();
-        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processDefinitionData);
+        this.drawGraph(this.props.process.json, this.props.layout, this.props.processDefinitionData);
         this.processGraphPaper.unfreeze();
         this._prepareContentForExport();
 
@@ -351,17 +351,17 @@ export class Graph extends React.Component<Props> {
     // eslint-disable-next-line react/no-deprecated
     componentWillUpdate(nextProps: Props): void {
         const processChanged =
-            !isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
+            !isEqual(this.props.process.json, nextProps.process.json) ||
             !isEqual(this.props.layout, nextProps.layout) ||
             !isEqual(this.props.processDefinitionData, nextProps.processDefinitionData);
         if (processChanged) {
-            this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processDefinitionData);
+            this.drawGraph(nextProps.process.json, nextProps.layout, nextProps.processDefinitionData);
         }
 
         //when e.g. layout changed we have to remember to highlight nodes
         const selectedNodesChanged = !isEqual(this.props.selectionState, nextProps.selectionState);
         if (processChanged || selectedNodesChanged) {
-            this.highlightNodes(nextProps.selectionState, nextProps.processToDisplay);
+            this.highlightNodes(nextProps.selectionState, nextProps.process);
         }
     }
 
@@ -425,20 +425,20 @@ export class Graph extends React.Component<Props> {
         const from = source.id.toString();
         const to = target.id.toString();
         const previousEdge = linkView.model.attributes.edgeData || {};
-        const { processToDisplay, processDefinitionData } = this.props;
-        return NodeUtils.canMakeLink(from, to, processToDisplay, processDefinitionData, previousEdge);
+        const { process, processDefinitionData } = this.props;
+        return NodeUtils.canMakeLink(from, to, process.json, processDefinitionData, previousEdge);
     };
 
     validateMagnet = ({ model }: dia.CellView, magnet: SVGElement) => {
-        const { processToDisplay, processDefinitionData } = this.props;
-        const from = NodeUtils.getNodeById(model.id.toString(), processToDisplay);
+        const { process, processDefinitionData } = this.props;
+        const from = NodeUtils.getNodeById(model.id.toString(), process.json);
         const port = magnet.getAttribute("port");
         if (port === "Out") {
-            const nodeOutputs = NodeUtils.nodeOutputs(from.id, processToDisplay);
+            const nodeOutputs = NodeUtils.nodeOutputs(from.id, process.json);
             return NodeUtils.canHaveMoreOutputs(from, nodeOutputs, processDefinitionData);
         }
         if (port === "In") {
-            const nodeInputs = NodeUtils.nodeInputs(from.id, processToDisplay);
+            const nodeInputs = NodeUtils.nodeInputs(from.id, process.json);
             return NodeUtils.canHaveMoreInputs(from, nodeInputs, processDefinitionData);
         }
     };
@@ -450,20 +450,20 @@ export class Graph extends React.Component<Props> {
     };
 
     graphContainsEdge(from: NodeId, to: NodeId): boolean {
-        return this.props.processToDisplay.edges.some((edge) => edge.from === from && edge.to === to);
+        return this.props.process.json.edges.some((edge) => edge.from === from && edge.to === to);
     }
 
     handleInjectBetweenNodes = (middleMan: shapes.devs.Model, linkBelowCell?: dia.Link): void => {
         if (this.props.isFragment === true) return;
 
-        const { processToDisplay, injectNode, processDefinitionData } = this.props;
+        const { process, injectNode, processDefinitionData } = this.props;
 
         if (linkBelowCell && middleMan) {
             const { sourceNode, targetNode } = getLinkNodes(linkBelowCell);
             const middleManNode = middleMan.get("nodeData");
 
             const canInjectNode = GraphUtils.canInjectNode(
-                processToDisplay,
+                process.json,
                 sourceNode.id,
                 middleManNode.id,
                 targetNode.id,
@@ -484,7 +484,7 @@ export class Graph extends React.Component<Props> {
         };
     };
 
-    highlightNodes = (selectedNodeIds: string[] = [], process = this.props.processToDisplay): void => {
+    highlightNodes = (selectedNodeIds: string[] = [], process = this.props.process): void => {
         this.processGraphPaper.freeze();
         const elements = this.graph.getElements();
         elements.forEach((cell) => {

@@ -5,7 +5,7 @@ import { EditNodeAction, RenameProcessAction } from "./editNode";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { getProcessToDisplay } from "../../reducers/selectors/graph";
+import { getScenarioGraph } from "../../reducers/selectors/graph";
 
 export type NodesWithPositions = { node: NodeType; position: Position }[];
 
@@ -81,7 +81,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
     return (dispatch, getState) => {
         const state = getState();
         const processDefinitionData = getProcessDefinitionData(state);
-        const processToDisplay = getProcessToDisplay(state);
+        const processToDisplay = getScenarioGraph(state);
 
         batchGroupBy.startOrContinue();
         dispatch({

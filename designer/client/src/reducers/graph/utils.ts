@@ -14,10 +14,10 @@ export function updateAfterNodeDelete(state: GraphState, idToDelete: NodeId) {
     return {
         ...state,
         fetchedProcessDetails: {
-            ...state.fetchedProcessDetails,
+            ...state.process,
             json: {
-                ...state.fetchedProcessDetails.json,
-                nodes: state.fetchedProcessDetails.json.nodes.filter((n) => n.id !== idToDelete),
+                ...state.process.json,
+                nodes: state.process.json.nodes.filter((n) => n.id !== idToDelete),
             },
         },
         layout: state.layout.filter((n) => n.id !== idToDelete),
@@ -48,7 +48,7 @@ export function prepareNewNodesWithLayout(
 ): { layout: NodePosition[]; nodes: NodeType[]; uniqueIds?: NodeId[] } {
     const {
         layout,
-        fetchedProcessDetails: {
+        process: {
             json: { nodes = [] },
         },
     } = state;
@@ -70,10 +70,10 @@ export function prepareNewNodesWithLayout(
 export function addNodesWithLayout(state: GraphState, { nodes, layout }: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
     return {
         ...state,
-        fetchedProcessDetails: {
-            ...state.fetchedProcessDetails,
+        process: {
+            ...state.process,
             json: {
-                ...state.fetchedProcessDetails.json,
+                ...state.process.json,
                 nodes,
             },
         },

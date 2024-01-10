@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import HttpService from "../http/HttpService";
 import { getMetricsSettings } from "../reducers/selectors/settings";
 import { CustomTabWrapper } from "./CustomTabPage";
-import { ProcessName } from "../types";
+import { ProcessName } from "src/components/Process/types";
 
 function useMetricsUrl(processName?: ProcessName): string {
     const [processingType, setProcessingType] = useState("");

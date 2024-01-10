@@ -1,5 +1,5 @@
 import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
-import { getFetchedProcessDetails, getProcessToDisplay } from "../../../../reducers/selectors/graph";
+import { getProcess, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { RootState } from "../../../../reducers";
@@ -13,7 +13,7 @@ export const getScenarioPropertiesConfig = createSelector(
     getProcessDefinitionData,
     (s) => (s.scenarioPropertiesConfig || {}) as ScenarioPropertiesConfig,
 );
-const getNodeResults = createSelector(getProcessToDisplay, (process) => ProcessUtils.getNodeResults(process));
+const getNodeResults = createSelector(getProcess, (process) => ProcessUtils.getNodeResults(process));
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>
     ProcessUtils.findVariablesForBranches(nodeResults),
 );
@@ -47,8 +47,8 @@ export const getNodeExpressionType = createSelector(getExpressionType, getNodeTy
         fields: (type && "fields" in type && type.fields) || nodeTypingInfo(nodeId),
     };
 });
-export const getProcessProperties = createSelector(getProcessToDisplay, (s) => s.properties);
-export const getProcessName = createSelector(getFetchedProcessDetails, (s) => s.name);
+export const getProcessProperties = createSelector(getScenarioGraph, (s) => s.properties);
+export const getProcessName = createSelector(getProcess, (s) => s.name);
 export const getCurrentErrors = createSelector(
     getValidationPerformed,
     getValidationErrors,
@@ -70,10 +70,8 @@ export const getDynamicParameterDefinitions = createSelector(
     },
 );
 
-export const getFindAvailableVariables = createSelector(
-    getComponentsDefinition,
-    getProcessToDisplay,
-    (processDefinition, processToDisplay) => ProcessUtils.findAvailableVariables(processDefinition, processToDisplay),
+export const getFindAvailableVariables = createSelector(getComponentsDefinition, getProcess, (processDefinition, process) =>
+    ProcessUtils.findAvailableVariables(processDefinition, process),
 );
 export const getVariableTypes = createSelector(
     getNodeResults,

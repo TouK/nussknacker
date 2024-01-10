@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/properties.svg";
-import { getProcessToDisplay, getProcessUnsavedNewName, hasError, hasPropertiesErrors } from "../../../../reducers/selectors/graph";
+import { getProcessUnsavedNewName, hasError, hasPropertiesErrors, getProcess } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import NodeUtils from "../../../graph/NodeUtils";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
@@ -12,17 +12,14 @@ function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
     const { openNodeWindow } = useWindows();
     const { disabled } = props;
-    const processToDisplay = useSelector(getProcessToDisplay);
+    const process = useSelector(getProcess);
     const name = useSelector(getProcessUnsavedNewName);
     const propertiesErrors = useSelector(hasPropertiesErrors);
     const errors = useSelector(hasError);
 
-    const processProperties = useMemo(() => NodeUtils.getProcessPropertiesNode(processToDisplay, name), [name, processToDisplay]);
+    const processProperties = useMemo(() => NodeUtils.getProcessPropertiesNode(process, name), [name, process]);
 
-    const onClick = useCallback(
-        () => openNodeWindow(processProperties, processToDisplay),
-        [openNodeWindow, processProperties, processToDisplay],
-    );
+    const onClick = useCallback(() => openNodeWindow(processProperties, process.json), [openNodeWindow, processProperties, process]);
 
     return (
         <ToolbarButton

@@ -4,7 +4,7 @@ import WarningIcon from "@mui/icons-material/Warning";
 import NodeUtils from "../graph/NodeUtils";
 import { groupBy } from "lodash";
 import { LinkStyled } from "./Styled";
-import { NodeType, Process } from "../../types";
+import { NodeType, ScenarioGraph } from "../../types";
 import { styled } from "@mui/material";
 
 interface Warning {
@@ -28,12 +28,12 @@ const StyledWarningIcon = styled(WarningIcon)(
 interface WarningsProps {
     warnings: Warning[];
     showDetails: (event: React.MouseEvent, node: NodeType) => void;
-    currentProcess: Process;
+    scenarioGraph: ScenarioGraph;
 }
 
 const headerMessageByWarningType = new Map([["DisabledNode", "Nodes disabled: "]]);
 
-const Warnings = ({ warnings, showDetails, currentProcess }: WarningsProps) => {
+const Warnings = ({ warnings, showDetails, scenarioGraph }: WarningsProps) => {
     const groupedByType = groupBy(warnings, (warning) => warning.error.typ);
     const separator = ", ";
 
@@ -49,7 +49,7 @@ const Warnings = ({ warnings, showDetails, currentProcess }: WarningsProps) => {
                                 <LinkStyled
                                     key={uuid4()}
                                     to={""}
-                                    onClick={(event) => showDetails(event, NodeUtils.getNodeById(warning.key, currentProcess))}
+                                    onClick={(event) => showDetails(event, NodeUtils.getNodeById(warning.key, scenarioGraph))}
                                 >
                                     <span>{warning.key}</span>
                                     {index < warnings.length - 1 ? separator : null}

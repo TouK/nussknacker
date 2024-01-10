@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/test-with-form.svg";
 import {
     getProcessName,
-    getProcessToDisplay,
+    getScenarioGraph,
     getTestCapabilities,
     getTestParameters,
     isLatestProcessVersion,
@@ -33,7 +33,7 @@ function TestWithFormButton(props: Props) {
     const isRenamed = useSelector(isProcessRenamed);
     const testFormParameters: TestFormParameters[] = useSelector(getTestParameters);
     const scenarioName = useSelector(getProcessName);
-    const processToDisplay = useSelector(getProcessToDisplay);
+    const processToDisplay = useSelector(getScenarioGraph);
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const dispatch = useDispatch();
 

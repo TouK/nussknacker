@@ -1,4 +1,4 @@
-import { ProcessAdditionalFields, ReturnedType } from "./process";
+import { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
 import { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
 
 type Type = "Properties" | "FragmentInput" | string;

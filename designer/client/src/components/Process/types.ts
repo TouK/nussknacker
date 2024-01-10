@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { UnknownRecord, Instant } from "../../types/common";
-import { Process } from "../../types";
+import { ScenarioGraph, ValidationResult } from "../../types";
 
 export enum ActionType {
     Deploy = "DEPLOY",
@@ -37,7 +37,7 @@ export type ProcessVersionType = {
     processVersionId: ProcessVersionId;
 };
 
-export interface ProcessType {
+export interface Process {
     name: string;
     processVersionId: number;
     isArchived: boolean;
@@ -53,9 +53,12 @@ export interface ProcessType {
     lastDeployedAction?: ProcessActionType;
     state: ProcessStateType;
     history?: ProcessVersionType[];
-    json: Process;
+    json: ScenarioGraph;
     processingType: string;
+    validationResult: ValidationResult;
 }
+
+export type ProcessName = Process["name"];
 
 export type ProcessStateType = {
     status: StatusType;

@@ -2,7 +2,7 @@ import { Moment } from "moment";
 import HttpService from "../../http/HttpService";
 import { ThunkAction } from "../reduxTypes";
 import { ProcessCounts } from "../../reducers/graph";
-import { Process } from "../../types";
+import { ScenarioGraph } from "../../types";
 
 export interface DisplayProcessCountsAction {
     processCounts: ProcessCounts;
@@ -16,7 +16,7 @@ export function displayProcessCounts(processCounts: ProcessCounts): DisplayProce
     };
 }
 
-const checkPossibleCountsToCalculate = (processCounts: ProcessCounts, processToDisplay: Process) => {
+const checkPossibleCountsToCalculate = (processCounts: ProcessCounts, processToDisplay: ScenarioGraph) => {
     const processCountsName = Object.keys(processCounts).sort((a, b) => a.localeCompare(b));
     const uncountableNodes = processToDisplay.nodes
         .sort((a, b) => a.id.localeCompare(b.id))
@@ -38,7 +38,7 @@ export function fetchAndDisplayProcessCounts(
     processName: string,
     from: Moment,
     to: Moment,
-    processToDisplay: Process,
+    processToDisplay: ScenarioGraph,
 ): ThunkAction<Promise<DisplayProcessCountsAction>> {
     return (dispatch) => {
         return HttpService.fetchProcessCounts(processName, from, to).then((response) => {

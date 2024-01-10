@@ -1,9 +1,9 @@
 import { defaultsDeep } from "lodash";
 import { Layout } from "../actions/nk";
-import { NodeType, Process } from "../types";
+import { NodeType, ScenarioGraph } from "../types";
 import { Reducer } from "../actions/reduxTypes";
 
-export function fromMeta(process: Process): Layout {
+export function fromMeta(process: ScenarioGraph): Layout {
     return process.nodes
         .filter(({ additionalFields }) => additionalFields?.layoutData)
         .map(({ id, additionalFields }) => ({ id, position: additionalFields.layoutData }));

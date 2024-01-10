@@ -2,7 +2,8 @@ import React from "react";
 import i18next from "i18next";
 import { concat, difference, isEmpty } from "lodash";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
-import { NodeType, Process, NodeValidationError } from "../../../types";
+import { NodeType, ScenarioGraph, NodeValidationError } from "../../../types";
+import { Process } from "src/components/Process/types";
 
 interface NodeErrorsTips {
     propertiesErrors: NodeValidationError[];

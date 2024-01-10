@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { getProcessToDisplay } from "../../../reducers/selectors/graph";
+import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import { Edge, EdgeKind, NodeValidationError, VariableTypes } from "../../../types";
 import { NodeRowFieldsProvider } from "./node-row-fields-provider";
 import { DndItems } from "../../common/dndItems/DndItems";
@@ -66,7 +66,7 @@ function withDefaults<T extends Edge>(edge: Partial<T>): T {
 
 export function EdgesDndComponent(props: Props): JSX.Element {
     const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, errors } = props;
-    const process = useSelector(getProcessToDisplay);
+    const process = useSelector(getScenarioGraph);
     const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => value || process.edges.filter(({ from }) => from === nodeId));
 
     const edgeTypes = useMemo(

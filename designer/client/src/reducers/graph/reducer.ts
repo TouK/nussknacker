@@ -26,8 +26,8 @@ import { correctFetchedDetails } from "./correctFetchedDetails";
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
 const emptyGraphState: GraphState = {
-    graphLoading: false,
-    fetchedProcessDetails: null,
+    scenarioLoading: false,
+    process: null,
     layout: [],
     testCapabilities: null,
     testFormParameters: null,
@@ -42,7 +42,7 @@ export function updateValidationResult(state: GraphState, action: { validationRe
         ...action.validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
         nodeResults: {
-            ...ProcessUtils.getValidationResult(state.fetchedProcessDetails.json).nodeResults,
+            ...ProcessUtils.getValidationResult(state.process).nodeResults,
             ...action.validationResult.nodeResults,
         },
     };
@@ -54,20 +54,20 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "PROCESS_LOADING": {
             return {
                 ...state,
-                graphLoading: true,
+                scenarioLoading: true,
             };
         }
         case "UPDATE_IMPORTED_PROCESS": {
-            const oldNodeIds = sortBy(state.fetchedProcessDetails.json.nodes.map((n) => n.id));
+            const oldNodeIds = sortBy(state.process.json.nodes.map((n) => n.id));
             const newNodeids = sortBy(action.processJson.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
             return {
                 ...state,
-                graphLoading: false,
+                scenarioLoading: false,
                 layout: newLayout,
-                fetchedProcessDetails: {
-                    ...state.fetchedProcessDetails,
+                process: {
+                    ...state.process,
                     json: action.processJson,
                 },
             };
@@ -88,23 +88,23 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             const { fetchedProcessDetails } = action;
             return {
                 ...state,
-                fetchedProcessDetails,
-                graphLoading: false,
+                process: fetchedProcessDetails,
+                scenarioLoading: false,
                 layout: LayoutUtils.fromMeta(fetchedProcessDetails.json),
             };
         }
         case "CORRECT_INVALID_SCENARIO": {
-            const fetchedProcessDetails = correctFetchedDetails(state.fetchedProcessDetails, action.processDefinitionData);
+            const fetchedProcessDetails = correctFetchedDetails(state.process, action.processDefinitionData);
             return {
                 ...state,
-                fetchedProcessDetails,
+                process: fetchedProcessDetails,
             };
         }
         case "ARCHIVED": {
             return {
                 ...state,
-                fetchedProcessDetails: {
-                    ...state.fetchedProcessDetails,
+                process: {
+                    ...state.process,
                     isArchived: true,
                 },
             };
@@ -113,8 +113,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             const { history, lastDeployedAction, lastAction } = action;
             return {
                 ...state,
-                fetchedProcessDetails: {
-                    ...state.fetchedProcessDetails,
+                process: {
+                    ...state.process,
                     history: history,
                     lastDeployedAction: lastDeployedAction,
                     lastAction: lastAction,
@@ -124,7 +124,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "LOADING_FAILED": {
             return {
                 ...state,
-                graphLoading: false,
+                scenarioLoading: false,
             };
         }
         case "CLEAR_PROCESS": {
@@ -136,8 +136,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 layout: newLayout,
-                fetchedProcessDetails: {
-                    ...state.fetchedProcessDetails,
+                process: {
+                    ...state.process,
                     json: { ...action.processAfterChange, validationResult: updateValidationResult(state, action) },
                 },
             };
@@ -154,7 +154,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.fetchedProcessDetails.json, idToDelete);
                 return {
                     ...stateAfterNodeDelete,
-                    fetchedProcessDetails: {
+                    process: {
                         ...stateAfterNodeDelete.fetchedProcessDetails,
                         json: processToDisplay,
                     },
@@ -162,13 +162,13 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             }, state);
         }
         case "NODES_CONNECTED": {
-            const currentEdges = NodeUtils.edgesFromProcess(state.fetchedProcessDetails.json);
+            const currentEdges = NodeUtils.edgesFromScenarioGraph(state.process.json);
             const newEdge = NodeUtils.getEdgeForConnection({
                 fromNode: action.fromNode,
                 toNode: action.toNode,
                 edgeType: action.edgeType,
                 processDefinition: action.processDefinitionData,
-                process: state.fetchedProcessDetails.json,
+                process: state.process.json,
             });
 
             const newEdges = currentEdges.includes(newEdge)
@@ -184,11 +184,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 
             return {
                 ...state,
-                fetchedProcessDetails: {
-                    ...state.fetchedProcessDetails,
+                process: {
+                    ...state.process,
                     json: {
-                        ...state.fetchedProcessDetails.json,
-                        nodes: state.fetchedProcessDetails.json.nodes.map((n) =>
+                        ...state.process.json,
+                        nodes: state.process.json.nodes.map((n) =>
                             action.toNode.id !== n.id ? n : enrichNodeWithProcessDependentData(n, action.processDefinitionData, newEdges),
                         ),
                         edges: newEdges,
@@ -197,14 +197,14 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "NODES_DISCONNECTED": {
-            const nodesToSet = adjustBranchParametersAfterDisconnect(state.fetchedProcessDetails.json.nodes, [action]);
+            const nodesToSet = adjustBranchParametersAfterDisconnect(state.process.json.nodes, [action]);
             return {
                 ...state,
-                fetchedProcessDetails: {
-                    ...state.fetchedProcessDetails,
+                process: {
+                    ...state.process,
                     json: {
-                        ...state.fetchedProcessDetails.json,
-                        edges: state.fetchedProcessDetails.json.edges
+                        ...state.process.json,
+                        edges: state.process.json.edges
                             .map((e) => (e.from === action.from && e.to === action.to ? { ...e, to: "" } : e))
                             .filter(Boolean),
                         nodes: nodesToSet,
@@ -242,15 +242,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
                 const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, action.processDefinitionData);
                 return edges.concat(newEdge);
-            }, state.fetchedProcessDetails.json.edges);
+            }, state.process.json.edges);
 
             const stateWithNodesAdded = addNodesWithLayout(state, { nodes, layout });
             return {
                 ...stateWithNodesAdded,
-                fetchedProcessDetails: {
-                    ...stateWithNodesAdded.fetchedProcessDetails,
+                process: {
+                    ...stateWithNodesAdded.process,
                     json: {
-                        ...stateWithNodesAdded.fetchedProcessDetails.json,
+                        ...stateWithNodesAdded.process.json,
                         edges: updatedEdges,
                     },
                 },
@@ -260,10 +260,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "VALIDATION_RESULT": {
             return {
                 ...state,
-                fetchedProcessDetails: {
-                    ...state.fetchedProcessDetails,
+                process: {
+                    ...state.process,
                     json: {
-                        ...state.fetchedProcessDetails.json,
+                        ...state.process.json,
                         validationResult: updateValidationResult(state, action),
                     },
                 },
@@ -286,7 +286,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testResults: action.testResults,
-                graphLoading: false,
+                scenarioLoading: false,
             };
         }
         case "HIDE_RUN_PROCESS_DETAILS": {
@@ -320,7 +320,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 };
 
 const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
-    fetchedProcessDetails: {
+    process: {
         json: {
             nodes,
         },
@@ -330,16 +330,15 @@ const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
 const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
 const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
 
-const pickKeys: NestedKeyOf<GraphState>[] = ["fetchedProcessDetails", "unsavedNewName", "layout", "selectionState"];
+const pickKeys: NestedKeyOf<GraphState>[] = ["process", "unsavedNewName", "layout", "selectionState"];
 const omitKeys: NestedKeyOf<GraphState>[] = [
-    "fetchedProcessDetails.json.validationResult",
-    "fetchedProcessDetails.lastDeployedAction",
-    "fetchedProcessDetails.lastAction",
-    "fetchedProcessDetails.history",
+    "process.validationResult",
+    "process.lastDeployedAction",
+    "process.lastAction",
+    "process.history",
 ];
 
-const getUndoableState = (state: GraphState) =>
-    omit(pick(state, pickKeys), omitKeys.concat(["fetchedProcessDetails.json.validationResult"]));
+const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["process.validationResult"]));
 const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));
 
 const undoableReducer = undoable<GraphState, Action>(reducer, {

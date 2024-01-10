@@ -1,6 +1,6 @@
 import { useWindows } from "../../windowManager";
 import { useCallback } from "react";
-import { Process } from "../../types";
+import { Process } from "src/components/Process/types";
 import { parseWindowsQueryParams } from "./useSearchQuery";
 import NodeUtils from "../../components/graph/NodeUtils";
 
@@ -25,11 +25,13 @@ export function useModalDetailsIfNeeded() {
     }, []);
 
     const openNodes = useCallback(
-        (scenario: Process) => {
+        (process: Process) => {
             return getNodeIds()
-                .map((id) => NodeUtils.getNodeById(id, scenario) ?? (scenario.name === id && NodeUtils.getProcessPropertiesNode(scenario)))
+                .map(
+                    (id) => NodeUtils.getNodeById(id, process.json) ?? (process.name === id && NodeUtils.getProcessPropertiesNode(process)),
+                )
                 .filter(Boolean)
-                .map((node) => openNodeWindow(node, scenario));
+                .map((node) => openNodeWindow(node, process.json));
         },
         [getNodeIds, openNodeWindow],
     );
@@ -39,9 +41,9 @@ export function useModalDetailsIfNeeded() {
             const prefix = getFragmentNodesPrefix(fragment);
             return getNodeIds()
                 .filter((i) => i.startsWith(prefix))
-                .map((id) => NodeUtils.getNodeById(removePrefix(id, prefix), fragment))
+                .map((id) => NodeUtils.getNodeById(removePrefix(id, prefix), fragment.json))
                 .filter(Boolean)
-                .map((node) => openNodeWindow({ ...node, id: addPrefix(node.id, prefix) }, fragment, true));
+                .map((node) => openNodeWindow({ ...node, id: addPrefix(node.id, prefix) }, fragment.json, true));
         },
         [getNodeIds, openNodeWindow],
     );

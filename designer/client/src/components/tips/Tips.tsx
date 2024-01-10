@@ -4,7 +4,7 @@ import { Scrollbars } from "react-custom-scrollbars";
 import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 import ProcessUtils from "../../common/ProcessUtils";
-import { getProcessToDisplay, getTestResults } from "../../reducers/selectors/graph";
+import { getProcess, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import { useWindows } from "../../windowManager";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
@@ -16,12 +16,12 @@ import { NodeType } from "../../types";
 
 export default function Tips(): JSX.Element {
     const { openNodeWindow } = useWindows();
-    const currentProcess = useSelector(getProcessToDisplay);
+    const currentProcess = useSelector(getProcess);
 
     const showDetails = useCallback(
         (event: React.MouseEvent, node: NodeType) => {
             event.preventDefault();
-            openNodeWindow(node, currentProcess);
+            openNodeWindow(node, currentProcess.json);
         },
         [openNodeWindow, currentProcess],
     );
@@ -49,7 +49,7 @@ export default function Tips(): JSX.Element {
                         <Warnings
                             warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
                             showDetails={showDetails}
-                            currentProcess={currentProcess}
+                            scenarioGraph={currentProcess.json}
                         />
                     )}
                 </Scrollbars>

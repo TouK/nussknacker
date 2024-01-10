@@ -3,7 +3,7 @@ import i18next from "i18next";
 import { SwitchTransition } from "react-transition-group";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
-import { getFetchedProcessDetails, getProcessUnsavedNewName, isProcessRenamed } from "../../../reducers/selectors/graph";
+import { getProcess, getProcessUnsavedNewName, isProcessRenamed } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { getCustomActions } from "../../../reducers/selectors/settings";
 import { CssFade } from "../../CssFade";
@@ -23,7 +23,7 @@ import {
 } from "./ProcessInfoComponents";
 
 const ProcessInfo = memo(({ id, buttonsVariant, children }: ToolbarPanelProps) => {
-    const process = useSelector((state: RootState) => getFetchedProcessDetails(state));
+    const process = useSelector((state: RootState) => getProcess(state));
     const isRenamePending = useSelector((state: RootState) => isProcessRenamed(state));
     const unsavedNewName = useSelector((state: RootState) => getProcessUnsavedNewName(state));
     const processState = useSelector((state: RootState) => getProcessState(state));

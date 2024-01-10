@@ -4,7 +4,7 @@ import { displayProcessActivity } from "./displayProcessActivity";
 import { fetchProcessDefinition } from "./processDefinitionData";
 import { handleHTTPError } from "./errors";
 import { loadProcessToolbarsConfiguration } from "./loadProcessToolbarsConfiguration";
-import { ProcessName } from "../../types";
+import { ProcessName } from "../../components/Process/types";
 
 export function fetchVisualizationData(processName: ProcessName): ThunkAction {
     return async (dispatch) => {

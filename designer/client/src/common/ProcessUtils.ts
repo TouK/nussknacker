@@ -5,7 +5,7 @@ import {
     NodeId,
     NodeResults,
     NodeType,
-    Process,
+    ScenarioGraph,
     ReturnedType,
     TypingResult,
     UIParameter,
@@ -14,30 +14,30 @@ import {
 } from "../types";
 import { RootState } from "../reducers";
 import { isProcessRenamed } from "../reducers/selectors/graph";
+import { Process } from "src/components/Process/types";
 
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
-        const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
-        const savedProcessState =
-            state.graphReducer.history.past[0]?.fetchedProcessDetails || state.graphReducer.history.present.fetchedProcessDetails;
+        const process = state.graphReducer.process;
+        const savedProcessState = state.graphReducer.history.past[0]?.process || state.graphReducer.history.present.process;
 
-        const omitValidation = (details: Process) => omit(details, ["validationResult"]);
+        const omitValidation = (details: ScenarioGraph) => omit(details, ["validationResult"]);
         const processRenamed = isProcessRenamed(state);
 
         if (processRenamed) {
             return false;
         }
 
-        if (isEmpty(fetchedProcessDetails)) {
+        if (isEmpty(process)) {
             return true;
         }
 
-        return !savedProcessState || isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(savedProcessState.json));
+        return !savedProcessState || isEqual(omitValidation(process.json), omitValidation(savedProcessState.json));
     };
 
     canExport = (state: RootState): boolean => {
-        const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
-        return isEmpty(fetchedProcessDetails) ? false : !isEmpty(fetchedProcessDetails.json.nodes);
+        const process = state.graphReducer.process;
+        return isEmpty(process) ? false : !isEmpty(process.json.nodes);
     };
 
     //fixme maybe return hasErrors flag from backend?
@@ -126,7 +126,7 @@ class ProcessUtils {
     ): VariableTypes => {
         const previousNodes = this._findPreviousNodes(nodeId, process);
         const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
-            return this._findVariablesDefinedInProcess(nodeId, process, components);
+            return this._findVariablesDefinedInProcess(nodeId, process.json, components);
         });
         return this._listOfObjectsToObject(variablesDefinedBeforeNodeList);
     };
@@ -139,7 +139,7 @@ class ProcessUtils {
 
     _findVariablesDefinedInProcess = (
         nodeId: NodeId,
-        process: Process,
+        process: ScenarioGraph,
         components: Record<string, ComponentDefinition>,
     ): Record<string, ReturnedType>[] => {
         const node = process.nodes.find((node) => node.id === nodeId);
@@ -278,7 +278,7 @@ class ProcessUtils {
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
     _findPreviousNodes = (nodeId: NodeId, process: Process): NodeId[] => {
-        const nodeEdge = process.edges.find((edge) => edge.to === nodeId);
+        const nodeEdge = process.json.edges.find((edge) => edge.to === nodeId);
         if (isEmpty(nodeEdge)) {
             return [];
         } else {

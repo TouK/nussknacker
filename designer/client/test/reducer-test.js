@@ -114,7 +114,7 @@ const reduceAll = (actions) => actions.reduce((state, action) => reducer(state, 
 
 describe("Reducer suite", () => {
     it("Display process", () => {
-        expect(baseStateWithProcess.graphReducer.fetchedProcessDetails.name).toEqual(baseProcessState.name);
+        expect(baseStateWithProcess.process.process.name).toEqual(baseProcessState.name);
     });
 });
 
@@ -148,7 +148,7 @@ describe("Nodes added", () => {
             },
         ]);
 
-        expect(NodeUtils.getNodeById(testNode.id, result.graphReducer.fetchedProcessDetails.json)).toEqual(testNode);
+        expect(NodeUtils.getNodeById(testNode.id, result.graphReducer.process.json)).toEqual(testNode);
         expect(result.graphReducer.layout.find((n) => n.id === testNode.id).position).toEqual(testPosition);
     });
 
@@ -161,7 +161,7 @@ describe("Nodes added", () => {
             },
         ]);
 
-        expect(NodeUtils.getNodeById("kafka-transaction 1", result.graphReducer.fetchedProcessDetails.json)).toEqual({
+        expect(NodeUtils.getNodeById("kafka-transaction 1", result.graphReducer.process.json)).toEqual({
             ...testNode,
             id: "kafka-transaction 1",
         });
@@ -186,11 +186,11 @@ describe("Nodes added", () => {
             },
         ]);
 
-        expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", result.graphReducer.fetchedProcessDetails.json)).toEqual({
+        expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", result.graphReducer.process.json)).toEqual({
             ...testNode,
             id: "kafka-transaction (copy 1)",
         });
-        expect(NodeUtils.getNodeById("kafka-transaction (copy 2)", result.graphReducer.fetchedProcessDetails.json)).toEqual({
+        expect(NodeUtils.getNodeById("kafka-transaction (copy 2)", result.graphReducer.process.json)).toEqual({
             ...testNode,
             id: "kafka-transaction (copy 2)",
         });
@@ -217,12 +217,12 @@ describe("Nodes added", () => {
             },
         ]);
 
-        expect(NodeUtils.getNodeById("newNode", result.graphReducer.fetchedProcessDetails.json)).toEqual({ ...testNode, id: "newNode" });
-        expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", result.graphReducer.fetchedProcessDetails.json)).toEqual({
+        expect(NodeUtils.getNodeById("newNode", result.graphReducer.process.json)).toEqual({ ...testNode, id: "newNode" });
+        expect(NodeUtils.getNodeById("kafka-transaction (copy 1)", result.graphReducer.process.json)).toEqual({
             ...testNode,
             id: "kafka-transaction (copy 1)",
         });
-        expect(NodeUtils.getEdgeById("newNode-kafka-transaction (copy 1)", result.graphReducer.fetchedProcessDetails.json)).toEqual({
+        expect(NodeUtils.getEdgeById("newNode-kafka-transaction (copy 1)", result.graphReducer.process.json)).toEqual({
             from: "newNode",
             to: "kafka-transaction (copy 1)",
         });

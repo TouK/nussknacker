@@ -1,16 +1,16 @@
 import { ThunkAction } from "../reduxTypes";
-import { Process, ProcessDefinitionData, ProcessName } from "../../types";
+import { ScenarioGraph, ProcessDefinitionData } from "../../types";
 import HttpService from "./../../http/HttpService";
-import { ProcessType, ProcessVersionId } from "../../components/Process/types";
+import { Process, ProcessName, ProcessVersionId } from "../../components/Process/types";
 import { displayProcessActivity } from "./displayProcessActivity";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
-    | { type: "DISPLAY_PROCESS"; fetchedProcessDetails: ProcessType };
+    | { type: "DISPLAY_PROCESS"; fetchedProcessDetails: Process };
 
-export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<ProcessType>> {
+export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Process>> {
     return (dispatch) => {
         dispatch({ type: "PROCESS_FETCH" });
 
@@ -35,7 +35,7 @@ export function loadProcessState(processName: ProcessName): ThunkAction {
         );
 }
 
-export function fetchTestFormParameters(processDetails: Process) {
+export function fetchTestFormParameters(processDetails: ScenarioGraph) {
     return (dispatch) =>
         HttpService.getTestFormParameters(processDetails).then(({ data }) => {
             dispatch({
@@ -45,7 +45,7 @@ export function fetchTestFormParameters(processDetails: Process) {
         });
 }
 
-export function displayTestCapabilities(processDetails: Process) {
+export function displayTestCapabilities(processDetails: ScenarioGraph) {
     return (dispatch) =>
         HttpService.getTestCapabilities(processDetails).then(({ data }) =>
             dispatch({

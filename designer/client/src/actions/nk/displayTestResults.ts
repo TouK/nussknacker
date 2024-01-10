@@ -1,11 +1,12 @@
 import HttpService, { SourceWithParametersTest, TestProcessResponse } from "../../http/HttpService";
 import { displayProcessCounts } from "./displayProcessCounts";
 import { TestResults } from "../../common/TestResultUtils";
-import { Expression, Process, ProcessName } from "../../types";
+import { ScenarioGraph } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
+import { ProcessName } from "src/components/Process/types";
 
-export function testProcessFromFile(processName: ProcessName, testDataFile: File, process: Process): ThunkAction {
+export function testProcessFromFile(processName: ProcessName, testDataFile: File, process: ScenarioGraph): ThunkAction {
     return (dispatch) => {
         dispatch({
             type: "PROCESS_LOADING",
@@ -18,7 +19,11 @@ export function testProcessFromFile(processName: ProcessName, testDataFile: File
     };
 }
 
-export function testProcessWithParameters(processName: ProcessName, testData: SourceWithParametersTest, process: Process): ThunkAction {
+export function testProcessWithParameters(
+    processName: ProcessName,
+    testData: SourceWithParametersTest,
+    process: ScenarioGraph,
+): ThunkAction {
     return (dispatch) => {
         dispatch({
             type: "PROCESS_LOADING",
@@ -31,7 +36,7 @@ export function testProcessWithParameters(processName: ProcessName, testData: So
     };
 }
 
-export function testScenarioWithGeneratedData(processName: ProcessName, testSampleSize: string, process: Process): ThunkAction {
+export function testScenarioWithGeneratedData(processName: ProcessName, testSampleSize: string, process: ScenarioGraph): ThunkAction {
     return (dispatch) => {
         dispatch({
             type: "PROCESS_LOADING",

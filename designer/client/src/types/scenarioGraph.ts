@@ -2,24 +2,19 @@ import { EditorProps } from "../components/graph/node-modal/editors/expression/E
 import { TypingResult, UIParameter } from "./definition";
 import { Edge, EdgeType } from "./edge";
 import { NodeType, PropertiesType } from "./node";
-import { ValidationResult } from "./validation";
 import { ComponentGroup, SingleComponentConfig } from "./component";
 import { ProcessingType } from "../actions/nk";
 import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioProperty";
 import { FixedValuesOption } from "../components/graph/node-modal/fragment-input-definition/item";
 
-export type Process = {
+export type ScenarioGraph = {
     id: string;
-    name: string;
     nodes: NodeType[];
     edges: Edge[];
     properties: PropertiesType;
-    validationResult: ValidationResult;
     processingType?: ProcessingType;
     category?: string; // optional - see the comment for a field with the same name in DisplayableProcess.scala
 };
-
-export type ProcessName = Process["name"];
 
 export type Category = string;
 

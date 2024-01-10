@@ -1,6 +1,6 @@
 import { Edge, EdgeKind, NodeValidationError, VariableTypes } from "../../../types";
 import { useSelector } from "react-redux";
-import { getProcessToDisplay } from "../../../reducers/selectors/graph";
+import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { NodeValue } from "./node";
 import { EdgeTypeOption, EdgeTypeSelect } from "./EdgeTypeSelect";
@@ -29,7 +29,7 @@ interface Props {
 export function EdgeFields(props: Props): JSX.Element {
     const { t } = useTranslation();
     const { readOnly, value, index, onChange, edges, types, variableTypes, fieldErrors } = props;
-    const process = useSelector(getProcessToDisplay);
+    const process = useSelector(getScenarioGraph);
     const processDefinitionData = useSelector(getProcessDefinitionData);
 
     const [edge, setEdge] = useState(value);
