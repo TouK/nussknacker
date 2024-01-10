@@ -4,14 +4,14 @@ import { useDispatch, useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/unarchive.svg";
 import * as DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
-import { getProcessName, isArchived } from "../../../../reducers/selectors/graph";
+import { getScenarioName, isArchived } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
 
 function UnArchiveButton({ disabled }: ToolbarButtonProps) {
-    const processName = useSelector(getProcessName);
+    const processName = useSelector(getScenarioName);
     const archived = useSelector(isArchived);
     const available = !disabled || !archived;
     const { t } = useTranslation();

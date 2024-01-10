@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { useDiffMark } from "./PathsToMark";
 import { NodeType, NodeValidationError } from "../../../types";
 import { useSelector } from "react-redux";
-import { getProcessNodesIds } from "../../../reducers/selectors/graph";
+import { getScenarioNodesIds } from "../../../reducers/selectors/graph";
 import NodeUtils from "../NodeUtils";
 import { isEmpty } from "lodash";
 
@@ -28,7 +28,7 @@ export function applyIdFromFakeName({ id, ...editedNode }: NodeType & { [FAKE_NA
 }
 
 export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showValidation, errors }: IdFieldProps): JSX.Element {
-    const nodes = useSelector(getProcessNodesIds);
+    const nodes = useSelector(getScenarioNodesIds);
     const otherNodes = useMemo(() => nodes.filter((n) => n !== node.id), [node.id, nodes]);
 
     const [isMarked] = useDiffMark();

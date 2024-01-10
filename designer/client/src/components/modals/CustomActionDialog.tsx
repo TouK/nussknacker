@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../actions/nk";
 import HttpService from "../../http/HttpService";
-import { getProcessName } from "../../reducers/selectors/graph";
+import { getScenarioName } from "../../reducers/selectors/graph";
 import { CustomAction } from "../../types";
 import { UnknownRecord } from "../../types/common";
 import { WindowContent } from "../../windowManager";
@@ -72,7 +72,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
 }
 
 export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomAction>): JSX.Element {
-    const processName = useSelector(getProcessName);
+    const processName = useSelector(getScenarioName);
     const dispatch = useDispatch();
     const action = props.data.meta;
     const [validationError, setValidationError] = useState("");

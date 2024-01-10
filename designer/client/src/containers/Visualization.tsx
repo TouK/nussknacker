@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getProcess, getGraph, getScenarioGraph } from "../reducers/selectors/graph";
+import { getScenario, getGraph, getScenarioGraph } from "../reducers/selectors/graph";
 import { isEmpty } from "lodash";
 import { getProcessDefinitionData } from "../reducers/selectors/settings";
 import { getCapabilities } from "../reducers/selectors/other";
@@ -47,7 +47,7 @@ function useUnmountCleanup() {
 
 function useProcessState(time = 10000) {
     const dispatch = useDispatch();
-    const fetchedProcessDetails = useSelector(getProcess);
+    const fetchedProcessDetails = useSelector(getScenario);
     const { isFragment, isArchived, name } = fetchedProcessDetails || {};
 
     const fetch = useCallback(() => dispatch(loadProcessState(name)), [dispatch, name]);
@@ -65,7 +65,7 @@ function useProcessState(time = 10000) {
 
 function useCountsIfNeeded() {
     const dispatch = useDispatch();
-    const name = useSelector(getProcess)?.name;
+    const name = useSelector(getScenario)?.name;
     const processToDisplay = useSelector(getScenarioGraph);
 
     const [searchParams] = useSearchParams();
@@ -97,7 +97,7 @@ function Visualization() {
     );
 
     const { scenarioLoading } = useSelector(getGraph);
-    const fetchedProcessDetails = useSelector(getProcess);
+    const fetchedProcessDetails = useSelector(getScenario);
     const graphNotReady = useMemo(
         () => !dataResolved || isEmpty(fetchedProcessDetails) || scenarioLoading,
         [dataResolved, fetchedProcessDetails, scenarioLoading],

@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/migrate.svg";
 import * as DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
-import { getProcessName, getProcessVersionId, isMigrationPossible } from "../../../../reducers/selectors/graph";
+import { getScenarioName, getScenarioVersionId, isMigrationPossible } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings, getTargetEnvironmentId } from "../../../../reducers/selectors/settings";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
@@ -15,8 +15,8 @@ type Props = ToolbarButtonProps;
 
 function MigrateButton(props: Props) {
     const { disabled } = props;
-    const processName = useSelector(getProcessName);
-    const versionId = useSelector(getProcessVersionId);
+    const processName = useSelector(getScenarioName);
+    const versionId = useSelector(getScenarioVersionId);
     const featuresSettings = useSelector(getFeatureSettings);
     const migrationPossible = useSelector(isMigrationPossible);
     const targetEnvironmentId = useSelector(getTargetEnvironmentId);

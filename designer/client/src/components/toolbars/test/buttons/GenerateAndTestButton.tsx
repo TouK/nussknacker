@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/generate-and-test.svg";
-import { getTestCapabilities, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
+import { getTestCapabilities, isLatestScenarioVersion } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
@@ -14,7 +14,7 @@ function GenerateAndTestButton(props: Props) {
     const { disabled } = props;
     const { t } = useTranslation();
     const testCapabilities = useSelector(getTestCapabilities);
-    const processIsLatestVersion = useSelector(isLatestProcessVersion);
+    const processIsLatestVersion = useSelector(isLatestScenarioVersion);
     const available = !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canGenerateTestData;
     const { open } = useWindows();
 

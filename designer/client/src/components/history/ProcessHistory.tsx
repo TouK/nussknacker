@@ -3,14 +3,14 @@ import { Scrollbars } from "react-custom-scrollbars";
 import { useDispatch, useSelector } from "react-redux";
 import { displayScenarioVersion } from "../../actions/nk/process";
 import { unsavedProcessChanges } from "../../common/DialogMessages";
-import { getProcess, isSaveDisabled } from "../../reducers/selectors/graph";
+import { getScenario, isSaveDisabled } from "../../reducers/selectors/graph";
 import { useWindows } from "../../windowManager";
 import { HistoryItem, VersionType } from "./HistoryItem";
 import { ProcessVersionType } from "../Process/types";
 import { ProcessHistoryWrapper, TrackVertical } from "./StyledHistory";
 
 export function ProcessHistoryComponent(props: { isReadOnly?: boolean }): JSX.Element {
-    const processDetails = useSelector(getProcess);
+    const processDetails = useSelector(getScenario);
     const { history = [], lastDeployedAction, name, processVersionId } = processDetails || {};
     const nothingToSave = useSelector(isSaveDisabled);
     const selectedVersion = useMemo(() => history.find((v) => v.processVersionId === processVersionId), [history, processVersionId]);

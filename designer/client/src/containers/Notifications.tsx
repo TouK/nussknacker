@@ -11,7 +11,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DangerousIcon from "@mui/icons-material/Dangerous";
 import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
 import { displayProcessActivity, loadProcessState } from "../actions/nk";
-import { getProcessName } from "../reducers/selectors/graph";
+import { getScenarioName } from "../reducers/selectors/graph";
 import { loadProcessVersions } from "../actions/nk/loadProcessVersions";
 import { useChangeConnectionError } from "./connectionErrorProvider";
 import i18next from "i18next";
@@ -93,7 +93,7 @@ export function Notifications(): JSX.Element {
 
     useEffect(() => HttpService.setNotificationActions(bindActionCreators(NotificationActions, dispatch)));
 
-    const currentScenarioName = useSelector(getProcessName);
+    const currentScenarioName = useSelector(getScenarioName);
 
     const refresh = useCallback(() => {
         HttpService.loadBackendNotifications()

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addComment, deleteComment } from "../../actions/nk";
-import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+import { getScenarioName, getScenarioVersionId } from "../../reducers/selectors/graph";
 import CommentInput from "./CommentInput";
 import { useWindows } from "../../windowManager";
 import * as DialogMessages from "../../common/DialogMessages";
@@ -15,8 +15,8 @@ function ProcessComments(): JSX.Element {
     const dispatch = useDispatch();
     const { confirm } = useWindows();
 
-    const processName = useSelector(getProcessName);
-    const processVersionId = useSelector(getProcessVersionId);
+    const processName = useSelector(getScenarioName);
+    const processVersionId = useSelector(getScenarioVersionId);
     const capabilities = useSelector(getCapabilities);
 
     const _deleteComment = useCallback(

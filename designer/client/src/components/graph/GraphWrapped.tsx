@@ -3,7 +3,7 @@ import { useWindows } from "../../windowManager";
 import { Graph } from "./Graph";
 import { useSelector } from "react-redux";
 import { getUserSettings } from "../../reducers/selectors/userSettings";
-import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
+import { getScenarioCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
 import { getLoggedUser, getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { GraphProps } from "./types";
 
@@ -12,7 +12,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const { openNodeWindow } = useWindows();
     const userSettings = useSelector(getUserSettings);
     const pristine = useSelector(isPristine);
-    const processCategory = useSelector(getProcessCategory);
+    const processCategory = useSelector(getScenarioCategory);
     const loggedUser = useSelector(getLoggedUser);
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const selectionState = useSelector(getSelectionState);

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/stop.svg";
 import HttpService from "../../../../http/HttpService";
-import { getProcessName, isCancelPossible } from "../../../../reducers/selectors/graph";
+import { getScenarioName, isCancelPossible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager/WindowKind";
@@ -17,7 +17,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
     const dispatch = useDispatch();
     const { disabled } = props;
     const cancelPossible = useSelector(isCancelPossible);
-    const processName = useSelector(getProcessName);
+    const processName = useSelector(getScenarioName);
     const capabilities = useSelector(getCapabilities);
     const available = !disabled && cancelPossible && capabilities.deploy;
 
