@@ -479,6 +479,12 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
       security:
       - httpAuth: []
   /api/nodess/{processName}/validation:
@@ -533,6 +539,12 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
       security:
       - httpAuth: []
   /api/parameterss/{processingType}/suggestions:
@@ -589,6 +601,12 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
       security:
       - httpAuth: []
   /api/parameterss/{processingType}/validate:
@@ -643,6 +661,12 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
       security:
       - httpAuth: []
   /api/propertiess/{processName}/additionalInfo:
@@ -697,6 +721,12 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
       security:
       - httpAuth: []
   /api/propertiess/{processName}/validation:
@@ -751,6 +781,12 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
       security:
       - httpAuth: []
   /api/notifications:

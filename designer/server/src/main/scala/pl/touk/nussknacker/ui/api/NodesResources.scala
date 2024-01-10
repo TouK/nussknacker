@@ -114,7 +114,8 @@ class NodesResources(
                 NodesResources.prepareParametersValidationDecoder(modelData)
               entity(as[ParametersValidationRequest]) { parametersToValidate =>
                 complete {
-                  val validator         = typeToParametersValidator.forTypeUnsafe(processingType)
+                  val validator = typeToParametersValidator.forTypeUnsafe(processingType)
+                  println(parametersToValidate)
                   val validationResults = validator.validate(parametersToValidate)
                   ParametersValidationResult(validationErrors = validationResults, validationPerformed = true)
                 }
