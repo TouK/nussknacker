@@ -19,16 +19,19 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
+import scala.concurrent.ExecutionContext
+
 class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   // TODO: tests for user privileges
   private implicit val user: LoggedUser = AdminUser("admin", "admin")
+  private val ec: ExecutionContext      = ExecutionContext.global
 
   test("should perform test migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(1, 2))
     val process       = wrapWithDetails(validDisplayableProcess)
 
-    val results = testMigration.testMigrations(List(process), List(), 1)
+    val results = testMigration.testMigrations(List(process), List(), ec)
 
     results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
   }
@@ -37,7 +40,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(8))
     val process       = wrapWithDetails(multipleSourcesValidProcess)
 
-    val results = testMigration.testMigrations(List(process), List(), 1)
+    val results = testMigration.testMigrations(List(process), List(), ec)
 
     results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
   }
@@ -46,7 +49,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(6))
     val process       = wrapWithDetails(validDisplayableProcess)
 
-    val results = testMigration.testMigrations(List(process), List(), 1)
+    val results = testMigration.testMigrations(List(process), List(), ec)
 
     results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
   }
@@ -55,7 +58,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 3))
     val process       = wrapWithDetails(validDisplayableProcess)
 
-    val results = testMigration.testMigrations(List(process), List(), 1)
+    val results = testMigration.testMigrations(List(process), List(), ec)
 
     errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
   }
@@ -64,7 +67,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(9))
     val process       = wrapWithDetails(multipleSourcesValidProcess)
 
-    val results = testMigration.testMigrations(List(process), List(), 1)
+    val results = testMigration.testMigrations(List(process), List(), ec)
 
     errorTypes(results.head.newErrors) shouldBe Map(
       "source1" -> List(classOf[RedundantParameters].getSimpleName),
@@ -76,7 +79,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
     val process       = wrapWithDetails(validDisplayableProcess)
 
-    val results = testMigration.testMigrations(List(process), List(), 1)
+    val results = testMigration.testMigrations(List(process), List(), ec)
 
     errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
   }
@@ -97,7 +100,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val validationResult = flinkProcessValidator.validate(invalidProcess)
     val process          = wrapWithDetails(invalidProcess, validationResult)
 
-    val results = testMigration.testMigrations(List(process), List(), 1)
+    val results = testMigration.testMigrations(List(process), List(), ec)
 
     errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
   }
@@ -114,7 +117,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
           .emptySink("sink", existingSinkFactory)
       )
 
-    val results = testMigration.testMigrations(List(wrapWithDetails(process)), List(wrapWithDetails(fragment)), 1)
+    val results = testMigration.testMigrations(List(wrapWithDetails(process)), List(wrapWithDetails(fragment)), ec)
 
     results should have size 2
   }
@@ -139,7 +142,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val results = testMigration.testMigrations(
       List(wrapWithDetails(process)),
       List(wrapWithDetails(fragment).copy(modelVersion = Some(10))),
-      1
+      ec
     )
 
     val processMigrationResult = results.find(_.processName == process.name).get
