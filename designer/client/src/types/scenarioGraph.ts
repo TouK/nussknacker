@@ -3,17 +3,15 @@ import { TypingResult, UIParameter } from "./definition";
 import { Edge, EdgeType } from "./edge";
 import { NodeType, PropertiesType } from "./node";
 import { ComponentGroup, SingleComponentConfig } from "./component";
-import { ProcessingType } from "../actions/nk";
 import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioProperty";
 import { FixedValuesOption } from "../components/graph/node-modal/fragment-input-definition/item";
+import { ProcessingType } from "../actions/nk";
 
 export type ScenarioGraph = {
     id: string;
     nodes: NodeType[];
     edges: Edge[];
     properties: PropertiesType;
-    processingType?: ProcessingType;
-    category?: string; // optional - see the comment for a field with the same name in DisplayableProcess.scala
 };
 
 export type Category = string;

@@ -13,6 +13,6 @@ export function generateUUIDs(editedNode: NodeType, properties: string[]): NodeT
     return node;
 }
 
-export function getNodeId(process: Scenario, node: NodeType): string {
-    return process.json.properties.isFragment ? node.id.replace(`${process.name}-`, "") : node.id;
+export function getNodeId(scenario: Scenario, node: NodeType): string {
+    return scenario.json.properties.isFragment ? node.id.replace(`${scenario.name}-`, "") : node.id;
 }

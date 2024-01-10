@@ -5,7 +5,7 @@ import { NodeValidationError } from "../../../types";
 import { Props } from "./Errors";
 import { NodeErrorsTips } from "./NodeErrorsTips";
 
-export const ErrorTips = ({ errors, showDetails, currentProcess }: Props) => {
+export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {
     const globalErrors = errors.globalErrors;
     const nodeErrors = errors.invalidNodes;
     const propertiesErrors = errors.processPropertiesErrors;
@@ -25,7 +25,7 @@ export const ErrorTips = ({ errors, showDetails, currentProcess }: Props) => {
                 propertiesErrors={errors.processPropertiesErrors}
                 nodeErrors={errors.invalidNodes}
                 showDetails={showDetails}
-                currentProcess={currentProcess}
+                scenario={scenario}
             />
         </div>
     );

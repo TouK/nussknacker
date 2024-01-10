@@ -16,9 +16,9 @@ export function displayProcessCounts(processCounts: ProcessCounts): DisplayProce
     };
 }
 
-const checkPossibleCountsToCalculate = (processCounts: ProcessCounts, processToDisplay: ScenarioGraph) => {
+const checkPossibleCountsToCalculate = (processCounts: ProcessCounts, scenarioGraph: ScenarioGraph) => {
     const processCountsName = Object.keys(processCounts).sort((a, b) => a.localeCompare(b));
-    const uncountableNodes = processToDisplay.nodes
+    const uncountableNodes = scenarioGraph.nodes
         .sort((a, b) => a.id.localeCompare(b.id))
         .filter((node, index) => node.id !== processCountsName[index]);
     const newProcessCounts = { ...processCounts };
@@ -38,11 +38,11 @@ export function fetchAndDisplayProcessCounts(
     processName: string,
     from: Moment,
     to: Moment,
-    processToDisplay: ScenarioGraph,
+    scenarioGraph: ScenarioGraph,
 ): ThunkAction<Promise<DisplayProcessCountsAction>> {
     return (dispatch) => {
         return HttpService.fetchProcessCounts(processName, from, to).then((response) => {
-            const newProcessCounts = checkPossibleCountsToCalculate(response.data, processToDisplay);
+            const newProcessCounts = checkPossibleCountsToCalculate(response.data, scenarioGraph);
             return dispatch(displayProcessCounts(newProcessCounts));
         });
     };

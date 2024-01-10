@@ -10,20 +10,21 @@ import { getProcessState } from "./scenarioState";
 
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
-export const getProcess = createSelector(getGraph, (g) => g.scenario);
+export const getScenario = createSelector(getGraph, (g) => g.scenario);
 export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.json || ({} as ScenarioGraph));
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
-export const getProcessName = createSelector(getProcess, (d) => d?.name);
+export const getProcessName = createSelector(getScenario, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);
-export const getProcessVersionId = createSelector(getProcess, (d) => d?.processVersionId);
-export const getProcessCategory = createSelector(getProcess, (d) => d?.processCategory || "");
-export const isLatestProcessVersion = createSelector(getProcess, (d) => d?.isLatestVersion);
+export const getProcessVersionId = createSelector(getScenario, (d) => d?.processVersionId);
+export const getProcessCategory = createSelector(getScenario, (d) => d?.processCategory || "");
+export const getProcessingType = createSelector(getScenario, (d) => d?.processingType);
+export const isLatestProcessVersion = createSelector(getScenario, (d) => d?.isLatestVersion);
 export const isFragment = createSelector(getScenarioGraph, (p) => p.properties?.isFragment);
-export const isArchived = createSelector(getProcess, (p) => p?.isArchived);
+export const isArchived = createSelector(getScenario, (p) => p?.isArchived);
 export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state);
-export const hasError = createSelector(getProcess, (p) => !ProcessUtils.hasNoErrors(p));
-export const hasWarnings = createSelector(getProcess, (p) => !ProcessUtils.hasNoWarnings(p));
-export const hasPropertiesErrors = createSelector(getProcess, (p) => !ProcessUtils.hasNoPropertiesErrors(p));
+export const hasError = createSelector(getScenario, (p) => !ProcessUtils.hasNoErrors(p));
+export const hasWarnings = createSelector(getScenario, (p) => !ProcessUtils.hasNoWarnings(p));
+export const hasPropertiesErrors = createSelector(getScenario, (p) => !ProcessUtils.hasNoPropertiesErrors(p));
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
@@ -36,7 +37,7 @@ export const isProcessRenamed = createSelector(
     (currentName, unsavedNewName) => unsavedNewName && unsavedNewName !== currentName,
 );
 export const getProcessToDisplayWithUnsavedName = createSelector(
-    [getProcess, getProcessUnsavedNewName, isProcessRenamed],
+    [getScenario, getProcessUnsavedNewName, isProcessRenamed],
     (process, unsavedName, isProcessRenamed) => ({ ...process, name: isProcessRenamed ? unsavedName : process.name }),
 );
 
@@ -63,7 +64,7 @@ export const getShowRunProcessDetails = createSelector(
     (testResults, processCounts) => testResults || processCounts,
 );
 
-export const getVersions = createSelector(getProcess, (details) => details?.history || []);
+export const getVersions = createSelector(getScenario, (details) => details?.history || []);
 export const hasOneVersion = createSelector(getVersions, (h) => h.length <= 1);
 export const getAdditionalFields = createSelector(getScenarioGraph, (p) => p.properties?.additionalFields);
 

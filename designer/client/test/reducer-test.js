@@ -107,7 +107,7 @@ const baseState = reducer(
 
 const baseStateWithProcess = reducer(baseState, {
     type: "DISPLAY_PROCESS",
-    fetchedProcessDetails: baseProcessState,
+    scenario: baseProcessState,
 });
 
 const reduceAll = (actions) => actions.reduce((state, action) => reducer(state, action), baseStateWithProcess);

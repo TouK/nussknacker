@@ -25,13 +25,14 @@ export function useModalDetailsIfNeeded() {
     }, []);
 
     const openNodes = useCallback(
-        (process: Scenario) => {
+        (scenario: Scenario) => {
             return getNodeIds()
                 .map(
-                    (id) => NodeUtils.getNodeById(id, process.json) ?? (process.name === id && NodeUtils.getProcessPropertiesNode(process)),
+                    (id) =>
+                        NodeUtils.getNodeById(id, scenario.json) ?? (scenario.name === id && NodeUtils.getProcessPropertiesNode(scenario)),
                 )
                 .filter(Boolean)
-                .map((node) => openNodeWindow(node, process.json));
+                .map((node) => openNodeWindow(node, scenario.json));
         },
         [getNodeIds, openNodeWindow],
     );

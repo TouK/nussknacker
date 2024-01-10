@@ -12,12 +12,12 @@ interface NodeErrorsLinkSectionProps {
     nodeIds: NodeId[];
     message: string;
     showDetails: (event: SyntheticEvent, details: NodeType) => void;
-    currentProcess: Scenario;
+    scenario: Scenario;
     errorsOnTop?: boolean;
 }
 
 export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps): JSX.Element {
-    const { nodeIds, message, showDetails, currentProcess, errorsOnTop } = props;
+    const { nodeIds, message, showDetails, scenario, errorsOnTop } = props;
     const unsavedName = useSelector(getProcessUnsavedNewName);
     const separator = ", ";
 
@@ -28,8 +28,8 @@ export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps)
                 {nodeIds.map((nodeId, index) => {
                     const details =
                         nodeId === "properties"
-                            ? NodeUtils.getProcessPropertiesNode(currentProcess, unsavedName)
-                            : NodeUtils.getNodeById(nodeId, currentProcess.json);
+                            ? NodeUtils.getProcessPropertiesNode(scenario, unsavedName)
+                            : NodeUtils.getNodeById(nodeId, scenario.json);
                     return (
                         <React.Fragment key={nodeId}>
                             <NodeErrorLink onClick={(event) => showDetails(event, details)} nodeId={nodeId} disabled={!details} />

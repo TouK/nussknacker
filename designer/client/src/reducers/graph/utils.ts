@@ -13,7 +13,7 @@ export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, new
 export function updateAfterNodeDelete(state: GraphState, idToDelete: NodeId) {
     return {
         ...state,
-        fetchedProcessDetails: {
+        scenario: {
             ...state.scenario,
             json: {
                 ...state.scenario.json,

@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { editNode } from "../../../../actions/nk";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
-import { getScenarioGraph } from "../../../../reducers/selectors/graph";
-import { Edge, NodeType, ScenarioGraph } from "../../../../types";
+import { getScenario } from "../../../../reducers/selectors/graph";
+import { Edge, NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
 import ErrorBoundary from "../../../common/ErrorBoundary";
 import NodeUtils from "../../NodeUtils";
@@ -20,22 +20,23 @@ import { applyIdFromFakeName } from "../IdField";
 import { useTheme } from "@mui/material";
 import { alpha, tint } from "../../../../containers/theme/helpers";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
+import { Scenario } from "../../../Process/types";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
 }
 
-interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; process: ScenarioGraph }> {
+interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; scenario: Scenario }> {
     readOnly?: boolean;
 }
 
 export function NodeDetails(props: NodeDetailsProps): JSX.Element {
-    const processFromGlobalStore = useSelector(getScenarioGraph);
+    const scenarioFromGlobalStore = useSelector(getScenario);
     const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly));
 
-    const { node, process = processFromGlobalStore } = props.data.meta;
+    const { node, scenario = scenarioFromGlobalStore } = props.data.meta;
     const [editedNode, setEditedNode] = useState<NodeType>(node);
-    const [outputEdges, setOutputEdges] = useState(() => process.edges.filter(({ from }) => from === node.id));
+    const [outputEdges, setOutputEdges] = useState(() => scenario.json.edges.filter(({ from }) => from === node.id));
 
     const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
         setEditedNode(node);
@@ -45,10 +46,10 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const dispatch = useDispatch();
 
     const performNodeEdit = useCallback(async () => {
-        await dispatch(editNode(process, node, applyIdFromFakeName(editedNode), outputEdges));
+        await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
         props.close();
         mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-    }, [process, node, editedNode, outputEdges, dispatch, props]);
+    }, [scenario, node, editedNode, outputEdges, dispatch, props]);
 
     const { t } = useTranslation();
     const theme = useTheme();
@@ -115,7 +116,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }, [node.id]);
 
     //no process? no nodes? no window contents! no errors for whole tree!
-    if (!processFromGlobalStore?.nodes) {
+    if (!scenarioFromGlobalStore?.json.nodes) {
         return null;
     }
 

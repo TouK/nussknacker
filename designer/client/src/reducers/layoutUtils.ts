@@ -3,8 +3,8 @@ import { Layout } from "../actions/nk";
 import { NodeType, ScenarioGraph } from "../types";
 import { Reducer } from "../actions/reduxTypes";
 
-export function fromMeta(process: ScenarioGraph): Layout {
-    return process.nodes
+export function fromMeta(scenarioGraph: ScenarioGraph): Layout {
+    return scenarioGraph.nodes
         .filter(({ additionalFields }) => additionalFields?.layoutData)
         .map(({ id, additionalFields }) => ({ id, position: additionalFields.layoutData }));
 }

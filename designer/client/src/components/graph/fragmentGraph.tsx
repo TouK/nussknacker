@@ -4,15 +4,15 @@ import React, { forwardRef } from "react";
 import { Graph } from "./Graph";
 import { GraphProps } from "./types";
 
-export const FragmentGraphPreview = forwardRef<Graph, Pick<GraphProps, "processCounts" | "process" | "nodeIdPrefixForFragmentTests">>(
-    function FragmentGraphPreview({ processCounts, process, nodeIdPrefixForFragmentTests }, ref) {
+export const FragmentGraphPreview = forwardRef<Graph, Pick<GraphProps, "processCounts" | "scenario" | "nodeIdPrefixForFragmentTests">>(
+    function FragmentGraphPreview({ processCounts, scenario, nodeIdPrefixForFragmentTests }, ref) {
         return (
             <GraphWrapped
                 ref={ref}
                 processCounts={processCounts}
-                process={process}
+                scenario={scenario}
                 nodeIdPrefixForFragmentTests={nodeIdPrefixForFragmentTests}
-                layout={LayoutUtils.fromMeta(process.json)}
+                layout={LayoutUtils.fromMeta(scenario.json)}
                 readonly
                 divId="nk-graph-fragment"
                 isFragment

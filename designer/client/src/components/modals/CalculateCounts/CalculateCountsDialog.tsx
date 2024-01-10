@@ -28,11 +28,11 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
     const [state, setState] = useState(initState);
     const processName = useSelector(getProcessName);
     const dispatch = useDispatch();
-    const processToDisplay = useSelector(getScenarioGraph);
+    const scenarioGraph = useSelector(getScenarioGraph);
 
     const confirm = useCallback(async () => {
-        await dispatch(fetchAndDisplayProcessCounts(processName, moment(state.from), moment(state.to), processToDisplay));
-    }, [dispatch, processName, state.from, state.to, processToDisplay]);
+        await dispatch(fetchAndDisplayProcessCounts(processName, moment(state.from), moment(state.to), scenarioGraph));
+    }, [dispatch, processName, state.from, state.to, scenarioGraph]);
 
     const isStateValid = moment(state.from).isValid() && moment(state.to).isValid();
     const buttons: WindowButtonProps[] = useMemo(

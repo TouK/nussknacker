@@ -8,17 +8,17 @@ import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
-    | { type: "DISPLAY_PROCESS"; fetchedProcessDetails: Scenario };
+    | { type: "DISPLAY_PROCESS"; scenario: Scenario };
 
 export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
     return (dispatch) => {
         dispatch({ type: "PROCESS_FETCH" });
 
         return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
-            dispatch(displayTestCapabilities(response.data.json));
+            dispatch(displayTestCapabilities(response.data));
             dispatch({
                 type: "DISPLAY_PROCESS",
-                fetchedProcessDetails: response.data,
+                scenario: response.data,
             });
             return response.data;
         });
@@ -35,9 +35,9 @@ export function loadProcessState(processName: ProcessName): ThunkAction {
         );
 }
 
-export function fetchTestFormParameters(processDetails: ScenarioGraph) {
+export function fetchTestFormParameters(scenario: Scenario) {
     return (dispatch) =>
-        HttpService.getTestFormParameters(processDetails).then(({ data }) => {
+        HttpService.getTestFormParameters(scenario).then(({ data }) => {
             dispatch({
                 type: "UPDATE_TEST_FORM_PARAMETERS",
                 testFormParameters: data,
@@ -45,9 +45,9 @@ export function fetchTestFormParameters(processDetails: ScenarioGraph) {
         });
 }
 
-export function displayTestCapabilities(processDetails: ScenarioGraph) {
+export function displayTestCapabilities(scenario: Scenario) {
     return (dispatch) =>
-        HttpService.getTestCapabilities(processDetails).then(({ data }) =>
+        HttpService.getTestCapabilities(scenario).then(({ data }) =>
             dispatch({
                 type: "UPDATE_TEST_CAPABILITIES",
                 capabilities: data,

@@ -380,10 +380,10 @@ class HttpService {
             });
     }
 
-    exportProcess(processName: string, scenarioGraph: ScenarioGraph, versionId: number) {
+    exportProcess(scenario: Scenario, versionId: number) {
         return api
-            .post("/processesExport", this.#sanitizeScenarioGraph(scenarioGraph), { responseType: "blob" })
-            .then((response) => FileSaver.saveAs(response.data, `${processName}-${versionId}.json`))
+            .post("/processesExport", this.#sanitizeScenario(scenario), { responseType: "blob" })
+            .then((response) => FileSaver.saveAs(response.data, `${scenario.name}-${versionId}.json`))
             .catch((error) => this.#addError(i18next.t("notification.error.failedToExport", "Failed to export"), error));
     }
 
@@ -395,8 +395,8 @@ class HttpService {
     }
 
     //to prevent closing edit node modal and corrupting graph display
-    validateProcess(scenarioGraph: ScenarioGraph) {
-        return api.post("/processValidation", this.#sanitizeScenarioGraph(scenarioGraph)).catch((error) => {
+    validateProcess(scenario: Scenario) {
+        return api.post("/processValidation", this.#sanitizeScenario(scenario)).catch((error) => {
             this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true);
             return Promise.reject(error);
         });
@@ -467,16 +467,16 @@ class HttpService {
 
     //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
 
-    getTestCapabilities(process: ScenarioGraph) {
-        const promise = api.post("/testInfo/capabilities", this.#sanitizeScenarioGraph(process));
+    getTestCapabilities(scenario: Scenario) {
+        const promise = api.post("/testInfo/capabilities", this.#sanitizeScenario(scenario));
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true),
         );
         return promise;
     }
 
-    getTestFormParameters(process: ScenarioGraph) {
-        const promise = api.post("/testInfo/testParameters", this.#sanitizeScenarioGraph(process));
+    getTestFormParameters(scenario: Scenario) {
+        const promise = api.post("/testInfo/testParameters", this.#sanitizeScenario(scenario));
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
@@ -487,8 +487,8 @@ class HttpService {
         return promise;
     }
 
-    generateTestData(processName: string, testSampleSize: string, process: ScenarioGraph): Promise<AxiosResponse> {
-        const promise = api.post(`/testInfo/generate/${testSampleSize}`, this.#sanitizeScenarioGraph(process), {
+    generateTestData(processName: string, testSampleSize: string, scenario: Scenario): Promise<AxiosResponse> {
+        const promise = api.post(`/testInfo/generate/${testSampleSize}`, this.#sanitizeScenario(scenario), {
             responseType: "blob",
         });
         promise
@@ -513,8 +513,8 @@ class HttpService {
     }
 
     //to prevent closing edit node modal and corrupting graph display
-    saveProcess(processName, processJson: ScenarioGraph, comment) {
-        const data = { process: this.#sanitizeScenarioGraph(processJson), comment: comment };
+    saveProcess(processName: ProcessName, scenario: Scenario, comment: string) {
+        const data = { process: this.#sanitizeScenario(scenario), comment: comment };
         return api.put(`/processes/${encodeURIComponent(processName)}`, data).catch((error) => {
             this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true);
             return Promise.reject(error);
@@ -559,8 +559,8 @@ class HttpService {
         return promise;
     }
 
-    testProcess(processName: ProcessName, file: File, processJson: ScenarioGraph): Promise<AxiosResponse<TestProcessResponse>> {
-        const sanitized = this.#sanitizeScenarioGraph(processJson);
+    testProcess(processName: ProcessName, file: File, scenario: Scenario): Promise<AxiosResponse<TestProcessResponse>> {
+        const sanitized = this.#sanitizeScenario(scenario);
 
         const data = new FormData();
         data.append("testData", file);
@@ -574,9 +574,9 @@ class HttpService {
     testProcessWithParameters(
         processName: ProcessName,
         testData: SourceWithParametersTest,
-        processJson: ScenarioGraph,
+        scenario: Scenario,
     ): Promise<AxiosResponse<TestProcessResponse>> {
-        const sanitized = this.#sanitizeScenarioGraph(processJson);
+        const sanitized = this.#sanitizeScenario(scenario);
         const request = {
             sourceParameters: testData,
             displayableProcess: sanitized,
@@ -587,12 +587,8 @@ class HttpService {
         return promise;
     }
 
-    testScenarioWithGeneratedData(
-        processName: ProcessName,
-        testSampleSize: string,
-        processJson: ScenarioGraph,
-    ): Promise<AxiosResponse<TestProcessResponse>> {
-        const promise = api.post(`/processManagement/generateAndTest/${testSampleSize}`, this.#sanitizeScenarioGraph(processJson));
+    testScenarioWithGeneratedData(testSampleSize: string, scenario: Scenario): Promise<AxiosResponse<TestProcessResponse>> {
+        const promise = api.post(`/processManagement/generateAndTest/${testSampleSize}`, this.#sanitizeScenario(scenario));
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test"), error, true),
         );
@@ -607,7 +603,7 @@ class HttpService {
         return promise;
     }
 
-    fetchRemoteVersions(processName) {
+    fetchRemoteVersions(processName: ProcessName) {
         const promise = api.get(`/remoteEnvironment/${encodeURIComponent(processName)}/versions`);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToGetVersions", "Failed to get versions from second environment"), error),
@@ -615,7 +611,7 @@ class HttpService {
         return promise;
     }
 
-    migrateProcess(processName, versionId) {
+    migrateProcess(processName: ProcessName, versionId: number) {
         return api
             .post(`/remoteEnvironment/${encodeURIComponent(processName)}/${versionId}/migrate`)
             .then(() =>
@@ -673,12 +669,14 @@ class HttpService {
         return Promise.resolve(error);
     }
 
-    #sanitizeScenarioGraph(scenarioGraph: ScenarioGraph) {
+    #sanitizeScenario(scenario: Scenario) {
         //don't send validationResult, it's not needed and can be v. large,
-        const { nodes, edges, properties, processingType, category, id }: Omit<ScenarioGraph, "validationResult"> =
+        const { nodes, edges, properties }: ScenarioGraph =
             //don't send empty edges
-            withoutHackOfEmptyEdges(scenarioGraph);
-        return { nodes, edges, properties, processingType, category, id };
+            withoutHackOfEmptyEdges(scenario.json);
+
+        const { processingType, name } = scenario;
+        return { nodes, edges, properties, name, processingType };
     }
 
     #requestCanceled(error: AxiosError<unknown>) {

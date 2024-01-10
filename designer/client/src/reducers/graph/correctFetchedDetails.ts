@@ -2,9 +2,9 @@ import { Edge, ScenarioGraph, ProcessDefinitionData } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { Scenario } from "../../components/Process/types";
 
-function getEdgeValidator(processToDisplay: ScenarioGraph, processDefinitionData?: ProcessDefinitionData) {
+function getEdgeValidator(scenarioGraph: ScenarioGraph, processDefinitionData?: ProcessDefinitionData) {
     return ({ from }: Edge): boolean => {
-        return NodeUtils.hasOutputs(NodeUtils.getNodeById(from, processToDisplay), processDefinitionData);
+        return NodeUtils.hasOutputs(NodeUtils.getNodeById(from, scenarioGraph), processDefinitionData);
     };
 }
 

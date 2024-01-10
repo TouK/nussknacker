@@ -1,5 +1,4 @@
 import { BranchParametersTemplate, NodeType } from "./node";
-import { Category } from "./scenarioGraph";
 
 export type ParameterConfig = {
     defaultValue?: string;

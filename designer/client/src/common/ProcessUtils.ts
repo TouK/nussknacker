@@ -41,8 +41,8 @@ class ProcessUtils {
     };
 
     //fixme maybe return hasErrors flag from backend?
-    hasNeitherErrorsNorWarnings = (process: Scenario) => {
-        return this.hasNoErrors(process) && this.hasNoWarnings(process);
+    hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
+        return this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
     };
 
     extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
@@ -55,8 +55,8 @@ class ProcessUtils {
         );
     };
 
-    hasNoErrors = (process: Scenario) => {
-        const result = this.getValidationErrors(process);
+    hasNoErrors = (scenario: Scenario) => {
+        const result = this.getValidationErrors(scenario);
         return (
             !result ||
             (Object.keys(result.invalidNodes || {}).length == 0 &&
@@ -65,20 +65,20 @@ class ProcessUtils {
         );
     };
 
-    getValidationResult = (process: Scenario): ValidationResult =>
-        process?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
+    getValidationResult = (scenario: Scenario): ValidationResult =>
+        scenario?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
 
-    hasNoWarnings = (process: Scenario) => {
-        const warnings = this.getValidationResult(process).warnings;
+    hasNoWarnings = (scenario: Scenario) => {
+        const warnings = this.getValidationResult(scenario).warnings;
         return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
     };
 
-    hasNoPropertiesErrors = (process: Scenario) => {
-        return isEmpty(this.getValidationErrors(process)?.processPropertiesErrors);
+    hasNoPropertiesErrors = (scenario: Scenario) => {
+        return isEmpty(this.getValidationErrors(scenario)?.processPropertiesErrors);
     };
 
-    getValidationErrors(process: Scenario) {
-        return this.getValidationResult(process).errors;
+    getValidationErrors(scenario: Scenario) {
+        return this.getValidationResult(scenario).errors;
     }
 
     findContextForBranch = (node: NodeType, branchId: string) => {
@@ -100,17 +100,17 @@ class ProcessUtils {
         );
     };
 
-    getNodeResults = (process: Scenario): NodeResults => this.getValidationResult(process).nodeResults;
+    getNodeResults = (scenario: Scenario): NodeResults => this.getValidationResult(scenario).nodeResults;
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
     escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
     findAvailableVariables =
-        (components: Record<string, ComponentDefinition>, process: Scenario) =>
+        (components: Record<string, ComponentDefinition>, scenario: Scenario) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
-            const nodeResults = this.getNodeResults(process);
+            const nodeResults = this.getNodeResults(scenario);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
-            const variablesForNode = variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, process, components);
+            const variablesForNode = variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, scenario, components);
             const variablesToHideForParam = parameterDefinition?.variablesToHide || [];
             const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key));
             const additionalVariablesForParam = parameterDefinition?.additionalVariables || {};
@@ -121,12 +121,12 @@ class ProcessUtils {
 
     _findVariablesDeclaredBeforeNode = (
         nodeId: NodeId,
-        process: Scenario,
+        scenario: Scenario,
         components: Record<string, ComponentDefinition>,
     ): VariableTypes => {
-        const previousNodes = this._findPreviousNodes(nodeId, process);
+        const previousNodes = this._findPreviousNodes(nodeId, scenario);
         const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
-            return this._findVariablesDefinedInProcess(nodeId, process.json, components);
+            return this._findVariablesDefinedInProcess(nodeId, scenario.json, components);
         });
         return this._listOfObjectsToObject(variablesDefinedBeforeNodeList);
     };
@@ -139,10 +139,10 @@ class ProcessUtils {
 
     _findVariablesDefinedInProcess = (
         nodeId: NodeId,
-        process: ScenarioGraph,
+        scenarioGraph: ScenarioGraph,
         components: Record<string, ComponentDefinition>,
     ): Record<string, ReturnedType>[] => {
-        const node = process.nodes.find((node) => node.id === nodeId);
+        const node = scenarioGraph.nodes.find((node) => node.id === nodeId);
         const componentDefinition = this.extractComponentDefinition(node, components);
         const clazzName = componentDefinition?.returnType;
         const unknown: ReturnedType = {
@@ -277,12 +277,12 @@ class ProcessUtils {
 
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
-    _findPreviousNodes = (nodeId: NodeId, process: Scenario): NodeId[] => {
-        const nodeEdge = process.json.edges.find((edge) => edge.to === nodeId);
+    _findPreviousNodes = (nodeId: NodeId, scenario: Scenario): NodeId[] => {
+        const nodeEdge = scenario.json.edges.find((edge) => edge.to === nodeId);
         if (isEmpty(nodeEdge)) {
             return [];
         } else {
-            const previousNodes = this._findPreviousNodes(nodeEdge.from, process);
+            const previousNodes = this._findPreviousNodes(nodeEdge.from, scenario);
             return [nodeEdge.from].concat(previousNodes);
         }
     };

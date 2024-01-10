@@ -5,18 +5,19 @@ import { mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/
 import { alignFragmentWithSchema } from "../../components/graph/utils/fragmentSchemaAligner";
 import { Edge, NodeType, ScenarioGraph, ProcessDefinitionData } from "../../types";
 import { ThunkAction } from "../reduxTypes";
+import { Scenario } from "../../components/Process/types";
 
-function alignFragmentsNodeWithSchema(scenarioGraph: ScenarioGraph, processDefinitionData: ProcessDefinitionData): ScenarioGraph {
+function alignFragmentsNodeWithSchema(scenario: Scenario, processDefinitionData: ProcessDefinitionData): ScenarioGraph {
     return {
-        ...scenarioGraph,
-        nodes: scenarioGraph.nodes.map((node) => {
+        ...scenario.json,
+        nodes: scenario.json.nodes.map((node) => {
             return node.type === "FragmentInput" ? alignFragmentWithSchema(processDefinitionData, node) : node;
         }),
     };
 }
 
 export function calculateProcessAfterChange(
-    scenarioGraph: ScenarioGraph,
+    scenario: Scenario,
     before: NodeType,
     after: NodeType,
     outputEdges: Edge[],
@@ -24,16 +25,16 @@ export function calculateProcessAfterChange(
     return async (dispatch, getState) => {
         if (NodeUtils.nodeIsProperties(after)) {
             const processDefinitionData = await dispatch(
-                fetchProcessDefinition(scenarioGraph.processingType, scenarioGraph.properties.isFragment),
+                fetchProcessDefinition(scenario.processingType, scenario.json.properties.isFragment),
             );
-            const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenarioGraph, processDefinitionData);
+            const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario, processDefinitionData);
             if (after?.length && after.id !== before.id) {
                 dispatch({ type: "PROCESS_RENAME", name: after.id });
             }
             return { ...processWithNewFragmentSchema, ...after };
         }
 
-        let changedProcess = scenarioGraph;
+        let changedProcess = scenario.json;
         if (outputEdges) {
             const processDefinitionData = getProcessDefinitionData(getState());
             const filtered = outputEdges.map(({ to, ...e }) =>
@@ -44,7 +45,7 @@ export function calculateProcessAfterChange(
                           to: "",
                       },
             );
-            changedProcess = replaceNodeOutputEdges(scenarioGraph, processDefinitionData, filtered, before.id);
+            changedProcess = replaceNodeOutputEdges(scenario.json, processDefinitionData, filtered, before.id);
         }
 
         return mapProcessWithNewNode(changedProcess, before, after);

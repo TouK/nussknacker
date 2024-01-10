@@ -85,19 +85,19 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "DISPLAY_PROCESS": {
-            const { fetchedProcessDetails } = action;
+            const { scenario } = action;
             return {
                 ...state,
-                scenario: fetchedProcessDetails,
+                scenario,
                 scenarioLoading: false,
-                layout: LayoutUtils.fromMeta(fetchedProcessDetails.json),
+                layout: LayoutUtils.fromMeta(scenario.json),
             };
         }
         case "CORRECT_INVALID_SCENARIO": {
-            const fetchedProcessDetails = correctFetchedDetails(state.scenario, action.processDefinitionData);
+            const scenario = correctFetchedDetails(state.scenario, action.processDefinitionData);
             return {
                 ...state,
-                scenario: fetchedProcessDetails,
+                scenario,
             };
         }
         case "ARCHIVED": {
@@ -151,12 +151,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         case "DELETE_NODES": {
             return action.ids.reduce((state, idToDelete) => {
                 const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete);
-                const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.fetchedProcessDetails.json, idToDelete);
+                const scenarioGraph = GraphUtils.deleteNode(stateAfterNodeDelete.scenario.json, idToDelete);
                 return {
                     ...stateAfterNodeDelete,
                     scenario: {
-                        ...stateAfterNodeDelete.fetchedProcessDetails,
-                        json: processToDisplay,
+                        ...stateAfterNodeDelete.scenario,
+                        json: scenarioGraph,
                     },
                 };
             }, state);
@@ -168,7 +168,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 toNode: action.toNode,
                 edgeType: action.edgeType,
                 processDefinition: action.processDefinitionData,
-                process: state.scenario.json,
+                scenarioGraph: state.scenario.json,
             });
 
             const newEdges = currentEdges.includes(newEdge)

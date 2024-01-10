@@ -25,9 +25,9 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
 
         const id = nodeToDisplay?.ref.id;
         const { data } = await HttpService.fetchProcessDetails(id);
-        const fetchedProcessDetails = correctFetchedDetails(data, processDefinitionData);
-        setFragmentContent(fetchedProcessDetails);
-        openFragmentNodes(fetchedProcessDetails);
+        const scenario = correctFetchedDetails(data, processDefinitionData);
+        setFragmentContent(scenario);
+        openFragmentNodes(scenario);
     }, [fragmentContent, nodeToDisplay, openFragmentNodes, processDefinitionData]);
 
     useInitEffect(initFragmentData);
@@ -39,7 +39,7 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
             {fragmentContent && (
                 <FragmentGraphPreview
                     processCounts={fragmentCounts}
-                    process={fragmentContent}
+                    scenario={fragmentContent}
                     nodeIdPrefixForFragmentTests={getFragmentNodesPrefix(fragmentContent)}
                 />
             )}

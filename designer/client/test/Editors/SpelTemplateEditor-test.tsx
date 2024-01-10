@@ -23,7 +23,7 @@ const store = mockStore({
             defaultAsyncInterpretation: true,
         },
     },
-    graphReducer: { history: { present: { fetchedProcessDetails: { json: {} } } } },
+    graphReducer: { history: { present: { scenario: { json: {} } } } },
 });
 
 describe(SpelTemplateEditor.name, () => {

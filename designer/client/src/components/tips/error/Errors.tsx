@@ -8,14 +8,14 @@ import { Scenario } from "../../Process/types";
 export interface Props {
     errors: ValidationErrors;
     showDetails: (event: SyntheticEvent, details: NodeType) => void;
-    currentProcess: Scenario;
+    scenario: Scenario;
 }
 
-function Errors({ errors = { globalErrors: [], invalidNodes: {}, processPropertiesErrors: [] }, showDetails, currentProcess }: Props) {
+function Errors({ errors = { globalErrors: [], invalidNodes: {}, processPropertiesErrors: [] }, showDetails, scenario }: Props) {
     return (
         <div key={uuid4()} style={{ display: "flex", alignItems: "center" }}>
             <HeaderIcon errors={errors} />
-            <ErrorTips errors={errors} showDetails={showDetails} currentProcess={currentProcess} />
+            <ErrorTips errors={errors} showDetails={showDetails} scenario={scenario} />
         </div>
     );
 }

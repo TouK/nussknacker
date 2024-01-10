@@ -22,7 +22,7 @@ const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowTyp
     return (
         <ListItemButton component={ExternalLink} href={scenarioHref(row.name)}>
             <ListItemAvatar>
-                <ScenarioAvatar process={row} />
+                <ScenarioAvatar scenario={row} />
             </ListItemAvatar>
             <ListItemText primary={<FirstLine row={row} />} secondary={<SecondLine row={row} />} />
         </ListItemButton>
