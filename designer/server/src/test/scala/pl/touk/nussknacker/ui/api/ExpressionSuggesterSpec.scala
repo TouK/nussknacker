@@ -120,7 +120,7 @@ class ExpressionSuggesterSpec
 
   private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
     ModelDefinitionBuilder.empty
-      .withGlobalVariable("util", classOf[Util])
+      .withGlobalVariable("util", new Util)
       .build
       .expressionConfig
 

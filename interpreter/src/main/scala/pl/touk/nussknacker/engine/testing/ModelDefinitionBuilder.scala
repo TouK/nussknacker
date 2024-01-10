@@ -118,14 +118,15 @@ final case class ModelDefinitionBuilder(
       }
   }
 
-  def build: ModelDefinition[ComponentDefinitionWithImplementation] =
+  def build: ModelDefinition[ComponentDefinitionWithImplementation] = {
+    val globalVariablesDefinition: Map[String, ComponentDefinitionWithImplementation] =
+      globalVariables.mapValuesNow(gv => GlobalVariableDefinitionExtractor.extractDefinition(gv, categories = None))
     ModelDefinition[ComponentDefinitionWithImplementation](
       components.map { case (k, v) => k -> withNullImplementation(v) },
-      emptyExpressionConfig.copy(globalVariables =
-        globalVariables.mapValuesNow(gv => GlobalVariableDefinitionExtractor.extractDefinition(gv, categories = None))
-      ),
+      emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
       ClassExtractionSettings.Default
     )
+  }
 
   private def withNullImplementation(
       staticDefinition: ComponentStaticDefinition

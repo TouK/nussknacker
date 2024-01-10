@@ -12,6 +12,7 @@ class ModelDefinitionTest extends AnyFunSuite with Matchers {
       ModelDefinitionBuilder.empty
         .withService("foo")
         .withService("foo")
+        .build
     }
   }
 
