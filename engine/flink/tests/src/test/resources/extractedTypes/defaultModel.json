@@ -12415,6 +12415,24 @@
           }
         }
       ],
+      "average": [
+        {
+          "name": "average",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
+          }
+        }
+      ],
+      "countWhen": [
+        {
+          "name": "countWhen",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
+          }
+        }
+      ],
       "sum": [
         {
           "name": "sum",
@@ -14502,6 +14520,20 @@
       "largeSum": [
         {
           "name": "largeSum",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
+        }
+      ],
+      "largeFloatingSum": [
+        {
+          "name": "largeFloatingSum",
           "signatures": [
             {
               "noVarArgs": [

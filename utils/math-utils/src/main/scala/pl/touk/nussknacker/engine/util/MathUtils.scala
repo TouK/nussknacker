@@ -70,6 +70,12 @@ trait MathUtils {
     promoteThenSum(n1, n2)
   }
 
+  def largeFloatingSum(n1: Number, n2: Number): Number = {
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy =
+      NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
+    promoteThenSum(n1, n2)
+  }
+
   def plus(n1: Number, n2: Number): Number = sum(n1, n2)
 
   def minus(n1: Number, n2: Number): Number = {
