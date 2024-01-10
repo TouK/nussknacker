@@ -12415,6 +12415,24 @@
           }
         }
       ],
+      "average": [
+        {
+          "name": "average",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
+          }
+        }
+      ],
+      "countWhen": [
+        {
+          "name": "countWhen",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
+          }
+        }
+      ],
       "sum": [
         {
           "name": "sum",

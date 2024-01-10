@@ -5,6 +5,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{
+  AverageAggregator,
+  CountWhenAggregator,
   FirstAggregator,
   LastAggregator,
   ListAggregator,
@@ -18,6 +20,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.lang.{Integer => JInt, Long => JLong}
+import java.math.BigInteger
 import java.util.{List => JList, Map => JMap, Set => JSet}
 import scala.jdk.CollectionConverters._
 
@@ -101,6 +104,63 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     agg.result(
       agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(5.asInstanceOf[agg.Element], agg.zero))
     ) shouldEqual 5
+  }
+
+  test("should calculate correct results for countWhen aggregator") {
+    val agg = CountWhenAggregator
+    agg.result(
+      agg.addElement(
+        false.asInstanceOf[agg.Element],
+        agg.addElement(true.asInstanceOf[agg.Element], agg.addElement(true.asInstanceOf[agg.Element], agg.zero))
+      )
+    ) shouldEqual 2
+  }
+
+  test("should calculate correct results for average aggregator") {
+    val agg = AverageAggregator
+    agg.result(
+      agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(7.asInstanceOf[agg.Element], agg.zero))
+    ) shouldEqual 7.5
+  }
+
+  test("should calculate correct results for average aggregator on BigInt") {
+    val agg = AverageAggregator
+    agg.result(
+      agg.addElement(
+        new BigInteger("8").asInstanceOf[agg.Element],
+        agg.addElement(new BigInteger("7").asInstanceOf[agg.Element], agg.zero)
+      )
+    ) shouldEqual new java.math.BigDecimal("7.5")
+  }
+
+  test("should calculate correct results for average aggregator on float") {
+    val agg = AverageAggregator
+    agg.result(
+      agg.addElement(
+        8.0f.asInstanceOf[agg.Element],
+        agg.addElement(7.0f.asInstanceOf[agg.Element], agg.zero)
+      )
+    ) shouldEqual 7.5
+  }
+
+  test("should calculate correct results for average aggregator on BigDecimal") {
+    val agg = AverageAggregator
+    agg.result(
+      agg.addElement(
+        new java.math.BigDecimal("8").asInstanceOf[agg.Element],
+        agg.addElement(new java.math.BigDecimal("7").asInstanceOf[agg.Element], agg.zero)
+      )
+    ) shouldEqual new java.math.BigDecimal("7.5")
+  }
+
+  test("AverageAggregator should calculate correct results for empty aggregation set") {
+    val agg = AverageAggregator
+    val result = agg.result(
+      agg.zero
+    )
+
+    // null is returned because method alignToExpectedType did not run
+    require(result == null)
   }
 
   test("should calculate correct results for last aggregator") {

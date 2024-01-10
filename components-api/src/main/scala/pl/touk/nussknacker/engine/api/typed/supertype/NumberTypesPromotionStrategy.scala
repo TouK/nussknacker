@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
 import java.lang
-
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -103,7 +102,7 @@ object NumberTypesPromotionStrategy {
 
     override protected def handleFloatingType(firstFloating: Class[_]): TypedClass = {
       if (firstFloating == classOf[lang.Float]) {
-        Typed.typedClass(classOf[lang.Double])
+        Typed.typedClass(classOf[Double])
       } else {
         Typed.typedClass(firstFloating)
       }
@@ -113,9 +112,29 @@ object NumberTypesPromotionStrategy {
       if (firstDecimal == classOf[lang.Byte] || firstDecimal == classOf[lang.Short] || firstDecimal == classOf[
           lang.Integer
         ]) {
-        Typed.typedClass(classOf[lang.Long])
+        Typed.typedClass(classOf[Long])
       } else {
         Typed.typedClass(firstDecimal)
+      }
+    }
+
+  }
+
+  object ForLargeFloatingNumbersOperation extends BaseToCommonWidestTypePromotionStrategy {
+
+    override protected def handleFloatingType(firstFloating: Class[_]): TypedClass = {
+      if (firstFloating == classOf[java.math.BigDecimal]) {
+        Typed.typedClass(classOf[java.math.BigDecimal])
+      } else {
+        Typed.typedClass(classOf[Double])
+      }
+    }
+
+    override protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = {
+      if (firstDecimal == classOf[java.math.BigInteger]) {
+        Typed.typedClass(classOf[java.math.BigDecimal])
+      } else {
+        Typed.typedClass(classOf[Double])
       }
     }
 
@@ -137,7 +156,7 @@ object NumberTypesPromotionStrategy {
         val floating = both.find(FloatingNumbers.contains).get
         handleFloatingType(floating)
       } else { // unknown Number
-        Typed.typedClass[java.lang.Double]
+        Typed.typedClass[Double]
       }
     }
 
@@ -173,11 +192,11 @@ object NumberTypesPromotionStrategy {
         Typed[java.math.BigInteger]
       } else if (left == classOf[java.lang.Double] || right == classOf[java.lang.Double] ||
         left == classOf[java.lang.Float] || right == classOf[java.lang.Float]) {
-        Typed[java.lang.Double]
+        Typed[Double]
       } else if (left == classOf[java.lang.Long] || right == classOf[java.lang.Long]) {
-        Typed[java.lang.Long]
+        Typed[Long]
       } else {
-        Typed(Typed[java.lang.Integer], Typed[java.lang.Long]) // it depends if there was overflow or not
+        Typed(Typed[java.lang.Integer], Typed[Long]) // it depends if there was overflow or not
       }
     }
 

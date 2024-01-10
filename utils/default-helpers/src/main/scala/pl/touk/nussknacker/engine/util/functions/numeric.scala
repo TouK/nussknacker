@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.functions.numeric.{
+  LargeFloatingNumberOperatorTypingFunction,
   LargeNumberOperatorTypingFunction,
   MathOperatorTypingFunction,
   MinMaxTypingFunction,
@@ -147,6 +148,11 @@ object numeric extends numeric {
   private class LargeNumberOperatorTypingFunction extends OperatorTypingFunction {
     override protected def numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
       NumberTypesPromotionStrategy.ForLargeNumbersOperation
+  }
+
+  private class LargeFloatingNumberOperatorTypingFunction extends OperatorTypingFunction {
+    override protected def numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
+      NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
   }
 
 }
