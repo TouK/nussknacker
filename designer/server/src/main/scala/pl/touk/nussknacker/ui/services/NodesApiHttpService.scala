@@ -80,6 +80,8 @@ class NodesApiHttpService(
               .flatMap { process =>
                 println(process)
                 val nodeValidator = typeToNodeValidator.forTypeUnsafe(process.processingType)(user)
+                implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(process.processingType)(user)
+                val nodeValidator                 = typeToNodeValidator.forTypeUnsafe(process.processingType)(user)
                 nodeValidationRequestDto.toRequest match {
                   case Some(nodeData) =>
                     Future(success(nodeValidator.validate(processName, nodeData)(user).toDto()))
@@ -176,9 +178,13 @@ class NodesApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
         val (processingType, request) = pair
+
         try {
-          val validator         = typeToParametersValidator.forTypeUnsafe(processingType)(user)
-          val validationResults = validator.validate(request.withoutDto)
+          implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)(user)
+          val validator                     = typeToParametersValidator.forTypeUnsafe(processingType)(user)
+          val requestWithTypingResult       = request.withoutDto()(modelData)
+          val validationResults             = validator.validate(requestWithTypingResult)
+
           Future(
             success(
               ParametersValidationResultDto(validationResults, validationPerformed = true)
@@ -195,7 +201,9 @@ class NodesApiHttpService(
     nodesApiEndpoints.parametersSuggestionsEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
-        val (processingType, request) = pair
+        val (processingType, request)     = pair
+        implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)(user)
+
         try {
           val expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)(user)
           expressionSuggester
