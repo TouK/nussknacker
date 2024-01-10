@@ -251,10 +251,27 @@ object aggregates {
       Valid(Typed[AverageAggregatorState])
 
     @TypeInfo(classOf[AverageAggregatorState.TypeInfoFactory])
-    case class AverageAggregatorState(sum: java.lang.Number, count: java.lang.Long)
+    // it would be natural to have one field sum: Number instead of nullable sumDouble and sumBigDecimal,
+    // it is done this way to have types serialized properly
+    case class AverageAggregatorState(
+        sumDouble: java.lang.Double,
+        sumBigDecimal: java.math.BigDecimal,
+        count: java.lang.Long
+    ) {
+      def sum: Number = Option(sumDouble).getOrElse(sumBigDecimal)
+    }
 
     object AverageAggregatorState {
       class TypeInfoFactory extends CaseClassTypeInfoFactory[AverageAggregatorState]
+
+      def apply(sum: Number, count: java.lang.Long): AverageAggregatorState = {
+        sum match {
+          case null                                => AverageAggregatorState(null, null, count)
+          case sumDouble: java.lang.Double         => AverageAggregatorState(sumDouble, null, count)
+          case sumBigDecimal: java.math.BigDecimal => AverageAggregatorState(null, sumBigDecimal, count)
+        }
+      }
+
     }
 
   }
