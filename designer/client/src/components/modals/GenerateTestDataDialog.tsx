@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import HttpService from "../../http/HttpService";
-import { getScenarioName, getScenarioGraph } from "../../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { PromptContent } from "../../windowManager";
 import {
@@ -21,7 +21,7 @@ import { isEmpty } from "lodash";
 
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
-    const processName = useSelector(getScenarioName);
+    const processName = useSelector(getProcessName);
     const processToDisplay = useSelector(getScenarioGraph);
     const maxSize = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 

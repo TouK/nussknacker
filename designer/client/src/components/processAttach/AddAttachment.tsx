@@ -3,7 +3,7 @@ import Dropzone from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import { addAttachment } from "../../actions/nk";
 import { useDispatch, useSelector } from "react-redux";
-import { getScenarioName, getScenarioVersionId } from "../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
 import ButtonUpload from "../../assets/img/icons/buttonUpload.svg";
 import { NodeInput } from "../withFocus";
 import { AddAttachmentsWrapper, AttachmentButton, AttachmentButtonText, AttachmentDropZone, AttachmentsContainer } from "./StyledAttach";
@@ -11,8 +11,8 @@ import { AddAttachmentsWrapper, AttachmentButton, AttachmentButtonText, Attachme
 export function AddAttachment() {
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    const processName = useSelector(getScenarioName);
-    const processVersionId = useSelector(getScenarioVersionId);
+    const processName = useSelector(getProcessName);
+    const processVersionId = useSelector(getProcessVersionId);
 
     const addFiles = useCallback(
         (files) => files.forEach((file) => dispatch(addAttachment(processName, processVersionId, file))),

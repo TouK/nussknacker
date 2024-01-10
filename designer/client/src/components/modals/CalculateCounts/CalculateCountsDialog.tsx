@@ -5,7 +5,7 @@ import React, { PropsWithChildren, useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAndDisplayProcessCounts } from "../../../actions/nk";
-import { getScenarioName, getScenarioGraph } from "../../../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { WindowContent } from "../../../windowManager";
 import { PickerInput } from "./Picker";
 import { CalculateCountsForm } from "./CalculateCountsForm";
@@ -26,7 +26,7 @@ const initState = (): State => {
 export function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): JSX.Element {
     const { t } = useTranslation();
     const [state, setState] = useState(initState);
-    const processName = useSelector(getScenarioName);
+    const processName = useSelector(getProcessName);
     const dispatch = useDispatch();
     const processToDisplay = useSelector(getScenarioGraph);
 

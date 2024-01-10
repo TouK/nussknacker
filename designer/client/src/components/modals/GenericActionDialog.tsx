@@ -3,7 +3,7 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { getScenarioName } from "../../reducers/selectors/graph";
+import { getProcessName } from "../../reducers/selectors/graph";
 import { Expression, NodeValidationError, UIParameter, VariableTypes } from "../../types";
 import { WindowContent } from "../../windowManager";
 import { WindowKind } from "../../windowManager";
@@ -111,7 +111,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
 }
 
 export function GenericActionDialog(props: WindowContentProps<WindowKind, GenericAction>): JSX.Element {
-    const processName = useSelector(getScenarioName);
+    const processName = useSelector(getProcessName);
     const { t } = useTranslation();
     const action = props.data.meta;
     const [value, setValue] = useState(() =>

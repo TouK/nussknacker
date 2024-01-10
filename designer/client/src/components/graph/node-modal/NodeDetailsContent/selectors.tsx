@@ -1,5 +1,5 @@
 import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
-import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
+import { getProcess, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { RootState } from "../../../../reducers";
@@ -13,7 +13,7 @@ export const getScenarioPropertiesConfig = createSelector(
     getProcessDefinitionData,
     (s) => (s.scenarioPropertiesConfig || {}) as ScenarioPropertiesConfig,
 );
-const getNodeResults = createSelector(getScenario, (process) => ProcessUtils.getNodeResults(process));
+const getNodeResults = createSelector(getProcess, (process) => ProcessUtils.getNodeResults(process));
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>
     ProcessUtils.findVariablesForBranches(nodeResults),
 );
@@ -48,7 +48,7 @@ export const getNodeExpressionType = createSelector(getExpressionType, getNodeTy
     };
 });
 export const getProcessProperties = createSelector(getScenarioGraph, (s) => s.properties);
-export const getProcessName = createSelector(getScenario, (s) => s.name);
+export const getProcessName = createSelector(getProcess, (s) => s.name);
 export const getCurrentErrors = createSelector(
     getValidationPerformed,
     getValidationErrors,
@@ -70,7 +70,7 @@ export const getDynamicParameterDefinitions = createSelector(
     },
 );
 
-export const getFindAvailableVariables = createSelector(getComponentsDefinition, getScenario, (processDefinition, process) =>
+export const getFindAvailableVariables = createSelector(getComponentsDefinition, getProcess, (processDefinition, process) =>
     ProcessUtils.findAvailableVariables(processDefinition, process),
 );
 export const getVariableTypes = createSelector(

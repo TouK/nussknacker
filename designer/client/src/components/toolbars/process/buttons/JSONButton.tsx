@@ -3,7 +3,7 @@ import { RootState } from "../../../../reducers";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { connect } from "react-redux";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import { getScenarioVersionId, getScenario } from "../../../../reducers/selectors/graph";
+import { getProcessVersionId, getProcess } from "../../../../reducers/selectors/graph";
 import { useTranslation } from "react-i18next";
 import Icon from "../../../../assets/img/toolbarButtons/JSON.svg";
 import { ToolbarButtonProps } from "../../types";
@@ -32,8 +32,8 @@ function JSONButton(props: Props) {
 
 const mapState = (state: RootState) => {
     return {
-        versionId: getScenarioVersionId(state),
-        process: getScenario(state),
+        versionId: getProcessVersionId(state),
+        process: getProcess(state),
         canExport: ProcessUtils.canExport(state),
     };
 };

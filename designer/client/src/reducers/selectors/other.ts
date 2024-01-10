@@ -1,5 +1,5 @@
 import { createSelector } from "reselect";
-import { getScenarioCategory, isArchived } from "./graph";
+import { getProcessCategory, isArchived } from "./graph";
 import { getLoggedUser } from "./settings";
 import { RootState } from "../index";
 import { NotificationsState } from "react-notification-system-redux";
@@ -14,7 +14,7 @@ export interface Capabilities {
 
 export const getCapabilities = createSelector(
     getLoggedUser,
-    getScenarioCategory,
+    getProcessCategory,
     isArchived,
     (loggedUser, processCategory, isArchived): Capabilities => ({
         write: loggedUser.canWrite(processCategory) && !isArchived,

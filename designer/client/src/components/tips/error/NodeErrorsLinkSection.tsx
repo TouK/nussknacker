@@ -2,7 +2,7 @@ import { isEmpty } from "lodash";
 import React, { SyntheticEvent } from "react";
 import { useSelector } from "react-redux";
 import NodeUtils from "../../graph/NodeUtils";
-import { getScenarioUnsavedNewName } from "../../../reducers/selectors/graph";
+import { getProcessUnsavedNewName } from "../../../reducers/selectors/graph";
 import { NodeId, NodeType } from "../../../types";
 import { ErrorHeader } from "./ErrorHeader";
 import { NodeErrorLink } from "./NodeErrorLink";
@@ -18,7 +18,7 @@ interface NodeErrorsLinkSectionProps {
 
 export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps): JSX.Element {
     const { nodeIds, message, showDetails, currentProcess, errorsOnTop } = props;
-    const unsavedName = useSelector(getScenarioUnsavedNewName);
+    const unsavedName = useSelector(getProcessUnsavedNewName);
     const separator = ", ";
 
     return (

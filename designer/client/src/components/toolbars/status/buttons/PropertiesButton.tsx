@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/properties.svg";
-import { getScenarioUnsavedNewName, hasError, hasPropertiesErrors, getScenario } from "../../../../reducers/selectors/graph";
+import { getProcessUnsavedNewName, hasError, hasPropertiesErrors, getProcess } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import NodeUtils from "../../../graph/NodeUtils";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
@@ -12,8 +12,8 @@ function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
     const { openNodeWindow } = useWindows();
     const { disabled } = props;
-    const process = useSelector(getScenario);
-    const name = useSelector(getScenarioUnsavedNewName);
+    const process = useSelector(getProcess);
+    const name = useSelector(getProcessUnsavedNewName);
     const propertiesErrors = useSelector(hasPropertiesErrors);
     const errors = useSelector(hasError);
 

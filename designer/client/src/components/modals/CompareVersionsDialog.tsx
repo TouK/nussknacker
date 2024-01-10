@@ -8,7 +8,7 @@ import { WindowContent } from "../../windowManager";
 import { formatAbsolutely } from "../../common/DateUtils";
 import { flattenObj, objectDiff } from "../../common/JsonUtils";
 import HttpService from "../../http/HttpService";
-import { getScenarioName, getScenarioVersionId, getVersions } from "../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
 import { ProcessVersionType } from "../Process/types";
@@ -35,8 +35,8 @@ const VersionsForm = () => {
     };
 
     const [state, setState] = useState<State>(initState);
-    const processName = useSelector(getScenarioName);
-    const version = useSelector(getScenarioVersionId);
+    const processName = useSelector(getProcessName);
+    const version = useSelector(getProcessVersionId);
     const otherEnvironment = useSelector(getTargetEnvironmentId);
     const versions = useSelector(getVersions);
 

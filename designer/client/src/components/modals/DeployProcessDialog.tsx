@@ -3,7 +3,7 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { getScenarioName } from "../../reducers/selectors/graph";
+import { getProcessName } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { ProcessName } from "../Process/types";
 import { PromptContent, WindowKind } from "../../windowManager";
@@ -21,7 +21,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const {
         meta: { action, displayWarnings },
     } = props.data;
-    const processName = useSelector(getScenarioName);
+    const processName = useSelector(getProcessName);
     const [comment, setComment] = useState("");
     const [validationError, setValidationError] = useState("");
     const featureSettings = useSelector(getFeatureSettings);

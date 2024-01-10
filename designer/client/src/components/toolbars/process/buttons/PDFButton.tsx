@@ -3,7 +3,7 @@ import { RootState } from "../../../../reducers/index";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { connect } from "react-redux";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import { getScenarioName, getScenarioVersionId } from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId } from "../../../../reducers/selectors/graph";
 import { useTranslation } from "react-i18next";
 import { useGraph } from "../../../graph/GraphContext";
 import Icon from "../../../../assets/img/toolbarButtons/PDF.svg";
@@ -36,8 +36,8 @@ function PDFButton(props: Props) {
 
 const mapState = (state: RootState) => {
     return {
-        processName: getScenarioName(state),
-        versionId: getScenarioVersionId(state),
+        processName: getProcessName(state),
+        versionId: getProcessVersionId(state),
         canExport: ProcessUtils.canExport(state),
     };
 };

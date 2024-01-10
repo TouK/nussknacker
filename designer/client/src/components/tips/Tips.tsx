@@ -4,7 +4,7 @@ import { Scrollbars } from "react-custom-scrollbars";
 import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 import ProcessUtils from "../../common/ProcessUtils";
-import { getScenario, getTestResults } from "../../reducers/selectors/graph";
+import { getProcess, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import { useWindows } from "../../windowManager";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
@@ -16,7 +16,7 @@ import { NodeType } from "../../types";
 
 export default function Tips(): JSX.Element {
     const { openNodeWindow } = useWindows();
-    const currentProcess = useSelector(getScenario);
+    const currentProcess = useSelector(getProcess);
 
     const showDetails = useCallback(
         (event: React.MouseEvent, node: NodeType) => {

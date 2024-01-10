@@ -5,11 +5,11 @@ import { getCapabilities } from "../../reducers/selectors/other";
 import { AttachmentEl } from "./AttachmentEl";
 import { AddAttachment } from "./AddAttachment";
 import { ProcessAttachmentsList, ProcessAttachmentsStyled } from "./StyledAttach";
-import { getScenarioName } from "../../reducers/selectors/graph";
+import { getProcessName } from "../../reducers/selectors/graph";
 
 export function ProcessAttachments() {
     const { write } = useSelector(getCapabilities);
-    const processName = useSelector(getScenarioName);
+    const processName = useSelector(getProcessName);
     const attachments = useSelector((s: RootState) => s.processActivity.attachments);
 
     return (

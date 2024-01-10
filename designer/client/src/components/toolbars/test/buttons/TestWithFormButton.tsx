@@ -3,11 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/test-with-form.svg";
 import {
-    getScenarioName,
+    getProcessName,
     getScenarioGraph,
     getTestCapabilities,
     getTestParameters,
-    isLatestScenarioVersion,
+    isLatestProcessVersion,
     isProcessRenamed,
 } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
@@ -28,11 +28,11 @@ function TestWithFormButton(props: Props) {
     const { disabled } = props;
     const { t } = useTranslation();
     const { open, inform } = useWindows();
-    const processIsLatestVersion = useSelector(isLatestScenarioVersion);
+    const processIsLatestVersion = useSelector(isLatestProcessVersion);
     const testCapabilities = useSelector(getTestCapabilities);
     const isRenamed = useSelector(isProcessRenamed);
     const testFormParameters: TestFormParameters[] = useSelector(getTestParameters);
-    const scenarioName = useSelector(getScenarioName);
+    const scenarioName = useSelector(getProcessName);
     const processToDisplay = useSelector(getScenarioGraph);
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const dispatch = useDispatch();
