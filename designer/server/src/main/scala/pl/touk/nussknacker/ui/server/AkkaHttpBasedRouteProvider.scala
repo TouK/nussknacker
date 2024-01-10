@@ -53,6 +53,14 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReloa
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
+import pl.touk.nussknacker.ui.services.{
+  AppApiHttpService,
+  ComponentApiHttpService,
+  NodesApiHttpService,
+  NotificationApiHttpService,
+  NuDesignerExposedApiHttpService,
+  UserApiHttpService
+}
 import pl.touk.nussknacker.ui.security.api.{
   AuthenticationConfiguration,
   AuthenticationResources,
@@ -263,6 +271,19 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         notificationService = notificationService
       )
+      val nodesApiHttpService = new NodesApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        getProcessCategoryService = getProcessCategoryService,
+        typeToConfig = typeToConfig.mapValues(_.modelData),
+        typeToProcessValidator = processValidator,
+        typeToNodeValidator = typeToConfig.mapValues(v => new NodeValidator(v.modelData, fragmentRepository)),
+        typeToExpressionSuggester =
+          typeToConfig.mapValues(v => ExpressionSuggester(v.modelData, v.scenarioPropertiesConfig.keys)),
+        typeToParametersValidator =
+          typeToConfig.mapValues(v => new ParametersValidator(v.modelData, v.scenarioPropertiesConfig.keys)),
+        processService = processService
+      )
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
@@ -373,7 +394,8 @@ class AkkaHttpBasedRouteProvider(
           appApiHttpService,
           componentsApiHttpService,
           userApiHttpService,
-          notificationApiHttpService
+          notificationApiHttpService,
+          nodesApiHttpService
         )
 
       createAppRoute(
