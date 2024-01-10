@@ -223,8 +223,8 @@ class ScenarioActivitySpec
           .applicationState {
             createSavedScenario(exampleScenario, category = Category1, Streaming)
           }
-          .multiPartBody(fileContent = fileContent, fileName = fileName)
-          .basicAuth("writer", "writer")
+          .streamBody(fileContent = fileContent, fileName = fileName)
+          .preemptiveBasicAuth("writer", "writer")
           .when()
           .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
           .Then()
@@ -241,7 +241,7 @@ class ScenarioActivitySpec
             createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent1, fileName = fileName)
             createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent2, fileName = fileName)
           }
-          .basicAuth("reader", "reader")
+          .preemptiveBasicAuth("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity")
           .Then()
@@ -274,8 +274,8 @@ class ScenarioActivitySpec
 
       "return 404 for no existing scenario" in {
         given()
-          .multiPartBody(fileContent = fileContent, fileName = fileName)
-          .basicAuth("writer", "writer")
+          .streamBody(fileContent = fileContent, fileName = fileName)
+          .preemptiveBasicAuth("writer", "writer")
           .when()
           .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/attachments")
           .Then()
@@ -287,7 +287,7 @@ class ScenarioActivitySpec
     "not authenticated should" - {
       "forbid access for no authorization" in {
         given()
-          .multiPartBody(fileContent = "test", fileName = "test.xml")
+          .streamBody(fileContent = "test", fileName = "test.xml")
           .noAuth()
           .when()
           .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
@@ -301,8 +301,8 @@ class ScenarioActivitySpec
           .applicationState {
             createSavedScenario(exampleScenario, category = Category1, Streaming)
           }
-          .multiPartBody(fileContent = "test", fileName = "test.xml")
-          .basicAuth("reader", "reader")
+          .streamBody(fileContent = "test", fileName = "test.xml")
+          .preemptiveBasicAuth("reader", "reader")
           .when()
           .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
           .Then()
@@ -386,8 +386,8 @@ class ScenarioActivitySpec
       fileName: String = "important_file.txt"
   ): Unit = {
     given()
-      .multiPartBody(fileContent = fileContent, fileName = fileName)
-      .basicAuth("writer", "writer")
+      .streamBody(fileContent = fileContent, fileName = fileName)
+      .preemptiveBasicAuth("writer", "writer")
       .when()
       .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/attachments")
   }

@@ -4,7 +4,7 @@ import _root_.sttp.client3.SttpBackend
 import _root_.sttp.client3.akkahttp.AkkaHttpBackend
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.instances.all._
@@ -50,7 +50,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
 import java.net.URI
@@ -171,7 +171,7 @@ trait NuResourcesTest
   )
 
   protected val processActivityRoute =
-    new ProcessActivityResource(processActivityRepository, processService, processAuthorizer)
+    new TestResource.ProcessActivityResource(processActivityRepository, processService, processAuthorizer)
 
   protected val processActivityRouteWithAllPermissions: Route = withAllPermissions(processActivityRoute)
 
@@ -612,6 +612,35 @@ object ProcessesQueryEnrichments {
       }
 
       url
+    }
+
+  }
+
+}
+
+object TestResource {
+
+  // should be replaced with rest call: GET /api/process/{scenarioName}/activity
+  class ProcessActivityResource(
+      processActivityRepository: ProcessActivityRepository,
+      protected val processService: ProcessService,
+      val processAuthorizer: AuthorizeProcess
+  )(implicit val ec: ExecutionContext)
+      extends Directives
+      with FailFastCirceSupport
+      with RouteWithUser
+      with ProcessDirectives
+      with AuthorizeProcessDirectives
+      with NuPathMatchers {
+
+    def securedRoute(implicit user: LoggedUser): Route = {
+      path("processes" / ProcessNameSegment / "activity") { processName =>
+        (get & processId(processName)) { processId =>
+          complete {
+            processActivityRepository.findActivity(processId.id)
+          }
+        }
+      }
     }
 
   }

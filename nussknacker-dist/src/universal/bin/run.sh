@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 RUN_IN_BACKGROUND=${RUN_IN_BACKGROUND:-false}
 
@@ -60,6 +60,6 @@ else
   echo -e "JVM: `java -version`\n"
   echo "Starting Nussknacker"
   set -x
-  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
+  exec java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
   set +x
 fi
