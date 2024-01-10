@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process
 
-import cats.data.Validated
+import cats.data.{NonEmptyList, Validated}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails
@@ -46,7 +46,7 @@ class ProcessStateDefinitionService(
 
 object ProcessStateDefinitionService {
 
-  case class StateDefinitionDeduplicationResult(
+  final case class StateDefinitionDeduplicationResult(
       definition: StateDefinitionDetails,
       processingTypes: Set[ProcessingType]
   )
@@ -66,7 +66,7 @@ object ProcessStateDefinitionService {
       .map { case (processingType, statusName, stateDefinitionDetails) =>
         statusName -> (processingType, stateDefinitionDetails)
       }
-      .toGroupedMap
+      .toGroupedMapSafe
       .toList
       .map { case (statusName, stateDefinitionsForOneStatusName) =>
         deduplicateStateDefinitions(stateDefinitionsForOneStatusName)
@@ -92,15 +92,15 @@ object ProcessStateDefinitionService {
   }
 
   private def deduplicateStateDefinitions(
-      stateDefinitionsForOneStatusName: List[(ProcessingType, StateDefinitionDetails)]
+      stateDefinitionsForOneStatusName: NonEmptyList[(ProcessingType, StateDefinitionDetails)]
   ): Validated[Unit, StateDefinitionDeduplicationResult] = {
-    val uniqueDefinitionsForName = stateDefinitionsForOneStatusName
+    val uniqueDefinitionsForName = stateDefinitionsForOneStatusName.toList
       // TODO: For some reasons we don't check other properties (tooltip and description). This code would be
       //       a little bit easier if we do - figure out why and write a comment
       .groupBy { case (_, sd) => (sd.displayableName, sd.icon) }
     lazy val deduplicatedResult = StateDefinitionDeduplicationResult(
       stateDefinitionsForOneStatusName.head._2,
-      stateDefinitionsForOneStatusName.map(_._1).toSet
+      stateDefinitionsForOneStatusName.map(_._1).toList.toSet
     )
     Validated.cond(uniqueDefinitionsForName.size == 1, deduplicatedResult, ())
   }
