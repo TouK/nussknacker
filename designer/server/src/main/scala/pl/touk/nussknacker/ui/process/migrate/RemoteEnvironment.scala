@@ -28,6 +28,9 @@ import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.Executors
+import scala.collection.parallel.ExecutionContextTaskSupport
+import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -207,32 +210,40 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     }
   }
 
+  // We need to be cautious when choosing maxParallelism value as validation may call external systems and we don't want to overwhelm them with requests
   override def testMigration(
       processToInclude: ScenarioWithDetails => Boolean = _ => true,
       maxParallelism: Int = 1
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
+    val batchingExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(maxParallelism))
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
       basicProcesses = allBasicProcesses.filterNot(_.isFragment).filter(processToInclude)
       basicFragments = allBasicProcesses.filter(_.isFragment).filter(processToInclude)
-      processes <- fetchGroupByGroup(basicProcesses)
-      fragments <- fetchGroupByGroup(basicFragments)
-    } yield testModelMigrations.testMigrations(processes, fragments, maxParallelism)).value
+      processes <- fetchGroupByGroup(basicProcesses, batchingExecutionContext)
+      fragments <- fetchGroupByGroup(basicFragments, batchingExecutionContext)
+    } yield testModelMigrations.testMigrations(processes, fragments, batchingExecutionContext)).value
+      .andThen { case _ => batchingExecutionContext.shutdown() }
   }
 
-  private def fetchGroupByGroup(
-      basicProcesses: List[ScenarioWithDetails]
-  )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetails]] = {
-    basicProcesses
+  private def fetchGroupByGroup(basicProcesses: List[ScenarioWithDetails], batchingExecutionContext: ExecutionContext)(
+      implicit ec: ExecutionContext
+  ): FutureE[List[ScenarioWithDetails]] = {
+    val groupedBasicProcesses = basicProcesses
       .map(_.name)
       .grouped(config.batchSize)
-      .foldLeft(EitherT.rightT[Future, NuDesignerError](List.empty[ScenarioWithDetails])) {
-        case (acc, processesGroup) =>
-          for {
-            current <- acc
-            fetched <- fetchProcessesDetails(processesGroup)
-          } yield current ::: fetched
-      }
+      .toVector
+    // We create ParVector manually instead of calling par for compatibility with Scala 2.12
+    val parallelCollection = new ParVector(groupedBasicProcesses)
+    val taskSupport        = new ExecutionContextTaskSupport(batchingExecutionContext)
+    parallelCollection.tasksupport = taskSupport
+    parallelCollection.foldLeft(EitherT.rightT[Future, NuDesignerError](List.empty[ScenarioWithDetails])) {
+      case (acc, processesGroup) =>
+        for {
+          current <- acc
+          fetched <- fetchProcessesDetails(processesGroup)
+        } yield current ::: fetched
+    }
   }
 
   private def fetchProcesses(
