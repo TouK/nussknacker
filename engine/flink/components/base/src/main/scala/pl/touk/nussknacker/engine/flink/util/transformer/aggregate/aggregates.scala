@@ -3,14 +3,18 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.instances.list._
+import io.circe.generic.JsonCodec
+import org.apache.flink.api.common.typeinfo.TypeInfo
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{NumberTypeUtils, typing}
+import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
-import java.util
+import java.{lang, util}
 import scala.jdk.CollectionConverters._
 
 /*
@@ -168,6 +172,107 @@ object aggregates {
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
       Typed.genericTypeClass(classOf[Option[_]], List(input))
     )
+
+  }
+
+  object CountWhenAggregator extends Aggregator {
+
+    override type Element = java.lang.Boolean
+
+    override type Aggregate = java.lang.Long
+
+    override def zero: java.lang.Long = 0L
+
+    override def addElement(element: java.lang.Boolean, aggregate: Aggregate): Aggregate =
+      if (element) aggregate + 1 else aggregate
+
+    override def mergeAggregates(aggregate1: Aggregate, aggregate2: Aggregate): Aggregate = aggregate1 + aggregate2
+
+    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate
+
+    override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = {
+      if (input.canBeSubclassOf(Typed[Boolean])) {
+        Valid(Typed[Long])
+      } else {
+        Invalid(s"Invalid aggregate type: ${input.display}, should be: ${Typed[Boolean].display}")
+      }
+    }
+
+    override def computeStoredType(input: typing.TypingResult): Validated[String, typing.TypingResult] =
+      computeOutputType(input)
+  }
+
+  object AverageAggregator extends Aggregator {
+
+    override type Element = java.lang.Number
+
+    override type Aggregate = AverageAggregatorState
+
+    override def zero: AverageAggregatorState = AverageAggregatorState(null, 0)
+
+    override def addElement(element: java.lang.Number, aggregate: Aggregate): Aggregate =
+      AverageAggregatorState(MathUtils.largeFloatingSum(element, aggregate.sum), aggregate.count + 1)
+
+    override def mergeAggregates(aggregate1: Aggregate, aggregate2: Aggregate): Aggregate =
+      AverageAggregatorState(
+        MathUtils.largeFloatingSum(aggregate1.sum, aggregate2.sum),
+        aggregate1.count + aggregate2.count
+      )
+
+    override def result(finalAggregate: Aggregate): AnyRef = {
+      val count = finalAggregate.count
+      finalAggregate.sum match {
+        case null =>
+          // will be replaced to Double.Nan in alignToExpectedType iff return type is known to be Double
+          null
+        case sum: java.lang.Double     => (sum / count).asInstanceOf[AnyRef]
+        case sum: java.math.BigDecimal => (BigDecimal(sum) / BigDecimal(count)).bigDecimal
+      }
+    }
+
+    override def alignToExpectedType(value: AnyRef, outputType: TypingResult): AnyRef = {
+      if (value == null && outputType == Typed(classOf[Double])) {
+        Double.NaN.asInstanceOf[AnyRef]
+      } else {
+        value
+      }
+    }
+
+    override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = {
+
+      if (!input.canBeSubclassOf(Typed[Number])) {
+        Invalid(s"Invalid aggregate type: ${input.display}, should be: ${Typed[Number].display}")
+      } else {
+        Valid(ForLargeFloatingNumbersOperation.promoteSingle(input))
+      }
+    }
+
+    override def computeStoredType(input: typing.TypingResult): Validated[String, typing.TypingResult] =
+      Valid(Typed[AverageAggregatorState])
+
+    @TypeInfo(classOf[AverageAggregatorState.TypeInfoFactory])
+    // it would be natural to have one field sum: Number instead of nullable sumDouble and sumBigDecimal,
+    // it is done this way to have types serialized properly
+    case class AverageAggregatorState(
+        sumDouble: java.lang.Double,
+        sumBigDecimal: java.math.BigDecimal,
+        count: java.lang.Long
+    ) {
+      def sum: Number = Option(sumDouble).getOrElse(sumBigDecimal)
+    }
+
+    object AverageAggregatorState {
+      class TypeInfoFactory extends CaseClassTypeInfoFactory[AverageAggregatorState]
+
+      def apply(sum: Number, count: java.lang.Long): AverageAggregatorState = {
+        sum match {
+          case null                                => AverageAggregatorState(null, null, count)
+          case sumDouble: java.lang.Double         => AverageAggregatorState(sumDouble, null, count)
+          case sumBigDecimal: java.math.BigDecimal => AverageAggregatorState(null, sumBigDecimal, count)
+        }
+      }
+
+    }
 
   }
 

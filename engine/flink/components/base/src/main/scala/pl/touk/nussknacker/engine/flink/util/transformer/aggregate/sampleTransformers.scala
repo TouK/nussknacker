@@ -10,15 +10,6 @@ import scala.concurrent.duration.Duration
 
 object sampleTransformers {
 
-  private def toAggregator(aggregatorType: String) = aggregatorType match {
-    case "Max"                       => aggregates.MaxAggregator
-    case "Min"                       => aggregates.MinAggregator
-    case "Set"                       => aggregates.SetAggregator
-    case "Sum"                       => aggregates.SumAggregator
-    case "ApproximateSetCardinality" => HyperLogLogPlusAggregator()
-    case _                           => throw new IllegalArgumentException(s"Unknown aggregate type: $aggregatorType")
-  }
-
   /**
    * This aggregator can be used for both predefined aggregators (see list below) and for some specialized aggregators like #AGG.map
    * when you switch editor to "raw mode". It also has `emitWhenEventLeft` flag.
@@ -44,6 +35,8 @@ object sampleTransformers {
               new LabeledExpression(label = "Min", expression = "#AGG.min"),
               new LabeledExpression(label = "Max", expression = "#AGG.max"),
               new LabeledExpression(label = "Sum", expression = "#AGG.sum"),
+              new LabeledExpression(label = "Average", expression = "#AGG.average"),
+              new LabeledExpression(label = "CountWhen", expression = "#AGG.countWhen"),
               new LabeledExpression(label = "List", expression = "#AGG.list"),
               new LabeledExpression(label = "Set", expression = "#AGG.set"),
               new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
@@ -94,6 +87,8 @@ object sampleTransformers {
               new LabeledExpression(label = "Min", expression = "#AGG.min"),
               new LabeledExpression(label = "Max", expression = "#AGG.max"),
               new LabeledExpression(label = "Sum", expression = "#AGG.sum"),
+              new LabeledExpression(label = "Average", expression = "#AGG.average"),
+              new LabeledExpression(label = "CountWhen", expression = "#AGG.countWhen"),
               new LabeledExpression(label = "List", expression = "#AGG.list"),
               new LabeledExpression(label = "Set", expression = "#AGG.set"),
               new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
@@ -148,6 +143,8 @@ object sampleTransformers {
               new LabeledExpression(label = "Min", expression = "#AGG.min"),
               new LabeledExpression(label = "Max", expression = "#AGG.max"),
               new LabeledExpression(label = "Sum", expression = "#AGG.sum"),
+              new LabeledExpression(label = "Average", expression = "#AGG.average"),
+              new LabeledExpression(label = "CountWhen", expression = "#AGG.countWhen"),
               new LabeledExpression(label = "List", expression = "#AGG.list"),
               new LabeledExpression(label = "Set", expression = "#AGG.set"),
               new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
