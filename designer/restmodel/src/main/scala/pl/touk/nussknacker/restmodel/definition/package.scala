@@ -19,8 +19,9 @@ package object definition {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  // This class contains various views for definitions, used in a different FE contexts
-  @JsonCodec(encodeOnly = true) final case class UIDefinitionsComposition(
+  // This class contains various views on definitions, used in a different FE contexts
+  @JsonCodec(encodeOnly = true) final case class UIDefinitions(
+      // This is dedicated view for the components toolbox panel
       componentGroups: List[UIComponentGroup],
       components: Map[ComponentInfo, UIComponentDefinition],
       classes: List[TypingResult],

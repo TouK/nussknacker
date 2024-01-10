@@ -19,8 +19,8 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
-// This class only combines various views of definitions for the FE. It is executed for each request.
-// The core domain logic should be done during Model Definitions extraction
+// This class only combines various views on definitions for the FE. It is executed for each request, when user
+// enters the scenario view. The core domain logic should be done during Model definition extraction
 class DefinitionsService(
     modelData: ModelData,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
@@ -32,7 +32,7 @@ class DefinitionsService(
 
   def prepareUIDefinitions(processingType: ProcessingType, forFragment: Boolean)(
       implicit user: LoggedUser
-  ): Future[UIDefinitionsComposition] = {
+  ): Future[UIDefinitions] = {
     fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
       val enrichedModelDefinition =
         modelDefinitionEnricher
@@ -50,17 +50,18 @@ class DefinitionsService(
   private def prepareUIDefinitions(
       modelDefinitionWithBuiltInComponentsAndFragments: ModelDefinition[ComponentStaticDefinition],
       forFragment: Boolean,
-      scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
-  ): UIDefinitionsComposition = {
-    UIDefinitionsComposition(
+      finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
+  ): UIDefinitions = {
+    UIDefinitions(
       componentGroups =
         ComponentGroupsPreparer.prepareComponentGroups(modelDefinitionWithBuiltInComponentsAndFragments),
       components =
         modelDefinitionWithBuiltInComponentsAndFragments.components.mapValuesNow(createUIComponentDefinition),
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       componentsConfig = prepareComponentConfig(modelDefinitionWithBuiltInComponentsAndFragments, modelData),
-      scenarioPropertiesConfig = (if (forFragment) FragmentPropertiesConfig.properties else scenarioPropertiesConfig)
-        .mapValuesNow(createUIScenarioPropertyConfig),
+      scenarioPropertiesConfig =
+        (if (forFragment) FragmentPropertiesConfig.properties else finalizedScenarioPropertiesConfig)
+          .mapValuesNow(createUIScenarioPropertyConfig),
       edgesForNodes =
         EdgeTypesPreparer.prepareEdgeTypes(definitions = modelDefinitionWithBuiltInComponentsAndFragments),
       customActions = deploymentManager.customActions.map(UICustomAction(_))
@@ -76,7 +77,7 @@ class DefinitionsService(
     } ++ preparePropertiesConfig(modelData)
   }
 
-  // TODO - Extract to the separate, named field in UIDefinitionsComposition
+  // TODO - Extract to the separate, named field in UIDefinitions which would hold also scenarioPropertiesConfig
   //      - Stop treating properties as a node on FE side
   //      - Other way to configure it - it should be somewhere around scenarioPropertiesConfig
   //      - Documentation
