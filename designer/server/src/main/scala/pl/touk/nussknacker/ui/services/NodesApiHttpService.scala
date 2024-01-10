@@ -2,10 +2,9 @@ package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{Decoder, Json}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
@@ -14,7 +13,7 @@ import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
   ParameterDto,
   ParametersValidationResultDto
 }
-import pl.touk.nussknacker.ui.api.{NodeValidationRequest, NodesApiEndpoints, NodesResources, ParametersValidationResult}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -76,12 +75,15 @@ class NodesApiHttpService(
         processService
           .getProcessId(processName)
           .flatMap { processId =>
+            println(processId)
+            println(ProcessIdWithName(processId, processName))
             processService
               .getLatestProcessWithDetails(
                 ProcessIdWithName(processId, processName),
                 GetScenarioWithDetailsOptions.detailsOnly
               )(user)
               .flatMap { process =>
+                println(process)
                 val nodeValidator = typeToNodeValidator.forTypeUnsafe(process.processingType)(user)
                 nodeValidationRequestDto.toRequest match {
                   case Some(nodeData) =>
