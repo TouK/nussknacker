@@ -3,7 +3,7 @@ import { getCapabilities } from "../../../../reducers/selectors/other";
 import { RootState } from "../../../../reducers";
 import { getScenario } from "../../../../reducers/selectors/graph";
 import { NodeId } from "../../../../types";
-import ProcessUtils from "../../../../common/ProcessUtils";
+import ProcessUtils from "../../../../common/ScenarioUtils";
 
 export const getNodeErrors = createSelector(
     getScenario,

@@ -1,5 +1,5 @@
 import { Edge, EdgeKind, NodeType, NodeValidationError, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
+import ProcessUtils from "../../../common/ScenarioUtils";
 import { useDiffMark } from "./PathsToMark";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";

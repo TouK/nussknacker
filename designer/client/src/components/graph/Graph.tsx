@@ -24,7 +24,7 @@ import { UserSettings } from "../../reducers/userSettings";
 import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
-import ProcessUtils from "../../common/ProcessUtils";
+import ProcessUtils from "../../common/ScenarioUtils";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";

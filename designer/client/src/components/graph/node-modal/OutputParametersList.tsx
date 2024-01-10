@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Field, { FieldType } from "./editors/field/Field";
 import { FieldError, getValidationErrorsForField } from "./editors/Validators";
 import { NodeType, NodeValidationError, ProcessDefinitionData } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
+import ProcessUtils from "../../../common/ScenarioUtils";
 import { useDiffMark } from "./PathsToMark";
 import { useTranslation } from "react-i18next";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";

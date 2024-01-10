@@ -3,7 +3,7 @@ import ExpressionField from "./editors/expression/ExpressionField";
 import { findParamDefinitionByName } from "./FieldLabel";
 import React from "react";
 import { NodeType, NodeValidationError, Parameter, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
+import ProcessUtils from "../../../common/ScenarioUtils";
 import { getValidationErrorsForField } from "./editors/Validators";
 
 interface ParameterExpressionField {

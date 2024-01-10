@@ -1,5 +1,5 @@
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
+import ProcessUtils from "../../../common/ScenarioUtils";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";

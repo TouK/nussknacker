@@ -20,7 +20,7 @@ import { ValidationResult } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "./batchGroupBy";
 import { NestedKeyOf } from "./nestedKeyOf";
-import ProcessUtils from "../../common/ProcessUtils";
+import ProcessUtils from "../../common/ScenarioUtils";
 import { correctFetchedDetails } from "./correctFetchedDetails";
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess

@@ -1,5 +1,5 @@
 import { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
+import ProcessUtils from "../../../common/ScenarioUtils";
 import { useTestResults } from "./TestResultsWrapper";
 import React, { useMemo } from "react";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";

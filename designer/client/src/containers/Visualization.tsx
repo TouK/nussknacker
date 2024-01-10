@@ -12,7 +12,7 @@ import Toolbars from "../components/toolbars/Toolbars";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import { ProcessGraph as GraphEl } from "../components/graph/ProcessGraph";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ProcessUtils from "../common/ProcessUtils";
+import ProcessUtils from "../common/ScenarioUtils";
 import { useWindows } from "../windowManager";
 import { useSearchParams } from "react-router-dom";
 import * as VisualizationUrl from "../common/VisualizationUrl";

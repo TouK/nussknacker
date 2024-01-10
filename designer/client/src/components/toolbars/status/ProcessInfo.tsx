@@ -3,8 +3,8 @@ import i18next from "i18next";
 import { SwitchTransition } from "react-transition-group";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
-import { getScenario, getScenarioUnsavedNewName, isProcessRenamed } from "../../../reducers/selectors/graph";
-import { getProcessState } from "../../../reducers/selectors/scenarioState";
+import { getScenario, getScenarioUnsavedNewName, isScenarioRenamed } from "../../../reducers/selectors/graph";
+import { getScenarioState } from "../../../reducers/selectors/scenarioState";
 import { getCustomActions } from "../../../reducers/selectors/settings";
 import { CssFade } from "../../CssFade";
 import ProcessStateIcon from "../../Process/ProcessStateIcon";
@@ -12,7 +12,7 @@ import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWr
 import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
 import { ActionButton } from "../../toolbarSettings/buttons";
-import ProcessStateUtils from "../../Process/ProcessStateUtils";
+import ProcessStateUtils from "../../Process/ScenarioStateUtils";
 import {
     PanelProcessInfo,
     PanelProcessInfoIcon,
@@ -24,9 +24,9 @@ import {
 
 const ProcessInfo = memo(({ id, buttonsVariant, children }: ToolbarPanelProps) => {
     const process = useSelector((state: RootState) => getScenario(state));
-    const isRenamePending = useSelector((state: RootState) => isProcessRenamed(state));
+    const isRenamePending = useSelector((state: RootState) => isScenarioRenamed(state));
     const unsavedNewName = useSelector((state: RootState) => getScenarioUnsavedNewName(state));
-    const processState = useSelector((state: RootState) => getProcessState(state));
+    const processState = useSelector((state: RootState) => getScenarioState(state));
     const customActions = useSelector((state: RootState) => getCustomActions(state));
 
     const description = ProcessStateUtils.getStateDescription(process, processState);

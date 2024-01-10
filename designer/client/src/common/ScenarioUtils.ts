@@ -13,16 +13,16 @@ import {
     VariableTypes,
 } from "../types";
 import { RootState } from "../reducers";
-import { isProcessRenamed } from "../reducers/selectors/graph";
+import { isScenarioRenamed } from "../reducers/selectors/graph";
 import { Scenario } from "src/components/Process/types";
 
-class ProcessUtils {
+class ScenarioUtils {
     nothingToSave = (state: RootState): boolean => {
         const scenario = state.graphReducer.scenario;
         const savedProcessState = state.graphReducer.history.past[0]?.scenario || state.graphReducer.history.present.scenario;
 
         const omitValidation = (details: ScenarioGraph) => omit(details, ["validationResult"]);
-        const processRenamed = isProcessRenamed(state);
+        const processRenamed = isScenarioRenamed(state);
 
         if (processRenamed) {
             return false;
@@ -300,4 +300,4 @@ class ProcessUtils {
         );
 }
 
-export default new ProcessUtils();
+export default new ScenarioUtils();

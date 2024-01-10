@@ -1,12 +1,12 @@
 import { isEmpty } from "lodash";
 import { createSelector } from "reselect";
-import ProcessUtils from "../../common/ProcessUtils";
+import ProcessUtils from "../../common/ScenarioUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
-import ProcessStateUtils from "../../components/Process/ProcessStateUtils";
+import ProcessStateUtils from "../../components/Process/ScenarioStateUtils";
 import { ScenarioGraph } from "../../types";
 import { ProcessCounts } from "../graph";
 import { RootState } from "../index";
-import { getProcessState } from "./scenarioState";
+import { getScenarioState } from "./scenarioState";
 
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
@@ -20,7 +20,7 @@ export const getScenarioCategory = createSelector(getScenario, (d) => d?.process
 export const isLatestScenarioVersion = createSelector(getScenario, (d) => d?.isLatestVersion);
 export const isFragment = createSelector(getScenarioGraph, (p) => p.properties?.isFragment);
 export const isArchived = createSelector(getScenario, (p) => p?.isArchived);
-export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state);
+export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isScenarioRenamed(state);
 export const hasError = createSelector(getScenario, (p) => !ProcessUtils.hasNoErrors(p));
 export const hasWarnings = createSelector(getScenario, (p) => !ProcessUtils.hasNoWarnings(p));
 export const hasPropertiesErrors = createSelector(getScenario, (p) => !ProcessUtils.hasNoPropertiesErrors(p));
@@ -30,28 +30,28 @@ export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !
 export const getHistoryPast = (state: RootState) => state.graphReducer.history.past;
 export const getHistoryFuture = (state: RootState) => state.graphReducer.history.future;
 
-export const isProcessRenamed = createSelector(
+export const isScenarioRenamed = createSelector(
     getScenarioName,
     getScenarioUnsavedNewName,
     (currentName, unsavedNewName) => unsavedNewName && unsavedNewName !== currentName,
 );
-export const getProcessToDisplayWithUnsavedName = createSelector(
-    [getScenario, getScenarioUnsavedNewName, isProcessRenamed],
+export const getScenarioWithUnsavedName = createSelector(
+    [getScenario, getScenarioUnsavedNewName, isScenarioRenamed],
     (process, unsavedName, isProcessRenamed) => ({ ...process, name: isProcessRenamed ? unsavedName : process.name }),
 );
 
 export const isSaveDisabled = createSelector([isPristine, isLatestScenarioVersion], (pristine, latest) => pristine && latest);
 export const isDeployPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState, isFragment],
+    [isSaveDisabled, hasError, getScenarioState, isFragment],
     (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 );
 export const isMigrationPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState, isFragment],
+    [isSaveDisabled, hasError, getScenarioState, isFragment],
     (saveDisabled, error, state, fragment) => saveDisabled && !error && (fragment || ProcessStateUtils.canDeploy(state)),
 );
-export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
+export const isCancelPossible = createSelector(getScenarioState, (state) => ProcessStateUtils.canCancel(state));
 export const isArchivePossible = createSelector(
-    [getProcessState, isFragment],
+    [getScenarioState, isFragment],
     (state, isFragment) => isFragment || ProcessStateUtils.canArchive(state),
 );
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);

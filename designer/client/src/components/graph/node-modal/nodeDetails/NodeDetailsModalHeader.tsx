@@ -6,7 +6,7 @@ import NkModalStyles from "../../../../common/NkModalStyles";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import { NodeType } from "../../../../types";
 import NodeUtils from "../../NodeUtils";
-import ProcessUtils from "../../../../common/ProcessUtils";
+import ProcessUtils from "../../../../common/ScenarioUtils";
 import { ComponentIconStyled, ModalHeader, ModalTitleContainer, NodeDetailsModalTitle } from "./NodeDetailsStyled";
 import { NodeClassDocs } from "./SubHeader";
 

@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/save.svg";
-import { getScenarioName, getScenarioUnsavedNewName, isProcessRenamed, isSaveDisabled } from "../../../../reducers/selectors/graph";
+import { getScenarioName, getScenarioUnsavedNewName, isScenarioRenamed, isSaveDisabled } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
@@ -16,7 +16,7 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
 
     const processName = useSelector(getScenarioName);
     const unsavedNewName = useSelector(getScenarioUnsavedNewName);
-    const isRenamed = useSelector(isProcessRenamed);
+    const isRenamed = useSelector(isScenarioRenamed);
     const title = isRenamed
         ? t("saveProcess.renameTitle", "Save scenario as {{name}}", { name: unsavedNewName })
         : t("saveProcess.title", "Save scenario {{name}}", { name: processName });

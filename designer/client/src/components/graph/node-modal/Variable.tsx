@@ -8,7 +8,7 @@ import { useDiffMark } from "./PathsToMark";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
 import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
-import ProcessUtils from "../../../common/ProcessUtils";
+import ProcessUtils from "../../../common/ScenarioUtils";
 import { IdField } from "./IdField";
 import { getValidationErrorsForField } from "./editors/Validators";
 

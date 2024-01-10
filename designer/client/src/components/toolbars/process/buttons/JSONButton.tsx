@@ -1,6 +1,6 @@
 import React from "react";
 import { RootState } from "../../../../reducers";
-import ProcessUtils from "../../../../common/ProcessUtils";
+import ProcessUtils from "../../../../common/ScenarioUtils";
 import { connect } from "react-redux";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { getScenarioVersionId, getScenario } from "../../../../reducers/selectors/graph";
