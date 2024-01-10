@@ -15,7 +15,7 @@ private[component] object ComponentsValidator {
 
   // TODO: We should rather take List[(ComponentInfo, ComponentDefinitionWithImplementation)] instead of ComponentListElement
   //       ComponentListElement is for a presentation purpose, we loose some information that we can check
-  //       e.g. if class of Component is the same. Even we could define then our own identity mechanisms in Components.
+  //       e.g. if class of Component is the same. We could even define identity mechanisms in Components.
   def validateComponents(
       components: Iterable[ComponentListElement]
   ): ValidatedNel[ComponentWrongConfiguration[_], Unit] = {

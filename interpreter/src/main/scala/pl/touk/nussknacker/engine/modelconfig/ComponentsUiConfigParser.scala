@@ -38,7 +38,7 @@ object ComponentsUiConfigParser {
 }
 
 class ComponentsUiConfig(
-    // TODO: It is public for a special, $properties faked component - see UIProcessObjectsFactory.preparePropertiesConfig
+    // TODO: It is public for a special, $properties faked component - see DefinitionsService.preparePropertiesConfig
     val componentsConfig: Map[String, SingleComponentConfig],
     groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
 ) {

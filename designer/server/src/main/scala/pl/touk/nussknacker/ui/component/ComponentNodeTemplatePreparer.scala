@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.restmodel.definition.ComponentNodeTemplate
+import pl.touk.nussknacker.restmodel.definition.UIComponentNodeTemplate
 
 private[component] object ComponentNodeTemplatePreparer {
 
@@ -71,7 +71,7 @@ private[component] object ComponentNodeTemplatePreparer {
       }
       val branchParametersTemplate =
         NodeParameterTemplatesPreparer.prepareNodeBranchParameterTemplates(componentDefinition.parameters)
-      val componentNodeTemplate = ComponentNodeTemplate.create(
+      val componentNodeTemplate = UIComponentNodeTemplate.create(
         info,
         nodeTemplate,
         branchParametersTemplate
@@ -89,7 +89,7 @@ private[component] object ComponentNodeTemplatePreparer {
 }
 
 private[component] case class ComponentNodeTemplateWithGroupNames(
-    nodeTemplate: ComponentNodeTemplate,
+    nodeTemplate: UIComponentNodeTemplate,
     originalGroupName: ComponentGroupName,
     mappedGroupName: ComponentGroupName
 )

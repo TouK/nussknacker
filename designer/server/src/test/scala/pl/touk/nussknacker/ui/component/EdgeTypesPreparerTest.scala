@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsD
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, FragmentOutput, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinitionConverter
-import pl.touk.nussknacker.restmodel.definition.NodeEdges
+import pl.touk.nussknacker.restmodel.definition.UINodeEdges
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories}
 
@@ -28,31 +28,31 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
     val edgeTypes = EdgeTypesPreparer.prepareEdgeTypes(definitionsWithFragments)
 
     edgeTypes.toSet shouldBe Set(
-      NodeEdges(
+      UINodeEdges(
         BuiltInComponentInfo.Split,
         List.empty,
         canChooseNodes = true,
         isForInputDefinition = false
       ),
-      NodeEdges(
+      UINodeEdges(
         BuiltInComponentInfo.Choice,
         List(NextSwitch(Expression.spel("true")), SwitchDefault),
         canChooseNodes = true,
         isForInputDefinition = false
       ),
-      NodeEdges(
+      UINodeEdges(
         BuiltInComponentInfo.Filter,
         List(FilterTrue, FilterFalse),
         canChooseNodes = false,
         isForInputDefinition = false
       ),
-      NodeEdges(
+      UINodeEdges(
         ComponentInfo(ComponentType.Fragment, "sub1"),
         List(FragmentOutput("out1"), FragmentOutput("out2")),
         canChooseNodes = false,
         isForInputDefinition = false
       ),
-      NodeEdges(
+      UINodeEdges(
         ComponentInfo(ComponentType.CustomComponent, "union"),
         List.empty,
         canChooseNodes = true,

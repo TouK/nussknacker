@@ -9,7 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeData}
 import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProviderFactory,
   EmptyAdditionalUIConfigProviderFactory
@@ -31,7 +31,7 @@ import pl.touk.nussknacker.ui.config.{
   UsageStatisticsReportsConfig
 }
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, ModelDefinitionEnricher}
+import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, DefinitionsService, ModelDefinitionEnricher}
 import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -205,15 +205,18 @@ class AkkaHttpBasedRouteProvider(
       val additionalUIConfigProvider  = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
       val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(additionalUIConfigProvider)
 
+      def prepareModelDefinitionEnricher(processingTypeData: ProcessingTypeData): ModelDefinitionEnricher =
+        ModelDefinitionEnricher(
+          processingTypeData.modelData,
+          additionalUIConfigFinalizer,
+          processingTypeData.staticModelDefinition
+        )
+
       val componentService = new DefaultComponentService(
         ComponentLinksConfigExtractor.extract(resolvedConfig),
         typeToConfig
           .mapValues { processingTypeData =>
-            val modelDefinitionEnricher = ModelDefinitionEnricher(
-              processingTypeData.modelData,
-              additionalUIConfigFinalizer,
-              processingTypeData.staticModelDefinition
-            )
+            val modelDefinitionEnricher = prepareModelDefinitionEnricher(processingTypeData)
             (processingTypeData, modelDefinitionEnricher)
           }
           .mapCombined(combined => combined.componentIdProvider),
@@ -289,14 +292,13 @@ class AkkaHttpBasedRouteProvider(
           new ValidationResources(processService, processResolver),
           new DefinitionResources(
             typeToConfig.mapValues { processingTypeData =>
-              val modelDefinitionEnricher = ModelDefinitionEnricher(
-                processingTypeData.modelData,
+              DefinitionsService(
+                processingTypeData,
+                prepareModelDefinitionEnricher(processingTypeData),
                 additionalUIConfigFinalizer,
-                processingTypeData.staticModelDefinition
+                fragmentRepository
               )
-              (processingTypeData, modelDefinitionEnricher, additionalUIConfigFinalizer)
-            },
-            fragmentRepository
+            }
           ),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
           new AttachmentResources(

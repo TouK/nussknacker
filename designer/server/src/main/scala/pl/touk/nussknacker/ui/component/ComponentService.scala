@@ -189,8 +189,6 @@ class DefaultComponentService(
         case components @ (head :: _) =>
           ComponentsValidator.validateComponents(components).map { _ =>
             val categories = components.flatMap(_.categories).toList.distinct.sorted
-            // We don't need to validate if deduplicated components has the same attributes, because it is already validated in ComponentsValidator
-            // during processing type data loading
             head.copy(categories = categories)
           }
       }

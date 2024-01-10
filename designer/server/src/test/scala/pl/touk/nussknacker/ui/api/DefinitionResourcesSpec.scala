@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.{
   AdditionalUIConfigFinalizer,
+  DefinitionsService,
   ModelDefinitionEnricher,
   TestAdditionalUIConfigProvider
 }
@@ -42,17 +43,15 @@ class DefinitionResourcesSpec
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val definitionResources = new DefinitionResources(
-    processingTypeDataProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
+    serviceProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
       val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(TestAdditionalUIConfigProvider)
       val modelDefinitionEnricher = ModelDefinitionEnricher(
         processingTypeData.modelData,
         additionalUIConfigFinalizer,
         processingTypeData.staticModelDefinition
       )
-      (processingTypeData, modelDefinitionEnricher, additionalUIConfigFinalizer)
-
-    },
-    fragmentRepository
+      DefinitionsService(processingTypeData, modelDefinitionEnricher, additionalUIConfigFinalizer, fragmentRepository)
+    }
   )
 
   it("should handle missing scenario type") {

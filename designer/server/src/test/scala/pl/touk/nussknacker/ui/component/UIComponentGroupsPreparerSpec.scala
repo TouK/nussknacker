@@ -19,12 +19,12 @@ import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinitionConverter
-import pl.touk.nussknacker.restmodel.definition.ComponentGroup
+import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, ModelDefinitionEnricher}
 
-class ComponentGroupsPreparerSpec
+class UIComponentGroupsPreparerSpec
     extends AnyFunSuite
     with Matchers
     with TestPermissions
@@ -121,11 +121,11 @@ class ComponentGroupsPreparerSpec
     }
   }
 
-  private def validateGroups(groups: List[ComponentGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
+  private def validateGroups(groups: List[UIComponentGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
     groups.filterNot(ng => ng.components.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
 
-  private def prepareGroupForServices(services: List[String]): List[ComponentGroup] = {
+  private def prepareGroupForServices(services: List[String]): List[UIComponentGroup] = {
     val modelDefinition = enrichModelDefinitionWithBuiltInComponents(
       services
         .foldRight(ModelDefinitionBuilder.empty)((s, p) => p.withService(s))

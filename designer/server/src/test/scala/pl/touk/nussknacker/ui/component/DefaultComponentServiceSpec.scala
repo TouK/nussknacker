@@ -533,10 +533,6 @@ class DefaultComponentServiceSpec
           (returnedComponent.categories diff possibleCategories) shouldBe empty
 
           val expectedComponent = expectedComponents.find(_.id == returnedComponent.id).value
-          // FIXME: icons are incorrectly determined for combinations of same name components for different types
-          //        because we moved default icon determining from FE to BE and the code of the ComponentService
-          //        uses legacy UIProcessObjects.componentsConfig which is keyed by componentName instead of ComponentInfo
-//          returnedComponent.copy(icon = "") shouldEqual expectedComponent.copy(icon = "")
           returnedComponent shouldEqual expectedComponent
         }
     }

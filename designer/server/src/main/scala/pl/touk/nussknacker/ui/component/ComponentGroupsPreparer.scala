@@ -13,7 +13,7 @@ object ComponentGroupsPreparer {
 
   def prepareComponentGroups(
       definitions: ModelDefinition[ComponentStaticDefinition],
-  ): List[ComponentGroup] = {
+  ): List[UIComponentGroup] = {
     ComponentNodeTemplatePreparer
       .componentNodeTemplatesWithGroupNames(definitions)
       .map(templateWithGroups =>
@@ -54,14 +54,14 @@ object ComponentGroupsPreparer {
         (mappedGroupName, nodeTemplates)
       }
       // We need to merge node templates that originally where in the other group but after mapping are in the same group
-      .foldLeft(ListMap.empty[ComponentGroupName, List[ComponentNodeTemplate]]) {
+      .foldLeft(ListMap.empty[ComponentGroupName, List[UIComponentNodeTemplate]]) {
         case (acc, (groupName, nodeTemplates)) =>
           val mergedNodeTemplates = acc.getOrElse(groupName, List.empty) ++ nodeTemplates
           acc + (groupName -> mergedNodeTemplates)
       }
       .toList
       .map { case (groupName, nodeTemplates) =>
-        ComponentGroup(groupName, nodeTemplates.sortBy(_.label.toLowerCase))
+        UIComponentGroup(groupName, nodeTemplates.sortBy(_.label.toLowerCase))
       }
   }
 
