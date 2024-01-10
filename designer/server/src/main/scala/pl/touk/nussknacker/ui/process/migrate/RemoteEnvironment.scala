@@ -83,7 +83,7 @@ class HttpRemoteEnvironment(
     httpConfig: HttpRemoteEnvironmentConfig,
     val testModelMigrations: TestModelMigrations,
     val environmentId: String
-)(implicit as: ActorSystem, val materializer: Materializer, ec: ExecutionContext)
+)(implicit as: ActorSystem, val materializer: Materializer)
     extends StandardRemoteEnvironment
     with LazyLogging
     with AutoCloseable {
