@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
-  ComponentStaticDefinition,
   CustomComponentSpecificData
 }
 import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
@@ -24,7 +23,6 @@ import pl.touk.nussknacker.restmodel.definition.ComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, ModelDefinitionEnricher}
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 class ComponentGroupsPreparerSpec
     extends AnyFunSuite
@@ -33,10 +31,8 @@ class ComponentGroupsPreparerSpec
     with OptionValues
     with ValidatedValuesDetailedMessage {
 
-  private val processCategoryService = TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
-
   test("return groups sorted in order: inputs, base, other, outputs and then sorted by name within group") {
-    val groups = prepareGroups(
+    val groups = ComponentGroupsPreparer.prepareComponentGroups(
       prepareModelDefinition(
         Map(
           ComponentGroupName("custom") -> Some(ComponentGroupName("CUSTOM")),
@@ -50,7 +46,7 @@ class ComponentGroupsPreparerSpec
   }
 
   test("return groups with hidden base group") {
-    val groups = prepareGroups(
+    val groups = ComponentGroupsPreparer.prepareComponentGroups(
       prepareModelDefinition(Map(ComponentGroupName("base") -> None))
     )
     groups.map(_.name) shouldBe List("sources", "custom", "enrichers", "optionalEndingCustom", "services", "sinks").map(
@@ -67,7 +63,7 @@ class ComponentGroupsPreparerSpec
   }
 
   test("return objects with mapped groups") {
-    val groups = prepareGroups(
+    val groups = ComponentGroupsPreparer.prepareComponentGroups(
       prepareModelDefinition(
         Map(
           ComponentGroupName("custom")               -> Some(ComponentGroupName("base")),
@@ -99,7 +95,7 @@ class ComponentGroupsPreparerSpec
           component.copy(componentConfig = updatedComponentConfig)
         case other => other
       }
-    val groups = prepareGroups(definitionWithCustomComponentInSomeGroup)
+    val groups = ComponentGroupsPreparer.prepareComponentGroups(definitionWithCustomComponentInSomeGroup)
 
     groups.exists(_.name == ComponentGroupName("custom")) shouldBe false
     groups.exists(_.name == ComponentGroupName("group1")) shouldBe true
@@ -118,7 +114,7 @@ class ComponentGroupsPreparerSpec
       .build
       .toStaticComponentsDefinition
 
-    val groups           = prepareGroups(definition)
+    val groups           = ComponentGroupsPreparer.prepareComponentGroups(definition)
     val transformerGroup = groups.find(_.name == ComponentGroupName("optionalEndingCustom")).value
     inside(transformerGroup.components.head.node) { case withParameters: WithParameters =>
       withParameters.parameters.head.expression shouldEqual defaultValueExpression
@@ -136,7 +132,7 @@ class ComponentGroupsPreparerSpec
         .build,
       Map.empty
     )
-    prepareGroups(modelDefinition)
+    ComponentGroupsPreparer.prepareComponentGroups(modelDefinition)
   }
 
   private def prepareModelDefinition(groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]) = {
@@ -157,20 +153,9 @@ class ComponentGroupsPreparerSpec
     modelDefinitionEnricher
       .modelDefinitionWithBuiltInComponentsAndFragments(
         forFragment = false,
-        fragmentsDetails = List.empty,
+        fragmentScenarios = List.empty,
         TestProcessingTypes.Streaming
       )
-  }
-
-  private def prepareGroups(
-      modelDefinition: ModelDefinition[ComponentStaticDefinition]
-  ): List[ComponentGroup] = {
-    ComponentGroupsPreparer.prepareComponentGroups(
-      user = TestFactory.adminUser(),
-      definitions = modelDefinition,
-      processCategoryService = processCategoryService,
-      TestProcessingTypes.Streaming
-    )
   }
 
 }

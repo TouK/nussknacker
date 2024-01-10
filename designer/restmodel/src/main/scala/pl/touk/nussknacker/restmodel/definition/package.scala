@@ -91,14 +91,12 @@ package object definition {
     def create(
         componentInfo: ComponentInfo,
         nodeTemplate: NodeData,
-        categories: List[String],
         branchParametersTemplate: List[NodeParameter]
     ): ComponentNodeTemplate =
       ComponentNodeTemplate(
         componentInfo.`type`,
         componentInfo.name,
         nodeTemplate,
-        categories,
         branchParametersTemplate
       )
 
@@ -109,12 +107,7 @@ package object definition {
       `type`: ComponentType,
       label: String,
       node: NodeData,
-      // TODO: Remove it - it is not used on the FE code, only ComponentService use it and we can take it from
-      //       the processingType property there
-      categories: List[String],
-      branchParametersTemplate: List[NodeParameter] = List.empty,
-      // TODO: This field is added temporary to pick correct icon - we shouldn't use this class for other purposes than encoding to json
-      isEnricher: Option[Boolean] = None
+      branchParametersTemplate: List[NodeParameter] = List.empty
   ) {
     // TODO: This is temporary - we shouldn't use ComponentNodeTemplate class for other purposes than encoding to json
     def componentInfo: ComponentInfo = ComponentInfo(`type`, label)

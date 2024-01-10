@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -13,8 +12,6 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.{ComponentGroupsPreparer, EdgeTypesPreparer}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 object UIProcessObjectsFactory {
 
@@ -22,19 +19,12 @@ object UIProcessObjectsFactory {
       modelDefinitionWithBuiltInComponentsAndFragments: ModelDefinition[ComponentStaticDefinition],
       modelData: ModelData,
       deploymentManager: DeploymentManager,
-      user: LoggedUser,
       forFragment: Boolean,
-      processCategoryService: ProcessCategoryService,
-      scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-      processingType: ProcessingType
+      scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
   ): UIProcessObjects = {
     UIProcessObjects(
-      componentGroups = ComponentGroupsPreparer.prepareComponentGroups(
-        user = user,
-        definitions = modelDefinitionWithBuiltInComponentsAndFragments,
-        processCategoryService = processCategoryService,
-        processingType
-      ),
+      componentGroups =
+        ComponentGroupsPreparer.prepareComponentGroups(modelDefinitionWithBuiltInComponentsAndFragments),
       components =
         modelDefinitionWithBuiltInComponentsAndFragments.components.mapValuesNow(createUIComponentDefinition),
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),

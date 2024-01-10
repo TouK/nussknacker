@@ -37,7 +37,7 @@ class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository
 
     // We create fragmentResolver for each request, because it requires LoggedUser to fetch fragments
     val fragmentResolver =
-      FragmentResolver(fragmentName => fragmentRepository.fetchLatestFragmentSync(fragmentName).map(_.canonical))
+      FragmentResolver(fragmentName => fragmentRepository.fetchLatestFragmentSync(fragmentName))
 
     nodeDataValidator.validate(
       nodeData.nodeData,

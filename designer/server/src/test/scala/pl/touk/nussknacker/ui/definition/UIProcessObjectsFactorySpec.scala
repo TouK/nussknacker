@@ -17,9 +17,8 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIScenarioPropertyConfig
-import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Future
@@ -156,7 +155,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       fragment.metaData.withTypeSpecificData(typeSpecificData = FragmentSpecificData(Some(docsUrl)))
     )
 
-    val processObjects = prepareUIProcessObjects(model, List(FragmentDetails(fragmentWithDocsUrl, "Category1")))
+    val processObjects = prepareUIProcessObjects(model, List(fragmentWithDocsUrl))
 
     processObjects.componentsConfig(fragmentWithDocsUrl.name.value).docsUrl shouldBe Some(docsUrl)
   }
@@ -166,7 +165,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
     val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
-    val processObjects = prepareUIProcessObjects(model, List(FragmentDetails(fragment, "Category1")))
+    val processObjects = prepareUIProcessObjects(model, List(fragment))
 
     processObjects.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)) shouldBe empty
   }
@@ -210,7 +209,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       .mapValuesNow(createUIScenarioPropertyConfig)
   }
 
-  private def prepareUIProcessObjects(model: ModelData, fragmentDetails: List[FragmentDetails]) = {
+  private def prepareUIProcessObjects(model: ModelData, fragmentScenarios: List[CanonicalProcess]) = {
     val staticModelDefinition =
       ToStaticComponentDefinitionTransformer.transformModel(
         model,
@@ -228,7 +227,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       modelDefinitionEnricher
         .modelDefinitionWithBuiltInComponentsAndFragments(
           forFragment = false,
-          fragmentsDetails = fragmentDetails,
+          fragmentScenarios = fragmentScenarios,
           TestProcessingTypes.Streaming
         )
     val finalizedScenarioPropertiesConfig = additionalUIConfigFinalizer
@@ -237,11 +236,8 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       enrichedModelDefinition,
       model,
       new MockDeploymentManager,
-      TestFactory.user("userId"),
       forFragment = false,
-      TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig),
-      finalizedScenarioPropertiesConfig,
-      TestProcessingTypes.Streaming
+      finalizedScenarioPropertiesConfig
     )
   }
 

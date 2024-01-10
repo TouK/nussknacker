@@ -43,7 +43,6 @@ class ToStaticComponentDefinitionTransformer(
         ComponentStaticDefinition(
           parameters,
           staticReturnType(dynamic.implementation),
-          dynamic.categories,
           dynamic.componentConfig,
           dynamic.originalGroupName,
           dynamic.componentTypeSpecificData

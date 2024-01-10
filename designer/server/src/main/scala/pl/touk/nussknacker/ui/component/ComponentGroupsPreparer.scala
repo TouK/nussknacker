@@ -1,27 +1,21 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.ComponentGroupName
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.collection.immutable.ListMap
 
 object ComponentGroupsPreparer {
 
   def prepareComponentGroups(
-      user: LoggedUser,
       definitions: ModelDefinition[ComponentStaticDefinition],
-      processCategoryService: ProcessCategoryService,
-      processingType: ProcessingType
   ): List[ComponentGroup] = {
     ComponentNodeTemplatePreparer
-      .componentNodeTemplatesWithGroupNames(user, definitions, processCategoryService, processingType)
+      .componentNodeTemplatesWithGroupNames(definitions)
       .map(templateWithGroups =>
         (templateWithGroups.originalGroupName, templateWithGroups.mappedGroupName) -> templateWithGroups.nodeTemplate
       )

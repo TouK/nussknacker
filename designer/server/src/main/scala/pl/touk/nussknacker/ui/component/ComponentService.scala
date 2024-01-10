@@ -73,7 +73,7 @@ class DefaultComponentService(
   override def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
     for {
       components <- processingTypeDataProvider.all.toList.flatTraverse { case (processingType, processingTypeData) =>
-        extractComponentsFromProcessingType(processingTypeData, processingType, user)
+        extractComponentsFromProcessingType(processingTypeData, processingType)
       }
       // TODO: We should firstly merge components and after that create DTOs (ComponentListElement). See TODO in ComponentsValidator
       mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
@@ -107,10 +107,8 @@ class DefaultComponentService(
 
   private def extractComponentsFromProcessingType(
       processingTypeData: (ProcessingTypeData, ModelDefinitionEnricher),
-      processingType: ProcessingType,
-      user: LoggedUser
-  ): Future[List[ComponentListElement]] = {
-    implicit val userImplicit: LoggedUser = user
+      processingType: ProcessingType
+  )(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
     fragmentsRepository
       .fetchLatestFragments(processingType)
       .map { fragments =>

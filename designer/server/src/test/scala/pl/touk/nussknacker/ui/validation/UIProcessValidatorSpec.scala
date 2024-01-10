@@ -54,7 +54,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.possibleValues
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentResolver}
+import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
@@ -1331,7 +1331,7 @@ private object UIProcessValidatorSpec {
       List(SampleCustomProcessValidator),
       new FragmentResolver(
         new StubFragmentRepository(
-          Map(TestProcessingTypes.Streaming -> List(FragmentDetails(fragment, Category1)))
+          Map(TestProcessingTypes.Streaming -> List(fragment))
         )
       )
     )

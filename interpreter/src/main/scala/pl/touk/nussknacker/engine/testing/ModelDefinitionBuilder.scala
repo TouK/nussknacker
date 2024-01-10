@@ -110,7 +110,6 @@ final case class ModelDefinitionBuilder(
         ComponentStaticDefinition(
           parameters,
           returnType,
-          None,
           configWithMappedName,
           originalGroupName,
           componentTypeSpecificData
@@ -120,7 +119,7 @@ final case class ModelDefinitionBuilder(
 
   def build: ModelDefinition[ComponentDefinitionWithImplementation] = {
     val globalVariablesDefinition: Map[String, ComponentDefinitionWithImplementation] =
-      globalVariables.mapValuesNow(gv => GlobalVariableDefinitionExtractor.extractDefinition(gv, categories = None))
+      globalVariables.mapValuesNow(GlobalVariableDefinitionExtractor.extractDefinition)
     ModelDefinition[ComponentDefinitionWithImplementation](
       components.map { case (k, v) => k -> withNullImplementation(v) },
       emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),

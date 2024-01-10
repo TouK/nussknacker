@@ -37,7 +37,7 @@ class FragmentRepositorySpec
     ProcessTestData.sampleFragment should not be ProcessTestData.sampleFragment2
 
     fragmentRepository.fetchLatestFragments(TestProcessingTypes.Streaming)(adminUser).futureValue shouldBe List(
-      FragmentDetails(ProcessTestData.sampleFragment2, Category1)
+      ProcessTestData.sampleFragment2
     )
   }
 

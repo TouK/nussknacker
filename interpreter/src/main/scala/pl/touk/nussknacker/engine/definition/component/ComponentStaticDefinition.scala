@@ -9,8 +9,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 final case class ComponentStaticDefinition(
     parameters: List[Parameter],
     returnType: Option[TypingResult],
-    // TODO: Remove it. We can take it from the processingType property, we don't to keep it here
-    categories: Option[List[String]],
     componentConfig: SingleComponentConfig,
     // This is necessary for sorting of components in the toolbox - see ComponentGroupsPreparer and notice next to sorting
     originalGroupName: ComponentGroupName,

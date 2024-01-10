@@ -27,7 +27,6 @@ class BuiltInComponentsStaticDefinitionsPreparer(componentsUiConfig: ComponentsU
           info.name -> ComponentStaticDefinition(
             parameters = List.empty,
             returnType = None,
-            categories = None,
             componentConfig = finalConfig,
             originalGroupName = originalGroupName,
             componentTypeSpecificData = BuiltInComponentSpecificData

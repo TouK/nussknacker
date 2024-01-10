@@ -296,8 +296,7 @@ class AkkaHttpBasedRouteProvider(
               )
               (processingTypeData, modelDefinitionEnricher, additionalUIConfigFinalizer)
             },
-            fragmentRepository,
-            getProcessCategoryService
+            fragmentRepository
           ),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
           new AttachmentResources(

@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
-import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentDetails, FragmentResolver}
+import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   ProcessingTypeDataConfigurationReader,
   ProcessingTypeDataProvider,
@@ -84,7 +84,7 @@ object TestFactory extends TestPermissions {
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
   def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
     Map(
-      TestProcessingTypes.Streaming -> List(FragmentDetails(ProcessTestData.sampleFragment, TestCategories.Category1))
+      TestProcessingTypes.Streaming -> List(ProcessTestData.sampleFragment)
     )
   )
 

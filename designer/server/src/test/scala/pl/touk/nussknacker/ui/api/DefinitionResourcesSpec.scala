@@ -52,8 +52,7 @@ class DefinitionResourcesSpec
       (processingTypeData, modelDefinitionEnricher, additionalUIConfigFinalizer)
 
     },
-    fragmentRepository,
-    () => processCategoryService
+    fragmentRepository
   )
 
   it("should handle missing scenario type") {

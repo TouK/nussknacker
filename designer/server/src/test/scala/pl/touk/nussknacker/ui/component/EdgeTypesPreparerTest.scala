@@ -17,7 +17,6 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
     val sampleFragmentDef = new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader)
       .extractFragmentComponentDefinition(ProcessTestData.sampleFragment)
       .validValue
-      .toStaticDefinition(TestCategories.Category1)
     val definitionsWithFragments = ProcessTestData
       .modelDefinition()
       .toStaticComponentsDefinition

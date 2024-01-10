@@ -20,7 +20,7 @@ object EdgeTypesPreparer {
     val fragmentOutputs = definitions.components.collect {
       case (
             componentInfo,
-            ComponentStaticDefinition(_, _, _, _, _, FragmentSpecificData(outputNames))
+            ComponentStaticDefinition(_, _, _, _, FragmentSpecificData(outputNames))
           ) =>
         // TODO: enable choice of output type
         NodeEdges(
@@ -32,7 +32,7 @@ object EdgeTypesPreparer {
     }
 
     val joinInputs = definitions.components.collect {
-      case (info, ComponentStaticDefinition(_, _, _, _, _, CustomComponentSpecificData(true, _))) =>
+      case (info, ComponentStaticDefinition(_, _, _, _, CustomComponentSpecificData(true, _))) =>
         NodeEdges(info, List.empty, canChooseNodes = true, isForInputDefinition = true)
     }
 

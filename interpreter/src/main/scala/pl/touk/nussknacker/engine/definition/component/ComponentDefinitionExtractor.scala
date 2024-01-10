@@ -32,25 +32,22 @@ object ComponentDefinitionExtractor {
   ): Option[(String, ComponentDefinitionWithImplementation)] = {
     val configBasedOnDefinition = SingleComponentConfig.zero
       .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
-    val componentWithConfig = WithCategories(
-      inputComponentDefinition.component,
-      None,
-      configBasedOnDefinition
-    )
     ComponentDefinitionExtractor
-      .extract(inputComponentDefinition.name, componentWithConfig, additionalConfigs)
+      .extract(
+        inputComponentDefinition.name,
+        inputComponentDefinition.component,
+        configBasedOnDefinition,
+        additionalConfigs
+      )
       .map(inputComponentDefinition.name -> _)
   }
 
-  // TODO: Move this WithCategories extraction to ModelDefinitionFromConfigCreatorExtractor. Here should be passed
-  //       Component and SingleComponentConfig. It will possible when we remove categories from ComponentDefinitionWithImplementation
   def extract(
       componentName: String,
-      componentWithConfig: WithCategories[Component],
+      component: Component,
+      configFromDefinition: SingleComponentConfig,
       additionalConfigs: ComponentsUiConfig
   ): Option[ComponentDefinitionWithImplementation] = {
-    val component = componentWithConfig.value
-
     val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
       component match {
         case _: SourceFactory => (MethodDefinitionExtractor.Source, SourceSpecificData)
@@ -72,7 +69,7 @@ object ComponentDefinitionExtractor {
       val defaultConfig =
         DefaultComponentConfigDeterminer.forNotBuiltInComponentType(componentTypeSpecificData, returnType.isDefined)
       val configFromAdditional = additionalConfigs.getConfig(componentInfo)
-      val combinedConfig       = configFromAdditional |+| componentWithConfig.componentConfig |+| defaultConfig
+      val combinedConfig       = configFromAdditional |+| configFromDefinition |+| defaultConfig
       translateGroupNameAndFilterOutDisabled(combinedConfig, additionalConfigs).map(f)
     }
 
@@ -85,7 +82,6 @@ object ComponentDefinitionExtractor {
               DynamicComponentDefinitionWithImplementation(
                 implementationInvoker,
                 e,
-                componentWithConfig.categories,
                 componentConfig,
                 originalGroupName,
                 componentTypeSpecificData
@@ -94,7 +90,7 @@ object ComponentDefinitionExtractor {
         )
       case _ =>
         val configCombinedForParameters =
-          additionalConfigs.getConfig(componentInfo) |+| componentWithConfig.componentConfig
+          additionalConfigs.getConfig(componentInfo) |+| configFromDefinition
         methodDefinitionExtractor
           .extractMethodDefinition(component, findMainComponentMethod(component), configCombinedForParameters)
           .map { methodDef =>
@@ -106,7 +102,6 @@ object ComponentDefinitionExtractor {
                 val staticDefinition = ComponentStaticDefinition(
                   methodDef.definedParameters,
                   returnType,
-                  componentWithConfig.categories,
                   componentConfig,
                   originalGroupName,
                   componentTypeSpecificData

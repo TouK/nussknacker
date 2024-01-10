@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.{Filter, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.ui.api.helpers.{StubFragmentRepository, TestCategories}
-import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository}
+import pl.touk.nussknacker.ui.api.helpers.StubFragmentRepository
+import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
@@ -161,7 +161,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
 
   private def fragmentRepository(processes: List[CanonicalProcess]): FragmentRepository =
     new StubFragmentRepository(
-      Map("not-important-processing-type" -> processes.map(c => FragmentDetails(c, TestCategories.Category1)))
+      Map("not-important-processing-type" -> processes)
     )
 
 }
