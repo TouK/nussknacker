@@ -28,11 +28,11 @@ import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, ThreadFactory}
 import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutorService, Future}
 
 trait RemoteEnvironment {
 
@@ -215,7 +215,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       processToInclude: ScenarioWithDetails => Boolean = _ => true,
       maxParallelism: Int = 1
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
-    val batchingExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(maxParallelism))
+    val batchingExecutionContext = createPrefixedWorkerThreadsExecutionContext(maxParallelism, "testMigration")
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
       basicProcesses = allBasicProcesses.filterNot(_.isFragment).filter(processToInclude)
@@ -224,6 +224,21 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       fragments <- fetchGroupByGroup(basicFragments, batchingExecutionContext)
     } yield testModelMigrations.testMigrations(processes, fragments, batchingExecutionContext)).value
       .andThen { case _ => batchingExecutionContext.shutdown() }
+  }
+
+  private def createPrefixedWorkerThreadsExecutionContext(
+      maxParallelism: Int,
+      prefix: String
+  ): ExecutionContextExecutorService = {
+    val threadFactory = new ThreadFactory {
+      override def newThread(r: Runnable): Thread = {
+        val thread = new Thread(r)
+        thread.setName(s"$prefix-${thread.getName}")
+        thread
+      }
+    }
+    val executorService = Executors.newFixedThreadPool(maxParallelism, threadFactory)
+    ExecutionContext.fromExecutorService(executorService)
   }
 
   private def fetchGroupByGroup(basicProcesses: List[ScenarioWithDetails], batchingExecutionContext: ExecutionContext)(
