@@ -1,5 +1,5 @@
 import React from "react";
-import { ProcessStateType, Process } from "./types";
+import { ProcessStateType, Scenario } from "./types";
 import ProcessStateUtils from "./ProcessStateUtils";
 import UrlIcon from "../UrlIcon";
 import { Box, Divider, Popover, Typography } from "@mui/material";
@@ -7,7 +7,7 @@ import { Errors } from "./ProcessErrors";
 
 interface Props {
     processState?: ProcessStateType;
-    process: Process;
+    process: Scenario;
 }
 
 function ProcessStateIcon({ process, processState }: Props) {

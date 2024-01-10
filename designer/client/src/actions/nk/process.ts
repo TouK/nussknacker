@@ -1,16 +1,16 @@
 import { ThunkAction } from "../reduxTypes";
 import { ScenarioGraph, ProcessDefinitionData } from "../../types";
 import HttpService from "./../../http/HttpService";
-import { Process, ProcessName, ProcessVersionId } from "../../components/Process/types";
+import { Scenario, ProcessName, ProcessVersionId } from "../../components/Process/types";
 import { displayProcessActivity } from "./displayProcessActivity";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
-    | { type: "DISPLAY_PROCESS"; fetchedProcessDetails: Process };
+    | { type: "DISPLAY_PROCESS"; fetchedProcessDetails: Scenario };
 
-export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Process>> {
+export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
     return (dispatch) => {
         dispatch({ type: "PROCESS_FETCH" });
 

@@ -3,13 +3,13 @@ import i18next from "i18next";
 import { concat, difference, isEmpty } from "lodash";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import { NodeType, ScenarioGraph, NodeValidationError } from "../../../types";
-import { Process } from "src/components/Process/types";
+import { Scenario } from "src/components/Process/types";
 
 interface NodeErrorsTips {
     propertiesErrors: NodeValidationError[];
     nodeErrors: Record<string, NodeValidationError[]>;
     showDetails: (event: React.SyntheticEvent<Element, Event>, details: NodeType) => void;
-    currentProcess: Process;
+    currentProcess: Scenario;
 }
 
 export const NodeErrorsTips = ({ propertiesErrors, nodeErrors, showDetails, currentProcess }: NodeErrorsTips) => {

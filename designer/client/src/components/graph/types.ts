@@ -11,7 +11,7 @@ import {
     toggleSelection,
 } from "../../actions/nk";
 import { Capabilities } from "../../reducers/selectors/other";
-import { Process } from "../Process/types";
+import { Scenario } from "../Process/types";
 
 type ScenarioGraphProps = {
     nodesConnected: typeof nodesConnected;
@@ -22,12 +22,12 @@ type ScenarioGraphProps = {
     resetSelection: typeof resetSelection;
     toggleSelection: typeof toggleSelection;
 
-    process: Process;
+    process: Scenario;
     divId: string;
     nodeIdPrefixForFragmentTests?: string;
     processCounts: ProcessCounts;
     capabilities: Capabilities;
-    fetchedProcessDetails: Process;
+    fetchedProcessDetails: Scenario;
     layout: Layout;
 
     readonly?: boolean;
@@ -39,7 +39,7 @@ type ScenarioGraphProps = {
 };
 
 type FragmentGraphProps = {
-    process: Process;
+    process: Scenario;
     divId: string;
     nodeIdPrefixForFragmentTests: string;
     processCounts: ProcessCounts;

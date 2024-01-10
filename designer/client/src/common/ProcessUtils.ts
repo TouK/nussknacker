@@ -14,12 +14,12 @@ import {
 } from "../types";
 import { RootState } from "../reducers";
 import { isProcessRenamed } from "../reducers/selectors/graph";
-import { Process } from "src/components/Process/types";
+import { Scenario } from "src/components/Process/types";
 
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
-        const process = state.graphReducer.process;
-        const savedProcessState = state.graphReducer.history.past[0]?.process || state.graphReducer.history.present.process;
+        const scenario = state.graphReducer.scenario;
+        const savedProcessState = state.graphReducer.history.past[0]?.scenario || state.graphReducer.history.present.scenario;
 
         const omitValidation = (details: ScenarioGraph) => omit(details, ["validationResult"]);
         const processRenamed = isProcessRenamed(state);
@@ -28,20 +28,20 @@ class ProcessUtils {
             return false;
         }
 
-        if (isEmpty(process)) {
+        if (isEmpty(scenario)) {
             return true;
         }
 
-        return !savedProcessState || isEqual(omitValidation(process.json), omitValidation(savedProcessState.json));
+        return !savedProcessState || isEqual(omitValidation(scenario.json), omitValidation(savedProcessState.json));
     };
 
     canExport = (state: RootState): boolean => {
-        const process = state.graphReducer.process;
-        return isEmpty(process) ? false : !isEmpty(process.json.nodes);
+        const scenario = state.graphReducer.scenario;
+        return isEmpty(scenario) ? false : !isEmpty(scenario.json.nodes);
     };
 
     //fixme maybe return hasErrors flag from backend?
-    hasNeitherErrorsNorWarnings = (process: Process) => {
+    hasNeitherErrorsNorWarnings = (process: Scenario) => {
         return this.hasNoErrors(process) && this.hasNoWarnings(process);
     };
 
@@ -55,7 +55,7 @@ class ProcessUtils {
         );
     };
 
-    hasNoErrors = (process: Process) => {
+    hasNoErrors = (process: Scenario) => {
         const result = this.getValidationErrors(process);
         return (
             !result ||
@@ -65,19 +65,19 @@ class ProcessUtils {
         );
     };
 
-    getValidationResult = (process: Process): ValidationResult =>
+    getValidationResult = (process: Scenario): ValidationResult =>
         process?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
 
-    hasNoWarnings = (process: Process) => {
+    hasNoWarnings = (process: Scenario) => {
         const warnings = this.getValidationResult(process).warnings;
         return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
     };
 
-    hasNoPropertiesErrors = (process: Process) => {
+    hasNoPropertiesErrors = (process: Scenario) => {
         return isEmpty(this.getValidationErrors(process)?.processPropertiesErrors);
     };
 
-    getValidationErrors(process: Process) {
+    getValidationErrors(process: Scenario) {
         return this.getValidationResult(process).errors;
     }
 
@@ -100,13 +100,13 @@ class ProcessUtils {
         );
     };
 
-    getNodeResults = (process: Process): NodeResults => this.getValidationResult(process).nodeResults;
+    getNodeResults = (process: Scenario): NodeResults => this.getValidationResult(process).nodeResults;
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
     escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
     findAvailableVariables =
-        (components: Record<string, ComponentDefinition>, process: Process) =>
+        (components: Record<string, ComponentDefinition>, process: Scenario) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
             const nodeResults = this.getNodeResults(process);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
@@ -121,7 +121,7 @@ class ProcessUtils {
 
     _findVariablesDeclaredBeforeNode = (
         nodeId: NodeId,
-        process: Process,
+        process: Scenario,
         components: Record<string, ComponentDefinition>,
     ): VariableTypes => {
         const previousNodes = this._findPreviousNodes(nodeId, process);
@@ -277,7 +277,7 @@ class ProcessUtils {
 
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
-    _findPreviousNodes = (nodeId: NodeId, process: Process): NodeId[] => {
+    _findPreviousNodes = (nodeId: NodeId, process: Scenario): NodeId[] => {
         const nodeEdge = process.json.edges.find((edge) => edge.to === nodeId);
         if (isEmpty(nodeEdge)) {
             return [];

@@ -1,10 +1,10 @@
 import { useWindows } from "../../windowManager";
 import { useCallback } from "react";
-import { Process } from "src/components/Process/types";
+import { Scenario } from "src/components/Process/types";
 import { parseWindowsQueryParams } from "./useSearchQuery";
 import NodeUtils from "../../components/graph/NodeUtils";
 
-export function getFragmentNodesPrefix(fragmentContent: Process) {
+export function getFragmentNodesPrefix(fragmentContent: Scenario) {
     return fragmentContent ? `${fragmentContent.name}-` : "";
 }
 
@@ -25,7 +25,7 @@ export function useModalDetailsIfNeeded() {
     }, []);
 
     const openNodes = useCallback(
-        (process: Process) => {
+        (process: Scenario) => {
             return getNodeIds()
                 .map(
                     (id) => NodeUtils.getNodeById(id, process.json) ?? (process.name === id && NodeUtils.getProcessPropertiesNode(process)),
@@ -37,7 +37,7 @@ export function useModalDetailsIfNeeded() {
     );
 
     const openFragmentNodes = useCallback(
-        (fragment: Process) => {
+        (fragment: Scenario) => {
             const prefix = getFragmentNodesPrefix(fragment);
             return getNodeIds()
                 .filter((i) => i.startsWith(prefix))

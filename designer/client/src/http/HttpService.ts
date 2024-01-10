@@ -9,7 +9,7 @@ import { UserData } from "../common/models/User";
 import {
     ProcessActionType,
     ProcessStateType,
-    Process,
+    Scenario,
     ProcessVersionId,
     StatusDefinitionType,
     ProcessName,
@@ -51,7 +51,7 @@ export type FetchProcessQueryParams = Partial<{
     isDeployed: boolean;
 }>;
 
-export type StatusesType = Record<Process["name"], ProcessStateType>;
+export type StatusesType = Record<Scenario["name"], ProcessStateType>;
 
 export interface AppBuildInfo {
     name: string;
@@ -214,14 +214,14 @@ class HttpService {
         return api.get<ComponentUsageType[]>(`/components/${encodeURIComponent(componentId)}/usages`);
     }
 
-    fetchProcesses(data: FetchProcessQueryParams = {}): Promise<AxiosResponse<Process[]>> {
-        return api.get<Process[]>("/processes", { params: data });
+    fetchProcesses(data: FetchProcessQueryParams = {}): Promise<AxiosResponse<Scenario[]>> {
+        return api.get<Scenario[]>("/processes", { params: data });
     }
 
     fetchProcessDetails(processName: ProcessName, versionId?: ProcessVersionId) {
         const id = encodeURIComponent(processName);
         const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`;
-        return api.get<Process>(url);
+        return api.get<Scenario>(url);
     }
 
     fetchProcessesStates() {

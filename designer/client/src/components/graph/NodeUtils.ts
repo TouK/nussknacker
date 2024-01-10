@@ -16,7 +16,7 @@ import {
 } from "../../types";
 import { UnknownRecord } from "../../types/common";
 import { createEdge } from "../../reducers/graph/utils";
-import { Process } from "../Process/types";
+import { Scenario } from "../Process/types";
 
 class NodeUtils {
     isNode = (obj: UnknownRecord): obj is NodeType => {
@@ -49,7 +49,7 @@ class NodeUtils {
     edgesFromScenarioGraph = (scenarioGraph: ScenarioGraph) => scenarioGraph.edges || [];
 
     // For sake of consistency with other nodes, name must be renamed to id
-    getProcessPropertiesNode = ({ name, json: { properties } }: Process, unsavedName?: string) => ({
+    getProcessPropertiesNode = ({ name, json: { properties } }: Scenario, unsavedName?: string) => ({
         id: name || unsavedName,
         ...properties,
     });

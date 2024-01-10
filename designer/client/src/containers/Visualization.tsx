@@ -25,7 +25,7 @@ import { DndProvider } from "react-dnd-multi-backend";
 import { useDecodedParams } from "../common/routerUtils";
 import { RootState } from "../reducers";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
-import { Process } from "../components/Process/types";
+import { Scenario } from "../components/Process/types";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -122,7 +122,7 @@ function Visualization() {
 
     const { openNodes } = useModalDetailsIfNeeded();
     const openAndHighlightNodes = useCallback(
-        async (process: Process) => {
+        async (process: Scenario) => {
             const windows = await Promise.all(openNodes(process));
             windows.map((w) => dispatch(toggleSelection(w.meta.node.id)));
         },

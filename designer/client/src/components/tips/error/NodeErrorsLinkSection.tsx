@@ -6,13 +6,13 @@ import { getProcessUnsavedNewName } from "../../../reducers/selectors/graph";
 import { NodeId, NodeType } from "../../../types";
 import { ErrorHeader } from "./ErrorHeader";
 import { NodeErrorLink } from "./NodeErrorLink";
-import { Process } from "../../Process/types";
+import { Scenario } from "../../Process/types";
 
 interface NodeErrorsLinkSectionProps {
     nodeIds: NodeId[];
     message: string;
     showDetails: (event: SyntheticEvent, details: NodeType) => void;
-    currentProcess: Process;
+    currentProcess: Scenario;
     errorsOnTop?: boolean;
 }
 

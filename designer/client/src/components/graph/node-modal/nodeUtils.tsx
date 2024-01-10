@@ -1,7 +1,7 @@
 import { NodeType } from "../../../types";
 import { cloneDeep, get, has } from "lodash";
 import { v4 as uuid4 } from "uuid";
-import { Process } from "src/components/Process/types";
+import { Scenario } from "src/components/Process/types";
 
 export function generateUUIDs(editedNode: NodeType, properties: string[]): NodeType {
     const node = cloneDeep(editedNode);
@@ -13,6 +13,6 @@ export function generateUUIDs(editedNode: NodeType, properties: string[]): NodeT
     return node;
 }
 
-export function getNodeId(process: Process, node: NodeType): string {
+export function getNodeId(process: Scenario, node: NodeType): string {
     return process.json.properties.isFragment ? node.id.replace(`${process.name}-`, "") : node.id;
 }

@@ -1,6 +1,6 @@
 import { Edge, ScenarioGraph, ProcessDefinitionData } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { Process } from "../../components/Process/types";
+import { Scenario } from "../../components/Process/types";
 
 function getEdgeValidator(processToDisplay: ScenarioGraph, processDefinitionData?: ProcessDefinitionData) {
     return ({ from }: Edge): boolean => {
@@ -8,7 +8,7 @@ function getEdgeValidator(processToDisplay: ScenarioGraph, processDefinitionData
     };
 }
 
-export function correctFetchedDetails(data: Process, definitionData?: ProcessDefinitionData): Process {
+export function correctFetchedDetails(data: Scenario, definitionData?: ProcessDefinitionData): Scenario {
     const { json: scenarioGraph } = data;
     const { edges } = scenarioGraph;
     const isValidEdge = getEdgeValidator(scenarioGraph, definitionData);

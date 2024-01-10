@@ -6,7 +6,6 @@ import { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
 import { NodeType, ScenarioGraph } from "../types";
 import { WindowKind } from "./WindowKind";
 import { InfoDialogData } from "../components/modals/GenericInfoDialog";
-import { Process } from "src/components/Process/types";
 
 export function useWindows(parent?: WindowId) {
     const { open: _open, closeAll } = useWindowManager(parent);

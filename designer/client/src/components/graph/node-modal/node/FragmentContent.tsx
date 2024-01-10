@@ -10,13 +10,13 @@ import { correctFetchedDetails } from "../../../../reducers/graph/correctFetched
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import { getFragmentNodesPrefix, useModalDetailsIfNeeded } from "../../../../containers/hooks/useModalDetailsIfNeeded";
 import { useInitEffect } from "../../../../containers/hooks/useInitEffect";
-import { Process } from "../../../Process/types";
+import { Scenario } from "../../../Process/types";
 
 export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNodeType }): JSX.Element {
     const processCounts = useSelector(getProcessCounts);
     const processDefinitionData = useSelector(getProcessDefinitionData);
 
-    const [fragmentContent, setFragmentContent] = useState<Process>(null);
+    const [fragmentContent, setFragmentContent] = useState<Scenario>(null);
     const { openFragmentNodes } = useModalDetailsIfNeeded();
 
     const initFragmentData = useCallback(async () => {

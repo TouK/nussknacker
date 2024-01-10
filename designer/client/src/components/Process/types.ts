@@ -37,7 +37,7 @@ export type ProcessVersionType = {
     processVersionId: ProcessVersionId;
 };
 
-export interface Process {
+export interface Scenario {
     name: string;
     processVersionId: number;
     isArchived: boolean;
@@ -58,7 +58,7 @@ export interface Process {
     validationResult: ValidationResult;
 }
 
-export type ProcessName = Process["name"];
+export type ProcessName = Scenario["name"];
 
 export type ProcessStateType = {
     status: StatusType;
