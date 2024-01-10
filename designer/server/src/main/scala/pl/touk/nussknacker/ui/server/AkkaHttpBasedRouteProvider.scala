@@ -63,7 +63,13 @@ import pl.touk.nussknacker.ui.services._
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
+import pl.touk.nussknacker.ui.util.{
+  AkkaToTapirStreamExtension,
+  CorsSupport,
+  OptionsMethodSupport,
+  SecurityHeadersSupport,
+  WithDirectives
+}
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
@@ -263,6 +269,19 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         notificationService = notificationService
       )
+      val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
+        config = resolvedConfig,
+        scenarioCategoryService = getProcessCategoryService,
+        authenticator = authenticationResources,
+        scenarioActivityRepository = processActivityRepository,
+        scenarioService = processService,
+        scenarioAuthorizer = processAuthorizer,
+        new ScenarioAttachmentService(
+          AttachmentsConfig.create(resolvedConfig),
+          processActivityRepository
+        ),
+        new AkkaToTapirStreamExtension()
+      )
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
@@ -289,7 +308,7 @@ class AkkaHttpBasedRouteProvider(
             processActivityRepository,
             processResolver
           ),
-          new ProcessActivityResource(processActivityRepository, processService, processAuthorizer),
+//          new ProcessActivityResource(processActivityRepository, processService, processAuthorizer),
           new ManagementResources(
             processAuthorizer,
             processService,
@@ -313,14 +332,14 @@ class AkkaHttpBasedRouteProvider(
             }
           ),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
-          new AttachmentResources(
-            new ProcessAttachmentService(
-              AttachmentsConfig.create(resolvedConfig),
-              processActivityRepository
-            ),
-            processService,
-            processAuthorizer
-          ),
+//          new AttachmentResources(
+//            new ProcessAttachmentService(
+//              AttachmentsConfig.create(resolvedConfig),
+//              processActivityRepository
+//            ),
+//            processService,
+//            processAuthorizer
+//          ),
           new StatusResources(stateDefinitionService),
         )
 
@@ -373,7 +392,8 @@ class AkkaHttpBasedRouteProvider(
           appApiHttpService,
           componentsApiHttpService,
           userApiHttpService,
-          notificationApiHttpService
+          notificationApiHttpService,
+          scenarioActivityApiHttpService
         )
 
       createAppRoute(
