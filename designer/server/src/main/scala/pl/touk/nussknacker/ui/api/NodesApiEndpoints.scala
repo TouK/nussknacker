@@ -2,21 +2,21 @@ package pl.touk.nussknacker.ui.api
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import io.circe.Json.Null
 import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder, HCursor, Json, JsonNumber, KeyDecoder}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.typed.TypingType.TypedUnion
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectWithValue, TypedTaggedValue, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectWithValue, TypedTaggedValue, TypedUnion, TypingResult}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
-import pl.touk.nussknacker.engine.spel.Parameter
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.UIValueParameter
@@ -195,7 +195,8 @@ object NodesApiEndpoints {
         display: String,
         `type`: String,
         refClazzName: String,
-        params: List[TypingResultDto]
+        params: List[TypingResultDto],
+        fields: Option[Map[String, TypingResultDto]]
     )
 
     object TypingResultDto {
@@ -204,32 +205,43 @@ object NodesApiEndpoints {
         Schema.any
       }
 
-      def getTypingValue(value: Any): Json = {
+      private def getTypingValue(value: Any): Json = {
         value match {
-          case Some(inside) =>
-            inside match {
-              case x: String  => Json.fromString(x)
-              case x: Int     => Json.fromInt(x)
-              case x: Boolean => Json.fromBoolean(x)
-              case _          => Json.Null
-            }
-          case None => Json.Null
+          case x: JsonNumber => x.asJson
+          case x: Json       => x
+          case x: String     => Json.fromString(x)
+          case x: Int        => Json.fromInt(x)
+          case x: Boolean    => Json.fromBoolean(x)
+          case _             => Json.Null
         }
       }
 
       implicit val encoder: Encoder[TypingResultDto] = {
         Encoder.encodeJson.contramap { typingResult =>
-          getTypingValue(typingResult.value) match {
-            case Null =>
+          typingResult.value match {
+            case None =>
+              typingResult.fields match {
+                case Some(fields) =>
+                  Json.obj(
+                    "display" -> Json.fromString(typingResult.display),
+                    "type"    -> Json.fromString(typingResult.`type`),
+                    "fields" -> Json.fromFields(fields.toList.map { case (key, typingResultDto) =>
+                      (key, typingResultDto.asJson(encoder))
+                    }),
+                    "refClazzName" -> Json.fromString(typingResult.refClazzName),
+                    "params"       -> Json.fromValues(typingResult.params.map { result => result.asJson(encoder) })
+                  )
+                case None =>
+                  Json.obj(
+                    "display"      -> Json.fromString(typingResult.display),
+                    "type"         -> Json.fromString(typingResult.`type`),
+                    "refClazzName" -> Json.fromString(typingResult.refClazzName),
+                    "params"       -> Json.fromValues(typingResult.params.map { result => result.asJson(encoder) })
+                  )
+              }
+            case Some(value) =>
               Json.obj(
-                "display"      -> Json.fromString(typingResult.display),
-                "type"         -> Json.fromString(typingResult.`type`),
-                "refClazzName" -> Json.fromString(typingResult.refClazzName),
-                "params"       -> Json.fromValues(typingResult.params.map { result => result.asJson(encoder) })
-              )
-            case value =>
-              Json.obj(
-                "value"        -> value,
+                "value"        -> getTypingValue(value),
                 "display"      -> Json.fromString(typingResult.display),
                 "type"         -> Json.fromString(typingResult.`type`),
                 "refClazzName" -> Json.fromString(typingResult.refClazzName),
@@ -240,18 +252,61 @@ object NodesApiEndpoints {
       }
 
       implicit val decoder: Decoder[TypingResultDto] = {
-        Decoder.instance { c =>
+        Decoder.instance { c: HCursor =>
           for {
-            typ <- c.downField("type").as[String]
-
-            //            variableType  <- giveType(typ, c)
-            //            value         <- c.downField("value").
+            typ          <- c.downField("type").as[String]
+            value        <- c.downField("value").as[Option[Json]]
             display      <- c.downField("display").as[String]
             refClazzName <- c.downField("refClazzName").as[String]
+            fields <- c
+              .downField("fields")
+              .as[Option[Map[String, TypingResultDto]]](
+                Decoder.decodeOption(Decoder.decodeMap[String, TypingResultDto](KeyDecoder.decodeKeyString, decoder))
+              )
             params <- c.downField("params").as[List[TypingResultDto]](Decoder.decodeList[TypingResultDto](decoder))
-          } yield TypingResultDto(None, display, typ, refClazzName, params)
+          } yield TypingResultDto(value, display, typ, refClazzName, params, fields)
         }
       }
+
+      private def jsonToValue(value: Any, klass: String): Any = {
+        klass match {
+          case "java.lang.Long" => value.asInstanceOf[Json].asNumber.get.toLong.get
+          case "java.lang.Int"  => value.asInstanceOf[Json].asNumber.get.toInt.get
+          case _                => value
+        }
+      }
+
+      def toTypingResult(typeDto: TypingResultDto)(implicit modelData: ModelData): TypingResult = {
+        typeDto.value match {
+          case Some(value) =>
+            val underlying = Typed.genericTypeClass(
+              modelData.modelClassLoader.classLoader.loadClass(typeDto.refClazzName),
+              typeDto.params.map { resultDto => toTypingResult(resultDto) }
+            )
+
+            val trueValue = jsonToValue(value, typeDto.refClazzName)
+            typing.TypedObjectWithValue(underlying, trueValue)
+
+          case None =>
+            typeDto.fields match {
+              case Some(fields) =>
+                typing.TypedObjectTypingResult(
+                  fields.map { case (key, result) => (key, toTypingResult(result)) }
+                )
+              case None =>
+                Typed.genericTypeClass(
+                  modelData.modelClassLoader.classLoader.loadClass(typeDto.refClazzName),
+                  typeDto.params.map { resultDto => toTypingResult(resultDto) }
+                )
+            }
+        }
+      }
+
+      private def toOptionString(valueOpt: Option[Any]): Option[String] =
+        valueOpt match {
+          case Some(value) => Some(value.toString)
+          case None        => None
+        }
 
       def typingResultToDto(typingResult: TypingResult): TypingResultDto = {
         typingResult match {
@@ -261,71 +316,91 @@ object NodesApiEndpoints {
               value = Some(result.value),
               display = result.display,
               `type` = typing.TypedObjectWithValue.toString(),
-              refClazzName = result.data.getClass.toString.stripPrefix("class "),
-              params = List.empty
+              refClazzName = result.underlying.klass.toString.stripPrefix("class "),
+              params = List.empty,
+              fields = None
             )
           case result: TypedClass =>
             println("TypedClass")
             TypingResultDto(
-              value = None,
+              value = toOptionString(result.valueOpt),
               display = result.display,
               `type` = "TypedClass",
               refClazzName = result.klass.toString.stripPrefix("class "),
-              params = result.params.map(param => typingResultToDto(param))
+              params = result.params.map(param => typingResultToDto(param)),
+              fields = None
+            )
+          case result: TypedUnion =>
+            println("TypedUnion")
+            TypingResultDto(
+              value = toOptionString(result.valueOpt),
+              display = result.display,
+              `type` = TypedUnion.getClass.toString.stripPrefix("class "),
+              refClazzName = "TypedUnion",
+              params = List.empty,
+              fields = None
             )
           case result: TypedTaggedValue =>
             println("TypedTaggedValue")
             TypingResultDto(
-              value = None,
+              value = toOptionString(result.valueOpt),
               display = result.display,
-              `type` = typing.TypedTaggedValue.toString(),
+              `type` = "TypedTaggedValue",
               refClazzName = result.data.getClass.toString.stripPrefix("class "),
-              params = List.empty
+              params = List.empty,
+              fields = None
+            )
+          case result: typing.TypedObjectWithData =>
+            println("TypedObjectWithData")
+            TypingResultDto(
+              value = toOptionString(result.valueOpt),
+              display = result.display,
+              `type` = "TypedObjectWithData",
+              refClazzName = result.withoutValue.display.getClass.toString,
+              params = List.empty,
+              fields = None
+            )
+          case result: typing.TypedDict =>
+            println("TypedDict")
+            TypingResultDto(
+              value = toOptionString(result.valueOpt),
+              display = result.display,
+              `type` = typing.TypedDict.getClass.toString.stripPrefix("class "),
+              refClazzName = result.objType.klass.toString,
+              params = List.empty,
+              fields = None
             )
           case result: typing.TypedObjectTypingResult =>
             println("TypedObjectTypingResult")
             TypingResultDto(
               value = None,
               display = result.display,
-              `type` = typing.TypedObjectTypingResult.getClass.toString,
-              refClazzName = result.getClass.toString.stripPrefix("class "),
-              params = List.empty // maybe sth else?
-            )
-          case result: typing.TypedObjectWithData =>
-            println("TypedObjectWithData")
-            TypingResultDto(
-              value = None,
-              display = result.display,
-              `type` = typing.TypedObjectWithValue.toString(), // wrong
-              refClazzName = result.withoutValue.display.getClass.toString,
-              params = List.empty
+              `type` = "TypedObjectTypingResult",
+              refClazzName = "java.util.Map",
+              params = List(typingResultToDto(Typed.genericTypeClass(Class.forName("java.lang.String"), List.empty))) ++
+                result.fields.values.toList.map { res => typingResultToDto(res) },
+              fields = Some(result.fields.map { case (key, result) => (key, typingResultToDto(result)) })
             )
           case result: typing.SingleTypingResult =>
             println("SingleTypingResult")
             TypingResultDto(
-              value = None,
+              value = toOptionString(result.valueOpt),
               display = result.display,
               `type` = typing.TypedObjectWithValue.toString(),
               refClazzName = result.getClass.toString.stripPrefix("class "),
-              params = List.empty
+              params = List.empty,
+              fields = None
             )
           case typing.TypedNull =>
             println("TypedNull")
-            TypingResultDto(None, "null", "null", "null", List.empty)
+            TypingResultDto(Some(null), "Null", "null", "null", List.empty, None)
           case typing.Unknown =>
             println("Unknown")
-            TypingResultDto(None, "Unknown", "Unknown", "java.lang.Object", List.empty)
-          case _: typing.KnownTypingResult =>
-            println("KnownTypingResult")
-            TypingResultDto(None, "rest", "type", "refClazzName", List.empty)
+            TypingResultDto(None, "Unknown", "Unknown", "java.lang.Object", List.empty, None)
+          case _ =>
+            println("KnownTypingResult?")
+            TypingResultDto(None, "rest", "type", "refClazzName", List.empty, None)
         }
-      }
-
-      def toTypingResult(typeDto: TypingResultDto): TypingResult = {
-        Typed.genericTypeClass(
-          Class.forName(typeDto.refClazzName),
-          typeDto.params.map { result => toTypingResult(result) }
-        )
       }
 
     }
@@ -334,24 +409,24 @@ object NodesApiEndpoints {
     final case class NodeValidationRequestDto(
         nodeData: NodeData,
         processProperties: ProcessProperties,
-        variableTypes: Map[String, TypingResultDto],                            // String -> TypingResult
-        branchVariableTypes: Option[Map[String, Map[String, TypingResultDto]]], // last map String -> TypingResult
+        variableTypes: Map[String, TypingResultDto],
+        branchVariableTypes: Option[Map[String, Map[String, TypingResultDto]]],
         outgoingEdges: Option[List[Edge]]
     ) {
 
-      def toRequest: Option[NodeValidationRequest] = {
+      def toRequest(implicit modelData: ModelData): Option[NodeValidationRequest] = {
         try {
           Some(
             NodeValidationRequest(
               nodeData = nodeData,
               processProperties = processProperties,
               variableTypes = variableTypes.map { case (key, typingResultDto) =>
-                (key, Typed.apply(Class.forName(typingResultDto.refClazzName)))
+                (key, toTypingResult(typingResultDto))
               },
               branchVariableTypes = branchVariableTypes.map { outerMap =>
                 outerMap.map { case (name, innerMap) =>
-                  val changedMap = innerMap.map { case (key, typingResultDto) =>
-                    (key, Typed.apply(Class.forName(typingResultDto.refClazzName)))
+                  val changedMap = innerMap.map { case (key, typing) =>
+                    (key, toTypingResult(typing))
                   }
                   (name, changedMap)
                 }
@@ -411,8 +486,7 @@ object NodesApiEndpoints {
         variableTypes: Map[String, TypingResultDto]
     ) {
 
-      def withoutDto: ParametersValidationRequest = {
-        //        println("halo from withoutDto")
+      def withoutDto()(implicit modelData: ModelData): ParametersValidationRequest = {
         ParametersValidationRequest(
           parameters.map { parameter =>
             UIValueParameter(
@@ -421,7 +495,9 @@ object NodesApiEndpoints {
               expression = parameter.expression
             )
           },
-          variableTypes.map { case (key, typDto) => (key, toTypingResult(typDto)) }
+          variableTypes.map { case (key, typDto) =>
+            (key, toTypingResult(typDto))
+          }
         )
       }
 
@@ -449,10 +525,6 @@ object NodesApiEndpoints {
         caretPosition2d: CaretPosition2d,
         variableTypes: Map[String, TypingResultDto]
     )
-
-    object ExpressionSuggestionRequestDto {
-      //      implicit val caretPosition2dEncoder: Encoder[CaretPosition2d] = deriveConfiguredEncoder[CaretPosition2d]
-    }
 
     @derive(schema, encoder, decoder)
     final case class ExpressionSuggestionDto(
