@@ -12,24 +12,25 @@ import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
 object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
+  private type ErrorMessage = String
 
   def nuDesignerErrorHandler: ExceptionHandler = {
     import akka.http.scaladsl.server.Directives._
     ExceptionHandler { case NonFatal(e) =>
-      complete(errorToHttpResponse(e))
+      complete(toHttpResponse(errorToStatusAndMessage(e)))
     }
   }
 
-  private def errorToHttpResponse: PartialFunction[Throwable, HttpResponse] = {
+  def errorToStatusAndMessage: Throwable => (StatusCode, ErrorMessage) = {
     case error: NuDesignerError =>
       logError(error)
-      httpResponseFrom(error)
+      toStatusAndMessage(error)
     case ex: IllegalArgumentException =>
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
-      HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
+      (StatusCodes.BadRequest, ex.getMessage)
     case ex =>
       logger.error(s"Unknown error: ${ex.getMessage}", ex)
-      HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)
+      (StatusCodes.InternalServerError, ex.getMessage)
   }
 
   def toResponseEither[T: Encoder](either: Either[NuDesignerError, T]): ToResponseMarshallable = either match {
@@ -38,9 +39,19 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
   }
 
   def httpResponseFrom(error: NuDesignerError): HttpResponse = {
+    toHttpResponse(toStatusAndMessage(error))
+  }
+
+  private def toStatusAndMessage(error: NuDesignerError): (StatusCode, ErrorMessage) =
+    (
+      httpStatusCodeFrom(error),
+      error.getMessage
+    )
+
+  private def toHttpResponse(statusAndMessage: (StatusCode, ErrorMessage)): HttpResponse = {
     HttpResponse(
-      status = httpStatusCodeFrom(error),
-      entity = error.getMessage
+      status = statusAndMessage._1,
+      entity = statusAndMessage._2
     )
   }
 
