@@ -36,10 +36,6 @@ trait numeric extends MathUtils with HideToString {
   @GenericType(typingFunction = classOf[LargeNumberOperatorTypingFunction])
   override def largeSum(n1: Number, n2: Number): Number = super.largeSum(n1, n2)
 
-  // TODO_PAWEL czy to powinno byc widoczne?
-  @GenericType(typingFunction = classOf[LargeFloatingNumberOperatorTypingFunction])
-  override def largeFloatingSum(n1: Number, n2: Number): Number = super.largeFloatingSum(n1, n2)
-
   @GenericType(typingFunction = classOf[MathOperatorTypingFunction])
   override def plus(n1: Number, n2: Number): Number = super.plus(n1, n2)
 

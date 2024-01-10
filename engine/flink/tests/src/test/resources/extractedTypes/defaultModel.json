@@ -14531,20 +14531,6 @@
           ]
         }
       ],
-      "largeFloatingSum": [
-        {
-          "name": "largeFloatingSum",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
-                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
-              ],
-              "result": {"refClazzName": "java.lang.Number"}
-            }
-          ]
-        }
-      ],
       "lesser": [
         {
           "name": "lesser",
