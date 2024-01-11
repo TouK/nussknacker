@@ -6,15 +6,15 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.{
   selectedScenarioTypeConfigurationPath,
   toValueWithPermission
 }
-import pl.touk.nussknacker.ui.process.processingtypedata.ValueAccessPermission.{AnyUser, UserWithAccessRightsToCategory}
+import pl.touk.nussknacker.ui.process.processingtypedata.ValueAccessPermission.UserWithAccessRightsToCategory
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,8 +23,7 @@ object ProcessingTypeDataReader extends ProcessingTypeDataReader {
   val selectedScenarioTypeConfigurationPath = "selectedScenarioType"
 
   def toValueWithPermission(processingTypeData: ProcessingTypeData): ValueWithPermission[ProcessingTypeData] = {
-    val accessPermission =
-      processingTypeData.categoryConfig.category.map(UserWithAccessRightsToCategory).getOrElse(AnyUser)
+    val accessPermission = UserWithAccessRightsToCategory(processingTypeData.category)
     ValueWithPermission(processingTypeData, accessPermission)
   }
 
@@ -48,7 +47,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
     // to assert the loaded configuration is correct (fail-fast approach).
-    val combinedData = createCombinedData(processingTypesData, config)
+    val combinedData = createCombinedData(processingTypesData)
 
     ProcessingTypeDataState(
       processingTypesData.mapValuesNow(toValueWithPermission),
@@ -59,7 +58,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
   }
 
   // TODO Replace selectedScenarioType property by mechanism allowing to configure multiple scenario types with
-  //      different paradigms and engine configurations. This mechanism should also allow to have some scenario types
+  //      different processing mode and engine configurations. This mechanism should also allow to have some scenario types
   //      configurations that are invalid (e.g. some mandatory field is not configured)
   private def createSelectedScenarioTypeFilter(
       config: ConfigWithUnresolvedVersion
@@ -83,9 +82,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
   protected def createCombinedData(
       valueMap: Map[ProcessingType, ProcessingTypeData],
-      designerConfig: ConfigWithUnresolvedVersion
   ): CombinedProcessingTypeData = {
-    CombinedProcessingTypeData.create(valueMap, designerConfig)
+    CombinedProcessingTypeData.create(valueMap)
   }
 
 }

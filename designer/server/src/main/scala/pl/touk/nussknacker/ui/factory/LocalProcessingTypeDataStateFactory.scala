@@ -34,11 +34,10 @@ class LocalProcessingTypeDataStateFactory(
     val deploymentService: DeploymentService = deploymentServiceSupplier.get()
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService =
       new DefaultProcessingTypeDeploymentService(typeName, deploymentService)
-    val categoriesConfig = new CategoryConfig(Some(category))
     val data =
-      ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig, categoriesConfig)
+      ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig, category)
     val processingTypes = Map(typeName -> data)
-    val combinedData    = CombinedProcessingTypeData.create(processingTypes, designerConfig)
+    val combinedData    = CombinedProcessingTypeData.create(processingTypes)
     ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithPermission), () => combinedData, new Object)
   }
 

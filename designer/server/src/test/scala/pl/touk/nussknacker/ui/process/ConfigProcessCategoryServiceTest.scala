@@ -1,32 +1,25 @@
 package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.ConfigFactory
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.CategoryConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
-import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService.{
-  CategoryToProcessingTypeMappingAmbiguousException,
-  ProcessingTypeToCategoryMappingAmbiguousException
-}
+import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService.CategoryToProcessingTypeMappingAmbiguousException
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataConfigurationReader
 
 import java.nio.file.Path
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Try}
 
-class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
+class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers with OptionValues {
 
   private val oneToOneProcessingType1 = "oneToOneProcessingType1"
   private val oneToOneCategory1       = "OneToOneCategory1"
   private val oneToOneProcessingType2 = "oneToOneProcessingType2"
   private val oneToOneCategory2       = "OneToOneCategory2"
-
-  private val oneToManyProcessingType = "oneToManyProcessingType"
-  private val oneToManyCategory1      = "OneToManyCategory1"
-  private val oneToManyCategory2      = "OneToManyCategory2"
 
   private val processingTypeBasicConfig =
     """deploymentConfig {
@@ -36,54 +29,8 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
       |  classPath: []
       |}""".stripMargin
 
-  test("legacy categories to processing types mapping") {
-    val configWithLegacyCategoriesConfig =
-      s"""categoriesConfig {
-         |  $oneToOneCategory1: $oneToOneProcessingType1
-         |  $oneToOneCategory2: $oneToOneProcessingType2
-         |}
-         |scenarioTypes {
-         |  $oneToOneProcessingType1 {
-         |    $processingTypeBasicConfig
-         |  }
-         |  $oneToOneProcessingType2 {
-         |    $processingTypeBasicConfig
-         |  }
-         |}
-         |""".stripMargin
-    val config          = ConfigFactory.parseString(configWithLegacyCategoriesConfig)
-    val categoryService = TestFactory.createCategoryService(config)
-
-    categoryService.getAllCategories shouldEqual List(oneToOneCategory1, oneToOneCategory2)
-    categoryService.getTypeForCategoryUnsafe(oneToOneCategory1) shouldEqual oneToOneProcessingType1
-    categoryService.getTypeForCategoryUnsafe(oneToOneCategory2) shouldEqual oneToOneProcessingType2
-  }
-
-  test("legacy ambiguous processing type to category mapping") {
-    val configWithLegacyCategoriesConfig =
-      s"""categoriesConfig {
-         |  $oneToManyCategory1: $oneToManyProcessingType
-         |  $oneToManyCategory2: $oneToManyProcessingType
-         |}
-         |scenarioTypes {
-         |  $oneToManyProcessingType {
-         |    $processingTypeBasicConfig
-         |  }
-         |  $oneToManyProcessingType {
-         |    $processingTypeBasicConfig
-         |  }
-         |}
-         |""".stripMargin
-    val config = ConfigFactory.parseString(configWithLegacyCategoriesConfig)
-
-    val expectedMap = Map(oneToManyProcessingType -> Set(oneToManyCategory1, oneToManyCategory2))
-    Try(TestFactory.createCategoryService(config)) should matchPattern {
-      case Failure(ProcessingTypeToCategoryMappingAmbiguousException(`expectedMap`)) =>
-    }
-  }
-
-  test("categories inside scenario types configuration format") {
-    val configWithCategoriesConfigInsideScenrioTypes =
+  test("processing type to category in one to one relation") {
+    val config = ConfigFactory.parseString(
       s"""scenarioTypes {
          |  $oneToOneProcessingType1 {
          |    $processingTypeBasicConfig
@@ -94,54 +41,16 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
          |    category: $oneToOneCategory2
          |  }
          |}""".stripMargin
-    val config          = ConfigFactory.parseString(configWithCategoriesConfigInsideScenrioTypes)
+    )
     val categoryService = TestFactory.createCategoryService(config)
 
     categoryService.getAllCategories shouldEqual List(oneToOneCategory1, oneToOneCategory2)
-    categoryService.getTypeForCategoryUnsafe(oneToOneCategory1) shouldEqual oneToOneProcessingType1
-    categoryService.getTypeForCategoryUnsafe(oneToOneCategory2) shouldEqual oneToOneProcessingType2
+    categoryService.getTypeForCategory(oneToOneCategory1).value shouldEqual oneToOneProcessingType1
+    categoryService.getTypeForCategory(oneToOneCategory2).value shouldEqual oneToOneProcessingType2
   }
 
-  test("mixed categories inside scenario types and legacy categories to processing types mapping") {
-    val scenarioTypeLegacy = "scenarioTypeLegacy"
-    val scenarioTypeNew    = "scenarioTypeNew"
-    val scenarioTypeMixed  = "scenarioTypeMixed"
-    val categoryLegacy     = "LegacyCategory"
-    val categoryNew        = "NewCategory"
-    val categoryMixed      = "MixedCategory"
-    val configWithMixedCategoriesConfig =
-      s"""categoriesConfig {
-         |  $categoryLegacy: $scenarioTypeLegacy
-         |  $categoryMixed: $scenarioTypeMixed
-         |}
-         |scenarioTypes {
-         |  $scenarioTypeLegacy {
-         |    $processingTypeBasicConfig
-         |  }
-         |  $scenarioTypeNew {
-         |    $processingTypeBasicConfig
-         |    category: $categoryNew
-         |  }
-         |  $scenarioTypeMixed {
-         |    $processingTypeBasicConfig
-         |    category: $categoryMixed
-         |  }
-         |}""".stripMargin
-    val config          = ConfigFactory.parseString(configWithMixedCategoriesConfig)
-    val categoryService = TestFactory.createCategoryService(config)
-
-    categoryService.getAllCategories.toSet shouldEqual Set(
-      categoryLegacy,
-      categoryNew,
-      categoryMixed
-    )
-    categoryService.getTypeForCategoryUnsafe(categoryLegacy) shouldEqual scenarioTypeLegacy
-    categoryService.getTypeForCategoryUnsafe(categoryNew) shouldEqual scenarioTypeNew
-    categoryService.getTypeForCategoryUnsafe(categoryMixed) shouldEqual scenarioTypeMixed
-  }
-
-  // TODO: this is temporary, after fully switch to paradigms we should replace restriction that category
-  //       implies processing type with more lax restriction that category + paradigm + engine type
+  // TODO: this is temporary, after fully switch to processing modes we should replace restriction that category
+  //       implies processing type with more lax restriction that category + processing mode + engine type
   //       implies processing type
   test("ambiguous category to processing type mapping") {
     val categoryUsedMoreThanOnce = "CategoryUsedMoreThanOnce"
@@ -191,10 +100,9 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
     )
 
     ConfigProcessCategoryService(
-      designerConfig.resolved,
       ProcessingTypeDataConfigurationReader
         .readProcessingTypeConfig(designerConfig)
-        .mapValuesNow(CategoryConfig(_))
+        .mapValuesNow(_.category)
     )
   }
 

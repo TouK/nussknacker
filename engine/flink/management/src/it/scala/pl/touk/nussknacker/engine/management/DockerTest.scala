@@ -128,15 +128,13 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
       )
     )
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
-    .withValue("enableObjectReuse", fromAnyRef(false))
+    .withValue("modelConfig.enableObjectReuse", fromAnyRef(false))
     .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(dockerKafkaAddress))
     .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
-    .withFallback(additionalConfig)
+    .withValue("category", fromAnyRef("Category1"))
 
   def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(ConfigWithUnresolvedVersion(config))
 
   protected def classPath: List[String]
-
-  protected def additionalConfig: Config = ConfigFactory.empty()
 
 }

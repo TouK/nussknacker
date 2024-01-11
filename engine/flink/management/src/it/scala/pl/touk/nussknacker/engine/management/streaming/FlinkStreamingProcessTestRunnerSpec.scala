@@ -41,6 +41,7 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
         ConfigValueFactory.fromAnyRef("kafka:1234")
       )
       .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
+      .withValue("category", fromAnyRef("Category1"))
   )
 
   private val scenarioTestData = ScenarioTestData(

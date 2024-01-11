@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
-import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ProcessingTypeData}
 
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
@@ -25,7 +24,7 @@ class ProcessingTypeDataReload(
     // We init state with dumb value instead of calling loadMethod() to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
     ProcessingTypeDataState(
       Map.empty,
-      () => CombinedProcessingTypeData.create(Map.empty, ConfigWithUnresolvedVersion(ConfigFactory.empty())),
+      () => CombinedProcessingTypeData.create(Map.empty),
       new Object
     )
 
