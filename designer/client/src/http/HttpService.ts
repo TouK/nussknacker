@@ -673,7 +673,7 @@ class HttpService {
         //don't send validationResult, it's not needed and can be v. large,
         const { nodes, edges, properties }: ScenarioGraph =
             //don't send empty edges
-            withoutHackOfEmptyEdges(scenario.scenarioGraph);
+            withoutHackOfEmptyEdges(scenario.json);
 
         const { processingType, name } = scenario;
         return { nodes, edges, properties, name, processingType };

@@ -16,8 +16,8 @@ export function updateAfterNodeDelete(state: GraphState, idToDelete: NodeId) {
         scenario: {
             ...state.scenario,
             json: {
-                ...state.scenario.scenarioGraph,
-                nodes: state.scenario.scenarioGraph.nodes.filter((n) => n.id !== idToDelete),
+                ...state.scenario.json,
+                nodes: state.scenario.json.nodes.filter((n) => n.id !== idToDelete),
             },
         },
         layout: state.layout.filter((n) => n.id !== idToDelete),
@@ -49,7 +49,7 @@ export function prepareNewNodesWithLayout(
     const {
         layout,
         scenario: {
-            scenarioGraph: { nodes = [] },
+            json: { nodes = [] },
         },
     } = state;
 
@@ -72,8 +72,8 @@ export function addNodesWithLayout(state: GraphState, { nodes, layout }: ReturnT
         ...state,
         scenario: {
             ...state.scenario,
-            scenarioGraph: {
-                ...state.scenario.scenarioGraph,
+            json: {
+                ...state.scenario.json,
                 nodes,
             },
         },

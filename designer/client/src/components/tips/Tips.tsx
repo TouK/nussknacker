@@ -21,7 +21,7 @@ export default function Tips(): JSX.Element {
     const showDetails = useCallback(
         (event: React.MouseEvent, node: NodeType) => {
             event.preventDefault();
-            openNodeWindow(node, scenario.scenarioGraph);
+            openNodeWindow(node, scenario.json);
         },
         [openNodeWindow, scenario],
     );
@@ -44,7 +44,7 @@ export default function Tips(): JSX.Element {
                         <Warnings
                             warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
                             showDetails={showDetails}
-                            scenarioGraph={scenario.scenarioGraph}
+                            scenarioGraph={scenario.json}
                         />
                     )}
                 </Scrollbars>

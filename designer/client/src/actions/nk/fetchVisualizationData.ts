@@ -10,10 +10,10 @@ export function fetchVisualizationData(processName: ProcessName): ThunkAction {
     return async (dispatch) => {
         try {
             const scenario = await dispatch(displayCurrentProcessVersion(processName));
-            const { name, scenarioGraph, processingType } = scenario;
+            const { name, json, processingType } = scenario;
             await dispatch(loadProcessToolbarsConfiguration(name));
             dispatch(displayProcessActivity(name));
-            const processDefinitionData = await dispatch(fetchProcessDefinition(processingType, scenarioGraph.properties?.isFragment));
+            const processDefinitionData = await dispatch(fetchProcessDefinition(processingType, json.properties?.isFragment));
             dispatch({ type: "CORRECT_INVALID_SCENARIO", processDefinitionData });
             return scenario;
         } catch (error) {

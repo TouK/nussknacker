@@ -9,12 +9,12 @@ function getEdgeValidator(scenarioGraph: ScenarioGraph, processDefinitionData?: 
 }
 
 export function correctFetchedDetails(data: Scenario, definitionData?: ProcessDefinitionData): Scenario {
-    const { scenarioGraph: scenarioGraph } = data;
+    const { json: scenarioGraph } = data;
     const { edges } = scenarioGraph;
     const isValidEdge = getEdgeValidator(scenarioGraph, definitionData);
     return {
         ...data,
-        scenarioGraph: {
+        json: {
             ...scenarioGraph,
             edges: edges.filter(isValidEdge),
         },

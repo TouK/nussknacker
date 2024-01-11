@@ -17,12 +17,9 @@ function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
     const propertiesErrors = useSelector(hasPropertiesErrors);
     const errors = useSelector(hasError);
 
-    const processProperties = useMemo(() => NodeUtils.getProcessPropertiesNode(scenario, name), [name, scenario]);
+    const processProperties = useMemo(() => NodeUtils.getProcessPropertiesNode(scenario, name), [name, process]);
 
-    const onClick = useCallback(
-        () => openNodeWindow(processProperties, scenario.scenarioGraph),
-        [openNodeWindow, processProperties, scenario.scenarioGraph],
-    );
+    const onClick = useCallback(() => openNodeWindow(processProperties, scenario.json), [openNodeWindow, processProperties, process]);
 
     return (
         <ToolbarButton

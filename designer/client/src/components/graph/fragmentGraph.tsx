@@ -12,7 +12,7 @@ export const FragmentGraphPreview = forwardRef<Graph, Pick<GraphProps, "processC
                 processCounts={processCounts}
                 scenario={scenario}
                 nodeIdPrefixForFragmentTests={nodeIdPrefixForFragmentTests}
-                layout={LayoutUtils.fromMeta(scenario.scenarioGraph)}
+                layout={LayoutUtils.fromMeta(scenario.json)}
                 readonly
                 divId="nk-graph-fragment"
                 isFragment

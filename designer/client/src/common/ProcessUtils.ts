@@ -32,12 +32,12 @@ class ProcessUtils {
             return true;
         }
 
-        return !savedProcessState || isEqual(omitValidation(scenario.scenarioGraph), omitValidation(savedProcessState.scenarioGraph));
+        return !savedProcessState || isEqual(omitValidation(scenario.json), omitValidation(savedProcessState.json));
     };
 
     canExport = (state: RootState): boolean => {
         const scenario = state.graphReducer.scenario;
-        return isEmpty(scenario) ? false : !isEmpty(scenario.scenarioGraph.nodes);
+        return isEmpty(scenario) ? false : !isEmpty(scenario.json.nodes);
     };
 
     //fixme maybe return hasErrors flag from backend?
@@ -126,7 +126,7 @@ class ProcessUtils {
     ): VariableTypes => {
         const previousNodes = this._findPreviousNodes(nodeId, scenario);
         const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
-            return this._findVariablesDefinedInProcess(nodeId, scenario.scenarioGraph, components);
+            return this._findVariablesDefinedInProcess(nodeId, scenario.json, components);
         });
         return this._listOfObjectsToObject(variablesDefinedBeforeNodeList);
     };
@@ -278,7 +278,7 @@ class ProcessUtils {
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
     _findPreviousNodes = (nodeId: NodeId, scenario: Scenario): NodeId[] => {
-        const nodeEdge = scenario.scenarioGraph.edges.find((edge) => edge.to === nodeId);
+        const nodeEdge = scenario.json.edges.find((edge) => edge.to === nodeId);
         if (isEmpty(nodeEdge)) {
             return [];
         } else {

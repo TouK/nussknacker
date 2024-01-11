@@ -9,8 +9,8 @@ import { Scenario } from "../../components/Process/types";
 
 function alignFragmentsNodeWithSchema(scenario: Scenario, processDefinitionData: ProcessDefinitionData): ScenarioGraph {
     return {
-        ...scenario.scenarioGraph,
-        nodes: scenario.scenarioGraph.nodes.map((node) => {
+        ...scenario.json,
+        nodes: scenario.json.nodes.map((node) => {
             return node.type === "FragmentInput" ? alignFragmentWithSchema(processDefinitionData, node) : node;
         }),
     };
@@ -25,7 +25,7 @@ export function calculateProcessAfterChange(
     return async (dispatch, getState) => {
         if (NodeUtils.nodeIsProperties(after)) {
             const processDefinitionData = await dispatch(
-                fetchProcessDefinition(scenario.processingType, scenario.scenarioGraph.properties.isFragment),
+                fetchProcessDefinition(scenario.processingType, scenario.json.properties.isFragment),
             );
             const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario, processDefinitionData);
             if (after?.length && after.id !== before.id) {
@@ -34,7 +34,7 @@ export function calculateProcessAfterChange(
             return { ...processWithNewFragmentSchema, ...after };
         }
 
-        let changedProcess = scenario.scenarioGraph;
+        let changedProcess = scenario.json;
         if (outputEdges) {
             const processDefinitionData = getProcessDefinitionData(getState());
             const filtered = outputEdges.map(({ to, ...e }) =>
@@ -45,7 +45,7 @@ export function calculateProcessAfterChange(
                           to: "",
                       },
             );
-            changedProcess = replaceNodeOutputEdges(scenario.scenarioGraph, processDefinitionData, filtered, before.id);
+            changedProcess = replaceNodeOutputEdges(scenario.json, processDefinitionData, filtered, before.id);
         }
 
         return mapProcessWithNewNode(changedProcess, before, after);
