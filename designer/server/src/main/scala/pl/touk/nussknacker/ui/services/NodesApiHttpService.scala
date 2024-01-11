@@ -39,7 +39,7 @@ class NodesApiHttpService(
   expose {
     nodesApiEndpoints.nodesAdditionalInfoEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { user => pair =>
+      .serverLogic { implicit loggedUser => pair =>
         val (processName, nodeData) = pair
 
         processService
@@ -49,10 +49,10 @@ class NodesApiHttpService(
               .getLatestProcessWithDetails(
                 ProcessIdWithName(processId, processName),
                 GetScenarioWithDetailsOptions.detailsOnly
-              )(user)
+              )
               .flatMap { process =>
                 additionalInfoProviders
-                  .prepareAdditionalInfoForNode(nodeData, process.processingType)(executionContext, user)
+                  .prepareAdditionalInfoForNode(nodeData, process.processingType)
                   .map { additionalInfo =>
                     success(additionalInfo)
                   }
@@ -67,7 +67,7 @@ class NodesApiHttpService(
   expose {
     nodesApiEndpoints.nodesValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { user => pair =>
+      .serverLogic { implicit loggedUser => pair =>
         val (processName, nodeValidationRequestDto) = pair
 
         processService
@@ -77,13 +77,13 @@ class NodesApiHttpService(
               .getLatestProcessWithDetails(
                 ProcessIdWithName(processId, processName),
                 GetScenarioWithDetailsOptions.detailsOnly
-              )(user)
+              )
               .flatMap { process =>
-                implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(process.processingType)(user)
-                val nodeValidator                 = typeToNodeValidator.forTypeUnsafe(process.processingType)(user)
+                implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(process.processingType)
+                val nodeValidator                 = typeToNodeValidator.forTypeUnsafe(process.processingType)
                 NodeValidationRequestDto.toRequest(nodeValidationRequestDto) match {
                   case Some(nodeData) =>
-                    Future(success(NodeValidationResult.toDto(nodeValidator.validate(processName, nodeData)(user))))
+                    Future(success(NodeValidationResult.toDto(nodeValidator.validate(processName, nodeData))))
                   case None =>
                     Future(businessError("None"))
                 }
@@ -99,7 +99,7 @@ class NodesApiHttpService(
   expose {
     nodesApiEndpoints.propertiesAdditionalInfoEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { user => pair =>
+      .serverLogic { implicit loggedUser => pair =>
         val (processName, processProperties) = pair
 
         processService
@@ -109,13 +109,13 @@ class NodesApiHttpService(
               .getLatestProcessWithDetails(
                 ProcessIdWithName(processId, processName),
                 GetScenarioWithDetailsOptions.detailsOnly
-              )(user)
+              )
               .flatMap { process =>
                 additionalInfoProviders
                   .prepareAdditionalInfoForProperties(
                     processProperties.toMetaData(processName),
                     process.processingType
-                  )(executionContext, user)
+                  )
                   .map { additionalInfo =>
                     success(additionalInfo)
                   }
@@ -130,7 +130,7 @@ class NodesApiHttpService(
   expose {
     nodesApiEndpoints.propertiesValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { user => pair =>
+      .serverLogic { implicit loggedUser => pair =>
         val (processName, request) = pair
 
         processService
@@ -140,7 +140,7 @@ class NodesApiHttpService(
               .getLatestProcessWithDetails(
                 ProcessIdWithName(processId, processName),
                 GetScenarioWithDetailsOptions.detailsOnly
-              )(user)
+              )
               .flatMap { process =>
                 val scenario = ScenarioGraph(
                   ProcessProperties(request.additionalFields),
@@ -149,8 +149,8 @@ class NodesApiHttpService(
                 )
                 val result =
                   typeToProcessValidator
-                    .forTypeUnsafe(process.processingType)(user)
-                    .validate(scenario, processName, isFragment = false)(user)
+                    .forTypeUnsafe(process.processingType)
+                    .validate(scenario, processName, isFragment = false)
                 Future(
                   success(
                     NodeValidationResultDto(
@@ -172,13 +172,13 @@ class NodesApiHttpService(
   expose {
     nodesApiEndpoints.parametersValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { user => pair =>
+      .serverLogic { implicit loggedUser => pair =>
         val (processingType, request) = pair
 
         try {
-          implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)(user)
-          val validator                     = typeToParametersValidator.forTypeUnsafe(processingType)(user)
-          val requestWithTypingResult       = ParametersValidationRequestDto.withoutDto(request)(modelData)
+          implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)
+          val validator                     = typeToParametersValidator.forTypeUnsafe(processingType)
+          val requestWithTypingResult       = ParametersValidationRequestDto.withoutDto(request)
           val validationResults             = validator.validate(requestWithTypingResult)
 
           Future(
@@ -196,12 +196,12 @@ class NodesApiHttpService(
   expose {
     nodesApiEndpoints.parametersSuggestionsEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { user => pair =>
+      .serverLogic { implicit loggedUser => pair =>
         val (processingType, request) = pair
 
         try {
-          implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)(user)
-          val expressionSuggester           = typeToExpressionSuggester.forTypeUnsafe(processingType)(user)
+          implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)
+          val expressionSuggester           = typeToExpressionSuggester.forTypeUnsafe(processingType)
           expressionSuggester
             .expressionSuggestions(
               request.expression,
