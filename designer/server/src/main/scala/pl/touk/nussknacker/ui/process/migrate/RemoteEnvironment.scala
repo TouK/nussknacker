@@ -28,11 +28,10 @@ import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.{Executors, ThreadFactory}
 import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutorService, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait RemoteEnvironment {
 
@@ -50,7 +49,7 @@ trait RemoteEnvironment {
   ): Future[Either[NuDesignerError, Unit]]
 
   // TODO This method is used by an external project. We should move it to some api module
-  def testMigration(processToInclude: ScenarioWithDetails => Boolean = _ => true, maxParallelism: Int)(
+  def testMigration(processToInclude: ScenarioWithDetails => Boolean = _ => true)(
       implicit ec: ExecutionContext,
       user: LoggedUser
   ): Future[Either[NuDesignerError, List[TestMigrationResult]]]
@@ -210,47 +209,28 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     }
   }
 
-  // We need to be cautious when choosing maxParallelism value as validation may call external systems and we don't want to overwhelm them with requests
   override def testMigration(
       processToInclude: ScenarioWithDetails => Boolean = _ => true,
-      maxParallelism: Int = 1
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
-    val batchingExecutionContext = createPrefixedWorkerThreadsExecutionContext(maxParallelism, "testMigration")
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
       basicProcesses = allBasicProcesses.filterNot(_.isFragment).filter(processToInclude)
       basicFragments = allBasicProcesses.filter(_.isFragment).filter(processToInclude)
-      processes <- fetchGroupByGroup(basicProcesses, batchingExecutionContext)
-      fragments <- fetchGroupByGroup(basicFragments, batchingExecutionContext)
-    } yield testModelMigrations.testMigrations(processes, fragments, batchingExecutionContext)).value
-      .andThen { case _ => batchingExecutionContext.shutdown() }
+      processes <- fetchGroupByGroup(basicProcesses)
+      fragments <- fetchGroupByGroup(basicFragments)
+    } yield testModelMigrations.testMigrations(processes, fragments)).value
   }
 
-  private def createPrefixedWorkerThreadsExecutionContext(
-      maxParallelism: Int,
-      prefix: String
-  ): ExecutionContextExecutorService = {
-    val threadFactory = new ThreadFactory {
-      override def newThread(r: Runnable): Thread = {
-        val thread = new Thread(r)
-        thread.setName(s"$prefix-${thread.getName}")
-        thread
-      }
-    }
-    val executorService = Executors.newFixedThreadPool(maxParallelism, threadFactory)
-    ExecutionContext.fromExecutorService(executorService)
-  }
-
-  private def fetchGroupByGroup(basicProcesses: List[ScenarioWithDetails], batchingExecutionContext: ExecutionContext)(
-      implicit ec: ExecutionContext
-  ): FutureE[List[ScenarioWithDetails]] = {
+  private def fetchGroupByGroup(
+      basicProcesses: List[ScenarioWithDetails]
+  )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetails]] = {
     val groupedBasicProcesses = basicProcesses
       .map(_.name)
       .grouped(config.batchSize)
       .toVector
     // We create ParVector manually instead of calling par for compatibility with Scala 2.12
     val parallelCollection = new ParVector(groupedBasicProcesses)
-    val taskSupport        = new ExecutionContextTaskSupport(batchingExecutionContext)
+    val taskSupport        = new ExecutionContextTaskSupport(ec)
     parallelCollection.tasksupport = taskSupport
     parallelCollection.foldLeft(EitherT.rightT[Future, NuDesignerError](List.empty[ScenarioWithDetails])) {
       case (acc, processesGroup) =>
