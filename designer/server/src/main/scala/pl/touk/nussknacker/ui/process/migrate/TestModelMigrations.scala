@@ -96,10 +96,9 @@ class TestModelMigrations(
   private def processInParallel(input: List[MigratedProcessDetails])(
       process: MigratedProcessDetails => TestMigrationResult
   )(implicit ec: ExecutionContext): List[TestMigrationResult] = {
-    val taskSupport = new ExecutionContextTaskSupport(ec)
     // We create ParVector manually instead of calling par for compatibility with Scala 2.12
     val parallelCollection = new ParVector(input.toVector)
-    parallelCollection.tasksupport = taskSupport
+    parallelCollection.tasksupport = new ExecutionContextTaskSupport(ec)
     parallelCollection.map(process).toList
   }
 
