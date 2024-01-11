@@ -427,12 +427,12 @@ paths:
                     resource
       security:
       - httpAuth: []
-  /api/nodess/{processName}/additionalInfo:
+  /api/nodes/{processName}/additionalInfo:
     post:
       tags:
       - Nodes
       summary: Additional info for provided node
-      operationId: postApiNodessProcessnameAdditionalinfo
+      operationId: postApiNodesProcessnameAdditionalinfo
       parameters:
       - name: processName
         in: path
@@ -487,12 +487,12 @@ paths:
                 type: string
       security:
       - httpAuth: []
-  /api/nodess/{processName}/validation:
+  /api/nodes/{processName}/validation:
     post:
       tags:
       - Nodes
       summary: Validate provided Node
-      operationId: postApiNodessProcessnameValidation
+      operationId: postApiNodesProcessnameValidation
       parameters:
       - name: processName
         in: path
@@ -547,12 +547,12 @@ paths:
                 type: string
       security:
       - httpAuth: []
-  /api/parameterss/{processingType}/suggestions:
+  /api/parameters/{processingType}/suggestions:
     post:
       tags:
       - Nodes
       summary: Suggest possible variables
-      operationId: postApiParameterssProcessingtypeSuggestions
+      operationId: postApiParametersProcessingtypeSuggestions
       parameters:
       - name: processingType
         in: path
@@ -609,12 +609,12 @@ paths:
                 type: string
       security:
       - httpAuth: []
-  /api/parameterss/{processingType}/validate:
+  /api/parameters/{processingType}/validate:
     post:
       tags:
       - Nodes
       summary: Validate node parameters
-      operationId: postApiParameterssProcessingtypeValidate
+      operationId: postApiParametersProcessingtypeValidate
       parameters:
       - name: processingType
         in: path
@@ -669,12 +669,12 @@ paths:
                 type: string
       security:
       - httpAuth: []
-  /api/propertiess/{processName}/additionalInfo:
+  /api/properties/{processName}/additionalInfo:
     post:
       tags:
       - Nodes
       summary: Additional info for provided properties
-      operationId: postApiPropertiessProcessnameAdditionalinfo
+      operationId: postApiPropertiesProcessnameAdditionalinfo
       parameters:
       - name: processName
         in: path
@@ -729,12 +729,12 @@ paths:
                 type: string
       security:
       - httpAuth: []
-  /api/propertiess/{processName}/validation:
+  /api/properties/{processName}/validation:
     post:
       tags:
       - Nodes
       summary: Validate node properties
-      operationId: postApiPropertiessProcessnameValidation
+      operationId: postApiPropertiesProcessnameValidation
       parameters:
       - name: processName
         in: path
