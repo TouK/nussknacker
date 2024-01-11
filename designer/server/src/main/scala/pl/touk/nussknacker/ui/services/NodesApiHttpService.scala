@@ -9,11 +9,14 @@ import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
   ExpressionSuggestionDto,
+  NodeValidationRequestDto,
   NodeValidationResultDto,
   ParameterDto,
+  ParametersValidationRequestDto,
   ParametersValidationResultDto
 }
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.NodeValidationResult
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -86,9 +89,9 @@ class NodesApiHttpService(
               .flatMap { process =>
                 implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(process.processingType)(user)
                 val nodeValidator                 = typeToNodeValidator.forTypeUnsafe(process.processingType)(user)
-                nodeValidationRequestDto.toRequest match {
+                NodeValidationRequestDto.toRequest(nodeValidationRequestDto) match {
                   case Some(nodeData) =>
-                    Future(success(nodeValidator.validate(processName, nodeData)(user).toDto()))
+                    Future(success(NodeValidationResult.toDto(nodeValidator.validate(processName, nodeData)(user))))
                   case None =>
                     Future(businessError("None"))
                 }
@@ -186,7 +189,7 @@ class NodesApiHttpService(
         try {
           implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)(user)
           val validator                     = typeToParametersValidator.forTypeUnsafe(processingType)(user)
-          val requestWithTypingResult       = request.withoutDto()(modelData)
+          val requestWithTypingResult       = ParametersValidationRequestDto.withoutDto(request)(modelData)
           val validationResults             = validator.validate(requestWithTypingResult)
 
           Future(
