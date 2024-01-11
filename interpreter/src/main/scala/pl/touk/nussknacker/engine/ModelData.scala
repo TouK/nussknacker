@@ -32,10 +32,13 @@ object ModelData extends LazyLogging {
     ModelData(
       processingTypeConfig.modelConfig,
       ModelClassLoader(processingTypeConfig.classPath),
-      processingTypeConfig.category
+      Some(processingTypeConfig.category)
     )
   }
 
+  // On the runtime side, we get only model config, not the whole processing type config, so we don't have category
+  // But it is not a big deal, because scenario was already validated before deploy, so we already check that
+  // we don't use not allowed components for a given category
   def apply(inputConfig: Config, modelClassLoader: ModelClassLoader, category: Option[String]): ModelData = {
     ModelData(ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig), modelClassLoader, category)
   }

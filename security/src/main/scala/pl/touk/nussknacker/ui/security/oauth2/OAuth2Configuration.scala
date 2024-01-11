@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.engine.util.config.FicusReaders.forDecoder
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigUser

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.util
 
 import org.springframework.util.{NumberUtils => SpringNumberUtils}
+import pl.touk.nussknacker.engine.api.Hidden
 import pl.touk.nussknacker.engine.api.typed.supertype.{
   NumberTypesPromotionStrategy,
   ReturningSingleClassPromotionStrategy
@@ -67,6 +68,13 @@ trait MathUtils {
   def largeSum(n1: Number, n2: Number): Number = {
     implicit val promotionStrategy: ReturningSingleClassPromotionStrategy =
       NumberTypesPromotionStrategy.ForLargeNumbersOperation
+    promoteThenSum(n1, n2)
+  }
+
+  @Hidden
+  def largeFloatingSum(n1: Number, n2: Number): Number = {
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy =
+      NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
     promoteThenSum(n1, n2)
   }
 

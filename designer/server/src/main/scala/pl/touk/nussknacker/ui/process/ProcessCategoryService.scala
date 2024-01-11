@@ -1,13 +1,8 @@
 package pl.touk.nussknacker.ui.process
 
-import cats.implicits.toFoldableOps
-import cats.instances.map._
-import cats.instances.set._
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.CategoryConfig
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.{
@@ -16,8 +11,6 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.{
   ProcessingTypeNotFoundError
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-
-import scala.jdk.CollectionConverters._
 
 object ProcessCategoryService {
   // TODO: Replace it by VO
@@ -33,8 +26,6 @@ object ProcessCategoryService {
 }
 
 trait ProcessCategoryService {
-  final def getTypeForCategoryUnsafe(category: Category): ProcessingType =
-    getTypeForCategory(category).getOrElse(throw new CategoryNotFoundError(category))
   def getTypeForCategory(category: Category): Option[ProcessingType]
   final def getAllCategories: List[Category] = getAllCategoriesSet.toList.sorted
   protected[process] def getAllCategoriesSet: Set[Category]
@@ -53,7 +44,13 @@ class UserCategoryService(categoriesService: ProcessCategoryService) {
 
   def getUserCategoriesWithType(user: LoggedUser): Map[Category, ProcessingType] = {
     getUserCategories(user)
-      .map(category => category -> categoriesService.getTypeForCategoryUnsafe(category))
+      .map(category =>
+        category -> categoriesService
+          .getTypeForCategory(category)
+          .getOrElse(
+            throw new IllegalStateException(s"Processing type not defined for category: $category, but it should be")
+          )
+      )
       .toMap
   }
 
@@ -61,56 +58,14 @@ class UserCategoryService(categoriesService: ProcessCategoryService) {
 
 object ConfigProcessCategoryService extends LazyLogging {
 
-  private[process] val categoryConfigPath = "categoriesConfig"
-
-  def apply(config: Config, processingCategories: Map[ProcessingType, CategoryConfig]): ProcessCategoryService = {
-    val (processingTypesWithDefinedCategory, notDefinedCategoryProcessingTypes) = processingCategories.toList.map {
-      case (processingType, CategoryConfig(Some(category))) =>
-        (Map(processingType -> category), Set.empty[ProcessingType])
-      case (processingTypeWithoutCategory, CategoryConfig(None)) =>
-        (Map.empty[ProcessingType, Category], Set(processingTypeWithoutCategory))
-    }.combineAll
-    val isLegacyConfigFormat = config.hasPath(categoryConfigPath)
-    val service = if (isLegacyConfigFormat) {
-      logger.warn(
-        s"Legacy $categoryConfigPath format detected. Please replace it by categories defined inside scenarioTypes. " +
-          "In the further versions the support for the old format will be removed"
-      )
-      val legacy = new LegacyConfigProcessCategoryService(config)
-      if (notDefinedCategoryProcessingTypes.nonEmpty) {
-        new MixedProcessCategoryService(new ProcessingTypeCategoryService(processingTypesWithDefinedCategory), legacy)
-      } else {
-        legacy
-      }
-    } else if (notDefinedCategoryProcessingTypes.nonEmpty) {
-      throw new IllegalArgumentException(
-        s"Illegal categories configuration. These scenario types have no category configured: $notDefinedCategoryProcessingTypes"
-      )
-    } else {
-      new ProcessingTypeCategoryService(processingTypesWithDefinedCategory)
-    }
-    checkProcessingTypeToCategoryMappingAmbiguity(service)
+  def apply(processingCategories: Map[ProcessingType, String]): ProcessCategoryService = {
+    val service = new ProcessingTypeCategoryService(processingCategories)
     checkCategoryToProcessingTypeMappingAmbiguity(processingCategories.keys, service)
     service
   }
 
-  private def checkProcessingTypeToCategoryMappingAmbiguity(
-      service: ProcessCategoryService
-  ): Unit = {
-    val processingTypesForEachCategory = service.getAllCategories
-      .map { category =>
-        service.getTypeForCategoryUnsafe(category) -> category
-      }
-      .groupBy(_._1)
-      .mapValuesNow(_.map(_._2).toSet)
-    val ambiguousProcessingTypeToCategoryMappings: Map[ProcessingType, Set[Category]] =
-      processingTypesForEachCategory.filter(_._2.size > 1)
-    if (ambiguousProcessingTypeToCategoryMappings.nonEmpty)
-      throw ProcessingTypeToCategoryMappingAmbiguousException(ambiguousProcessingTypeToCategoryMappings)
-  }
-
-  // TODO: this is temporary, after fully switch to paradigms we should replace restriction that category
-  //       implies processing type with more lax restriction that category + paradigm + engine type
+  // TODO: this is temporary, after fully switch to processing modes we should replace restriction that category
+  //       implies processing type with more lax restriction that category + processing mode + engine type
   //       implies processing type
   private def checkCategoryToProcessingTypeMappingAmbiguity(
       scenarioTypes: Iterable[ProcessingType],
@@ -134,12 +89,6 @@ object ConfigProcessCategoryService extends LazyLogging {
         s"These categories are configured in more than one scenario type, which is not allowed now: $ambiguousCategoryToProcessingTypeMappings"
       )
 
-  private[process] final case class ProcessingTypeToCategoryMappingAmbiguousException(
-      ambiguousProcessingTypeToCategoryMappings: Map[ProcessingType, Set[Category]]
-  ) extends IllegalStateException(
-        s"These scenario types have more than one category configured, which is not allowed now: $ambiguousProcessingTypeToCategoryMappings"
-      )
-
 }
 
 class ProcessingTypeCategoryService(scenarioTypes: Map[String, Category]) extends ProcessCategoryService {
@@ -151,35 +100,4 @@ class ProcessingTypeCategoryService(scenarioTypes: Map[String, Category]) extend
   override def getProcessingTypeCategory(processingType: ProcessingType): Option[Category] =
     scenarioTypes.get(processingType)
 
-}
-
-class LegacyConfigProcessCategoryService(config: Config) extends ProcessCategoryService {
-
-  private val categoriesToTypesMap: Map[Category, ProcessingType] = {
-    val categories = config.getConfig(ConfigProcessCategoryService.categoryConfigPath)
-    categories.entrySet().asScala.map(_.getKey).map(category => category -> categories.getString(category)).toMap
-  }
-
-  override def getTypeForCategory(category: Category): Option[ProcessingType] =
-    categoriesToTypesMap.get(category)
-
-  // We assume there can't be more categories then config returns
-  override protected[process] def getAllCategoriesSet: Set[Category] =
-    categoriesToTypesMap.keys.toSet
-
-  override def getProcessingTypeCategory(processingType: ProcessingType): Option[Category] =
-    categoriesToTypesMap.collectFirst { case (category, `processingType`) => category }
-
-}
-
-class MixedProcessCategoryService(main: ProcessCategoryService, fallback: ProcessCategoryService)
-    extends ProcessCategoryService {
-  override def getTypeForCategory(category: Category): Option[ProcessingType] =
-    main.getTypeForCategory(category) orElse fallback.getTypeForCategory(category)
-
-  override protected[process] def getAllCategoriesSet: Set[Category] =
-    main.getAllCategoriesSet ++ fallback.getAllCategoriesSet
-
-  override def getProcessingTypeCategory(processingType: ProcessingType): Option[Category] =
-    main.getProcessingTypeCategory(processingType).orElse(fallback.getProcessingTypeCategory(processingType))
 }
