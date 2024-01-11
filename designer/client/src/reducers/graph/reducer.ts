@@ -42,7 +42,7 @@ export function updateValidationResult(state: GraphState, action: { validationRe
         ...action.validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
         nodeResults: {
-            ...ProcessUtils.getValidationResult(state.scenario).nodeResults,
+            ...ProcessUtils.getValidationResult(state.scenario.json).nodeResults,
             ...action.validationResult.nodeResults,
         },
     };
