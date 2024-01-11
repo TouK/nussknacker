@@ -230,8 +230,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       .toVector
     // We create ParVector manually instead of calling par for compatibility with Scala 2.12
     val parallelCollection = new ParVector(groupedBasicProcesses)
-    val taskSupport        = new ExecutionContextTaskSupport(ec)
-    parallelCollection.tasksupport = taskSupport
+    parallelCollection.tasksupport = new ExecutionContextTaskSupport(ec)
     parallelCollection.foldLeft(EitherT.rightT[Future, NuDesignerError](List.empty[ScenarioWithDetails])) {
       case (acc, processesGroup) =>
         for {
