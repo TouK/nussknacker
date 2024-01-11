@@ -58,7 +58,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "UPDATE_IMPORTED_PROCESS": {
-            const oldNodeIds = sortBy(state.scenario.json.nodes.map((n) => n.id));
+            const oldNodeIds = sortBy(state.scenario.scenarioGraph.nodes.map((n) => n.id));
             const newNodeids = sortBy(action.processJson.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
@@ -68,7 +68,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
-                    json: action.processJson,
+                    scenarioGraph: action.processJson,
                 },
             };
         }
@@ -90,7 +90,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 scenario,
                 scenarioLoading: false,
-                layout: LayoutUtils.fromMeta(scenario.json),
+                layout: LayoutUtils.fromMeta(scenario.scenarioGraph),
             };
         }
         case "CORRECT_INVALID_SCENARIO": {
@@ -138,7 +138,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
-                    json: { ...action.processAfterChange, validationResult: updateValidationResult(state, action) },
+                    scenarioGraph: { ...action.processAfterChange, validationResult: updateValidationResult(state, action) },
                 },
             };
         }
@@ -156,19 +156,19 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                     ...stateAfterNodeDelete,
                     scenario: {
                         ...stateAfterNodeDelete.scenario,
-                        json: scenarioGraph,
+                        scenarioGraph: scenarioGraph,
                     },
                 };
             }, state);
         }
         case "NODES_CONNECTED": {
-            const currentEdges = NodeUtils.edgesFromScenarioGraph(state.scenario.json);
+            const currentEdges = NodeUtils.edgesFromScenarioGraph(state.scenario.scenarioGraph);
             const newEdge = NodeUtils.getEdgeForConnection({
                 fromNode: action.fromNode,
                 toNode: action.toNode,
                 edgeType: action.edgeType,
                 processDefinition: action.processDefinitionData,
-                scenarioGraph: state.scenario.json,
+                scenarioGraph: state.scenario.scenarioGraph,
             });
 
             const newEdges = currentEdges.includes(newEdge)
@@ -186,9 +186,9 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 scenario: {
                     ...state.scenario,
-                    json: {
-                        ...state.scenario.json,
-                        nodes: state.scenario.json.nodes.map((n) =>
+                    scenarioGraph: {
+                        ...state.scenario.scenarioGraph,
+                        nodes: state.scenario.scenarioGraph.nodes.map((n) =>
                             action.toNode.id !== n.id ? n : enrichNodeWithProcessDependentData(n, action.processDefinitionData, newEdges),
                         ),
                         edges: newEdges,
@@ -197,14 +197,14 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "NODES_DISCONNECTED": {
-            const nodesToSet = adjustBranchParametersAfterDisconnect(state.scenario.json.nodes, [action]);
+            const nodesToSet = adjustBranchParametersAfterDisconnect(state.scenario.scenarioGraph.nodes, [action]);
             return {
                 ...state,
                 scenario: {
                     ...state.scenario,
-                    json: {
-                        ...state.scenario.json,
-                        edges: state.scenario.json.edges
+                    scenarioGraph: {
+                        ...state.scenario.scenarioGraph,
+                        edges: state.scenario.scenarioGraph.edges
                             .map((e) => (e.from === action.from && e.to === action.to ? { ...e, to: "" } : e))
                             .filter(Boolean),
                         nodes: nodesToSet,
@@ -242,15 +242,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
                 const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, action.processDefinitionData);
                 return edges.concat(newEdge);
-            }, state.scenario.json.edges);
+            }, state.scenario.scenarioGraph.edges);
 
             const stateWithNodesAdded = addNodesWithLayout(state, { nodes, layout });
             return {
                 ...stateWithNodesAdded,
                 scenario: {
                     ...stateWithNodesAdded.scenario,
-                    json: {
-                        ...stateWithNodesAdded.scenario.json,
+                    scenarioGraph: {
+                        ...stateWithNodesAdded.scenario.scenarioGraph,
                         edges: updatedEdges,
                     },
                 },
@@ -262,8 +262,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 scenario: {
                     ...state.scenario,
-                    json: {
-                        ...state.scenario.json,
+                    scenarioGraph: {
+                        ...state.scenario.scenarioGraph,
                         validationResult: updateValidationResult(state, action),
                     },
                 },
@@ -321,7 +321,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 
 const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
     scenario: {
-        json: {
+        scenarioGraph: {
             nodes,
         },
     },

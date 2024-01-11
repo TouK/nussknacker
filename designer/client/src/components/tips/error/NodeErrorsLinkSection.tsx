@@ -29,7 +29,7 @@ export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps)
                     const details =
                         nodeId === "properties"
                             ? NodeUtils.getProcessPropertiesNode(scenario, unsavedName)
-                            : NodeUtils.getNodeById(nodeId, scenario.json);
+                            : NodeUtils.getNodeById(nodeId, scenario.scenarioGraph);
                     return (
                         <React.Fragment key={nodeId}>
                             <NodeErrorLink onClick={(event) => showDetails(event, details)} nodeId={nodeId} disabled={!details} />

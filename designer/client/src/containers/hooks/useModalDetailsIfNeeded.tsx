@@ -29,10 +29,11 @@ export function useModalDetailsIfNeeded() {
             return getNodeIds()
                 .map(
                     (id) =>
-                        NodeUtils.getNodeById(id, scenario.json) ?? (scenario.name === id && NodeUtils.getProcessPropertiesNode(scenario)),
+                        NodeUtils.getNodeById(id, scenario.scenarioGraph) ??
+                        (scenario.name === id && NodeUtils.getProcessPropertiesNode(scenario)),
                 )
                 .filter(Boolean)
-                .map((node) => openNodeWindow(node, scenario.json));
+                .map((node) => openNodeWindow(node, scenario.scenarioGraph));
         },
         [getNodeIds, openNodeWindow],
     );
@@ -42,9 +43,9 @@ export function useModalDetailsIfNeeded() {
             const prefix = getFragmentNodesPrefix(fragment);
             return getNodeIds()
                 .filter((i) => i.startsWith(prefix))
-                .map((id) => NodeUtils.getNodeById(removePrefix(id, prefix), fragment.json))
+                .map((id) => NodeUtils.getNodeById(removePrefix(id, prefix), fragment.scenarioGraph))
                 .filter(Boolean)
-                .map((node) => openNodeWindow({ ...node, id: addPrefix(node.id, prefix) }, fragment.json, true));
+                .map((node) => openNodeWindow({ ...node, id: addPrefix(node.id, prefix) }, fragment.scenarioGraph, true));
         },
         [getNodeIds, openNodeWindow],
     );
