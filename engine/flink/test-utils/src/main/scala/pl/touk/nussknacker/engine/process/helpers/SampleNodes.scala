@@ -204,10 +204,10 @@ object SampleNodes {
     @MethodToInvoke
     def invoke(@ParamName("name") name: String): ServiceInvoker = synchronized {
       val newI = new ServiceInvoker with WithLifecycle {
-        override def invokeService(params: Map[String, Any])(
+        override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
             implicit ec: ExecutionContext,
             collector: ServiceInvocationCollector,
-            contextId: ContextId,
+            context: Context,
             componentUseCase: ComponentUseCase
         ): Future[Any] = {
           if (!opened) {
@@ -231,12 +231,13 @@ object SampleNodes {
         @ParamName("dynamic") dynamic: LazyParameter[String]
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(params: Map[String, Any])(
+      override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          contextId: ContextId,
+          context: Context,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
+        val params = evaluateParams(context)._2
         collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
           Future.successful(())
         }
@@ -440,12 +441,13 @@ object SampleNodes {
         outputVar,
         returnType,
         new ServiceInvoker {
-          override def invokeService(params: Map[String, Any])(
+          override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
-              contextId: ContextId,
+              context: Context,
               componentUseCase: ComponentUseCase
           ): Future[Any] = {
+            val params = evaluateParams(context)._2
             val result = (1 to count)
               .map(_ => definition.asScala.map(_ -> params("toFill").asInstanceOf[String]).toMap)
               .map(TypedMap(_))

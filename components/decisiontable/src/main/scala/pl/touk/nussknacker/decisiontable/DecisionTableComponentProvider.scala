@@ -22,7 +22,7 @@ class DecisionTableComponentProvider extends ComponentProvider {
     List {
       ComponentDefinition(
         name = "decision-table",
-        component = DecisionTable2
+        component = DecisionTable
       ).withRelativeDocs("BasicNodes#decisiontable")
     }
   }

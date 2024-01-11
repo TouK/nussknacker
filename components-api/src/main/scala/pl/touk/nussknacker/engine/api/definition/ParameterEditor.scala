@@ -38,7 +38,8 @@ case object TabularTypedDataEditor extends SimpleParameterEditor {
 
   // todo: check + smart constructor
   final case class TabularTypedData private (columns: Vector[Column]) {
-    val rows: Vector[Row] = columns.transpose(_.cells).map(Row.apply)
+    val rows: Vector[Row]                            = columns.transpose(_.cells).map(Row.apply)
+    val columnDefinitions: Vector[Column.Definition] = columns.map(_.definition)
   }
 
   object TabularTypedData {
@@ -49,7 +50,7 @@ case object TabularTypedDataEditor extends SimpleParameterEditor {
       final case class Definition(name: String, aType: Class[_])
     }
 
-    final case class Cell(aType: Class[_], value: Any)
+    final case class Cell(definition: Column.Definition, value: Any)
     final case class Row(cells: Vector[Cell])
 
     def create(columns: Vector[Column.Definition], rows: Vector[Vector[Any]]): Try[TabularTypedData] = Try {
@@ -62,7 +63,7 @@ case object TabularTypedDataEditor extends SimpleParameterEditor {
                 case None        => throw new IllegalArgumentException("More columns than rows")
               }
             }
-            Column(column, valuesOfColumn.map(Cell(column.aType, _)))
+            Column(column, valuesOfColumn.map(Cell(column, _)))
           }
       }
     }
@@ -145,11 +146,11 @@ case object TabularTypedDataEditor extends SimpleParameterEditor {
       implicit val columnDecoder: Decoder[Column.Definition] =
         Decoder.forProduct2("name", "type")(Column.Definition.apply)
       implicit val valueDecoder: Decoder[Any] = Decoder.decodeJson.emapTry { value =>
-        Try {
+        Try { // todo: validate if type is declared one (and try to cast)
           value.asNull.map(_ => null).getOrElse {
             value.asString.getOrElse {
               value.asBoolean.getOrElse {
-                value.asNumber.map(_.toBigDecimal).getOrElse {
+                value.asNumber.flatMap(_.toBigDecimal).getOrElse {
                   throw new IllegalArgumentException("Value unexpected type")
                 }
               }

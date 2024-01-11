@@ -8,64 +8,48 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputGenericNodeTransformation
 }
 import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData
-import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.Row
+import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.Column
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.lazyparam.EvaluableLazyParameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
-object DecisionTable extends Service {
+object DecisionTable extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
 
-  @MethodToInvoke
-  def invoke(
-      @ParamName("Basic Decision Table")
-      @SimpleEditor(`type` = SimpleEditorType.TYPED_TABULAR_DATA_EDITOR) tabularData: TabularTypedData,
-      @ParamName("Expression") expression: java.lang.Boolean,
-      @OutputVariableName outputVariable: String
-  )(implicit nodeId: NodeId): Future[Vector[Row]] = Future.successful {
-    tabularData.rows
-  }
-
-}
-
-object DecisionTable2 extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
-
-  override type State = DecisionTableComponentState
+  override type State = Unit
 
   override val nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): NodeTransformationDefinition = {
-    case TransformationStep(_, None) =>
+    case TransformationStep(Nil, _) =>
       NextParameters(
         parameters = decisionTableParameter :: Nil,
         errors = List.empty,
-        state = Some(DecisionTableComponentState.Initiated)
+        state = None
       )
     case TransformationStep(
           (`decisionTableParameterName`, DefinedEagerParameter(data: TabularTypedData, _)) :: Nil,
-          Some(DecisionTableComponentState.Initiated)
+          _
         ) =>
       NextParameters(
         parameters = filterDecisionTableExpressionParameter(data) :: Nil,
         errors = List.empty,
-        state = Some(DecisionTableComponentState.Configured)
+        state = None
       )
     case TransformationStep(
           (`decisionTableParameterName`, DefinedEagerParameter(data: TabularTypedData, _)) ::
           (`filterDecisionTableExpressionParameterName`, _) :: Nil,
-          Some(DecisionTableComponentState.Configured)
+          _
         ) =>
-      FinalResults.forValidation(context, errors = List.empty)(
+      FinalResults.forValidation(context)(
         _.withVariable(
           name = OutputVariableNameDependency.extract(dependencies),
-          value = Typed.fromInstance(data.rows), // todo: do it better
+          value = componentResultTypingResult(data.columnDefinitions),
           paramName = None
         )
       )
@@ -74,11 +58,10 @@ object DecisionTable2 extends EagerService with SingleInputGenericNodeTransforma
   override def implementation(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
-      finalState: Option[DecisionTableComponentState]
+      finalState: Option[Unit]
   ): ServiceInvoker =
     new DecisionTableComponentLogic(
-      params(decisionTableParameterName).asInstanceOf[TabularTypedData],
-      params(filterDecisionTableExpressionParameterName).asInstanceOf[EvaluableLazyParameter[java.lang.Boolean]]
+      params(decisionTableParameterName).asInstanceOf[TabularTypedData]
     )
 
   private lazy val decisionTableParameterName = "Basic Decision Table"
@@ -100,39 +83,51 @@ object DecisionTable2 extends EagerService with SingleInputGenericNodeTransforma
     ).copy(
       isLazyParameter = true,
       additionalVariables = Map(
-        "DecisionTable" -> AdditionalVariableProvidedInRuntime(
-          TypedObjectTypingResult(
-            data.columns
-              .map(_.definition)
-              .map { columnDef =>
-                columnDef.name -> Typed.typedClass(columnDef.aType)
-              }
-              .toMap
-          )
-        )
+        "DecisionTableRow" -> AdditionalVariableProvidedInRuntime(rowDataTypingResult(data.columnDefinitions))
       )
     )
 
-  sealed trait DecisionTableComponentState
-
-  object DecisionTableComponentState {
-    case object Initiated  extends DecisionTableComponentState
-    case object Configured extends DecisionTableComponentState
+  private def componentResultTypingResult(columnDefinitions: Iterable[Column.Definition]): TypingResult = {
+    Typed.genericTypeClass(classOf[List[Map[String, Any]]], rowDataTypingResult(columnDefinitions) :: Nil)
   }
+
+  private def rowDataTypingResult(columnDefinitions: Iterable[Column.Definition]) =
+    TypedObjectTypingResult(
+      columnDefinitions.map { columnDef =>
+        columnDef.name -> Typed.typedClass(columnDef.aType)
+      }.toMap
+    )
 
   private class DecisionTableComponentLogic(
       tabularData: TabularTypedData,
-      filterTabularDataExpression: EvaluableLazyParameter[java.lang.Boolean]
   ) extends ServiceInvoker {
 
-    override def invokeService(params: Map[String, Any])(
+    override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ContextId,
+        context: Context,
         componentUseCase: ComponentUseCase
     ): Future[Any] = Future.successful {
-      filterTabularDataExpression.prepareEvaluator(???)
-      ???
+      filterRows(tabularData, evaluateParams, context)
+    }
+
+    private def filterRows(
+        tabularData: TabularTypedData,
+        evaluateParams: Context => (Context, Map[String, Any]),
+        context: Context
+    ): java.util.List[java.util.Map[String, Any]] = {
+      tabularData.rows
+        .filter { row =>
+          val m           = row.cells.map(c => (c.definition.name, c.value)).toMap.asJava
+          val newContext  = context.withVariables(Map("DecisionTableRow" -> m))
+          val (_, params) = evaluateParams(newContext)
+          params("Expression").asInstanceOf[java.lang.Boolean]
+        }
+        .map { row =>
+          row.cells.map(c => c.definition.name -> c.value).toMap // todo: are we sure keys are unique
+        }
+        .map(_.asJava)
+        .asJava
     }
 
   }

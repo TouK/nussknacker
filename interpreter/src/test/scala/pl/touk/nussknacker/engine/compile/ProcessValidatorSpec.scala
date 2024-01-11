@@ -1743,10 +1743,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition))),
         new ServiceInvoker {
 
-          override def invokeService(params: Map[String, Any])(
+          override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              contextId: ContextId,
+              context: Context,
               componentUseCase: ComponentUseCase
           ): Future[Any] = Future.successful(null)
 
@@ -1780,10 +1780,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         metaData: MetaData
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(params: Map[String, Any])(
+      override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
+          context: Context,
           componentUseCase: ComponentUseCase
       ): Future[Any] = Future.successful(null)
 
@@ -1829,15 +1829,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         variableName,
         returnType,
         new ServiceInvoker {
-          override def invokeService(params: Map[String, Any])(
+          override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              contextId: ContextId,
+              context: Context,
               componentUseCase: ComponentUseCase
-          ): Future[Any] =
+          ): Future[Any] = {
+            val params = evaluateParams(context)._2
             Future.successful(
               s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age"
             )
+          }
         }
       )
     }

@@ -95,10 +95,10 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
   // TODO: This method should be removed - instead, developers should deliver it's own ServiceInvoker to avoid
   //       mixing implementation logic with definition logic. Before that we should fix EagerService Lifecycle handling.
   //       See notice next to EagerService
-  def invoke(params: Map[String, Any])(
+  def invoke(evaluateParams: Context => (Context, Map[String, Any]))(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
-      contextId: ContextId,
+      context: Context,
       metaData: MetaData,
       componentUseCase: ComponentUseCase
   ): Future[Any]
@@ -111,13 +111,18 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
     implicit val metaImplicit: MetaData = metaData
     new ServiceInvoker {
 
-      override def invokeService(params: Map[String, Any])(
+      override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
+          context: Context,
           componentUseCase: ComponentUseCase
-      ): Future[Any] =
-        invoke(params ++ eagerParameters)
+      ): Future[Any] = {
+        def newEvaluateParams(context: Context): (Context, Map[String, Any]) = {
+          val (newContext, params) = evaluateParams(context)
+          (newContext, params ++ eagerParameters)
+        }
+        invoke(newEvaluateParams)
+      }
 
     }
   }

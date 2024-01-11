@@ -3,7 +3,6 @@ package pl.touk.nussknacker.decisiontable
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.{Cell, Row}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -11,6 +10,9 @@ import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import scala.jdk.CollectionConverters._
+import java.util.{List => JList}
+import java.util.{Map => JMap}
 
 class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
@@ -28,7 +30,7 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
     .build()
 
   test("simple test") { // todo: change name
-    val process = ScenarioBuilder
+    val scenarioWithDecisionTable = ScenarioBuilder
       .requestResponse("test scenario")
       .source("request", TestScenarioRunner.testDataSource)
       .enricher(
@@ -36,26 +38,25 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
         "dtResult",
         "decision-table",
         "Basic Decision Table" -> decisionTableJson,
-        "Expression"           -> "#DecisionTable.B == 'foo'",
+        "Expression"           -> "#DecisionTableRow['B'] == 'foo' && #DecisionTableRow['C'] != null",
       )
       .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#dtResult")
 
-    val validatedResult = testScenarioRunner.runWithData[TestMessage, Vector[Row]](process, List(TestMessage("1", 100)))
+    val validatedResult = testScenarioRunner.runWithData[TestMessage, JList[JMap[String, Any]]](
+      scenario = scenarioWithDecisionTable,
+      data = List(TestMessage("1", 100))
+    )
 
     val resultList = validatedResult.validValue.successes
-    resultList should be(
-      List {
-        Vector(
-          Row(
-            Vector(
-              Cell(classOf[Option[Int]], Some(1)),
-              Cell(classOf[String], "foo"),
-              Cell(classOf[String], "bar"),
-            )
-          )
-        )
-      }
-    )
+    resultList should be(oneElementList {
+      List(
+        Map(
+          "somename" -> 1,
+          "B"        -> "foo",
+          "C"        -> "bar"
+        ).asJava
+      ).asJava
+    })
   }
 
   private lazy val decisionTableJson = Expression.tabularDataDefinition {
@@ -94,6 +95,7 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
        |}""".stripMargin
   }
 
+  private def oneElementList[T](obj: T) = List(obj)
 }
 
 private final case class TestMessage(id: String, value: Int)

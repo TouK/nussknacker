@@ -1053,14 +1053,14 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Map[String, Any])(
+    override def invoke(evaluateParams: Context => (Context, Map[String, Any]))(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ContextId,
+        context: Context,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
-      Future.successful(params.head._2.toString)
+      Future.successful(evaluateParams(context)._2.head._2.toString)
     }
 
   }
@@ -1075,13 +1075,14 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Map[String, Any])(
+    override def invoke(evaluateParams: Context => (Context, Map[String, Any]))(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ContextId,
+        context: Context,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
+      val params = evaluateParams(context)._2
       Future.successful(params.head._2.toString)
     }
 
@@ -1128,10 +1129,10 @@ object InterpreterSpec {
         param: String
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(params: Map[String, Any])(
+      override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
+          context: Context,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
         Future.successful(param)
@@ -1156,12 +1157,13 @@ object InterpreterSpec {
         lazyOne.returnType, {
           if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
           new ServiceInvoker {
-            override def invokeService(params: Map[String, Any])(
+            override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
-                contextId: ContextId,
+                context: Context,
                 componentUseCase: ComponentUseCase
             ): Future[AnyRef] = {
+              val params = evaluateParams(context)._2
               Future.successful(params("lazy").asInstanceOf[AnyRef])
             }
           }
@@ -1204,10 +1206,10 @@ object InterpreterSpec {
       val paramName = staticParam.extractValue(params)
 
       new ServiceInvoker {
-        override def invokeService(params: Map[String, Any])(
+        override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
-            contextId: ContextId,
+            context: Context,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
           Future.successful(params(paramName).asInstanceOf[AnyRef])
