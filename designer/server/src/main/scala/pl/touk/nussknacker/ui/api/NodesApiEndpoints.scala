@@ -25,8 +25,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{NodeValidationResultDto, UIParameterDto}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.Codec.PlainCodec
@@ -38,6 +37,7 @@ import sttp.tapir.json.circe.jsonBody
 class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import NodesApiEndpoints.Dtos._
+  import NodesApiEndpoints.Dtos.ProcessNameCodec._
 
   lazy val nodesAdditionalInfoEndpoint
       : SecuredEndpoint[(ProcessName, NodeData), String, Option[AdditionalInfo], Any] = {
@@ -179,18 +179,19 @@ object NodesApiEndpoints {
 
   object Dtos {
 
-    def encode(processName: ProcessName): String = processName.value
+    object ProcessNameCodec {
+      def encode(processName: ProcessName): String = processName.value
 
-    def decode(s: String): DecodeResult[ProcessName] = {
-      val processName = ProcessName.apply(s)
-      DecodeResult.Value(processName)
+      def decode(s: String): DecodeResult[ProcessName] = {
+        val processName = ProcessName.apply(s)
+        DecodeResult.Value(processName)
+      }
+
+      implicit val processNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
     }
 
-    implicit val processNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
-    implicit val processNameSchema: Schema[ProcessName]    = Schema.derived
-
-    implicit val additionalInfoSchema: Schema[AdditionalInfo] = Schema.derived
-
+    implicit val processNameSchema: Schema[ProcessName]                         = Schema.derived
+    implicit val additionalInfoSchema: Schema[AdditionalInfo]                   = Schema.derived
     implicit val processAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
 
     final case class TypingResultDto(
@@ -315,7 +316,6 @@ object NodesApiEndpoints {
       def typingResultToDto(typingResult: TypingResult): TypingResultDto = {
         typingResult match {
           case result: TypedObjectWithValue =>
-            println("TypedObjectWithValue")
             TypingResultDto(
               value = Some(result.value),
               display = result.display,
@@ -325,7 +325,6 @@ object NodesApiEndpoints {
               fields = None
             )
           case result: TypedClass =>
-            println("TypedClass")
             TypingResultDto(
               value = toOptionString(result.valueOpt),
               display = result.display,
@@ -335,7 +334,6 @@ object NodesApiEndpoints {
               fields = None
             )
           case result: TypedUnion =>
-            println("TypedUnion")
             TypingResultDto(
               value = toOptionString(result.valueOpt),
               display = result.display,
@@ -345,7 +343,6 @@ object NodesApiEndpoints {
               fields = None
             )
           case result: TypedTaggedValue =>
-            println("TypedTaggedValue")
             TypingResultDto(
               value = toOptionString(result.valueOpt),
               display = result.display,
@@ -355,7 +352,6 @@ object NodesApiEndpoints {
               fields = None
             )
           case result: typing.TypedObjectWithData =>
-            println("TypedObjectWithData")
             TypingResultDto(
               value = toOptionString(result.valueOpt),
               display = result.display,
@@ -365,7 +361,6 @@ object NodesApiEndpoints {
               fields = None
             )
           case result: typing.TypedDict =>
-            println("TypedDict")
             TypingResultDto(
               value = toOptionString(result.valueOpt),
               display = result.display,
@@ -375,7 +370,6 @@ object NodesApiEndpoints {
               fields = None
             )
           case result: typing.TypedObjectTypingResult =>
-            println("TypedObjectTypingResult")
             TypingResultDto(
               value = None,
               display = result.display,
@@ -386,7 +380,6 @@ object NodesApiEndpoints {
               fields = Some(result.fields.map { case (key, result) => (key, typingResultToDto(result)) })
             )
           case result: typing.SingleTypingResult =>
-            println("SingleTypingResult")
             TypingResultDto(
               value = toOptionString(result.valueOpt),
               display = result.display,
@@ -396,13 +389,10 @@ object NodesApiEndpoints {
               fields = None
             )
           case typing.TypedNull =>
-            println("TypedNull")
             TypingResultDto(Some(null), "Null", "null", "null", List.empty, None)
           case typing.Unknown =>
-            println("Unknown")
             TypingResultDto(None, "Unknown", "Unknown", "java.lang.Object", List.empty, None)
           case _ =>
-            println("KnownTypingResult?")
             TypingResultDto(None, "rest", "type", "refClazzName", List.empty, None)
         }
       }
@@ -416,26 +406,28 @@ object NodesApiEndpoints {
         variableTypes: Map[String, TypingResultDto],
         branchVariableTypes: Option[Map[String, Map[String, TypingResultDto]]],
         outgoingEdges: Option[List[Edge]]
-    ) {
+    )
 
-      def toRequest(implicit modelData: ModelData): Option[NodeValidationRequest] = {
+    object NodeValidationRequestDto {
+
+      def toRequest(node: NodeValidationRequestDto)(implicit modelData: ModelData): Option[NodeValidationRequest] = {
         try {
           Some(
             NodeValidationRequest(
-              nodeData = nodeData,
-              processProperties = processProperties,
-              variableTypes = variableTypes.map { case (key, typingResultDto) =>
-                (key, toTypingResult(typingResultDto))
+              nodeData = node.nodeData,
+              processProperties = node.processProperties,
+              variableTypes = node.variableTypes.map { case (key, typingResultDto) =>
+                (key, TypingResultDto.toTypingResult(typingResultDto))
               },
-              branchVariableTypes = branchVariableTypes.map { outerMap =>
+              branchVariableTypes = node.branchVariableTypes.map { outerMap =>
                 outerMap.map { case (name, innerMap) =>
                   val changedMap = innerMap.map { case (key, typing) =>
-                    (key, toTypingResult(typing))
+                    (key, TypingResultDto.toTypingResult(typing))
                   }
                   (name, changedMap)
                 }
               },
-              outgoingEdges = outgoingEdges
+              outgoingEdges = node.outgoingEdges
             )
           )
         } catch {
@@ -444,9 +436,6 @@ object NodesApiEndpoints {
 
       }
 
-    }
-
-    object NodeValidationRequestDto {
       implicit val nodeDataSchema: Schema[NodeData]                   = Schema.anyObject
       implicit val processPropertiesSchema: Schema[ProcessProperties] = Schema.any
     }
@@ -488,19 +477,23 @@ object NodesApiEndpoints {
     final case class ParametersValidationRequestDto(
         parameters: List[UIValueParameterDto],
         variableTypes: Map[String, TypingResultDto]
-    ) {
+    )
 
-      def withoutDto()(implicit modelData: ModelData): ParametersValidationRequest = {
+    object ParametersValidationRequestDto {
+
+      def withoutDto(
+          param: ParametersValidationRequestDto
+      )(implicit modelData: ModelData): ParametersValidationRequest = {
         ParametersValidationRequest(
-          parameters.map { parameter =>
+          param.parameters.map { parameter =>
             UIValueParameter(
               name = parameter.name,
-              typ = toTypingResult(parameter.typ),
+              typ = TypingResultDto.toTypingResult(parameter.typ),
               expression = parameter.expression
             )
           },
-          variableTypes.map { case (key, typDto) =>
-            (key, toTypingResult(typDto))
+          param.variableTypes.map { case (key, typDto) =>
+            (key, TypingResultDto.toTypingResult(typDto))
           }
         )
       }
@@ -601,19 +594,22 @@ object NodesApiEndpoints {
       expressionType: Option[TypingResult],
       validationErrors: List[NodeValidationError],
       validationPerformed: Boolean
-  ) {
+  )
 
-    def toDto(): Dtos.NodeValidationResultDto = {
+  object NodeValidationResult {
+    import Dtos._
+
+    def toDto(node: NodeValidationResult): Dtos.NodeValidationResultDto = {
       NodeValidationResultDto(
-        parameters = parameters.map { list =>
+        parameters = node.parameters.map { list =>
           list.map { param =>
             UIParameterDto(
               name = param.name,
-              typ = typingResultToDto(param.typ),
+              typ = TypingResultDto.typingResultToDto(param.typ),
               editor = param.editor,
               defaultValue = param.defaultValue,
               additionalVariables = param.additionalVariables.map { case (key, typingResult) =>
-                (key, typingResultToDto(typingResult))
+                (key, TypingResultDto.typingResultToDto(typingResult))
               },
               variablesToHide = param.variablesToHide,
               branchParam = param.branchParam,
@@ -621,11 +617,11 @@ object NodesApiEndpoints {
             )
           }
         },
-        expressionType = expressionType.map { typingResult =>
-          typingResultToDto(typingResult)
+        expressionType = node.expressionType.map { typingResult =>
+          TypingResultDto.typingResultToDto(typingResult)
         },
-        validationErrors = validationErrors,
-        validationPerformed = validationPerformed
+        validationErrors = node.validationErrors,
+        validationPerformed = node.validationPerformed
       )
     }
 
