@@ -24,8 +24,9 @@ import scala.concurrent.ExecutionContext
 class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   // TODO: tests for user privileges
-  private implicit val user: LoggedUser                           = AdminUser("admin", "admin")
-  private implicit val batchingExecutionContext: ExecutionContext = ExecutionContext.global
+  private implicit val user: LoggedUser = AdminUser("admin", "admin")
+
+  private val batchingExecutionContext: ExecutionContext = ExecutionContext.global
 
   test("should perform test migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(1, 2))
