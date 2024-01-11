@@ -49,7 +49,10 @@ trait RemoteEnvironment {
   ): Future[Either[NuDesignerError, Unit]]
 
   // TODO This method is used by an external project. We should move it to some api module
-  def testMigration(processToInclude: ScenarioWithDetails => Boolean = _ => true)(
+  def testMigration(
+      processToInclude: ScenarioWithDetails => Boolean = _ => true,
+      batchingExecutionContext: ExecutionContext
+  )(
       implicit ec: ExecutionContext,
       user: LoggedUser
   ): Future[Either[NuDesignerError, List[TestMigrationResult]]]
@@ -209,20 +212,23 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     }
   }
 
+  // We need to be cautious when choosing maxParallelism of batchingExecutionContext as validation may call external systems and we don't want to overwhelm them with requests
   override def testMigration(
       processToInclude: ScenarioWithDetails => Boolean = _ => true,
+      batchingExecutionContext: ExecutionContext
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
       basicProcesses = allBasicProcesses.filterNot(_.isFragment).filter(processToInclude)
       basicFragments = allBasicProcesses.filter(_.isFragment).filter(processToInclude)
-      processes <- fetchGroupByGroup(basicProcesses)
-      fragments <- fetchGroupByGroup(basicFragments)
-    } yield testModelMigrations.testMigrations(processes, fragments)).value
+      processes <- fetchGroupByGroup(basicProcesses, batchingExecutionContext)
+      fragments <- fetchGroupByGroup(basicFragments, batchingExecutionContext)
+    } yield testModelMigrations.testMigrations(processes, fragments, batchingExecutionContext)).value
   }
 
   private def fetchGroupByGroup(
-      basicProcesses: List[ScenarioWithDetails]
+      basicProcesses: List[ScenarioWithDetails],
+      batchingExecutionContext: ExecutionContext
   )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetails]] = {
     val groupedBasicProcesses = basicProcesses
       .map(_.name)
@@ -230,7 +236,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       .toVector
     // We create ParVector manually instead of calling par for compatibility with Scala 2.12
     val parallelCollection = new ParVector(groupedBasicProcesses)
-    parallelCollection.tasksupport = new ExecutionContextTaskSupport(ec)
+    parallelCollection.tasksupport = new ExecutionContextTaskSupport(batchingExecutionContext)
     parallelCollection.foldLeft(EitherT.rightT[Future, NuDesignerError](List.empty[ScenarioWithDetails])) {
       case (acc, processesGroup) =>
         for {
