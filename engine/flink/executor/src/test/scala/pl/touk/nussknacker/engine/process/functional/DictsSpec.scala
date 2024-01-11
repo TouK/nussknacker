@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import java.util.Date
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
 import pl.touk.nussknacker.engine.spel
+
+import java.util.Date
 
 class DictsSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
@@ -35,7 +36,7 @@ class DictsSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data should have size 1
+    ProcessTestHelpers.logServiceResultsHolder.results should have size 1
   }
 
 }

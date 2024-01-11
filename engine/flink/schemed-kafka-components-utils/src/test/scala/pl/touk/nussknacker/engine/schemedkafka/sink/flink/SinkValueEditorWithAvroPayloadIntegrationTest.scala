@@ -6,6 +6,8 @@ import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
@@ -19,6 +21,8 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import scala.jdk.CollectionConverters._
 
 private object SinkValueEditorWithAvroPayloadIntegrationTest {
+
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
 
   val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
@@ -92,10 +96,11 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
 
   private var topicConfigs: Map[String, TopicConfig] = Map.empty
 
-  private lazy val processConfigCreator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def schemaRegistryClientFactory =
-      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-  }
+  private lazy val processConfigCreator: KafkaAvroTestProcessConfigCreator =
+    new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
+      override protected def schemaRegistryClientFactory =
+        MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
+    }
 
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient
 

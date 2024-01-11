@@ -6,6 +6,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestingCapabilities}
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
+import pl.touk.nussknacker.engine.schemedkafka.AvroNodesClassloadingSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -19,7 +22,7 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
 
   override protected val schemaRegistryClient: SchemaRegistryClient = MockSchemaRegistry.getClientForScope("testScope")
 
-  private val configCreator = new KafkaAvroTestProcessConfigCreator {
+  private val configCreator = new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
     override protected def schemaRegistryClientFactory =
       MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
@@ -45,5 +48,11 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
       new ModelDataTestInfoProvider(modelData).getTestingCapabilities(scenario) shouldBe TestingCapabilities.Disabled
     }
   }
+
+}
+
+object AvroNodesClassloadingSpec {
+
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
 
 }

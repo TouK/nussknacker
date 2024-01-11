@@ -286,7 +286,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       nodeResults("out") should have length 2
 
       results.exceptions should have length 2
-      RecordingExceptionConsumer.dataFor(exceptionConsumerId) shouldBe Symbol("empty")
+      RecordingExceptionConsumer.exceptionsFor(exceptionConsumerId) shouldBe Symbol("empty")
     }
 
     "handle transient errors" in {
@@ -384,7 +384,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       results.exceptions.head.nodeComponentInfo.map(_.nodeId) shouldBe Some("out")
       results.exceptions.head.throwable.getMessage should include("message: / by zero")
 
-      SinkForInts.data should have length 0
+      SimpleProcessConfigCreator.sinkForIntsResultsHolder.results should have length 0
     }
 
     "be able to test process with time windows" in {

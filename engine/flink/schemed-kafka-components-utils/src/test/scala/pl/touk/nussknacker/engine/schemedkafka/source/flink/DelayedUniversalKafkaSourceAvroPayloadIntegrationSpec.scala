@@ -1,15 +1,9 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.schemedkafka.schema.{
-  IntFieldV1,
-  LocalTimestampMicrosFieldV1,
-  LocalTimestampMillisFieldV1,
-  LongFieldV1,
-  NullableLongFieldV1,
-  TimestampMicrosFieldV1,
-  TimestampMillisFieldV1
-}
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
+import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 
 class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec extends DelayedUniversalKafkaSourceIntegrationMixinSpec {
@@ -95,5 +89,17 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec extends DelayedUnive
   private def runAndVerify(topicConfig: TopicConfig, process: CanonicalProcess, givenObj: AnyRef): Unit = {
     runAndVerify(topicConfig.input, process, givenObj)
   }
+
+  override protected val sinkForLongsResultsHolder: () => TestResultsHolder[java.lang.Long] =
+    () => DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec.sinkForLongsResultsHolder
+
+  override protected val sinkForInputMetaResultsHolder: () => TestResultsHolder[InputMeta[_]] =
+    () => DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder
+}
+
+object DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec extends Serializable {
+
+  private val sinkForLongsResultsHolder     = new TestResultsHolder[java.lang.Long]
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
 
 }

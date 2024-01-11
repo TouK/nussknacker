@@ -3,12 +3,8 @@ package pl.touk.nussknacker.engine.process.functional
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.process.helpers.{
-  LifecycleRecordingExceptionConsumer,
-  LifecycleRecordingExceptionConsumerProvider,
-  ProcessTestHelpers
-}
 import pl.touk.nussknacker.engine.spel
 
 import java.util.Date
@@ -74,7 +70,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    val mockData = MockService.data.map(_.asInstanceOf[SimpleRecordWithPreviousValue])
+    val mockData = ProcessTestHelpers.logServiceResultsHolder.results.map(_.asInstanceOf[SimpleRecordWithPreviousValue])
     mockData.map(_.record.value1) shouldBe List(12L, 20L)
     mockData.map(_.added) shouldBe List("terefere", "terefere")
 
@@ -106,7 +102,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    val mockData = MockService.data.map(_.asInstanceOf[SimpleRecordWithPreviousValue])
+    val mockData = ProcessTestHelpers.logServiceResultsHolder.results.map(_.asInstanceOf[SimpleRecordWithPreviousValue])
     mockData.map(_.record.value1) shouldBe List(12L, 20L)
     mockData.map(_.added) shouldBe List("terefere", "terefere")
 
@@ -124,7 +120,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data.size shouldBe 1
+    ProcessTestHelpers.logServiceResultsHolder.results.size shouldBe 1
   }
 
   test("be able to split after custom node") {
@@ -157,7 +153,8 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    val (allMocked, filteredMocked) = MockService.data.map(_.asInstanceOf[String]).partition(_.startsWith("allRec-"))
+    val (allMocked, filteredMocked) =
+      ProcessTestHelpers.logServiceResultsHolder.results.map(_.asInstanceOf[String]).partition(_.startsWith("allRec-"))
     allMocked shouldBe List("allRec-3", "allRec-5", "allRec-12", "allRec-14", "allRec-20")
     filteredMocked shouldBe List("12-terefere", "20-terefere")
 
@@ -177,7 +174,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe Symbol("empty")
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe Symbol("empty")
 
   }
 
@@ -198,7 +195,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    val all = MockService.data.toSet
+    val all = ProcessTestHelpers.logServiceResultsHolder.results.toSet
     all shouldBe Set("f1-alamakota", "f2-alamakota")
 
   }
@@ -214,7 +211,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe List("testBeforeNode")
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe List("testBeforeNode")
 
   }
 
@@ -230,7 +227,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe List("terefere")
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe List("terefere")
 
   }
 
@@ -251,7 +248,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe List("terefere")
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe List("terefere")
   }
 
   test("not allow input after custom node clearing context") {
@@ -296,7 +293,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe List(null)
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe List(null)
   }
 
   test("be able to end process with optional ending custom node") {
@@ -311,7 +308,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     // without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
-    MockService.data shouldBe List("1")
+    ProcessTestHelpers.optionalEndingCustomResultsHolder.results shouldBe List("1")
   }
 
   test("listeners should count only incoming events to nodes") {
@@ -330,32 +327,6 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     CountingNodesListener.listen {
       processInvoker.invokeWithSampleData(process, data)
     } shouldBe List("id", "testVar", "custom", "split", "out", "custom-ending", "id", "testVar", "custom")
-  }
-
-  // TODO: for ending custom nodes and sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
-  ignore("should not prepare interpretation function after ending custom node or sink") {
-    val process = ScenarioBuilder
-      .streaming("proc1")
-      .source("id", "input")
-      .buildSimpleVariable("map", "map", "{:}")
-      .buildSimpleVariable("list", "list", "{}")
-      .split(
-        "split",
-        GraphBuilder.emptySink("out", "monitor"),
-        GraphBuilder.endingCustomNode("custom-ending", None, "optionalEndingCustom", "param" -> "'param'")
-      )
-    val data = List(SimpleRecord("1", 3, "a", new Date(0)))
-    val cfg  = LifecycleRecordingExceptionConsumerProvider.configWithProvider(config, runId)
-    processInvoker.invokeWithSampleData(process, data, cfg)
-
-    val exceptionConsumerLifecycleHistory = LifecycleRecordingExceptionConsumer.dataFor(runId)
-    // Exception handler is prepared for source part and custom node itself (LazyParameterInterpreterFunction opens the exception handler).
-    // However an extra one for interpretation function should not be prepared.
-    exceptionConsumerLifecycleHistory should have size 4
-    val opened = exceptionConsumerLifecycleHistory.filter(_.opened)
-    opened should have size 2
-    val closed = exceptionConsumerLifecycleHistory.filter(_.closed)
-    closed should have size 2
   }
 
 }

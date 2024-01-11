@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, StaticMetho
 import KafkaSourceFactoryMixin.{SampleKey, SampleValue}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
 
 class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProcessMixin {
 
@@ -46,5 +47,14 @@ class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProces
       )
     )
   }
+
+  override protected val resultHolders: () => ResultsHolders = () =>
+    KafkaSourceFactoryDefinitionExtractorSpec.resultsHolders
+
+}
+
+object KafkaSourceFactoryDefinitionExtractorSpec extends Serializable {
+
+  private val resultsHolders = new ResultsHolders
 
 }
