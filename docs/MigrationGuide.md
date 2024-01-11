@@ -53,6 +53,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `processes/**/activity/comments` - `processId` fields was removed
   * GET `processes/$name/$version/activity/attachments` - `$version` segment is removed now
 
+### Configuration changes
+* [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
+  * `$processingType-$componentType-$componentName` format was replaced by `$componentType-$componentName` format
+
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
@@ -138,13 +142,17 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `scenarioName` is removed
     * `processProperties` is removed
 
-### Other changes
+### Configuration changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
+* [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
+* [#5323](https://github.com/TouK/nussknacker/pull/5323) Support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) was removed.
+  In the new format, you should specify `category` field inside each scenario type.
+
+### Other changes
 * [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
   * Changes at `FlinkProcessRegistrar.register` passing `resultCollector` instead of `testRunId`
 * [#5033](https://github.com/TouK/nussknacker/pull/5033) Scala 2.13 was updated to 2.13.12, you may update your `flink-scala-2.13` to 1.1.1
   (it's not required, new version is binary-compatible)
-* [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
 * [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) Categories configuration doesn't allow configuring multiple categories for the same scenario type. 
   If you have such a case, you have to extract another scenario types and assign each category to each scenario type.
   Because of this change configuration of categories was also removed from Components configuration

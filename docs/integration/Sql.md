@@ -19,7 +19,7 @@ It supports:
 
 ## Configuration
 
-You have to configure database connection pool you will be using in your `Sql` enricher.
+You have to configure a database connection pool you will be using in your `Sql` enricher. It is performed at the root level of the configuration file (the same level as all other configs from Designer configuration area) - see [configuration file](../installation_configuration_guide/Common.md#configuration-file).
 
 Sample configuration:
 
@@ -35,17 +35,17 @@ myDatabasePool {
 }
 ```
 
-| Parameter            | Type                     | Required | Default | Description                              |
-|----------------------|--------------------------|----------|---------|------------------------------------------|
-| url                  | string                   | true     |         | URL with your database resource          |
-| username             | string                   | true     |         | Authentication username                  |
-| password             | string                   | true     |         | Authentication password                  |
-| driverClassName      | string                   | true     |         | Database driver class name               |
-| initialSize          | int                      | false    | 0       | Minimum idle size                        |
-| maxTotal             | int                      | false    | 10      | Maximum pool size                        |
-| timeout              | string (Duration format) | false    | 30s     | Connection timeout                       |
-| schema               | string                   | false    |         | Schema to be set on connections          |
-| dataSourceProperties | string-string map        | false    |         | DataSource or java.sql.Driver properties |
+| Parameter            | Type                     | Required | Default | Description                                                            |
+|----------------------|--------------------------|----------|---------|------------------------------------------------------------------------|
+| url                  | string                   | true     |         | URL with your database resource                                        |
+| username             | string                   | true     |         | Authentication username                                                |
+| password             | string                   | true     |         | Authentication password                                                |
+| driverClassName      | string                   | true     |         | Java database driver class name - check your JDBC driver documentation |
+| initialSize          | int                      | false    | 0       | Minimum idle size                                                      |
+| maxTotal             | int                      | false    | 10      | Maximum pool size                                                      |
+| timeout              | string (Duration format) | false    | 30s     | Connection timeout                                                     |
+| schema               | string                   | false    |         | Schema to be set on connections                                        |
+| dataSourceProperties | string-string map        | false    |         | DataSource or java.sql.Driver properties                               |
 
 > As a user you have to provide the database driver. 
 > It should be placed in Flink's /lib folder (/opt/flink/lib), more info can be found in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code).
@@ -69,7 +69,7 @@ components {
     config: {
       databaseQueryEnricher {
         name: "myDatabaseQuery"
-        dbPool: ${myDatabasePool}
+        dbPool: ${myDatabasePool} #refers to your database pool definition
       }
       databaseLookupEnricher { 
         name: "myDatabaseLookup"

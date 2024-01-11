@@ -11,10 +11,11 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, ParameterEvaluator}
+import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer.staticReturnType
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
@@ -41,7 +42,7 @@ class ToStaticComponentDefinitionTransformer(
         val parameters = determineInitialParameters(dynamic)
         ComponentStaticDefinition(
           parameters,
-          if (dynamic.implementation.nodeDependencies.contains(OutputVariableNameDependency)) Some(Unknown) else None,
+          staticReturnType(dynamic.implementation),
           dynamic.categories,
           dynamic.componentConfig,
           dynamic.componentTypeSpecificData
@@ -102,6 +103,10 @@ object ToStaticComponentDefinitionTransformer {
     modelDataForType.withThisAsContextClassLoader {
       modelDataForType.modelDefinition.transform(toStaticComponentDefinitionTransformer.toStaticComponentDefinition)
     }
+  }
+
+  def staticReturnType(dynamicImplementation: GenericNodeTransformation[_]): Option[TypingResult] = {
+    if (dynamicImplementation.nodeDependencies.contains(OutputVariableNameDependency)) Some(Unknown) else None
   }
 
 }

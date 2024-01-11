@@ -12,15 +12,18 @@ import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValuesProvided
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.ui.definition.{
+  AdditionalUIConfigFinalizer,
+  ModelDefinitionEnricher,
+  TestAdditionalUIConfigProvider
+}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class DefinitionResourcesSpec
@@ -39,11 +42,18 @@ class DefinitionResourcesSpec
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val definitionResources = new DefinitionResources(
-    modelDataProvider = testModelDataProvider,
-    processingTypeDataProvider = testProcessingTypeDataProvider,
+    processingTypeDataProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
+      val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(TestAdditionalUIConfigProvider)
+      val modelDefinitionEnricher = ModelDefinitionEnricher(
+        processingTypeData.modelData,
+        additionalUIConfigFinalizer,
+        processingTypeData.staticModelDefinition
+      )
+      (processingTypeData, modelDefinitionEnricher, additionalUIConfigFinalizer)
+
+    },
     fragmentRepository,
-    () => processCategoryService,
-    TestAdditionalUIConfigProvider
+    () => processCategoryService
   )
 
   it("should handle missing scenario type") {

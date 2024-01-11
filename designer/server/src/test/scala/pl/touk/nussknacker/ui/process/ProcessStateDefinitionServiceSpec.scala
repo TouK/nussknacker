@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{CategoryConfig, ProcessingTypeData}
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
@@ -21,8 +21,7 @@ import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
 
   private val categoryService = ConfigProcessCategoryService(
-    ConfigFactory.empty,
-    Map(Streaming -> CategoryConfig(Category1), Fraud -> CategoryConfig(Category2))
+    Map(Streaming -> Category1, Fraud -> Category2)
   )
 
   test("should fetch state definitions when definitions with the same name are unique") {
@@ -186,7 +185,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       deploymentManager,
       LocalModelData(ConfigFactory.empty(), List.empty),
       ConfigFactory.empty(),
-      CategoryConfig(category)
+      category
     )
   }
 

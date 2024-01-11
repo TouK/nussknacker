@@ -22,27 +22,13 @@ final case class ProcessingTypeData private (
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     additionalValidators: List[CustomProcessValidator],
     usageStatistics: ProcessingTypeUsageStatistics,
-    categoryConfig: CategoryConfig
+    category: String
 ) {
 
   def close(): Unit = {
     modelData.close()
     deploymentManager.close()
   }
-
-}
-
-// TODO: remove Option after fully switch to categories inside processing types configuration format -
-//       see ConfigProcessCategoryService for details
-case class CategoryConfig(category: Option[String])
-
-object CategoryConfig {
-
-  def apply(processTypeConfig: ProcessingTypeConfig): CategoryConfig = new CategoryConfig(
-    processTypeConfig.category
-  )
-
-  def apply(category: String): CategoryConfig = new CategoryConfig(Some(category))
 
 }
 
@@ -62,7 +48,7 @@ object ProcessingTypeData {
       deploymentManagerProvider,
       ModelData(processTypeConfig),
       managerConfig,
-      CategoryConfig(processTypeConfig)
+      processTypeConfig.category
     )
   }
 
@@ -70,7 +56,7 @@ object ProcessingTypeData {
       deploymentManagerProvider: DeploymentManagerProvider,
       modelData: ModelData,
       managerConfig: Config,
-      categoriesConfig: CategoryConfig
+      category: String
   )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
@@ -78,7 +64,7 @@ object ProcessingTypeData {
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
-    createProcessingTypeData(deploymentManagerProvider, manager, modelData, managerConfig, categoriesConfig)
+    createProcessingTypeData(deploymentManagerProvider, manager, modelData, managerConfig, category)
   }
 
   def createProcessingTypeData(
@@ -86,7 +72,7 @@ object ProcessingTypeData {
       manager: DeploymentManager,
       modelData: ModelData,
       managerConfig: Config,
-      categoriesConfig: CategoryConfig
+      category: String
   ): ProcessingTypeData = {
     import net.ceedubs.ficus.Ficus._
     import pl.touk.nussknacker.engine.util.config.FicusReaders._
@@ -106,7 +92,7 @@ object ProcessingTypeData {
       scenarioProperties,
       deploymentManagerProvider.additionalValidators(managerConfig),
       ProcessingTypeUsageStatistics(managerConfig),
-      categoriesConfig
+      category
     )
   }
 

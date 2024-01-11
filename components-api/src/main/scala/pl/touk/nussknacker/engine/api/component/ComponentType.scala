@@ -17,6 +17,4 @@ object ComponentType extends Enumeration {
   val Fragment: Value        = Value("fragment")
   val BuiltIn: Value         = Value("builtin")
 
-  val NotBuiltInComponentTypes: List[Value] = List(Source, Sink, Service, CustomComponent, Fragment)
-
 }
