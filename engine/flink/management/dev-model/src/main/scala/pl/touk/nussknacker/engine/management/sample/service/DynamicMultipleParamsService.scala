@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.{ContextId, EagerService, NodeId, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, NodeId, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   NodeDependencyValue,
@@ -68,10 +68,10 @@ object DynamicMultipleParamsService extends EagerService with SingleInputGeneric
       finalState: Option[State]
   ): ServiceInvoker = {
     new ServiceInvoker {
-      override def invokeService(params: Map[String, Any])(
+      override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
+          context: Context,
           componentUseCase: ComponentUseCase
       ): Future[Any] = ???
     }

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -10,12 +10,12 @@ import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersA
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case object UnionReturnObjectService extends EagerServiceWithStaticParametersAndReturnType {
+object UnionReturnObjectService extends EagerServiceWithStaticParametersAndReturnType {
 
-  override def invoke(params: Map[String, Any])(
+  override def invoke(evaluateParams: Context => (Context, Map[String, Any]))(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ContextId,
+      context: Context,
       metaData: MetaData,
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] =

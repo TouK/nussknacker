@@ -34,8 +34,9 @@ class CodeHandlingTest
     val config          = baseConfig.copy(codesToInterpretAsEmpty = List(customEmptyCode))
     val service         = parseToEnrichers("custom-codes.yml", backend, config)(ServiceName("code"))
 
-    def invokeWithCode(code: Int) =
-      service.invoke(Map(codeParameter -> code)).futureValue.asInstanceOf[AnyRef]
+    def invokeWithCode(code: Int) = {
+      service.invoke(ctx => (ctx, Map(codeParameter -> code))).futureValue.asInstanceOf[AnyRef]
+    }
 
     invokeWithCode(customEmptyCode) shouldBe null
     invokeWithCode(200) shouldBe TypedMap(Map.empty)

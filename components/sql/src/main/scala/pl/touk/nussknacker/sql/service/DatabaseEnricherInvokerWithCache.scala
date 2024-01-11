@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.service
 
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
-import pl.touk.nussknacker.engine.api.ContextId
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -49,13 +49,14 @@ class DatabaseEnricherInvokerWithCache(
 
   import scala.compat.java8.FutureConverters._
 
-  override def invokeService(params: Map[String, Any])(
+  override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ContextId,
+      context: Context,
       componentUseCase: ComponentUseCase
   ): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {
+      val params         = evaluateParams(context)._2
       val queryArguments = queryArgumentsExtractor(argsCount, params)
       val cacheKey       = CacheKey(query, queryArguments)
 

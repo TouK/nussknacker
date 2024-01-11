@@ -32,7 +32,7 @@ class OpenAPIServiceSpec
 
   implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
   implicit val metaData: MetaData                 = MetaData("testProc", StreamMetaData())
-  implicit val contextId: ContextId               = ContextId("testContextId")
+  implicit val contextId: Context                 = Context("testContextId", Map.empty)
 
   type FixtureParam = EagerServiceWithStaticParametersAndReturnType
 
@@ -67,7 +67,8 @@ class OpenAPIServiceSpec
   }
 
   test("service returns customers") { service =>
-    val valueWithChosenFields = service.invoke(Map("customer_id" -> "10")).futureValue.asInstanceOf[TypedMap].asScala
+    val valueWithChosenFields =
+      service.invoke(ctx => (ctx, Map("customer_id" -> "10"))).futureValue.asInstanceOf[TypedMap].asScala
     valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")
   }
 

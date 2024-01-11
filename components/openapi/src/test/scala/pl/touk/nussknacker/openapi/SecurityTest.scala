@@ -61,7 +61,9 @@ class SecurityTest
       enrichersForSecurityConfig(backend, configs.map(c => c.securityName -> ApiKeyConfig(c.key)).toMap)
     configs.foreach { config =>
       withClue(config.serviceName) {
-        withCorrectConfig(ServiceName(config.serviceName)).invoke(Map()).futureValue shouldBe TypedMap(Map.empty)
+        withCorrectConfig(ServiceName(config.serviceName))
+          .invoke(ctx => (ctx, Map.empty))
+          .futureValue shouldBe TypedMap(Map.empty)
       }
     }
 
@@ -70,7 +72,7 @@ class SecurityTest
     configs.foreach { config =>
       withClue(config.serviceName) {
         intercept[Exception] {
-          withBadConfig(ServiceName(config.serviceName)).invoke(Map()).futureValue
+          withBadConfig(ServiceName(config.serviceName)).invoke(ctx => (ctx, Map.empty)).futureValue
         }
       }
     }
