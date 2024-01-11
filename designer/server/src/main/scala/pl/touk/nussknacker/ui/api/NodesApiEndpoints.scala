@@ -275,9 +275,10 @@ object NodesApiEndpoints {
 
       private def jsonToValue(value: Any, klass: String): Any = {
         klass match {
-          case "java.lang.Long" => value.asInstanceOf[Json].asNumber.get.toLong.get
-          case "java.lang.Int"  => value.asInstanceOf[Json].asNumber.get.toInt.get
-          case _                => value
+          case "java.lang.Long"   => value.asInstanceOf[Json].asNumber.get.toLong.get
+          case "java.lang.Int"    => value.asInstanceOf[Json].asNumber.get.toInt.get
+          case "java.lang.String" => value.asInstanceOf[Json].asString.get
+          case _                  => value
         }
       }
 
