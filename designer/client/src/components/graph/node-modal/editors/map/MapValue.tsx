@@ -1,9 +1,9 @@
 import { isEqual } from "lodash";
 import React from "react";
-import { Expression, NodeValidationError, VariableTypes } from "../../../../../types";
+import { Expression, VariableTypes } from "../../../../../types";
 import { NodeValue } from "../../node";
 import EditableEditor from "../EditableEditor";
-import { FieldError, Validator } from "../Validators";
+import { FieldError } from "../Validators";
 
 interface MapValueProps {
     value: Expression;

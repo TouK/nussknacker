@@ -1,5 +1,5 @@
 import Field, { FieldType } from "./editors/field/Field";
-import { FieldError, getValidationErrorsForField } from "./editors/Validators";
+import { getValidationErrorsForField } from "./editors/Validators";
 import { get, isEmpty } from "lodash";
 import React from "react";
 import { useDiffMark } from "./PathsToMark";

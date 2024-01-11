@@ -4,7 +4,7 @@ import React from "react";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import { ExpressionLang, ExpressionObj } from "./types";
 import { ExtendedEditor } from "./Editor";
-import { FieldError, getValidationErrorsForField } from "../Validators";
+import { FieldError } from "../Validators";
 
 type Props = {
     expressionObj: ExpressionObj;

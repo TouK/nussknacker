@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { RootState } from "../../../../reducers";
 import { connect } from "react-redux";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
-import { getProcessName, getScenario, getScenarioGraph, getTestCapabilities } from "../../../../reducers/selectors/graph";
+import { getProcessName, getScenario, getTestCapabilities } from "../../../../reducers/selectors/graph";
 import Icon from "../../../../assets/img/toolbarButtons/from-file.svg";
 import { ToolbarButtonProps } from "../../types";
 import { testProcessFromFile } from "../../../../actions/nk/displayTestResults";

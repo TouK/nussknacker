@@ -3,7 +3,7 @@ import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
-import { getProcessingType, getScenarioGraph } from "../../../../../reducers/selectors/graph";
+import { getProcessingType } from "../../../../../reducers/selectors/graph";
 import { BackendExpressionSuggester } from "./ExpressionSuggester";
 import HttpService from "../../../../../http/HttpService";
 import AceEditor from "./AceWithSettings";

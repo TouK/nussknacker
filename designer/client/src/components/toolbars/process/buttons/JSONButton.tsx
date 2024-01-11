@@ -7,7 +7,6 @@ import { getProcessVersionId, getScenario } from "../../../../reducers/selectors
 import { useTranslation } from "react-i18next";
 import Icon from "../../../../assets/img/toolbarButtons/JSON.svg";
 import { ToolbarButtonProps } from "../../types";
-import { withoutHackOfEmptyEdges } from "../../../graph/GraphPartialsInTS/EdgeUtils";
 import HttpService from "../../../../http/HttpService";
 
 type Props = StateProps & ToolbarButtonProps;

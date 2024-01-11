@@ -7,7 +7,7 @@ import { displayCurrentProcessVersion, displayProcessActivity, loadProcessToolba
 import { PromptContent } from "../../windowManager";
 import { CommentInput } from "../comment/CommentInput";
 import { ThunkAction } from "../../actions/reduxTypes";
-import { getScenario, getScenarioGraph, getProcessUnsavedNewName, isProcessRenamed } from "../../reducers/selectors/graph";
+import { getScenario, getProcessUnsavedNewName, isProcessRenamed } from "../../reducers/selectors/graph";
 import HttpService from "../../http/HttpService";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { visualizationUrl } from "../../common/VisualizationUrl";

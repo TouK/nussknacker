@@ -4,7 +4,6 @@ import Input from "./Input";
 import LabeledInput from "./LabeledInput";
 import LabeledTextarea from "./LabeledTextarea";
 import UnknownField from "./UnknownField";
-import { NodeValidationError } from "../../../../../types";
 import { FieldError } from "../Validators";
 
 export enum FieldType {

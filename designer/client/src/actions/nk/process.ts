@@ -1,5 +1,5 @@
 import { ThunkAction } from "../reduxTypes";
-import { ScenarioGraph, ProcessDefinitionData } from "../../types";
+import { ProcessDefinitionData } from "../../types";
 import HttpService from "./../../http/HttpService";
 import { Scenario, ProcessName, ProcessVersionId } from "../../components/Process/types";
 import { displayProcessActivity } from "./displayProcessActivity";

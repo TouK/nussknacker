@@ -1,7 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
-import { GlobalStyles, Theme, useTheme } from "@mui/material";
+import { useTheme } from "@mui/material";
 import Color from "color";
-import React from "react";
 import { css } from "@emotion/css";
 
 export function tint(base: string, amount = 0): string {

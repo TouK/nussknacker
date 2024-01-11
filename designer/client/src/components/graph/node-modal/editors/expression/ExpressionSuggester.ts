@@ -1,6 +1,6 @@
 import HttpService from "../../../../../http/HttpService";
 import { ExpressionLang } from "./types";
-import { PropertiesType, TypingResult, VariableTypes } from "../../../../../types";
+import { VariableTypes } from "../../../../../types";
 
 export type CaretPosition2d = { row: number; column: number };
 

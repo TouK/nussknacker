@@ -1,5 +1,5 @@
 import HttpService from "../../http/HttpService";
-import { Edge, NodeType, ScenarioGraph, ValidationResult } from "../../types";
+import { Edge, NodeType, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
 import { displayProcessCounts } from "./displayProcessCounts";

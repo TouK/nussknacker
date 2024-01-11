@@ -5,7 +5,6 @@ import { NodeType, PropertiesType } from "./node";
 import { ComponentGroup, SingleComponentConfig } from "./component";
 import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioProperty";
 import { FixedValuesOption } from "../components/graph/node-modal/fragment-input-definition/item";
-import { ProcessingType } from "../actions/nk";
 
 export type ScenarioGraph = {
     id: string;

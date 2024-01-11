@@ -1,4 +1,4 @@
-import { Edge, EdgeKind, NodeValidationError, VariableTypes } from "../../../types";
+import { Edge, EdgeKind, VariableTypes } from "../../../types";
 import { useSelector } from "react-redux";
 import { getScenarioGraph } from "../../../reducers/selectors/graph";
 import React, { useCallback, useEffect, useMemo, useState } from "react";

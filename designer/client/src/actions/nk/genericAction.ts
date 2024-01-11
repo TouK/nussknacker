@@ -1,6 +1,6 @@
 import { ThunkAction } from "../reduxTypes";
 import HttpService from "../../http/HttpService";
-import { Expression, NodeValidationError, PropertiesType, TypingResult, VariableTypes } from "../../types";
+import { Expression, NodeValidationError, TypingResult, VariableTypes } from "../../types";
 
 import { debounce } from "lodash";
 
