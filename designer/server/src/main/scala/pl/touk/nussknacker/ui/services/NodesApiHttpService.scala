@@ -3,12 +3,14 @@ package pl.touk.nussknacker.ui.services
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{ExpressionSuggestionDto, NodeValidationResultDto, ParameterDto, ParametersValidationResultDto}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
@@ -70,8 +72,6 @@ class NodesApiHttpService(
         processService
           .getProcessId(processName)
           .flatMap { processId =>
-            println(processId)
-            println(ProcessIdWithName(processId, processName))
             processService
               .getLatestProcessWithDetails(
                 ProcessIdWithName(processId, processName),
@@ -122,7 +122,7 @@ class NodesApiHttpService(
                   }
               }
           }
-          .recover { _ =>
+          .recover { case _ =>
             businessError(s"No scenario $processName found")
           }
       }
@@ -143,18 +143,15 @@ class NodesApiHttpService(
                 GetScenarioWithDetailsOptions.detailsOnly
               )(user)
               .flatMap { process =>
-                val scenario = DisplayableProcess(
-                  request.name,
+                val scenario = ScenarioGraph(
                   ProcessProperties(request.additionalFields),
                   Nil,
-                  Nil,
-                  process.processingType,
-                  process.processCategory
+                  Nil
                 )
                 val result =
                   typeToProcessValidator
                     .forTypeUnsafe(process.processingType)(user)
-                    .validate(scenario)(user)
+                    .validate(scenario, processName, isFragment = false)(user)
                 Future(
                   success(
                     NodeValidationResultDto(
@@ -167,7 +164,7 @@ class NodesApiHttpService(
                 )
               }
           }
-          .recover { _ =>
+          .recover { case _ =>
             businessError(s"No scenario $processName found")
           }
       }
@@ -201,11 +198,11 @@ class NodesApiHttpService(
     nodesApiEndpoints.parametersSuggestionsEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
-        val (processingType, request)     = pair
-        implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)(user)
+        val (processingType, request) = pair
 
         try {
-          val expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)(user)
+          implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)(user)
+          val expressionSuggester           = typeToExpressionSuggester.forTypeUnsafe(processingType)(user)
           expressionSuggester
             .expressionSuggestions(
               request.expression,
