@@ -66,7 +66,7 @@ class ProcessUtils {
     };
 
     getValidationResult = (scenario: Scenario): ValidationResult =>
-        scenario?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
+        scenario?.json.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
 
     hasNoWarnings = (scenario: Scenario) => {
         const warnings = this.getValidationResult(scenario).warnings;

@@ -55,7 +55,6 @@ export interface Scenario {
     history?: ProcessVersionType[];
     json: ScenarioGraph;
     processingType: string;
-    validationResult: ValidationResult;
 }
 
 export type ProcessName = Scenario["name"];

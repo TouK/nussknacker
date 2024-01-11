@@ -332,13 +332,13 @@ const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]
 
 const pickKeys: NestedKeyOf<GraphState>[] = ["scenario", "unsavedNewName", "layout", "selectionState"];
 const omitKeys: NestedKeyOf<GraphState>[] = [
-    "scenario.validationResult",
+    "scenario.json.validationResult",
     "scenario.lastDeployedAction",
     "scenario.lastAction",
     "scenario.history",
 ];
 
-const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["scenario.validationResult"]));
+const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["scenario.json.validationResult"]));
 const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));
 
 const undoableReducer = undoable<GraphState, Action>(reducer, {

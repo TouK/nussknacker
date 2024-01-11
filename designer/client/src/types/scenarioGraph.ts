@@ -5,12 +5,14 @@ import { NodeType, PropertiesType } from "./node";
 import { ComponentGroup, SingleComponentConfig } from "./component";
 import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioProperty";
 import { FixedValuesOption } from "../components/graph/node-modal/fragment-input-definition/item";
+import { ValidationResult } from "./validation";
 
 export type ScenarioGraph = {
     id: string;
     nodes: NodeType[];
     edges: Edge[];
     properties: PropertiesType;
+    validationResult: ValidationResult;
 };
 
 export type Category = string;
