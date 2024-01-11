@@ -41,7 +41,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Additional info for provided node")
       .tag("Nodes")
       .post
-      .in("nodess" / path[ProcessName]("processName") / "additionalInfo")
+      .in("nodes" / path[ProcessName]("processName") / "additionalInfo")
       .in(jsonBody[NodeData])
       .out(
         statusCode(Ok).and(
@@ -62,7 +62,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Validate provided Node")
       .tag("Nodes")
       .post
-      .in("nodess" / path[ProcessName]("processName") / "validation")
+      .in("nodes" / path[ProcessName]("processName") / "validation")
       .in(jsonBody[NodeValidationRequestDto])
       .out(
         statusCode(Ok).and(
@@ -83,7 +83,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Additional info for provided properties")
       .tag("Nodes")
       .post
-      .in("propertiess" / path[ProcessName]("processName") / "additionalInfo")
+      .in("properties" / path[ProcessName]("processName") / "additionalInfo")
       .in(jsonBody[ProcessProperties])
       .out(
         statusCode(Ok).and(
@@ -104,7 +104,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Validate node properties")
       .tag("Nodes")
       .post
-      .in("propertiess" / path[ProcessName]("processName") / "validation")
+      .in("properties" / path[ProcessName]("processName") / "validation")
       .in(jsonBody[PropertiesValidationRequestDto])
       .out(
         statusCode(Ok).and(
@@ -119,7 +119,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
-  //  Almost -> error messages are almost correct, they are less specific for now
   lazy val parametersValidationEndpoint: SecuredEndpoint[
     (ProcessingType, ParametersValidationRequestDto),
     String,
@@ -130,7 +129,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Validate node parameters")
       .tag("Nodes")
       .post
-      .in("parameterss" / path[ProcessingType]("processingType") / "validate")
+      .in("parameters" / path[ProcessingType]("processingType") / "validate")
       .in(jsonBody[ParametersValidationRequestDto])
       .out(
         statusCode(Ok).and(
@@ -155,7 +154,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Suggest possible variables")
       .tag("Nodes")
       .post
-      .in("parameterss" / path[ProcessingType]("processingType") / "suggestions")
+      .in("parameters" / path[ProcessingType]("processingType") / "suggestions")
       .in(jsonBody[ExpressionSuggestionRequestDto])
       .out(
         statusCode(Ok).and(
