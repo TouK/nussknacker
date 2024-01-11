@@ -50,7 +50,7 @@ class NodesResources(
   private val additionalInfoProviders = new AdditionalInfoProviders(typeToConfig)
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
-    pathPrefix("nodes" / ProcessNameSegment) { processName =>
+    pathPrefix("nodess" / ProcessNameSegment) { processName =>
       (post & processDetailsForName(processName)) { process =>
         path("additionalInfo") {
           entity(as[NodeData]) { nodeData =>
@@ -70,7 +70,7 @@ class NodesResources(
           }
         }
       }
-    } ~ pathPrefix("properties" / ProcessNameSegment) { processName =>
+    } ~ pathPrefix("propertiess" / ProcessNameSegment) { processName =>
       (post & processDetailsForName(processName)) { process =>
         path("additionalInfo") {
           entity(as[ProcessProperties]) { processProperties =>
@@ -104,7 +104,7 @@ class NodesResources(
           }
         }
       }
-    } ~ pathPrefix("parameters" / Segment) { processingType =>
+    } ~ pathPrefix("parameterss" / Segment) { processingType =>
       post {
         typeToConfig
           .forType(processingType)
