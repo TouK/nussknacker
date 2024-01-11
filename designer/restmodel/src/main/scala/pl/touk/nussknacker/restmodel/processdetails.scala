@@ -38,7 +38,8 @@ object processdetails {
       lastAction = baseProcessDetails.lastAction,
       lastStateAction = baseProcessDetails.lastStateAction,
       lastDeployedAction = baseProcessDetails.lastDeployedAction,
-      state = baseProcessDetails.state
+      state = baseProcessDetails.state,
+      isLatestVersion = baseProcessDetails.isLatestVersion,
     )
 
   }
@@ -62,7 +63,8 @@ object processdetails {
       lastDeployedAction: Option[ProcessAction],
       // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
       // After that it remains always defined.
-      state: Option[ProcessState] = Option.empty
+      state: Option[ProcessState] = Option.empty,
+      isLatestVersion: Boolean,
   )
 
   object BaseProcessDetails {
