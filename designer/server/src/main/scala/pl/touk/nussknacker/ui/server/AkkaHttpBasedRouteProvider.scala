@@ -296,14 +296,6 @@ class AkkaHttpBasedRouteProvider(
             processAuthorizer = processAuthorizer,
             processChangeListener = processChangeListener
           ),
-          new NodesResources(
-            processService,
-            typeToConfig.mapValues(_.modelData),
-            processValidator,
-            typeToConfig.mapValues(v => new NodeValidator(v.modelData, fragmentRepository)),
-            typeToConfig.mapValues(v => ExpressionSuggester(v.modelData, v.scenarioPropertiesConfig.keys)),
-            typeToConfig.mapValues(v => new ParametersValidator(v.modelData, v.scenarioPropertiesConfig.keys)),
-          ),
           new ProcessesExportResources(
             futureProcessRepository,
             processService,

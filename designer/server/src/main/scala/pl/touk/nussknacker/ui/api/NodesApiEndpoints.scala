@@ -1,35 +1,32 @@
 package pl.touk.nussknacker.ui.api
 
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import io.circe.generic.JsonCodec
+import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, HCursor, Json, JsonNumber, KeyDecoder}
+import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
-import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  Typed,
-  TypedClass,
-  TypedObjectWithValue,
-  TypedTaggedValue,
-  TypedUnion,
-  TypingResult
-}
+import pl.touk.nussknacker.engine.api.typed.{TypingResultDecoder, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectWithValue, TypedTaggedValue, TypedUnion, TypingResult}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
-import pl.touk.nussknacker.restmodel.definition.UIValueParameter
+import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.toTypingResult
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{NodeValidationResultDto, UIParameterDto}
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.Codec.PlainCodec
@@ -213,11 +210,12 @@ object NodesApiEndpoints {
 
       private def getTypingValue(value: Any): Json = {
         value match {
-          case x: JsonNumber => x.asJson
-          case x: Json       => x
+          case x: Long       => Json.fromLong(x)
           case x: String     => Json.fromString(x)
           case x: Int        => Json.fromInt(x)
           case x: Boolean    => Json.fromBoolean(x)
+          case x: JsonNumber => x.asJson
+          case x: Json       => x
           case _             => Json.Null
         }
       }
@@ -546,6 +544,120 @@ object NodesApiEndpoints {
         name: String,
         refClazz: TypingResultDto
     )
+
+    def prepareTypingResultDecoder(modelData: ModelData): Decoder[TypingResult] = {
+      new TypingResultDecoder(name =>
+        ClassUtils.forName(name, modelData.modelClassLoader.classLoader)
+      ).decodeTypingResults
+    }
+
+    def prepareNodeRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
+      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+      deriveConfiguredDecoder[NodeValidationRequest]
+    }
+
+    def prepareParametersValidationDecoder(modelData: ModelData): Decoder[ParametersValidationRequest] = {
+      implicit val typeDecoder: Decoder[TypingResult]                 = prepareTypingResultDecoder(modelData)
+      implicit val uiValueParameterDecoder: Decoder[UIValueParameter] = deriveConfiguredDecoder[UIValueParameter]
+      deriveConfiguredDecoder[ParametersValidationRequest]
+    }
+
+    def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
+      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+      implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
+        deriveConfiguredDecoder[TestSourceParameters]
+      deriveConfiguredDecoder[TestFromParametersRequest]
+    }
+
+    def preparePropertiesRequestDecoder(modelData: ModelData): Decoder[PropertiesValidationRequest] = {
+      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+      deriveConfiguredDecoder[PropertiesValidationRequest]
+    }
+
+  }
+
+  @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
+      sourceId: String,
+      parameterExpressions: Map[String, Expression]
+  )
+
+  @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
+      sourceParameters: TestSourceParameters,
+      displayableProcess: ScenarioGraph
+  )
+
+  @JsonCodec(encodeOnly = true) final case class ParametersValidationResult(
+      validationErrors: List[NodeValidationError],
+      validationPerformed: Boolean
+  )
+
+  @JsonCodec(encodeOnly = true) final case class ParametersValidationRequest(
+      parameters: List[UIValueParameter],
+      variableTypes: Map[String, TypingResult]
+  )
+
+  @JsonCodec(encodeOnly = true) final case class NodeValidationResult(
+      parameters: Option[List[UIParameter]],
+      expressionType: Option[TypingResult],
+      validationErrors: List[NodeValidationError],
+      validationPerformed: Boolean
+  ) {
+
+    def toDto(): Dtos.NodeValidationResultDto = {
+      NodeValidationResultDto(
+        parameters = parameters.map { list =>
+          list.map { param =>
+            UIParameterDto(
+              name = param.name,
+              typ = typingResultToDto(param.typ),
+              editor = param.editor,
+              defaultValue = param.defaultValue,
+              additionalVariables = param.additionalVariables.map { case (key, typingResult) =>
+                (key, typingResultToDto(typingResult))
+              },
+              variablesToHide = param.variablesToHide,
+              branchParam = param.branchParam,
+              hintText = param.hintText
+            )
+          }
+        },
+        expressionType = expressionType.map { typingResult =>
+          typingResultToDto(typingResult)
+        },
+        validationErrors = validationErrors,
+        validationPerformed = validationPerformed
+      )
+    }
+
+  }
+
+  @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
+      nodeData: NodeData,
+      processProperties: ProcessProperties,
+      variableTypes: Map[String, TypingResult],
+      branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
+      // TODO: remove Option when FE is ready
+      // In this request edges are not guaranteed to have the correct "from" field. Normally it's synced with node id but
+      // when renaming node, it contains node's id before the rename.
+      outgoingEdges: Option[List[Edge]]
+  )
+
+  @JsonCodec(encodeOnly = true) final case class PropertiesValidationRequest(
+      additionalFields: ProcessAdditionalFields,
+      name: ProcessName
+  )
+
+  final case class ExpressionSuggestionRequest(
+      expression: Expression,
+      caretPosition2d: CaretPosition2d,
+      variableTypes: Map[String, TypingResult]
+  )
+
+  object ExpressionSuggestionRequest {
+
+    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[ExpressionSuggestionRequest] = {
+      deriveConfiguredDecoder[ExpressionSuggestionRequest]
+    }
 
   }
 
