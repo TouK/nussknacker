@@ -31,9 +31,8 @@ class TestModelMigrations(
 
   def testMigrations(
       processes: List[ScenarioWithDetails],
-      fragments: List[ScenarioWithDetails],
-      ec: ExecutionContext
-  )(implicit user: LoggedUser): List[TestMigrationResult] = {
+      fragments: List[ScenarioWithDetails]
+  )(implicit user: LoggedUser, ec: ExecutionContext): List[TestMigrationResult] = {
     logger.debug(
       s"Testing scenario migrations (scenarios=${processes.count(_ => true)}, fragments=${fragments.count(_ => true)})"
     )
@@ -45,7 +44,7 @@ class TestModelMigrations(
         new FragmentResolver(prepareFragmentRepository(migratedFragments.map(_.newProcess)))
       )
     )
-    processInParallel(migratedFragments ++ migratedProcesses, ec) { migrationDetails =>
+    processInParallel(migratedFragments ++ migratedProcesses) { migrationDetails =>
       val validationResult =
         validator.forTypeUnsafe(migrationDetails.newProcess.processingType).validate(migrationDetails.newProcess)
       val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
@@ -94,9 +93,9 @@ class TestModelMigrations(
 
   }
 
-  private def processInParallel(input: List[MigratedProcessDetails], ec: ExecutionContext)(
+  private def processInParallel(input: List[MigratedProcessDetails])(
       process: MigratedProcessDetails => TestMigrationResult
-  ): List[TestMigrationResult] = {
+  )(implicit ec: ExecutionContext): List[TestMigrationResult] = {
     val taskSupport = new ExecutionContextTaskSupport(ec)
     // We create ParVector manually instead of calling par for compatibility with Scala 2.12
     val parallelCollection = new ParVector(input.toVector)

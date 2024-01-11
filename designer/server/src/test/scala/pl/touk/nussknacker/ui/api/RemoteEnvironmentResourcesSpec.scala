@@ -207,8 +207,7 @@ class RemoteEnvironmentResourcesSpec
     ): Future[List[ScenarioVersion]] = Future.successful(List())
 
     override def testMigration(
-        processToInclude: ScenarioWithDetails => Boolean,
-        maxParallelism: Int
+        processToInclude: ScenarioWithDetails => Boolean
     )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }
