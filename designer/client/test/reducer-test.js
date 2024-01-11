@@ -114,7 +114,7 @@ const reduceAll = (actions) => actions.reduce((state, action) => reducer(state, 
 
 describe("Reducer suite", () => {
     it("Display process", () => {
-        expect(baseStateWithProcess.process.process.name).toEqual(baseProcessState.name);
+        expect(baseStateWithProcess.graphReducer.scenario.name).toEqual(baseProcessState.name);
     });
 });
 

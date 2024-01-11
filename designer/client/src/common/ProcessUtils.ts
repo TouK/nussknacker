@@ -65,11 +65,11 @@ class ProcessUtils {
         );
     };
 
-    getValidationResult = (scenario: Scenario): ValidationResult =>
-        scenario?.json.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
+    getValidationResult = (scenarioGraph: ScenarioGraph): ValidationResult =>
+        scenarioGraph?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
 
     hasNoWarnings = (scenario: Scenario) => {
-        const warnings = this.getValidationResult(scenario).warnings;
+        const warnings = this.getValidationResult(scenario.json).warnings;
         return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
     };
 
@@ -78,7 +78,7 @@ class ProcessUtils {
     };
 
     getValidationErrors(scenario: Scenario) {
-        return this.getValidationResult(scenario).errors;
+        return this.getValidationResult(scenario.json).errors;
     }
 
     findContextForBranch = (node: NodeType, branchId: string) => {
@@ -100,17 +100,17 @@ class ProcessUtils {
         );
     };
 
-    getNodeResults = (scenario: Scenario): NodeResults => this.getValidationResult(scenario).nodeResults;
+    getNodeResults = (scenarioGraph: ScenarioGraph): NodeResults => this.getValidationResult(scenarioGraph).nodeResults;
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
     escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
     findAvailableVariables =
-        (components: Record<string, ComponentDefinition>, scenario: Scenario) =>
+        (components: Record<string, ComponentDefinition>, scenarioGraph: ScenarioGraph) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
-            const nodeResults = this.getNodeResults(scenario);
+            const nodeResults = this.getNodeResults(scenarioGraph);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
-            const variablesForNode = variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, scenario, components);
+            const variablesForNode = variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, scenarioGraph, components);
             const variablesToHideForParam = parameterDefinition?.variablesToHide || [];
             const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key));
             const additionalVariablesForParam = parameterDefinition?.additionalVariables || {};
@@ -121,12 +121,12 @@ class ProcessUtils {
 
     _findVariablesDeclaredBeforeNode = (
         nodeId: NodeId,
-        scenario: Scenario,
+        scenarioGraph: ScenarioGraph,
         components: Record<string, ComponentDefinition>,
     ): VariableTypes => {
-        const previousNodes = this._findPreviousNodes(nodeId, scenario);
+        const previousNodes = this._findPreviousNodes(nodeId, scenarioGraph);
         const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
-            return this._findVariablesDefinedInProcess(nodeId, scenario.json, components);
+            return this._findVariablesDefinedInProcess(nodeId, scenarioGraph, components);
         });
         return this._listOfObjectsToObject(variablesDefinedBeforeNodeList);
     };
@@ -277,12 +277,12 @@ class ProcessUtils {
 
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
-    _findPreviousNodes = (nodeId: NodeId, scenario: Scenario): NodeId[] => {
-        const nodeEdge = scenario.json.edges.find((edge) => edge.to === nodeId);
+    _findPreviousNodes = (nodeId: NodeId, scenarioGraph: ScenarioGraph): NodeId[] => {
+        const nodeEdge = scenarioGraph.edges.find((edge) => edge.to === nodeId);
         if (isEmpty(nodeEdge)) {
             return [];
         } else {
-            const previousNodes = this._findPreviousNodes(nodeEdge.from, scenario);
+            const previousNodes = this._findPreviousNodes(nodeEdge.from, scenarioGraph);
             return [nodeEdge.from].concat(previousNodes);
         }
     };
