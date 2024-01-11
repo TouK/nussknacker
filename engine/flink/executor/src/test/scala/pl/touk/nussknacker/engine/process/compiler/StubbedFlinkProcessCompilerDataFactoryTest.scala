@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.process.compiler.StubbedFlinkProcessCompilerDataFactoryTest.mocServiceResultsHolder
+import pl.touk.nussknacker.engine.process.compiler.StubbedFlinkProcessCompilerDataFactoryTest.mockServiceResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
@@ -70,7 +70,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
       SourceFactory.noParam[Int](SampleTestSupportParametersSource)
     ),
     ComponentDefinition("source-no-test-support", SourceFactory.noParam[Int](EmptySource(Typed.fromDetailedType[Int]))),
-    ComponentDefinition("mockService", new MockService(mocServiceResultsHolder))
+    ComponentDefinition("mockService", new MockService(mockServiceResultsHolder))
   )
 
   private val modelData =
@@ -188,6 +188,6 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
 
 object StubbedFlinkProcessCompilerDataFactoryTest extends Serializable {
 
-  val mocServiceResultsHolder = new TestResultsHolder[Any]
+  val mockServiceResultsHolder = new TestResultsHolder[Any]
 
 }
