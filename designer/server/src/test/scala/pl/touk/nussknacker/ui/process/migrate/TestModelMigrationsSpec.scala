@@ -20,16 +20,19 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 
+import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
+  private val batchingExecutionContext = ExecutionContext.global
+
   test("should perform test migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(1, 2))
     val process       = validatedToProcess(validDisplayableProcess)
 
-    val results = testMigration.testMigrations(List(process), List())
+    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
     results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
   }
@@ -38,7 +41,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(8))
     val process       = validatedToProcess(multipleSourcesValidProcess)
 
-    val results = testMigration.testMigrations(List(process), List())
+    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
     results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
     results.head.converted.nodes.collect { case s: Source => s.ref.typ } shouldBe List(
@@ -51,7 +54,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(6))
     val process       = validatedToProcess(validDisplayableProcess)
 
-    val results = testMigration.testMigrations(List(process), List())
+    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
     results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
     results.head.shouldFail shouldBe false
@@ -62,7 +65,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 3))
     val process       = validatedToProcess(validDisplayableProcess)
 
-    val results = testMigration.testMigrations(List(process), List())
+    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
     errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
     results.head.shouldFail shouldBe true
@@ -72,7 +75,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(9))
     val process       = validatedToProcess(multipleSourcesValidProcess)
 
-    val results = testMigration.testMigrations(List(process), List())
+    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
     errorTypes(results.head.newErrors) shouldBe Map(
       "source1" -> List(classOf[RedundantParameters].getSimpleName),
@@ -85,7 +88,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
     val process       = validatedToProcess(validDisplayableProcess)
 
-    val results = testMigration.testMigrations(List(process), List())
+    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
     errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
     results.head.shouldFail shouldBe false
@@ -107,7 +110,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val process = validatedToProcess(invalidProcess)
 
-    val results = testMigration.testMigrations(List(process), List())
+    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
     errorTypes(results.head.newErrors) shouldBe Map("processor" -> List(classOf[RedundantParameters].getSimpleName))
     results.head.shouldFail shouldBe false
@@ -125,7 +128,11 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
           .emptySink("sink", existingSinkFactory)
       )
 
-    val results = testMigration.testMigrations(List(validatedToProcess(process)), List(validatedToProcess(fragment)))
+    val results = testMigration.testMigrations(
+      List(validatedToProcess(process)),
+      List(validatedToProcess(fragment)),
+      batchingExecutionContext
+    )
 
     results should have size 2
     val (fragmentMigrationResult, processMigrationResult) =
@@ -159,7 +166,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val results = testMigration.testMigrations(
       List(validatedToProcess(process)),
-      List(validatedToProcess(fragment).copy(modelVersion = Some(10)))
+      List(validatedToProcess(fragment).copy(modelVersion = Some(10))),
+      batchingExecutionContext
     )
 
     val processMigrationResult = results.find(_.converted.id == process.id).get

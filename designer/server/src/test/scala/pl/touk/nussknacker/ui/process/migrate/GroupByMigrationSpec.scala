@@ -9,13 +9,15 @@ import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 
+import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 
 class GroupByMigrationSpec extends AnyFunSuite {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val migrations = ProcessMigrations.listOf(GroupByMigration)
+  private val batchingExecutionContext = ExecutionContext.global
+  private val migrations               = ProcessMigrations.listOf(GroupByMigration)
 
   test("should migrate custom aggregation node keyBy parameter name to groupBy") {
     val testMigration = newTestModelMigrations(migrations)
@@ -28,7 +30,8 @@ class GroupByMigrationSpec extends AnyFunSuite {
           .emptySink("sink", existingSinkFactory)
       )
 
-    val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
+    val results =
+      testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List(), batchingExecutionContext)
 
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
@@ -47,7 +50,8 @@ class GroupByMigrationSpec extends AnyFunSuite {
           .emptySink("sink", existingSinkFactory)
       )
 
-    val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
+    val results =
+      testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List(), batchingExecutionContext)
 
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
@@ -65,7 +69,8 @@ class GroupByMigrationSpec extends AnyFunSuite {
           .emptySink("sink", existingSinkFactory)
       )
 
-    val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
+    val results =
+      testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List(), batchingExecutionContext)
 
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get

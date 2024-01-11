@@ -35,7 +35,7 @@ import io.circe.parser
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class StandardRemoteEnvironmentSpec
     extends AnyFlatSpec
@@ -414,7 +414,12 @@ class StandardRemoteEnvironmentSpec
       fragments = TestProcessUtil.validatedToProcess(toValidatedDisplayable(ProcessTestData.sampleFragment)) :: Nil
     )
 
-    val migrationResult = remoteEnvironment.testMigration().futureValue.rightValue
+    val migrationResult = remoteEnvironment
+      .testMigration(
+        batchingExecutionContext = ExecutionContext.global
+      )
+      .futureValue
+      .rightValue
 
     migrationResult should have size 2
     migrationResult.map(

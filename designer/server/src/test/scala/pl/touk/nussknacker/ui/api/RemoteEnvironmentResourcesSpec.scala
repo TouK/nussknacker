@@ -215,7 +215,8 @@ class RemoteEnvironmentResourcesSpec
     ): Future[List[ProcessVersion]] = Future.successful(List())
 
     override def testMigration(
-        processToInclude: processdetails.BasicProcess => Boolean
+        processToInclude: processdetails.BasicProcess => Boolean,
+        batchingExecutionContext: ExecutionContext
     )(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }
