@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.runner
 
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
-import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 
 import java.nio.charset.StandardCharsets
 import scala.util.Using

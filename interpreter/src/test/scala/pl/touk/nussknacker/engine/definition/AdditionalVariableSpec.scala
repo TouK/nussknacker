@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
@@ -18,11 +18,11 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
+import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -64,9 +64,8 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
   }
 
   private def definition(sourceFactory: SourceFactory): List[Parameter] = {
-    ComponentDefinitionExtractor
-      .extract(ComponentDefinition("one", sourceFactory), SingleComponentConfig.zero)
-      ._2
+    ComponentDefinitionWithImplementation
+      .withEmptyConfig(sourceFactory)
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
       .parameters
   }

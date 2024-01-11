@@ -27,7 +27,11 @@ case class ModelDefinition[T <: BaseComponentDefinition] private (
   }
 
   def getComponent(componentType: ComponentType, componentName: String): Option[T] =
-    components.get(ComponentInfo(componentType, componentName))
+    getComponent(ComponentInfo(componentType, componentName))
+
+  def getComponent(info: ComponentInfo): Option[T] = {
+    components.get(info)
+  }
 
   def transform[R <: BaseComponentDefinition](f: T => R): ModelDefinition[R] = copy(
     components.mapValuesNow(f),

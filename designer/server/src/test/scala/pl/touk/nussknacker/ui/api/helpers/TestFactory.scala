@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegist
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{CategoryConfig, ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
@@ -184,10 +184,9 @@ object TestFactory extends TestPermissions {
 
   def createCategoryService(designerConfig: Config): ProcessCategoryService =
     ConfigProcessCategoryService(
-      designerConfig,
       ProcessingTypeDataConfigurationReader
         .readProcessingTypeConfig(ConfigWithUnresolvedVersion(designerConfig))
-        .mapValuesNow(CategoryConfig(_))
+        .mapValuesNow(_.category)
     )
 
 }

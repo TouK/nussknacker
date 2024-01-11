@@ -23,6 +23,7 @@ package object definition {
       componentGroups: List[ComponentGroup],
       components: Map[ComponentInfo, UIComponentDefinition],
       classes: List[TypingResult],
+      // TODO: remove it, use components field on the FE side instead
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
@@ -66,7 +67,6 @@ package object definition {
       //    (see. ProcessUtils.findAvailableVariables). This heuristic is used when DisplayableProcess can't be translated
       //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
-      categories: List[String],
       // For fragments only
       outputParameters: Option[List[String]]
   )
@@ -90,20 +90,27 @@ package object definition {
 
     def create(
         componentInfo: ComponentInfo,
-        node: NodeData,
+        nodeTemplate: NodeData,
         categories: List[String],
-        branchParametersTemplate: List[NodeParameter] = List.empty
+        branchParametersTemplate: List[NodeParameter]
     ): ComponentNodeTemplate =
-      ComponentNodeTemplate(componentInfo.`type`, componentInfo.name, node, categories, branchParametersTemplate)
+      ComponentNodeTemplate(
+        componentInfo.`type`,
+        componentInfo.name,
+        nodeTemplate,
+        categories,
+        branchParametersTemplate
+      )
 
   }
 
   @JsonCodec(encodeOnly = true) final case class ComponentNodeTemplate(
+      // This field is used to generate unique key in DOM model on FE side (the label isn't unique)
       `type`: ComponentType,
-      // TODO: Rename to name
       label: String,
       node: NodeData,
-      // TODO: remove
+      // TODO: Remove it - it is not used on the FE code, only ComponentService use it and we can take it from
+      //       the processingType property there
       categories: List[String],
       branchParametersTemplate: List[NodeParameter] = List.empty,
       // TODO: This field is added temporary to pick correct icon - we shouldn't use this class for other purposes than encoding to json

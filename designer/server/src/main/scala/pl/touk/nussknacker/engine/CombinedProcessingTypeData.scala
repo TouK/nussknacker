@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine
 
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.component.{ComponentIdProvider, ComponentIdProviderFactory}
-import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.StatusNameToStateDefinitionsMapping
+import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.StateDefinitionDeduplicationResult
 import pl.touk.nussknacker.ui.process.{
   ConfigProcessCategoryService,
   ProcessCategoryService,
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.ui.process.{
 }
 
 final case class CombinedProcessingTypeData(
-    statusNameToStateDefinitionsMapping: StatusNameToStateDefinitionsMapping,
+    statusNameToStateDefinitionsMapping: Map[StatusName, StateDefinitionDeduplicationResult],
     componentIdProvider: ComponentIdProvider,
     categoryService: ProcessCategoryService,
 )
@@ -19,17 +20,14 @@ final case class CombinedProcessingTypeData(
 object CombinedProcessingTypeData {
 
   def create(
-      processingTypes: Map[ProcessingType, ProcessingTypeData],
-      designerConfig: ConfigWithUnresolvedVersion
+      processingTypes: Map[ProcessingType, ProcessingTypeData]
   ): CombinedProcessingTypeData = {
     val categoryService: ProcessCategoryService =
-      ConfigProcessCategoryService(designerConfig.resolved, processingTypes.mapValuesNow(_.categoryConfig))
+      ConfigProcessCategoryService(processingTypes.mapValuesNow(_.category))
     CombinedProcessingTypeData(
       statusNameToStateDefinitionsMapping =
         ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypes),
-      // While creation of component id provider, we validate all component ids but fragments.
-      // We assume that fragments cannot have overridden component id thus are not merged/deduplicated across processing types.
-      componentIdProvider = ComponentIdProviderFactory.createUnsafe(processingTypes, categoryService),
+      componentIdProvider = ComponentIdProviderFactory.create(processingTypes),
       categoryService = categoryService
     )
   }
