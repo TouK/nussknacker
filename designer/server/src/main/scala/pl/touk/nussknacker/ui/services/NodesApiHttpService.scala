@@ -126,7 +126,7 @@ class NodesApiHttpService(
                   }
               }
           }
-          .recover { _ =>
+          .recover { case _ =>
             businessError(s"No scenario $processName found")
           }
       }
@@ -171,7 +171,7 @@ class NodesApiHttpService(
                 )
               }
           }
-          .recover { _ =>
+          .recover { case _ =>
             businessError(s"No scenario $processName found")
           }
       }
@@ -205,11 +205,11 @@ class NodesApiHttpService(
     nodesApiEndpoints.parametersSuggestionsEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user => pair =>
-        val (processingType, request)     = pair
-        implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)(user)
+        val (processingType, request) = pair
 
         try {
-          val expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)(user)
+          implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)(user)
+          val expressionSuggester           = typeToExpressionSuggester.forTypeUnsafe(processingType)(user)
           expressionSuggester
             .expressionSuggestions(
               request.expression,
