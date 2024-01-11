@@ -17,17 +17,18 @@ object propertyAccessors {
   // through the `getSpecificTargetClasses` method.
   def configured(): Seq[PropertyAccessor] = {
     Seq(
+      MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
       new ReflectivePropertyAccessor(),
       NullPropertyAccessor,              // must be before other non-standard ones
       ScalaOptionOrNullPropertyAccessor, // must be before scalaPropertyAccessor
       JavaOptionalOrNullPropertyAccessor,
       PrimitiveOrWrappersPropertyAccessor,
       StaticPropertyAccessor,
-      MapPropertyAccessor,               // must be before MapPropertyAccessor
-      TypedDictInstancePropertyAccessor, // must be before MapPropertyAccessor
+      TypedDictInstancePropertyAccessor, // must be before NoParamMethodPropertyAccessor
       NoParamMethodPropertyAccessor,
       // it can add performance overhead so it will be better to keep it on the bottom
-      MapLikePropertyAccessor
+      MapLikePropertyAccessor,
+      MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor
     )
   }
 
@@ -162,18 +163,32 @@ object propertyAccessors {
   }
 
   object MapPropertyAccessor extends PropertyAccessor with ReadOnly {
+
     // if map does not contain property this should return false so that `NoParamMethodPropertyAccessor` can be used
-    override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
-      target.asInstanceOf[java.util.Map[_, _]].containsKey(name)
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean = target match {
+      case map: java.util.Map[_, _] => map.containsKey(name)
+      case _                        => false
+    }
 
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
       new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))
 
-    override def getSpecificTargetClasses: Array[Class[_]] = Array(
-      classOf[java.util.Map[_, _]],
-      getClass.getClassLoader.loadClass("java.util.Collections$UnmodifiableMap")
-    )
+    override def getSpecificTargetClasses: Array[Class[_]] = null
+  }
 
+  // This accessor handles situation where a Map has no property and no no-parameter method with given name. In that
+  // case we want to return null instead of throwing exception.
+  object MapMissingPropertyToNullAccessor extends PropertyAccessor with ReadOnly {
+
+    override def canRead(context: EvaluationContext, target: Any, name: String): Boolean = target match {
+      case map: java.util.Map[_, _] => !map.containsKey(name)
+      case _                        => false
+    }
+
+    override def read(context: EvaluationContext, target: Any, name: String): TypedValue =
+      new TypedValue(null)
+
+    override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
   object TypedDictInstancePropertyAccessor extends PropertyAccessor with ReadOnly {
