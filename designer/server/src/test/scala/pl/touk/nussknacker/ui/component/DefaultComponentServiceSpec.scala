@@ -739,7 +739,7 @@ class DefaultComponentServiceSpec
         additionalUIConfigFinalizer,
         processingTypeData.staticModelDefinition
       )
-      (processingTypeData, modelDefinitionEnricher)
+      ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
     }
     val processService = createDbProcessService(categoryService, scenarios)
     new DefaultComponentService(

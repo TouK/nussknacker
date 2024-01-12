@@ -58,10 +58,7 @@ object DefaultComponentService {
 
 class DefaultComponentService(
     componentLinksConfig: ComponentLinksConfig,
-    processingTypeDataProvider: ProcessingTypeDataProvider[
-      (ProcessingTypeData, ModelDefinitionEnricher),
-      ComponentIdProvider
-    ],
+    processingTypeDataProvider: ProcessingTypeDataProvider[ComponentServiceProcessingTypeData, ComponentIdProvider],
     processService: ProcessService,
     fragmentsRepository: FragmentRepository
 )(implicit ec: ExecutionContext)
@@ -107,21 +104,22 @@ class DefaultComponentService(
       }
 
   private def extractComponentsFromProcessingType(
-      processingTypeData: (ProcessingTypeData, ModelDefinitionEnricher),
+      processingTypeData: ComponentServiceProcessingTypeData,
       processingType: ProcessingType
   )(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
     fragmentsRepository
       .fetchLatestFragments(processingType)
       .map { fragments =>
-        val componentsDefinition = processingTypeData._2.modelDefinitionWithBuiltInComponentsAndFragments(
-          forFragment = false, // It excludes fragment's components: input / output
-          fragments,
-          processingType
-        )
+        val componentsDefinition =
+          processingTypeData.modelDefinitionEnricher.modelDefinitionWithBuiltInComponentsAndFragments(
+            forFragment = false, // It excludes fragment's components: input / output
+            fragments,
+            processingType
+          )
         createComponents(
           componentsDefinition.components,
           processingType,
-          processingTypeData._1.category,
+          processingTypeData.category,
           componentIdProvider
         )
       }
@@ -189,6 +187,8 @@ class DefaultComponentService(
         case components @ (head :: _) =>
           ComponentsValidator.validateComponents(components).map { _ =>
             val categories = components.flatMap(_.categories).toList.distinct.sorted
+            // Categories is the only thing that have to be overriden. They are different for each processing type.
+            // For other component properties we validated that are the same.
             head.copy(categories = categories)
           }
       }
@@ -200,3 +200,5 @@ class DefaultComponentService(
 
 private final case class ComponentNotFoundError(componentId: ComponentId)
     extends NotFoundError(s"Component $componentId not exist.")
+
+case class ComponentServiceProcessingTypeData(modelDefinitionEnricher: ModelDefinitionEnricher, category: Category)

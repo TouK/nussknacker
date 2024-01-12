@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.component.DefaultComponentService
+import pl.touk.nussknacker.ui.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
 import pl.touk.nussknacker.ui.config.{
   AnalyticsConfig,
   AttachmentsConfig,
@@ -217,7 +217,7 @@ class AkkaHttpBasedRouteProvider(
         typeToConfig
           .mapValues { processingTypeData =>
             val modelDefinitionEnricher = prepareModelDefinitionEnricher(processingTypeData)
-            (processingTypeData, modelDefinitionEnricher)
+            ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
           }
           .mapCombined(combined => combined.componentIdProvider),
         processService,
