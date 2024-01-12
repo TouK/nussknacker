@@ -69,8 +69,7 @@ package object definition {
       //    (see. ProcessUtils.findAvailableVariables). This heuristic is used when DisplayableProcess can't be translated
       //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
-      // This field is defined only for fragments. It is used to correct output edges from a node that uses fragment.
-      // See correctFetchedDetails.ts
+      // This field is defined only for fragments
       outputParameters: Option[List[String]]
   )
 
