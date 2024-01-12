@@ -52,7 +52,9 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
 
   private val defaultConfig: Config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
     .foldLeft(ConfigFactory.empty())((c, n) =>
-      c.withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'"))
+      c
+        .withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'"))
+        .withValue(s"componentsUiConfig.$n.params.par1.label", fromAnyRef("Parameter 1"))
     )
 
   private val defaultFragmentId: String = "fragment1"
@@ -1166,7 +1168,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     Parameter[String]("par1")
       .copy(
         editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
-        defaultValue = Some("'realDefault'")
+        defaultValue = Some("'realDefault'"),
+        labelOpt = Some("Parameter 1")
       ),
     Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
     Parameter[Any]("a"),
