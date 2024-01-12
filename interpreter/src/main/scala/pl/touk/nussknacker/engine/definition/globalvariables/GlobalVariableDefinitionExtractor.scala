@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.globalvariables
 
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
@@ -12,10 +12,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 
 object GlobalVariableDefinitionExtractor {
 
-  def extractDefinition(
-      variable: AnyRef,
-      categories: Option[List[String]]
-  ): MethodBasedComponentDefinitionWithImplementation = {
+  def extractDefinition(variable: AnyRef): MethodBasedComponentDefinitionWithImplementation = {
     val returnType = variable match {
       case typedGlobalVariable: TypedGlobalVariable => typedGlobalVariable.initialReturnType
       case obj                                      => Typed.fromInstance(obj)
@@ -23,8 +20,8 @@ object GlobalVariableDefinitionExtractor {
     val staticDefinition = ComponentStaticDefinition(
       parameters = Nil,
       returnType = Some(returnType),
-      categories = categories,
       componentConfig = SingleComponentConfig.zero,
+      originalGroupName = ComponentGroupName("dumbGroup"),
       componentTypeSpecificData = GlobalVariablesSpecificData
     )
     MethodBasedComponentDefinitionWithImplementation(

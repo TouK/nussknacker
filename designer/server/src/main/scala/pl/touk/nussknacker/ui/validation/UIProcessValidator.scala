@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors, ValidationResult}
-import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
+import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -100,7 +100,7 @@ class UIProcessValidator(
 
   private def nodeInfoToResult(typingInfo: NodeTypingInfo) = NodeTypingData(
     typingInfo.inputValidationContext.localVariables,
-    typingInfo.parameters.map(_.map(UIProcessObjectsFactory.createUIParameter)),
+    typingInfo.parameters.map(_.map(DefinitionsService.createUIParameter)),
     typingInfo.expressionsTypingInfo
   )
 

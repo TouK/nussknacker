@@ -37,8 +37,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldNot be(Symbol("empty"))
-    MockService.data.head shouldBe "a"
+    ProcessTestHelpers.logServiceResultsHolder.results shouldNot be(Symbol("empty"))
+    ProcessTestHelpers.logServiceResultsHolder.results.head shouldBe "a"
   }
 
   test("should handle split in fragment") {
@@ -57,8 +57,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldNot be(Symbol("empty"))
-    MockService.data.head shouldBe "a"
+    ProcessTestHelpers.logServiceResultsHolder.results shouldNot be(Symbol("empty"))
+    ProcessTestHelpers.logServiceResultsHolder.results.head shouldBe "a"
   }
 
   test("be possible to use global vars in fragment") {
@@ -76,8 +76,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldNot be(Symbol("empty"))
-    MockService.data.head shouldBe "a"
+    ProcessTestHelpers.logServiceResultsHolder.results shouldNot be(Symbol("empty"))
+    ProcessTestHelpers.logServiceResultsHolder.results.head shouldBe "a"
   }
 
   test("be possible to use diamond fragments") {
@@ -95,8 +95,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldNot be(Symbol("empty"))
-    MockService.data.head shouldBe "a"
+    ProcessTestHelpers.logServiceResultsHolder.results shouldNot be(Symbol("empty"))
+    ProcessTestHelpers.logServiceResultsHolder.results.head shouldBe "a"
   }
 
   private def resolve(scenario: CanonicalProcess) = {

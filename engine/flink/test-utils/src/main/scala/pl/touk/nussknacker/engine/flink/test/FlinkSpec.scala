@@ -59,7 +59,7 @@ trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithConfig { 
   }
 
   after {
-    RecordingExceptionConsumer.clearData(runId)
+    RecordingExceptionConsumer.clearRecordedExceptions(runId)
   }
 
 }

@@ -8,10 +8,12 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.generic.FlinkKafkaDelayedSourceImplFactory
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{
   DelayParameterName,
   TimestampFieldParamName
 }
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
@@ -34,8 +36,13 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import java.time.Instant
 
 trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
+  protected val sinkForLongsResultsHolder: () => TestResultsHolder[java.lang.Long]
+  protected val sinkForInputMetaResultsHolder: () => TestResultsHolder[InputMeta[_]]
 
-  private lazy val creator: ProcessConfigCreator = new DelayedKafkaUniversalProcessConfigCreator
+  private lazy val creator: ProcessConfigCreator = new DelayedKafkaUniversalProcessConfigCreator(
+    sinkForLongsResultsHolder(),
+    sinkForInputMetaResultsHolder()
+  )
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
@@ -48,7 +55,8 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
   }
 
   before {
-    SinkForLongs.clear()
+    sinkForLongsResultsHolder().clear()
+    sinkForInputMetaResultsHolder().clear()
   }
 
   protected def runAndVerify(topic: String, process: CanonicalProcess, givenObj: AnyRef): Unit = {
@@ -56,8 +64,8 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
     pushMessage(givenObj, topic)
     run(process) {
       eventually {
-        RecordingExceptionConsumer.dataFor(runId) shouldBe empty
-        SinkForLongs.data should have size 1
+        RecordingExceptionConsumer.exceptionsFor(runId) shouldBe empty
+        sinkForLongsResultsHolder().results should have size 1
       }
     }
   }
@@ -87,7 +95,10 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
 
 }
 
-class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConfigCreator {
+class DelayedKafkaUniversalProcessConfigCreator(
+    sinkForLongsResultsHolder: => TestResultsHolder[java.lang.Long],
+    sinkForInputMetaResultsHolder: => TestResultsHolder[InputMeta[_]]
+) extends KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
 
   override def sourceFactories(
       modelDependencies: ProcessObjectDependencies
@@ -113,7 +124,7 @@ class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConf
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "sinkForLongs" -> defaultCategory(SinkForLongs.toSinkFactory)
+      "sinkForLongs" -> defaultCategory(SinkForLongs(sinkForLongsResultsHolder))
     )
   }
 

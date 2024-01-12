@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord, SinkForStrings}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
@@ -52,7 +52,7 @@ class MetricsSpec
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldNot be(Symbol("empty"))
+    ProcessTestHelpers.logServiceResultsHolder.results shouldNot be(Symbol("empty"))
     withClue(reporter.namedMetricsForScenario) {
       val histogram = reporter.testMetrics[Histogram]("service.OK.serviceName.mockService.histogram").loneElement
       histogram.getCount shouldBe 1
@@ -176,7 +176,7 @@ class MetricsSpec
     )
 
     processInvoker.invokeWithSampleData(process, data)
-    SinkForStrings.data shouldBe List("initialized!")
+    ProcessTestHelpers.sinkForStringsResultsHolder.results shouldBe List("initialized!")
   }
 
   test("initializes counts, ends, dead ends") { implicit scenarioName =>

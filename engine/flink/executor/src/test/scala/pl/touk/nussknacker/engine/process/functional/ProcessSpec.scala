@@ -40,7 +40,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data should have size 5
+    ProcessTestHelpers.logServiceResultsHolder.results should have size 5
 
   }
 
@@ -56,7 +56,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(scenario, data)
 
-    MockService.data should have size 0
+    ProcessTestHelpers.logServiceResultsHolder.results should have size 0
   }
 
   test("handles lazy params in sinks") {
@@ -71,7 +71,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    SinkForInts.data shouldBe List(7)
+    ProcessTestHelpers.sinkForIntsResultsHolder.results shouldBe List(7)
   }
 
   test("allow global vars in source config") {
@@ -85,7 +85,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe List(5)
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe List(5)
   }
 
   test("should do simple join") {
@@ -109,8 +109,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data.toSet shouldBe Set(5, rec)
-
+    ProcessTestHelpers.logServiceResultsHolder.results.toSet shouldBe Set(5, rec)
   }
 
   test("should do join with branch expressions") {
@@ -155,7 +154,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data.toSet shouldBe Set(5, 15, rec)
+    ProcessTestHelpers.logServiceResultsHolder.results.toSet shouldBe Set(5, 15, rec)
   }
 
   test("should handle diamond-like process") {
@@ -190,7 +189,8 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data.sortBy(_.asInstanceOf[SimpleRecord].date) shouldBe List(recA, recB, recC, recC)
+    ProcessTestHelpers.logServiceResultsHolder.results
+      .sortBy(_.asInstanceOf[SimpleRecord].date) shouldBe List(recA, recB, recC, recC)
   }
 
   test("usage of scala option parameters in services") {
@@ -207,7 +207,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe List(Some("" + ProcessHelper.constant))
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe List(Some("" + ProcessHelper.constant))
   }
 
   test("usage of java optional parameters in eager parameters") {
@@ -222,7 +222,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    EagerOptionalParameterSinkFactory.data shouldBe List("" + ProcessHelper.constant)
+    ProcessTestHelpers.eagerOptionalParameterSinkResultsHolder.results shouldBe List("" + ProcessHelper.constant)
   }
 
   test("usage of TypedMap in method parameters") {
@@ -238,7 +238,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe List("123")
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe List("123")
   }
 
   test("Open/close only used services") {
@@ -267,7 +267,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     EagerLifecycleService.closed shouldBe true
 
     val openedInvokers = EagerLifecycleService.list.filter(_._2.opened == true)
-    openedInvokers.map(_._1).toSet == Set("1", "2")
+    openedInvokers.map(_._1).toSet shouldEqual Set("1", "2")
     openedInvokers.foreach { cl =>
       cl._2.closed shouldBe true
     }
@@ -293,7 +293,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    SinkForStrings.data.loneElement shouldBe ComponentUseCase.EngineRuntime.toString
+    ProcessTestHelpers.sinkForStringsResultsHolder.results.loneElement shouldBe ComponentUseCase.EngineRuntime.toString
   }
 
   test("should handle errors on branches after split independently") {
@@ -313,7 +313,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     // we test both sync and async to be sure collecting is handled correctly
     List(true, false).foreach { useAsync =>
-      SinkForStrings.clear()
+      ProcessTestHelpers.sinkForStringsResultsHolder.clear()
 
       val additionalFields = process.metaData.additionalFields
 
@@ -330,12 +330,12 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       val cfg   = RecordingExceptionConsumerProvider.configWithProvider(config, consumerId = runId)
       processInvoker.invokeWithSampleData(scenarioToUse, data, cfg)
 
-      val exception = RecordingExceptionConsumer.dataFor(runId).loneElement
+      val exception = RecordingExceptionConsumer.exceptionsFor(runId).loneElement
       exception.throwable shouldBe a[NonTransientException]
       exception.nodeComponentInfo shouldBe Some(
         NodeComponentInfo("throwingNonTransientErrorsNodeId", ComponentType.Service, "throwingNonTransientErrors")
       )
-      SinkForStrings.data.loneElement shouldBe "b"
+      ProcessTestHelpers.sinkForStringsResultsHolder.results.loneElement shouldBe "b"
     }
 
   }

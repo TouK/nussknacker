@@ -1,20 +1,15 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import java.util.Date
-
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{
-  MockService,
-  NodePassingStateToImplementation,
-  SimpleRecord,
-  SinkForStrings
-}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{NodePassingStateToImplementation, SimpleRecord}
 import pl.touk.nussknacker.engine.spel
+
+import java.util.Date
 
 class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
@@ -39,7 +34,7 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe List(TypedMap(Map("val1" -> "aa", "val2" -> 11)))
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe List(TypedMap(Map("val1" -> "aa", "val2" -> 11)))
   }
 
   test("be able to use final state in generic transformation's implementation") {
@@ -52,9 +47,9 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
     processInvoker.invokeWithSampleData(processWithoutVariableDeclaration, data)
-    MockService.data shouldBe List(false)
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe List(false)
 
-    MockService.clear()
+    ProcessTestHelpers.logServiceResultsHolder.clear()
     val processWithVariableDeclaration = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
@@ -67,7 +62,7 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
       .processorEnd("proc2", "logService", "all" -> "#result")
 
     processInvoker.invokeWithSampleData(processWithVariableDeclaration, data)
-    MockService.data shouldBe List(true)
+    ProcessTestHelpers.logServiceResultsHolder.results shouldBe List(true)
   }
 
   test("be able to generic source and sink") {
@@ -78,7 +73,9 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
 
     processInvoker.invokeWithSampleData(process, Nil)
 
-    SinkForStrings.data shouldBe List(s"type2-3+type1-2+componentUseCase:${ComponentUseCase.EngineRuntime}")
+    ProcessTestHelpers.genericParameterSinkResultsHolder.results shouldBe List(
+      s"type2-3+type1-2+componentUseCase:${ComponentUseCase.EngineRuntime}"
+    )
   }
 
   test("be able to generic source with multiple variables on start (with multipart compilation)") {
@@ -98,7 +95,7 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
 
     processInvoker.invokeWithSampleData(process, Nil)
 
-    SinkForStrings.data shouldBe List(
+    ProcessTestHelpers.genericParameterSinkResultsHolder.results shouldBe List(
       s"test|transformed:test|4+type1-2+componentUseCase:${ComponentUseCase.EngineRuntime}"
     )
   }

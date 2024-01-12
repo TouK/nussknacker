@@ -5,27 +5,31 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
-import pl.touk.nussknacker.test.WithDataList
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 
 import java.util.UUID
 
-trait RunIdDataRecorder[T] extends WithDataList[(String, T)] {
+object RecordingExceptionConsumer extends TestResultsHolder[(String, NuExceptionInfo[_ <: Throwable])] {
 
-  def dataFor(id: String): List[T] =
-    data.collect { case (eid, ex) if eid == id => ex }
+  def createExceptionConsumer(id: String) = new RecordingExceptionConsumer(this, id)
 
-  def clearData(id: String): Unit = {
+  def exceptionsFor(id: String): List[NuExceptionInfo[_ <: Throwable]] =
+    results.collect { case (eid, ex) if eid == id => ex }
+
+  def clearRecordedExceptions(id: String): Unit = {
     clear { case (eid, _) => eid == id }
   }
 
 }
 
-object RecordingExceptionConsumer extends RunIdDataRecorder[NuExceptionInfo[_ <: Throwable]]
-
-class RecordingExceptionConsumer(id: String) extends FlinkEspExceptionConsumer {
+class RecordingExceptionConsumer(
+    exceptionsHolder: => TestResultsHolder[(String, NuExceptionInfo[_ <: Throwable])],
+    id: String
+) extends FlinkEspExceptionConsumer {
 
   override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit =
-    RecordingExceptionConsumer.add((id, exceptionInfo))
+    exceptionsHolder.add((id, exceptionInfo))
+
 }
 
 object RecordingExceptionConsumerProvider {
@@ -47,7 +51,7 @@ class RecordingExceptionConsumerProvider extends FlinkEspExceptionConsumerProvid
 
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer = {
     val id = exceptionHandlerConfig.getOrElse[String](recordingConsumerIdPath, UUID.randomUUID().toString)
-    new RecordingExceptionConsumer(id)
+    RecordingExceptionConsumer.createExceptionConsumer(id)
   }
 
 }

@@ -10,20 +10,20 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.restmodel.definition.NodeEdges
+import pl.touk.nussknacker.restmodel.definition.UINodeEdges
 
 object EdgeTypesPreparer {
 
   def prepareEdgeTypes(
       definitions: ModelDefinition[ComponentStaticDefinition],
-  ): List[NodeEdges] = {
+  ): List[UINodeEdges] = {
     val fragmentOutputs = definitions.components.collect {
       case (
             componentInfo,
             ComponentStaticDefinition(_, _, _, _, FragmentSpecificData(outputNames))
           ) =>
         // TODO: enable choice of output type
-        NodeEdges(
+        UINodeEdges(
           componentInfo,
           outputNames.map(EdgeType.FragmentOutput),
           canChooseNodes = false,
@@ -33,23 +33,23 @@ object EdgeTypesPreparer {
 
     val joinInputs = definitions.components.collect {
       case (info, ComponentStaticDefinition(_, _, _, _, CustomComponentSpecificData(true, _))) =>
-        NodeEdges(info, List.empty, canChooseNodes = true, isForInputDefinition = true)
+        UINodeEdges(info, List.empty, canChooseNodes = true, isForInputDefinition = true)
     }
 
     List(
-      NodeEdges(
+      UINodeEdges(
         BuiltInComponentInfo.Split,
         List.empty,
         canChooseNodes = true,
         isForInputDefinition = false
       ),
-      NodeEdges(
+      UINodeEdges(
         BuiltInComponentInfo.Choice,
         List(EdgeType.NextSwitch(Expression.spel("true")), EdgeType.SwitchDefault),
         canChooseNodes = true,
         isForInputDefinition = false
       ),
-      NodeEdges(
+      UINodeEdges(
         BuiltInComponentInfo.Filter,
         List(FilterTrue, FilterFalse),
         canChooseNodes = false,

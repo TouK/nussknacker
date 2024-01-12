@@ -4,6 +4,9 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
+import pl.touk.nussknacker.engine.schemedkafka.KafkaJsonPayloadIntegrationSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{
   KafkaAvroSpecMixin,
   SimpleKafkaJsonDeserializer,
@@ -20,10 +23,11 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
 
   import KafkaAvroIntegrationMockSchemaRegistry._
 
-  private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
-      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-  }
+  private lazy val creator: KafkaAvroTestProcessConfigCreator =
+    new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
+      override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
+        MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
+    }
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
@@ -58,5 +62,11 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
       BestEffortJsonEncoder.defaultForTests.encode(PaymentV1.exampleData)
     )
   }
+
+}
+
+object KafkaJsonPayloadIntegrationSpec {
+
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
 
 }

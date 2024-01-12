@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsu
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.ObjToSerialize
-import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForLongs, SinkForStrings}
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -27,18 +26,17 @@ trait KafkaSourceFactoryProcessMixin
     with BeforeAndAfter
     with NuScalaTestAssertions {
 
+  protected def resultHolders: () => ResultsHolders
+
   protected lazy val modelData =
-    LocalModelData(config, List.empty, configCreator = new KafkaSourceFactoryProcessConfigCreator)
+    LocalModelData(config, List.empty, configCreator = new KafkaSourceFactoryProcessConfigCreator(resultHolders))
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
   }
 
   before {
-    SinkForSampleValue.clear()
-    SinkForInputMeta.clear()
-    SinkForStrings.clear()
-    SinkForLongs.clear()
+    resultHolders().clear()
   }
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
@@ -51,19 +49,18 @@ trait KafkaSourceFactoryProcessMixin
       topicName: String,
       process: CanonicalProcess,
       obj: ObjToSerialize
-  ): List[InputMeta[Any]] = {
+  ): Unit = {
     val topic = createTopic(topicName)
     pushMessage(objToSerializeSerializationSchema(topic), obj, timestamp = constTimestamp)
     run(process) {
       eventually {
-        SinkForInputMeta.data shouldBe List(
+        RecordingExceptionConsumer.exceptionsFor(runId) should have size 0
+        resultHolders().sinkForSimpleJsonRecordResultsHolder.results shouldBe List(obj.value)
+        resultHolders().sinkForInputMetaResultsHolder.results shouldBe List(
           InputMeta(obj.key, topic, 0, 0L, constTimestamp, TimestampType.CREATE_TIME, obj.headers.asJava, 0)
         )
-        SinkForSampleValue.data shouldBe List(obj.value)
-        RecordingExceptionConsumer.dataFor(runId) should have size 0
       }
     }
-    SinkForInputMeta.data
   }
 
   object SourceType extends Enumeration {

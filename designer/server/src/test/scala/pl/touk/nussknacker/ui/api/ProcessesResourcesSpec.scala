@@ -67,7 +67,7 @@ class ProcessesResourcesSpec
 
   private val routeWithAllPermissions: Route = withAllPermissions(processesRoute)
 
-  private val processName: ProcessName = SampleProcess.processName
+  private val processName: ProcessName = SampleScenario.scenarioName
 
   private val archivedProcessName = ProcessName("archived")
 
@@ -76,7 +76,7 @@ class ProcessesResourcesSpec
   private val archivedFragmentName = ProcessName("archived-fragment")
 
   test("should return list of process with state") {
-    createDeployedProcess(processName)
+    createDeployedExampleScenario(processName.value)
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running))
   }
 
@@ -102,7 +102,7 @@ class ProcessesResourcesSpec
   }
 
   test("return single process") {
-    val processId = createDeployedProcess(processName)
+    val processId = createDeployedExampleScenario(processName.value)
 
     deploymentManager.withProcessRunning(processName) {
       forScenarioReturned(processName) { process =>
@@ -122,7 +122,7 @@ class ProcessesResourcesSpec
   }
 
   test("spel template expression is validated properly") {
-    createDeployedProcessFromProcess(SampleSpelTemplateProcess.process)
+    createDeployedScenario(SampleSpelTemplateProcess.process)
 
     Get(s"/processes/${SampleSpelTemplateProcess.processName}") ~> routeWithRead ~> check {
       val newProcessDetails = responseAs[ScenarioWithDetails]
@@ -156,7 +156,7 @@ class ProcessesResourcesSpec
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
     val displayableFragment =
       ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, Category1)
-    savefragment(displayableFragment)(succeed)
+    saveFragment(displayableFragment)(succeed)
     saveProcess(processName, processWithFragment.process, Category1)(succeed)
 
     archiveProcess(displayableFragment.name) { status =>
@@ -165,7 +165,7 @@ class ProcessesResourcesSpec
   }
 
   test("not allow to archive still running process") {
-    createDeployedProcess(processName)
+    createDeployedExampleScenario(processName.value)
 
     deploymentManager.withProcessRunning(processName) {
       archiveProcess(processName) { status =>
@@ -178,7 +178,7 @@ class ProcessesResourcesSpec
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
     val displayableFragment =
       ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, Category1)
-    savefragment(displayableFragment)(succeed)
+    saveFragment(displayableFragment)(succeed)
     saveProcess(processName, processWithFragment.process, Category1)(succeed)
 
     archiveProcess(processName) { status =>
@@ -215,7 +215,7 @@ class ProcessesResourcesSpec
   }
 
   test("should allow to rename canceled process") {
-    val processId = createDeployedCanceledProcess(processName)
+    val processId = createDeployedCanceledExampleScenario(processName.value)
     val newName   = ProcessName("ProcessChangedName")
 
     renameProcess(processName, newName) { status =>
@@ -225,7 +225,7 @@ class ProcessesResourcesSpec
   }
 
   test("should not allow to rename deployed process") {
-    createDeployedProcess(processName)
+    createDeployedExampleScenario(processName.value)
     deploymentManager.withProcessRunning(processName) {
       val newName = ProcessName("ProcessChangedName")
 
@@ -524,8 +524,8 @@ class ProcessesResourcesSpec
     val thirdProcessor  = ProcessName("Processor3")
 
     createEmptyProcess(firstProcessor)
-    createDeployedCanceledProcess(secondProcessor)
-    createDeployedProcess(thirdProcessor)
+    createDeployedCanceledExampleScenario(secondProcessor.value)
+    createDeployedExampleScenario(thirdProcessor.value)
 
     deploymentManager.withProcessStateStatus(secondProcessor, SimpleStateStatus.Canceled) {
       deploymentManager.withProcessStateStatus(thirdProcessor, SimpleStateStatus.Running) {
@@ -651,14 +651,14 @@ class ProcessesResourcesSpec
     }
 
     forScenariosReturned(ScenarioQuery.empty) { processes =>
-      val process = processes.find(_.name == SampleProcess.process.name.value)
+      val process = processes.find(_.name == SampleScenario.scenario.name.value)
 
       withClue(process) {
         process.isDefined shouldBe true
       }
     }
     forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
-      processes.exists(_.name == SampleProcess.process.name) shouldBe true
+      processes.exists(_.name == SampleScenario.scenario.name) shouldBe true
     }
   }
 
@@ -677,7 +677,7 @@ class ProcessesResourcesSpec
 
     getProcess(processName) ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
-      processDetails.name shouldBe SampleProcess.process.name
+      processDetails.name shouldBe SampleScenario.scenario.name
       processDetails.historyUnsafe.length shouldBe 3
       // processDetails.history.forall(_.processId == processDetails.id) shouldBe true //TODO: uncomment this when we will support id as Long / ProcessId
     }
@@ -692,19 +692,19 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processes/${SampleProcess.process.name}/1") ~> routeWithAllPermissions ~> check {
+    Get(s"/processes/${SampleScenario.scenario.name}/1") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
       processDetails.isLatestVersion shouldBe false
     }
 
-    Get(s"/processes/${SampleProcess.process.name}/2") ~> routeWithAllPermissions ~> check {
+    Get(s"/processes/${SampleScenario.scenario.name}/2") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(2)
       processDetails.isLatestVersion shouldBe false
     }
 
-    Get(s"/processes/${SampleProcess.process.name}/3") ~> routeWithAllPermissions ~> check {
+    Get(s"/processes/${SampleScenario.scenario.name}/3") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(3)
       processDetails.isLatestVersion shouldBe true
@@ -722,11 +722,11 @@ class ProcessesResourcesSpec
   }
 
   test("perform idempotent process save") {
-    saveProcessAndAssertSuccess(SampleProcess.process.name, ProcessTestData.validProcess)
-    Get(s"/processes/${SampleProcess.process.name}") ~> routeWithAllPermissions ~> check {
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, ProcessTestData.validProcess)
+    Get(s"/processes/${SampleScenario.scenario.name}") ~> routeWithAllPermissions ~> check {
       val processHistoryBeforeDuplicatedWrite = responseAs[ScenarioWithDetails].historyUnsafe
-      updateProcessAndAssertSuccess(SampleProcess.process.name, ProcessTestData.validProcess)
-      Get(s"/processes/${SampleProcess.process.name}") ~> routeWithAllPermissions ~> check {
+      updateProcessAndAssertSuccess(SampleScenario.scenario.name, ProcessTestData.validProcess)
+      Get(s"/processes/${SampleScenario.scenario.name}") ~> routeWithAllPermissions ~> check {
         val processHistoryAfterDuplicatedWrite = responseAs[ScenarioWithDetails].historyUnsafe
         processHistoryAfterDuplicatedWrite shouldBe processHistoryBeforeDuplicatedWrite
       }
@@ -883,7 +883,7 @@ class ProcessesResourcesSpec
   }
 
   test("should return statuses only for not archived scenarios (excluding fragments)") {
-    createDeployedProcess(processName)
+    createDeployedExampleScenario(processName.value)
     createArchivedProcess(archivedProcessName)
     createEmptyProcess(ProcessName("fragment"), isFragment = true)
 
@@ -896,7 +896,7 @@ class ProcessesResourcesSpec
   }
 
   test("should return status for single deployed process") {
-    createDeployedProcess(processName)
+    createDeployedExampleScenario(processName.value)
 
     deploymentManager.withProcessRunning(processName) {
       forScenarioStatus(processName) { (code, state) =>
@@ -1004,14 +1004,14 @@ class ProcessesResourcesSpec
   }
 
   private def fetchSampleProcess(): Future[CanonicalProcess] = {
-    futureFetchingProcessRepository
+    futureFetchingScenarioRepository
       .fetchLatestProcessDetailsForProcessId[CanonicalProcess](getProcessId(processName))
       .map(_.getOrElse(sys.error("Sample process missing")))
       .map(_.json)
   }
 
   private def getProcessId(processName: ProcessName): ProcessId =
-    futureFetchingProcessRepository.fetchProcessId(processName).futureValue.get
+    futureFetchingScenarioRepository.fetchProcessId(processName).futureValue.get
 
   private def renameProcess(processName: ProcessName, newName: ProcessName)(callback: StatusCode => Any): Any =
     Put(s"/processes/$processName/rename/$newName") ~> routeWithAllPermissions ~> check {

@@ -8,11 +8,10 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.security.Permission
@@ -20,7 +19,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
-import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentDetails, FragmentResolver}
+import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   ProcessingTypeDataConfigurationReader,
   ProcessingTypeDataProvider,
@@ -85,7 +84,7 @@ object TestFactory extends TestPermissions {
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
   def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
     Map(
-      TestProcessingTypes.Streaming -> List(FragmentDetails(ProcessTestData.sampleFragment, TestCategories.Category1))
+      TestProcessingTypes.Streaming -> List(ProcessTestData.sampleFragment)
     )
   )
 
@@ -101,7 +100,7 @@ object TestFactory extends TestPermissions {
   def newDummyDBIOActionRunner(): DBIOActionRunner =
     newDBIOActionRunner(dummyDbRef)
 
-  def newFutureFetchingProcessRepository(dbRef: DbRef) =
+  def newFutureFetchingScenarioRepository(dbRef: DbRef) =
     new DBFetchingProcessRepository[Future](dbRef, newActionProcessRepository(dbRef)) with BasicRepository
 
   def newFetchingProcessRepository(dbRef: DbRef) =
@@ -117,7 +116,7 @@ object TestFactory extends TestPermissions {
     newWriteProcessRepository(dummyDbRef)
 
   def newFragmentRepository(dbRef: DbRef): DefaultFragmentRepository =
-    new DefaultFragmentRepository(newFutureFetchingProcessRepository(dbRef))
+    new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
     new DbProcessActionRepository[DB](dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
@@ -174,9 +173,9 @@ object TestFactory extends TestPermissions {
   def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] =
     ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
 
-  def createValidator(modelDefinition: ModelDefinition[ComponentStaticDefinition]): ProcessValidator = {
+  def createValidator(modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation]): ProcessValidator = {
     ProcessValidator.default(
-      ModelDefinitionWithClasses(ModelDefinitionBuilder.withNullImplementation(modelDefinition)),
+      ModelDefinitionWithClasses(modelDefinition),
       new SimpleDictRegistry(Map.empty),
       CustomProcessValidatorLoader.emptyCustomProcessValidator
     )

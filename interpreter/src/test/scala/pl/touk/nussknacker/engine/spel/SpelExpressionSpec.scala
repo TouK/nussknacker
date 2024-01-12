@@ -155,7 +155,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed
   ) = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    val expressionConfig = ModelDefinitionBuilder.empty.expressionConfig.copy(
+    val expressionConfig = ModelDefinitionBuilder.emptyExpressionConfig.copy(
       globalImports = imports,
       strictMethodsChecking = strictMethodsChecking,
       staticMethodInvocationsChecking = staticMethodInvocationsChecking,
@@ -485,6 +485,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("access list elements by index") {
     parse[String]("#obj.children[0].id").validExpression.evaluateSync[String](ctx) shouldEqual "3"
     parse[Int]("#obj.children[0].id") shouldBe Symbol("invalid")
+  }
+
+  test("access fields with the same name as a no parameter method in record") {
+    parse[String]("{getClass: 'str'}.getClass").validExpression.evaluateSync[String](ctx) shouldEqual "str"
+    parse[String]("{isEmpty: 'str'}.isEmpty").validExpression.evaluateSync[String](ctx) shouldEqual "str"
+  }
+
+  test("access fields with the name of method without getter prefix in record") {
+    // Reflective accessor would normally try to find methods with added getter prefixes "is" or "get" so that ".class"
+    // would call ".getClass()"
+    parse[String]("{class: 'str'}.class").validExpression.evaluateSync[String](ctx) shouldEqual "str"
+    parse[String]("{empty: 'str'}.empty").validExpression.evaluateSync[String](ctx) shouldEqual "str"
   }
 
   test("access record elements by index") {

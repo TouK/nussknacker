@@ -11,14 +11,17 @@ import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.{
   SampleValue,
   createDeserializer
 }
-import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator._
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.{
+  KafkaConsumerRecordSourceHelper,
+  ResultsHolders
+}
 import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{ExtractAndTransformTimestamp, SinkForStrings}
-import pl.touk.nussknacker.engine.process.helpers.SinkForType
+import pl.touk.nussknacker.engine.process.helpers.{SinkForType, TestResultsHolder}
 
 import scala.reflect.ClassTag
 
-class KafkaSourceFactoryProcessConfigCreator extends EmptyProcessConfigCreator {
+class KafkaSourceFactoryProcessConfigCreator(resultsHolders: () => ResultsHolders) extends EmptyProcessConfigCreator {
 
   override def sourceFactories(
       modelDependencies: ProcessObjectDependencies
@@ -42,9 +45,13 @@ class KafkaSourceFactoryProcessConfigCreator extends EmptyProcessConfigCreator {
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "sinkForStrings"          -> defaultCategory(SinkForStrings.toSinkFactory),
-      "sinkForInputMeta"        -> defaultCategory(SinkForInputMeta.toSinkFactory),
-      "sinkForSimpleJsonRecord" -> defaultCategory(SinkForSampleValue.toSinkFactory)
+      "sinkForStrings" -> defaultCategory(SinkForStrings(resultsHolders().sinkForStringsResultsHolder)),
+      "sinkForInputMeta" -> defaultCategory(
+        SinkForType[InputMeta[Any]](resultsHolders().sinkForInputMetaResultsHolder)
+      ),
+      "sinkForSimpleJsonRecord" -> defaultCategory(
+        SinkForType[SampleValue](resultsHolders().sinkForSimpleJsonRecordResultsHolder)
+      )
     )
   }
 
@@ -60,7 +67,18 @@ class KafkaSourceFactoryProcessConfigCreator extends EmptyProcessConfigCreator {
 
 object KafkaSourceFactoryProcessConfigCreator {
 
-  case object SinkForSampleValue extends SinkForType[SampleValue]
+  class ResultsHolders {
+    val sinkForStringsResultsHolder: TestResultsHolder[String]               = new TestResultsHolder[String]
+    val sinkForInputMetaResultsHolder: TestResultsHolder[InputMeta[Any]]     = new TestResultsHolder[InputMeta[Any]]
+    val sinkForSimpleJsonRecordResultsHolder: TestResultsHolder[SampleValue] = new TestResultsHolder[SampleValue]
+
+    def clear(): Unit = {
+      sinkForStringsResultsHolder.clear()
+      sinkForInputMetaResultsHolder.clear()
+      sinkForSimpleJsonRecordResultsHolder.clear()
+    }
+
+  }
 
   object KafkaConsumerRecordSourceHelper {
 
@@ -123,5 +141,3 @@ object KafkaSourceFactoryProcessConfigCreator {
   }
 
 }
-
-case object SinkForInputMeta extends SinkForType[InputMeta[Any]]

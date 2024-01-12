@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
 import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJson}
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -33,7 +34,11 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:2222"))
 
   protected lazy val modelData: ModelData =
-    LocalModelData(config, List.empty, configCreator = new KafkaSourceFactoryProcessConfigCreator)
+    LocalModelData(
+      config,
+      List.empty,
+      configCreator = new KafkaSourceFactoryProcessConfigCreator(() => TestFromFileSpec.resultsHolders)
+    )
 
   test("Should pass correct timestamp from test data") {
     val topic             = "simple"
@@ -104,5 +109,11 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       )
     }
   }
+
+}
+
+object TestFromFileSpec extends Serializable {
+
+  private val resultsHolders = new ResultsHolders
 
 }

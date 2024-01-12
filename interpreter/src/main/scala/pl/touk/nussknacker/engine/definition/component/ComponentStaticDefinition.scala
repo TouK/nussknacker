@@ -5,13 +5,14 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleCompo
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
+// TODO: This class should contain only parameters and returnType. For other things we should use ComponentDefinitionWithImplementation
 final case class ComponentStaticDefinition(
     parameters: List[Parameter],
     returnType: Option[TypingResult],
-    // TODO: Remove it. We can take it from the processingType property, we don't to keep it here
-    categories: Option[List[String]],
     componentConfig: SingleComponentConfig,
-    componentTypeSpecificData: ComponentTypeSpecificData
+    // This is necessary for sorting of components in the toolbox - see ComponentGroupsPreparer and notice next to sorting
+    originalGroupName: ComponentGroupName,
+    componentTypeSpecificData: ComponentTypeSpecificData,
 ) extends BaseComponentDefinition {
 
   def withComponentConfig(componentConfig: SingleComponentConfig): ComponentStaticDefinition =
@@ -19,9 +20,12 @@ final case class ComponentStaticDefinition(
 
   val hasReturn: Boolean = returnType.isDefined
 
-  def componentGroupUnsafe: ComponentGroupName =
-    componentConfig.componentGroup.getOrElse(throw new IllegalStateException(s"Component group not defined for $this"))
-
   override def componentType: ComponentType = componentTypeSpecificData.componentType
+
+  // TODO: Instead of these methods we should replace componentConfig by configuration with well defined parameters
+  def componentGroupUnsafe: ComponentGroupName =
+    componentConfig.componentGroup.getOrElse(throw new IllegalStateException(s"Component group not defined in $this"))
+  def iconUnsafe: String =
+    componentConfig.icon.getOrElse(throw new IllegalStateException(s"Icon not defined in $this"))
 
 }

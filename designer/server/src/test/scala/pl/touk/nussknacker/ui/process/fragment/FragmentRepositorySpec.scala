@@ -26,7 +26,7 @@ class FragmentRepositorySpec
       ProcessConverter.toDisplayable(ProcessTestData.sampleFragment, TestProcessingTypes.Streaming, Category1)
     val sampleFragment2 =
       ProcessConverter.toDisplayable(ProcessTestData.sampleFragment2, TestProcessingTypes.Streaming, Category1)
-    savefragment(sampleFragment) {
+    saveFragment(sampleFragment) {
       status shouldEqual StatusCodes.OK
     }
     updateProcess(sampleFragment2) {
@@ -37,7 +37,7 @@ class FragmentRepositorySpec
     ProcessTestData.sampleFragment should not be ProcessTestData.sampleFragment2
 
     fragmentRepository.fetchLatestFragments(TestProcessingTypes.Streaming)(adminUser).futureValue shouldBe List(
-      FragmentDetails(ProcessTestData.sampleFragment2, Category1)
+      ProcessTestData.sampleFragment2
     )
   }
 
