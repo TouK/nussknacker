@@ -9,7 +9,12 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.process.runner.SimpleProcessConfigCreator.{
+  sinkForIntsResultsHolder,
+  valueMonitorResultsHolder
+}
 import pl.touk.nussknacker.engine.spel
 
 import java.net.ConnectException
@@ -54,8 +59,8 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] = Map(
     "monitor"      -> WithCategories(SinkFactory.noParam(MonitorEmptySink), "c2"),
-    "valueMonitor" -> WithCategories(SinkForAny.toSinkFactory, "c2"),
-    "sinkForInts"  -> WithCategories.anyCategory(SinkForInts.toSinkFactory)
+    "valueMonitor" -> WithCategories(SinkForAny(valueMonitorResultsHolder), "c2"),
+    "sinkForInts"  -> WithCategories.anyCategory(SinkForInts(sinkForIntsResultsHolder))
   )
 
   override def customStreamTransformers(
@@ -75,5 +80,12 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     "typedJsonInput"                   -> WithCategories(TypedJsonSource, "cat2"),
     "genericSourceWithCustomVariables" -> WithCategories.anyCategory(GenericSourceWithCustomVariables)
   )
+
+}
+
+object SimpleProcessConfigCreator extends Serializable {
+
+  val valueMonitorResultsHolder = new TestResultsHolder[AnyRef]
+  val sinkForIntsResultsHolder  = new TestResultsHolder[java.lang.Integer]
 
 }

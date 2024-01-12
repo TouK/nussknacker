@@ -6,6 +6,9 @@ import org.apache.avro.Schema
 import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
+import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroNamespacedSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
@@ -36,10 +39,11 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
     MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
-  private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
-      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-  }
+  private lazy val creator: KafkaAvroTestProcessConfigCreator =
+    new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
+      override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
+        MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
+    }
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -57,6 +61,12 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
   }
+
+}
+
+object KafkaAvroNamespacedSpec {
+
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
 
 }
 

@@ -6,18 +6,15 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ExtractAndTransformTimestamp
-import pl.touk.nussknacker.engine.process.helpers.SinkForType
+import pl.touk.nussknacker.engine.process.helpers.{SinkForType, TestResultsHolder}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSinkImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 
-abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
-
-  {
-    SinkForInputMeta.clear()
-  }
+abstract class KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder: => TestResultsHolder[InputMeta[_]])
+    extends EmptyProcessConfigCreator {
 
   private val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
@@ -63,7 +60,7 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
           FlinkKafkaUniversalSinkImplFactory
         )
       ),
-      "sinkForInputMeta" -> defaultCategory(SinkForInputMeta.toSinkFactory)
+      "sinkForInputMeta" -> defaultCategory(SinkForType[InputMeta[_]](sinkForInputMetaResultsHolder))
     )
   }
 
@@ -72,5 +69,3 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
   protected def schemaRegistryClientFactory: SchemaRegistryClientFactory
 
 }
-
-case object SinkForInputMeta extends SinkForType[InputMeta[Any]]

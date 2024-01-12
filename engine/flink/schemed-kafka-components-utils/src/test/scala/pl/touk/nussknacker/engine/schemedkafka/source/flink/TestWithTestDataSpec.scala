@@ -32,15 +32,18 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.KafkaConfigProperties
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
+import pl.touk.nussknacker.engine.schemedkafka.source.flink.TestWithTestDataSpec.sinkForInputMetaResultsHolder
 
 import java.util.Collections
 
 class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
 
-  private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def schemaRegistryClientFactory =
-      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-  }
+  private lazy val creator: KafkaAvroTestProcessConfigCreator =
+    new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
+      override protected def schemaRegistryClientFactory =
+        MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
+    }
 
   private lazy val config = ConfigFactory
     .empty()
@@ -149,5 +152,11 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       )
     }
   }
+
+}
+
+object TestWithTestDataSpec {
+
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
 
 }

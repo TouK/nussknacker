@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import org.apache.kafka.common.serialization.Serializer
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SimpleKafkaJsonSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
@@ -38,5 +40,18 @@ class DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec extends DelayedUnive
     val process = createProcessWithDelayedSource(inputTopic, ExistingSchemaVersion(1), "'field'", "1L")
     runAndVerify(inputTopic, process, OffsetDateTimeFieldJsonV1.exampleData)
   }
+
+  override protected val sinkForLongsResultsHolder: () => TestResultsHolder[java.lang.Long] =
+    () => DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec.sinkForLongsResultsHolder
+
+  override protected val sinkForInputMetaResultsHolder: () => TestResultsHolder[InputMeta[_]] =
+    () => DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec.sinkForInputMetaResultsHolder
+}
+
+object DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec extends Serializable {
+
+  private val sinkForLongsResultsHolder = new TestResultsHolder[java.lang.Long]
+
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
 
 }

@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.kafka.common.record.TimestampType
-import KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.serialization
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
-import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
 
 import scala.jdk.CollectionConverters._
 
@@ -81,8 +81,10 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta)
     run(process) {
       eventually {
-        SinkForSampleValue.data shouldBe List(correctObj.value)
-        RecordingExceptionConsumer.dataFor(runId) should have size 1
+        KafkaSourceFactoryIntegrationSpec.resultsHolders.sinkForSimpleJsonRecordResultsHolder.results shouldBe List(
+          correctObj.value
+        )
+        RecordingExceptionConsumer.exceptionsFor(runId) should have size 1
       }
     }
   }
@@ -91,7 +93,7 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     val topic    = "kafka-value-with-meta"
     val givenObj = ObjToSerialize(TestSampleValue, null, TestSampleHeaders)
     val process  = createProcess(topic, SourceType.jsonValueWithMeta)
-    val result   = runAndVerifyResult(topic, process, givenObj)
+    runAndVerifyResult(topic, process, givenObj)
   }
 
   test("source with value only should accept given key, fallback to String deserialization") {
@@ -102,7 +104,7 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     pushMessage(objToSerializeSerializationSchema(topic), givenObj, timestamp = constTimestamp)
     run(process) {
       eventually {
-        SinkForInputMeta.data shouldBe List(
+        KafkaSourceFactoryIntegrationSpec.resultsHolders.sinkForInputMetaResultsHolder.results shouldBe List(
           InputMeta(
             """{"partOne":"some key","partTwo":123}""",
             topic,
@@ -130,7 +132,9 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     pushMessage(objToSerializeSerializationSchema(topicTwo), givenObj, timestamp = constTimestamp)
     run(process) {
       eventually {
-        SinkForInputMeta.data.map(_.topic).toSet shouldEqual Set(topicOne, topicTwo)
+        KafkaSourceFactoryIntegrationSpec.resultsHolders.sinkForInputMetaResultsHolder.results
+          .map(_.topic)
+          .toSet shouldEqual Set(topicOne, topicTwo)
       }
     }
   }
@@ -159,10 +163,20 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     pushMessage(objToSerializeSerializationSchema(topic), correctObj, timestamp = constTimestamp + 1)
     run(process) {
       eventually {
-        SinkForSampleValue.data shouldBe List(correctObj.value)
-        RecordingExceptionConsumer.dataFor(runId) should have size 1
+        KafkaSourceFactoryIntegrationSpec.resultsHolders.sinkForSimpleJsonRecordResultsHolder.results shouldBe List(
+          correctObj.value
+        )
+        RecordingExceptionConsumer.exceptionsFor(runId) should have size 1
       }
     }
   }
+
+  override protected val resultHolders: () => ResultsHolders = () => KafkaSourceFactoryIntegrationSpec.resultsHolders
+
+}
+
+object KafkaSourceFactoryIntegrationSpec extends Serializable {
+
+  private val resultsHolders = new ResultsHolders
 
 }

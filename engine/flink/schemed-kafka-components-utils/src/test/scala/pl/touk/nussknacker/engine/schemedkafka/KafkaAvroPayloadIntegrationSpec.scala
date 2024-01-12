@@ -10,6 +10,8 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
+import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema._
@@ -32,7 +34,9 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
   import scala.jdk.CollectionConverters._
 
-  private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
+  private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator(
+    sinkForInputMetaResultsHolder
+  ) {
     override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
       MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
@@ -51,7 +55,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
   }
 
   before {
-    SinkForInputMeta.clear()
+    KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder.clear()
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
@@ -60,10 +64,15 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val sinkParam   = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process     = createAvroProcess(sourceParam, sinkParam)
 
-    runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
+    kafkaClient.createTopic(topicConfig.input, partitions = 1)
+    pushMessage(PaymentV1.record, topicConfig.input)
+    kafkaClient.createTopic(topicConfig.output, partitions = 1)
 
-    // Here process uses value-only source with metadata, the content of event's key is treated as a string.
-    verifyInputMeta(null, topicConfig.input, 0, 0L)
+    run(process) {
+      consumeAndVerifyMessage(topicConfig.output, PaymentV1.record)
+      // Here process uses value-only source with metadata, the content of event's key is treated as a string.
+      verifyInputMeta(null, topicConfig.input, 0, 0L)
+    }
   }
 
   test("should read primitive event and save it in the same format") {
@@ -220,8 +229,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
     runAndVerifyResult(process, topicConfig, events, Address.record)
 
-    RecordingExceptionConsumer.dataFor(runId) should have size 1
-    val espExceptionInfo = RecordingExceptionConsumer.dataFor(runId).head
+    RecordingExceptionConsumer.exceptionsFor(runId) should have size 1
+    val espExceptionInfo = RecordingExceptionConsumer.exceptionsFor(runId).head
 
     espExceptionInfo.nodeComponentInfo shouldBe Some(
       NodeComponentInfo("end", ComponentType.Sink, "flinkKafkaAvroSink")
@@ -256,7 +265,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       List(PaymentV2.recordWithData, PaymentNotCompatible.recordWithData),
       PaymentNotCompatible.recordWithData
     )
-    RecordingExceptionConsumer.dataFor(runId) should have size 1
+    RecordingExceptionConsumer.exceptionsFor(runId) should have size 1
   }
 
   test("should pass timestamp from flink to kafka") {
@@ -411,9 +420,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
     run(process) {
       consumeAndVerifyMessages(topicConfig.output, List(Product.record))
+      verifyInputMeta("""{"id":"lorem","field":"ipsum"}""", topicConfig.input, 0, 0L)
     }
-
-    verifyInputMeta("""{"id":"lorem","field":"ipsum"}""", topicConfig.input, 0, 0L)
   }
 
   test("should read key and value when source has key-value deserialization") {
@@ -434,11 +442,11 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
     run(process) {
       consumeAndVerifyMessages(topicConfig.output, List(Product.record))
-    }
 
-    // Here process uses key-and-value deserialization in a source with metadata.
-    // The content of event's key is interpreted according to defined key schema.
-    verifyInputMeta(FullNameV1.record, topicConfig.input, 0, 0L)
+      // Here process uses key-and-value deserialization in a source with metadata.
+      // The content of event's key is interpreted according to defined key schema.
+      verifyInputMeta(FullNameV1.record, topicConfig.input, 0, 0L)
+    }
   }
 
   private def verifyInputMeta[T](key: T, topic: String, partition: Int, offset: Long): Assertion = {
@@ -446,11 +454,19 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       InputMeta[T](key, topic, partition, offset, 0L, TimestampType.CREATE_TIME, Map.empty[String, String].asJava, 0)
 
     eventually {
-      val results = SinkForInputMeta.data.map(_.asInstanceOf[InputMeta[T]].copy(timestamp = 0L))
+      val results = KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder.results.map(
+        _.asInstanceOf[InputMeta[T]].copy(timestamp = 0L)
+      )
       results should not be empty
       results should contain(expectedInputMeta)
     }
   }
+
+}
+
+object KafkaAvroPayloadIntegrationSpec extends Serializable {
+
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
 
 }
 

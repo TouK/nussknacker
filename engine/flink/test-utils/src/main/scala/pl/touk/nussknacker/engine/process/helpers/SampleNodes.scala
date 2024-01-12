@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordPars
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
@@ -37,14 +38,12 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
-import pl.touk.nussknacker.test.WithDataList
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
 import javax.annotation.Nullable
-import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 //TODO: clean up sample objects...
 object SampleNodes {
@@ -116,15 +115,17 @@ object SampleNodes {
 
   }
 
-  // data is static, to be able to track, Service is object, to initialize metrics properly...
-  class MockService extends Service with TimeMeasuringService with Serializable {
+  class MockService(resultsHolder: => TestResultsHolder[Any])
+      extends Service
+      with TimeMeasuringService
+      with Serializable {
 
     val serviceName = "mockService"
 
     @MethodToInvoke
     def invoke(@ParamName("all") all: Any)(implicit ec: ExecutionContext): Future[Unit] = {
       measuring(Future.successful {
-        MockService.add(all)
+        resultsHolder.add(all)
       })
     }
 
@@ -544,7 +545,9 @@ object SampleNodes {
 
   }
 
-  object OptionalEndingCustom extends CustomStreamTransformer with Serializable {
+  class OptionalEndingCustom(resultsHolder: => TestResultsHolder[AnyRef])
+      extends CustomStreamTransformer
+      with Serializable {
 
     override def canBeEnding: Boolean = true
 
@@ -555,7 +558,7 @@ object SampleNodes {
           .flatMap(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
         afterMap.addSink(new SinkFunction[ValueWithContext[AnyRef]] {
           override def invoke(value: ValueWithContext[AnyRef], context: SinkFunction.Context): Unit = {
-            MockService.add(value.value)
+            resultsHolder.add(value.value)
           }
         })
         afterMap
@@ -563,7 +566,7 @@ object SampleNodes {
 
   }
 
-  object EagerOptionalParameterSinkFactory extends SinkFactory with WithDataList[String] {
+  class EagerOptionalParameterSinkFactory(resultsHolder: => TestResultsHolder[String]) extends SinkFactory {
 
     @MethodToInvoke
     def createSink(@ParamName("optionalStringParam") value: Optional[String]): Sink = new BasicFlinkSink {
@@ -577,15 +580,13 @@ object SampleNodes {
         (ctx, collector) => collector.collect(ValueWithContext(serializableValue, ctx))
 
       override def toFlinkFunction: SinkFunction[String] = new SinkFunction[String] {
-        override def invoke(value: String, context: SinkFunction.Context): Unit = add(value)
+        override def invoke(value: String, context: SinkFunction.Context): Unit = resultsHolder.add(value)
       }
 
       override type Value = String
     }
 
   }
-
-  object MockService extends Service with WithDataList[Any]
 
   case object MonitorEmptySink extends EmptySink with Serializable {
 
@@ -603,13 +604,23 @@ object SampleNodes {
 
   }
 
-  case object SinkForInts extends SinkForType[java.lang.Integer]
+  object SinkForInts {
+    def apply(resultsHolder: => TestResultsHolder[java.lang.Integer]): SinkFactory =
+      SinkForType[java.lang.Integer](resultsHolder)
+  }
 
-  case object SinkForStrings extends SinkForType[String]
+  object SinkForStrings {
+    def apply(resultsHolder: => TestResultsHolder[String]): SinkFactory = SinkForType[String](resultsHolder)
+  }
 
-  case object SinkForLongs extends SinkForType[java.lang.Long]
+  object SinkForLongs {
+    def apply(resultsHolder: => TestResultsHolder[java.lang.Long]): SinkFactory =
+      SinkForType[java.lang.Long](resultsHolder)
+  }
 
-  case object SinkForAny extends SinkForType[AnyRef]
+  object SinkForAny {
+    def apply(resultsHolder: => TestResultsHolder[AnyRef]): SinkFactory = SinkForType[AnyRef](resultsHolder)
+  }
 
   object EmptyService extends Service with Serializable {
     def invoke(): Future[Unit] = Future.successful(())
@@ -852,7 +863,10 @@ object SampleNodes {
 
   }
 
-  object GenericParametersSink extends SinkFactory with SingleInputGenericNodeTransformation[Sink] with Serializable {
+  class GenericParametersSink(resultsHolder: => TestResultsHolder[String])
+      extends SinkFactory
+      with SingleInputGenericNodeTransformation[Sink]
+      with Serializable {
 
     private val componentUseCaseDependency = TypedNodeDependency[ComponentUseCase]
 
@@ -920,7 +934,7 @@ object SampleNodes {
           dataStream: DataStream[ValueWithContext[String]],
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStreamSink[_] =
-        dataStream.map(_.value).addSink(SinkForStrings.toSinkFunction)
+        dataStream.map(_.value).addSink(new SinkForTypeFunction[String](resultsHolder))
 
     }
 

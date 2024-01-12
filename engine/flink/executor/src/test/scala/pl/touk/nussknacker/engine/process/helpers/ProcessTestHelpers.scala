@@ -35,9 +35,12 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       )
       UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
 
-      MockService.clear()
-      SinkForStrings.clear()
-      SinkForInts.clear()
+      ProcessTestHelpers.logServiceResultsHolder.clear()
+      ProcessTestHelpers.sinkForStringsResultsHolder.clear()
+      ProcessTestHelpers.sinkForIntsResultsHolder.clear()
+      ProcessTestHelpers.eagerOptionalParameterSinkResultsHolder.clear()
+      ProcessTestHelpers.genericParameterSinkResultsHolder.clear()
+      ProcessTestHelpers.optionalEndingCustomResultsHolder.clear()
       env.executeAndWaitForFinished(process.name.value)()
     }
 
@@ -45,10 +48,19 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
 }
 
-object ProcessTestHelpers {
+// TODO: Having TestResultsHolder in a one shared between all tests object is a bad pattern. It can cause interfere with other tests.
+//       We'd rather should create a separate TestResultsHolder for each tests and pass components using them to the invoker above.
+object ProcessTestHelpers extends Serializable {
+
+  val logServiceResultsHolder                 = new TestResultsHolder[Any]
+  val sinkForStringsResultsHolder             = new TestResultsHolder[String]
+  val sinkForIntsResultsHolder                = new TestResultsHolder[java.lang.Integer]
+  val eagerOptionalParameterSinkResultsHolder = new TestResultsHolder[String]
+  val genericParameterSinkResultsHolder       = new TestResultsHolder[String]
+  val optionalEndingCustomResultsHolder       = new TestResultsHolder[AnyRef]
 
   def prepareComponents(data: List[SimpleRecord]): List[ComponentDefinition] = List(
-    ComponentDefinition("logService", new MockService),
+    ComponentDefinition("logService", new MockService(logServiceResultsHolder)),
     ComponentDefinition("lifecycleService", LifecycleService),
     ComponentDefinition("eagerLifecycleService", EagerLifecycleService),
     ComponentDefinition("enricherWithOpenService", new EnricherWithOpenService),
@@ -63,10 +75,13 @@ object ProcessTestHelpers {
     ComponentDefinition("genericParametersSource", GenericParametersSource),
     ComponentDefinition("genericSourceWithCustomVariables", GenericSourceWithCustomVariables),
     ComponentDefinition("monitor", SinkFactory.noParam(MonitorEmptySink)),
-    ComponentDefinition("sinkForInts", SinkForInts.toSinkFactory),
-    ComponentDefinition("sinkForStrings", SinkForStrings.toSinkFactory),
-    ComponentDefinition("eagerOptionalParameterSink", EagerOptionalParameterSinkFactory),
-    ComponentDefinition("genericParametersSink", GenericParametersSink),
+    ComponentDefinition("sinkForInts", SinkForInts(sinkForIntsResultsHolder)),
+    ComponentDefinition("sinkForStrings", SinkForStrings(sinkForStringsResultsHolder)),
+    ComponentDefinition(
+      "eagerOptionalParameterSink",
+      new EagerOptionalParameterSinkFactory(eagerOptionalParameterSinkResultsHolder)
+    ),
+    ComponentDefinition("genericParametersSink", new GenericParametersSink(genericParameterSinkResultsHolder)),
     ComponentDefinition("stateCustom", StateCustomNode),
     ComponentDefinition("customFilter", CustomFilter),
     ComponentDefinition("customFilterContextTransformation", CustomFilterContextTransformation),
@@ -74,7 +89,7 @@ object ProcessTestHelpers {
     ComponentDefinition("sampleJoin", CustomJoin),
     ComponentDefinition("joinBranchExpression", CustomJoinUsingBranchExpressions),
     ComponentDefinition("transformWithNullable", TransformerWithNullableParam),
-    ComponentDefinition("optionalEndingCustom", OptionalEndingCustom),
+    ComponentDefinition("optionalEndingCustom", new OptionalEndingCustom(optionalEndingCustomResultsHolder)),
     ComponentDefinition("genericParametersNode", GenericParametersNode),
     ComponentDefinition("nodePassingStateToImplementation", NodePassingStateToImplementation),
   )

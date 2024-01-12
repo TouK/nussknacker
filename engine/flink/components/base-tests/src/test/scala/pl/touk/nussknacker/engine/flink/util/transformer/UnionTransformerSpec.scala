@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCrea
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
@@ -37,7 +36,6 @@ class UnionTransformerSpec
 
   override def afterEach(): Unit = {
     super.afterEach()
-    MockService.clear()
   }
 
   test("should unify streams with union-memo") {
