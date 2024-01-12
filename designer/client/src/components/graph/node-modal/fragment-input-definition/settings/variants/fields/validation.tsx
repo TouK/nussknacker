@@ -80,6 +80,7 @@ export function ValidationsFields(props: Validation) {
                     readOnly={readOnly}
                     errors={errors}
                     name={item.name}
+                    typ={item.typ}
                 />
             )}
         </>
