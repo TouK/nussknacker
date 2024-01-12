@@ -487,6 +487,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Int]("#obj.children[0].id") shouldBe Symbol("invalid")
   }
 
+  test("access fields with the same name as a no parameter method in record") {
+    parse[String]("{getClass: 'str'}.getClass").validExpression.evaluateSync[String](ctx) shouldEqual "str"
+    parse[String]("{isEmpty: 'str'}.isEmpty").validExpression.evaluateSync[String](ctx) shouldEqual "str"
+  }
+
+  test("access fields with the name of method without getter prefix in record") {
+    // Reflective accessor would normally try to find methods with added getter prefixes "is" or "get" so that ".class"
+    // would call ".getClass()"
+    parse[String]("{class: 'str'}.class").validExpression.evaluateSync[String](ctx) shouldEqual "str"
+    parse[String]("{empty: 'str'}.empty").validExpression.evaluateSync[String](ctx) shouldEqual "str"
+  }
+
   test("access record elements by index") {
     val ctxWithVal = ctx.withVariable("stringKey", "string")
     val testRecordExpr: String =

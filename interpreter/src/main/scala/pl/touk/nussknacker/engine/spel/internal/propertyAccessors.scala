@@ -7,27 +7,28 @@ import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.typed.TypedMap
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
 
 object propertyAccessors {
 
+  // Order of accessors matters - property from first accessor that returns `true` from `canRead` will be chosen.
+  // This general order can be overridden - each accessor can define target classes for which it will have precedence -
+  // through the `getSpecificTargetClasses` method.
   def configured(): Seq[PropertyAccessor] = {
-
     Seq(
+      MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
       new ReflectivePropertyAccessor(),
-      NullPropertyAccessor,              // must come before other non-standard ones
+      NullPropertyAccessor,              // must be before other non-standard ones
       ScalaOptionOrNullPropertyAccessor, // must be before scalaPropertyAccessor
       JavaOptionalOrNullPropertyAccessor,
-      NoParamMethodPropertyAccessor,
       PrimitiveOrWrappersPropertyAccessor,
       StaticPropertyAccessor,
-      MapPropertyAccessor,
-      TypedDictInstancePropertyAccessor,
+      TypedDictInstancePropertyAccessor, // must be before NoParamMethodPropertyAccessor
+      NoParamMethodPropertyAccessor,
       // it can add performance overhead so it will be better to keep it on the bottom
-      MapLikePropertyAccessor
+      MapLikePropertyAccessor,
+      MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor
     )
   }
 
@@ -163,13 +164,31 @@ object propertyAccessors {
 
   object MapPropertyAccessor extends PropertyAccessor with ReadOnly {
 
-    override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
-      true
+    // if map does not contain property this should return false so that `NoParamMethodPropertyAccessor` can be used
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean = target match {
+      case map: java.util.Map[_, _] => map.containsKey(name)
+      case _                        => false
+    }
 
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
       new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))
 
-    override def getSpecificTargetClasses: Array[Class[_]] = Array(classOf[java.util.Map[_, _]])
+    override def getSpecificTargetClasses: Array[Class[_]] = null
+  }
+
+  // This accessor handles situation where a Map has no property and no no-parameter method with given name. In that
+  // case we want to return null instead of throwing exception.
+  object MapMissingPropertyToNullAccessor extends PropertyAccessor with ReadOnly {
+
+    override def canRead(context: EvaluationContext, target: Any, name: String): Boolean = target match {
+      case map: java.util.Map[_, _] => !map.containsKey(name)
+      case _                        => false
+    }
+
+    override def read(context: EvaluationContext, target: Any, name: String): TypedValue =
+      new TypedValue(null)
+
+    override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
   object TypedDictInstancePropertyAccessor extends PropertyAccessor with ReadOnly {

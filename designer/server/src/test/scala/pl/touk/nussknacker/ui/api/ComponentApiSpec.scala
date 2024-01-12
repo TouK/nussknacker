@@ -1,35 +1,30 @@
 package pl.touk.nussknacker.ui.api
 
 import io.restassured.RestAssured.given
+import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import io.restassured.response.ValidatableResponse
+import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.must.Matchers.contain
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.{
-  NuItTest,
-  NuScenarioConfigurationHelper,
-  TestProcessingTypes,
-  WithMockableDeploymentManager
-}
-import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import io.restassured.response.ValidatableResponse
-import org.hamcrest.Matchers.equalTo
-import org.scalatest.matchers.must.Matchers.contain
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
+import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider}
 
 class ComponentApiSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager
-    with NuScenarioConfigurationHelper
+    with NuTestScenarioManager
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
@@ -279,17 +274,17 @@ class ComponentApiSpec
   "The endpoint for getting component usages when" - {
     "authenticated should" - {
       "return component usages for existing component" in {
-        val processName         = ProcessName("test")
+        val scenarioName        = "test"
         val sourceComponentName = "kafka" // it's real component name from DevProcessConfigCreator
-        val process = ScenarioBuilder
-          .streaming(processName.value)
+        val scenario = ScenarioBuilder
+          .streaming(scenarioName)
           .source("source", sourceComponentName)
           .emptySink("sink", "kafka")
 
-        val processId = createSavedProcess(process, Category1, TestProcessingTypes.Streaming)
+        createSavedScenario(scenario, Category1, Streaming)
         val componentId = defaultComponentIdProvider.createComponentId(
-          TestProcessingTypes.Streaming,
-          ComponentInfo(ComponentType.Source, sourceComponentName)
+          processingType = Streaming,
+          componentInfo = ComponentInfo(ComponentType.Source, sourceComponentName)
         )
 
         given()
@@ -302,7 +297,7 @@ class ComponentApiSpec
           .body(
             matchJsonWithRegexValues(
               s"""[{
-                 |  "name": "$processName",
+                 |  "name": "$scenarioName",
                  |  "nodesUsagesData": [ { "nodeId": "source", "type": "ScenarioUsageData" } ],
                  |  "isFragment": false,
                  |  "processCategory": "$Category1",

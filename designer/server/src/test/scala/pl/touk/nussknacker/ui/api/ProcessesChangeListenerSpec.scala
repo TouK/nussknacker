@@ -33,7 +33,7 @@ class ProcessesChangeListenerSpec
   private val routeWithAdminPermissions = withAdminPermissions(processesRoute)
   implicit val loggedUser: LoggedUser   = LoggedUser("1", "lu", testCategory)
 
-  private val processName = SampleProcess.process.name
+  private val processName = SampleScenario.scenario.name
 
   test("listen to category change") {
     val processId = createEmptyProcess(processName, Category1, false)
@@ -122,11 +122,11 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to deployment cancel") {
-    val processId = createDeployedProcess(processName)
+    val processId = createDeployedExampleScenario(processName.value)
     val comment   = Some("cancelComment")
 
     cancelProcess(
-      SampleProcess.process.name,
+      SampleScenario.scenario.name,
       Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
       comment
     ) ~> checkEventually {

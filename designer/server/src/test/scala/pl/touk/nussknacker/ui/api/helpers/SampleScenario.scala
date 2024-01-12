@@ -6,15 +6,15 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SubsequentNode
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
 
-object SampleProcess {
+object SampleScenario {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  val processName: ProcessName = ProcessName(this.getClass.getName)
+  val scenarioName: ProcessName = ProcessName(this.getClass.getName)
 
-  val process: CanonicalProcess = {
+  val scenario: CanonicalProcess = {
     ScenarioBuilder
-      .streaming(processName.value)
+      .streaming(scenarioName.value)
       .parallelism(1)
       .source("startProcess", "csv-source")
       .filter("input", "#input != null")

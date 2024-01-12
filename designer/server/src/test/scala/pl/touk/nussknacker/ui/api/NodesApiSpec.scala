@@ -4,41 +4,39 @@ import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 
 class NodesApiSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager
-    with NuScenarioConfigurationHelper
+    with NuTestScenarioManager
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
 
-  val processName: ProcessName = ProcessName("test")
-
-  val process: CanonicalProcess = ScenarioBuilder
-    .streaming(processName.value)
+  private val exampleScenario = ScenarioBuilder
+    .streaming("test")
     .source("sourceId", "barSource")
     .emptySink("sinkId", "barSink")
 
   "The endpoint for nodes" - {
     "additional info when" - {
       "authenticated should" - {
-        "return additional info for node with expression in existing process" in {
-          given
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+        "return additional info for node with expression in existing scenario" in {
+          given()
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -62,7 +60,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/additionalInfo")
             .Then()
             .statusCode(200)
             .equalsJsonBody(
@@ -72,10 +70,10 @@ class NodesApiSpec
                  |}""".stripMargin
             )
         }
-        "return no additional info for node without expression in existing process" in {
+        "return no additional info for node without expression in existing scenario" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -91,38 +89,38 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/additionalInfo")
             .Then()
             .statusCode(200)
             .body(
               equalTo("")
             )
         }
-        "return 404 for not existent process" in {
-          val wrongName: String = "wrongProcessName"
+        "return 404 for not existent scenario" in {
+          val nonExistingScenarioName = "nonExistingScenario"
 
           given()
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(exampleNodesAdditionalInfoRequestBody)
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/$wrongName/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/nodes/$nonExistingScenarioName/additionalInfo")
             .Then()
             .statusCode(404)
             .body(
-              equalTo(s"No scenario $wrongName found")
+              equalTo(s"No scenario $nonExistingScenarioName found")
             )
         }
       }
       "not authenticated should" - {
         "forbid access" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .noAuth()
             .jsonBody(exampleNodesAdditionalInfoRequestBody)
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/additionalInfo")
             .Then()
             .statusCode(401)
             .body(
@@ -135,8 +133,8 @@ class NodesApiSpec
       "authenticated should" - {
         "validate correct node without errors" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -183,7 +181,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(
@@ -202,8 +200,8 @@ class NodesApiSpec
         }
         "validate filter node when wrong parameter type is given" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -250,7 +248,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(
@@ -277,8 +275,8 @@ class NodesApiSpec
         }
         "validate incorrect sink expression" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -341,7 +339,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(
@@ -408,8 +406,8 @@ class NodesApiSpec
         }
         "validate node using dictionaries" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -443,7 +441,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(s"""{
@@ -460,8 +458,8 @@ class NodesApiSpec
         }
         "validate node id" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -495,7 +493,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(s"""{
@@ -523,13 +521,13 @@ class NodesApiSpec
       "not authenticated should" - {
         "forbid access" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .noAuth()
             .jsonBody(exampleNodesValidationRequestBody)
             .when()
-            .post(s"$nuDesignerHttpAddress/api/nodes/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
             .Then()
             .statusCode(401)
             .body(
@@ -543,10 +541,10 @@ class NodesApiSpec
   "The endpoint for properties" - {
     "additional info when" - {
       "authenticated should" - {
-        "return additional info for process properties" in {
+        "return additional info for scenario properties" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -567,7 +565,7 @@ class NodesApiSpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/properties/${exampleScenario.name}/additionalInfo")
             .Then()
             .statusCode(200)
             .equalsJsonBody(
@@ -581,13 +579,13 @@ class NodesApiSpec
       "not authenticated should" - {
         "forbid access" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .jsonBody(examplePropertiesAdditionalInfoRequestBody)
             .noAuth()
             .when()
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/additionalInfo")
+            .post(s"$nuDesignerHttpAddress/api/properties/${exampleScenario.name}/additionalInfo")
             .Then()
             .statusCode(401)
             .body(
@@ -600,8 +598,8 @@ class NodesApiSpec
       "authenticated should" - {
         "validate properties" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -621,7 +619,7 @@ class NodesApiSpec
                  |    "name": "test"
                  |}""".stripMargin
             )
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/properties/${exampleScenario.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(s"""{
@@ -669,8 +667,8 @@ class NodesApiSpec
         }
         "validate scenario id" in {
           given()
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -690,7 +688,7 @@ class NodesApiSpec
                  |    "name": " "
                  |}""".stripMargin
             )
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/properties/${exampleScenario.name}/validation")
             .Then()
             .statusCode(200)
             .equalsJsonBody(s"""{
@@ -747,12 +745,12 @@ class NodesApiSpec
       "not authenticated should" - {
         "forbid access" in {
           given
-            .applicationConfiguration {
-              createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
             }
             .jsonBody(examplePropertiesValidationRequestBody)
             .noAuth()
-            .post(s"$nuDesignerHttpAddress/api/properties/${process.name}/validation")
+            .post(s"$nuDesignerHttpAddress/api/properties/${exampleScenario.name}/validation")
             .Then()
             .statusCode(401)
             .body(

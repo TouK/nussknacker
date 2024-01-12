@@ -43,8 +43,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataProvider,
-  ProcessingTypeDataReader,
-  ProcessingTypeDataState
+  ProcessingTypeDataReader
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
@@ -63,7 +62,7 @@ trait NuResourcesTest
     with EitherValuesDetailedMessage
     with OptionValues
     with TestPermissions
-    with NuScenarioConfigurationHelper
+    with NuTestScenarioManager
     with BeforeAndAfterEach
     with LazyLogging {
   self: ScalatestRouteTest with Suite with Matchers with ScalaFutures =>
@@ -82,7 +81,7 @@ trait NuResourcesTest
 
   protected val fetchingProcessRepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(testDbRef)
 
-  protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(futureFetchingProcessRepository)
+  protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(futureFetchingScenarioRepository)
 
   protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(testDbRef)
 
@@ -98,7 +97,7 @@ trait NuResourcesTest
 
   protected val dmDispatcher = new DeploymentManagerDispatcher(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
-    futureFetchingProcessRepository
+    futureFetchingScenarioRepository
   )
 
   protected implicit val deploymentService: DeploymentService =
@@ -150,7 +149,7 @@ trait NuResourcesTest
     ProcessingTypeDataProvider(ProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(testConfig)))
 
   protected val customActionInvokerService =
-    new CustomActionInvokerServiceImpl(futureFetchingProcessRepository, dmDispatcher, deploymentService)
+    new CustomActionInvokerServiceImpl(futureFetchingScenarioRepository, dmDispatcher, deploymentService)
 
   protected val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
 
@@ -161,7 +160,7 @@ trait NuResourcesTest
   )
 
   protected val configProcessToolbarService =
-    new ConfigProcessToolbarService(testConfig, () => processCategoryService.getAllCategories)
+    new ConfigProcessToolbarService(testConfig, () => scenarioCategoryService.getAllCategories)
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
@@ -184,10 +183,10 @@ trait NuResourcesTest
     new DBProcessService(
       deploymentService,
       newProcessPreparer,
-      () => processCategoryService,
+      () => scenarioCategoryService,
       processResolverByProcessingType,
       dbioRunner,
-      futureFetchingProcessRepository,
+      futureFetchingScenarioRepository,
       actionRepository,
       writeProcessRepository
     )
@@ -261,12 +260,7 @@ trait NuResourcesTest
       callback(status)
     }
 
-  protected def savefragment(process: CanonicalProcess)(testCode: => Assertion): Assertion = {
-    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
-    savefragment(displayable)(testCode)
-  }
-
-  protected def savefragment(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
+  protected def saveFragment(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
     Post(
       s"/processes/${process.name}/${process.category}?isFragment=true"
     ) ~> processesRouteWithAllPermissions ~> check {
@@ -422,7 +416,7 @@ trait NuResourcesTest
       category: String,
       isFragment: Boolean
   ): Future[ProcessId] = {
-    val validProcess: CanonicalProcess = if (isFragment) SampleFragment.fragment else SampleProcess.process
+    val validProcess: CanonicalProcess = if (isFragment) SampleFragment.fragment else SampleScenario.scenario
     val withNameSet = validProcess.copy(metaData = validProcess.metaData.copy(id = processName.value))
     saveAndGetId(withNameSet, category, isFragment)
   }
@@ -447,12 +441,12 @@ trait NuResourcesTest
       CreateProcessAction(processName, category, process, processingType, isFragment, forwardedUserName = None)
     for {
       _  <- dbioRunner.runInTransaction(writeProcessRepository.saveNewProcess(action))
-      id <- futureFetchingProcessRepository.fetchProcessId(processName).map(_.get)
+      id <- futureFetchingScenarioRepository.fetchProcessId(processName).map(_.get)
     } yield id
   }
 
   protected def getProcessDetails(processId: ProcessId): ScenarioWithDetailsEntity[Unit] =
-    futureFetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
+    futureFetchingScenarioRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
   protected def createEmptyProcess(
       processName: ProcessName,
@@ -477,13 +471,6 @@ trait NuResourcesTest
           actionRepository.markProcessAsArchived(processId = id, VersionId(1))
         )
       )
-    } yield id).futureValue
-  }
-
-  protected def createDeployedProcessFromProcess(process: CanonicalProcess, category: String = Category1): ProcessId = {
-    (for {
-      id <- Future(createSavedProcess(process, category, processingType = Streaming))
-      _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 

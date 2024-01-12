@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * Implementations of this class *must not* allocate resources (connections, file handles etc.) unless open() *or* appropriate @MethodToInvoke
   *  is called
   */
-trait Service extends Lifecycle with Component
+abstract class Service extends Lifecycle with Component
 
 /*
   This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with ServiceInvoker
@@ -30,7 +30,7 @@ trait Service extends Lifecycle with Component
   Please see EagerLifecycleService to see how such scenario can be achieved.
  */
 // TODO: EagerService shouldn't extend Lifecycle, instead ServiceInvoker should extend it - see notice in ProcessCompilerData.lifecycle
-trait EagerService extends Service
+abstract class EagerService extends Service
 
 trait ServiceInvoker {
 
