@@ -155,7 +155,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed
   ) = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    val expressionConfig = ModelDefinitionBuilder.empty.expressionConfig.copy(
+    val expressionConfig = ModelDefinitionBuilder.emptyExpressionConfig.copy(
       globalImports = imports,
       strictMethodsChecking = strictMethodsChecking,
       staticMethodInvocationsChecking = staticMethodInvocationsChecking,

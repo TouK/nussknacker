@@ -49,7 +49,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     List.empty
   )
 
-  private val fragmentDetails = displayableToProcess(
+  private val fragmentScenario = displayableToProcess(
     ProcessConverter.toDisplayable(fragment, TestProcessingTypes.Streaming, TestCategories.Category1)
   )
 
@@ -161,7 +161,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         )
       ),
       (
-        List(processDetails2, fragmentDetails),
+        List(processDetails2, fragmentScenario),
         Map(
           sid(Sink, existingSinkFactory)                        -> 1,
           sid(Source, existingSourceFactory)                    -> 1,
@@ -172,7 +172,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         )
       ),
       (
-        List(processDetails2, processDetailsWithSomeBasesStreaming, fragmentDetails),
+        List(processDetails2, processDetailsWithSomeBasesStreaming, fragmentScenario),
         Map(
           sid(Sink, existingSinkFactory)                        -> 2,
           sid(Sink, existingSinkFactory2)                       -> 1,
@@ -199,7 +199,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         )
       ),
       (
-        List(processDetailsWithFragment, fragmentDetails),
+        List(processDetailsWithFragment, fragmentScenario),
         Map(
           sid(Source, existingSourceFactory)                    -> 1,
           sid(Sink, existingSinkFactory)                        -> 1,
@@ -210,7 +210,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         )
       ),
       (
-        List(fragmentDetails, fragmentDetails),
+        List(fragmentScenario, fragmentScenario),
         Map(
           sid(CustomComponent, otherExistingStreamTransformer2) -> 2,
           bid(BuiltInComponentInfo.FragmentInputDefinition)     -> 2,
@@ -298,22 +298,22 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         )
       ),
       (
-        List(processDetailsWithFragment, fragmentDetails),
+        List(processDetailsWithFragment, fragmentScenario),
         Map(
           sid(Source, existingSourceFactory) -> List((processDetailsWithFragment, List(ScenarioUsageData("source")))),
           sid(CustomComponent, otherExistingStreamTransformer2) -> List(
             (processDetailsWithFragment, List(ScenarioUsageData("custom"))),
-            (fragmentDetails, List(ScenarioUsageData("f1")))
+            (fragmentScenario, List(ScenarioUsageData("f1")))
           ),
           sid(Sink, existingSinkFactory) -> List((processDetailsWithFragment, List(ScenarioUsageData("sink")))),
           sid(Fragment, fragment.name.value) -> List(
             (processDetailsWithFragment, List(ScenarioUsageData(fragment.name.value)))
           ),
           bid(BuiltInComponentInfo.FragmentInputDefinition) -> List(
-            (fragmentDetails, List(ScenarioUsageData("start")))
+            (fragmentScenario, List(ScenarioUsageData("start")))
           ),
           bid(BuiltInComponentInfo.FragmentOutputDefinition) -> List(
-            (fragmentDetails, List(ScenarioUsageData("out1")))
+            (fragmentScenario, List(ScenarioUsageData("out1")))
           ),
         )
       )

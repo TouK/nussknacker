@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapa
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.ui.api.{TestDataSettings, TestSourceParameters}
-import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
+import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
@@ -41,7 +41,7 @@ class ScenarioTestService(
     val canonical        = toCanonicalProcess(displayableProcess)
     testInfoProvider
       .getTestParameters(canonical)
-      .map { case (id, params) => UISourceParameters(id, params.map(UIProcessObjectsFactory.createUIParameter)) }
+      .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
       .toList
   }
 

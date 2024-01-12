@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.definition.model
 
-import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.process.{
   ExpressionConfig,
@@ -8,7 +7,6 @@ import pl.touk.nussknacker.engine.api.process.{
   ProcessObjectDependencies,
   WithCategories
 }
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation
@@ -52,8 +50,10 @@ object ModelDefinitionFromConfigCreatorExtractor {
       categoryOpt: Option[String],
       componentsUiConfig: ComponentsUiConfig
   ): List[(String, ComponentDefinitionWithImplementation)] = {
-    filterAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component) =>
-      ComponentDefinitionExtractor.extract(componentName, component, componentsUiConfig).map(componentName -> _)
+    collectAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component, componentConfig) =>
+      ComponentDefinitionExtractor
+        .extract(componentName, component, componentConfig, componentsUiConfig)
+        .map(componentName -> _)
     }
   }
 
@@ -61,9 +61,9 @@ object ModelDefinitionFromConfigCreatorExtractor {
       expressionConfig: ExpressionConfig,
       categoryOpt: Option[String],
   ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] = {
-    val filteredVariables = filterAvailableForCategory(expressionConfig.globalProcessVariables.toList, categoryOpt)
-    val variables = filteredVariables.map { case (name, variable) =>
-      name -> GlobalVariableDefinitionExtractor.extractDefinition(variable.value, variable.categories)
+    val filteredVariables = collectAvailableForCategory(expressionConfig.globalProcessVariables.toList, categoryOpt)
+    val variables = filteredVariables.map { case (name, variable, _) =>
+      name -> GlobalVariableDefinitionExtractor.extractDefinition(variable)
     }.toMap
     ExpressionConfigDefinition(
       variables,
@@ -83,11 +83,14 @@ object ModelDefinitionFromConfigCreatorExtractor {
     )
   }
 
-  private def filterAvailableForCategory[T](list: List[(String, WithCategories[T])], categoryOpt: Option[String]) = {
+  private def collectAvailableForCategory[T](list: List[(String, WithCategories[T])], categoryOpt: Option[String]) = {
     def availableForCategory(component: WithCategories[_]): Boolean =
       component.categories.isEmpty ||
         categoryOpt.forall(category => component.categories.exists(_.contains(category)))
-    list.filter { case (_, withComponentConfig) => availableForCategory(withComponentConfig) }
+    list.collect {
+      case (name, withComponentConfig) if availableForCategory(withComponentConfig) =>
+        (name, withComponentConfig.value, withComponentConfig.componentConfig)
+    }
   }
 
 }

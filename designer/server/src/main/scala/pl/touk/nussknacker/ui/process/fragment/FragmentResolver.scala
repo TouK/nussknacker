@@ -15,7 +15,7 @@ class FragmentResolver(fragmentRepository: FragmentRepository) {
     val fragments =
       fragmentRepository
         .fetchLatestFragmentsSync(processingType)
-        .map(s => s.canonical.name -> s.canonical)
+        .map(s => s.name -> s)
         .toMap
     pl.touk.nussknacker.engine.compile.FragmentResolver(fragments.get _).resolve(process)
   }

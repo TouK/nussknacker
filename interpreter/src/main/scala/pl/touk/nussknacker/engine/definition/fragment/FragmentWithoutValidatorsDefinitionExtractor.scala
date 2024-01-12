@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
+import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -30,13 +31,13 @@ class FragmentWithoutValidatorsDefinitionExtractor(classLoader: ClassLoader) {
 
   def extractFragmentComponentDefinition(
       fragment: CanonicalProcess
-  ): Validated[FragmentDefinitionError, FragmentComponentDefinition] = {
+  ): Validated[FragmentDefinitionError, ComponentStaticDefinition] = {
     FragmentGraphDefinitionExtractor.extractFragmentGraph(fragment).map { case (input, _, outputs) =>
       val parameters =
         extractFragmentParametersDefinition(input.parameters)(NodeId(input.id)).value
       val outputNames = outputs.map(_.name).sorted
       val docsUrl     = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
-      new FragmentComponentDefinition(parameters, outputNames, docsUrl)
+      FragmentComponentDefinition(parameters, outputNames, docsUrl)
     }
   }
 
