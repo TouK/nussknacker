@@ -3,13 +3,17 @@ package pl.touk.nussknacker.engine.testing
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentDefinition, ComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  ComponentDefinition,
+  ComponentId,
+  ComponentInfo
+}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{
   EmptyProcessConfigCreator,
   ProcessConfigCreator,
-  ProcessObjectDependencies,
-  ProcessingType
+  ProcessObjectDependencies
 }
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionFromConfigCreatorExtractor}
@@ -36,7 +40,7 @@ object LocalModelData {
       modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
       objectNaming: ObjectNaming = ObjectNaming.OriginalNames,
-      processingType: Option[ProcessingType] = Some("streaming"),
+      componentInfoToId: ComponentInfo => ComponentId = ComponentId.default("streaming", _),
       additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig] = Map.empty
   ): LocalModelData =
     new LocalModelData(
@@ -48,7 +52,7 @@ object LocalModelData {
       modelClassLoader,
       objectNaming,
       components,
-      processingType,
+      componentInfoToId,
       additionalConfigsFromProvider
     )
 
@@ -62,14 +66,14 @@ object LocalModelData {
     override def apply(
         classLoader: ClassLoader,
         modelDependencies: ProcessObjectDependencies,
-        processingType: Option[ProcessingType],
+        componentInfoToId: ComponentInfo => ComponentId,
         additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
     ): ModelDefinition[ComponentDefinitionWithImplementation] = {
       val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
       val componentsDefWithImpl = ComponentDefinitionWithImplementation.forList(
         components,
         componentsUiConfig,
-        processingType,
+        componentInfoToId,
         additionalConfigsFromProvider
       )
       // To avoid classloading magic, for local model we load components manually and skip ComponentProvider's loading
@@ -79,7 +83,7 @@ object LocalModelData {
           category,
           modelDependencies,
           componentsUiConfig,
-          processingType,
+          componentInfoToId,
           additionalConfigsFromProvider
         )
         .withComponents(componentsDefWithImpl)
@@ -98,7 +102,7 @@ case class LocalModelData(
     modelClassLoader: ModelClassLoader,
     objectNaming: ObjectNaming,
     components: List[ComponentDefinition],
-    processingType: Option[ProcessingType],
+    componentInfoToId: ComponentInfo => ComponentId,
     additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
 ) extends ModelData {
 

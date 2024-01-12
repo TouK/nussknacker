@@ -29,12 +29,19 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
   def extractComponents(
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig,
-      processingType: Option[ProcessingType],
+      componentInfoToId: ComponentInfo => ComponentId,
       additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     loadCorrectProviders(modelDependencies.config).toList
       .flatMap { case (_, (config, provider)) =>
-        extract(config, provider, modelDependencies, componentsUiConfig, processingType, additionalConfigsFromProvider)
+        extract(
+          config,
+          provider,
+          modelDependencies,
+          componentsUiConfig,
+          componentInfoToId,
+          additionalConfigsFromProvider
+        )
       }
   }
 
@@ -113,7 +120,7 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
       provider: ComponentProvider,
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig,
-      processingType: Option[ProcessingType],
+      componentInfoToId: ComponentInfo => ComponentId,
       additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     ComponentDefinitionWithImplementation.forList(
@@ -123,7 +130,7 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
           .getOrElse(inputComponentDefinition)
       },
       componentsUiConfig,
-      processingType,
+      componentInfoToId,
       additionalConfigsFromProvider
     )
   }

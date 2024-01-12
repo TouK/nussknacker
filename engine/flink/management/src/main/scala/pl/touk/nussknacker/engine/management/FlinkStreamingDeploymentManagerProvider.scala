@@ -5,7 +5,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
@@ -51,7 +51,11 @@ object FlinkStreamingDeploymentManagerProvider {
     val typeConfig = ProcessingTypeConfig.read(config)
     new FlinkStreamingDeploymentManagerProvider()
       .createDeploymentManager(
-        ModelData(processingType = None, processingTypeConfig = typeConfig, additionalConfigsFromProvider = Map.empty),
+        ModelData(
+          processingTypeConfig = typeConfig,
+          additionalConfigsFromProvider = Map.empty,
+          componentInfoToId = info => ComponentId(info.toString)
+        ),
         typeConfig.deploymentConfig
       )
   }

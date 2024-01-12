@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import akka.actor.ActorSystem
 import com.google.common.collect.LinkedHashMultimap
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -33,9 +34,9 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
     implicit deploymentService: ProcessingTypeDeploymentService
 ) extends FlinkDeploymentManager(
       ModelData(
-        Some(TestProcessingTypes.Streaming),
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
-        TestAdditionalUIConfigProvider.componentAdditionalConfigMap
+        TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
+        ComponentId.default(TestProcessingTypes.Streaming, _)
       ),
       shouldVerifyBeforeDeploy = false,
       mainClassName = "UNUSED"

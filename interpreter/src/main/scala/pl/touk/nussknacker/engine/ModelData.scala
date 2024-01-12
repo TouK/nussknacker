@@ -4,10 +4,10 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId}
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinition,
@@ -30,20 +30,20 @@ object ModelData extends LazyLogging {
     (
         ClassLoader,
         ProcessObjectDependencies,
-        Option[ProcessingType],
+        ComponentInfo => ComponentId,
         Map[ComponentId, ComponentAdditionalConfig]
     ) => ModelDefinition[ComponentDefinitionWithImplementation]
 
   def apply(
-      processingType: Option[ProcessingType],
       processingTypeConfig: ProcessingTypeConfig,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig],
+      componentInfoToId: ComponentInfo => ComponentId
   ): ModelData = {
     ModelData(
       processingTypeConfig.modelConfig,
       ModelClassLoader(processingTypeConfig.classPath),
       Some(processingTypeConfig.category),
-      processingType,
+      componentInfoToId,
       additionalConfigsFromProvider
     )
   }
@@ -58,7 +58,7 @@ object ModelData extends LazyLogging {
       inputConfig = ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig),
       modelClassLoader = modelClassLoader,
       category = category,
-      processingType = None,
+      componentInfoToId = info => ComponentId(info.toString),
       additionalConfigsFromProvider = Map.empty
     )
   }
@@ -67,7 +67,7 @@ object ModelData extends LazyLogging {
       inputConfig: ConfigWithUnresolvedVersion,
       modelClassLoader: ModelClassLoader,
       category: Option[String],
-      processingType: Option[ProcessingType],
+      componentInfoToId: ComponentInfo => ComponentId,
       additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): ModelData = {
     logger.debug("Loading model data from: " + modelClassLoader)
@@ -76,14 +76,20 @@ object ModelData extends LazyLogging {
         modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
       modelClassLoader,
       category,
-      processingType,
+      componentInfoToId,
       additionalConfigsFromProvider
     )
   }
 
   // Used on Flink, where we start already with resolved config so we should not resolve it twice.
   def duringExecution(inputConfig: Config): ModelData = {
-    ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil), None, None, Map.empty)
+    ClassLoaderModelData(
+      _ => InputConfigDuringExecution(inputConfig),
+      ModelClassLoader(Nil),
+      None,
+      info => ComponentId(info.toString),
+      Map.empty
+    )
   }
 
   implicit class BaseModelDataExt(baseModelData: BaseModelData) {
@@ -96,7 +102,7 @@ case class ClassLoaderModelData private (
     private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
     modelClassLoader: ModelClassLoader,
     override val category: Option[String],
-    override val processingType: Option[ProcessingType],
+    override val componentInfoToId: ComponentInfo => ComponentId,
     override val additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
 ) extends ModelData {
 
@@ -140,7 +146,7 @@ object ClassLoaderModelData {
     override def apply(
         classLoader: ClassLoader,
         modelDependencies: ProcessObjectDependencies,
-        processingType: Option[ProcessingType],
+        componentInfoToId: ComponentInfo => ComponentId,
         additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
     ): ModelDefinition[ComponentDefinitionWithImplementation] = {
       ModelDefinitionExtractor.extractModelDefinition(
@@ -148,7 +154,7 @@ object ClassLoaderModelData {
         classLoader,
         modelDependencies,
         category,
-        processingType,
+        componentInfoToId,
         additionalConfigsFromProvider
       )
     }
@@ -166,7 +172,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // It won't be necessary after we get rid of ProcessConfigCreator API
   def category: Option[String]
 
-  def processingType: Option[ProcessingType]
+  def componentInfoToId: ComponentInfo => ComponentId
 
   def additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
 
@@ -175,7 +181,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
       extractModelDefinitionFun(
         modelClassLoader.classLoader,
         ProcessObjectDependencies(modelConfig, objectNaming),
-        processingType,
+        componentInfoToId,
         additionalConfigsFromProvider
       )
     }

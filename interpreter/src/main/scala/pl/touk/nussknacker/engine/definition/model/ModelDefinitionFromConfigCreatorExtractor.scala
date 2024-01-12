@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.definition.model
 
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentAdditionalConfig, ComponentId}
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentAdditionalConfig, ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.process.{
   ExpressionConfig,
   ProcessConfigCreator,
   ProcessObjectDependencies,
-  ProcessingType,
   WithCategories
 }
 import pl.touk.nussknacker.engine.definition.component.{
@@ -25,7 +24,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       categoryOpt: Option[String],
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig,
-      processingType: Option[ProcessingType],
+      componentInfoToId: ComponentInfo => ComponentId,
       additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): ModelDefinition[ComponentDefinitionWithImplementation] = {
 
@@ -41,7 +40,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       allComponents,
       categoryOpt,
       componentsUiConfig,
-      processingType,
+      componentInfoToId,
       additionalConfigsFromProvider
     )
 
@@ -58,7 +57,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       components: List[(String, WithCategories[Component])],
       categoryOpt: Option[String],
       componentsUiConfig: ComponentsUiConfig,
-      processingType: Option[ProcessingType],
+      componentInfoToId: ComponentInfo => ComponentId,
       additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     collectAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component, componentConfig) =>
@@ -68,7 +67,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
           component,
           componentConfig,
           componentsUiConfig,
-          processingType,
+          componentInfoToId,
           additionalConfigsFromProvider
         )
         .map(componentName -> _)

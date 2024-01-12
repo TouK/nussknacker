@@ -21,6 +21,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
@@ -132,14 +133,14 @@ trait NuResourcesTest
 
   protected val testModelDataProvider: ProcessingTypeDataProvider[ModelData, _] = mapProcessingTypeDataProvider(
     Streaming -> ModelData(
-      Some(Streaming),
       processingTypeConfig,
-      TestAdditionalUIConfigProvider.componentAdditionalConfigMap
+      TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
+      ComponentId.default(TestProcessingTypes.Streaming, _)
     ),
     Streaming2 -> ModelData(
-      Some(Streaming2),
       processingTypeConfig,
-      TestAdditionalUIConfigProvider.componentAdditionalConfigMap
+      TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
+      ComponentId.default(TestProcessingTypes.Streaming2, _)
     )
   )
 

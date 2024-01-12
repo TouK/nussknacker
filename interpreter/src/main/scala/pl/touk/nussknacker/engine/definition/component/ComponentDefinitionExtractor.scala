@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.component
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.process.{ProcessingType, SinkFactory, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
@@ -29,7 +29,7 @@ object ComponentDefinitionExtractor {
   def extract(
       inputComponentDefinition: ComponentDefinition,
       additionalConfigs: ComponentsUiConfig,
-      processingType: Option[ProcessingType],
+      componentInfoToId: ComponentInfo => ComponentId,
       additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): Option[(String, ComponentDefinitionWithImplementation)] = {
     val configBasedOnDefinition = SingleComponentConfig.zero
@@ -40,7 +40,7 @@ object ComponentDefinitionExtractor {
         inputComponentDefinition.component,
         configBasedOnDefinition,
         additionalConfigs,
-        processingType,
+        componentInfoToId,
         additionalConfigsFromProvider
       )
       .map(inputComponentDefinition.name -> _)
@@ -51,7 +51,7 @@ object ComponentDefinitionExtractor {
       component: Component,
       configFromDefinition: SingleComponentConfig,
       additionalConfigs: ComponentsUiConfig,
-      processingType: Option[ProcessingType],
+      componentInfoToId: ComponentInfo => ComponentId,
       additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): Option[ComponentDefinitionWithImplementation] = {
     val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
@@ -69,15 +69,14 @@ object ComponentDefinitionExtractor {
 
     val componentInfo = ComponentInfo(componentTypeSpecificData.componentType, componentName)
 
-    def additionalConfigFromProvider(overriddenComponentId: Option[ComponentId]) = processingType
-      .flatMap { processingType =>
-        val componentId = overriddenComponentId.getOrElse(ComponentId.default(processingType, componentInfo))
+    def additionalConfigFromProvider(overriddenComponentId: Option[ComponentId]) = {
+      val componentId = overriddenComponentId.getOrElse(componentInfoToId(componentInfo))
 
-        additionalConfigsFromProvider
-          .get(componentId)
-          .map(ComponentAdditionalConfigConverter.toSingleComponentConfig)
-      }
-      .getOrElse(SingleComponentConfig.zero)
+      additionalConfigsFromProvider
+        .get(componentId)
+        .map(ComponentAdditionalConfigConverter.toSingleComponentConfig)
+        .getOrElse(SingleComponentConfig.zero)
+    }
 
     def withConfigForNotDisabledComponent[T](
         returnType: Option[TypingResult]
