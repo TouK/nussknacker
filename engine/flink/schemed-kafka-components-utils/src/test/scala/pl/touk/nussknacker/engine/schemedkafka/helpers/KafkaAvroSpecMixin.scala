@@ -48,7 +48,7 @@ import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactor
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, spel}
-import pl.touk.nussknacker.test.{NuScalaTestAssertions, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.{NuScalaTestAssertions, PatientScalaFutures}
 
 trait KafkaAvroSpecMixin
     extends AnyFunSuite
@@ -58,7 +58,7 @@ trait KafkaAvroSpecMixin
     with Matchers
     with LazyLogging
     with NuScalaTestAssertions
-    with VeryPatientScalaFutures
+    with PatientScalaFutures
     with Serializable {
 
   type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source]

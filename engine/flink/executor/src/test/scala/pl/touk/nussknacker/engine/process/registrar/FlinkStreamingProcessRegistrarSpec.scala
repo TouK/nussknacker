@@ -38,7 +38,7 @@ class FlinkStreamingProcessRegistrarSpec
     )
 
     processInvoker.invokeWithSampleData(process, data)
-    MockService.data.toSet shouldBe Set("a", "c", "d")
+    ProcessTestHelpers.logServiceResultsHolder.results.toSet shouldBe Set("a", "c", "d")
   }
 
   // TODO: some better check than "it does not crash"?
@@ -58,7 +58,7 @@ class FlinkStreamingProcessRegistrarSpec
     )
 
     processInvoker.invokeWithSampleData(process, data)
-    MockService.data.toSet shouldBe Set("a", "b", "c")
+    ProcessTestHelpers.logServiceResultsHolder.results.toSet shouldBe Set("a", "b", "c")
   }
 
 }

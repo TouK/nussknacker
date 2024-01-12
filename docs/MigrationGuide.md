@@ -1,4 +1,3 @@
-
 # Migration guide
 
 To see the biggest differences please consult the [changelog](Changelog.md).

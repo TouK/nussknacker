@@ -40,7 +40,7 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
     )
 
     env.executeAndWaitForFinished("test")()
-    RecordingExceptionConsumer.dataFor(runId) should have length generator.count
+    RecordingExceptionConsumer.exceptionsFor(runId) should have length generator.count
   }
 
   /**
