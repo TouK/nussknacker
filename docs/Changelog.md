@@ -10,7 +10,9 @@
 * [#5280](https://github.com/TouK/nussknacker/pull/5280) Security improvement: Checking if user has access rights to fragment's Category for fragments served by definitions API
 * [#5303](https://github.com/TouK/nussknacker/pull/5303) Added `skipNodeResults` parameter to API endpoints that return scenario validation results
 * [#5323](https://github.com/TouK/nussknacker/pull/5323) Removed support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories)
-* [#5266](https://github.com/TouK/nussknacker/pull/5266) Fixed order of access of methods and keys in records
+* [#5266](https://github.com/TouK/nussknacker/pull/5266) Security improvement: fixed order of accessing no-parameter methods and keys in records in expressions. Examples:
+  * Previously `{class: "str"}.class` would return the result of calling `getClass()`
+  * Now `{class: "str"}.class` returns `str`
 
 1.13.0 (Not released yet)
 -------------------------
