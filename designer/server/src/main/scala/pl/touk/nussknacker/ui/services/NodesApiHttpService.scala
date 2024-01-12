@@ -187,7 +187,7 @@ class NodesApiHttpService(
             )
           )
         } catch {
-          case _: Throwable =>
+          case _: IllegalArgumentException =>
             Future(businessError(s"ProcessingType type: $processingType not found"))
         }
       }
@@ -222,8 +222,8 @@ class NodesApiHttpService(
               )
             }
         } catch {
-          case _: Throwable =>
-            Future(businessError(s"ProcessingType type: $processingType not fond"))
+          case _: IllegalArgumentException =>
+            Future(businessError(s"ProcessingType type: $processingType not found"))
         }
 
       }
