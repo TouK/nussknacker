@@ -3,7 +3,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.13.x (Not released yet)
+## In version 1.13.0 
 
 ### Code API changes
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Method definition `def authenticationMethod(): Auth[AuthCredentials, _]` was changed to `def authenticationMethod(): EndpointInput[AuthCredentials]`
