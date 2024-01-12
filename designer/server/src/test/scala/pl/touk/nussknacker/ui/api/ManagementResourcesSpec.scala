@@ -47,7 +47,7 @@ class ManagementResourcesSpec
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val processName: ProcessName = SampleProcess.process.name
+  private val processName: ProcessName = SampleScenario.scenario.name
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] = {
     BeMatcher[(ProcessActionType, VersionId)](equal((ProcessActionType.Deploy, VersionId(versionId))))
@@ -56,12 +56,12 @@ class ManagementResourcesSpec
   }
 
   test("process deployment should be visible in process history") {
-    saveProcessAndAssertSuccess(processName, SampleProcess.process)
+    saveProcessAndAssertSuccess(processName, SampleScenario.scenario)
     deployProcess(processName) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
-        updateProcessAndAssertSuccess(processName, SampleProcess.process)
+        updateProcessAndAssertSuccess(processName, SampleScenario.scenario)
         deployProcess(processName) ~> checkThatEventually {
           getProcess(processName) ~> check {
             decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
@@ -72,7 +72,7 @@ class ManagementResourcesSpec
   }
 
   test("process during deploy cannot be deployed again") {
-    createDeployedProcess(processName, Category1)
+    createDeployedExampleScenario(processName.value, Category1)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
       deployProcess(processName) ~> check {
@@ -82,7 +82,7 @@ class ManagementResourcesSpec
   }
 
   test("canceled process can't be canceled again") {
-    createDeployedCanceledProcess(processName, Category1)
+    createDeployedCanceledExampleScenario(processName.value, Category1)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       cancelProcess(processName) ~> check {
@@ -121,9 +121,9 @@ class ManagementResourcesSpec
   }
 
   test("deploys and cancels with comment") {
-    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, SampleScenario.scenario)
     deployProcess(
-      SampleProcess.process.name,
+      SampleScenario.scenario.name,
       Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))),
       comment = Some("deployComment")
     ) ~> checkThatEventually {
@@ -132,7 +132,7 @@ class ManagementResourcesSpec
         processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)) shouldBe true
       }
       cancelProcess(
-        SampleProcess.process.name,
+        SampleScenario.scenario.name,
         Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))),
         comment = Some("cancelComment")
       ) ~> check {
@@ -140,13 +140,15 @@ class ManagementResourcesSpec
         // TODO: remove Deployment:, Stop: after adding custom icons
         val expectedDeployComment = "Deployment: deployComment"
         val expectedStopComment   = "Stop: cancelComment"
-        getActivity(SampleProcess.process.name) ~> check {
+        getActivity(SampleScenario.scenario.name) ~> check {
           val comments = responseAs[ProcessActivity].comments.sortBy(_.id)
           comments.map(_.content) shouldBe List(expectedDeployComment, expectedStopComment)
 
           val firstCommentId :: secondCommentId :: Nil = comments.map(_.id)
 
-          Get(s"/processes/${SampleProcess.process.name}/deployments") ~> withAllPermissions(processesRoute) ~> check {
+          Get(s"/processes/${SampleScenario.scenario.name}/deployments") ~> withAllPermissions(
+            processesRoute
+          ) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
             val curTime           = Instant.now()
             deploymentHistory.map(a =>
@@ -176,9 +178,9 @@ class ManagementResourcesSpec
   }
 
   test("rejects deploy without comment if comment required") {
-    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, SampleScenario.scenario)
     deployProcess(
-      SampleProcess.process.name,
+      SampleScenario.scenario.name,
       deploymentCommentSettings =
         Some(DeploymentCommentSettings.unsafe("requiredCommentPattern", Some("exampleRequiredComment")))
     ) ~> check {
@@ -200,12 +202,12 @@ class ManagementResourcesSpec
   }
 
   test("recognize process cancel in deployment list") {
-    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
-    deployProcess(SampleProcess.process.name) ~> checkThatEventually {
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, SampleScenario.scenario)
+    deployProcess(SampleScenario.scenario.name) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
-        cancelProcess(SampleProcess.process.name) ~> check {
+        cancelProcess(SampleScenario.scenario.name) ~> check {
           getProcess(processName) ~> check {
             decodeDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
           }
@@ -215,18 +217,18 @@ class ManagementResourcesSpec
   }
 
   test("recognize process deploy and cancel in global process list") {
-    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
-    deployProcess(SampleProcess.process.name) ~> checkThatEventually {
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, SampleScenario.scenario)
+    deployProcess(SampleScenario.scenario.name) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
 
       forScenariosReturned(ScenarioQuery.empty) { processes =>
-        val process = processes.find(_.name == SampleProcess.process.name.value).head
+        val process = processes.find(_.name == SampleScenario.scenario.name.value).head
         process.lastActionVersionId shouldBe Some(2L)
         process.isDeployed shouldBe true
 
-        cancelProcess(SampleProcess.process.name) ~> check {
+        cancelProcess(SampleScenario.scenario.name) ~> check {
           forScenariosReturned(ScenarioQuery.empty) { processes =>
-            val process = processes.find(_.name == SampleProcess.process.name.value).head
+            val process = processes.find(_.name == SampleScenario.scenario.name.value).head
             process.lastActionVersionId shouldBe Some(2L)
             process.isCanceled shouldBe true
           }
@@ -236,8 +238,8 @@ class ManagementResourcesSpec
   }
 
   test("not authorize user with write permission to deploy") {
-    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
-    Post(s"/processManagement/deploy/${SampleProcess.process.name}") ~> withPermissions(
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, SampleScenario.scenario)
+    Post(s"/processManagement/deploy/${SampleScenario.scenario.name}") ~> withPermissions(
       deployRoute(),
       testPermissionWrite
     ) ~> check {
@@ -253,7 +255,7 @@ class ManagementResourcesSpec
       .filter("input", "#input != null", Some(true))
       .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#input")
 
-    saveProcessAndAssertSuccess(SampleProcess.process.name, processWithDisabledFilter)
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, processWithDisabledFilter)
     deployProcess(processName) ~> check {
       status shouldBe StatusCodes.OK
     }
@@ -279,9 +281,9 @@ class ManagementResourcesSpec
   }
 
   test("should return failure for not validating deployment") {
-    val largeParallelismScenario = SampleProcess.process.copy(metaData =
+    val largeParallelismScenario = SampleScenario.scenario.copy(metaData =
       MetaData(
-        SampleProcess.process.name.value,
+        SampleScenario.scenario.name.value,
         StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1))
       )
     )
@@ -296,19 +298,19 @@ class ManagementResourcesSpec
   }
 
   test("return from deploy before deployment manager proceeds") {
-    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, SampleScenario.scenario)
 
-    deploymentManager.withWaitForDeployFinish(SampleProcess.process.name) {
-      deployProcess(SampleProcess.process.name) ~> check {
+    deploymentManager.withWaitForDeployFinish(SampleScenario.scenario.name) {
+      deployProcess(SampleScenario.scenario.name) ~> check {
         status shouldBe StatusCodes.OK
       }
     }
   }
 
   test("snapshots process") {
-    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
-    deploymentManager.withProcessRunning(SampleProcess.process.name) {
-      snapshot(SampleProcess.process.name) ~> check {
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, SampleScenario.scenario)
+    deploymentManager.withProcessRunning(SampleScenario.scenario.name) {
+      snapshot(SampleScenario.scenario.name) ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe MockDeploymentManager.savepointPath
       }
@@ -316,9 +318,9 @@ class ManagementResourcesSpec
   }
 
   test("stops process") {
-    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
-    deploymentManager.withProcessRunning(SampleProcess.process.name) {
-      stop(SampleProcess.process.name) ~> check {
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, SampleScenario.scenario)
+    deploymentManager.withProcessRunning(SampleScenario.scenario.name) {
+      stop(SampleScenario.scenario.name) ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe MockDeploymentManager.stopSavepointPath
       }
@@ -329,9 +331,9 @@ class ManagementResourcesSpec
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
         |{"sourceId":"startProcess","record":"bela"}""".stripMargin
-    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, SampleScenario.scenario)
 
-    testScenario(SampleProcess.process, testDataContent) ~> check {
+    testScenario(SampleScenario.scenario, testDataContent) ~> check {
 
       status shouldEqual StatusCodes.OK
 
@@ -398,28 +400,28 @@ class ManagementResourcesSpec
   }
 
   test("rejects test record with non-existing source") {
-    saveProcessAndAssertSuccess(SampleProcess.process.name, SampleProcess.process)
+    saveProcessAndAssertSuccess(SampleScenario.scenario.name, SampleScenario.scenario)
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
         |{"sourceId":"unknown","record":"bela"}""".stripMargin
 
-    testScenario(SampleProcess.process, testDataContent) ~> check {
+    testScenario(SampleScenario.scenario, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[String] shouldBe "Record 2 - scenario does not have source id: 'unknown'"
     }
   }
 
   test("execute valid custom action") {
-    createEmptyProcess(SampleProcess.processName)
-    customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
+    createEmptyProcess(SampleScenario.scenarioName)
+    customAction(SampleScenario.scenarioName, CustomActionRequest("hello")) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = true, msg = "Hi")
     }
   }
 
   test("execute non existing custom action") {
-    createEmptyProcess(SampleProcess.processName)
-    customAction(SampleProcess.processName, CustomActionRequest("non-existing")) ~> check {
+    createEmptyProcess(SampleScenario.scenarioName)
+    customAction(SampleScenario.scenarioName, CustomActionRequest("non-existing")) ~> check {
       status shouldBe StatusCodes.NotFound
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(
         isSuccess = false,
@@ -429,8 +431,8 @@ class ManagementResourcesSpec
   }
 
   test("execute not implemented custom action") {
-    createEmptyProcess(SampleProcess.processName)
-    customAction(SampleProcess.processName, CustomActionRequest("not-implemented")) ~> check {
+    createEmptyProcess(SampleScenario.scenarioName)
+    customAction(SampleScenario.scenarioName, CustomActionRequest("not-implemented")) ~> check {
       status shouldBe StatusCodes.NotImplemented
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(
         isSuccess = false,
@@ -440,8 +442,8 @@ class ManagementResourcesSpec
   }
 
   test("execute custom action with not allowed process status") {
-    createEmptyProcess(SampleProcess.processName)
-    customAction(SampleProcess.processName, CustomActionRequest("invalid-status")) ~> check {
+    createEmptyProcess(SampleScenario.scenarioName)
+    customAction(SampleScenario.scenarioName, CustomActionRequest("invalid-status")) ~> check {
       status shouldBe StatusCodes.Forbidden
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(
         isSuccess = false,
@@ -451,15 +453,15 @@ class ManagementResourcesSpec
   }
 
   test("should return 403 when execute custom action on archived process") {
-    createArchivedProcess(SampleProcess.processName)
-    customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
+    createArchivedProcess(SampleScenario.scenarioName)
+    customAction(SampleScenario.scenarioName, CustomActionRequest("hello")) ~> check {
       status shouldBe StatusCodes.Forbidden
     }
   }
 
   test("should return 403 when execute custom action on fragment") {
-    createEmptyProcess(SampleProcess.processName, isFragment = true)
-    customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
+    createEmptyProcess(SampleScenario.scenarioName, isFragment = true)
+    customAction(SampleScenario.scenarioName, CustomActionRequest("hello")) ~> check {
       status shouldBe StatusCodes.Forbidden
     }
   }

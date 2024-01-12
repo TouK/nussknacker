@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, Proces
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.util.ResourceLoader
-import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestCategories, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{SampleScenario, TestCategories, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Comment, ProcessActivity}
 
@@ -23,7 +23,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   it should "export process to " in {
     val process: DisplayableProcess =
-      ProcessConverter.toDisplayable(SampleProcess.process, TestProcessingTypes.Streaming, TestCategories.Category1)
+      ProcessConverter.toDisplayable(SampleScenario.scenario, TestProcessingTypes.Streaming, TestCategories.Category1)
     val displayable: DisplayableProcess = process.copy(nodes = process.nodes.map {
       case a: Filter =>
         a.copy(additionalFields = Some(UserDefinedAdditionalNodeFields(Some("mój wnikliwy komętaż"), None)))
