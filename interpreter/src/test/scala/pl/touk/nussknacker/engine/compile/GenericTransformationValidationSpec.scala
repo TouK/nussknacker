@@ -50,7 +50,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   private val modelDefinition = ModelDefinition(
     ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
-    ModelDefinitionBuilder.toDefinitionWithImpl(ModelDefinitionBuilder.emptyExpressionConfig),
+    ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default
   )
 

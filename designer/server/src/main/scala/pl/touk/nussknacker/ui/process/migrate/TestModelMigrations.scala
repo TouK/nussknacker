@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.migrate
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
-import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -38,7 +39,7 @@ class TestModelMigrations(
     logger.debug("Validating migrated scenarios")
     val validator = processValidator.mapValues(
       _.withFragmentResolver(
-        new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
+        new FragmentResolver(prepareFragmentRepository(migratedFragments.map(_.newProcess)))
       )
     )
     (migratedFragments ++ migratedProcesses).map { migrationDetails =>
@@ -65,27 +66,26 @@ class TestModelMigrations(
     } yield {
       MigratedProcessDetails(
         displayable,
-        process.validationResultUnsafe,
-        process.processCategory
+        process.validationResultUnsafe
       )
     }
   }
 
-  private def prepareFragmentRepository(fragments: List[(DisplayableProcess, String)]) = {
-    val fragmentsDetails = fragments.map { case (displayable, category) =>
+  private def prepareFragmentRepository(fragments: List[DisplayableProcess]) = {
+    val fragmentsByProcessingType = fragments.map { displayable =>
       val canonical = ProcessConverter.fromDisplayable(displayable)
-      displayable.processingType -> FragmentDetails(canonical, category)
+      displayable.processingType -> canonical
     }.toGroupedMap
     new FragmentRepository {
 
       override def fetchLatestFragments(processingType: ProcessingType)(
           implicit user: LoggedUser
-      ): Future[List[FragmentDetails]] =
-        Future.successful(fragmentsDetails.getOrElse(processingType, List.empty))
+      ): Future[List[CanonicalProcess]] =
+        Future.successful(fragmentsByProcessingType.getOrElse(processingType, List.empty))
 
       override def fetchLatestFragment(fragmentName: ProcessName)(
           implicit user: LoggedUser
-      ): Future[Option[FragmentDetails]] =
+      ): Future[Option[CanonicalProcess]] =
         throw new IllegalStateException("FragmentRepository.get(ProcessName) used during migration")
     }
 
@@ -125,6 +125,5 @@ final case class TestMigrationResult(processName: ProcessName, newErrors: Valida
 
 private final case class MigratedProcessDetails(
     newProcess: DisplayableProcess,
-    oldProcessErrors: ValidationResult,
-    processCategory: String
+    oldProcessErrors: ValidationResult
 )

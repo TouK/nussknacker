@@ -66,9 +66,9 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
           .copy(
             expressionConfig = originalModelDefinition.expressionConfig.copy(
               originalModelDefinition.expressionConfig.globalVariables ++
-                testExtensionsHolder.globalVariables.mapValuesNow { value =>
-                  GlobalVariableDefinitionExtractor.extractDefinition(value, categories = None)
-                }
+                testExtensionsHolder.globalVariables.mapValuesNow(
+                  GlobalVariableDefinitionExtractor.extractDefinition
+                )
             )
           )
       }

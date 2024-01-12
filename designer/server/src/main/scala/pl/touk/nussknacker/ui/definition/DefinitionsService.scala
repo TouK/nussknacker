@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.definition
 
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
@@ -10,41 +9,59 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.{ComponentGroupsPreparer, EdgeTypesPreparer}
-import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
+import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioPropertyConfig}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
+import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-object UIProcessObjectsFactory {
+import scala.concurrent.{ExecutionContext, Future}
 
-  def prepareUIProcessObjects(
+// This class only combines various views on definitions for the FE. It is executed for each request, when user
+// enters the scenario view. The core domain logic should be done during Model definition extraction
+class DefinitionsService(
+    modelData: ModelData,
+    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+    deploymentManager: DeploymentManager,
+    modelDefinitionEnricher: ModelDefinitionEnricher,
+    additionalUIConfigFinalizer: AdditionalUIConfigFinalizer,
+    fragmentRepository: FragmentRepository
+)(implicit ec: ExecutionContext) {
+
+  def prepareUIDefinitions(processingType: ProcessingType, forFragment: Boolean)(
+      implicit user: LoggedUser
+  ): Future[UIDefinitions] = {
+    fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
+      val enrichedModelDefinition =
+        modelDefinitionEnricher
+          .modelDefinitionWithBuiltInComponentsAndFragments(forFragment, fragments, processingType)
+      val finalizedScenarioPropertiesConfig = additionalUIConfigFinalizer
+        .finalizeScenarioProperties(scenarioPropertiesConfig, processingType)
+      prepareUIDefinitions(
+        enrichedModelDefinition,
+        forFragment,
+        finalizedScenarioPropertiesConfig
+      )
+    }
+  }
+
+  private def prepareUIDefinitions(
       modelDefinitionWithBuiltInComponentsAndFragments: ModelDefinition[ComponentStaticDefinition],
-      modelData: ModelData,
-      deploymentManager: DeploymentManager,
-      user: LoggedUser,
       forFragment: Boolean,
-      processCategoryService: ProcessCategoryService,
-      scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-      processingType: ProcessingType
-  ): UIProcessObjects = {
-    val componentGroupsPreparer = new ComponentGroupsPreparer(
-      ComponentsGroupMappingConfigExtractor.extract(modelData.modelConfig)
-    )
-    UIProcessObjects(
-      componentGroups = componentGroupsPreparer.prepareComponentGroups(
-        user = user,
-        definitions = modelDefinitionWithBuiltInComponentsAndFragments,
-        processCategoryService = processCategoryService,
-        processingType
-      ),
+      finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
+  ): UIDefinitions = {
+    UIDefinitions(
+      componentGroups =
+        ComponentGroupsPreparer.prepareComponentGroups(modelDefinitionWithBuiltInComponentsAndFragments),
       components =
         modelDefinitionWithBuiltInComponentsAndFragments.components.mapValuesNow(createUIComponentDefinition),
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       componentsConfig = prepareComponentConfig(modelDefinitionWithBuiltInComponentsAndFragments, modelData),
-      scenarioPropertiesConfig = (if (forFragment) FragmentPropertiesConfig.properties else scenarioPropertiesConfig)
-        .mapValuesNow(createUIScenarioPropertyConfig),
+      scenarioPropertiesConfig =
+        (if (forFragment) FragmentPropertiesConfig.properties else finalizedScenarioPropertiesConfig)
+          .mapValuesNow(createUIScenarioPropertyConfig),
       edgesForNodes =
         EdgeTypesPreparer.prepareEdgeTypes(definitions = modelDefinitionWithBuiltInComponentsAndFragments),
       customActions = deploymentManager.customActions.map(UICustomAction(_))
@@ -60,7 +77,7 @@ object UIProcessObjectsFactory {
     } ++ preparePropertiesConfig(modelData)
   }
 
-  // TODO - Extract to the separate, named field in UIProcessObjects
+  // TODO - Extract to the separate, named field in UIDefinitions which would hold also scenarioPropertiesConfig
   //      - Stop treating properties as a node on FE side
   //      - Other way to configure it - it should be somewhere around scenarioPropertiesConfig
   //      - Documentation
@@ -68,7 +85,7 @@ object UIProcessObjectsFactory {
   private def preparePropertiesConfig(modelData: ModelData) = {
     val componentsUiConfig          = ComponentsUiConfigParser.parse(modelData.modelConfig)
     val propertiesFakeComponentName = "$properties"
-    componentsUiConfig.config.get(propertiesFakeComponentName).map(propertiesFakeComponentName -> _)
+    componentsUiConfig.componentsConfig.get(propertiesFakeComponentName).map(propertiesFakeComponentName -> _)
   }
 
   private def createUIComponentDefinition(
@@ -80,6 +97,25 @@ object UIProcessObjectsFactory {
       outputParameters = None
     )
   }
+
+}
+
+object DefinitionsService {
+
+  def apply(
+      processingTypeData: ProcessingTypeData,
+      modelDefinitionEnricher: ModelDefinitionEnricher,
+      additionalUIConfigFinalizer: AdditionalUIConfigFinalizer,
+      fragmentRepository: FragmentRepository
+  )(implicit ec: ExecutionContext) =
+    new DefinitionsService(
+      processingTypeData.modelData,
+      processingTypeData.scenarioPropertiesConfig,
+      processingTypeData.deploymentManager,
+      modelDefinitionEnricher,
+      additionalUIConfigFinalizer,
+      fragmentRepository
+    )
 
   def createUIParameter(parameter: Parameter): UIParameter = {
     val defaultValue = parameter.defaultValue.getOrElse(Expression.spel(""))

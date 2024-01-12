@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentInfo}
-import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, SingleComponentConfig}
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 // This class represents component's definition and implementation.
@@ -37,7 +36,7 @@ object ComponentDefinitionWithImplementation {
   // This method is mainly for the tests purpose. It doesn't take into an account additionalConfigs provided from the model configuration
   def withEmptyConfig(component: Component): ComponentDefinitionWithImplementation = {
     ComponentDefinitionExtractor
-      .extract("dumbName", WithCategories.anyCategory(component), ComponentsUiConfig.Empty)
+      .extract("dumbName", component, SingleComponentConfig.zero, ComponentsUiConfig.Empty)
       .getOrElse(
         throw new IllegalStateException(
           s"ComponentDefinitionWithImplementation.withEmptyConfig returned None for: $component but component should be filtered for empty config"
