@@ -69,7 +69,7 @@ package object definition {
       //    (see. ProcessUtils.findAvailableVariables). This heuristic is used when DisplayableProcess can't be translated
       //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
-      // For fragments only
+      // This field is defined only for fragments
       outputParameters: Option[List[String]]
   )
 
