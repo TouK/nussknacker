@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
+import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -37,7 +38,7 @@ class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository
 
     // We create fragmentResolver for each request, because it requires LoggedUser to fetch fragments
     val fragmentResolver =
-      FragmentResolver(fragmentName => fragmentRepository.fetchLatestFragmentSync(fragmentName).map(_.canonical))
+      FragmentResolver(fragmentName => fragmentRepository.fetchLatestFragmentSync(fragmentName))
 
     nodeDataValidator.validate(
       nodeData.nodeData,
@@ -54,7 +55,7 @@ class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository
           validationPerformed = false
         )
       case ValidationPerformed(errors, parameters, expressionType) =>
-        val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter))
+        val uiParams = parameters.map(_.map(DefinitionsService.createUIParameter))
 
         // We don't return MissingParameter error when we are returning those missing parameters to be added - since
         // it's not really exception ATM

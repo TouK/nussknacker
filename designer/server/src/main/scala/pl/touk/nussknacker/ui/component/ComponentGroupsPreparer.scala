@@ -1,70 +1,67 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.ComponentGroupName
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.collection.immutable.ListMap
 
-class ComponentGroupsPreparer(componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]]) {
+object ComponentGroupsPreparer {
 
   def prepareComponentGroups(
-      user: LoggedUser,
       definitions: ModelDefinition[ComponentStaticDefinition],
-      processCategoryService: ProcessCategoryService,
-      processingType: ProcessingType
-  ): List[ComponentGroup] = {
+  ): List[UIComponentGroup] = {
     ComponentNodeTemplatePreparer
-      .componentNodeTemplatesWithGroupNames(user, definitions, processCategoryService, processingType)
+      .componentNodeTemplatesWithGroupNames(definitions)
+      .map(templateWithGroups =>
+        (templateWithGroups.originalGroupName, templateWithGroups.mappedGroupName) -> templateWithGroups.nodeTemplate
+      )
       .toGroupedMap
       .toList
-      .map { case (originalGroupName, nodeTemplates) =>
-        val nonHiddenMappedGroupName = componentsGroupMapping.getOrElse(originalGroupName, Some(originalGroupName))
-        (originalGroupName, nonHiddenMappedGroupName, nodeTemplates)
-      }
-      .flatMap { case (originalGroupName, nonHiddenMappedGroupName, nodeTemplates) =>
-        nonHiddenMappedGroupName.map { mappedGroupName =>
-          (originalGroupName, mappedGroupName, nodeTemplates)
-        }
-      }
+      // We sort based on the original group name. It might be tricky when someone instead of using component group
+      // mapping feature, would override component group for component which is source or ending component.
+      // Maybe instead of sorting based on the original group name we should sort based on rules likes:
+      // group contains only (or some?) components that are sources. The same for ending components.
+      // What about base components in this case?
       .sortBy {
         case (
-              DefaultsComponentGroupName.SourcesGroupName | DefaultsComponentGroupName.FragmentsDefinitionGroupName,
-              mappedGroupName,
+              (
+                DefaultsComponentGroupName.SourcesGroupName | DefaultsComponentGroupName.FragmentsDefinitionGroupName,
+                mappedGroupName
+              ),
               _
             ) =>
           (0, mappedGroupName.toLowerCase)
-        case (DefaultsComponentGroupName.BaseGroupName, mappedGroupName, _) =>
+        case ((DefaultsComponentGroupName.BaseGroupName, mappedGroupName), _) =>
           (1, mappedGroupName.toLowerCase)
         case (
-              DefaultsComponentGroupName.ServicesGroupName | DefaultsComponentGroupName.OptionalEndingCustomGroupName |
-              DefaultsComponentGroupName.SinksGroupName,
-              mappedGroupName,
+              (
+                DefaultsComponentGroupName.ServicesGroupName |
+                DefaultsComponentGroupName.OptionalEndingCustomGroupName | DefaultsComponentGroupName.SinksGroupName,
+                mappedGroupName
+              ),
               _
             ) =>
           (3, mappedGroupName.toLowerCase)
-        case (_, mappedGroupName, _) =>
+        case ((_, mappedGroupName), _) =>
           // We put everything else in the middle
           (2, mappedGroupName.toLowerCase)
       }
-      .map { case (_, mappedGroupName, nodeTemplates) =>
+      .map { case ((_, mappedGroupName), nodeTemplates) =>
         (mappedGroupName, nodeTemplates)
       }
       // We need to merge node templates that originally where in the other group but after mapping are in the same group
-      .foldLeft(ListMap.empty[ComponentGroupName, List[ComponentNodeTemplate]]) {
+      .foldLeft(ListMap.empty[ComponentGroupName, List[UIComponentNodeTemplate]]) {
         case (acc, (groupName, nodeTemplates)) =>
           val mergedNodeTemplates = acc.getOrElse(groupName, List.empty) ++ nodeTemplates
           acc + (groupName -> mergedNodeTemplates)
       }
       .toList
       .map { case (groupName, nodeTemplates) =>
-        ComponentGroup(groupName, nodeTemplates.sortBy(_.label.toLowerCase))
+        UIComponentGroup(groupName, nodeTemplates.sortBy(_.label.toLowerCase))
       }
   }
 

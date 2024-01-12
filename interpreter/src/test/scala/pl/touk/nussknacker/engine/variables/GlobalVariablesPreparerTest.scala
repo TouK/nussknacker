@@ -13,7 +13,7 @@ class GlobalVariablesPreparerTest extends AnyFunSuite with Matchers {
     val metaData = MetaData("test", StreamMetaData())
     val varsWithMethodDef = Map(
       "typedVar" ->
-        GlobalVariableDefinitionExtractor.extractDefinition(TestTypedGlobalVariable, categories = None)
+        GlobalVariableDefinitionExtractor.extractDefinition(TestTypedGlobalVariable)
     )
 
     val varsWithType =

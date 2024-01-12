@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory}
 import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
@@ -9,7 +9,7 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
@@ -17,13 +17,13 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLogging
 }
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
+import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 class AppApiSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager
-    with NuScenarioConfigurationHelper
+    with NuTestScenarioManager
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
@@ -32,13 +32,11 @@ class AppApiSpec
   "The app health check endpoint should" - {
     "return simple designer health check (not checking scenario statuses) without authentication" in {
       given()
-        .applicationConfiguration {
-          createDeployedProcess(ProcessName("id1"), category = Category1)
+        .applicationState {
+          createDeployedExampleScenario("id1", category = Category1)
 
           MockableDeploymentManager.configure(
-            Map(
-              ProcessName("id1") -> SimpleStateStatus.Running,
-            )
+            Map("id1" -> SimpleStateStatus.Running)
           )
         }
         .when()
@@ -55,20 +53,20 @@ class AppApiSpec
     }
   }
 
-  "The process deployment health check endpoint when" - {
+  "The scenario deployment health check endpoint when" - {
     "authenticated should" - {
       "return health check also if cannot retrieve statuses" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"), category = Category1)
-            createDeployedProcess(ProcessName("id2"), category = Category1)
-            createDeployedProcess(ProcessName("id3"), category = Category1)
+          .applicationState {
+            createDeployedExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario("id2", category = Category1)
+            createDeployedExampleScenario("id3", category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
-                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
-                ProcessName("id2") -> SimpleStateStatus.Running,
-                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
               )
             )
           }
@@ -87,14 +85,12 @@ class AppApiSpec
       }
       "not return health check when scenario is canceled" in {
         given()
-          .applicationConfiguration {
-            createDeployedCanceledProcess(ProcessName("id1"), category = Category1)
-            createDeployedProcess(ProcessName("id2"), category = Category1)
+          .applicationState {
+            createDeployedCanceledExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario("id2", category = Category1)
 
             MockableDeploymentManager.configure(
-              Map(
-                ProcessName("id2") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
-              )
+              Map("id2" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"))
             )
           }
           .basicAuth("reader", "reader")
@@ -112,14 +108,14 @@ class AppApiSpec
       }
       "return health check ok if statuses are ok" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"), category = Category1)
-            createDeployedProcess(ProcessName("id2"), category = Category1)
+          .applicationState {
+            createDeployedExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario("id2", category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
-                ProcessName("id1") -> SimpleStateStatus.Running,
-                ProcessName("id2") -> SimpleStateStatus.Running,
+                "id1" -> SimpleStateStatus.Running,
+                "id2" -> SimpleStateStatus.Running,
               )
             )
           }
@@ -138,13 +134,11 @@ class AppApiSpec
       }
       "not report deployment in progress as fail" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"))
+          .applicationState {
+            createDeployedExampleScenario("id1")
 
             MockableDeploymentManager.configure(
-              Map(
-                ProcessName("id1") -> SimpleStateStatus.Running
-              )
+              Map("id1" -> SimpleStateStatus.Running)
             )
           }
           .when()
@@ -164,16 +158,16 @@ class AppApiSpec
     "not authenticated should" - {
       "forbid access" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"), category = Category1)
-            createDeployedProcess(ProcessName("id2"), category = Category1)
-            createDeployedProcess(ProcessName("id3"), category = Category1)
+          .applicationState {
+            createDeployedExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario("id2", category = Category1)
+            createDeployedExampleScenario("id3", category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
-                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
-                ProcessName("id2") -> SimpleStateStatus.Running,
-                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
               )
             )
           }
@@ -186,17 +180,15 @@ class AppApiSpec
     }
   }
 
-  "The process validation health check endpoint when" - {
+  "The scenario validation health check endpoint when" - {
     "authenticated should" - {
-      "return ERROR status and list of processes with validation errors" in {
+      "return ERROR status and list of scenarios with validation errors" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"), category = Category1)
+          .applicationState {
+            createDeployedExampleScenario("id1", category = Category1)
 
             MockableDeploymentManager.configure(
-              Map(
-                ProcessName("id1") -> SimpleStateStatus.Running
-              )
+              Map("id1" -> SimpleStateStatus.Running)
             )
           }
           .basicAuth("reader", "reader")
@@ -214,9 +206,9 @@ class AppApiSpec
             )
           )
       }
-      "return OK status and empty list of processes where there are no validation errors" in {
+      "return OK status and empty list of scenarios where there are no validation errors" in {
         given()
-          .applicationConfiguration {}
+          .applicationState {}
           .basicAuth("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
@@ -236,16 +228,16 @@ class AppApiSpec
     "not authenticated should" - {
       "forbid access" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"), category = Category1)
-            createDeployedProcess(ProcessName("id2"), category = Category1)
-            createDeployedProcess(ProcessName("id3"), category = Category1)
+          .applicationState {
+            createDeployedExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario("id2", category = Category1)
+            createDeployedExampleScenario("id3", category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
-                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
-                ProcessName("id2") -> SimpleStateStatus.Running,
-                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
               )
             )
           }
@@ -334,16 +326,16 @@ class AppApiSpec
     "authenticated should" - {
       "return user's categories and processing types" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"), category = Category1)
-            createDeployedProcess(ProcessName("id2"), category = Category1)
-            createDeployedProcess(ProcessName("id3"), category = Category1)
+          .applicationState {
+            createDeployedExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario("id2", category = Category1)
+            createDeployedExampleScenario("id3", category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
-                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
-                ProcessName("id2") -> SimpleStateStatus.Running,
-                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
               )
             )
           }
@@ -365,16 +357,16 @@ class AppApiSpec
     "not authenticated should" - {
       "forbid access" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"), category = Category1)
-            createDeployedProcess(ProcessName("id2"), category = Category1)
-            createDeployedProcess(ProcessName("id3"), category = Category1)
+          .applicationState {
+            createDeployedExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario("id2", category = Category1)
+            createDeployedExampleScenario("id3", category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
-                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
-                ProcessName("id2") -> SimpleStateStatus.Running,
-                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
               )
             )
           }
@@ -391,16 +383,16 @@ class AppApiSpec
     "authenticated should" - {
       "allow to reload" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"), category = Category1)
-            createDeployedProcess(ProcessName("id2"), category = Category1)
-            createDeployedProcess(ProcessName("id3"), category = Category1)
+          .applicationState {
+            createDeployedExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario("id2", category = Category1)
+            createDeployedExampleScenario("id3", category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
-                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
-                ProcessName("id2") -> SimpleStateStatus.Running,
-                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
               )
             )
           }
@@ -415,16 +407,16 @@ class AppApiSpec
     "not authenticated should" - {
       "forbid access" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"), category = Category1)
-            createDeployedProcess(ProcessName("id2"), category = Category1)
-            createDeployedProcess(ProcessName("id3"), category = Category1)
+          .applicationState {
+            createDeployedExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario("id2", category = Category1)
+            createDeployedExampleScenario("id3", category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
-                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
-                ProcessName("id2") -> SimpleStateStatus.Running,
-                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
               )
             )
           }
@@ -438,16 +430,16 @@ class AppApiSpec
     "not authorized as admin should" - {
       "forbid access" in {
         given()
-          .applicationConfiguration {
-            createDeployedProcess(ProcessName("id1"), category = Category1)
-            createDeployedProcess(ProcessName("id2"), category = Category1)
-            createDeployedProcess(ProcessName("id3"), category = Category1)
+          .applicationState {
+            createDeployedExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario("id2", category = Category1)
+            createDeployedExampleScenario("id3", category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
-                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
-                ProcessName("id2") -> SimpleStateStatus.Running,
-                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
               )
             )
           }

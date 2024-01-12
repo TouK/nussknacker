@@ -37,18 +37,20 @@ class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
 
 object MockableDeploymentManagerProvider {
 
+  type ScenarioName = String
+
   // note: At the moment this manager cannot be used in tests which are executed in parallel. It can be obviously
   //       improved, but there is no need to do it ATM.
   object MockableDeploymentManager extends DeploymentManager {
 
-    private val processesStates = new AtomicReference[Map[ProcessName, StateStatus]](Map.empty)
+    private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
 
-    def configure(processesStates: Map[ProcessName, StateStatus]): Unit = {
-      this.processesStates.set(processesStates)
+    def configure(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
+      this.scenarioStatuses.set(scenarioStates)
     }
 
     def clean(): Unit = {
-      this.processesStates.set(Map.empty)
+      this.scenarioStatuses.set(Map.empty)
     }
 
     override def validate(
@@ -93,7 +95,7 @@ object MockableDeploymentManagerProvider {
         implicit freshnessPolicy: DataFreshnessPolicy
     ): Future[WithDataFreshnessStatus[ProcessState]] = {
       Future {
-        val status = processesStates.get().getOrElse(idWithName.name, SimpleStateStatus.NotDeployed)
+        val status = scenarioStatuses.get().getOrElse(idWithName.name.value, SimpleStateStatus.NotDeployed)
         WithDataFreshnessStatus(
           processStateDefinitionManager.processState(StatusDetails(status, None)),
           cached = false

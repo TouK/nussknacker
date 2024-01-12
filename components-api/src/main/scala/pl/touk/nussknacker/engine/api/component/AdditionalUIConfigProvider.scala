@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValida
  *
  * TODO: Currently the value of 'valueCompileTimeValidation' has no effect, it'll be supported in the future but is included now to keep the API stable.
  *       Validating and extracting a parameter's validators requires access to expressionCompiler and validationContext,
- *       this is currently hard to achieve where AdditionalUIConfigProvider is used (UIProcessObjectsFactory),
+ *       this is currently hard to achieve where AdditionalUIConfigProvider is used (DefinitionsService and ComponentService),
  *       after refactoring it to be used at the level of ModelData or so it should be easy, and support for 'valueCompileTimeValidation' will be possible
  */
 trait AdditionalUIConfigProvider extends Serializable {

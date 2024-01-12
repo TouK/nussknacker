@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.{
   AdditionalUIConfigFinalizer,
+  DefinitionsService,
   ModelDefinitionEnricher,
   TestAdditionalUIConfigProvider
 }
@@ -42,18 +43,15 @@ class DefinitionResourcesSpec
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val definitionResources = new DefinitionResources(
-    processingTypeDataProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
+    serviceProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
       val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(TestAdditionalUIConfigProvider)
       val modelDefinitionEnricher = ModelDefinitionEnricher(
         processingTypeData.modelData,
         additionalUIConfigFinalizer,
         processingTypeData.staticModelDefinition
       )
-      (processingTypeData, modelDefinitionEnricher, additionalUIConfigFinalizer)
-
-    },
-    fragmentRepository,
-    () => processCategoryService
+      DefinitionsService(processingTypeData, modelDefinitionEnricher, additionalUIConfigFinalizer, fragmentRepository)
+    }
   )
 
   it("should handle missing scenario type") {
@@ -113,14 +111,14 @@ class DefinitionResourcesSpec
       )
     }
 
-    val processName         = SampleProcess.process.name
+    val processName         = SampleScenario.scenario.name
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
     val displayableFragment = ProcessConverter.toDisplayable(
       processWithFragment.fragment,
       TestProcessingTypes.Streaming,
       TestCategories.Category1
     )
-    savefragment(displayableFragment)(succeed)
+    saveFragment(displayableFragment)(succeed)
     saveProcess(processName, processWithFragment.process, TestCategories.Category1)(succeed)
 
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {

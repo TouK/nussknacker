@@ -53,7 +53,7 @@ class InterpreterSetup[T: ClassTag] {
 
     val definitions = ModelDefinition(
       ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
-      ModelDefinitionBuilder.toDefinitionWithImpl(ModelDefinitionBuilder.emptyExpressionConfig),
+      ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
