@@ -31,6 +31,8 @@ final case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
     additionalFields = additionalFields
   )
 
+  // TODO: Remove this after we stop using `DisplayableProcess` for the source of information about scenario's metadata
+  //       (processToDisplay redux state) on the FE side.,
   val isFragment: Boolean = additionalFields.typeSpecificProperties.isFragment
 
   // TODO: remove typeSpecificData-related code after the migration is completed

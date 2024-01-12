@@ -3,7 +3,7 @@ import EditableEditor from "./editors/EditableEditor";
 import React, { useCallback } from "react";
 import { ExpressionLang } from "./editors/expression/types";
 import { getValidationErrorsForField, PossibleValue } from "./editors/Validators";
-import { NodeType, NodeValidationError } from "../../../types";
+import { NodeValidationError, PropertiesType } from "../../../types";
 
 export interface ScenarioPropertyConfig {
     editor: any;
@@ -16,8 +16,8 @@ interface Props {
     showValidation: boolean;
     propertyName: string;
     propertyConfig: ScenarioPropertyConfig;
-    editedNode: NodeType;
-    onChange: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    editedNode: PropertiesType;
+    onChange: <K extends keyof PropertiesType>(property: K, newValue: PropertiesType[K], defaultValue?: PropertiesType[K]) => void;
     renderFieldLabel: (paramName: string) => JSX.Element;
     readOnly: boolean;
     errors: NodeValidationError[];
