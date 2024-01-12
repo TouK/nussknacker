@@ -40,7 +40,7 @@ class ExpressionSuggesterBenchmarkSetup() {
   )
 
   private val expressionSuggester = new ExpressionSuggester(
-    ModelDefinitionBuilder.toDefinitionWithImpl(ModelDefinitionBuilder.emptyExpressionConfig),
+    ModelDefinitionBuilder.emptyExpressionConfig,
     clazzDefinitions,
     dictServices,
     getClass.getClassLoader,

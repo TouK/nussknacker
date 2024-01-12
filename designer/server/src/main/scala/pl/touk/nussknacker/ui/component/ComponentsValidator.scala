@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.ui.component
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.ui.component.DefaultComponentService.getComponentIcon
+import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{
   ComponentGroupNameAttribute,
   ComponentTypeAttribute,
@@ -13,45 +11,13 @@ import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{
   WrongConfigurationAttribute
 }
 
-// FIXME: rewrite to domain based approach, use it the ComponentService then
 private[component] object ComponentsValidator {
 
-  def checkUnsafe(
-      componentObjectsMap: Map[ProcessingType, ComponentObjects],
-      componentIdProvider: ComponentIdProvider
-  ): Unit = {
-    val components = componentObjectsMap.toList.flatMap { case (processingType, componentObjects) =>
-      extractComponents(processingType, componentObjects, componentIdProvider)
-    }
-    validateComponents(components)
-      .valueOr(wrongConfigurations =>
-        throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations)
-      )
-  }
-
-  // TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
-  private def extractComponents(
-      processingType: ProcessingType,
-      componentObjects: ComponentObjects,
-      componentIdProvider: ComponentIdProvider
-  ): List[ComponentValidationData] = {
-    componentObjects.templates
-      .map { case (groupName, com) =>
-        val componentId = componentIdProvider.createComponentId(processingType, com.componentInfo)
-        val icon        = getComponentIcon(componentObjects.config, com)
-
-        ComponentValidationData(
-          id = componentId,
-          name = com.label,
-          icon = icon,
-          componentType = com.`type`,
-          componentGroupName = groupName
-        )
-      }
-  }
-
-  private def validateComponents(
-      components: List[ComponentValidationData]
+  // TODO: We should rather take List[(ComponentInfo, ComponentDefinitionWithImplementation)] instead of ComponentListElement
+  //       ComponentListElement is for a presentation purpose, we loose some information that we can check
+  //       e.g. if class of Component is the same. We could even define identity mechanisms in Components.
+  def validateComponents(
+      components: Iterable[ComponentListElement]
   ): ValidatedNel[ComponentWrongConfiguration[_], Unit] = {
     val wrongComponents = components
       .groupBy(_.id)
@@ -69,7 +35,7 @@ private[component] object ComponentsValidator {
 
   private def computeWrongConfigurations(
       componentId: ComponentId,
-      components: Iterable[ComponentValidationData]
+      components: Iterable[ComponentListElement]
   ): List[ComponentWrongConfiguration[_]] = {
     def checkUniqueAttributeValue[T](
         attribute: WrongConfigurationAttribute,
@@ -94,15 +60,6 @@ private[component] object ComponentsValidator {
 
 }
 
-// TODO: validate component's initial parameters as well
-private final case class ComponentValidationData(
-    id: ComponentId,
-    name: String,
-    icon: String,
-    componentType: ComponentType,
-    componentGroupName: ComponentGroupName
-)
-
 private final case class ComponentWrongConfiguration[T](
     id: ComponentId,
     attribute: WrongConfigurationAttribute,
@@ -112,10 +69,10 @@ private final case class ComponentWrongConfiguration[T](
 private object WrongConfigurationAttribute extends Enumeration {
   type WrongConfigurationAttribute = Value
 
-  val NameAttribute               = Value("name")
-  val IconAttribute               = Value("icon")
-  val ComponentTypeAttribute      = Value("componentType")
-  val ComponentGroupNameAttribute = Value("componentGroupName")
+  val NameAttribute: WrongConfigurationAttribute               = Value("name")
+  val IconAttribute: WrongConfigurationAttribute               = Value("icon")
+  val ComponentTypeAttribute: WrongConfigurationAttribute      = Value("componentType")
+  val ComponentGroupNameAttribute: WrongConfigurationAttribute = Value("componentGroupName")
 }
 
 private final case class ComponentConfigurationException(

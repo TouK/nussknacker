@@ -19,14 +19,16 @@ package object definition {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
-      componentGroups: List[ComponentGroup],
+  // This class contains various views on definitions, used in a different FE contexts
+  @JsonCodec(encodeOnly = true) final case class UIDefinitions(
+      // This is dedicated view for the components toolbox panel
+      componentGroups: List[UIComponentGroup],
       components: Map[ComponentInfo, UIComponentDefinition],
       classes: List[TypingResult],
       // TODO: remove it, use components field on the FE side instead
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
-      edgesForNodes: List[NodeEdges],
+      edgesForNodes: List[UINodeEdges],
       customActions: List[UICustomAction]
   )
 
@@ -73,56 +75,49 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
-  final case class NodeEdges(
+  final case class UINodeEdges(
       componentId: ComponentInfo,
       edges: List[EdgeType],
       canChooseNodes: Boolean,
       isForInputDefinition: Boolean
   )
 
-  object NodeEdges {
+  object UINodeEdges {
     implicit val componentIdEncoder: Encoder[ComponentInfo] = Encoder.encodeString.contramap(_.toString)
 
-    implicit val encoder: Encoder[NodeEdges] = deriveConfiguredEncoder
+    implicit val encoder: Encoder[UINodeEdges] = deriveConfiguredEncoder
   }
 
-  object ComponentNodeTemplate {
+  object UIComponentNodeTemplate {
 
     def create(
         componentInfo: ComponentInfo,
         nodeTemplate: NodeData,
-        categories: List[String],
         branchParametersTemplate: List[NodeParameter]
-    ): ComponentNodeTemplate =
-      ComponentNodeTemplate(
+    ): UIComponentNodeTemplate =
+      UIComponentNodeTemplate(
         componentInfo.`type`,
         componentInfo.name,
         nodeTemplate,
-        categories,
         branchParametersTemplate
       )
 
   }
 
-  @JsonCodec(encodeOnly = true) final case class ComponentNodeTemplate(
+  @JsonCodec(encodeOnly = true) final case class UIComponentNodeTemplate(
       // This field is used to generate unique key in DOM model on FE side (the label isn't unique)
       `type`: ComponentType,
       label: String,
       node: NodeData,
-      // TODO: Remove it - it is not used on the FE code, only ComponentService use it and we can take it from
-      //       the processingType property there
-      categories: List[String],
-      branchParametersTemplate: List[NodeParameter] = List.empty,
-      // TODO: This field is added temporary to pick correct icon - we shouldn't use this class for other purposes than encoding to json
-      isEnricher: Option[Boolean] = None
+      branchParametersTemplate: List[NodeParameter] = List.empty
   ) {
     // TODO: This is temporary - we shouldn't use ComponentNodeTemplate class for other purposes than encoding to json
     def componentInfo: ComponentInfo = ComponentInfo(`type`, label)
   }
 
-  @JsonCodec(encodeOnly = true) final case class ComponentGroup(
+  @JsonCodec(encodeOnly = true) final case class UIComponentGroup(
       name: ComponentGroupName,
-      components: List[ComponentNodeTemplate]
+      components: List[UIComponentNodeTemplate]
   )
 
   @JsonCodec final case class UiScenarioPropertyConfig(

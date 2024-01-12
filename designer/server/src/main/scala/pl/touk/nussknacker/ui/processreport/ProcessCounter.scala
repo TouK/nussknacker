@@ -52,7 +52,7 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
         case SplitNode(node, nexts)  => computeCountsSamePrefixes(nexts.flatten) + (node.id -> nodeCount(node.id))
         case Fragment(node, outputs) =>
           // TODO: validate that process exists
-          val fragment = getFragment(ProcessName(node.ref.id)).get
+          val fragment = fragmentRepository.fetchLatestFragmentSync(ProcessName(node.ref.id)).get
           computeCountsSamePrefixes(outputs.values.flatten) + (node.id -> nodeCount(
             node.id,
             computeCounts(prefixes :+ node.id)(fragment.allStartNodes)
@@ -62,10 +62,6 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
     }
 
     computeCounts(List())(canonicalProcess.allStartNodes)
-  }
-
-  private def getFragment(fragmentName: ProcessName)(implicit user: LoggedUser): Option[CanonicalProcess] = {
-    fragmentRepository.fetchLatestFragmentSync(fragmentName).map(_.canonical)
   }
 
 }

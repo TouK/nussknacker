@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentInfo}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -12,28 +11,13 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.restmodel.definition.ComponentNodeTemplate
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, UserCategoryService}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.restmodel.definition.UIComponentNodeTemplate
 
 private[component] object ComponentNodeTemplatePreparer {
 
   def componentNodeTemplatesWithGroupNames(
-      user: LoggedUser,
-      definitions: ModelDefinition[ComponentStaticDefinition],
-      processCategoryService: ProcessCategoryService,
-      processingType: ProcessingType
-  ): List[(ComponentGroupName, ComponentNodeTemplate)] = {
-    val userCategoryService          = new UserCategoryService(processCategoryService)
-    val userCategories               = userCategoryService.getUserCategories(user)
-    val processingTypeCategories     = List(processCategoryService.getProcessingTypeCategoryUnsafe(processingType))
-    val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
-
-    def filterCategories(componentDefinition: ComponentStaticDefinition): List[String] =
-      userProcessingTypeCategories.intersect(
-        componentDefinition.categories.getOrElse(processCategoryService.getAllCategories)
-      )
-
+      definitions: ModelDefinition[ComponentStaticDefinition]
+  ): List[ComponentNodeTemplateWithGroupNames] = {
     def parameterTemplates(componentDefinition: ComponentStaticDefinition): List[NodeParameter] =
       NodeParameterTemplatesPreparer.prepareNodeParameterTemplates(componentDefinition.parameters)
 
@@ -87,17 +71,25 @@ private[component] object ComponentNodeTemplatePreparer {
       }
       val branchParametersTemplate =
         NodeParameterTemplatesPreparer.prepareNodeBranchParameterTemplates(componentDefinition.parameters)
-      val componentNodeTemplate = ComponentNodeTemplate.create(
+      val componentNodeTemplate = UIComponentNodeTemplate.create(
         info,
         nodeTemplate,
-        filterCategories(componentDefinition),
         branchParametersTemplate
       )
-      val componentGroup = componentDefinition.componentGroupUnsafe
-      (componentGroup, componentNodeTemplate)
+      ComponentNodeTemplateWithGroupNames(
+        componentNodeTemplate,
+        componentDefinition.originalGroupName,
+        componentDefinition.componentGroupUnsafe
+      )
     }
 
     definitions.components.toList.map(prepareComponentNodeTemplateWithGroup _ tupled)
   }
 
 }
+
+private[component] case class ComponentNodeTemplateWithGroupNames(
+    nodeTemplate: UIComponentNodeTemplate,
+    originalGroupName: ComponentGroupName,
+    mappedGroupName: ComponentGroupName
+)

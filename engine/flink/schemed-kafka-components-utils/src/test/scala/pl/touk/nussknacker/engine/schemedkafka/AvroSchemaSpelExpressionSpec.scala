@@ -238,7 +238,7 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
     SpelExpressionParser
       .default(
         getClass.getClassLoader,
-        ModelDefinitionBuilder.empty.expressionConfig,
+        ModelDefinitionBuilder.emptyExpressionConfig,
         new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))),
         enableSpelForceCompile = true,
         Standard,

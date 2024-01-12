@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -12,7 +12,10 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, CustomComponentSpecificData}
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  CustomComponentSpecificData
+}
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -22,11 +25,9 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil.toDisplayable
 import pl.touk.nussknacker.ui.component.ComponentIdProvider
-import pl.touk.nussknacker.ui.definition.ModelDefinitionWithComponentIds
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -69,13 +70,16 @@ object ProcessTestData {
     def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] = ???
   }
 
-  val modelDefinition: ModelDefinition[ComponentStaticDefinition] =
-    ModelDefinitionBuilder.empty
-      .withSourceFactory(existingSourceFactory)
-      .withSourceFactory(otherExistingSourceFactory)
-      .withSourceFactory(csvSourceFactory)
-      .withSinkFactory(existingSinkFactory)
-      .withSinkFactory(
+  def modelDefinition(
+      groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]] = Map.empty
+  ): ModelDefinition[ComponentDefinitionWithImplementation] =
+    ModelDefinitionBuilder
+      .empty(groupNameMapping)
+      .withSource(existingSourceFactory)
+      .withSource(otherExistingSourceFactory)
+      .withSource(csvSourceFactory)
+      .withSink(existingSinkFactory)
+      .withSink(
         existingSinkFactoryKafkaString,
         Parameter[String](TopicParamName),
         Parameter[Any](SinkValueParamName).copy(isLazyParameter = true)
@@ -93,41 +97,35 @@ object ProcessTestData {
           validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a"))))
         )
       )
-      .withCustomStreamTransformer(
+      .withCustom(
         existingStreamTransformer,
         Some(Typed[String]),
         CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
       )
-      .withCustomStreamTransformer(
+      .withCustom(
         otherExistingStreamTransformer,
         Some(Typed[String]),
         CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
       )
-      .withCustomStreamTransformer(
+      .withCustom(
         otherExistingStreamTransformer2,
         Some(Typed[String]),
         CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
       )
-      .withCustomStreamTransformer(
+      .withCustom(
         optionalEndingStreamTransformer,
         Some(Typed[String]),
         CustomComponentSpecificData(manyInputs = false, canBeEnding = true)
       )
-      .withCustomStreamTransformer(
+      .withCustom(
         union,
         Some(Unknown),
         CustomComponentSpecificData(manyInputs = true, canBeEnding = true)
       )
-
-  val modelDefinitionWithIds: ModelDefinitionWithComponentIds =
-    ModelDefinitionWithComponentIds(
-      modelDefinition,
-      new SimpleTestComponentIdProvider,
-      TestProcessingTypes.Streaming
-    )
+      .build
 
   def processValidator: UIProcessValidator = new UIProcessValidator(
-    ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),
+    ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition())),
     Map.empty,
     List.empty,
     new FragmentResolver(new StubFragmentRepository(Map.empty))

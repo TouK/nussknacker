@@ -137,7 +137,6 @@ class SpelExpressionSuggester(
 
       methods.values.flatten.map { method =>
         // TODO: present all overloaded methods, not only one with most parameters.
-        //  Current logic here is the same as in UIProcessObjectsFactory
         val signature = method.signatures.toList.maxBy(_.parametersToList.length)
         ExpressionSuggestion(
           method.name,

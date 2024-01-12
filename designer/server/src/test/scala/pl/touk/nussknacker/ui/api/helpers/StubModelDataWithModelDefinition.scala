@@ -5,15 +5,14 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessConfigCreator}
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 class StubModelDataWithModelDefinition(
-    definition: ModelDefinition[ComponentStaticDefinition],
+    definition: ModelDefinition[ComponentDefinitionWithImplementation],
     configDuringExecution: Config = ConfigFactory.empty()
 ) extends ModelData {
 
@@ -33,6 +32,6 @@ class StubModelDataWithModelDefinition(
 
   override def category: Option[String] = None
 
-  override def extractModelDefinitionFun: ExtractDefinitionFun = (_, _) =>
-    ModelDefinitionBuilder.withNullImplementation(definition)
+  override def extractModelDefinitionFun: ExtractDefinitionFun = (_, _) => definition
+
 }
