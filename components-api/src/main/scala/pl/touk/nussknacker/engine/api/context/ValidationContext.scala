@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InvalidVariableOutputName, OverwrittenVariable}
-import pl.touk.nussknacker.engine.api.context.ValidationContext.empty
+import pl.touk.nussknacker.engine.api.context.ValidationContext.{empty, validateVariableName}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.NodeId
 
@@ -13,6 +13,15 @@ import javax.lang.model.SourceVersion
 object ValidationContext {
 
   def empty: ValidationContext = ValidationContext()
+
+  def validateVariableName(name: String, paramName: Option[String])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, String] = {
+    // TODO: add correct and more precise error messages
+    if (SourceVersion.isIdentifier(name)) Valid(name)
+    else Invalid(InvalidVariableOutputName(name, paramName)).toValidatedNel
+  }
+
 }
 
 case class ValidationContext(
@@ -36,7 +45,7 @@ case class ValidationContext(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
 
-    List(validateVariableExists(name, paramName), validateVariableFormat(name, paramName)).sequence
+    List(validateVariableExists(name, paramName), validateVariableName(name, paramName)).sequence
       .map(_ => copy(localVariables = localVariables + (name -> value)))
   }
 
@@ -48,7 +57,7 @@ case class ValidationContext(
   def withVariableOverriden(name: String, value: TypingResult, paramName: Option[String])(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
-    validateVariableFormat(name, paramName)
+    validateVariableName(name, paramName)
       .map(_ => copy(localVariables = localVariables + (name -> value)))
   }
 
@@ -56,12 +65,6 @@ case class ValidationContext(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, String] =
     if (variables.contains(name)) Invalid(OverwrittenVariable(name, paramName)).toValidatedNel else Valid(name)
-
-  private def validateVariableFormat(name: String, paramName: Option[String])(
-      implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, String] =
-    if (SourceVersion.isIdentifier(name)) Valid(name)
-    else Invalid(InvalidVariableOutputName(name, paramName)).toValidatedNel
 
   def clearVariables: ValidationContext = copy(localVariables = Map.empty, parent = None)
 
