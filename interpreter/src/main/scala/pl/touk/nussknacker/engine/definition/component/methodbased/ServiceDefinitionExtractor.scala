@@ -16,7 +16,7 @@ object ServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[Serv
     classOf[ServiceInvocationCollector],
     classOf[MetaData],
     classOf[NodeId],
-    classOf[ContextId],
+    classOf[Context],
     classOf[ComponentUseCase]
   )
 
@@ -32,7 +32,7 @@ object JavaServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[
     classOf[ServiceInvocationCollector],
     classOf[MetaData],
     classOf[NodeId],
-    classOf[ContextId],
+    classOf[Context],
     classOf[ComponentUseCase]
   )
 
@@ -48,7 +48,7 @@ object EagerServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor
     classOf[ServiceInvocationCollector],
     classOf[MetaData],
     classOf[NodeId],
-    classOf[ContextId],
+    classOf[Context],
     classOf[ComponentUseCase]
   )
 

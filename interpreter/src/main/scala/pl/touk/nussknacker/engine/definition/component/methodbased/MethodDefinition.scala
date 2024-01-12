@@ -68,9 +68,10 @@ class OrderedDependencies(dependencies: List[NodeDependency]) extends Serializab
       case OutputVariableNameDependency =>
         outputVariableNameOpt.getOrElse(throw MissingOutputVariableException)
       case TypedNodeDependency(clazz) =>
-        additionalDependencies
-          .find(clazz.isInstance)
-          .getOrElse(throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
+        val found = additionalDependencies.find(clazz.isInstance)
+        found.getOrElse {
+          throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}")
+        }
     }
   }
 

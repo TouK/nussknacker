@@ -937,7 +937,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .buildSimpleVariable("result-end", resultVariable, "#data")
       .emptySink("end-end", "dummySink")
 
-    interpretProcess(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
+    val result = interpretProcess(process, Transaction())
+    result shouldBe Collections.singletonMap("bool", false)
   }
 
   test("inject fixed additional variable") {
@@ -1210,7 +1211,8 @@ object InterpreterSpec {
             context: Context,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
-          Future.successful(params(paramName).asInstanceOf[AnyRef])
+          val localParams = evaluateParams(context)._2
+          Future.successful(localParams(paramName).asInstanceOf[AnyRef])
         }
       }
     }
