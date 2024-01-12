@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
@@ -94,7 +94,9 @@ class DefinitionsService(
     UIComponentDefinition(
       parameters = componentDefinition.parameters.map(createUIParameter),
       returnType = componentDefinition.returnType,
-      outputParameters = None
+      outputParameters = Option(componentDefinition.componentTypeSpecificData).collect {
+        case FragmentSpecificData(outputNames) => outputNames
+      }
     )
   }
 

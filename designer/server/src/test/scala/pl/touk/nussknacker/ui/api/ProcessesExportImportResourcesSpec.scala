@@ -43,7 +43,7 @@ class ProcessesExportImportResourcesSpec
 
   private val processesExportResources =
     new ProcessesExportResources(
-      futureFetchingProcessRepository,
+      futureFetchingScenarioRepository,
       processService,
       processActivityRepository,
       processResolverByProcessingType

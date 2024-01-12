@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.definition
 
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
@@ -31,7 +32,7 @@ import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
+class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with OptionValues {
 
   object TestService extends Service {
 
@@ -176,6 +177,19 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val definitions = prepareDefinitions(model, List(fragment))
 
     definitions.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)) shouldBe empty
+  }
+
+  test("should return outputParameters in fragment's definition") {
+    val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
+
+    val fragment    = ProcessTestData.sampleFragmentOneOut
+    val definitions = prepareDefinitions(model, List(ProcessTestData.sampleFragmentOneOut))
+
+    val fragmentDefinition =
+      definitions.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)).value
+    val outputParameters = fragmentDefinition.outputParameters.value
+    outputParameters shouldEqual List("output")
   }
 
   test("should override component's parameter config with additionally provided config") {

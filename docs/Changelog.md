@@ -10,6 +10,7 @@
 * [#5280](https://github.com/TouK/nussknacker/pull/5280) Security improvement: Checking if user has access rights to fragment's Category for fragments served by definitions API
 * [#5303](https://github.com/TouK/nussknacker/pull/5303) Added `skipNodeResults` parameter to API endpoints that return scenario validation results
 * [#5323](https://github.com/TouK/nussknacker/pull/5323) Removed support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories)
+* [#5266](https://github.com/TouK/nussknacker/pull/5266) Security improvement: removed accessing class internals of records in expressions
 * [#TODO](https://github.com/TouK/nussknacker/pull/TODO) Pushed configs provided by AdditionalUIConfigProvider deeper into domain (at the stage of component definition extraction), allowing it to impact validation. However, changes now require model reload.
 
 1.13.0 (Not released yet)

@@ -4,20 +4,19 @@ import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
+import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 class NotificationApiSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager
-    with NuScenarioConfigurationHelper
+    with NuTestScenarioManager
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
@@ -36,7 +35,6 @@ class NotificationApiSpec
             equalTo("[]")
           )
       }
-
       "return a list of notifications" in {
         given()
           .basicAuth("admin", "admin")
@@ -48,10 +46,12 @@ class NotificationApiSpec
             equalTo("[]")
           )
 
-        val processName = ProcessName("process-execution-canceled")
-        createDeployedCanceledProcess(processName)
+        val scenarioName = "canceled-scenario-01"
 
         given()
+          .applicationState {
+            createDeployedCanceledExampleScenario(scenarioName)
+          }
           .basicAuth("admin", "admin")
           .when()
           .get(s"$nuDesignerHttpAddress/api/notifications")
@@ -61,14 +61,14 @@ class NotificationApiSpec
             matchJsonWithRegexValues(
               s"""[{
                  |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                 |  "scenarioName": "$processName",
+                 |  "scenarioName": "$scenarioName",
                  |  "message": "Deployment finished",
                  |  "type": null,
                  |  "toRefresh": [ "versions", "activity", "state" ]
                  |},
                  |{
                  |   "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                 |   "scenarioName": "$processName",
+                 |   "scenarioName": "$scenarioName",
                  |   "message": "Cancel finished",
                  |   "type": null,
                  |   "toRefresh": [ "versions", "activity", "state" ]

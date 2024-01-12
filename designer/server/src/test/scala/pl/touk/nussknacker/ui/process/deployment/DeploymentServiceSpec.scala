@@ -73,7 +73,7 @@ class DeploymentServiceSpec
   private var deploymentManager: MockDeploymentManager = _
   override protected val dbioRunner: DBIOActionRunner  = newDBIOActionRunner(testDbRef)
   private val fetchingProcessRepository                = newFetchingProcessRepository(testDbRef)
-  private val futureFetchingProcessRepository          = newFutureFetchingProcessRepository(testDbRef)
+  private val futureFetchingProcessRepository          = newFutureFetchingScenarioRepository(testDbRef)
   private val writeProcessRepository                   = newWriteProcessRepository(testDbRef)
   private val actionRepository                         = newActionProcessRepository(testDbRef)
   private val activityRepository                       = newProcessActivityRepository(testDbRef)

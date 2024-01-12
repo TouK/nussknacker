@@ -56,6 +56,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
   * `$processingType-$componentType-$componentName` format was replaced by `$componentType-$componentName` format
+* [#5323](https://github.com/TouK/nussknacker/pull/5323) Support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) was removed.
+  In the new format, you should specify `category` field inside each scenario type.
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
@@ -145,8 +147,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Configuration changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
-* [#5323](https://github.com/TouK/nussknacker/pull/5323) Support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) was removed.
-  In the new format, you should specify `category` field inside each scenario type.
 
 ### Other changes
 * [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:

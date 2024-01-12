@@ -26,7 +26,7 @@ class FragmentRepositorySpec
       ProcessConverter.toDisplayable(ProcessTestData.sampleFragment, TestProcessingTypes.Streaming, Category1)
     val sampleFragment2 =
       ProcessConverter.toDisplayable(ProcessTestData.sampleFragment2, TestProcessingTypes.Streaming, Category1)
-    savefragment(sampleFragment) {
+    saveFragment(sampleFragment) {
       status shouldEqual StatusCodes.OK
     }
     updateProcess(sampleFragment2) {

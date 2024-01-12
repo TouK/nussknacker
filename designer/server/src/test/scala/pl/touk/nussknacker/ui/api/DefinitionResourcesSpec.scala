@@ -114,14 +114,14 @@ class DefinitionResourcesSpec
       )
     }
 
-    val processName         = SampleProcess.process.name
+    val processName         = SampleScenario.scenario.name
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
     val displayableFragment = ProcessConverter.toDisplayable(
       processWithFragment.fragment,
       TestProcessingTypes.Streaming,
       TestCategories.Category1
     )
-    savefragment(displayableFragment)(succeed)
+    saveFragment(displayableFragment)(succeed)
     saveProcess(processName, processWithFragment.process, TestCategories.Category1)(succeed)
 
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
