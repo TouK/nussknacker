@@ -38,11 +38,9 @@ export default function ValidationFields({
     const extendedVariableType = useMemo(
         () => ({
             ...variableTypes,
-            value: definitionData.processDefinition.typesInformation.find(
-                (typesInformationType) => typesInformationType.clazzName.refClazzName === typ.refClazzName,
-            ).clazzName,
+            value: definitionData.classes.find((typesInformationType) => typesInformationType.refClazzName === typ.refClazzName),
         }),
-        [definitionData.processDefinition.typesInformation, typ.refClazzName, variableTypes],
+        [definitionData.classes, typ.refClazzName, variableTypes],
     );
 
     return (
