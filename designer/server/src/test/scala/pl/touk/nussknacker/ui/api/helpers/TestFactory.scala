@@ -100,7 +100,7 @@ object TestFactory extends TestPermissions {
   def newDummyDBIOActionRunner(): DBIOActionRunner =
     newDBIOActionRunner(dummyDbRef)
 
-  def newFutureFetchingProcessRepository(dbRef: DbRef) =
+  def newFutureFetchingScenarioRepository(dbRef: DbRef) =
     new DBFetchingProcessRepository[Future](dbRef, newActionProcessRepository(dbRef)) with BasicRepository
 
   def newFetchingProcessRepository(dbRef: DbRef) =
@@ -116,7 +116,7 @@ object TestFactory extends TestPermissions {
     newWriteProcessRepository(dummyDbRef)
 
   def newFragmentRepository(dbRef: DbRef): DefaultFragmentRepository =
-    new DefaultFragmentRepository(newFutureFetchingProcessRepository(dbRef))
+    new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
     new DbProcessActionRepository[DB](dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
