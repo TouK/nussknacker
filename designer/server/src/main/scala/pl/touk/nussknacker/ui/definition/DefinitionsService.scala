@@ -26,7 +26,7 @@ class DefinitionsService(
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
     modelDefinitionEnricher: ModelDefinitionEnricher,
-    additionalUIConfigFinalizer: AdditionalUIConfigFinalizer,
+    scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     fragmentRepository: FragmentRepository
 )(implicit ec: ExecutionContext) {
 
@@ -36,8 +36,8 @@ class DefinitionsService(
     fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
       val enrichedModelDefinition =
         modelDefinitionEnricher
-          .modelDefinitionWithBuiltInComponentsAndFragments(forFragment, fragments, processingType)
-      val finalizedScenarioPropertiesConfig = additionalUIConfigFinalizer
+          .modelDefinitionWithBuiltInComponentsAndFragments(forFragment, fragments)
+      val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
         .finalizeScenarioProperties(scenarioPropertiesConfig, processingType)
       prepareUIDefinitions(
         enrichedModelDefinition,
@@ -105,7 +105,7 @@ object DefinitionsService {
   def apply(
       processingTypeData: ProcessingTypeData,
       modelDefinitionEnricher: ModelDefinitionEnricher,
-      additionalUIConfigFinalizer: AdditionalUIConfigFinalizer,
+      scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
       fragmentRepository: FragmentRepository
   )(implicit ec: ExecutionContext) =
     new DefinitionsService(
@@ -113,7 +113,7 @@ object DefinitionsService {
       processingTypeData.scenarioPropertiesConfig,
       processingTypeData.deploymentManager,
       modelDefinitionEnricher,
-      additionalUIConfigFinalizer,
+      scenarioPropertiesConfigFinalizer,
       fragmentRepository
     )
 

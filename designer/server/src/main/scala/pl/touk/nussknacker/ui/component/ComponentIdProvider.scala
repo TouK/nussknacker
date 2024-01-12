@@ -2,13 +2,10 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.node.ComponentInfoExtractor
 
 //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
 trait ComponentIdProvider {
   def createComponentId(processingType: ProcessingType, componentInfo: ComponentInfo): ComponentId
-  def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId]
 }
 
 class DefaultComponentIdProvider(
@@ -34,11 +31,6 @@ class DefaultComponentIdProvider(
 
     overriddenComponentId
   }
-
-  override def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] =
-    ComponentInfoExtractor
-      .fromScenarioNode(node)
-      .map(createComponentId(processingType, _))
 
   private def getOverriddenComponentId(
       processingType: ProcessingType,

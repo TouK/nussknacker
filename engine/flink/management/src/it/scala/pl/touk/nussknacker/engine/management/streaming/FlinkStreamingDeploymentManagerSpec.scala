@@ -213,7 +213,11 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   def empty(processName: ProcessName): ProcessVersion = ProcessVersion.empty.copy(processName = processName)
 
   test("extract scenario definition") {
-    val modelData  = ModelData(processingTypeConfig)
+    val modelData = ModelData(
+      processingType = None,
+      processingTypeConfig = processingTypeConfig,
+      additionalConfigsFromProvider = Map.empty
+    )
     val definition = modelData.modelDefinition
     definition.components should contain key ComponentInfo(ComponentType.Service, "accountService")
   }

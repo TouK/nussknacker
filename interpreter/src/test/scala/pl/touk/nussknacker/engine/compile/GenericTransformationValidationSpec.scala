@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
-import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Inside, OptionValues}
@@ -49,7 +48,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
   private val modelDefinition = ModelDefinition(
-    ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+    ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty, None, Map.empty),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default
   )

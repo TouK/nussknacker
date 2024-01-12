@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{
 }
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel.{category, typeName}
 import _root_.sttp.client3.SttpBackend
+import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.toValueWithPermission
 
@@ -25,7 +26,8 @@ class LocalProcessingTypeDataStateFactory(
 
   override def create(
       designerConfig: ConfigWithUnresolvedVersion,
-      deploymentServiceSupplier: Supplier[DeploymentService]
+      deploymentServiceSupplier: Supplier[DeploymentService],
+      additionalUIConfigProvider: AdditionalUIConfigProvider
   )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,

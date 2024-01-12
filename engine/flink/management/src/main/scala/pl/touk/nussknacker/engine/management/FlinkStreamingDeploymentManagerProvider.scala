@@ -50,7 +50,10 @@ object FlinkStreamingDeploymentManagerProvider {
   ): DeploymentManager = {
     val typeConfig = ProcessingTypeConfig.read(config)
     new FlinkStreamingDeploymentManagerProvider()
-      .createDeploymentManager(ModelData(typeConfig), typeConfig.deploymentConfig)
+      .createDeploymentManager(
+        ModelData(processingType = None, processingTypeConfig = typeConfig, additionalConfigsFromProvider = Map.empty),
+        typeConfig.deploymentConfig
+      )
   }
 
 }

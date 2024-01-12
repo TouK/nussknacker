@@ -202,7 +202,9 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       TestCreator,
       category,
       ProcessObjectDependencies.withConfig(modelConfig),
-      ComponentsUiConfigParser.parse(modelConfig)
+      ComponentsUiConfigParser.parse(modelConfig),
+      None,
+      Map.empty
     )
     ModelDefinitionWithClasses(modelDefinition)
   }

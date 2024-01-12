@@ -3,11 +3,7 @@ package pl.touk.nussknacker.ui.component
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
@@ -63,49 +59,6 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
         provider.createComponentId(processingType, componentInfo)
       }.getMessage shouldBe s"Component id can't be overridden for: $componentInfo"
     })
-  }
-
-  // TODO: This test should be moved next to ComponentInfoExtractor and here we should test only component id overriding mechanism
-  it should "create ComponentId for NodeData" in {
-    val testingData = Table(
-      ("nodeData", "expected"),
-      (Filter("", ""), Some(cid(BuiltInComponentInfo.Filter))),
-      (Switch(""), Some(cid(BuiltInComponentInfo.Choice))),
-      (VariableBuilder("", "", Nil), Some(cid(BuiltInComponentInfo.RecordVariable))),
-      (Variable("", "", ""), Some(cid(BuiltInComponentInfo.Variable))),
-      (Split(""), Some(cid(BuiltInComponentInfo.Split))),
-      (FragmentInputDefinition("", Nil), Some(cid(BuiltInComponentInfo.FragmentInputDefinition))),
-      (FragmentOutputDefinition("", ""), Some(cid(BuiltInComponentInfo.FragmentOutputDefinition))),
-      (
-        Source("source", SourceRef(componentName, Nil)),
-        Some(cid(ComponentInfo(ComponentType.Source, componentName)))
-      ),
-      (Sink("sink", SinkRef(componentName, Nil)), Some(cid(ComponentInfo(ComponentType.Sink, componentName)))),
-      (
-        Enricher("enricher", ServiceRef(componentName, Nil), "out"),
-        Some(cid(ComponentInfo(ComponentType.Service, componentName)))
-      ),
-      (
-        Processor("processor", ServiceRef(componentName, Nil)),
-        Some(cid(ComponentInfo(ComponentType.Service, componentName)))
-      ),
-      (
-        CustomNode("custom", None, componentName, Nil),
-        Some(cid(ComponentInfo(ComponentType.CustomComponent, componentName)))
-      ),
-      (
-        FragmentInput("fragment", FragmentRef(componentName, Nil)),
-        Some(cid(ComponentInfo(ComponentType.Fragment, componentName)))
-      ),
-      (FragmentUsageOutput("output", "", None), None),
-      (BranchEndData(BranchEndDefinition("", "")), None),
-      (Source("source", SourceRef(componentNameToOverride, Nil)), Some(overriddenId)),
-    )
-
-    forAll(testingData) { (nodeData: NodeData, expected: Option[ComponentId]) =>
-      val result = componentIdProvider.nodeToComponentId(processingType, nodeData)
-      result shouldBe expected
-    }
   }
 
   private def cid(componentInfo: ComponentInfo): ComponentId =

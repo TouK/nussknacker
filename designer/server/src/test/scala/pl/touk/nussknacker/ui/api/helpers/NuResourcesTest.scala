@@ -24,17 +24,17 @@ import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.CustomActionRequest
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -43,8 +43,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataProvider,
-  ProcessingTypeDataReader,
-  ProcessingTypeDataState
+  ProcessingTypeDataReader
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
@@ -132,14 +131,32 @@ trait NuResourcesTest
     }
 
   protected val testModelDataProvider: ProcessingTypeDataProvider[ModelData, _] = mapProcessingTypeDataProvider(
-    Streaming  -> ModelData(processingTypeConfig),
-    Streaming2 -> ModelData(processingTypeConfig)
+    Streaming -> ModelData(
+      Some(Streaming),
+      processingTypeConfig,
+      TestAdditionalUIConfigProvider.componentAdditionalConfigMap
+    ),
+    Streaming2 -> ModelData(
+      Some(Streaming2),
+      processingTypeConfig,
+      TestAdditionalUIConfigProvider.componentAdditionalConfigMap
+    )
   )
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
-      Streaming  -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig),
-      Streaming2 -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
+      Streaming -> ProcessingTypeData.createProcessingTypeData(
+        TestProcessingTypes.Streaming,
+        deploymentManagerProvider,
+        processingTypeConfig,
+        TestAdditionalUIConfigProvider
+      ),
+      Streaming2 -> ProcessingTypeData.createProcessingTypeData(
+        TestProcessingTypes.Streaming,
+        deploymentManagerProvider,
+        processingTypeConfig,
+        TestAdditionalUIConfigProvider
+      )
     )
 
   protected val newProcessPreparer: NewProcessPreparer = createNewProcessPreparer()
@@ -147,7 +164,12 @@ trait NuResourcesTest
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _] =
-    ProcessingTypeDataProvider(ProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(testConfig)))
+    ProcessingTypeDataProvider(
+      ProcessingTypeDataReader.loadProcessingTypeData(
+        ConfigWithUnresolvedVersion(testConfig),
+        TestAdditionalUIConfigProvider
+      )
+    )
 
   protected val customActionInvokerService =
     new CustomActionInvokerServiceImpl(futureFetchingProcessRepository, dmDispatcher, deploymentService)

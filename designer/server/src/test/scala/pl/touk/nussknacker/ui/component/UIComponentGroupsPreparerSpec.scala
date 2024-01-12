@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinit
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, ModelDefinitionEnricher}
+import pl.touk.nussknacker.ui.definition.ModelDefinitionEnricher
 
 class UIComponentGroupsPreparerSpec
     extends AnyFunSuite
@@ -147,14 +147,13 @@ class UIComponentGroupsPreparerSpec
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
       new BuiltInComponentsStaticDefinitionsPreparer(new ComponentsUiConfig(Map.empty, groupNameMapping)),
       new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
-      new AdditionalUIConfigFinalizer(AdditionalUIConfigProvider.empty),
       modelDefinition.toStaticComponentsDefinition
     )
+
     modelDefinitionEnricher
       .modelDefinitionWithBuiltInComponentsAndFragments(
         forFragment = false,
-        fragmentScenarios = List.empty,
-        TestProcessingTypes.Streaming
+        fragmentScenarios = List.empty
       )
   }
 

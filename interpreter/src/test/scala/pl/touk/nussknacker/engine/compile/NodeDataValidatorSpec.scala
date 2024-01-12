@@ -7,7 +7,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  ComponentDefinition,
+  ComponentId,
+  ParameterAdditionalUIConfig
+}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
@@ -81,7 +86,15 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         ComponentDefinition("genericParametersThrowingException", GenericParametersThrowingException),
         ComponentDefinition("missingParamHandleGenericNodeTransformation", MissingParamHandleGenericNodeTransformation),
         ComponentDefinition("genericParametersSource", new GenericParametersSource),
-        ComponentDefinition("genericParametersSink", GenericParametersSink)
+        ComponentDefinition("genericParametersSink", GenericParametersSink),
+        ComponentDefinition("optionalParameterService", OptionalParameterService)
+      ),
+      additionalConfigsFromProvider = Map(
+        ComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            "optionalParam" -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
+          )
+        )
       )
     )
   }
@@ -594,6 +607,25 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             None,
             None
           ) =>
+    }
+  }
+
+  test(
+    "should validate service based on additional config from provider - P1 as mandatory param with missing actual value"
+  ) {
+    val nodeId = "enricherNodeId"
+    val nodeToBeValidated = node.Enricher(
+      nodeId,
+      ServiceRef("optionalParameterService", List(NodeParameter("optionalParam", Expression.spel("")))),
+      "out"
+    )
+
+    validate(
+      nodeToBeValidated,
+      ValidationContext.empty,
+      outgoingEdges = defaultFragmentOutgoingEdges
+    ) should matchPattern {
+      case ValidationPerformed(List(EmptyMandatoryParameter(_, _, "optionalParam", nodeId)), None, None) =>
     }
   }
 

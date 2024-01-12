@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
@@ -12,14 +11,12 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 class ModelDefinitionEnricher(
     builtInComponentsDefinitionsPreparer: BuiltInComponentsStaticDefinitionsPreparer,
     fragmentDefinitionExtractor: FragmentWithoutValidatorsDefinitionExtractor,
-    additionalUIConfigFinalizer: AdditionalUIConfigFinalizer,
     modelDefinition: ModelDefinition[ComponentStaticDefinition]
 ) {
 
   def modelDefinitionWithBuiltInComponentsAndFragments(
       forFragment: Boolean,
       fragmentScenarios: List[CanonicalProcess],
-      processingType: ProcessingType
   ): ModelDefinition[ComponentStaticDefinition] = {
     val builtInComponents =
       builtInComponentsDefinitionsPreparer.prepareStaticDefinitions(forFragment)
@@ -27,12 +24,10 @@ class ModelDefinitionEnricher(
       // TODO: Support for fragments using other fragments
       if (forFragment) List.empty
       else extractFragmentComponents(fragmentScenarios)
-    additionalUIConfigFinalizer.finalizeModelDefinition(
-      modelDefinition
-        .withComponents(builtInComponents)
-        .withComponents(fragmentComponents.toList),
-      processingType
-    )
+
+    modelDefinition
+      .withComponents(builtInComponents)
+      .withComponents(fragmentComponents.toList)
   }
 
   private def extractFragmentComponents(
@@ -52,14 +47,12 @@ object ModelDefinitionEnricher {
 
   def apply(
       modelData: ModelData,
-      additionalUIConfigFinalizer: AdditionalUIConfigFinalizer,
       modelDefinition: ModelDefinition[ComponentStaticDefinition]
   ): ModelDefinitionEnricher = {
     val builtInComponentConfig = ComponentsUiConfigParser.parse(modelData.modelConfig)
     new ModelDefinitionEnricher(
       new BuiltInComponentsStaticDefinitionsPreparer(builtInComponentConfig),
       new FragmentWithoutValidatorsDefinitionExtractor(modelData.modelClassLoader.classLoader),
-      additionalUIConfigFinalizer,
       modelDefinition
     )
   }

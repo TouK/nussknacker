@@ -121,7 +121,7 @@ class BaseFlowTest
             "paramStringEditor" -> ParameterConfig(
               defaultValue = Some("'default-from-additional-ui-config-provider'"),
               editor = None,
-              validators = None,
+              validators = Some(List(MandatoryParameterValidator)),
               label = None,
               hintText = Some("hint-text-from-additional-ui-config-provider")
             ),

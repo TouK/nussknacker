@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.engine.definition.component
 
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.component.{
   ParameterConfig,
   SingleComponentConfig
 }
+import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
 import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
 
 object ComponentAdditionalConfigConverter {
@@ -39,7 +40,11 @@ object ComponentAdditionalConfigConverter {
         )
         .toOption
     ),
-    validators = None, // see AdditionalUIConfigProvider TODOs
+    validators = if (paramAdditionalConfig.required) {
+      Some(List(MandatoryParameterValidator))
+    } else {
+      None
+    }, // see AdditionalUIConfigProvider TODOs
     label = None,
     hintText = paramAdditionalConfig.hintText
   )

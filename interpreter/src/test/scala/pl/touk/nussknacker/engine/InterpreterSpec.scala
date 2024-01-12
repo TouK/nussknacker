@@ -171,7 +171,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         additionalComponents
 
     val definitions = ModelDefinition(
-      ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+      ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty, None, Map.empty),
       ModelDefinitionBuilder.emptyExpressionConfig.copy(
         languages = LanguageConfiguration(List(LiteralExpressionParser))
       ),

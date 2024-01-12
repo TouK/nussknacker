@@ -4,9 +4,10 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinition,
@@ -26,40 +27,63 @@ import java.net.URL
 object ModelData extends LazyLogging {
 
   type ExtractDefinitionFun =
-    (ClassLoader, ProcessObjectDependencies) => ModelDefinition[ComponentDefinitionWithImplementation]
+    (
+        ClassLoader,
+        ProcessObjectDependencies,
+        Option[ProcessingType],
+        Map[ComponentId, ComponentAdditionalConfig]
+    ) => ModelDefinition[ComponentDefinitionWithImplementation]
 
-  def apply(processingTypeConfig: ProcessingTypeConfig): ModelData = {
+  def apply(
+      processingType: Option[ProcessingType],
+      processingTypeConfig: ProcessingTypeConfig,
+      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+  ): ModelData = {
     ModelData(
       processingTypeConfig.modelConfig,
       ModelClassLoader(processingTypeConfig.classPath),
-      Some(processingTypeConfig.category)
+      Some(processingTypeConfig.category),
+      processingType,
+      additionalConfigsFromProvider
     )
   }
 
-  // On the runtime side, we get only model config, not the whole processing type config, so we don't have category
+  // On the runtime side, we get only model config, not the whole processing type config,
+  // so we don't have category, processingType and additionalConfigsFromProvider
   // But it is not a big deal, because scenario was already validated before deploy, so we already check that
   // we don't use not allowed components for a given category
+  // and that the scenario doesn't violate validators introduced by additionalConfigsFromProvider
   def apply(inputConfig: Config, modelClassLoader: ModelClassLoader, category: Option[String]): ModelData = {
-    ModelData(ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig), modelClassLoader, category)
+    ModelData(
+      inputConfig = ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig),
+      modelClassLoader = modelClassLoader,
+      category = category,
+      processingType = None,
+      additionalConfigsFromProvider = Map.empty
+    )
   }
 
   def apply(
       inputConfig: ConfigWithUnresolvedVersion,
       modelClassLoader: ModelClassLoader,
-      category: Option[String]
+      category: Option[String],
+      processingType: Option[ProcessingType],
+      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): ModelData = {
     logger.debug("Loading model data from: " + modelClassLoader)
     ClassLoaderModelData(
       modelConfigLoader =>
         modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
       modelClassLoader,
-      category
+      category,
+      processingType,
+      additionalConfigsFromProvider
     )
   }
 
   // Used on Flink, where we start already with resolved config so we should not resolve it twice.
   def duringExecution(inputConfig: Config): ModelData = {
-    ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil), None)
+    ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil), None, None, Map.empty)
   }
 
   implicit class BaseModelDataExt(baseModelData: BaseModelData) {
@@ -71,7 +95,9 @@ object ModelData extends LazyLogging {
 case class ClassLoaderModelData private (
     private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
     modelClassLoader: ModelClassLoader,
-    override val category: Option[String]
+    override val category: Option[String],
+    override val processingType: Option[ProcessingType],
+    override val additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
 ) extends ModelData {
 
   // this is not lazy, to be able to detect if creator can be created...
@@ -113,13 +139,17 @@ object ClassLoaderModelData {
 
     override def apply(
         classLoader: ClassLoader,
-        modelDependencies: ProcessObjectDependencies
+        modelDependencies: ProcessObjectDependencies,
+        processingType: Option[ProcessingType],
+        additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
     ): ModelDefinition[ComponentDefinitionWithImplementation] = {
       ModelDefinitionExtractor.extractModelDefinition(
         configCreator,
         classLoader,
         modelDependencies,
-        category
+        category,
+        processingType,
+        additionalConfigsFromProvider
       )
     }
 
@@ -136,9 +166,18 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // It won't be necessary after we get rid of ProcessConfigCreator API
   def category: Option[String]
 
+  def processingType: Option[ProcessingType]
+
+  def additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+
   final lazy val modelDefinitionWithClasses: ModelDefinitionWithClasses = {
     val modelDefinitions = withThisAsContextClassLoader {
-      extractModelDefinitionFun(modelClassLoader.classLoader, ProcessObjectDependencies(modelConfig, objectNaming))
+      extractModelDefinitionFun(
+        modelClassLoader.classLoader,
+        ProcessObjectDependencies(modelConfig, objectNaming),
+        processingType,
+        additionalConfigsFromProvider
+      )
     }
     ModelDefinitionWithClasses(modelDefinitions)
   }

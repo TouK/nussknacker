@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -52,7 +51,7 @@ class InterpreterSetup[T: ClassTag] {
     ) ::: additionalComponents
 
     val definitions = ModelDefinition(
-      ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+      ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty, None, Map.empty),
       ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default
     )

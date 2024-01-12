@@ -59,7 +59,12 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
           definitionContext: ComponentDefinitionContext
       ): ModelDefinition[ComponentDefinitionWithImplementation] = {
         val testComponents =
-          ComponentDefinitionWithImplementation.forList(testExtensionsHolder.components, ComponentsUiConfig.Empty)
+          ComponentDefinitionWithImplementation.forList(
+            components = testExtensionsHolder.components,
+            additionalConfigs = ComponentsUiConfig.Empty,
+            processingType = None,
+            additionalConfigsFromProvider = Map.empty
+          )
 
         originalModelDefinition
           .withComponents(testComponents)

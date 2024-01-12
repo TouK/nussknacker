@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import shapeless.syntax.typeable.typeableOps
 import sttp.client3.SttpBackend
@@ -31,7 +32,11 @@ object MockDeploymentManager {
 class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
     implicit deploymentService: ProcessingTypeDeploymentService
 ) extends FlinkDeploymentManager(
-      ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)),
+      ModelData(
+        Some(TestProcessingTypes.Streaming),
+        ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
+        TestAdditionalUIConfigProvider.componentAdditionalConfigMap
+      ),
       shouldVerifyBeforeDeploy = false,
       mainClassName = "UNUSED"
     ) {

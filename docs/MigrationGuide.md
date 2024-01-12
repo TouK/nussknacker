@@ -29,6 +29,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `RemoteEnvironment.testMigration` result types changes
     * `shouldFailOnNewErrors` field was removed - it wasn't used anywhere anymore
     * `converted` field was replaced by the `processName` field which was the only information that was used
+* [#TODO](https://github.com/TouK/nussknacker/pull/TODO) Changes in AdditionalUIConfigProvider.getAllForProcessingType now require model reload to take effect.
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280) Changes in the definition API:

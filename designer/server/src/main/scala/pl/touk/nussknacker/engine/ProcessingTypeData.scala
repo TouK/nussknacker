@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine
 import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentStaticDefinition,
   ToStaticComponentDefinitionTransformer
@@ -35,20 +36,24 @@ final case class ProcessingTypeData private (
 object ProcessingTypeData {
 
   def createProcessingTypeData(
+      processingType: ProcessingType,
       deploymentManagerProvider: DeploymentManagerProvider,
-      processTypeConfig: ProcessingTypeConfig
+      processingTypeConfig: ProcessingTypeConfig,
+      additionalUIConfigProvider: AdditionalUIConfigProvider
   )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
-    val managerConfig = processTypeConfig.deploymentConfig
+    val managerConfig                 = processingTypeConfig.deploymentConfig
+    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
+
     createProcessingTypeData(
       deploymentManagerProvider,
-      ModelData(processTypeConfig),
+      ModelData(Some(processingType), processingTypeConfig, additionalConfigsFromProvider),
       managerConfig,
-      processTypeConfig.category
+      processingTypeConfig.category
     )
   }
 

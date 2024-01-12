@@ -117,7 +117,8 @@ class FlinkProcessCompilerDataFactory(
   ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
     val modelDefinitionWithTypes = ModelDefinitionWithClasses(
-      extractModelDefinition(userCodeClassLoader, modelDependencies)
+      // processingType and additionalConfigsFromProvider aren't provided, as they are not needed to run the process on flink
+      extractModelDefinition(userCodeClassLoader, modelDependencies, None, Map.empty)
     )
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(
       modelDefinitionWithTypes.modelDefinition.expressionConfig.dictionaries

@@ -18,7 +18,12 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, StubFragmentRepository, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{
+  MockDeploymentManager,
+  ProcessTestData,
+  StubFragmentRepository,
+  TestProcessingTypes
+}
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.security.api.AdminUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -167,7 +172,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
-    val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
+    val fragment    = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val definitions = prepareDefinitions(model, List(fragment))
 
     definitions.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)) shouldBe empty
@@ -176,7 +181,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
   test("should override component's parameter config with additionally provided config") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-      List(ComponentDefinition("enricher", TestService))
+      List(ComponentDefinition("enricher", TestService)),
+      additionalConfigsFromProvider = TestAdditionalUIConfigProvider.componentAdditionalConfigMap
     )
 
     val definitions = prepareDefinitions(model, List.empty)
@@ -191,7 +197,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
   test("should override component's component groups with additionally provided config") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-      List(ComponentDefinition("enricher", TestService))
+      List(ComponentDefinition("enricher", TestService)),
+      additionalConfigsFromProvider = TestAdditionalUIConfigProvider.componentAdditionalConfigMap
     )
 
     val definitions = prepareDefinitions(model, List.empty)
@@ -218,11 +225,9 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         model,
         MetaDataInitializer(StreamMetaData.typeName).create(_, Map.empty)
       )
-    val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(TestAdditionalUIConfigProvider)
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
       new BuiltInComponentsStaticDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
       new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
-      additionalUIConfigFinalizer,
       staticModelDefinition
     )
     new DefinitionsService(
@@ -230,12 +235,13 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       scenarioPropertiesConfig = Map.empty,
       deploymentManager = new MockDeploymentManager,
       modelDefinitionEnricher = modelDefinitionEnricher,
-      additionalUIConfigFinalizer = additionalUIConfigFinalizer,
+      scenarioPropertiesConfigFinalizer = new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider),
       fragmentRepository = new StubFragmentRepository(Map(TestProcessingTypes.Streaming -> fragmentScenarios))
     ).prepareUIDefinitions(
       TestProcessingTypes.Streaming,
       forFragment = false
-    )(AdminUser("admin", "admin")).futureValue
+    )(AdminUser("admin", "admin"))
+      .futureValue
   }
 
 }

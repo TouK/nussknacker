@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
 import cats.data.Validated.Valid
-import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
@@ -113,8 +112,7 @@ class DefaultComponentService(
         val componentsDefinition =
           processingTypeData.modelDefinitionEnricher.modelDefinitionWithBuiltInComponentsAndFragments(
             forFragment = false, // It excludes fragment's components: input / output
-            fragments,
-            processingType
+            fragments
           )
         createComponents(
           componentsDefinition.components,
@@ -136,6 +134,7 @@ class DefaultComponentService(
     componentsDefinition.toList
       .map { case (info, definition) =>
         // TODO: We should add componentId into ComponentDefinitionWithImplementation, thx to that we won't need to use ComponentIdProvider in many places
+        // TODO: alternatively, make sure that SingleComponentConfig.componentId is filled during ComponentDefinitionExtractor.extract and rely on it
         val componentId = componentIdProvider.createComponentId(processingType, info)
         val links       = createComponentLinks(componentId, info, definition)
 
