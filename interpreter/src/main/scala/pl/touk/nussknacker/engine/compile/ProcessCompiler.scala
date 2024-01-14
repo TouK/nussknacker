@@ -64,10 +64,9 @@ trait ProcessValidator extends LazyLogging {
       CompilationResult.map3(
         CompilationResult(IdValidator.validate(process, isFragment)),
         CompilationResult(validateWithCustomProcessValidators(process)),
+        // TODO local: validate fragment outputs here?
         compile(process).map(_ => ()): CompilationResult[Unit]
-      )((_, _, compiled) => {
-        compiled
-      })
+      )((_, _, _) => { () })
     } catch {
       case NonFatal(e) =>
         logger.warn(s"Unexpected error during compilation of ${process.name}", e)
@@ -113,6 +112,7 @@ protected trait ProcessCompilerBase {
   private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] =
     CompilationResult.map2(
       CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
+      // TODO local: validate fragment outputs here?
       compileSources(splittedProcess.sources)(splittedProcess.metaData)
     ) { (_, sources) =>
       CompiledProcessParts(splittedProcess.metaData, sources)
