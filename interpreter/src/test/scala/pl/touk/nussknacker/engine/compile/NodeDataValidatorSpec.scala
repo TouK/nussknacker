@@ -1184,7 +1184,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               InvalidVariableOutputName(
                 "1",
                 "in",
-                Some("$param-0-name")
+                Some("$param.1.$name")
               )
             ),
             None,
