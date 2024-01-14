@@ -74,28 +74,47 @@ class UIProcessValidator(
       canonical: CanonicalProcess,
       processingType: ProcessingType
   )(implicit loggedUser: LoggedUser): ValidationResult = {
+    def validateAndFormatResult(scenario: CanonicalProcess) = {
+      val validated = validator.validate(scenario)
+      validated.result
+        .fold(formatErrors, _ => ValidationResult.success)
+        .withNodeResults(validated.typing.mapValuesNow(nodeInfoToResult))
+    }
+
     // TODO: should we validate after resolve?
     val additionalValidatorErrors = additionalValidators
       .map(_.validate(canonical))
       .sequence
       .fold(formatErrors, _ => ValidationResult.success)
 
-    val resolveResult = fragmentResolver.resolveFragments(canonical, processingType) match {
-      case Invalid(e) => formatErrors(e)
-      case _          =>
-        /* 1. We remove disabled nodes from canonical to not validate disabled nodes
-           2. TODO: handle types when fragment resolution fails... */
-        fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType) match {
-          case Valid(process) =>
-            val validated = validator.validate(process)
-            // FIXME: Validation errors for fragment nodes are not properly handled by FE
-            validated.result
-              .fold(formatErrors, _ => ValidationResult.success)
-              .withNodeResults(validated.typing.mapValuesNow(nodeInfoToResult))
-          case Invalid(e) => formatErrors(e)
+    val resolvedScenarioResult = fragmentResolver.resolveFragments(canonical, processingType)
+
+    val validationResult = resolvedScenarioResult match {
+      case Invalid(fragmentResolutionErrors) => formatErrors(fragmentResolutionErrors)
+      case Valid(scenario) =>
+        val validationResult = validateAndFormatResult(scenario)
+
+        val containsDisabledNodes =
+          canonical.withoutDisabledNodes.collectAllNodes.size != canonical.collectAllNodes.size
+        if (containsDisabledNodes) {
+
+          val resolvedScenarioWithoutDisabledNodes =
+            fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType)
+
+          resolvedScenarioWithoutDisabledNodes match {
+            case Invalid(e)                          => formatErrors(e)
+            case Valid(scenarioWithoutDisabledNodes) =>
+              // FIXME: Validation errors for fragment nodes are not properly handled by FE
+              val resultWithoutDisabledNodes = validateAndFormatResult(scenarioWithoutDisabledNodes)
+              resultWithoutDisabledNodes.copy(nodeResults =
+                resultWithoutDisabledNodes.nodeResults ++ validationResult.nodeResults
+              )
+          }
+        } else {
+          validationResult
         }
     }
-    resolveResult.add(additionalValidatorErrors)
+    validationResult.add(additionalValidatorErrors)
   }
 
   private def nodeInfoToResult(typingInfo: NodeTypingInfo) = NodeTypingData(

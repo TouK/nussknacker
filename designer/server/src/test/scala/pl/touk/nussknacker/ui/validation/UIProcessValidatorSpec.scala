@@ -19,7 +19,13 @@ import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, Proces
 import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{
+  Typed,
+  TypedClass,
+  TypedObjectTypingResult,
+  TypedObjectWithValue,
+  Unknown
+}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
@@ -1237,6 +1243,21 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     nodeResults.get("s").value shouldEqual Map.empty
     nodeResults.get("v").value shouldEqual Map("input" -> Unknown)
     nodeResults.get("e").value shouldEqual Map("input" -> Unknown, "test" -> Typed.fromInstance(""))
+  }
+
+  test("return variable type information for scenario with disabled filter") {
+    val disabledFilterScenario = ScenarioBuilder
+      .streaming("id")
+      .source("start", existingSourceFactory)
+      .buildSimpleVariable("variable", "varName", Expression.spel("'string'"))
+      .filter("filter", "false", disabled = Some(true))
+      .emptySink("sink", existingSinkFactory)
+
+    val displayable = ProcessConverter.toDisplayable(disabledFilterScenario, TestProcessingTypes.Streaming, Category1)
+    val result      = TestFactory.processValidator.validate(displayable)
+
+    val nodeResults = result.nodeResults.mapValuesNow(_.variableTypes)
+    nodeResults.get("filter").value shouldEqual Map("input" -> Unknown, "varName" -> Typed.fromInstance("string"))
   }
 
 }
