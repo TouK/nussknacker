@@ -293,9 +293,17 @@ object ProcessCompilationError {
 
   final case class InvalidFragment(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  final case class MultipleOutputsForName(name: String, nodeId: String)
-      extends ProcessCompilationError
+  sealed trait DuplicateFragmentOutputNames extends ProcessCompilationError {
+    val duplicatedVarName: String
+  }
+
+  final case class DuplicateOutputNamesInScenarioUsage(duplicatedVarName: String, nodeId: String)
+      extends DuplicateFragmentOutputNames
       with InASingleNode
+
+  final case class DuplicateOutputNamesInFragment(duplicatedVarName: String) extends DuplicateFragmentOutputNames {
+    override def nodeIds: Set[String] = Set.empty
+  }
 
   final case class CustomNodeError(nodeId: String, message: String, paramName: Option[String])
       extends ProcessCompilationError

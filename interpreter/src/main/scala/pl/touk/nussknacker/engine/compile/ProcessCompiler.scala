@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated._
+import cats.implicits.toTraverseOps
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, Type
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
-import pl.touk.nussknacker.engine.graph.node.{Source => _, _}
+import pl.touk.nussknacker.engine.graph.node.{NodeData, Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
@@ -64,7 +65,6 @@ trait ProcessValidator extends LazyLogging {
       CompilationResult.map3(
         CompilationResult(IdValidator.validate(process, isFragment)),
         CompilationResult(validateWithCustomProcessValidators(process)),
-        // TODO local: validate fragment outputs here?
         compile(process).map(_ => ()): CompilationResult[Unit]
       )((_, _, _) => { () })
     } catch {
@@ -110,11 +110,11 @@ protected trait ProcessCompilerBase {
     globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(metaData)
 
   private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] =
-    CompilationResult.map2(
+    CompilationResult.map3(
       CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
-      // TODO local: validate fragment outputs here?
+      CompilationResult(validateUniqueFragmentOutputNames(splittedProcess)),
       compileSources(splittedProcess.sources)(splittedProcess.metaData)
-    ) { (_, sources) =>
+    ) { (_, _, sources) =>
       CompiledProcessParts(splittedProcess.metaData, sources)
     }
 
@@ -136,6 +136,33 @@ protected trait ProcessCompilerBase {
         (nextResult, branchContexts.addPart(nextSourcePart, compiledPart))
       }
     result.map(NonEmptyList.fromListUnsafe)
+  }
+
+  // TODO local: displaying this is problematic. This error is detectable only at whole process validation so can't be
+  //             displayed inside a node. Otherwise displaying it in the tips panel as a global error is ugly.
+  // TODO: validate single input in request response and single input in fragment like this
+  private def validateUniqueFragmentOutputNames(
+      splittedProcess: SplittedProcess
+  ): ValidatedNel[ProcessCompilationError, Unit] = {
+    if (splittedProcess.metaData.isFragment) {
+      val nodes               = NodesCollector.collectNodesInAllParts(splittedProcess.sources)
+      val fragmentOutputNodes = nodes.collect { case EndingNode(data: FragmentOutputDefinition) => data }
+      val duplicatedOutputNames = fragmentOutputNodes
+        .groupBy(_.outputName)
+        .collect {
+          case (name, nodes) if nodes.size > 1 => name
+        }
+        .toSet
+      val nodesWithDuplicatedOutputNames = fragmentOutputNodes.filter(n => duplicatedOutputNames(n.outputName))
+      // TODO local: how do we display this? if as global errors then need to not generate error per node
+      //             but per duplicated name
+      nodesWithDuplicatedOutputNames
+        .map(n => invalidNel(DuplicateOutputNamesInFragment(n.outputName)))
+        .sequence
+        .map(_ => ())
+    } else {
+      valid(())
+    }
   }
 
   private def findDuplicates(parts: NonEmptyList[SourcePart]): Validated[ProcessCompilationError, Unit] = {
