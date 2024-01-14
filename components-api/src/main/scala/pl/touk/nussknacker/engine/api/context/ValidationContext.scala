@@ -14,11 +14,13 @@ object ValidationContext {
 
   def empty: ValidationContext = ValidationContext()
 
+  def isVariableNameValid(name: String): Boolean = SourceVersion.isIdentifier(name)
+
   def validateVariableName(name: String, paramName: Option[String])(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, String] = {
     // TODO: add correct and more precise error messages
-    if (SourceVersion.isIdentifier(name)) Valid(name)
+    if (isVariableNameValid(name)) Valid(name)
     else Invalid(InvalidVariableOutputName(name, paramName)).toValidatedNel
   }
 
