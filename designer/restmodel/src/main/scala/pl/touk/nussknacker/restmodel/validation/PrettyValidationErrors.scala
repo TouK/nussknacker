@@ -151,9 +151,9 @@ object PrettyValidationErrors {
         invalidPropertyFixedValue(typ, fieldName, label, value, values)
       case CustomNodeError(_, message, paramName) =>
         NodeValidationError(typ, message, message, paramName, NodeValidationErrorType.SaveAllowed)
-      case MultipleOutputsForName(name, _) =>
+      case e: DuplicateFragmentOutputNames =>
         node(
-          s"There is more than one output with '$name' name defined in the fragment, currently this is not allowed",
+          s"There is more than one output with '${e.duplicatedVarName}' name defined in the fragment, currently this is not allowed",
           "Please check fragment definition"
         )
       case DuplicateFragmentInputParameter(paramName, _) =>

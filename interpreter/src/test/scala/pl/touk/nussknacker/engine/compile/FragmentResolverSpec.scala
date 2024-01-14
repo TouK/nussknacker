@@ -364,7 +364,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .emptySink("id1", "sink")
 
     val resolvedValidated = FragmentResolver(List(fragment)).resolve(scenario)
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(MultipleOutputsForName("output1", "fragment")))
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(DuplicateOutputNamesInScenarioUsage("output1", "fragment")))
 
   }
 
