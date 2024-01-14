@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -52,8 +52,7 @@ import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 import cats.implicits._
-
-import javax.lang.model.SourceVersion
+import pl.touk.nussknacker.engine.api.context.ValidationContext.validateVariableName
 
 object NodeCompiler {
 
@@ -166,37 +165,36 @@ class NodeCompiler(
           )
       }
 
-      // TODO local: extract this validation logic somewhere to avoid spaghetti
-      // TODO local: add unique name validation same as in record keys
-      val parameterNames = parameterDefinitions.value
+      val parameterNameValidation = parameterDefinitions.value
         .map(_.name)
-      val duplicatedParameterNames = parameterNames.groupBy(identity).view.mapValues(_.size).filter(_._2 > 1)
+        .groupBy(identity)
+        .foldLeft(valid(()): ValidatedNel[ProcessCompilationError, Unit]) { case (acc, (paramName, group)) =>
+          val duplicationError = if (group.size > 1) {
+            invalid(DuplicateFragmentInputParameter(paramName, nodeId.toString)).toValidatedNel
+          } else valid(())
+          val validIdentifierError = validateVariableName(
+            paramName,
+            Some(qualifiedParamFieldName(paramName, Some(ParameterNameFieldName)))
+          ).map(_ => ())
+          acc.combine(duplicationError).combine(validIdentifierError)
+        }
 
-      val parameterNamesAsParametersForValidation: Validated[NonEmptyList[PartSubGraphCompilationError], Unit] =
-        parameterNames.zipWithIndex.map { case (parameterName, index) =>
-          // TODO local: compose validation instead of this ifology
-          val first =
-            if (duplicatedParameterNames.contains(parameterName))
-              Invalid(
-                InvalidVariableOutputName(parameterName, Some(s"$$param-$index-$$name-duplicate"))
-              ).toValidatedNel
-            else valid(())
-          // TODO local: expose this properly in components-api and reuse it here and in suggester
-          val second = if (!SourceVersion.isIdentifier(parameterName)) {
-
-            Invalid(InvalidVariableOutputName(parameterName, Some(s"$$param-$index-$$name"))).toValidatedNel
-          } else {
-            valid(())
-          }
-          first.combine(second)
-        }.combineAll
-
-      val parameterExtractionValidation: Validated[NonEmptyList[PartSubGraphCompilationError], Unit] =
+      val parameterExtractionValidation =
         NonEmptyList.fromList(parameterDefinitions.written).map(errors => invalid(errors)).getOrElse(valid(()))
 
-      val combinedErrors = parameterNamesAsParametersForValidation |+| parameterExtractionValidation
+      // by relying on name for the field names used on FE, we display the same errors under all fields with the
+      // duplicated name
+      // TODO: display all errors when switching to field name errors not reliant on parameter name
+      val displayUniqueNameReliantErrors = parameterNameValidation.fold(
+        errors => errors.collect { case _: DuplicateFragmentInputParameter => }.isEmpty,
+        _ => true
+      )
 
-      compilationResult.copy(compiledObject = combinedErrors.andThen(_ => compilationResult.compiledObject))
+      val displayableErrors =
+        if (displayUniqueNameReliantErrors) parameterNameValidation |+| parameterExtractionValidation
+        else parameterNameValidation
+
+      compilationResult.copy(compiledObject = displayableErrors.andThen(_ => compilationResult.compiledObject))
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(

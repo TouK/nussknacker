@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.{
   InitialValueFieldName,
   InputModeFieldName,
+  ParameterNameFieldName,
   TypFieldName,
   ValidationExpressionFieldName,
   qualifiedParamFieldName
@@ -154,6 +155,12 @@ object PrettyValidationErrors {
         node(
           s"There is more than one output with '$name' name defined in the fragment, currently this is not allowed",
           "Please check fragment definition"
+        )
+      case DuplicateFragmentInputParameter(paramName, _) =>
+        node(
+          s"Parameter name '$paramName' has to be unique",
+          "Parameter name not unique",
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ParameterNameFieldName)))
         )
       case InitialValueNotPresentInPossibleValues(paramName, _) =>
         node(

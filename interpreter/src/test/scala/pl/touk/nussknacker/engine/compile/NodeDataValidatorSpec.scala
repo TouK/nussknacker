@@ -1193,6 +1193,75 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should return error on duplicated parameter name") {
+    val duplicatedParam = FragmentParameter(
+      "paramName",
+      FragmentClazzRef[String]
+    )
+    inside(
+      validate(
+        FragmentInputDefinition(
+          "in",
+          List(
+            duplicatedParam,
+            duplicatedParam
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              DuplicateFragmentInputParameter("paramName", "in")
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should not return specific errors based on parameter name when parameter names are duplicated") {
+    inside(
+      validate(
+        FragmentInputDefinition(
+          "in",
+          List(
+            FragmentParameter(
+              name = "paramName",
+              typ = FragmentClazzRef[String],
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = Some(
+                ParameterValueCompileTimeValidation(
+                  "invalidExpr",
+                  None
+                )
+              )
+            ),
+            FragmentParameter(
+              "paramName",
+              FragmentClazzRef[String],
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              DuplicateFragmentInputParameter("paramName", "in")
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
   private def genericParameters = List(
     Parameter[String]("par1")
       .copy(

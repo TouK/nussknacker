@@ -268,6 +268,10 @@ object ProcessCompilationError {
 
   final case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
+  final case class DuplicateFragmentInputParameter(paramName: String, nodeId: String)
+      extends PartSubGraphCompilationError
+      with InASingleNode
+
   final case class RequireValueFromEmptyFixedList(paramName: String, nodeIds: Set[String])
       extends PartSubGraphCompilationError
 
