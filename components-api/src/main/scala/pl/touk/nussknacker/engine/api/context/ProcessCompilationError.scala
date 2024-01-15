@@ -297,11 +297,12 @@ object ProcessCompilationError {
     val duplicatedVarName: String
   }
 
-  final case class DuplicateOutputNamesInScenarioUsage(duplicatedVarName: String, nodeId: String)
+  final case class DuplicateFragmentOutputNamesInScenario(duplicatedVarName: String, nodeId: String)
       extends DuplicateFragmentOutputNames
       with InASingleNode
 
-  final case class DuplicateOutputNamesInFragment(duplicatedVarName: String) extends DuplicateFragmentOutputNames {
+  final case class DuplicateFragmentOutputNamesInFragment(duplicatedVarName: String)
+      extends DuplicateFragmentOutputNames {
     override def nodeIds: Set[String] = Set.empty
   }
 

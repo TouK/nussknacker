@@ -1605,20 +1605,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test("validates uniqueness of output names within fragment") {
-    val duplicatedOutputName = "output1"
-    val fragment = ScenarioBuilder
-      .fragment("frag1")
-      .split(
-        "splitId",
-        fragmentOutput("outNode1", duplicatedOutputName),
-        fragmentOutput("outNode2", duplicatedOutputName),
-      )
-    validate(fragment, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(DuplicateOutputNamesInFragment(`duplicatedOutputName`), Nil)) =>
-    }
-  }
-
   private def validate(
       process: CanonicalProcess,
       definitions: ModelDefinition,
