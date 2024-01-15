@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.sql.service
 
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.api.ServiceLogic
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.{ContextId, ServiceLogic}
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.sql.db.WithDBConnectionPool
 import pl.touk.nussknacker.sql.db.query._
@@ -31,15 +30,13 @@ class DatabaseEnricherLogic(
     case UpdateResultStrategy => new UpdateQueryExecutor()
   }
 
-  override def run(params: Map[String, Any])(
-      implicit ec: ExecutionContext,
-      collector: ServiceInvocationCollector,
-      contextId: ContextId,
-      componentUseCase: ComponentUseCase
-  ): Future[queryExecutor.QueryResult] =
+  override def run(
+      paramsEvaluator: ParamsEvaluator
+  )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
     getTimeMeasurement().measuring {
-      queryDatabase(queryArgumentsExtractor(argsCount, params))
+      queryDatabase(queryArgumentsExtractor(argsCount, paramsEvaluator.evaluate().allRaw))
     }
+  }
 
   protected def queryDatabase(
       queryArguments: QueryArguments

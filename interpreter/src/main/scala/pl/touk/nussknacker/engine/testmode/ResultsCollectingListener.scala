@@ -57,7 +57,6 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
       id: String,
       context: Context,
       processMetaData: MetaData,
-      params: Map[String, Any],
       result: Try[Any]
   ) = {}
 

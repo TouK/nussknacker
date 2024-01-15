@@ -4,7 +4,8 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll}
-import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ServiceLogic.FunctionBasedParamsEvaluator
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client3.testing.SttpBackendStub
@@ -61,7 +62,9 @@ class SecurityTest
       enrichersForSecurityConfig(backend, configs.map(c => c.securityName -> ApiKeyConfig(c.key)).toMap)
     configs.foreach { config =>
       withClue(config.serviceName) {
-        withCorrectConfig(ServiceName(config.serviceName)).invoke(Map()).futureValue shouldBe TypedMap(Map.empty)
+        withCorrectConfig(ServiceName(config.serviceName))
+          .runServiceLogic(dummyParamsEvaluator)
+          .futureValue shouldBe TypedMap(Map.empty)
       }
     }
 
@@ -70,7 +73,7 @@ class SecurityTest
     configs.foreach { config =>
       withClue(config.serviceName) {
         intercept[Exception] {
-          withBadConfig(ServiceName(config.serviceName)).invoke(Map()).futureValue
+          withBadConfig(ServiceName(config.serviceName)).runServiceLogic(dummyParamsEvaluator).futureValue
         }
       }
     }
@@ -81,6 +84,10 @@ class SecurityTest
       securities: Map[String, ApiKeyConfig]
   ) = {
     parseToEnrichers("service-security.yml", backend, baseConfig.copy(security = Some(securities)))
+  }
+
+  private lazy val dummyParamsEvaluator = {
+    new FunctionBasedParamsEvaluator(Context("dummy", Map.empty), _ => Map.empty)
   }
 
 }

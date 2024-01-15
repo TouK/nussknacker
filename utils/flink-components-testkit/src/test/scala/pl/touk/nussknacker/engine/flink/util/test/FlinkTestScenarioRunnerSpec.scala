@@ -2,10 +2,9 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -125,15 +124,14 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
     @MethodToInvoke
     def invoke(@ParamName("param") value: LazyParameter[String]): ServiceLogic = new ServiceLogic {
 
-      override def run(params: Map[String, Any])(
-          implicit ec: ExecutionContext,
-          collector: ServiceInvocationCollector,
-          contextId: ContextId,
-          componentUseCase: ComponentUseCase
-      ): Future[String] = {
-        collector.collect(s"test-service-$value", Option(MockedValued)) {
-          Future.successful(params("param").asInstanceOf[String])
-        }
+      override def run(
+          paramsEvaluator: ParamsEvaluator
+      )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
+        val params = paramsEvaluator.evaluate()
+        runContext.collector
+          .collect(s"test-service-$value", Option(MockedValued)) {
+            Future.successful(params.getUnsafe[String]("param"))
+          }
       }
 
     }

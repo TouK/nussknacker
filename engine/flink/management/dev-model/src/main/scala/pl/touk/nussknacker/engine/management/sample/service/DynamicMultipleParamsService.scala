@@ -1,22 +1,21 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.{ContextId, EagerService, NodeId, ServiceLogic}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   NodeDependencyValue,
   SingleInputGenericNodeTransformation
 }
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedValuesParameterEditor,
   NodeDependency,
   Parameter
 }
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
+import pl.touk.nussknacker.engine.api.{EagerService, NodeId, ServiceLogic}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -66,17 +65,20 @@ object DynamicMultipleParamsService extends EagerService with SingleInputGeneric
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
-  ): ServiceLogic = {
-    new ServiceLogic {
-      override def run(params: Map[String, Any])(
-          implicit ec: ExecutionContext,
-          collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
-          componentUseCase: ComponentUseCase
-      ): Future[Any] = ???
-    }
-  }
+  ): ServiceLogic = NoImplementationRequired
 
   override def nodeDependencies: List[NodeDependency] = List.empty
+
+  private object NoImplementationRequired extends ServiceLogic {
+
+    override def run(
+        paramsEvaluator: ParamsEvaluator
+    )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
+      throw new IllegalStateException(
+        s"Logic of [${classOf[DynamicMultipleParamsService.type].getSimpleName}] service should not be called!"
+      )
+    }
+
+  }
 
 }

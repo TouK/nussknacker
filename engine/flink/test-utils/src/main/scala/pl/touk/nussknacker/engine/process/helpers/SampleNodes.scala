@@ -15,6 +15,7 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context._
@@ -205,18 +206,14 @@ object SampleNodes {
     @MethodToInvoke
     def invoke(@ParamName("name") name: String): ServiceLogic = synchronized {
       val newI = new ServiceLogic with WithLifecycle {
-        override def run(params: Map[String, Any])(
-            implicit ec: ExecutionContext,
-            collector: ServiceInvocationCollector,
-            contextId: ContextId,
-            componentUseCase: ComponentUseCase
-        ): Future[Any] = {
+        override def run(
+            paramsEvaluator: ParamsEvaluator
+        )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
           if (!opened) {
             throw new IllegalArgumentException
           }
           Future.successful(())
         }
-
       }
       list = (name -> newI) :: list
       newI
@@ -232,13 +229,11 @@ object SampleNodes {
         @ParamName("dynamic") dynamic: LazyParameter[String]
     ): ServiceLogic = new ServiceLogic {
 
-      override def run(params: Map[String, Any])(
-          implicit ec: ExecutionContext,
-          collector: ServiceInvocationCollector,
-          contextId: ContextId,
-          componentUseCase: ComponentUseCase
-      ): Future[Any] = {
-        collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
+      override def run(
+          paramsEvaluator: ParamsEvaluator
+      )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
+        val params = paramsEvaluator.evaluate().allRaw
+        runContext.collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
           Future.successful(())
         }
       }
@@ -441,14 +436,12 @@ object SampleNodes {
         outputVar,
         returnType,
         new ServiceLogic {
-          override def run(params: Map[String, Any])(
-              implicit ec: ExecutionContext,
-              collector: ServiceInvocationCollector,
-              contextId: ContextId,
-              componentUseCase: ComponentUseCase
-          ): Future[Any] = {
+          override def run(
+              paramsEvaluator: ParamsEvaluator
+          )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
+            val evaluatedParams = paramsEvaluator.evaluate()
             val result = (1 to count)
-              .map(_ => definition.asScala.map(_ -> params("toFill").asInstanceOf[String]).toMap)
+              .map(_ => definition.asScala.map(_ -> evaluatedParams.getUnsafe[String]("toFill")).toMap)
               .map(TypedMap(_))
               .toList
               .asJava

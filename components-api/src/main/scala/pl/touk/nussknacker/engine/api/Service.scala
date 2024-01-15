@@ -35,7 +35,9 @@ abstract class EagerService extends Service
 
 trait ServiceLogic {
 
-  def run(paramsEvaluator: ParamsEvaluator)(implicit context: RunContext, ec: ExecutionContext): Future[Any]
+  def run(
+      paramsEvaluator: ParamsEvaluator
+  )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any]
 
 }
 
@@ -47,21 +49,26 @@ object ServiceLogic {
       componentUseCase: ComponentUseCase
   )
 
-  class ParamsEvaluator private (context: Context, evaluate: Context => Map[String, Any]) {
+  trait ParamsEvaluator {
+    def evaluate(additionalVariables: Map[String, Any] = Map.empty): EvaluatedParams
+  }
 
-    def evaluateParams(additionalVariables: Map[String, Any] = Map.empty): EvaluatedParams = {
+  // todo:
+  class FunctionBasedParamsEvaluator(context: Context, evaluate: Context => Map[String, Any]) extends ParamsEvaluator {
+
+    override def evaluate(additionalVariables: Map[String, Any] = Map.empty): EvaluatedParams = {
       val newContext = context.withVariables(additionalVariables)
       new EvaluatedParams(evaluate(newContext))
     }
 
   }
 
-  class EvaluatedParams private[ServiceLogic] (params: Map[String, Any]) {
-    def get[T](name: String): Option[T] = params.get(name).map(_.asInstanceOf[T])
+  class EvaluatedParams private[ServiceLogic] (val allRaw: Map[String, Any]) {
+    def get[T](name: String): Option[T] = allRaw.get(name).map(_.asInstanceOf[T])
 
     def getUnsafe[T](name: String): T = get(name).getOrElse {
       throw new IllegalArgumentException(
-        s"Cannot find param with name [$name]. Present ones: [${params.keys.mkString(", ")}]"
+        s"Cannot find param with name [$name]. Present ones: [${allRaw.keys.mkString(", ")}]"
       )
     }
 

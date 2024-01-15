@@ -5,20 +5,13 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{
-  AdditionalVariableProvidedInRuntime,
-  FixedExpressionValue,
-  FixedValuesValidator,
-  MandatoryParameterValidator,
-  Parameter,
-  RegExpParameterValidator
-}
+import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
@@ -236,7 +229,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
       Map(
         "configurable1" -> WithCategories.anyCategory(
-          EmptyExplicitMethodToInvoke(
+          new EmptyExplicitMethodToInvoke(
             List(Parameter[Int]("param1"), Parameter[Duration]("durationParam")),
             Typed[String]
           )
@@ -363,16 +356,12 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
 
   case class AdditionalClass(someField: String)
 
-  case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult)
+  class EmptyExplicitMethodToInvoke(override val parameters: List[Parameter], override val returnType: TypingResult)
       extends EagerServiceWithStaticParametersAndReturnType {
 
-    override def invoke(params: Map[String, Any])(
-        implicit ec: ExecutionContext,
-        collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ContextId,
-        metaData: MetaData,
-        componentUseCase: ComponentUseCase
-    ): Future[Any] = ???
+    override def runServiceLogic(
+        paramsEvaluator: ParamsEvaluator
+    )(implicit runContext: RunContext, metaData: MetaData, executionContext: ExecutionContext): Future[Any] = ???
 
   }
 

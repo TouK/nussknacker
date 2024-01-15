@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,7 +20,7 @@ object service {
 
   case class ServiceRef(
       id: String,
-      invoker: ServiceLogic,
+      serviceLogic: ServiceLogic,
       parameters: List[CompiledParameter],
       resultCollector: ResultCollector,
   ) {
@@ -32,20 +33,15 @@ object service {
         implicit nodeId: NodeId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
-    ): (Map[String, AnyRef], Future[Any]) = {
-
-      val (_, preparedParams) = expressionEvaluator.evaluateParameters(parameters, ctx)
-      val contextId           = ContextId(ctx.id)
-      val collector           = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
-      (
-        preparedParams,
-        invoker.run(preparedParams)(
-          serviceExecutionContext.executionContext,
-          collector,
-          contextId,
-          componentUseCase
-        )
+    ): Future[Any] = {
+      val evaluator = new FunctionBasedParamsEvaluator(ctx, expressionEvaluator.evaluateParameters(parameters, _)._2)
+      val contextId = ContextId(ctx.id)
+      val runContext = RunContext(
+        collector = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id),
+        contextId = contextId,
+        componentUseCase = componentUseCase
       )
+      serviceLogic.run(evaluator)(runContext, serviceExecutionContext.executionContext)
     }
 
   }

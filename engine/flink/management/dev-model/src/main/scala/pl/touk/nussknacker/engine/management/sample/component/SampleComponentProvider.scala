@@ -2,17 +2,17 @@ package pl.touk.nussknacker.engine.management.sample.component
 
 import com.typesafe.config.{Config, ConfigValueFactory}
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
-import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 //Sample showing how to achieve dynamic component count based on configuration, evaluated on NK side (e.g. discover of services from external registry)
 class SampleComponentProvider extends ComponentProvider {
@@ -35,18 +35,14 @@ class SampleComponentProvider extends ComponentProvider {
 
 case class SampleProvidedComponent(param: String) extends EagerServiceWithStaticParametersAndReturnType {
 
-  override def invoke(params: Map[String, Any])(
-      implicit ec: ExecutionContext,
-      collector: InvocationCollectors.ServiceInvocationCollector,
-      contextId: ContextId,
-      metaData: MetaData,
-      componentUseCase: ComponentUseCase
-  ): Future[Any] = {
+  override val parameters: List[Parameter] = List(Parameter[String](s"fromConfig-$param"))
+
+  override val returnType: typing.TypingResult = Typed[Void]
+
+  override def runServiceLogic(
+      paramsEvaluator: ParamsEvaluator
+  )(implicit context: RunContext, metaData: MetaData, ec: ExecutionContext): Future[Any] = {
     Future.successful(null)
   }
-
-  override def parameters: List[Parameter] = List(Parameter[String](s"fromConfig-$param"))
-
-  override def returnType: typing.TypingResult = Typed[Void]
 
 }

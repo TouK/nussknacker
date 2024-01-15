@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidFragment
@@ -23,7 +24,6 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, _}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -422,7 +422,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           id: String,
           context: Context,
           processMetaData: MetaData,
-          params: Map[String, Any],
           result: Try[Any]
       ): Unit = {
         serviceResults = serviceResults + (id -> result)
@@ -1047,17 +1046,16 @@ object InterpreterSpec {
 
   object WithExplicitDefinitionService extends EagerServiceWithStaticParametersAndReturnType {
 
-    override def parameters: List[Parameter] = List(Parameter[Long]("param1"))
+    override val parameters: List[Parameter] = List(Parameter[Long]("param1"))
 
-    override def returnType: typing.TypingResult = Typed[String]
+    override val returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Map[String, Any])(
-        implicit ec: ExecutionContext,
-        collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ContextId,
+    override def runServiceLogic(paramsEvaluator: ParamsEvaluator)(
+        implicit runContext: RunContext,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
-    ): Future[AnyRef] = {
+        executionContext: ExecutionContext
+    ): Future[Any] = {
+      val params = paramsEvaluator.evaluate().allRaw
       Future.successful(params.head._2.toString)
     }
 
@@ -1073,13 +1071,12 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Map[String, Any])(
-        implicit ec: ExecutionContext,
-        collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ContextId,
+    override def runServiceLogic(paramsEvaluator: ParamsEvaluator)(
+        implicit runContext: RunContext,
         metaData: MetaData,
-        componentUseCase: ComponentUseCase
-    ): Future[AnyRef] = {
+        executionContext: ExecutionContext
+    ): Future[Any] = {
+      val params = paramsEvaluator.evaluate().allRaw
       Future.successful(params.head._2.toString)
     }
 
@@ -1126,14 +1123,10 @@ object InterpreterSpec {
         param: String
     ): ServiceLogic = new ServiceLogic {
 
-      override def run(params: Map[String, Any])(
-          implicit ec: ExecutionContext,
-          collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
-          componentUseCase: ComponentUseCase
-      ): Future[Any] = {
+      override def run(
+          paramsEvaluator: ParamsEvaluator
+      )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] =
         Future.successful(param)
-      }
 
     }
 
@@ -1154,13 +1147,12 @@ object InterpreterSpec {
         lazyOne.returnType, {
           if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
           new ServiceLogic {
-            override def run(params: Map[String, Any])(
-                implicit ec: ExecutionContext,
-                collector: InvocationCollectors.ServiceInvocationCollector,
-                contextId: ContextId,
-                componentUseCase: ComponentUseCase
-            ): Future[AnyRef] = {
-              Future.successful(params("lazy").asInstanceOf[AnyRef])
+
+            override def run(
+                paramsEvaluator: ParamsEvaluator
+            )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
+              val lazyParamValue = paramsEvaluator.evaluate().getUnsafe[AnyRef]("lazy")
+              Future.successful(lazyParamValue)
             }
           }
         }
@@ -1202,13 +1194,11 @@ object InterpreterSpec {
       val paramName = staticParam.extractValue(params)
 
       new ServiceLogic {
-        override def run(params: Map[String, Any])(
-            implicit ec: ExecutionContext,
-            collector: InvocationCollectors.ServiceInvocationCollector,
-            contextId: ContextId,
-            componentUseCase: ComponentUseCase
-        ): Future[AnyRef] = {
-          Future.successful(params(paramName).asInstanceOf[AnyRef])
+        override def run(
+            paramsEvaluator: ParamsEvaluator
+        )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
+          val paramValue = paramsEvaluator.evaluate().getUnsafe[AnyRef](paramName)
+          Future.successful(paramValue)
         }
       }
     }

@@ -2,10 +2,9 @@ package pl.touk.nussknacker.engine.management.sample
 
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 
 import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,13 +25,10 @@ object LoggingService extends EagerService {
         (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
       )
 
-      override def run(params: Map[String, Any])(
-          implicit ec: ExecutionContext,
-          collector: ServiceInvocationCollector,
-          contextId: ContextId,
-          componentUseCase: ComponentUseCase
-      ): Future[Any] = {
-        val message = params("message").asInstanceOf[String]
+      override def run(
+          paramsEvaluator: ParamsEvaluator
+      )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
+        val message = paramsEvaluator.evaluate().getUnsafe[String]("message")
         level match {
           case Level.TRACE => logger.trace(message)
           case Level.DEBUG => logger.debug(message)

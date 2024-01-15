@@ -3,8 +3,10 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.definition.WithJobData
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -13,12 +15,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class MethodBasedServiceLogicTest extends AnyFlatSpec with PatientScalaFutures with OptionValues with Matchers {
 
-  import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
-
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private implicit val metadata: MetaData                 = MetaData("proc1", StreamMetaData())
-  private implicit val ctxId: ContextId                   = ContextId("")
+  private implicit val ctx: Context                       = Context("", Map.empty)
   private implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
 
   private val nodeId           = NodeId("id")
@@ -27,9 +27,15 @@ class MethodBasedServiceLogicTest extends AnyFlatSpec with PatientScalaFutures w
   it should "invoke service method with declared parameters as scala params" in {
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig(mock)
-    val invoker    = new MethodBasedServiceLogic(metadata, nodeId, None, definition)
+    implicit val runContext: RunContext = RunContext(
+      collector = EmptyInvocationCollector.Instance,
+      contextId = ContextId(ctx.id),
+      componentUseCase = componentUseCase
+    )
+    val logic              = new MethodBasedServiceLogic(metadata, nodeId, None, definition)
+    val parameterEvaluator = new FunctionBasedParamsEvaluator(ctx, _ => Map("foo" -> "aa", "bar" -> 1))
 
-    whenReady(invoker.run(Map("foo" -> "aa", "bar" -> 1))) { _ =>
+    whenReady(logic.run(parameterEvaluator)) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
     }
   }
@@ -37,10 +43,16 @@ class MethodBasedServiceLogicTest extends AnyFlatSpec with PatientScalaFutures w
   it should "throw excpetion with nice message when parameters do not match" in {
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig(mock)
-    val invoker    = new MethodBasedServiceLogic(metadata, nodeId, None, definition)
+    implicit val runContext: RunContext = RunContext(
+      collector = EmptyInvocationCollector.Instance,
+      contextId = ContextId(ctx.id),
+      componentUseCase = componentUseCase
+    )
+    val logic              = new MethodBasedServiceLogic(metadata, nodeId, None, definition)
+    val parameterEvaluator = new FunctionBasedParamsEvaluator(ctx, _ => Map("foo" -> "aa", "bar" -> "terefere"))
 
     intercept[IllegalArgumentException](
-      invoker.run(Map("foo" -> "aa", "bar" -> "terefere"))
+      logic.run(parameterEvaluator)
     ).getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String): argument type mismatch"""
   }
 

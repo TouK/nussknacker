@@ -2,13 +2,11 @@ package pl.touk.nussknacker.engine.management.sample.service
 
 import cats.data.Validated.Valid
 import cats.data.{Validated, ValidatedNel}
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,15 +38,11 @@ class CustomValidatedService extends EagerService {
       varName,
       returnType,
       new ServiceLogic {
-        override def run(params: Map[String, Any])(
-            implicit ec: ExecutionContext,
-            collector: InvocationCollectors.ServiceInvocationCollector,
-            contextId: ContextId,
-            componentUseCase: ComponentUseCase
-        ): Future[Any] = {
-          Future.successful(
-            s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age"
-          )
+        override def run(
+            paramsEvaluator: ParamsEvaluator
+        )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = Future.successful {
+          val evaluatedParams = paramsEvaluator.evaluate()
+          s"name: ${evaluatedParams.getUnsafe[java.util.Map[String, String]]("fields").get("name")}, age: $age"
         }
       }
     )

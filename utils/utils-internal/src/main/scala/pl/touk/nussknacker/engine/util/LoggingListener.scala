@@ -68,7 +68,6 @@ object LoggingListener extends ProcessListener with Serializable {
       id: String,
       context: Context,
       metadata: MetaData,
-      params: Map[String, Any],
       result: Try[Any]
   ): Unit = {
     debug(

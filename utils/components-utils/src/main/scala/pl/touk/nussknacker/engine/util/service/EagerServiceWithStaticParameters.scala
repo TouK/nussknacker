@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.util.service
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedSingleParameter,
   NodeDependencyValue,
@@ -15,11 +17,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   Parameter,
   TypedNodeDependency
 }
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.runtime.BoxedUnit
@@ -95,13 +93,9 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
   // TODO: This method should be removed - instead, developers should deliver it's own ServiceInvoker to avoid
   //       mixing implementation logic with definition logic. Before that we should fix EagerService Lifecycle handling.
   //       See notice next to EagerService
-  def invoke(params: Map[String, Any])(
-      implicit ec: ExecutionContext,
-      collector: InvocationCollectors.ServiceInvocationCollector,
-      contextId: ContextId,
-      metaData: MetaData,
-      componentUseCase: ComponentUseCase
-  ): Future[Any]
+  def runServiceLogic(
+      paramsEvaluator: ParamsEvaluator
+  )(implicit runContext: RunContext, metaData: MetaData, executionContext: ExecutionContext): Future[Any]
 
   override def serviceImplementation(
       eagerParameters: Map[String, Any],
@@ -111,14 +105,13 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
     implicit val metaImplicit: MetaData = metaData
     new ServiceLogic {
 
-      override def run(params: Map[String, Any])(
-          implicit ec: ExecutionContext,
-          collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
-          componentUseCase: ComponentUseCase
-      ): Future[Any] =
-        invoke(params ++ eagerParameters)
-
+      override def run(
+          paramsEvaluator: ServiceLogic.ParamsEvaluator
+      )(implicit context: ServiceLogic.RunContext, ec: ExecutionContext): Future[Any] = {
+        runServiceLogic((additionalVariables: Map[String, Any]) =>
+          paramsEvaluator.evaluate(additionalVariables ++ eagerParameters)
+        )
+      }
     }
   }
 

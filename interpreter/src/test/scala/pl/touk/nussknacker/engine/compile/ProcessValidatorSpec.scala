@@ -8,14 +8,13 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -1653,12 +1652,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition))),
         new ServiceLogic {
 
-          override def run(params: Map[String, Any])(
-              implicit ec: ExecutionContext,
-              collector: InvocationCollectors.ServiceInvocationCollector,
-              contextId: ContextId,
-              componentUseCase: ComponentUseCase
-          ): Future[Any] = Future.successful(null)
+          override def run(
+              paramsEvaluator: ParamsEvaluator
+          )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] =
+            Future.successful(null)
 
         }
       )
@@ -1690,12 +1687,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         metaData: MetaData
     ): ServiceLogic = new ServiceLogic {
 
-      override def run(params: Map[String, Any])(
-          implicit ec: ExecutionContext,
-          collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
-          componentUseCase: ComponentUseCase
-      ): Future[Any] = Future.successful(null)
+      override def run(
+          paramsEvaluator: ParamsEvaluator
+      )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] =
+        Future.successful(null)
 
     }
 
@@ -1739,15 +1734,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         variableName,
         returnType,
         new ServiceLogic {
-          override def run(params: Map[String, Any])(
-              implicit ec: ExecutionContext,
-              collector: InvocationCollectors.ServiceInvocationCollector,
-              contextId: ContextId,
-              componentUseCase: ComponentUseCase
-          ): Future[Any] =
+          override def run(
+              paramsEvaluator: ParamsEvaluator
+          )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
+            val map = paramsEvaluator.evaluate().getUnsafe[java.util.Map[String, String]]("fields")
             Future.successful(
-              s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age"
+              s"name: ${map.get("name")}, age: $age"
             )
+          }
         }
       )
     }

@@ -26,7 +26,6 @@ trait ProcessListener extends Lifecycle {
       id: String,
       context: Context,
       processMetaData: MetaData,
-      params: Map[String, Any],
       result: Try[Any]
   ): Unit
 
@@ -64,7 +63,6 @@ trait EmptyProcessListener extends ProcessListener {
       id: String,
       context: Context,
       processMetaData: MetaData,
-      params: Map[String, Any],
       result: Try[Any]
   ): Unit = {}
 

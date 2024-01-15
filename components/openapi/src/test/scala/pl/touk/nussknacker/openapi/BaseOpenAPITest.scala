@@ -3,8 +3,10 @@ package pl.touk.nussknacker.openapi
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.commons.io.IOUtils
+import pl.touk.nussknacker.engine.api.ServiceLogic.RunContext
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector
+import pl.touk.nussknacker.engine.api.{Context, ContextId, JobData, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
@@ -19,10 +21,17 @@ trait BaseOpenAPITest {
 
   protected val baseConfig: OpenAPIServicesConfig = OpenAPIServicesConfig(new URL("http://foo"))
 
-  implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
-  implicit val metaData: MetaData                 = MetaData("testProc", StreamMetaData())
-  implicit val contextId: ContextId               = ContextId("testContextId")
-  private val context                             = TestEngineRuntimeContext(JobData(metaData, ProcessVersion.empty))
+  val context: Context = Context("testContextId", Map.empty)
+
+  implicit val runContext: RunContext = RunContext(
+    collector = EmptyInvocationCollector.Instance,
+    contextId = ContextId(context.id),
+    componentUseCase = ComponentUseCase.EngineRuntime
+  )
+
+  implicit val metaData: MetaData = MetaData("testProc", StreamMetaData())
+
+  private val engineRuntimeContext = TestEngineRuntimeContext(JobData(metaData, ProcessVersion.empty))
 
   protected def parseServicesFromResource(
       name: String,
@@ -55,7 +64,7 @@ trait BaseOpenAPITest {
       .prepare(config, services, creator)
       .map(ed => ed.name -> ed.service.asInstanceOf[EagerServiceWithStaticParametersAndReturnType])
       .toMap
-    enrichers.foreach(_._2.open(context))
+    enrichers.foreach(_._2.open(engineRuntimeContext))
     enrichers
   }
 

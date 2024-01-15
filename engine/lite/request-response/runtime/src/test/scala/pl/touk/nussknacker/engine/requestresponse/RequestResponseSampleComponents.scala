@@ -4,6 +4,7 @@ import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker._
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
@@ -156,15 +157,11 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
       Typed[Response],
       synchronized {
         val newI: ServiceLogic with WithLifecycle = new ServiceLogic with WithLifecycle {
-          override def run(params: Map[String, Any])(
-              implicit ec: ExecutionContext,
-              collector: ServiceInvocationCollector,
-              contextId: ContextId,
-              componentUseCase: ComponentUseCase
-          ): Future[Response] = {
+          override def run(
+              paramsEvaluator: ParamsEvaluator
+          )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
             Future.successful(Response(opened.toString))
           }
-
         }
         list = (name, newI) :: list
         newI
@@ -181,15 +178,13 @@ object CollectingEagerService extends EagerService {
       @ParamName("dynamic") dynamic: LazyParameter[String]
   ): ServiceLogic = new ServiceLogic {
 
-    override def run(params: Map[String, Any])(
-        implicit ec: ExecutionContext,
-        collector: ServiceInvocationCollector,
-        contextId: ContextId,
-        componentUseCase: ComponentUseCase
-    ): Future[Any] = {
-      collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
-        Future.successful(())
-      }
+    override def run(
+        paramsEvaluator: ParamsEvaluator
+    )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
+      runContext.collector
+        .collect(s"static-$static-dynamic-${paramsEvaluator.evaluate().getUnsafe("dynamic")}", Option(())) {
+          Future.successful(())
+        }
     }
 
   }
