@@ -39,11 +39,8 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       contextId = ContextId(context.id),
       componentUseCase = componentUseCase
     )
-    val serviceLogic = service.implementation(Map.empty, dependencies = Nil, Some(state))
-    val paramsEvaluator = new FunctionBasedParamsEvaluator(
-      context,
-      _ => Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)
-    )
+    val serviceLogic    = service.implementation(Map.empty, dependencies = Nil, Some(state))
+    val paramsEvaluator = new FunctionBasedParamsEvaluator(context, _ => Map("arg1" -> 1))
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
     val resultF = serviceLogic.run(paramsEvaluator)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
@@ -75,11 +72,8 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       contextId = ContextId(context.id),
       componentUseCase = componentUseCase
     )
-    val serviceLogic = service.implementation(Map.empty, dependencies = Nil, Some(state))
-    val paramsEvaluator = new FunctionBasedParamsEvaluator(
-      context,
-      _ => Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)
-    )
+    val serviceLogic    = service.implementation(Map.empty, dependencies = Nil, Some(state))
+    val paramsEvaluator = new FunctionBasedParamsEvaluator(context, _ => Map("arg1" -> 1))
     returnType(service, state).display shouldBe "Integer"
     val resultF = serviceLogic.run(paramsEvaluator)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]

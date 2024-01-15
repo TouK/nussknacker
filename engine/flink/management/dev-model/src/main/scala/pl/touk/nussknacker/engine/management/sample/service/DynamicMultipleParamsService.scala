@@ -52,7 +52,7 @@ object DynamicMultipleParamsService extends EagerService with SingleInputGeneric
         )
       )
     case TransformationStep(
-          ("foo", DefinedEagerParameter(fooValue, _)) :: ("bar", DefinedEagerParameter(_, _)) :: (
+          ("foo", DefinedEagerParameter(_, _)) :: ("bar", DefinedEagerParameter(_, _)) :: (
             "baz",
             DefinedEagerParameter(_, _)
           ) :: Nil,
@@ -67,7 +67,7 @@ object DynamicMultipleParamsService extends EagerService with SingleInputGeneric
       finalState: Option[State]
   ): ServiceLogic = NoImplementationRequired
 
-  override def nodeDependencies: List[NodeDependency] = List.empty
+  override val nodeDependencies: List[NodeDependency] = List.empty
 
   private object NoImplementationRequired extends ServiceLogic {
 
@@ -75,7 +75,7 @@ object DynamicMultipleParamsService extends EagerService with SingleInputGeneric
         paramsEvaluator: ParamsEvaluator
     )(implicit runContext: RunContext, executionContext: ExecutionContext): Future[Any] = {
       throw new IllegalStateException(
-        s"Logic of [${classOf[DynamicMultipleParamsService.type].getSimpleName}] service should not be called!"
+        s"Logic of [${DynamicMultipleParamsService.getClass.getSimpleName}] service should not be called!"
       )
     }
 

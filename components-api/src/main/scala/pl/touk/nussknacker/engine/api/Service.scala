@@ -63,7 +63,7 @@ object ServiceLogic {
 
   }
 
-  class EvaluatedParams private[ServiceLogic] (val allRaw: Map[String, Any]) {
+  class EvaluatedParams(val allRaw: Map[String, Any]) {
     def get[T](name: String): Option[T] = allRaw.get(name).map(_.asInstanceOf[T])
 
     def getUnsafe[T](name: String): T = get(name).getOrElse {

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.service
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
+import pl.touk.nussknacker.engine.api.ServiceLogic.{EvaluatedParams, ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedSingleParameter,
@@ -106,10 +106,12 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
     new ServiceLogic {
 
       override def run(
-          paramsEvaluator: ServiceLogic.ParamsEvaluator
-      )(implicit context: ServiceLogic.RunContext, ec: ExecutionContext): Future[Any] = {
-        runServiceLogic((additionalVariables: Map[String, Any]) =>
-          paramsEvaluator.evaluate(additionalVariables ++ eagerParameters)
+          paramsEvaluator: ParamsEvaluator
+      )(implicit context: RunContext, ec: ExecutionContext): Future[Any] = {
+        runServiceLogic(
+          paramsEvaluator = (additionalVariables: Map[String, Any]) => {
+            new EvaluatedParams(paramsEvaluator.evaluate(additionalVariables).allRaw ++ eagerParameters)
+          }
         )
       }
     }
