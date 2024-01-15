@@ -99,6 +99,7 @@ object PrettyValidationErrors {
 
       case pve: ParameterValidationError => handleParameterValidationError(pve)
 
+      // TODO local refactor: check which errors this refers to - definitely not all below
       // exceptions below should not really happen (unless services change and process becomes invalid)
       case MissingCustomNodeExecutor(id, _) =>
         node(s"Missing custom executor: $id", s"Please check the name of custom executor, $id is not available")
@@ -196,6 +197,7 @@ object PrettyValidationErrors {
     }
   }
 
+  // TODO local refactor: check
   def noValidatorKnown(processingType: ProcessingType): NodeValidationError = {
     NodeValidationError(
       processingType,

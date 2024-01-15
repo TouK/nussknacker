@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.{
@@ -1595,6 +1596,20 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val outputVar = OutputVar.fragmentOutput("output1", "")
     withUsed should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable(usedVarName, "sample-out", Some(outputVar)), Nil)) =>
+    }
+  }
+
+  test("validates uniqueness of output names within fragment") {
+    val duplicatedOutputName = "output1"
+    val fragment = ScenarioBuilder
+      .fragment("frag1")
+      .split(
+        "splitId",
+        fragmentOutput("outNode1", duplicatedOutputName),
+        fragmentOutput("outNode2", duplicatedOutputName),
+      )
+    validate(fragment, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(DuplicateOutputNamesInFragment(`duplicatedOutputName`), Nil)) =>
     }
   }
 
