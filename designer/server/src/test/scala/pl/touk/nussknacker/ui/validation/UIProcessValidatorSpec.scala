@@ -20,6 +20,8 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValida
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
@@ -1193,6 +1195,49 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       }
     }
+  }
+
+  test("validates uniqueness of fragment output names when validating fragment") {
+    val duplicatedOutputName = "output1"
+    val fragment = ScenarioBuilder
+      .fragment("frag1")
+      .split(
+        "splitId",
+        fragmentOutput("outNode1", duplicatedOutputName),
+        fragmentOutput("outNode2", duplicatedOutputName),
+      )
+    val displayable = ProcessConverter.toDisplayable(fragment, TestProcessingTypes.Streaming, Category1)
+    val result      = TestFactory.flinkProcessValidator.validate(displayable)
+    result.errors.globalErrors shouldBe List(
+      PrettyValidationErrors.formatErrorMessage(DuplicateFragmentOutputNamesInFragment(`duplicatedOutputName`))
+    )
+  }
+
+  test("validates uniqueness of fragment output names when validating scenario") {
+    val duplicatedOutputName = "output1"
+    val fragment = ScenarioBuilder
+      .fragment("fragment1")
+      .split(
+        "splitId",
+        fragmentOutput("outNode1", duplicatedOutputName),
+        fragmentOutput("outNode2", duplicatedOutputName),
+      )
+    val scenario = ScenarioBuilder
+      .streaming("scenario1")
+      .source("source", "source1")
+      .fragmentOneOut("fragment", "fragment1", "output1", "outVar1")
+      .emptySink("id1", "sink")
+
+    val displayable = ProcessConverter.toDisplayable(scenario, TestProcessingTypes.Streaming, Category1)
+
+    val processValidator = mockedProcessValidator(fragment, defaultConfig)
+    val result           = processValidator.validate(displayable)
+
+    result.errors.invalidNodes shouldBe Map(
+      "fragment" -> List(
+        PrettyValidationErrors.formatErrorMessage(DuplicateFragmentOutputNamesInScenario("output1", "fragment"))
+      )
+    )
   }
 
   test("be able to convert process ending not properly") {

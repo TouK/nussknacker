@@ -151,7 +151,7 @@ protected trait ProcessCompilerBase {
           case (name, nodes) if nodes.size > 1 => name
         }
       duplicatedOutputNames
-        .map(n => invalidNel(DuplicateOutputNamesInFragment(n)))
+        .map(n => invalidNel(DuplicateFragmentOutputNamesInFragment(n)))
         .toList
         .sequence
         .map(_ => ())
