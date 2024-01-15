@@ -19,5 +19,5 @@ object NodeParameterTemplatesPreparer {
   }
 
   private def createNodeParameterWithDefaultValue(parameterDefinition: Parameter): NodeParameter =
-    NodeParameter(parameterDefinition.name, parameterDefinition.defaultValue.getOrElse(Expression.spel("")))
+    NodeParameter(parameterDefinition.name, parameterDefinition.finalDefaultValue)
 }

@@ -33,13 +33,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   to specify label presented to the user without changing identifier used in scenario graph json (`Parameteter.name`)
 
 ### REST API changes
-* [#5280](https://github.com/TouK/nussknacker/pull/5280) Changes in the definition API:
+* [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
   * `/processDefinitionData/componentIds` endpoint is removed
   * `/processDefinitionData/*` response changes:
-    * `services`, `sourceFactories`, `sinkFactories`, `customStreamTransformers` and `fragmentInputs` maps inside `processDefinition` were replaced by
+    * `services`, `sourceFactories`, `sinkFactories`, `customStreamTransformers` and `fragmentInputs` maps fields were replaced by
       one `components` map with key in format `$componentType-$componentName` and moved into top level of response
-    * `typesInformation` inside `processDefinition` was renamed into `classes`, moved into top level of response 
+    * `typesInformation` field was renamed into `classes`, moved into top level of response 
       and nested `clazzName` inside each element was extracted
+    * `componentsConfig` field was removed - now all information about components are available in the `components` field
     * `nodeId` field inside `edgesForNodes` was renamed into `componentId` in the flat `$componentType-$componentName` format
     * `defaultAsyncInterpretation` field was removed
 * [#5285](https://github.com/TouK/nussknacker/pull/5285) Changes around scenario id/name fields:

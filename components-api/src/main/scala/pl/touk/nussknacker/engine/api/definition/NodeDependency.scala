@@ -113,6 +113,12 @@ object NotBlankParameter {
 
 }
 
+// This class is currently a part of the component API but also used as our domain model class
+// Because of that some fields like editor, defaultValue, labelOpt are optional but eventually in the domain
+// model their will be determined - see StandardParameterEnrichment and label method
+// Also some fields like scalaOptionParameter and javaOptionalParameter are only necessary in the method-based
+// component's context, so it could be removed from the API
+// TODO: extract Parameter class in the domain model (see ComponentDefinitionWithImplementation and belongings)
 case class Parameter(
     name: String,
     typ: TypingResult,
@@ -267,6 +273,11 @@ case class Parameter(
   }
 
   val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
+
+  // TODO: all three methods below could be removed when we split this class into api class and domain model class
+  def finalEditor: ParameterEditor = editor.getOrElse(RawParameterEditor)
+
+  def finalDefaultValue: Expression = defaultValue.getOrElse(Expression.spel(""))
 
   // We should have some convention for building the default label based on Parameter's name - e.g.
   // names could be kebab-case and we can convert them to the Human Readable Format

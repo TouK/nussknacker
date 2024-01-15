@@ -72,11 +72,7 @@ class NodeUtils {
     };
 
     isAvailable = (node: NodeType, processDefinitionData): boolean => {
-        const availableIdsInComponentGroups = ProcessDefinitionUtils.getFlatComponents(processDefinitionData).map((component) =>
-            ProcessUtils.determineComponentId(component.node),
-        );
-        const nodeComponentId = ProcessUtils.determineComponentId(node);
-        return availableIdsInComponentGroups.includes(nodeComponentId);
+        return ProcessUtils.extractComponentDefinition(node, processDefinitionData.components) != null;
     };
 
     getOutputEdges = (nodeId: NodeId, edges: Edge[]): Edge[] => edges.filter((e) => e.from === nodeId);

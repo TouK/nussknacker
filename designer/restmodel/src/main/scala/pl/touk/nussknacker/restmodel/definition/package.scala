@@ -25,8 +25,6 @@ package object definition {
       componentGroups: List[UIComponentGroup],
       components: Map[ComponentInfo, UIComponentDefinition],
       classes: List[TypingResult],
-      // TODO: remove it, use components field on the FE side instead
-      componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[UINodeEdges],
       customActions: List[UICustomAction]
@@ -71,6 +69,8 @@ package object definition {
       //    (see. ProcessUtils.findAvailableVariables). This heuristic is used when DisplayableProcess can't be translated
       //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
+      icon: String,
+      docsUrl: Option[String],
       // This field is defined only for fragments
       outputParameters: Option[List[String]]
   )
