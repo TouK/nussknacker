@@ -62,8 +62,10 @@ object LazyParameter {
 
 trait LazyParameterInterpreter {
 
+  // FIXME remove
   def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]): Context => T
 
+  // FIXME remove
   def close(): Unit
 
 }

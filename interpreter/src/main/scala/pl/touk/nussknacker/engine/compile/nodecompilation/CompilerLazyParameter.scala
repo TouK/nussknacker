@@ -8,11 +8,6 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
-
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext, Future}
 
 // This class is public for tests purpose. Be aware that its interface can be changed in the future
 case class ExpressionLazyParameter[T <: AnyRef](
@@ -24,7 +19,7 @@ case class ExpressionLazyParameter[T <: AnyRef](
 
   override def prepareEvaluator(
       compilerInterpreter: LazyParameterInterpreter
-  )(implicit ec: ExecutionContext): Context => Future[T] = {
+  ): Context => T = {
     val compilerLazyInterpreter = compilerInterpreter.asInstanceOf[CompilerLazyParameterInterpreter]
     val compiledExpression = compilerLazyInterpreter.deps.expressionCompiler
       .compileWithoutContextValidation(expression, parameterDef.name, parameterDef.typ)(nodeId)
@@ -35,9 +30,10 @@ case class ExpressionLazyParameter[T <: AnyRef](
     val compiledParameter =
       CompiledParameter(TypedExpression(compiledExpression, Unknown, null), parameterDef)
     context: Context =>
-      Future
-        .successful(evaluator.evaluateParameter(compiledParameter, context)(nodeId, compilerLazyInterpreter.metaData))
-        .map(_.value.asInstanceOf[T])(ec)
+      evaluator
+        .evaluateParameter(compiledParameter, context)(nodeId, compilerLazyInterpreter.metaData)
+        .value
+        .asInstanceOf[T]
   }
 
 }
@@ -48,14 +44,13 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
 
   def metaData: MetaData
 
-  // it's important that it's (...): (Context => Future[T])
-  // and not e.g. (...)(Context) => Future[T] as we want to be sure when body is evaluated (in particular expression compilation)!
+  // it's important that it's (...): (Context => T)
+  // and not e.g. (...)(Context) => T as we want to be sure when body is evaluated (in particular expression compilation)!
   private[nodecompilation] def createInterpreter[T <: AnyRef](
-      ec: ExecutionContext,
       definition: LazyParameter[T]
-  ): Context => Future[T] = {
+  ): Context => T = {
     definition match {
-      case e: EvaluableLazyParameter[T] => e.prepareEvaluator(this)(ec)
+      case e: EvaluableLazyParameter[T] => e.prepareEvaluator(this)
       case _ => throw new IllegalArgumentException(s"LazyParameter $definition is not supported")
     }
   }
@@ -63,16 +58,13 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
   override def syncInterpretationFunction[T <: AnyRef](
       lazyInterpreter: LazyParameter[T]
   ): Context => T = {
-
-    implicit val ec: ExecutionContext = SynchronousExecutionContextAndIORuntime.syncEc
-    val interpreter                   = createInterpreter(ec, lazyInterpreter)
-    v1: Context => Await.result(interpreter(v1), deps.processTimeout)
+    val interpreter = createInterpreter(lazyInterpreter)
+    v1: Context => interpreter(v1)
   }
 
 }
 
 case class LazyInterpreterDependencies(
     expressionEvaluator: ExpressionEvaluator,
-    expressionCompiler: ExpressionCompiler,
-    processTimeout: FiniteDuration
+    expressionCompiler: ExpressionCompiler
 ) extends Serializable

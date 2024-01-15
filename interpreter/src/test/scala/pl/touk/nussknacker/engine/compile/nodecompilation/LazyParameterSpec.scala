@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 class LazyParameterSpec extends AnyFunSuite with Matchers {
 
@@ -62,11 +61,9 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
     val evalParameter = new EvaluableLazyParameter[Integer] {
       override def prepareEvaluator(
           deps: LazyParameterInterpreter
-      )(implicit ec: ExecutionContext): Context => Future[Integer] = {
+      ): Context => Integer = {
         invoked += 1
-        _ => {
-          Future.successful(123)
-        }
+        _ => 123
       }
 
       override def returnType: typing.TypingResult = Typed[Integer]
@@ -120,7 +117,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions
     )
-    LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, 10.seconds)
+    LazyInterpreterDependencies(expressionEvaluator, expressionCompiler)
   }
 
 }

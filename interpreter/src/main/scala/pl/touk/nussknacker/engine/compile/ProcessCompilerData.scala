@@ -18,9 +18,6 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter}
 
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
-
 /*
   This is helper class, which collects pieces needed for various stages of compilation process
 
@@ -78,7 +75,7 @@ object ProcessCompilerData {
     new ProcessCompilerData(
       processCompiler,
       subCompiler,
-      LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
+      LazyInterpreterDependencies(expressionEvaluator, expressionCompiler),
       interpreter,
       listeners,
       servicesDefs.map { case (info, servicesDef) => info.name -> servicesDef.implementation.asInstanceOf[Lifecycle] }
