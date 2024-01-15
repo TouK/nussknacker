@@ -117,13 +117,13 @@ object PrettyValidationErrors {
         )
       case OverwrittenVariable(varName, _, paramName) =>
         node(
-          s"Variable output name '$varName' is already defined.",
+          s"Variable name '$varName' is already defined.",
           "You cannot overwrite variables",
           fieldName = paramName
         )
-      case InvalidVariableOutputName(varName, _, paramName) =>
+      case InvalidVariableName(varName, _, paramName) =>
         node(
-          s"Variable output name '$varName' is not a valid identifier (only letters, numbers or '_', cannot be empty)",
+          s"Variable name '$varName' is not a valid identifier (only letters, numbers or '_', cannot be empty)",
           "Please use only letters, numbers or '_', also identifier cannot be empty.",
           fieldName = paramName
         )

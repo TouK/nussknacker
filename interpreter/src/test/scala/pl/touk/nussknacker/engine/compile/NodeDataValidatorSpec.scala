@@ -317,7 +317,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
 
   test("should not allow to use special chars in variable name") {
     inside(validate(Variable("var1", "var@ 2", "42L", None), ValidationContext())) {
-      case ValidationPerformed(InvalidVariableOutputName("var@ 2", "var1", _) :: Nil, None, _) =>
+      case ValidationPerformed(InvalidVariableName("var@ 2", "var1", _) :: Nil, None, _) =>
     }
   }
 
@@ -612,7 +612,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) {
       case ValidationPerformed(
-            List(InvalidVariableOutputName(incorrectVarName, nodeId, Some(varFieldName))),
+            List(InvalidVariableName(incorrectVarName, nodeId, Some(varFieldName))),
             None,
             None
           ) =>
@@ -1181,7 +1181,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     ) {
       case ValidationPerformed(
             List(
-              InvalidVariableOutputName(
+              InvalidVariableName(
                 "1",
                 "in",
                 Some("$param.1.$name")

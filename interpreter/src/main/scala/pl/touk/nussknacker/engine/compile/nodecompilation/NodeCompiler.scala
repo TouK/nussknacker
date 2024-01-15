@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -53,6 +53,7 @@ import shapeless.Typeable
 import shapeless.syntax.typeable._
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
+import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.validateParameterNames
 
 object NodeCompiler {
 
@@ -165,19 +166,7 @@ class NodeCompiler(
           )
       }
 
-      val parameterNameValidation = parameterDefinitions.value
-        .map(_.name)
-        .groupBy(identity)
-        .foldLeft(valid(()): ValidatedNel[ProcessCompilationError, Unit]) { case (acc, (paramName, group)) =>
-          val duplicationError = if (group.size > 1) {
-            invalid(DuplicateFragmentInputParameter(paramName, nodeId.toString)).toValidatedNel
-          } else valid(())
-          val validIdentifierError = validateVariableName(
-            paramName,
-            Some(qualifiedParamFieldName(paramName, Some(ParameterNameFieldName)))
-          ).map(_ => ())
-          acc.combine(duplicationError).combine(validIdentifierError)
-        }
+      val parameterNameValidation = validateParameterNames(parameterDefinitions.value)
 
       val parameterExtractionValidation =
         NonEmptyList.fromList(parameterDefinitions.written).map(errors => invalid(errors)).getOrElse(valid(()))
