@@ -234,11 +234,15 @@ class NodeUtils {
     hasOutputs = (node: NodeType, processDefinitionData?: ProcessDefinitionData): boolean => {
         switch (node?.type) {
             case "FragmentInput": {
-                const outputParameters =
-                    processDefinitionData?.components["fragment-" + node.ref.id]?.outputParameters ||
-                    Object.keys(node.ref.outputVariableNames);
-                return outputParameters.length > 0;
+                const fragmentComponentId = ProcessUtils.determineComponentId(node);
+                const edgesFromDefinition = processDefinitionData?.edgesForNodes.find(
+                    (e) => e.componentId === fragmentComponentId && !e.isForInputDefinition,
+                )?.edges;
+                // Is this fallback is ok? This function is used for correctFetchedDetails. Why we prefer to
+                // clean edges when referred fragment lost all outputs but don't clean them when fragment was removed at all?
+                return (edgesFromDefinition || Object.keys(node.ref.outputVariableNames)).length > 0;
             }
+            // Can't we use processDefinitionData?.edgesForNodes for every node type?
             default: {
                 return !this.noOutputNodeTypes.includes(node?.type);
             }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.definition
 
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
@@ -18,7 +19,12 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, StubFragmentRepository, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{
+  MockDeploymentManager,
+  ProcessTestData,
+  StubFragmentRepository,
+  TestProcessingTypes
+}
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.security.api.AdminUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -26,7 +32,7 @@ import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
+class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with OptionValues {
 
   object TestService extends Service {
 
@@ -167,10 +173,23 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
-    val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
+    val fragment    = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val definitions = prepareDefinitions(model, List(fragment))
 
     definitions.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)) shouldBe empty
+  }
+
+  test("should return outputParameters in fragment's definition") {
+    val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
+
+    val fragment    = ProcessTestData.sampleFragmentOneOut
+    val definitions = prepareDefinitions(model, List(ProcessTestData.sampleFragmentOneOut))
+
+    val fragmentDefinition =
+      definitions.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)).value
+    val outputParameters = fragmentDefinition.outputParameters.value
+    outputParameters shouldEqual List("output")
   }
 
   test("should override component's parameter config with additionally provided config") {
@@ -235,7 +254,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     ).prepareUIDefinitions(
       TestProcessingTypes.Streaming,
       forFragment = false
-    )(AdminUser("admin", "admin")).futureValue
+    )(AdminUser("admin", "admin"))
+      .futureValue
   }
 
 }
