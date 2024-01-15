@@ -16,14 +16,10 @@ export type BranchParametersTemplate = $TodoType;
 export type NodeType<F extends Field = Field> = {
     id: string;
     type: Type;
-    isFragment?: boolean;
     isDisabled?: boolean;
     additionalFields?: {
         description: string;
         layoutData?: LayoutData;
-        properties: {
-            layout?: string;
-        };
     };
     parameters?: Parameter[];
     branchParameters?: BranchParams[];
@@ -67,6 +63,7 @@ export interface Expression {
 export type PropertiesType = NodeType & {
     type: "Properties";
     additionalFields: ProcessAdditionalFields;
+    isFragment?: boolean;
 };
 
 export type NodeId = NodeType["id"];
