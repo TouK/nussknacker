@@ -5,7 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll}
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.ServiceLogic.FunctionBasedParamsEvaluator
+import pl.touk.nussknacker.engine.api.ServiceLogic.ParamsEvaluator
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client3.testing.SttpBackendStub
@@ -87,7 +87,7 @@ class SecurityTest
   }
 
   private lazy val dummyParamsEvaluator = {
-    new FunctionBasedParamsEvaluator(Context("dummy", Map.empty), _ => Map.empty)
+    ParamsEvaluator.create(Context("dummy", Map.empty), _ => Map.empty)
   }
 
 }

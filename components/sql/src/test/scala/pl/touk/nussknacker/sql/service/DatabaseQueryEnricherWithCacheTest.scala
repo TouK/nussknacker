@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.sql.service
 
-import pl.touk.nussknacker.engine.api.{Context, ContextId}
-import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator, RunContext}
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.CacheTTLParamName
@@ -12,8 +12,8 @@ import scala.concurrent.Await
 
 class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
 
-  import scala.jdk.CollectionConverters._
   import scala.concurrent.duration._
+  import scala.jdk.CollectionConverters._
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
@@ -45,7 +45,7 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       dependencies = Nil,
       finalState = Some(state)
     )
-    val paramsEvaluator = new FunctionBasedParamsEvaluator(context, _ => Map("arg1" -> 1))
+    val paramsEvaluator = ParamsEvaluator.create(context, _ => Map("arg1" -> 1))
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
     val resultF = serviceLogic.run(paramsEvaluator)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList

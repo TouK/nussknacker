@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.service
 
 import pl.touk.nussknacker.engine.api.{Context, ContextId}
-import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator, RunContext}
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, UpdateResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
@@ -40,7 +40,7 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       componentUseCase = componentUseCase
     )
     val serviceLogic    = service.implementation(Map.empty, dependencies = Nil, Some(state))
-    val paramsEvaluator = new FunctionBasedParamsEvaluator(context, _ => Map("arg1" -> 1))
+    val paramsEvaluator = ParamsEvaluator.create(context, _ => Map("arg1" -> 1))
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
     val resultF = serviceLogic.run(paramsEvaluator)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
@@ -73,7 +73,7 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       componentUseCase = componentUseCase
     )
     val serviceLogic    = service.implementation(Map.empty, dependencies = Nil, Some(state))
-    val paramsEvaluator = new FunctionBasedParamsEvaluator(context, _ => Map("arg1" -> 1))
+    val paramsEvaluator = ParamsEvaluator.create(context, _ => Map("arg1" -> 1))
     returnType(service, state).display shouldBe "Integer"
     val resultF = serviceLogic.run(paramsEvaluator)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]

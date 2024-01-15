@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator, RunContext}
+import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator, ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector
@@ -33,7 +33,7 @@ class MethodBasedServiceLogicTest extends AnyFlatSpec with PatientScalaFutures w
       componentUseCase = componentUseCase
     )
     val logic              = new MethodBasedServiceLogic(metadata, nodeId, None, definition)
-    val parameterEvaluator = new FunctionBasedParamsEvaluator(ctx, _ => Map("foo" -> "aa", "bar" -> 1))
+    val parameterEvaluator = ParamsEvaluator.create(ctx, _ => Map("foo" -> "aa", "bar" -> 1))
 
     whenReady(logic.run(parameterEvaluator)) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
@@ -49,7 +49,7 @@ class MethodBasedServiceLogicTest extends AnyFlatSpec with PatientScalaFutures w
       componentUseCase = componentUseCase
     )
     val logic              = new MethodBasedServiceLogic(metadata, nodeId, None, definition)
-    val parameterEvaluator = new FunctionBasedParamsEvaluator(ctx, _ => Map("foo" -> "aa", "bar" -> "terefere"))
+    val parameterEvaluator = ParamsEvaluator.create(ctx, _ => Map("foo" -> "aa", "bar" -> "terefere"))
 
     intercept[IllegalArgumentException](
       logic.run(parameterEvaluator)

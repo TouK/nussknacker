@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
+import cats.implicits._
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
   CollectableAction,
   ServiceInvocationCollector,
   ToCollect,
   TransmissionNames
 }
-import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, ServiceLogic}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import cats.implicits._
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,7 +33,7 @@ object service {
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[Any] = {
-      val evaluator = new FunctionBasedParamsEvaluator(ctx, expressionEvaluator.evaluateParameters(parameters, _)._2)
+      val evaluator = ParamsEvaluator.create(ctx, expressionEvaluator.evaluateParameters(parameters, _)._2)
       val contextId = ContextId(ctx.id)
       val runContext = RunContext(
         collector = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id),

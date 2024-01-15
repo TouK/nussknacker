@@ -6,7 +6,7 @@ import org.asynchttpclient.DefaultAsyncHttpClient
 import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, Outcome}
-import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator, RunContext}
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector
@@ -73,7 +73,7 @@ class OpenAPIServiceSpec
       contextId = ContextId(context.id),
       componentUseCase = componentUseCase
     )
-    val paramsEvaluator = new FunctionBasedParamsEvaluator(context, _ => Map("customer_id" -> "10"))
+    val paramsEvaluator = ParamsEvaluator.create(context, _ => Map("customer_id" -> "10"))
     val valueWithChosenFields =
       service.runServiceLogic(paramsEvaluator).futureValue.asInstanceOf[TypedMap].asScala
     valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")

@@ -53,8 +53,15 @@ object ServiceLogic {
     def evaluate(additionalVariables: Map[String, Any] = Map.empty): EvaluatedParams
   }
 
-  // todo:
-  class FunctionBasedParamsEvaluator(context: Context, evaluate: Context => Map[String, Any]) extends ParamsEvaluator {
+  object ParamsEvaluator {
+    def create(context: Context, evaluate: Context => Map[String, Any]): ParamsEvaluator =
+      new FunctionBasedParamsEvaluator(context, evaluate)
+  }
+
+  private[ServiceLogic] final class FunctionBasedParamsEvaluator private[ServiceLogic] (
+      context: Context,
+      evaluate: Context => Map[String, Any]
+  ) extends ParamsEvaluator {
 
     override def evaluate(additionalVariables: Map[String, Any] = Map.empty): EvaluatedParams = {
       val newContext = context.withVariables(additionalVariables)
@@ -63,7 +70,7 @@ object ServiceLogic {
 
   }
 
-  class EvaluatedParams(val allRaw: Map[String, Any]) {
+  final class EvaluatedParams(val allRaw: Map[String, Any]) {
     def get[T](name: String): Option[T] = allRaw.get(name).map(_.asInstanceOf[T])
 
     def getUnsafe[T](name: String): T = get(name).getOrElse {

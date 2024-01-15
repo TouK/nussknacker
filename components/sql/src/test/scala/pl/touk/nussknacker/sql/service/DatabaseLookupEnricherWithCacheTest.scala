@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.sql.service
 
-import pl.touk.nussknacker.engine.api.{Context, ContextId}
-import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator, RunContext}
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.CacheTTLParamName
@@ -12,8 +12,8 @@ import scala.concurrent.Await
 
 class DatabaseLookupEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
 
-  import scala.jdk.CollectionConverters._
   import scala.concurrent.duration._
+  import scala.jdk.CollectionConverters._
 
   override val service =
     new DatabaseLookupEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
@@ -45,7 +45,7 @@ class DatabaseLookupEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       dependencies = Nil,
       finalState = Some(state)
     )
-    val paramsEvaluator = new FunctionBasedParamsEvaluator(
+    val paramsEvaluator = ParamsEvaluator.create(
       context,
       _ => Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)
     )

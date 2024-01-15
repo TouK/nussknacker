@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ServiceLogic.FunctionBasedParamsEvaluator
+import pl.touk.nussknacker.engine.api.ServiceLogic.ParamsEvaluator
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client3.Response
@@ -35,7 +35,7 @@ class CodeHandlingTest
     val service         = parseToEnrichers("custom-codes.yml", backend, config)(ServiceName("code"))
 
     def invokeWithCode(code: Int) = {
-      val paramsEvaluator = new FunctionBasedParamsEvaluator(context, _ => Map(codeParameter -> code))
+      val paramsEvaluator = ParamsEvaluator.create(context, _ => Map(codeParameter -> code))
       service.runServiceLogic(paramsEvaluator).futureValue.asInstanceOf[AnyRef]
     }
 

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.sql.service
 
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.OutputVariableNameValue
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
-import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator, RunContext}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
@@ -15,8 +15,8 @@ import scala.concurrent.Await
 
 class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
 
-  import scala.jdk.CollectionConverters._
   import scala.concurrent.duration._
+  import scala.jdk.CollectionConverters._
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
@@ -50,7 +50,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       componentUseCase = componentUseCase
     )
     val serviceLogic = service.implementation(Map(), dependencies = Nil, Some(state))
-    val paramsEvaluator = new FunctionBasedParamsEvaluator(
+    val paramsEvaluator = ParamsEvaluator.create(
       context,
       _ => Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)
     )
