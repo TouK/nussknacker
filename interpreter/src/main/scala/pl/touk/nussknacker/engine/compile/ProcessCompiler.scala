@@ -138,8 +138,6 @@ protected trait ProcessCompilerBase {
     result.map(NonEmptyList.fromListUnsafe)
   }
 
-  // TODO local: displaying this is problematic. This error is detectable only at whole process validation so can't be
-  //             displayed inside a node. Otherwise displaying it in the tips panel as a global error is ugly.
   // TODO: validate single input in request response and single input in fragment like this
   private def validateUniqueFragmentOutputNames(
       splittedProcess: SplittedProcess
@@ -152,12 +150,9 @@ protected trait ProcessCompilerBase {
         .collect {
           case (name, nodes) if nodes.size > 1 => name
         }
-        .toSet
-      val nodesWithDuplicatedOutputNames = fragmentOutputNodes.filter(n => duplicatedOutputNames(n.outputName))
-      // TODO local: how do we display this? if as global errors then need to not generate error per node
-      //             but per duplicated name
-      nodesWithDuplicatedOutputNames
-        .map(n => invalidNel(DuplicateOutputNamesInFragment(n.outputName)))
+      duplicatedOutputNames
+        .map(n => invalidNel(DuplicateOutputNamesInFragment(n)))
+        .toList
         .sequence
         .map(_ => ())
     } else {
