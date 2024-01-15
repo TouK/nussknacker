@@ -46,9 +46,11 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const dispatch = useDispatch();
 
     const performNodeEdit = useCallback(async () => {
-        dispatch(await editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
-        props.close();
+        await dispatch(await editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
+
+        //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like props.close doesn't unmount component.
         mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+        props.close();
     }, [scenario, node, editedNode, outputEdges, dispatch, props]);
 
     const { t } = useTranslation();
