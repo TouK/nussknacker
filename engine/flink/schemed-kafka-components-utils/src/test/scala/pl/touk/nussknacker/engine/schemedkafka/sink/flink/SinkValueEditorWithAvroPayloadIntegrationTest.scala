@@ -127,7 +127,7 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
     )
     val process = createAvroProcess(sourceParam, sinkParam)
 
-    runAndVerifyResult(process, topicConfig, event = MyRecord.record, expected = MyRecord.record)
+    runAndVerifyResultSingleEvent(process, topicConfig, event = MyRecord.record, expected = MyRecord.record)
   }
 
   test("primitive at top level") {
@@ -136,7 +136,7 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
     val sinkParam   = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "42L", validationMode = None)
     val process     = createAvroProcess(sourceParam, sinkParam)
     val encoded     = encode(42L, topicSchemas("long"))
-    runAndVerifyResult(process, topicConfig, event = encoded, expected = encoded)
+    runAndVerifyResultSingleEvent(process, topicConfig, event = encoded, expected = encoded)
   }
 
   test("array at top level") {
@@ -145,7 +145,7 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
     val sinkParam   = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "{42L}")
     val process     = createAvroProcess(sourceParam, sinkParam)
     val encoded     = encode(new NonRecordContainer(topicSchemas("array"), List(42L).asJava), topicSchemas("array"))
-    runAndVerifyResult(process, topicConfig, event = encoded, expected = List(42L).asJava)
+    runAndVerifyResultSingleEvent(process, topicConfig, event = encoded, expected = List(42L).asJava)
   }
 
 }

@@ -87,9 +87,9 @@ export function NodeTypeDetailsContent({
 
     const renderFieldLabel = useCallback(
         (paramName: string): JSX.Element => {
-            return <FieldLabel nodeId={node.id} parameterDefinitions={parameterDefinitions} paramName={paramName} />;
+            return <FieldLabel parameterDefinitions={parameterDefinitions} paramName={paramName} />;
         },
-        [node.id, parameterDefinitions],
+        [parameterDefinitions],
     );
 
     const removeElement = useCallback(

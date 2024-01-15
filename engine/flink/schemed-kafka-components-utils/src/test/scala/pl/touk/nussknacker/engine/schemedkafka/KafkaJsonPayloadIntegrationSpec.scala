@@ -55,7 +55,7 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
     val sinkParam   = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process     = createAvroProcess(sourceParam, sinkParam)
 
-    runAndVerifyResult(
+    runAndVerifyResultSingleEvent(
       process,
       topicConfig,
       PaymentV1.exampleData,

@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import cats.instances.list._
-import cats.syntax.traverse._
 import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   OutputVariableNameValue,
@@ -80,7 +78,8 @@ object Parameter {
       isLazyParameter = false,
       scalaOptionParameter = false,
       javaOptionalParameter = false,
-      hintText = None
+      hintText = None,
+      labelOpt = None
     )
 
   def optional[T: TypeTag: NotNothing](name: String): Parameter =
@@ -101,7 +100,8 @@ object Parameter {
       isLazyParameter = false,
       scalaOptionParameter = false,
       javaOptionalParameter = false,
-      hintText = None
+      hintText = None,
+      labelOpt = None
     )
 
 }
@@ -125,7 +125,8 @@ case class Parameter(
     isLazyParameter: Boolean,
     scalaOptionParameter: Boolean,
     javaOptionalParameter: Boolean,
-    hintText: Option[String]
+    hintText: Option[String],
+    labelOpt: Option[String],
 ) extends NodeDependency {
 
   def copy(
@@ -153,7 +154,8 @@ case class Parameter(
       isLazyParameter,
       scalaOptionParameter,
       javaOptionalParameter,
-      hintText = None
+      hintText = None,
+      labelOpt = None
     )
   }
 
@@ -169,7 +171,8 @@ case class Parameter(
       isLazyParameter: Boolean = this.isLazyParameter,
       scalaOptionParameter: Boolean = this.scalaOptionParameter,
       javaOptionalParameter: Boolean = this.javaOptionalParameter,
-      hintText: Option[String] = this.hintText
+      hintText: Option[String] = this.hintText,
+      labelOpt: Option[String] = this.labelOpt,
   ): Parameter = {
     new Parameter(
       name,
@@ -183,7 +186,8 @@ case class Parameter(
       isLazyParameter,
       scalaOptionParameter,
       javaOptionalParameter,
-      hintText
+      hintText,
+      labelOpt
     )
   }
 
@@ -199,7 +203,8 @@ case class Parameter(
       isLazyParameter: Boolean,
       scalaOptionParameter: Boolean,
       javaOptionalParameter: Boolean,
-      hintText: Option[String]
+      hintText: Option[String],
+      labelOpt: Option[String]
   ): Parameter = {
     new Parameter(
       name,
@@ -213,7 +218,8 @@ case class Parameter(
       isLazyParameter,
       scalaOptionParameter,
       javaOptionalParameter,
-      hintText
+      hintText,
+      labelOpt
     )
   }
 
@@ -242,7 +248,8 @@ case class Parameter(
       isLazyParameter,
       scalaOptionParameter,
       javaOptionalParameter,
-      hintText = None
+      hintText = None,
+      labelOpt = None
     )
   }
 
@@ -260,6 +267,10 @@ case class Parameter(
   }
 
   val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
+
+  // We should have some convention for building the default label based on Parameter's name - e.g.
+  // names could be kebab-case and we can convert them to the Human Readable Format
+  def label: String = labelOpt getOrElse name
 
 }
 
