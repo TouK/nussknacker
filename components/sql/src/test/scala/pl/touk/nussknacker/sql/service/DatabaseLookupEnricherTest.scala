@@ -10,6 +10,7 @@ import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
+import java.io.{ByteArrayOutputStream, FileOutputStream, ObjectOutputStream}
 import scala.concurrent.Await
 
 class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
@@ -30,6 +31,14 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
     new MetaDataProviderFactory().create(conf)
 
   override val service = new DatabaseLookupEnricher(hsqlDbPoolConfig, provider(hsqlDbPoolConfig))
+
+  test("Database lookup enricher should be serializable") {
+    val fos = new ByteArrayOutputStream()
+    val oos = new ObjectOutputStream(fos);
+    oos.writeObject(service)
+    oos.flush()
+    oos.close()
+  }
 
   test("DatabaseLookupEnricher#implementation without cache") {
     val query = "select * from persons where id = ?"
