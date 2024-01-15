@@ -7,10 +7,10 @@ import { Edge, NodeType, ScenarioGraph, ProcessDefinitionData } from "../../type
 import { ThunkAction } from "../reduxTypes";
 import { Scenario } from "../../components/Process/types";
 
-function alignFragmentsNodeWithSchema(scenario: Scenario, processDefinitionData: ProcessDefinitionData): ScenarioGraph {
+function alignFragmentsNodeWithSchema(scenarioGraph: ScenarioGraph, processDefinitionData: ProcessDefinitionData): ScenarioGraph {
     return {
-        ...scenario.json,
-        nodes: scenario.json.nodes.map((node) => {
+        ...scenarioGraph,
+        nodes: scenarioGraph.nodes.map((node) => {
             return node.type === "FragmentInput" ? alignFragmentWithSchema(processDefinitionData, node) : node;
         }),
     };
@@ -27,7 +27,7 @@ export function calculateProcessAfterChange(
             const processDefinitionData = await dispatch(
                 fetchProcessDefinition(scenario.processingType, scenario.json.properties.isFragment),
             );
-            const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario, processDefinitionData);
+            const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario.json, processDefinitionData);
             if (after.id !== before.id) {
                 dispatch({ type: "PROCESS_RENAME", name: after.id });
             }
