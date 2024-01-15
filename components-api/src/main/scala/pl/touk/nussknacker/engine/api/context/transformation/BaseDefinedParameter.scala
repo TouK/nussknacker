@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.context.transformation
 
-import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
 sealed trait BaseDefinedParameter {
@@ -11,30 +10,28 @@ sealed trait DefinedSingleParameter extends BaseDefinedParameter
 
 trait ValidDefinedSingleParameter { self: DefinedSingleParameter =>
 
-  def expression: TypedExpression
-
-  final override def returnType: TypingResult = expression.returnType
+  def returnType: TypingResult
 
 }
 
 sealed trait DefinedBranchParameter extends BaseDefinedParameter {
 
-  def expressionByBranchId: Map[String, TypedExpression]
+  def typeByBranchId: Map[String, TypingResult]
 
-  final override def returnType: TypingResult = Typed(expressionByBranchId.values.map(_.returnType).toSet)
+  final override def returnType: TypingResult = Typed(typeByBranchId.values.toSet)
 
 }
 
-case class DefinedLazyParameter(expression: TypedExpression)
+case class DefinedLazyParameter(returnType: TypingResult)
     extends DefinedSingleParameter
     with ValidDefinedSingleParameter
 
-case class DefinedEagerParameter(value: Any, expression: TypedExpression)
+case class DefinedEagerParameter(value: Any, returnType: TypingResult)
     extends DefinedSingleParameter
     with ValidDefinedSingleParameter
 
-case class DefinedLazyBranchParameter(expressionByBranchId: Map[String, TypedExpression]) extends DefinedBranchParameter
-case class DefinedEagerBranchParameter(value: Map[String, Any], expressionByBranchId: Map[String, TypedExpression])
+case class DefinedLazyBranchParameter(typeByBranchId: Map[String, TypingResult]) extends DefinedBranchParameter
+case class DefinedEagerBranchParameter(value: Map[String, Any], typeByBranchId: Map[String, TypingResult])
     extends DefinedBranchParameter
 
 //TODO: and for branch parameters??

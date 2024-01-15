@@ -1189,7 +1189,7 @@ object InterpreterSpec {
             _
           ) if value == otherName =>
         FinalResults.forValidation(context)(
-          _.withVariable(OutputVariableNameDependency.extract(dependencies), expression.returnType, None)
+          _.withVariable(OutputVariableNameDependency.extract(dependencies), expression, None)
         )
     }
 
