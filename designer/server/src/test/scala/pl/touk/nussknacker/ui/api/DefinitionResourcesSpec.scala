@@ -45,6 +45,7 @@ class DefinitionResourcesSpec
   private val definitionResources = new DefinitionResources(
     serviceProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
       val modelDefinitionEnricher = ModelDefinitionEnricher(
+        processingTypeData.processingType,
         processingTypeData.modelData,
         processingTypeData.staticModelDefinition
       )

@@ -134,8 +134,7 @@ class DefaultComponentService(
     componentsDefinition.toList
       .map { case (info, definition) =>
         // TODO: We should add componentId into ComponentDefinitionWithImplementation, thx to that we won't need to use ComponentIdProvider in many places
-        // TODO: alternatively, make sure that SingleComponentConfig.componentId is filled during ComponentDefinitionExtractor.extract and rely on it
-        val componentId = componentIdProvider.createComponentId(processingType, info)
+        val componentId = definition.componentIdUnsafe
         val links       = createComponentLinks(componentId, info, definition)
 
         ComponentListElement(

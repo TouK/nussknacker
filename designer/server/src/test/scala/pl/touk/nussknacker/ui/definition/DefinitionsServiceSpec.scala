@@ -239,12 +239,14 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         model,
         MetaDataInitializer(StreamMetaData.typeName).create(_, Map.empty)
       )
+    val processingType = TestProcessingTypes.Streaming
+
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
+      processingType,
       new BuiltInComponentsStaticDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
       new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
       staticModelDefinition
     )
-    val processingType = TestProcessingTypes.Streaming
 
     new DefinitionsService(
       modelData = model,

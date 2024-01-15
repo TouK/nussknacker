@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -34,8 +34,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, SecurityHeadersSupport}
@@ -106,7 +106,7 @@ class BaseFlowTest
         icon = Some(DefaultsComponentIcon.FilterIcon),
         docsUrl = Some("https://touk.github.io/nussknacker/filter"),
         componentGroup = Some(DefaultsComponentGroupName.BaseGroupName),
-        componentId = None
+        componentId = Some(ComponentId.forBuiltInComponent(BuiltInComponentInfo.Filter))
       ),
       "enricher" -> SingleComponentConfig(
         params = Some(
@@ -130,7 +130,7 @@ class BaseFlowTest
         icon = Some("/assets/components/Filter.svg"),
         docsUrl = Some("https://touk.github.io/nussknacker/enricher"),
         componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName),
-        componentId = None
+        componentId = Some(ComponentId("streaming-service-enricher"))
       ),
       "multipleParamsService" -> SingleComponentConfig(
         params = Some(
@@ -156,14 +156,14 @@ class BaseFlowTest
         icon = Some(DefaultsComponentIcon.ServiceIcon),
         docsUrl = None,
         componentGroup = Some(DefaultsComponentGroupName.ServicesGroupName),
-        componentId = None
+        componentId = Some(ComponentId("streaming-service-multipleparamsservice"))
       ),
       "accountService" -> SingleComponentConfig(
         params = None,
         icon = Some(DefaultsComponentIcon.ServiceIcon),
         docsUrl = Some("accountServiceDocs"),
         componentGroup = Some(DefaultsComponentGroupName.ServicesGroupName),
-        componentId = None
+        componentId = Some(ComponentId("streaming-service-accountService"))
       ),
       "optionalTypesService" -> SingleComponentConfig(
         params = Some(
@@ -187,14 +187,14 @@ class BaseFlowTest
         icon = Some(DefaultsComponentIcon.ServiceIcon),
         docsUrl = None,
         componentGroup = Some(ComponentGroupName("types")),
-        componentId = None
+        componentId = Some(ComponentId("streaming-service-optionalTypesService"))
       ),
       "providedComponent-component-v1" -> SingleComponentConfig(
         params = None,
         icon = Some(DefaultsComponentIcon.ServiceIcon),
         docsUrl = Some("https://nussknacker.io/Configuration.html"),
         componentGroup = Some(DefaultsComponentGroupName.ServicesGroupName),
-        componentId = None
+        componentId = Some(ComponentId("streaming-service-providedComponent-component-v1"))
       ),
       "$properties" -> SingleComponentConfig(
         params = None,

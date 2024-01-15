@@ -76,6 +76,9 @@ object ComponentDefinitionExtractor {
         .get(componentId)
         .map(ComponentAdditionalConfigConverter.toSingleComponentConfig)
         .getOrElse(SingleComponentConfig.zero)
+        .copy(
+          componentId = Some(componentId)
+        )
     }
 
     def withConfigForNotDisabledComponent[T](

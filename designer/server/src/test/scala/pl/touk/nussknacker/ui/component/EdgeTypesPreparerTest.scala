@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinitionConverter
 import pl.touk.nussknacker.restmodel.definition.UINodeEdges
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 
 class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   test("return edge types for fragment, filters, switches and components with multiple inputs") {
     val sampleFragmentDef = new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader)
-      .extractFragmentComponentDefinition(ProcessTestData.sampleFragment)
+      .extractFragmentComponentDefinition(ProcessTestData.sampleFragment, TestProcessingTypes.Streaming)
       .validValue
     val definitionsWithFragments = ProcessTestData
       .modelDefinition()

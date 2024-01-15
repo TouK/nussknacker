@@ -211,6 +211,7 @@ class AkkaHttpBasedRouteProvider(
 
       def prepareModelDefinitionEnricher(processingTypeData: ProcessingTypeData): ModelDefinitionEnricher =
         ModelDefinitionEnricher(
+          processingTypeData.processingType,
           processingTypeData.modelData,
           processingTypeData.staticModelDefinition
         )

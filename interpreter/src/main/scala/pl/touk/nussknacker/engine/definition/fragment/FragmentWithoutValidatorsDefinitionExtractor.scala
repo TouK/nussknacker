@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -30,14 +31,15 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefini
 class FragmentWithoutValidatorsDefinitionExtractor(classLoader: ClassLoader) {
 
   def extractFragmentComponentDefinition(
-      fragment: CanonicalProcess
+      fragment: CanonicalProcess,
+      processingType: ProcessingType
   ): Validated[FragmentDefinitionError, ComponentStaticDefinition] = {
     FragmentGraphDefinitionExtractor.extractFragmentGraph(fragment).map { case (input, _, outputs) =>
       val parameters =
         extractFragmentParametersDefinition(input.parameters)(NodeId(input.id)).value
       val outputNames = outputs.map(_.name).sorted
       val docsUrl     = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
-      FragmentComponentDefinition(parameters, outputNames, docsUrl)
+      FragmentComponentDefinition(fragment.name.value, processingType, parameters, outputNames, docsUrl)
     }
   }
 

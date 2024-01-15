@@ -484,9 +484,19 @@ class DefaultComponentServiceSpec
     new DynamicComponentProvider().create(ConfigFactory.empty, ProcessObjectDependencies.empty)
 
   private val modelDataMap: Map[ProcessingType, (LocalModelData, Category)] = Map(
-    Streaming -> (LocalModelData(streamingConfig, providerComponents, ComponentMarketingTestConfigCreator),
+    Streaming -> (LocalModelData(
+      streamingConfig,
+      providerComponents,
+      ComponentMarketingTestConfigCreator,
+      componentInfoToId = ComponentId.default(Streaming, _)
+    ),
     CategoryMarketing),
-    Fraud -> (LocalModelData(fraudConfig, providerComponents, ComponentFraudTestConfigCreator),
+    Fraud -> (LocalModelData(
+      fraudConfig,
+      providerComponents,
+      ComponentFraudTestConfigCreator,
+      componentInfoToId = ComponentId.default(Fraud, _)
+    ),
     CategoryFraud)
   )
 
@@ -569,9 +579,15 @@ class DefaultComponentServiceSpec
       Streaming -> (LocalModelData(
         streamingConfig,
         providerComponents,
-        ComponentMarketingTestConfigCreator
+        ComponentMarketingTestConfigCreator,
+        componentInfoToId = ComponentId.default(Streaming, _)
       ), CategoryMarketing),
-      Fraud -> (LocalModelData(wrongConfig, providerComponents, WronglyConfiguredConfigCreator), CategoryFraud)
+      Fraud -> (LocalModelData(
+        wrongConfig,
+        providerComponents,
+        WronglyConfiguredConfigCreator,
+        componentInfoToId = ComponentId.default(Fraud, _)
+      ), CategoryFraud)
     )
 
     val componentService = prepareService(badModelDataMap, List.empty, List.empty)
@@ -735,6 +751,7 @@ class DefaultComponentServiceSpec
       ComponentIdProviderFactory.create(processingTypeDataMap)
     ).mapValues { processingTypeData =>
       val modelDefinitionEnricher = ModelDefinitionEnricher(
+        processingTypeData.processingType,
         processingTypeData.modelData,
         processingTypeData.staticModelDefinition
       )
