@@ -1597,9 +1597,11 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
     withNonUsed shouldBe Symbol("valid")
 
-    val withUsed = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
+    val withUsed       = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
+    val errorFieldName = OutputVar.fragmentOutput("output1", "").fieldName
+
     withUsed should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable(usedVarName, "sample-out", Some(outputVar)), Nil)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable(`usedVarName`, "sample-out", Some(`errorFieldName`)), Nil)) =>
     }
   }
 
