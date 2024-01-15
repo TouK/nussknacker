@@ -186,7 +186,7 @@ class NodeCompiler(
       // duplicated name
       // TODO: display all errors when switching to field name errors not reliant on parameter name
       val displayUniqueNameReliantErrors = parameterNameValidation.fold(
-        errors => errors.collect { case _: DuplicateFragmentInputParameter => }.isEmpty,
+        errors => !errors.exists(_.isInstanceOf[DuplicateFragmentInputParameter]),
         _ => true
       )
 
