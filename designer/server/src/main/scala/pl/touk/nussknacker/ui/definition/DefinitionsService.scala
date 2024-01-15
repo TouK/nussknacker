@@ -129,7 +129,8 @@ object DefinitionsService {
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
       variablesToHide = parameter.variablesToHide,
       branchParam = parameter.branchParam,
-      hintText = parameter.hintText
+      hintText = parameter.hintText,
+      label = parameter.label
     )
   }
 

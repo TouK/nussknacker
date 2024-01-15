@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
-import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Inside, OptionValues}

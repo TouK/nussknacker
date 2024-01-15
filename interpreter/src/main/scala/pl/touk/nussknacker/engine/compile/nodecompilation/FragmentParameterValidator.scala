@@ -1,23 +1,30 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Valid, invalidNel}
+import cats.data.Validated.{Valid, invalid, invalidNel, valid}
 import cats.data.ValidatedNel
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
+  Parameter,
   ParameterEditor,
   ValidationExpressionParameterValidator
 }
 import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
-import pl.touk.nussknacker.engine.graph.node.{FixedValuesListFieldName, InitialValueFieldName}
+import pl.touk.nussknacker.engine.graph.node.{
+  FixedValuesListFieldName,
+  InitialValueFieldName,
+  ParameterNameFieldName,
+  qualifiedParamFieldName
+}
 
 object FragmentParameterValidator {
 
@@ -172,6 +179,24 @@ object FragmentParameterValidator {
         Some(FixedValuesListFieldName)
       )
     ).sequence.map(_ => None)
+  }
+
+  def validateParameterNames(
+      parameters: List[Parameter]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+    parameters
+      .map(_.name)
+      .groupBy(identity)
+      .foldLeft(valid(()): ValidatedNel[ProcessCompilationError, Unit]) { case (acc, (paramName, group)) =>
+        val duplicationError = if (group.size > 1) {
+          invalid(DuplicateFragmentInputParameter(paramName, nodeId.toString)).toValidatedNel
+        } else valid(())
+        val validIdentifierError = validateVariableName(
+          paramName,
+          Some(qualifiedParamFieldName(paramName, Some(ParameterNameFieldName)))
+        ).map(_ => ())
+        acc.combine(duplicationError).combine(validIdentifierError)
+      }
   }
 
 }
