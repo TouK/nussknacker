@@ -138,7 +138,6 @@ protected trait ProcessCompilerBase {
     result.map(NonEmptyList.fromListUnsafe)
   }
 
-  // TODO: validate single input in request response and single input in fragment like this
   private def validateUniqueFragmentOutputNames(
       splittedProcess: SplittedProcess
   ): ValidatedNel[ProcessCompilationError, Unit] = {
