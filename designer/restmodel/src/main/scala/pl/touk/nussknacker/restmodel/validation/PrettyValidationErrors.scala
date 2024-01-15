@@ -153,7 +153,7 @@ object PrettyValidationErrors {
         NodeValidationError(typ, message, message, paramName, NodeValidationErrorType.SaveAllowed)
       case e: DuplicateFragmentOutputNames =>
         node(
-          s"There is more than one output with '${e.duplicatedVarName}' name defined in the fragment, currently this is not allowed",
+          s"Fragment output name '${e.duplicatedVarName}' has to be unique",
           "Please check fragment definition"
         )
       case DuplicateFragmentInputParameter(paramName, _) =>
