@@ -14,7 +14,6 @@ object CompiledParameter {
     CompiledParameter(
       parameterDefinition.name,
       typedExpression.expression,
-      typedExpression.returnType,
       parameterDefinition.scalaOptionParameter,
       parameterDefinition.javaOptionalParameter,
       typedExpression.typingInfo
@@ -26,7 +25,6 @@ object CompiledParameter {
 case class CompiledParameter(
     name: String,
     expression: CompiledExpression,
-    returnType: TypingResult,
     shouldBeWrappedWithScalaOption: Boolean,
     shouldBeWrappedWithJavaOptional: Boolean,
     typingInfo: ExpressionTypingInfo
