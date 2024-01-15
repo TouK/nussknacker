@@ -38,7 +38,7 @@ class DefinitionsService(
         modelDefinitionEnricher
           .modelDefinitionWithBuiltInComponentsAndFragments(forFragment, fragments)
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
-        .finalizeScenarioProperties(scenarioPropertiesConfig, processingType)
+        .finalizeScenarioProperties(scenarioPropertiesConfig)
       prepareUIDefinitions(
         enrichedModelDefinition,
         forFragment,

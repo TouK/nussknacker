@@ -162,12 +162,14 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   ): Map[ProcessingType, ProcessingTypeData] = {
     Map(
       Streaming -> createProcessingTypeData(
+        Streaming,
         new MockDeploymentManager() {
           override def processStateDefinitionManager: ProcessStateDefinitionManager = streaming
         },
         Category1
       ),
       Fraud -> createProcessingTypeData(
+        Fraud,
         new MockDeploymentManager() {
           override def processStateDefinitionManager: ProcessStateDefinitionManager = fraud
         },
@@ -177,10 +179,12 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   }
 
   private def createProcessingTypeData(
+      processingType: ProcessingType,
       deploymentManager: DeploymentManager,
       category: Category
   ): ProcessingTypeData = {
     ProcessingTypeData.createProcessingTypeData(
+      processingType,
       MockManagerProvider,
       deploymentManager,
       LocalModelData(ConfigFactory.empty(), List.empty),

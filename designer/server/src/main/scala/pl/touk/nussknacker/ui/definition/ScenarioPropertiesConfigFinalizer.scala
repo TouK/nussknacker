@@ -6,11 +6,11 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 
 class ScenarioPropertiesConfigFinalizer(
     additionalUIConfigProvider: AdditionalUIConfigProvider,
+    processingType: ProcessingType
 ) {
 
   def finalizeScenarioProperties(
       scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-      processingType: ProcessingType
   ): Map[String, ScenarioPropertyConfig] = {
     additionalUIConfigProvider.getScenarioPropertiesUIConfigs(processingType) |+| scenarioPropertiesConfig
   }

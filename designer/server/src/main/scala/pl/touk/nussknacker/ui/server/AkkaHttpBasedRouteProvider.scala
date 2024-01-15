@@ -298,7 +298,7 @@ class AkkaHttpBasedRouteProvider(
               DefinitionsService(
                 processingTypeData,
                 prepareModelDefinitionEnricher(processingTypeData),
-                new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider),
+                new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
                 fragmentRepository
               )
             }

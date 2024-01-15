@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 import scala.concurrent.{ExecutionContext, Future}
 
 final case class ProcessingTypeData private (
+    processingType: ProcessingType,
     deploymentManager: DeploymentManager,
     modelData: ModelData,
     staticModelDefinition: ModelDefinition[ComponentStaticDefinition],
@@ -50,6 +51,7 @@ object ProcessingTypeData {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
 
     createProcessingTypeData(
+      processingType,
       deploymentManagerProvider,
       ModelData(processingTypeConfig, additionalConfigsFromProvider, ComponentId.default(processingType, _)),
       managerConfig,
@@ -58,6 +60,7 @@ object ProcessingTypeData {
   }
 
   def createProcessingTypeData(
+      processingType: ProcessingType,
       deploymentManagerProvider: DeploymentManagerProvider,
       modelData: ModelData,
       managerConfig: Config,
@@ -69,10 +72,11 @@ object ProcessingTypeData {
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
-    createProcessingTypeData(deploymentManagerProvider, manager, modelData, managerConfig, category)
+    createProcessingTypeData(processingType, deploymentManagerProvider, manager, modelData, managerConfig, category)
   }
 
   def createProcessingTypeData(
+      processingType: ProcessingType,
       deploymentManagerProvider: DeploymentManagerProvider,
       manager: DeploymentManager,
       modelData: ModelData,
@@ -90,6 +94,7 @@ object ProcessingTypeData {
       ToStaticComponentDefinitionTransformer.transformModel(modelData, metaDataInitializer.create(_, Map.empty))
 
     ProcessingTypeData(
+      processingType,
       manager,
       modelData,
       staticModelDefinition,

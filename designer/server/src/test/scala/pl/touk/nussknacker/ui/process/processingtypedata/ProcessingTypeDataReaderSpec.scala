@@ -119,6 +119,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         deploymentService: DeploymentService
     ): ProcessingTypeData = {
       ProcessingTypeData(
+        processingType,
         new MockDeploymentManager,
         null,
         null,

@@ -720,8 +720,9 @@ class DefaultComponentServiceSpec
       fragments: List[ScenarioWithDetailsEntity[DisplayableProcess]]
   ): ComponentService = {
     val processingTypeDataMap: Map[ProcessingType, ProcessingTypeData] = modelDataMap.transform {
-      case (_, (modelData, category)) =>
+      case (processingType, (modelData, category)) =>
         ProcessingTypeData.createProcessingTypeData(
+          processingType,
           MockManagerProvider,
           new MockDeploymentManager,
           modelData,

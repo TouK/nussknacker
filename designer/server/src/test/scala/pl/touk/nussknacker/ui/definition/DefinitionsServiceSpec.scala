@@ -244,15 +244,18 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
       staticModelDefinition
     )
+    val processingType = TestProcessingTypes.Streaming
+
     new DefinitionsService(
       modelData = model,
       scenarioPropertiesConfig = Map.empty,
       deploymentManager = new MockDeploymentManager,
       modelDefinitionEnricher = modelDefinitionEnricher,
-      scenarioPropertiesConfigFinalizer = new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider),
-      fragmentRepository = new StubFragmentRepository(Map(TestProcessingTypes.Streaming -> fragmentScenarios))
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType),
+      fragmentRepository = new StubFragmentRepository(Map(processingType -> fragmentScenarios))
     ).prepareUIDefinitions(
-      TestProcessingTypes.Streaming,
+      processingType,
       forFragment = false
     )(AdminUser("admin", "admin"))
       .futureValue
