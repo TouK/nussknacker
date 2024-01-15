@@ -319,7 +319,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
 
   test("should not allow to use special chars in variable name") {
     inside(validate(Variable("var1", "var@ 2", "42L", None), ValidationContext())) {
-      case ValidationPerformed(InvalidVariableOutputName("var@ 2", "var1", _) :: Nil, None, _) =>
+      case ValidationPerformed(InvalidVariableName("var@ 2", "var1", _) :: Nil, None, _) =>
     }
   }
 
@@ -614,7 +614,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) {
       case ValidationPerformed(
-            List(InvalidVariableOutputName(incorrectVarName, nodeId, Some(varFieldName))),
+            List(InvalidVariableName(incorrectVarName, nodeId, Some(varFieldName))),
             None,
             None
           ) =>
@@ -1157,6 +1157,106 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 paramName,
                 stringExpression
               )
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should return error on invalid parameter name") {
+    inside(
+      validate(
+        FragmentInputDefinition(
+          "in",
+          List(
+            FragmentParameter(
+              "1",
+              FragmentClazzRef[String]
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidVariableName(
+                "1",
+                "in",
+                Some("$param.1.$name")
+              )
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should return error on duplicated parameter name") {
+    val duplicatedParam = FragmentParameter(
+      "paramName",
+      FragmentClazzRef[String]
+    )
+    inside(
+      validate(
+        FragmentInputDefinition(
+          "in",
+          List(
+            duplicatedParam,
+            duplicatedParam
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              DuplicateFragmentInputParameter("paramName", "in")
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should not return specific errors based on parameter name when parameter names are duplicated") {
+    inside(
+      validate(
+        FragmentInputDefinition(
+          "in",
+          List(
+            FragmentParameter(
+              name = "paramName",
+              typ = FragmentClazzRef[String],
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = Some(
+                ParameterValueCompileTimeValidation(
+                  "invalidExpr",
+                  None
+                )
+              )
+            ),
+            FragmentParameter(
+              "paramName",
+              FragmentClazzRef[String],
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              DuplicateFragmentInputParameter("paramName", "in")
             ),
             None,
             None

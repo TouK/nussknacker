@@ -9,6 +9,7 @@ import org.springframework.expression.spel.{SpelNode, SpelParserConfiguration}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.validation.Validations.isVariableNameValid
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper
@@ -17,7 +18,6 @@ import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 
-import javax.lang.model.SourceVersion
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
@@ -89,7 +89,7 @@ class SpelExpressionSuggester(
             )
           case TypingResultWithContext(to: TypedObjectTypingResult, _) =>
             def filterIllegalIdentifierAfterDot(name: String) = {
-              SourceVersion.isIdentifier(name)
+              isVariableNameValid(name)
             }
             val collectSuggestionsFromClass = parentIsIndexer
             val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList
