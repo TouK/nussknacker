@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
+// TODO: refactor this reliance on nodeIds.empty to determine if error is a node error or global
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
 }
