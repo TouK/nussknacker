@@ -25,7 +25,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{NodeValidationRequestDto, TypingResultDto}
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.Codec.PlainCodec
@@ -300,9 +300,8 @@ object NodesApiEndpoints {
                   fields.map { case (key, result) => (key, toTypingResult(result)) }
                 )
               case None =>
-                Typed.genericTypeClass(
-                  modelData.modelClassLoader.classLoader.loadClass(typeDto.refClazzName),
-                  typeDto.params.map { resultDto => toTypingResult(resultDto) }
+                Typed.apply(
+                  ClassUtils.forName(typeDto.refClazzName, modelData.modelClassLoader.classLoader)
                 )
             }
         }
@@ -393,8 +392,6 @@ object NodesApiEndpoints {
             TypingResultDto(Some(null), "Null", "null", "null", List.empty, None)
           case typing.Unknown =>
             TypingResultDto(None, "Unknown", "Unknown", "java.lang.Object", List.empty, None)
-          case _ =>
-            TypingResultDto(None, "rest", "type", "refClazzName", List.empty, None)
         }
       }
 
@@ -410,33 +407,6 @@ object NodesApiEndpoints {
     )
 
     object NodeValidationRequestDto {
-
-      def toRequest(node: NodeValidationRequestDto)(implicit modelData: ModelData): Option[NodeValidationRequest] = {
-        try {
-          Some(
-            NodeValidationRequest(
-              nodeData = node.nodeData,
-              processProperties = node.processProperties,
-              variableTypes = node.variableTypes.map { case (key, typingResultDto) =>
-                (key, TypingResultDto.toTypingResult(typingResultDto))
-              },
-              branchVariableTypes = node.branchVariableTypes.map { outerMap =>
-                outerMap.map { case (name, innerMap) =>
-                  val changedMap = innerMap.map { case (key, typing) =>
-                    (key, TypingResultDto.toTypingResult(typing))
-                  }
-                  (name, changedMap)
-                }
-              },
-              outgoingEdges = node.outgoingEdges
-            )
-          )
-        } catch {
-          case _: Throwable => None
-        }
-
-      }
-
       implicit val nodeDataSchema: Schema[NodeData]                   = Schema.anyObject
       implicit val processPropertiesSchema: Schema[ProcessProperties] = Schema.any
     }
@@ -448,6 +418,36 @@ object NodesApiEndpoints {
         validationErrors: List[NodeValidationError],
         validationPerformed: Boolean
     )
+
+    object NodeValidationResultDto {
+
+      def apply(node: NodeValidationResult): NodeValidationResultDto = {
+        new NodeValidationResultDto(
+          parameters = node.parameters.map { list =>
+            list.map { param =>
+              UIParameterDto(
+                name = param.name,
+                typ = TypingResultDto.typingResultToDto(param.typ),
+                editor = param.editor,
+                defaultValue = param.defaultValue,
+                additionalVariables = param.additionalVariables.map { case (key, typingResult) =>
+                  (key, TypingResultDto.typingResultToDto(typingResult))
+                },
+                variablesToHide = param.variablesToHide,
+                branchParam = param.branchParam,
+                hintText = param.hintText
+              )
+            }
+          },
+          expressionType = node.expressionType.map { typingResult =>
+            TypingResultDto.typingResultToDto(typingResult)
+          },
+          validationErrors = node.validationErrors,
+          validationPerformed = node.validationPerformed
+        )
+      }
+
+    }
 
     @derive(encoder, decoder, schema)
     final case class UIParameterDto(
@@ -479,27 +479,6 @@ object NodesApiEndpoints {
         parameters: List[UIValueParameterDto],
         variableTypes: Map[String, TypingResultDto]
     )
-
-    object ParametersValidationRequestDto {
-
-      def withoutDto(
-          param: ParametersValidationRequestDto
-      )(implicit modelData: ModelData): ParametersValidationRequest = {
-        ParametersValidationRequest(
-          param.parameters.map { parameter =>
-            UIValueParameter(
-              name = parameter.name,
-              typ = TypingResultDto.toTypingResult(parameter.typ),
-              expression = parameter.expression
-            )
-          },
-          param.variableTypes.map { case (key, typDto) =>
-            (key, TypingResultDto.toTypingResult(typDto))
-          }
-        )
-      }
-
-    }
 
     @derive(schema, encoder, decoder)
     final case class ParametersValidationResultDto(
@@ -590,43 +569,32 @@ object NodesApiEndpoints {
       variableTypes: Map[String, TypingResult]
   )
 
+  object ParametersValidationRequest {
+    import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.ParametersValidationRequestDto
+
+    def apply(request: ParametersValidationRequestDto)(implicit modelData: ModelData): ParametersValidationRequest = {
+      new ParametersValidationRequest(
+        request.parameters.map { parameter =>
+          UIValueParameter(
+            name = parameter.name,
+            typ = TypingResultDto.toTypingResult(parameter.typ),
+            expression = parameter.expression
+          )
+        },
+        request.variableTypes.map { case (key, typDto) =>
+          (key, TypingResultDto.toTypingResult(typDto))
+        }
+      )
+    }
+
+  }
+
   @JsonCodec(encodeOnly = true) final case class NodeValidationResult(
       parameters: Option[List[UIParameter]],
       expressionType: Option[TypingResult],
       validationErrors: List[NodeValidationError],
       validationPerformed: Boolean
   )
-
-  object NodeValidationResult {
-    import Dtos._
-
-    def toDto(node: NodeValidationResult): Dtos.NodeValidationResultDto = {
-      NodeValidationResultDto(
-        parameters = node.parameters.map { list =>
-          list.map { param =>
-            UIParameterDto(
-              name = param.name,
-              typ = TypingResultDto.typingResultToDto(param.typ),
-              editor = param.editor,
-              defaultValue = param.defaultValue,
-              additionalVariables = param.additionalVariables.map { case (key, typingResult) =>
-                (key, TypingResultDto.typingResultToDto(typingResult))
-              },
-              variablesToHide = param.variablesToHide,
-              branchParam = param.branchParam,
-              hintText = param.hintText
-            )
-          }
-        },
-        expressionType = node.expressionType.map { typingResult =>
-          TypingResultDto.typingResultToDto(typingResult)
-        },
-        validationErrors = node.validationErrors,
-        validationPerformed = node.validationPerformed
-      )
-    }
-
-  }
 
   @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
       nodeData: NodeData,
@@ -638,6 +606,30 @@ object NodesApiEndpoints {
       // when renaming node, it contains node's id before the rename.
       outgoingEdges: Option[List[Edge]]
   )
+
+  object NodeValidationRequest {
+
+    def apply(node: NodeValidationRequestDto)(implicit modelData: ModelData): NodeValidationRequest = {
+      new NodeValidationRequest(
+        nodeData = node.nodeData,
+        processProperties = node.processProperties,
+        variableTypes = node.variableTypes.map { case (key, typingResultDto) =>
+          (key, TypingResultDto.toTypingResult(typingResultDto))
+        },
+        branchVariableTypes = node.branchVariableTypes.map { outerMap =>
+          outerMap.map { case (name, innerMap) =>
+            val changedMap = innerMap.map { case (key, typing) =>
+              (key, TypingResultDto.toTypingResult(typing))
+            }
+            (name, changedMap)
+          }
+        },
+        outgoingEdges = node.outgoingEdges
+      )
+
+    }
+
+  }
 
   @JsonCodec(encodeOnly = true) final case class PropertiesValidationRequest(
       additionalFields: ProcessAdditionalFields,

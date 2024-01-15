@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{ExpressionSuggestionDto, NodeValidationRequestDto, NodeValidationResultDto, ParameterDto, ParametersValidationRequestDto, ParametersValidationResultDto}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{ExpressionSuggestionDto, NodeValidationResultDto, ParameterDto, ParametersValidationResultDto}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.NodeValidationResult
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.{NodeValidationRequest, ParametersValidationRequest}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -81,13 +81,8 @@ class NodesApiHttpService(
               .flatMap { process =>
                 implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(process.processingType)
                 val nodeValidator                 = typeToNodeValidator.forTypeUnsafe(process.processingType)
-                NodeValidationRequestDto.toRequest(nodeValidationRequestDto) match {
-                  case Some(nodeData) =>
-                    Future(success(NodeValidationResult.toDto(nodeValidator.validate(processName, nodeData))))
-                  case None =>
-                    Future(businessError("None"))
-                }
-
+                val nodeData                      = NodeValidationRequest.apply(nodeValidationRequestDto)
+                Future(success(NodeValidationResultDto.apply(nodeValidator.validate(processName, nodeData))))
               }
           }
           .recover { case _ =>
@@ -178,7 +173,7 @@ class NodesApiHttpService(
         try {
           implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)
           val validator                     = typeToParametersValidator.forTypeUnsafe(processingType)
-          val requestWithTypingResult       = ParametersValidationRequestDto.withoutDto(request)
+          val requestWithTypingResult       = ParametersValidationRequest.apply(request)
           val validationResults             = validator.validate(requestWithTypingResult)
 
           Future(
