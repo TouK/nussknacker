@@ -27,8 +27,9 @@ case class ExpressionLazyParameter[T <: AnyRef](
         throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}")
       )
     val evaluator = compilerLazyInterpreter.deps.expressionEvaluator
+    // TODO: extract BaseCompiledParameter without typingInfo
     val compiledParameter =
-      CompiledParameter(TypedExpression(compiledExpression, Unknown, null), parameterDef)
+      CompiledParameter(TypedExpression(compiledExpression, returnType, typingInfo = null), parameterDef)
     context: Context =>
       evaluator
         .evaluateParameter(compiledParameter, context)(nodeId, compilerLazyInterpreter.metaData)
@@ -44,22 +45,14 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
 
   def metaData: MetaData
 
-  // it's important that it's (...): (Context => T)
-  // and not e.g. (...)(Context) => T as we want to be sure when body is evaluated (in particular expression compilation)!
-  private[nodecompilation] def createInterpreter[T <: AnyRef](
-      definition: LazyParameter[T]
-  ): Context => T = {
-    definition match {
+  override def syncInterpretationFunction[T <: AnyRef](lazyParameter: LazyParameter[T]): Context => T = {
+    // it's important that it's (...): (Context => T)
+    // and not e.g. (...)(Context) => T as we want to be sure when body is evaluated (in particular expression compilation)!
+    val evaluator = lazyParameter match {
       case e: EvaluableLazyParameter[T] => e.prepareEvaluator(this)
-      case _ => throw new IllegalArgumentException(s"LazyParameter $definition is not supported")
+      case _ => throw new IllegalArgumentException(s"LazyParameter $lazyParameter is not supported")
     }
-  }
-
-  override def syncInterpretationFunction[T <: AnyRef](
-      lazyInterpreter: LazyParameter[T]
-  ): Context => T = {
-    val interpreter = createInterpreter(lazyInterpreter)
-    v1: Context => interpreter(v1)
+    v1: Context => evaluator(v1)
   }
 
 }
@@ -67,4 +60,4 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
 case class LazyInterpreterDependencies(
     expressionEvaluator: ExpressionEvaluator,
     expressionCompiler: ExpressionCompiler
-) extends Serializable
+)

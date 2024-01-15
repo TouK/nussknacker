@@ -62,7 +62,7 @@ object LazyParameter {
 
 trait LazyParameterInterpreter {
 
-  // FIXME remove
+  // TODO: Rename: LazyParameters already return sync evaluator, so no sync is done here
   def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]): Context => T
 
 }
