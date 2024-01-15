@@ -99,7 +99,6 @@ object PrettyValidationErrors {
 
       case pve: ParameterValidationError => handleParameterValidationError(pve)
 
-      // TODO local refactor: check which errors this refers to - definitely not all below
       // exceptions below should not really happen (unless services change and process becomes invalid)
       case MissingCustomNodeExecutor(id, _) =>
         node(s"Missing custom executor: $id", s"Please check the name of custom executor, $id is not available")
@@ -195,17 +194,6 @@ object PrettyValidationErrors {
             Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ValidationExpressionFieldName)))
         )
     }
-  }
-
-  // TODO local refactor: check
-  def noValidatorKnown(processingType: ProcessingType): NodeValidationError = {
-    NodeValidationError(
-      processingType,
-      s"No validator available for $processingType",
-      "No validator for scenario type - please check configuration",
-      fieldName = None,
-      errorType = NodeValidationErrorType.RenderNotAllowed
-    )
   }
 
   private def unknownProperty(typ: String, propertyName: String): NodeValidationError =
