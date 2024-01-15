@@ -267,7 +267,7 @@ class HttpService {
             .then((res) => res.data.filter(({ actionType }) => actionType === "DEPLOY").map(({ performedAt }) => performedAt));
     }
 
-    deploy(processName, comment?): Promise<{ isSuccess: boolean }> {
+    deploy(processName: string, comment?: string): Promise<{ isSuccess: boolean }> {
         return api
             .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
             .then(() => {
@@ -675,8 +675,8 @@ class HttpService {
             //don't send empty edges
             withoutHackOfEmptyEdges(scenario.json);
 
-        const { processingType, name } = scenario;
-        return { nodes, edges, properties, name, processingType };
+        const { processingType, name, processCategory } = scenario;
+        return { nodes, edges, properties, name, processingType, category: processCategory };
     }
 
     #requestCanceled(error: AxiosError<unknown>) {

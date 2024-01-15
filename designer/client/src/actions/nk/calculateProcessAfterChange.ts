@@ -28,10 +28,10 @@ export function calculateProcessAfterChange(
                 fetchProcessDefinition(scenario.processingType, scenario.json.properties.isFragment),
             );
             const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario, processDefinitionData);
-            if (after?.length && after.id !== before.id) {
+            if (after.id !== before.id) {
                 dispatch({ type: "PROCESS_RENAME", name: after.id });
             }
-            return { ...processWithNewFragmentSchema, ...after };
+            return { ...processWithNewFragmentSchema, properties: after };
         }
 
         let changedProcess = scenario.json;

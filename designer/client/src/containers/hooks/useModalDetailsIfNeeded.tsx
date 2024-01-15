@@ -32,7 +32,7 @@ export function useModalDetailsIfNeeded() {
                         NodeUtils.getNodeById(id, scenario.json) ?? (scenario.name === id && NodeUtils.getProcessPropertiesNode(scenario)),
                 )
                 .filter(Boolean)
-                .map((node) => openNodeWindow(node, scenario.json));
+                .map((node) => openNodeWindow(node, scenario));
         },
         [getNodeIds, openNodeWindow],
     );
@@ -44,7 +44,7 @@ export function useModalDetailsIfNeeded() {
                 .filter((i) => i.startsWith(prefix))
                 .map((id) => NodeUtils.getNodeById(removePrefix(id, prefix), fragment.json))
                 .filter(Boolean)
-                .map((node) => openNodeWindow({ ...node, id: addPrefix(node.id, prefix) }, fragment.json, true));
+                .map((node) => openNodeWindow({ ...node, id: addPrefix(node.id, prefix) }, fragment, true));
         },
         [getNodeIds, openNodeWindow],
     );

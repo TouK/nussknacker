@@ -29,7 +29,7 @@ interface Props {
 export function EdgeFields(props: Props): JSX.Element {
     const { t } = useTranslation();
     const { readOnly, value, index, onChange, edges, types, variableTypes, fieldErrors } = props;
-    const process = useSelector(getScenarioGraph);
+    const scenarioGraph = useSelector(getScenarioGraph);
     const processDefinitionData = useSelector(getProcessDefinitionData);
 
     const [edge, setEdge] = useState(value);
@@ -39,8 +39,8 @@ export function EdgeFields(props: Props): JSX.Element {
     }, [edge, onChange]);
 
     //NOTE: fragment node preview is read only so we can ignore wrong "process" and nodes here.
-    const availableNodes = process.nodes.filter((n) => NodeUtils.hasInputs(n));
-    const otherEdges = useMemo(() => process.edges.filter((e) => e.from !== edge.from), [edge.from, process.edges]);
+    const availableNodes = scenarioGraph.nodes.filter((n) => NodeUtils.hasInputs(n));
+    const otherEdges = useMemo(() => scenarioGraph.edges.filter((e) => e.from !== edge.from), [edge.from, scenarioGraph.edges]);
     const targetNodes = useMemo(() => availableNodes.filter((n) => n.id === edge.to), [availableNodes, edge.to]);
     const freeNodes = useMemo(() => {
         return availableNodes.filter((n) => {

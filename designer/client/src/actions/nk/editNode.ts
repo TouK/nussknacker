@@ -1,5 +1,5 @@
 import HttpService from "../../http/HttpService";
-import { Edge, NodeType, ValidationResult } from "../../types";
+import { Edge, NodeType, ScenarioGraph, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
 import { displayProcessCounts } from "./displayProcessCounts";
@@ -10,7 +10,7 @@ export type EditNodeAction = {
     before: NodeType;
     after: NodeType;
     validationResult: ValidationResult;
-    processAfterChange: $TodoType;
+    scenarioGraphAfterChange: ScenarioGraph;
 };
 export type RenameProcessAction = {
     type: "PROCESS_RENAME";
@@ -25,10 +25,10 @@ export function editNode(scenarioBefore: Scenario, before: NodeType, after: Node
 
         return dispatch({
             type: "EDIT_NODE",
-            before: before,
-            after: after,
+            before,
+            after,
             validationResult: response.data,
-            processAfterChange: process,
+            scenarioGraphAfterChange: scenarioGraph,
         });
     };
 }

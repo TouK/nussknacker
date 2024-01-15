@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { editNode } from "../../../../actions/nk";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
-import { getScenario } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
 import ErrorBoundary from "../../../common/ErrorBoundary";
@@ -21,6 +20,7 @@ import { useTheme } from "@mui/material";
 import { alpha, tint } from "../../../../containers/theme/helpers";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { Scenario } from "../../../Process/types";
+import { getScenario } from "../../../../reducers/selectors/graph";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -46,7 +46,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const dispatch = useDispatch();
 
     const performNodeEdit = useCallback(async () => {
-        await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
+        dispatch(await editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
         props.close();
         mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
     }, [scenario, node, editedNode, outputEdges, dispatch, props]);

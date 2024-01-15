@@ -138,7 +138,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
-                    json: { ...action.processAfterChange, validationResult: updateValidationResult(state, action) },
+                    json: { ...action.scenarioGraphAfterChange, validationResult: updateValidationResult(state, action) },
                 },
             };
         }

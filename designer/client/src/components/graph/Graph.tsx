@@ -28,6 +28,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
+import { Scenario } from "../Process/types";
 
 type Props = GraphProps & {
     processCategory: string;
@@ -35,7 +36,7 @@ type Props = GraphProps & {
     loggedUser: Partial<User>;
     selectionState: NodeId[];
     userSettings: UserSettings;
-    showModalNodeDetails: (node: NodeType, scenarioGraph: ScenarioGraph, readonly?: boolean) => void;
+    showModalNodeDetails: (node: NodeType, scenario: Scenario, readonly?: boolean) => void;
     isPristine?: boolean;
 };
 
@@ -245,7 +246,7 @@ export class Graph extends React.Component<Props> {
                         ...NodeUtils.getNodeById(nodeId, scenario.json),
                         id: nodeIdPrefixForFragmentTests + nodeId,
                     },
-                    scenario.json,
+                    scenario,
                     readonly,
                 );
             }
@@ -268,7 +269,6 @@ export class Graph extends React.Component<Props> {
         };
 
         const deselectNodes = (event: JQuery.Event) => {
-            console.log("deselectNodes");
             if (event.isPropagationStopped()) {
                 return;
             }

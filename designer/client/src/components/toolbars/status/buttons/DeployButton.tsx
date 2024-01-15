@@ -7,7 +7,7 @@ import HttpService from "../../../../http/HttpService";
 import { getProcessName, hasError, isDeployPossible, isSaveDisabled } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
-import { WindowKind } from "../../../../windowManager/WindowKind";
+import { WindowKind } from "../../../../windowManager";
 import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";

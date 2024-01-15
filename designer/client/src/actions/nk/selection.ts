@@ -41,8 +41,8 @@ export function pasteSelection(pasteFunction: Callback): ThunkAction {
 
 export function deleteSelection(selectionState: string[]): ThunkAction {
     return (dispatch, getState) => {
-        const process = getScenarioGraph(getState());
-        const selectedNodes = NodeUtils.getAllNodesById(selectionState, process).map((n) => n.id);
+        const scenarioGraph = getScenarioGraph(getState());
+        const selectedNodes = NodeUtils.getAllNodesById(selectionState, scenarioGraph).map((n) => n.id);
 
         batchGroupBy.startOrContinue();
         dispatch(deleteNodes(selectedNodes));
@@ -83,8 +83,8 @@ export function resetSelection(...nodeIds: string[]): ThunkAction {
 export function selectAll(): ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
-        const process = getScenarioGraph(state);
-        const nodeIds = process.nodes.map((n) => n.id);
+        const scenarioGraph = getScenarioGraph(state);
+        const nodeIds = scenarioGraph.nodes.map((n) => n.id);
         dispatch(resetSelection(...nodeIds));
     };
 }
