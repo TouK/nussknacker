@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
@@ -819,6 +820,104 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           ) =>
     }
     result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test("checks for unknown dictId in DictParameterEditor") {
+    val process = createProcess(
+      List(
+        Source("inID", SourceRef(existingSourceFactory, List())),
+        Enricher(
+          "custom",
+          ServiceRef(dictParameterEditorServiceId, List(NodeParameter("expression", Expression.spel("'someKey'")))),
+          "out"
+        ),
+        Sink("out", SinkRef(existingSinkFactory, List()))
+      ),
+      List(Edge("inID", "custom", None), Edge("custom", "out", None))
+    )
+
+    val result = processValidatorWithDicts(Map.empty).validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "DictNotDeclared",
+                _,
+                _,
+                _, // todo
+                NodeValidationErrorType.SaveAllowed
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test("checks for unknown key in DictParameterEditor") {
+    val process = createProcess(
+      List(
+        Source("inID", SourceRef(existingSourceFactory, List())),
+        Enricher(
+          "custom",
+          ServiceRef(
+            dictParameterEditorServiceId,
+            List(NodeParameter("expression", Expression.spel("'thisKeyDoesntExist'")))
+          ),
+          "out"
+        ),
+        Sink("out", SinkRef(existingSinkFactory, List()))
+      ),
+      List(Edge("inID", "custom", None), Edge("custom", "out", None))
+    )
+
+    val result = processValidatorWithDicts(
+      Map("someDictId" -> EmbeddedDictDefinition(Map.empty))
+    ).validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "DictEntryWithKeyNotExists",
+                _,
+                _,
+                _, // todo
+                NodeValidationErrorType.SaveAllowed
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test("validate DictParameterEditor happy path") {
+    val process = createProcess(
+      List(
+        Source("inID", SourceRef(existingSourceFactory, List())),
+        Enricher(
+          "custom",
+          ServiceRef(
+            dictParameterEditorServiceId,
+            List(NodeParameter("expression", Expression.spel("'someKey'")))
+          ),
+          "out"
+        ),
+        Sink("out", SinkRef(existingSinkFactory, List()))
+      ),
+      List(Edge("inID", "custom", None), Edge("custom", "out", None))
+    )
+
+    val result = processValidatorWithDicts(
+      Map(
+        "someDictId" -> EmbeddedDictDefinition(Map("'someKey'" -> "someLabel"))
+      )
+    ).validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes shouldBe Map.empty
   }
 
   test("check for wrong fixed expression value in node parameter") {

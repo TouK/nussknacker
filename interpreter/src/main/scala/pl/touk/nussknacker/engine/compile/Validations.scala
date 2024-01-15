@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.valid
+import cats.data.NonEmptyList
+import cats.data.Validated.{Valid, valid}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, RedundantParameters}
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{DictParameterEditor, Parameter, ParameterValidator}
+import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
@@ -87,6 +89,32 @@ object Validations {
       }
       .sequence
       .map(_ => parameter)
+  }
+
+  def validateDictEditorParameters(
+      parameters: List[NodeParameter],
+      paramDefMap: Map[String, Parameter],
+      dictRegistry: DictRegistry
+  )(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+    parameters
+      .flatMap { param =>
+        paramDefMap.get(param.name).map(definition => validateDictParameter(definition, param, dictRegistry))
+      }
+      .sequence
+      .map(_ => ())
+  }
+
+  private def validateDictParameter(definition: Parameter, parameter: NodeParameter, dictRegistry: DictRegistry)(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, Unit] = definition.editor match {
+    case Some(DictParameterEditor(dictId)) =>
+      dictRegistry
+        .labelByKey(dictId, parameter.expression.expression)
+        .map(_ => ())
+        .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id)))
+    case _ => Valid(())
   }
 
 }

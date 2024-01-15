@@ -193,6 +193,12 @@ object PrettyValidationErrors {
           fieldName =
             Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ValidationExpressionFieldName)))
         )
+      case _ =>
+        node(
+          s"DICT ERROR TODO",
+          s"DICT ERROR TODO",
+          fieldName = Some("TODO")
+        )
     }
   }
 

@@ -74,6 +74,10 @@ case object CronParameterEditor extends SimpleParameterEditor
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue])
     extends SimpleParameterEditor
 
+@JsonCodec case class DictParameterEditor(
+    dictId: String
+) extends SimpleParameterEditor
+
 @JsonCodec case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode)
     extends ParameterEditor
 

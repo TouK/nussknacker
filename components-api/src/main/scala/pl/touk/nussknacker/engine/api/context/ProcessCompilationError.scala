@@ -293,6 +293,26 @@ object ProcessCompilationError {
 
   final case class InvalidFragment(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
+  final case class DictNotDeclared(dictId: String, nodeId: String)
+      extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class DictEntryWithLabelNotExists(
+      dictId: String,
+      label: String,
+      possibleLabels: Option[List[String]],
+      nodeId: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class DictEntryWithKeyNotExists(
+      dictId: String,
+      key: String,
+      possibleKeys: Option[List[String]],
+      nodeId: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
+
   final case class MultipleOutputsForName(name: String, nodeId: String)
       extends ProcessCompilationError
       with InASingleNode

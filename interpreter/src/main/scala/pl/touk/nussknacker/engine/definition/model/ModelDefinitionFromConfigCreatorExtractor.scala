@@ -61,6 +61,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       expressionConfig: ExpressionConfig,
       categoryOpt: Option[String],
   ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] = {
+    // here dictionaries from the config are added to global variables
     val filteredVariables = collectAvailableForCategory(expressionConfig.globalProcessVariables.toList, categoryOpt)
     val variables = filteredVariables.map { case (name, variable, _) =>
       name -> GlobalVariableDefinitionExtractor.extractDefinition(variable)

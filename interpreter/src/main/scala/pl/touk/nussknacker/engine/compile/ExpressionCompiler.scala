@@ -8,8 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression, TypedExpressionMap, Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
@@ -68,12 +67,12 @@ object ExpressionCompiler {
     val defaultParsers = Seq(spelParser(SpelExpressionParser.Standard), spelParser(SpelExpressionParser.Template))
     val parsersSeq     = defaultParsers ++ expressionConfig.languages.expressionParsers
     val parsers        = parsersSeq.map(p => p.languageId -> p).toMap
-    new ExpressionCompiler(parsers)
+    new ExpressionCompiler(parsers, dictRegistry)
   }
 
 }
 
-class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
+class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictRegistry: DictRegistry) {
 
   // used only for services and fragments - in places where component is an Executor instead of a factory
   // that creates Executor
@@ -117,24 +116,34 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     )
     val paramDefMap = parameterDefinitions.map(p => p.name -> p).toMap
 
+    // TODO adding validation here covers most (if not all) possible usages of DictParameterEditor, make sure it's enough
+    val dictEditorParametersValidation = Validations.validateDictEditorParameters(
+      nodeParameters ++ nodeBranchParameters.flatMap(_.parameters),
+      paramDefMap,
+      dictRegistry
+    )
+
     val compiledParams = nodeParameters
-      .flatMap { p =>
-        val paramDef = paramDefMap.get(p.name)
-        paramDef.map(pd => compileParam(p, ctx, pd, treatEagerParametersAsLazy))
+      .flatMap { nodeParam =>
+        paramDefMap
+          .get(nodeParam.name)
+          .map(paramDef => compileParam(nodeParam, ctx, paramDef, treatEagerParametersAsLazy))
       }
     val compiledBranchParams = (for {
       branchParams <- nodeBranchParameters
       p            <- branchParams.parameters
     } yield p.name -> (branchParams.branchId, p.expression)).toGroupedMap.toList.flatMap {
       case (paramName, branchIdAndExpressions) =>
-        val paramDef = paramDefMap.get(paramName)
-        paramDef.map(pd => compileBranchParam(branchIdAndExpressions, branchContexts, pd))
+        paramDefMap
+          .get(paramName)
+          .map(paramDef => compileBranchParam(branchIdAndExpressions, branchContexts, paramDef))
     }
     val allCompiledParams = (compiledParams ++ compiledBranchParams).sequence
       .map(typed => typed.map(t => (t, paramDefMap(t.name))))
     allCompiledParams
       .andThen(allParams => Validations.validateWithCustomValidators(parameterDefinitions, allParams))
       .combine(redundantMissingValidation.map(_ => List()))
+      .combine(dictEditorParametersValidation.map(_ => List()))
   }
 
   def compileParam(
@@ -219,9 +228,12 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   }
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ExpressionCompiler =
-    new ExpressionCompiler(expressionParsers.map { case (k, v) =>
-      k -> modify.lift(v).getOrElse(v)
-    })
+    new ExpressionCompiler(
+      expressionParsers.map { case (k, v) =>
+        k -> modify.lift(v).getOrElse(v)
+      },
+      dictRegistry
+    )
 
   private def enrichContext(ctx: ValidationContext, definition: Parameter)(implicit nodeId: NodeId) = {
     val withoutVariablesToHide = ctx.copy(localVariables =
