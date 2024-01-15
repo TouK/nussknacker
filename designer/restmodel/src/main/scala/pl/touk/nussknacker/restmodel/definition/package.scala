@@ -42,6 +42,7 @@ package object definition {
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
+      // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
       defaultValue: Expression,
       // additionalVariables and variablesToHide are served to FE because suggestions API requires full set of variables
       // and ScenarioWithDetails.json.validationResult.nodeResults is not enough
@@ -50,7 +51,8 @@ package object definition {
       // FE need this information because branch parameters aren't changed dynamically during node validation so they never
       // should be invalidated
       branchParam: Boolean,
-      hintText: Option[String]
+      hintText: Option[String],
+      label: String
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(

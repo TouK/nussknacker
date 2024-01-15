@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.definition
 
+import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -102,7 +103,36 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     )
   }
 
-  test("should hide node in hidden category") {
+  test("should read parameter's label from configuration") {
+    val labelSpecifiedInConfiguration = "Human Readable Label"
+    val model: ModelData = LocalModelData(
+      ConfigFactory.parseString(s"""componentsUiConfig {
+          |  service-enricher: {
+          |    params {
+          |      paramRawEditor {
+          |        label: "$labelSpecifiedInConfiguration"
+          |      }
+          |    }
+          |  }
+          |}
+          |""".stripMargin),
+      List(ComponentDefinition("enricher", TestService))
+    )
+
+    val definitions = prepareDefinitions(model, List.empty)
+
+    definitions
+      .components(ComponentInfo(ComponentType.Service, "enricher"))
+      .parameters
+      .map(p => (p.name, p.label))
+      .toMap shouldBe Map(
+      "paramDualEditor"   -> "paramDualEditor",
+      "paramStringEditor" -> "paramStringEditor",
+      "paramRawEditor"    -> labelSpecifiedInConfiguration
+    )
+  }
+
+  test("should hide component in hidden component group") {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model = LocalModelData(
       typeConfig.modelConfig.resolved,
@@ -117,7 +147,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
             "hiddenEnricher" -> WithCategories
               .anyCategory(TestService)
               .withComponentConfig(
-                SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("hiddenCategory")))
+                SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("hiddenComponentGroup")))
               )
           )
       }
@@ -125,7 +155,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     val definitions = prepareDefinitions(model, List.empty)
 
-    definitions.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
+    definitions.componentGroups.filter(_.name == ComponentGroupName("hiddenComponentGroup")) shouldBe empty
   }
 
   test("should be able to setup component group name programmatically") {
