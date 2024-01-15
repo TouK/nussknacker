@@ -3,26 +3,15 @@ package pl.touk.nussknacker.engine.api.context
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InvalidVariableOutputName, OverwrittenVariable}
-import pl.touk.nussknacker.engine.api.context.ValidationContext.{empty, validateVariableName}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.OverwrittenVariable
+import pl.touk.nussknacker.engine.api.context.ValidationContext.empty
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.NodeId
-
-import javax.lang.model.SourceVersion
+import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 
 object ValidationContext {
 
   def empty: ValidationContext = ValidationContext()
-
-  def isVariableNameValid(name: String): Boolean = SourceVersion.isIdentifier(name)
-
-  def validateVariableName(name: String, paramName: Option[String])(
-      implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, String] = {
-    // TODO: add correct and more precise error messages
-    if (isVariableNameValid(name)) Valid(name)
-    else Invalid(InvalidVariableOutputName(name, paramName)).toValidatedNel
-  }
 
 }
 

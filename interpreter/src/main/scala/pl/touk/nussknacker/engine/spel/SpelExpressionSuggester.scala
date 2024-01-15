@@ -7,9 +7,9 @@ import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.standard.{SpelExpression => SpringSpelExpression}
 import org.springframework.expression.spel.{SpelNode, SpelParserConfiguration}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.ValidationContext.isVariableNameValid
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.validation.Validations.isVariableNameValid
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper

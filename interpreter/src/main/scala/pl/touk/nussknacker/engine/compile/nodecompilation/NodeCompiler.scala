@@ -52,7 +52,7 @@ import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.context.ValidationContext.validateVariableName
+import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 
 object NodeCompiler {
 
