@@ -103,7 +103,6 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
     new CompilerLazyParameterInterpreter {
       override def deps: LazyInterpreterDependencies = lazyInterpreterDeps
       override def metaData: MetaData                = MetaData("proc1", StreamMetaData())
-      override def close(): Unit                     = {}
     }
   }
 

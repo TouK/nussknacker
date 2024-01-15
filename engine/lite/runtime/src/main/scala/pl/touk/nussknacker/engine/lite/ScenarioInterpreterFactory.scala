@@ -175,8 +175,6 @@ object ScenarioInterpreterFactory {
       override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps
 
       override def metaData: MetaData = compiledProcess.metaData
-
-      override def close(): Unit = {}
     }
 
     def compile: CompilationResult[ScenarioInterpreterType] = {

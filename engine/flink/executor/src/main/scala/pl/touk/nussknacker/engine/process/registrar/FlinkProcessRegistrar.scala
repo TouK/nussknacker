@@ -110,7 +110,6 @@ class FlinkProcessRegistrar(
   ): RuntimeContext => FlinkCompilerLazyInterpreterCreator =
     (runtimeContext: RuntimeContext) =>
       new FlinkCompilerLazyInterpreterCreator(
-        runtimeContext,
         compilerDataForClassloader(runtimeContext.getUserCodeClassLoader)
       )
 
