@@ -1124,9 +1124,9 @@ object InterpreterSpec {
         @ParamName("param")
         @AdditionalVariables(Array(new AdditionalVariable(name = "helper", clazz = classOf[Helper])))
         param: String
-    ): ServiceInvoker = new ServiceInvoker {
+    ): ServiceLogic = new ServiceLogic {
 
-      override def invokeService(params: Map[String, Any])(
+      override def run(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           contextId: ContextId,
@@ -1153,8 +1153,8 @@ object InterpreterSpec {
         outputVar,
         lazyOne.returnType, {
           if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
-          new ServiceInvoker {
-            override def invokeService(params: Map[String, Any])(
+          new ServiceLogic {
+            override def run(params: Map[String, Any])(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
                 contextId: ContextId,
@@ -1168,7 +1168,7 @@ object InterpreterSpec {
 
   }
 
-  object DynamicEagerService extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+  object DynamicEagerService extends EagerService with SingleInputGenericNodeTransformation[ServiceLogic] {
 
     override type State = Nothing
 
@@ -1197,12 +1197,12 @@ object InterpreterSpec {
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[Nothing]
-    ): ServiceInvoker = {
+    ): ServiceLogic = {
 
       val paramName = staticParam.extractValue(params)
 
-      new ServiceInvoker {
-        override def invokeService(params: Map[String, Any])(
+      new ServiceLogic {
+        override def run(params: Map[String, Any])(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
             contextId: ContextId,

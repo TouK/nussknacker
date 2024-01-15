@@ -9,15 +9,15 @@ import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithIm
 
 import scala.concurrent.{ExecutionContext, Future}
 
-private[nodecompilation] class MethodBasedServiceInvoker(
+private[nodecompilation] class MethodBasedServiceLogic(
     metaData: MetaData,
     nodeId: NodeId,
     outputVariableNameOpt: Option[OutputVar],
     componentDefWithImpl: ComponentDefinitionWithImplementation
-) extends ServiceInvoker
+) extends ServiceLogic
     with LazyLogging {
 
-  override def invokeService(params: Map[String, Any])(
+  override def run(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       contextId: ContextId,

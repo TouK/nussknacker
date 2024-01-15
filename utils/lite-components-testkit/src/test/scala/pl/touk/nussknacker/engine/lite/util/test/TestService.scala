@@ -1,13 +1,6 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import pl.touk.nussknacker.engine.api.{
-  ContextId,
-  EagerService,
-  LazyParameter,
-  MethodToInvoke,
-  ParamName,
-  ServiceInvoker
-}
+import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MethodToInvoke, ParamName, ServiceLogic}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 
@@ -20,9 +13,9 @@ object TestService extends EagerService {
   val MockedValued = "sample-mocked"
 
   @MethodToInvoke
-  def invoke(@ParamName("param") value: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
+  def invoke(@ParamName("param") value: LazyParameter[String]): ServiceLogic = new ServiceLogic {
 
-    override def invokeService(params: Map[String, Any])(
+    override def run(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         contextId: ContextId,

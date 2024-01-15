@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
   ToCollect,
   TransmissionNames
 }
-import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, ServiceLogic}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
@@ -19,7 +19,7 @@ object service {
 
   case class ServiceRef(
       id: String,
-      invoker: ServiceInvoker,
+      invoker: ServiceLogic,
       parameters: List[CompiledParameter],
       resultCollector: ResultCollector,
   ) {
@@ -39,7 +39,7 @@ object service {
       val collector           = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
       (
         preparedParams,
-        invoker.invokeService(preparedParams)(
+        invoker.run(preparedParams)(
           serviceExecutionContext.executionContext,
           collector,
           contextId,

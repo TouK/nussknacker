@@ -32,7 +32,7 @@ import scala.runtime.BoxedUnit
  */
 trait EagerServiceWithStaticParameters
     extends EagerService
-    with SingleInputGenericNodeTransformation[ServiceInvoker]
+    with SingleInputGenericNodeTransformation[ServiceLogic]
     with WithStaticParameters {
 
   override type State = TypingResult
@@ -49,7 +49,7 @@ trait EagerServiceWithStaticParameters
       eagerParameters: Map[String, Any],
       typingResult: TypingResult,
       metaData: MetaData
-  ): ServiceInvoker
+  ): ServiceLogic
 
   def returnType(
       validationContext: ValidationContext,
@@ -75,7 +75,7 @@ trait EagerServiceWithStaticParameters
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[TypingResult]
-  ): ServiceInvoker = {
+  ): ServiceLogic = {
     serviceImplementation(
       params.filterNot(_._2.isInstanceOf[LazyParameter[_]]),
       finalState.getOrElse(Unknown),
@@ -107,11 +107,11 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       eagerParameters: Map[String, Any],
       typingResult: TypingResult,
       metaData: MetaData
-  ): ServiceInvoker = {
+  ): ServiceLogic = {
     implicit val metaImplicit: MetaData = metaData
-    new ServiceInvoker {
+    new ServiceLogic {
 
-      override def invokeService(params: Map[String, Any])(
+      override def run(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           contextId: ContextId,

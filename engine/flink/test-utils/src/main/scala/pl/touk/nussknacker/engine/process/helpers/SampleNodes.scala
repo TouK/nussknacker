@@ -203,9 +203,9 @@ object SampleNodes {
     }
 
     @MethodToInvoke
-    def invoke(@ParamName("name") name: String): ServiceInvoker = synchronized {
-      val newI = new ServiceInvoker with WithLifecycle {
-        override def invokeService(params: Map[String, Any])(
+    def invoke(@ParamName("name") name: String): ServiceLogic = synchronized {
+      val newI = new ServiceLogic with WithLifecycle {
+        override def run(params: Map[String, Any])(
             implicit ec: ExecutionContext,
             collector: ServiceInvocationCollector,
             contextId: ContextId,
@@ -230,9 +230,9 @@ object SampleNodes {
     def invoke(
         @ParamName("static") static: String,
         @ParamName("dynamic") dynamic: LazyParameter[String]
-    ): ServiceInvoker = new ServiceInvoker {
+    ): ServiceLogic = new ServiceLogic {
 
-      override def invokeService(params: Map[String, Any])(
+      override def run(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
           contextId: ContextId,
@@ -440,8 +440,8 @@ object SampleNodes {
       EnricherContextTransformation(
         outputVar,
         returnType,
-        new ServiceInvoker {
-          override def invokeService(params: Map[String, Any])(
+        new ServiceLogic {
+          override def run(params: Map[String, Any])(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
               contextId: ContextId,

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.ServiceLogic.{ParamsEvaluator, RunContext}
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -33,13 +33,38 @@ abstract class Service extends Lifecycle with Component
 // TODO: EagerService shouldn't extend Lifecycle, instead ServiceInvoker should extend it - see notice in ProcessCompilerData.lifecycle
 abstract class EagerService extends Service
 
-trait ServiceInvoker {
+trait ServiceLogic {
 
-  def invokeService(params: Map[String, Any])(
-      implicit ec: ExecutionContext,
+  def run(paramsEvaluator: ParamsEvaluator)(implicit context: RunContext, ec: ExecutionContext): Future[Any]
+
+}
+
+object ServiceLogic {
+
+  final case class RunContext(
       collector: InvocationCollectors.ServiceInvocationCollector,
       contextId: ContextId,
       componentUseCase: ComponentUseCase
-  ): Future[Any]
+  )
+
+  class ParamsEvaluator private (context: Context, evaluate: Context => Map[String, Any]) {
+
+    def evaluateParams(additionalVariables: Map[String, Any] = Map.empty): EvaluatedParams = {
+      val newContext = context.withVariables(additionalVariables)
+      new EvaluatedParams(evaluate(newContext))
+    }
+
+  }
+
+  class EvaluatedParams private[ServiceLogic] (params: Map[String, Any]) {
+    def get[T](name: String): Option[T] = params.get(name).map(_.asInstanceOf[T])
+
+    def getUnsafe[T](name: String): T = get(name).getOrElse {
+      throw new IllegalArgumentException(
+        s"Cannot find param with name [$name]. Present ones: [${params.keys.mkString(", ")}]"
+      )
+    }
+
+  }
 
 }

@@ -364,7 +364,7 @@ class NodeCompiler(
       }
     }
 
-    def makeInvoker(service: ServiceInvoker, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
+    def makeInvoker(service: ServiceLogic, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
       compiledgraph.service.ServiceRef(
         serviceRef.id,
         service,
@@ -372,7 +372,7 @@ class NodeCompiler(
         resultCollector
       )
 
-    val compilationResult = compileComponentWithContextTransformation[ServiceInvoker](
+    val compilationResult = compileComponentWithContextTransformation[ServiceLogic](
       serviceRef.parameters,
       Nil,
       Left(validationContext),
@@ -647,7 +647,7 @@ class NodeCompiler(
       val serviceRef = computedParameters.map { params =>
         compiledgraph.service.ServiceRef(
           n.id,
-          new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod),
+          new MethodBasedServiceLogic(metaData, nodeId, outputVar, objWithMethod),
           params,
           resultCollector
         )

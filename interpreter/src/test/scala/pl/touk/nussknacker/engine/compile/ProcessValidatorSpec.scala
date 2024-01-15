@@ -1651,9 +1651,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       EnricherContextTransformation(
         variableName,
         Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition))),
-        new ServiceInvoker {
+        new ServiceLogic {
 
-          override def invokeService(params: Map[String, Any])(
+          override def run(params: Map[String, Any])(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
               contextId: ContextId,
@@ -1688,9 +1688,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         eagerParameters: Map[String, Any],
         typingResult: TypingResult,
         metaData: MetaData
-    ): ServiceInvoker = new ServiceInvoker {
+    ): ServiceLogic = new ServiceLogic {
 
-      override def invokeService(params: Map[String, Any])(
+      override def run(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           contextId: ContextId,
@@ -1738,8 +1738,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       EnricherContextTransformation(
         variableName,
         returnType,
-        new ServiceInvoker {
-          override def invokeService(params: Map[String, Any])(
+        new ServiceLogic {
+          override def run(params: Map[String, Any])(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
               contextId: ContextId,

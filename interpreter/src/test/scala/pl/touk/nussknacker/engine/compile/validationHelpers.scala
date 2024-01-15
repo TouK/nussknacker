@@ -196,7 +196,7 @@ object validationHelpers {
 
   object MissingParamHandleGenericNodeTransformation
       extends EagerService
-      with SingleInputGenericNodeTransformation[ServiceInvoker] {
+      with SingleInputGenericNodeTransformation[ServiceLogic] {
 
     override type State = Nothing
 
@@ -210,7 +210,7 @@ object validationHelpers {
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
-    ): ServiceInvoker = ???
+    ): ServiceLogic = ???
 
     override def nodeDependencies: List[NodeDependency] = List.empty
 
@@ -380,7 +380,7 @@ object validationHelpers {
 
   }
 
-  object GenericParametersProcessor extends EagerService with GenericParameters[ServiceInvoker] {
+  object GenericParametersProcessor extends EagerService with GenericParameters[ServiceLogic] {
 
     protected def outputParameters(
         context: ValidationContext,
@@ -394,7 +394,7 @@ object validationHelpers {
 
   case object SomeException extends Exception("Some exception")
 
-  object GenericParametersThrowingException extends EagerService with GenericParameters[ServiceInvoker] {
+  object GenericParametersThrowingException extends EagerService with GenericParameters[ServiceLogic] {
 
     protected def outputParameters(
         context: ValidationContext,
@@ -406,7 +406,7 @@ object validationHelpers {
 
   }
 
-  object GenericParametersEnricher extends EagerService with GenericParameters[ServiceInvoker] {
+  object GenericParametersEnricher extends EagerService with GenericParameters[ServiceLogic] {
 
     protected def outputParameters(
         context: ValidationContext,

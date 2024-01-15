@@ -11,7 +11,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with OptionValues with Matchers {
+class MethodBasedServiceLogicTest extends AnyFlatSpec with PatientScalaFutures with OptionValues with Matchers {
 
   import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 
@@ -27,9 +27,9 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   it should "invoke service method with declared parameters as scala params" in {
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig(mock)
-    val invoker    = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
+    val invoker    = new MethodBasedServiceLogic(metadata, nodeId, None, definition)
 
-    whenReady(invoker.invokeService(Map("foo" -> "aa", "bar" -> 1))) { _ =>
+    whenReady(invoker.run(Map("foo" -> "aa", "bar" -> 1))) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
     }
   }
@@ -37,10 +37,10 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   it should "throw excpetion with nice message when parameters do not match" in {
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig(mock)
-    val invoker    = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
+    val invoker    = new MethodBasedServiceLogic(metadata, nodeId, None, definition)
 
     intercept[IllegalArgumentException](
-      invoker.invokeService(Map("foo" -> "aa", "bar" -> "terefere"))
+      invoker.run(Map("foo" -> "aa", "bar" -> "terefere"))
     ).getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String): argument type mismatch"""
   }
 
