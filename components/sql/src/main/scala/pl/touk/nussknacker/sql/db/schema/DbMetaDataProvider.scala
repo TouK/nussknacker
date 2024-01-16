@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.sql.db.schema
 
-trait DbMetaDataProvider {
+trait DbMetaDataProvider extends Serializable {
   def getDialectMetaData: DialectMetaData
 
   def getTableMetaData(tableName: String): TableMetaData
