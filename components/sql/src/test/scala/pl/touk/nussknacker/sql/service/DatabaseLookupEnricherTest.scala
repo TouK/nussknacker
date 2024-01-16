@@ -65,9 +65,9 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest with FlinkSpe
           id = "personEnricher",
           output = "person",
           svcId = "dbLookup",
-          params = "Table" -> Expression.spel("'persons'"),
+          params = "Table" -> Expression.spel("'PERSONS'"),
           "Cache TTL"  -> Expression.spel("T(java.time.Duration).ofDays(1L)"),
-          "Key column" -> Expression.spel("'id'"),
+          "Key column" -> Expression.spel("'ID'"),
           "Key value"  -> Expression.spel("#input")
         )
         .processorEnd("end", "invocationCollector", "value" -> Expression.spel("#person"))
