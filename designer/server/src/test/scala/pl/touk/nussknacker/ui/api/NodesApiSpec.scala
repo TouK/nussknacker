@@ -367,7 +367,8 @@ class NodesApiSpec
                  |            "additionalVariables": {},
                  |            "variablesToHide": [],
                  |            "branchParam": false,
-                 |            "hintText": null
+                 |            "hintText": null,
+                 |            "label": "Topic"
                  |        },
                  |        {
                  |            "name": "Value",
@@ -387,7 +388,8 @@ class NodesApiSpec
                  |            "additionalVariables": {},
                  |            "variablesToHide": [],
                  |            "branchParam": false,
-                 |            "hintText": null
+                 |            "hintText": null,
+                 |            "label": "Value"
                  |        }
                  |    ],
                  |    "expressionType": null,

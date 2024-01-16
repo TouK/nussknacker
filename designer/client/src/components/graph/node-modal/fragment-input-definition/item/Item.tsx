@@ -59,7 +59,7 @@ export function Item(props: ItemProps): JSX.Element {
                         onChange={(e) => onChange(`${path}.name`, e.target.value)}
                         value={item.name}
                         placeholder="Field name"
-                        fieldErrors={getValidationErrorsForField(errors, "name")}
+                        fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$name`)}
                     />
                 </NodeValue>
                 <TypeSelect
