@@ -45,9 +45,8 @@ class DatabaseLookupEnricherSerializationTest extends BaseHsqlQueryEnricherTest 
   private val dbLookupEnricherOutput = "dbVar"
   private val dbLookupNodeResultId   = "db-result"
 
-  private def aProcessWithDbLookupNode(): CanonicalProcess = {
-    val resultExpression: String = s"#$dbLookupEnricherOutput.NAME"
-    return ScenarioBuilder
+  private def aProcessWithDbLookupNode(): CanonicalProcess =
+    ScenarioBuilder
       .streaming("forEachProcess")
       .parallelism(1)
       .stateOnDisk(true)
@@ -61,9 +60,8 @@ class DatabaseLookupEnricherSerializationTest extends BaseHsqlQueryEnricherTest 
         "Key column" -> Expression.spel("'ID'"),
         "Key value"  -> Expression.spel("#input.id")
       )
-      .buildSimpleVariable(dbLookupNodeResultId, resultVariableName, resultExpression)
+      .buildSimpleVariable(dbLookupNodeResultId, resultVariableName, s"#$dbLookupEnricherOutput.NAME")
       .emptySink(sinkId, "dead-end")
-  }
 
   test("Database lookup enricher should be serializable") {
     val fos = new ByteArrayOutputStream()
@@ -111,7 +109,7 @@ class DatabaseLookupEnricherSerializationTest extends BaseHsqlQueryEnricherTest 
     stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
   }
 
-  test("should produce results for each element in list") {
+  test("DatabaseLookupEnricher should work when passed to the list of LocalModelData, where it will be serialized") {
     val collectingListener = initializeListener
     val model              = modelData(List(TestRecord(id = 1)), collectingListener)
 
