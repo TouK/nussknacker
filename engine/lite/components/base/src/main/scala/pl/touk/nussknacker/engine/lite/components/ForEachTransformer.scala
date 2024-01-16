@@ -30,15 +30,13 @@ class ForEachTransformerComponent(elements: LazyParameter[java.util.Collection[A
   final override def createTransformation[F[_]: Monad, Result](
       continuation: DataBatch => F[ResultType[Result]],
       context: CustomComponentContext[F]
-  ): DataBatch => F[ResultType[Result]] = {
-    val interpreter = context.interpreter.syncInterpretationFunction(elements)
-    batch =>
-      continuation(DataBatch(batch.value.flatMap { ctx =>
-        val partsToRun = interpreter(ctx)
-        partsToRun.asScala.toList.zipWithIndex.map { case (partToRun, index) =>
-          ctx.withVariable(outputVariable, partToRun).appendIdSuffix(index.toString)
-        }
-      }))
+  ): DataBatch => F[ResultType[Result]] = { batch =>
+    continuation(DataBatch(batch.value.flatMap { ctx =>
+      val partsToRun = elements.evaluate(ctx)
+      partsToRun.asScala.toList.zipWithIndex.map { case (partToRun, index) =>
+        ctx.withVariable(outputVariable, partToRun).appendIdSuffix(index.toString)
+      }
+    }))
   }
 
   override def returnType: typing.TypingResult = {

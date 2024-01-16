@@ -1,13 +1,8 @@
 package pl.touk.nussknacker.engine.api
 
-import pl.touk.nussknacker.engine.api.lazyparam.{
-  EvaluableLazyParameter,
-  FixedLazyParameter,
-  MappedLazyParameter,
-  ProductLazyParameter,
-  SequenceLazyParameter
-}
+import pl.touk.nussknacker.engine.api.lazyparam._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+
 import scala.reflect.runtime.universe.TypeTag
 
 /**
@@ -22,6 +17,8 @@ import scala.reflect.runtime.universe.TypeTag
   */
 // TODO: rename to TypedFunction
 trait LazyParameter[+T <: AnyRef] {
+
+  def evaluate(context: Context): T
 
   // type of parameter, derived from expression. Can be used for dependent types, see PreviousValueTransformer
   def returnType: TypingResult
@@ -60,9 +57,13 @@ object LazyParameter {
 
 }
 
+// This class is Flink-specific. It allows to evaluate value of lazy parameter in case when LazyParameter isn't
+// a ready to evaluation function. In Flink case, LazyParameters are passed into Flink's operators so they
+// need to be Serializable. Because of that they can't hold heavy objects like ExpressionCompiler or ExpressionEvaluator
+// TODO: Rename ToEvaluableFunctionConverter
 trait LazyParameterInterpreter {
 
-  // TODO: Rename: LazyParameters already return sync evaluator, so no sync is done here
+  // TODO: Rename toEvaluableFunction + return function
   def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]): Context => T
 
 }

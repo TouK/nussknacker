@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.lite.api
 
 import cats.data.ValidatedNel
 import cats.{Monad, ~>}
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{Sink, Source}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType}
 
 import scala.language.higherKinds
@@ -22,7 +22,6 @@ object customComponentTypes {
 
   case class CustomComponentContext[F[_]](
       nodeId: String,
-      interpreter: LazyParameterInterpreter,
       capabilityTransformer: CapabilityTransformer[F]
   )
 

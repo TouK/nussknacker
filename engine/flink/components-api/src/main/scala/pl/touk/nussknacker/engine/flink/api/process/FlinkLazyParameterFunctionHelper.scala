@@ -5,6 +5,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.lazyparam.EvaluableLazyParameter
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 
 /*

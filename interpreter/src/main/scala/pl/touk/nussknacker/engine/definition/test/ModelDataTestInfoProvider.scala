@@ -39,7 +39,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     expressionCompiler,
     modelData.modelClassLoader.classLoader,
     ProductionServiceInvocationCollector,
-    ComponentUseCase.TestDataGeneration
+    ComponentUseCase.TestDataGeneration,
+    postponedLazyParametersEvaluator = false
   )
 
   override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = {

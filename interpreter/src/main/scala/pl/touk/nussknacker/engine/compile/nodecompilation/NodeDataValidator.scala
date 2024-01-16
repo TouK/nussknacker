@@ -55,7 +55,8 @@ class NodeDataValidator(modelData: ModelData) {
     expressionCompiler,
     modelData.modelClassLoader.classLoader,
     PreventInvocationCollector,
-    ComponentUseCase.Validation
+    ComponentUseCase.Validation,
+    postponedLazyParametersEvaluator = false
   )
 
   def validate(

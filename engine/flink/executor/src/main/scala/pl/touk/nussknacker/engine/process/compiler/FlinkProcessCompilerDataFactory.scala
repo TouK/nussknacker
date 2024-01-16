@@ -85,7 +85,8 @@ class FlinkProcessCompilerDataFactory(
         userCodeClassLoader,
         resultCollector,
         componentUseCase,
-        customProcessValidator
+        customProcessValidator,
+        postponedLazyParametersEvaluator = true
       )
 
     new FlinkProcessCompilerData(

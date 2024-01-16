@@ -53,11 +53,12 @@ object TestComponentProvider {
     def invoke(
         @ParamName(`TopicParamName`) topicName: String,
         @ParamName(SinkValueParamName) value: LazyParameter[String]
-    ): LazyParamSink[Output] =
-      (evaluateLazyParameter: LazyParameterInterpreter) => {
-        implicit val epi: LazyParameterInterpreter = evaluateLazyParameter
-        value.map(out => new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
+    ): LazyParamSink[Output] = {
+      new LazyParamSink[Output] {
+        override def prepareResponse: LazyParameter[Output] =
+          value.map(out => new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
       }
+    }
 
   }
 

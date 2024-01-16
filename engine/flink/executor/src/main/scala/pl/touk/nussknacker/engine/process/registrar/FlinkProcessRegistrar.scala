@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.compile.nodecompilation.CompilerLazyParameterInterpreter
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
@@ -107,10 +108,10 @@ class FlinkProcessRegistrar(
 
   protected def createInterpreter(
       compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData
-  ): RuntimeContext => FlinkCompilerLazyInterpreterCreator =
+  ): RuntimeContext => CompilerLazyParameterInterpreter =
     (runtimeContext: RuntimeContext) =>
-      new FlinkCompilerLazyInterpreterCreator(
-        compilerDataForClassloader(runtimeContext.getUserCodeClassLoader)
+      new CompilerLazyParameterInterpreter(
+        compilerDataForClassloader(runtimeContext.getUserCodeClassLoader).lazyParameterDeps
       )
 
   private def register(

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.requestresponse
 import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
@@ -15,10 +14,8 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes._
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementComponent
-import pl.touk.nussknacker.engine.lite.components.requestresponse.CollectTransformer
 import pl.touk.nussknacker.engine.requestresponse.utils.JsonRequestResponseSourceFactory
 import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.Sorter
-import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -229,11 +226,9 @@ class CustomExtractor(outputVariableName: String, expression: LazyParameter[AnyR
   override def createTransformation[F[_]: Monad, Result](
       continuation: DataBatch => F[ResultType[Result]],
       context: CustomComponentContext[F]
-  ): DataBatch => F[ResultType[Result]] = {
-    val exprInterpreter: engine.api.Context => Any =
-      context.interpreter.syncInterpretationFunction(expression)
-    (ctxs: DataBatch) => {
-      val exprResults = ctxs.map(ctx => ctx.withVariable(outputVariableName, exprInterpreter(ctx)))
+  ): DataBatch => F[ResultType[Result]] = { (ctxs: DataBatch) =>
+    {
+      val exprResults = ctxs.map(ctx => ctx.withVariable(outputVariableName, expression.evaluate(ctx)))
       continuation(DataBatch(exprResults))
     }
   }
@@ -254,9 +249,8 @@ class CustomFilter(filterExpression: LazyParameter[java.lang.Boolean]) extends S
   override def createSingleTransformation[F[_]: Monad, Result](
       continuation: DataBatch => F[ResultType[Result]],
       context: CustomComponentContext[F]
-  ): Context => F[ResultType[Result]] = {
-    val exprInterpreter = context.interpreter.syncInterpretationFunction(filterExpression)
-    (ctx: Context) => if (exprInterpreter(ctx)) continuation(DataBatch(ctx)) else continuation(DataBatch())
+  ): Context => F[ResultType[Result]] = { (ctx: Context) =>
+    if (filterExpression.evaluate(ctx)) continuation(DataBatch(ctx)) else continuation(DataBatch())
   }
 
 }
@@ -267,7 +261,7 @@ object ParameterResponseSinkFactory extends SinkFactory {
 
   class ParameterResponseSink(computed: LazyParameter[String]) extends LazyParamSink[AnyRef] {
 
-    override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {
+    override def prepareResponse: LazyParameter[AnyRef] = {
       computed.map(s => s + " withRandomString")
     }
 
@@ -279,7 +273,7 @@ private object RequestResponseSinkFactory extends SinkFactory {
 
   @MethodToInvoke
   def invoke(@ParamName("value") value: LazyParameter[AnyRef]): Sink = new LazyParamSink[AnyRef] {
-    override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] =
+    override def prepareResponse: LazyParameter[AnyRef] =
       value
   }
 
@@ -294,7 +288,7 @@ final case class SinkException(message: String) extends Exception(message)
 
 private class FailingSink(val fail: LazyParameter[java.lang.Boolean]) extends LazyParamSink[AnyRef] {
 
-  override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {
+  override def prepareResponse: LazyParameter[AnyRef] = {
     fail.map { doFail =>
       if (doFail) {
         throw SinkException("FailingSink failed")

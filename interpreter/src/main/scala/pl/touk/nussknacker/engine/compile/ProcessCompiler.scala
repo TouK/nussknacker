@@ -349,7 +349,8 @@ object ProcessValidator {
       expressionCompiler,
       classLoader,
       PreventInvocationCollector,
-      ComponentUseCase.Validation
+      ComponentUseCase.Validation,
+      postponedLazyParametersEvaluator = false
     )
     val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     new ProcessCompiler(

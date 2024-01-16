@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.lazyparam
 
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
 
 /**
   * Purpose of this trait is to hide evaluation details from LazyParameter api to make sure that only
@@ -12,7 +12,9 @@ import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInte
   */
 trait EvaluableLazyParameter[+T <: AnyRef] extends LazyParameter[T] {
 
-  def prepareEvaluator(deps: LazyParameterInterpreter): Context => T
+  override def evaluate(context: Context): T = prepareEvaluator(EmptyParameterDeps)(context)
+
+  def prepareEvaluator(deps: LazyParameterDeps): Context => T
 
 }
 
@@ -23,7 +25,7 @@ private[api] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](
 
   override def returnType: TypingResult = Typed.genericTypeClass[(T, Y)](List(arg1.returnType, arg2.returnType))
 
-  override def prepareEvaluator(lpi: LazyParameterInterpreter): Context => (T, Y) = {
+  override def prepareEvaluator(lpi: LazyParameterDeps): Context => (T, Y) = {
     val arg1Interpreter = arg1.prepareEvaluator(lpi)
     val arg2Interpreter = arg2.prepareEvaluator(lpi)
     ctx: Context =>
@@ -43,7 +45,7 @@ private[api] case class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](
   override def returnType: TypingResult =
     wrapReturnType(args.map(_.returnType))
 
-  override def prepareEvaluator(lpi: LazyParameterInterpreter): Context => Y = {
+  override def prepareEvaluator(lpi: LazyParameterDeps): Context => Y = {
     val argsInterpreters = args.map(_.prepareEvaluator(lpi))
     ctx: Context => wrapResult(argsInterpreters.map(_(ctx)))
   }
@@ -58,7 +60,7 @@ private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
 
   override def returnType: TypingResult = transformTypingResult(arg.returnType)
 
-  override def prepareEvaluator(lpi: LazyParameterInterpreter): Context => Y = {
+  override def prepareEvaluator(lpi: LazyParameterDeps): Context => Y = {
     val argInterpreter = arg.prepareEvaluator(lpi)
     ctx: Context => fun(argInterpreter(ctx))
   }
@@ -68,7 +70,11 @@ private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
 private[api] case class FixedLazyParameter[T <: AnyRef](value: T, returnType: TypingResult)
     extends EvaluableLazyParameter[T] {
 
-  override def prepareEvaluator(deps: LazyParameterInterpreter): Context => T =
+  override def prepareEvaluator(deps: LazyParameterDeps): Context => T =
     _ => value
 
 }
+
+trait LazyParameterDeps
+
+case object EmptyParameterDeps extends LazyParameterDeps

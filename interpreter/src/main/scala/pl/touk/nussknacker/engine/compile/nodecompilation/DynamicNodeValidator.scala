@@ -211,7 +211,10 @@ object DynamicNodeValidator {
     new DynamicNodeValidator(
       ExpressionCompiler.withoutOptimization(modelData),
       globalVariablesPreparer,
-      new ParameterEvaluator(ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer))
+      new ParameterEvaluator(
+        ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer),
+        postponedLazyParametersEvaluator = false
+      )
     )
   }
 

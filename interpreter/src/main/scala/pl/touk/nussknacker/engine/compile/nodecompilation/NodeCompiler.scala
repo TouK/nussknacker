@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel, Writer}
-import cats.implicits.toTraverseOps
+import cats.data.{NonEmptyList, ValidatedNel}
+import cats.implicits.{toTraverseOps, _}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.api.expression.{
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.validateParameterNames
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.{
   ComponentExecutorFactory,
@@ -51,9 +52,6 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
-import cats.implicits._
-import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
-import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.validateParameterNames
 
 object NodeCompiler {
 
@@ -79,7 +77,8 @@ class NodeCompiler(
     expressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
     resultCollector: ResultCollector,
-    componentUseCase: ComponentUseCase
+    componentUseCase: ComponentUseCase,
+    postponedLazyParametersEvaluator: Boolean
 ) {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
@@ -89,7 +88,8 @@ class NodeCompiler(
       expressionCompiler.withExpressionParsers(modify),
       classLoader,
       resultCollector,
-      componentUseCase
+      componentUseCase,
+      postponedLazyParametersEvaluator
     )
   }
 
@@ -102,7 +102,7 @@ class NodeCompiler(
 
   private val expressionEvaluator =
     ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
-  private val parametersEvaluator = new ParameterEvaluator(expressionEvaluator)
+  private val parametersEvaluator = new ParameterEvaluator(expressionEvaluator, postponedLazyParametersEvaluator)
   private val factory             = new ComponentExecutorFactory(parametersEvaluator)
   private val dynamicNodeValidator =
     new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator)
