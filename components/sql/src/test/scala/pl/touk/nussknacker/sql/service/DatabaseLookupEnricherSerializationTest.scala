@@ -26,7 +26,6 @@ case class TestRecord(id: Int = 1, timeHours: Int = 0) {
   def timestamp: Long = timeHours * 3600L * 1000
 }
 
-// TODO_PAWEL kolejnosc i czy sie odpalaja wszystkie before all
 class DatabaseLookupEnricherSerializationTest extends BaseHsqlQueryEnricherTest with FlinkSpec {
 
   override val handleOpenAndClose: Boolean = false
