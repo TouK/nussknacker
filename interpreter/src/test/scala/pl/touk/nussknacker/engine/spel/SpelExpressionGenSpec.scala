@@ -95,11 +95,13 @@ class SpelExpressionGenSpec
           fail(other) // shouldn't happen
         case Success(evaluatedClass) =>
           inside(validate(expr, a, b)) {
-            case Valid(TypedExpression(_, TypedObjectWithValue(TypedClass(typedClass, Nil), _), _)) =>
+            case Valid(
+                  TypedExpression(_, SpelExpressionTypingInfo(_, TypedObjectWithValue(TypedClass(typedClass, Nil), _)))
+                ) =>
               typedClass shouldEqual evaluatedClass
-            case Valid(TypedExpression(_, TypedClass(typedClass, Nil), _)) =>
+            case Valid(TypedExpression(_, SpelExpressionTypingInfo(_, TypedClass(typedClass, Nil)))) =>
               typedClass shouldEqual evaluatedClass
-            case Valid(TypedExpression(_, TypedUnion(possibleTypes), _)) =>
+            case Valid(TypedExpression(_, SpelExpressionTypingInfo(_, TypedUnion(possibleTypes)))) =>
               val typedClasses = possibleTypes.map(_.asInstanceOf[TypedClass].klass)
               typedClasses should contain(evaluatedClass)
           }

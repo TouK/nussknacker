@@ -78,7 +78,8 @@ object ProcessCompilerData {
     new ProcessCompilerData(
       processCompiler,
       subCompiler,
-      LazyInterpreterDependencies(expressionEvaluator, expressionCompiler),
+      expressionCompiler,
+      expressionEvaluator,
       interpreter,
       listeners,
       servicesDefs.map { case (info, servicesDef) => info.name -> servicesDef.implementation.asInstanceOf[Lifecycle] }
@@ -91,7 +92,8 @@ object ProcessCompilerData {
 final class ProcessCompilerData(
     compiler: ProcessCompiler,
     val subPartCompiler: PartSubGraphCompiler,
-    val lazyInterpreterDeps: LazyInterpreterDependencies,
+    val expressionCompiler: ExpressionCompiler,
+    val expressionEvaluator: ExpressionEvaluator,
     val interpreter: Interpreter,
     val listeners: Seq[ProcessListener],
     services: Map[String, Lifecycle]
@@ -112,8 +114,3 @@ final class ProcessCompilerData(
   def compile(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
     compiler.compile(process).result
 }
-
-case class LazyInterpreterDependencies(
-    expressionEvaluator: ExpressionEvaluator,
-    expressionCompiler: ExpressionCompiler
-)

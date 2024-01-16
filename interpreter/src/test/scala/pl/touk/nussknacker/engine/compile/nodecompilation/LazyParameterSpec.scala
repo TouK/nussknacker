@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.lazyparam.{EvaluableLazyParameter, LazyParameterDeps}
+import pl.touk.nussknacker.engine.api.lazyparam.{LazyParameterDeps, LazyParameterWithPotentiallyPostponedEvaluator}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -56,7 +56,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
   ) = {
 
     var invoked = 0
-    val evalParameter = new EvaluableLazyParameter[Integer] {
+    val evalParameter = new LazyParameterWithPotentiallyPostponedEvaluator[Integer] {
       override def prepareEvaluator(
           deps: LazyParameterDeps
       ): Context => Integer = {
@@ -98,10 +98,10 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
     val definitionWithTypes = ModelDefinitionWithClasses(processDef)
     val lazyInterpreterDeps = prepareLazyParameterDeps(definitionWithTypes)
 
-    new CompilerLazyParameterInterpreter(lazyInterpreterDeps)
+    new DefaultLazyParameterInterpreter(lazyInterpreterDeps)
   }
 
-  def prepareLazyParameterDeps(definitionWithTypes: ModelDefinitionWithClasses): SerializableLazyParameterDeps = {
+  def prepareLazyParameterDeps(definitionWithTypes: ModelDefinitionWithClasses): PostponedEvaluatorLazyParameterDeps = {
     import definitionWithTypes.modelDefinition
     val expressionEvaluator =
       ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(modelDefinition.expressionConfig))
@@ -111,7 +111,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions
     )
-    SerializableLazyParameterDeps(expressionCompiler, expressionEvaluator, MetaData("proc1", StreamMetaData()))
+    PostponedEvaluatorLazyParameterDeps(expressionCompiler, expressionEvaluator, MetaData("proc1", StreamMetaData()))
   }
 
 }

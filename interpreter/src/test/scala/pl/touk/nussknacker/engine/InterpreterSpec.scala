@@ -1095,7 +1095,7 @@ object InterpreterSpec {
         expectedType: typing.TypingResult
     ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
       parseWithoutContextValidation(original, expectedType).map(
-        TypedExpression(_, Typed[String], LiteralExpressionTypingInfo(typing.Unknown))
+        TypedExpression(_, LiteralExpressionTypingInfo(typing.Unknown))
       )
 
     override def parseWithoutContextValidation(

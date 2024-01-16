@@ -556,10 +556,10 @@ class NodeCompiler(
           )
           .map { componentExecutor =>
             val typingInfo = compiledParameters.flatMap {
-              case (TypedParameter(name, TypedExpression(_, _, typingInfo)), _) =>
+              case (TypedParameter(name, TypedExpression(_, typingInfo)), _) =>
                 List(name -> typingInfo)
               case (TypedParameter(paramName, TypedExpressionMap(valueByBranch)), _) =>
-                valueByBranch.map { case (branch, TypedExpression(_, _, typingInfo)) =>
+                valueByBranch.map { case (branch, TypedExpression(_, typingInfo)) =>
                   val expressionId = branchParameterExpressionId(paramName, branch)
                   expressionId -> typingInfo
                 }

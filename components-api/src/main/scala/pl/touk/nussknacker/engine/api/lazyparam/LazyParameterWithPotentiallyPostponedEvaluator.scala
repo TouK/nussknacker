@@ -4,13 +4,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
 
 /**
-  * Purpose of this trait is to hide evaluation details from LazyParameter api to make sure that only
-  * interpreter manage how to evaluate them. It causes down casting in a few places but it is very isolated
-  * and hidden from public developer of extensions api
-  *
-  * Ideally it should be visible only by interpreters but to not extract additional modules it is accessible from api module.
+  * Purpose of this trait is to hide the fact, that the real implementation of LazyParameter can has postponed
+  * evaluator's creation.
   */
-trait EvaluableLazyParameter[+T <: AnyRef] extends LazyParameter[T] {
+trait LazyParameterWithPotentiallyPostponedEvaluator[+T <: AnyRef] extends LazyParameter[T] {
 
   override def evaluate(context: Context): T = prepareEvaluator(EmptyParameterDeps)(context)
 
@@ -19,9 +16,9 @@ trait EvaluableLazyParameter[+T <: AnyRef] extends LazyParameter[T] {
 }
 
 private[api] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](
-    arg1: EvaluableLazyParameter[T],
-    arg2: EvaluableLazyParameter[Y]
-) extends EvaluableLazyParameter[(T, Y)] {
+    arg1: LazyParameterWithPotentiallyPostponedEvaluator[T],
+    arg2: LazyParameterWithPotentiallyPostponedEvaluator[Y]
+) extends LazyParameterWithPotentiallyPostponedEvaluator[(T, Y)] {
 
   override def returnType: TypingResult = Typed.genericTypeClass[(T, Y)](List(arg1.returnType, arg2.returnType))
 
@@ -37,10 +34,10 @@ private[api] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](
 }
 
 private[api] case class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](
-    args: List[EvaluableLazyParameter[T]],
+    args: List[LazyParameterWithPotentiallyPostponedEvaluator[T]],
     wrapResult: List[T] => Y,
     wrapReturnType: List[TypingResult] => TypingResult
-) extends EvaluableLazyParameter[Y] {
+) extends LazyParameterWithPotentiallyPostponedEvaluator[Y] {
 
   override def returnType: TypingResult =
     wrapReturnType(args.map(_.returnType))
@@ -53,10 +50,10 @@ private[api] case class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](
 }
 
 private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
-    arg: EvaluableLazyParameter[T],
+    arg: LazyParameterWithPotentiallyPostponedEvaluator[T],
     fun: T => Y,
     transformTypingResult: TypingResult => TypingResult
-) extends EvaluableLazyParameter[Y] {
+) extends LazyParameterWithPotentiallyPostponedEvaluator[Y] {
 
   override def returnType: TypingResult = transformTypingResult(arg.returnType)
 
@@ -68,7 +65,7 @@ private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
 }
 
 private[api] case class FixedLazyParameter[T <: AnyRef](value: T, returnType: TypingResult)
-    extends EvaluableLazyParameter[T] {
+    extends LazyParameterWithPotentiallyPostponedEvaluator[T] {
 
   override def prepareEvaluator(deps: LazyParameterDeps): Context => T =
     _ => value

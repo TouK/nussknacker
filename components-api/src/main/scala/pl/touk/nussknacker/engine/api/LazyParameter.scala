@@ -26,7 +26,10 @@ trait LazyParameter[+T <: AnyRef] {
   // we provide only applicative operation, monad is tricky to implement (see CompilerLazyParameterInterpreter.createInterpreter)
   // we use product and not ap here, because it's more convenient to handle returnType computations
   def product[B <: AnyRef](fb: LazyParameter[B]): LazyParameter[(T, B)] = {
-    ProductLazyParameter(this.asInstanceOf[EvaluableLazyParameter[T]], fb.asInstanceOf[EvaluableLazyParameter[B]])
+    ProductLazyParameter(
+      this.asInstanceOf[LazyParameterWithPotentiallyPostponedEvaluator[T]],
+      fb.asInstanceOf[LazyParameterWithPotentiallyPostponedEvaluator[B]]
+    )
   }
 
   def map[Y <: AnyRef: TypeTag](fun: T => Y): LazyParameter[Y] =
@@ -34,7 +37,11 @@ trait LazyParameter[+T <: AnyRef] {
 
   // unfortunately, we cannot assert that TypingResult represents Y somehow...
   def map[Y <: AnyRef](fun: T => Y, transformTypingResult: TypingResult => TypingResult): LazyParameter[Y] =
-    new MappedLazyParameter[T, Y](this.asInstanceOf[EvaluableLazyParameter[T]], fun, transformTypingResult)
+    new MappedLazyParameter[T, Y](
+      this.asInstanceOf[LazyParameterWithPotentiallyPostponedEvaluator[T]],
+      fun,
+      transformTypingResult
+    )
 
 }
 
@@ -46,7 +53,11 @@ object LazyParameter {
       wrapResult: List[T] => Y,
       wrapReturnType: List[TypingResult] => TypingResult
   ): LazyParameter[Y] =
-    SequenceLazyParameter(fa.map(_.asInstanceOf[EvaluableLazyParameter[T]]), wrapResult, wrapReturnType)
+    SequenceLazyParameter(
+      fa.map(_.asInstanceOf[LazyParameterWithPotentiallyPostponedEvaluator[T]]),
+      wrapResult,
+      wrapReturnType
+    )
 
   // Name must be other then pure because scala can't recognize which overloaded method was used
   def pureFromDetailedType[T <: AnyRef: TypeTag](value: T): LazyParameter[T] =
@@ -63,7 +74,7 @@ object LazyParameter {
 // TODO: Rename ToEvaluableFunctionConverter
 trait LazyParameterInterpreter {
 
-  // TODO: Rename toEvaluableFunction + return function
+  // TODO: Rename toEvaluableFunction
   def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]): Context => T
 
 }

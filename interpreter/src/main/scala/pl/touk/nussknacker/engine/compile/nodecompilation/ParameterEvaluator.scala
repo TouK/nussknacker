@@ -75,14 +75,14 @@ class ParameterEvaluator(
       nodeId: NodeId
   ): LazyParameter[Nothing] = {
     if (postponedLazyParametersEvaluator) {
-      ExpressionLazyParameter(
+      PostponedEvaluatorLazyParameter(
         nodeId,
         definition,
         graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
         exprValue.returnType
       )
     } else {
-      new InstantExpressionLazyParameter(
+      new EvaluableLazyParameter(
         CompiledParameter(exprValue, definition),
         runtimeExpressionEvaluator,
         nodeId,
