@@ -45,6 +45,28 @@ class DatabaseLookupEnricherSerializationTest extends BaseHsqlQueryEnricherTest 
   private val dbLookupEnricherOutput = "dbVar"
   private val dbLookupNodeResultId   = "db-result"
 
+  test("DatabaseLookupEnricher should work when passed to the list of LocalModelData, where it will be serialized") {
+    val collectingListener = initializeListener
+    val model              = modelData(List(TestRecord(id = 1)), collectingListener)
+
+    val testProcess = aProcessWithDbLookupNode()
+
+    val results = collectTestResults[String](model, testProcess, collectingListener)
+    extractResultValues(results) shouldBe List("John")
+  }
+
+  test("Database lookup enricher should be serializable") {
+    val fos = new ByteArrayOutputStream()
+    val oos = new ObjectOutputStream(fos);
+    oos.writeObject(service)
+    oos.flush()
+    oos.close()
+  }
+
+  private def extractResultValues(results: TestProcess.TestResults): List[String] = results
+    .nodeResults(sinkId)
+    .map(_.get[String](resultVariableName).get)
+
   private def aProcessWithDbLookupNode(): CanonicalProcess =
     ScenarioBuilder
       .streaming("forEachProcess")
@@ -62,14 +84,6 @@ class DatabaseLookupEnricherSerializationTest extends BaseHsqlQueryEnricherTest 
       )
       .buildSimpleVariable(dbLookupNodeResultId, resultVariableName, s"#$dbLookupEnricherOutput.NAME")
       .emptySink(sinkId, "dead-end")
-
-  test("Database lookup enricher should be serializable") {
-    val fos = new ByteArrayOutputStream()
-    val oos = new ObjectOutputStream(fos);
-    oos.writeObject(service)
-    oos.flush()
-    oos.close()
-  }
 
   private def initializeListener = ResultsCollectingListenerHolder.registerRun
 
@@ -108,19 +122,5 @@ class DatabaseLookupEnricherSerializationTest extends BaseHsqlQueryEnricherTest 
     UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
     stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
   }
-
-  test("DatabaseLookupEnricher should work when passed to the list of LocalModelData, where it will be serialized") {
-    val collectingListener = initializeListener
-    val model              = modelData(List(TestRecord(id = 1)), collectingListener)
-
-    val testProcess = aProcessWithDbLookupNode()
-
-    val results = collectTestResults[String](model, testProcess, collectingListener)
-    extractResultValues(results) shouldBe List("John")
-  }
-
-  private def extractResultValues(results: TestProcess.TestResults): List[String] = results
-    .nodeResults(sinkId)
-    .map(_.get[String](resultVariableName).get)
 
 }

@@ -21,7 +21,6 @@ class MetaDataProviderFactory extends Serializable {
       props.put(k, v)
     }
     val getConnection: () => Connection = () => {
-      // TODO_PAWEL is it ok?
       val ds = ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
         new DriverDataSource(
           dbPoolConfig.url,
