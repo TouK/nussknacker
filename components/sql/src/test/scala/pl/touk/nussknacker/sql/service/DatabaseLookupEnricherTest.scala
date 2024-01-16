@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import java.io.{ByteArrayOutputStream, FileOutputStream, ObjectOutputStream}
 import scala.concurrent.Await
 
-case class TestRecord(id: String = "1", timeHours: Int = 0, eId: Int = 1, str: String = "a") {
+case class TestRecord(id: Int = 1, timeHours: Int = 0) {
   def timestamp: Long = timeHours * 3600L * 1000
 }
 
@@ -59,15 +59,25 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest with FlinkSpe
   private val forEachOutputVariableName = "forEachVar"
   private val forEachNodeResultId       = "for-each-result"
 
-  private def aProcessWithForEachNode(elements: String, resultExpression: String = s"#$forEachOutputVariableName") =
-    ScenarioBuilder
+  private def aProcessWithDbLookupNode(): CanonicalProcess = {
+    val resultExpression: String = s"#$forEachOutputVariableName.NAME"
+    return ScenarioBuilder
       .streaming("forEachProcess")
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
-      .customNode("for-each", forEachOutputVariableName, "for-each", "Elements" -> elements)
+      .enricher(
+        id = "personEnricher",
+        output = forEachOutputVariableName,
+        svcId = "dbLookup",
+        params = "Table" -> Expression.spel("'PERSONS'"),
+        "Cache TTL"  -> Expression.spel("T(java.time.Duration).ofDays(1L)"),
+        "Key column" -> Expression.spel("'ID'"),
+        "Key value"  -> Expression.spel("#input.id")
+      )
       .buildSimpleVariable(forEachNodeResultId, "resultVar", resultExpression)
       .emptySink(sinkId, "dead-end")
+  }
 
   test("Database lookup enricher should be serializable") {
     val fos = new ByteArrayOutputStream()
@@ -95,7 +105,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest with FlinkSpe
     )
     LocalModelData(
       modelConfig,
-      sourceComponent :: FlinkBaseComponentProvider.Components,
+      (sourceComponent :: FlinkBaseComponentProvider.Components) ::: List(ComponentDefinition("dbLookup", service)),
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
   }
@@ -117,13 +127,12 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest with FlinkSpe
 
   test("should produce results for each element in list") {
     val collectingListener = initializeListener
-    val model              = modelData(List(TestRecord()), collectingListener)
+    val model              = modelData(List(TestRecord(id = 1)), collectingListener)
 
-    val testProcess =
-      aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
+    val testProcess = aProcessWithDbLookupNode()
 
     val results = collectTestResults[String](model, testProcess, collectingListener)
-    extractResultValues(results) shouldBe List("one_1", "other_1")
+    extractResultValues(results) shouldBe List("John")
   }
 
   private def extractResultValues(results: TestProcess.TestResults): List[String] = results

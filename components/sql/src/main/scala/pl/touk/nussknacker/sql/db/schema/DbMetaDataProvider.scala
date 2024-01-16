@@ -18,7 +18,7 @@ object SchemaDefinition {
   def empty(): SchemaDefinition = SchemaDefinition(List())
 }
 
-class SqlDialect(metaData: DialectMetaData) {
+class SqlDialect(metaData: DialectMetaData) extends Serializable {
 
   def quoteIdentifier(identifier: String): String =
     metaData.identifierQuote + identifier + metaData.identifierQuote
