@@ -76,7 +76,7 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 }
 
 object RichKafkaConsumer {
-  private val DefaultSecondsToWait = 30
+  val DefaultSecondsToWait: Int = 30
 }
 
 case class KeyMessage[K, V](k: K, msg: V, timestamp: Long) {
