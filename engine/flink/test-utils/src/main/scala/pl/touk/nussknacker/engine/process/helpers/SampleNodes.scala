@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -39,11 +40,12 @@ import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import java.util.{Date, Optional, UUID}
 import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
+import scala.util.Try
 
 //TODO: clean up sample objects...
 object SampleNodes {
@@ -1044,6 +1046,65 @@ object SampleNodes {
 
     override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
       if (listening) nodesEntered = nodesEntered ::: nodeId :: Nil
+    }
+
+  }
+
+  class LifecycleCheckingListener extends ProcessListener with Lifecycle {
+
+    @transient @volatile private var opened = false
+    @transient @volatile private var closed = false
+
+    override def open(context: EngineRuntimeContext): Unit = {
+      opened = true
+    }
+
+    override def close(): Unit = {
+      closed = true
+    }
+
+    override def nodeEntered(nodeId: ProcessingType, context: Context, processMetaData: MetaData): Unit =
+      checkValidState("nodeEntered")
+
+    override def endEncountered(
+        nodeId: ProcessingType,
+        ref: ProcessingType,
+        context: Context,
+        processMetaData: MetaData
+    ): Unit =
+      checkValidState("endEncountered")
+
+    override def deadEndEncountered(lastNodeId: ProcessingType, context: Context, processMetaData: MetaData): Unit =
+      checkValidState("deadEndEncountered")
+
+    override def expressionEvaluated(
+        nodeId: ProcessingType,
+        expressionId: ProcessingType,
+        expression: ProcessingType,
+        context: Context,
+        processMetaData: MetaData,
+        result: Any
+    ): Unit =
+      checkValidState("expressionEvaluated")
+
+    override def serviceInvoked(
+        nodeId: ProcessingType,
+        id: ProcessingType,
+        context: Context,
+        processMetaData: MetaData,
+        params: Map[ProcessingType, Any],
+        result: Try[Any]
+    ): Unit =
+      checkValidState("serviceInvoked")
+
+    override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit =
+      checkValidState("exceptionThrown")
+
+    private def checkValidState(operation: String): Unit = {
+      if (!opened)
+        throw new IllegalStateException(s"For operation: $operation, ${getClass.getSimpleName} wasn't opened")
+      if (closed)
+        throw new IllegalStateException(s"For operation: $operation, ${getClass.getSimpleName} was already closed")
     }
 
   }

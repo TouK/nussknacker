@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -108,10 +107,11 @@ class FlinkProcessRegistrar(
 
   protected def createInterpreter(
       compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData
-  ): RuntimeContext => DefaultLazyParameterInterpreter =
+  ): RuntimeContext => LazyParameterInterpreterWithLifecycle =
     (runtimeContext: RuntimeContext) =>
-      new DefaultLazyParameterInterpreter(
-        compilerDataForClassloader(runtimeContext.getUserCodeClassLoader).lazyParameterDeps
+      new LazyParameterInterpreterWithLifecycle(
+        runtimeContext,
+        compilerDataForClassloader(runtimeContext.getUserCodeClassLoader)
       )
 
   private def register(
