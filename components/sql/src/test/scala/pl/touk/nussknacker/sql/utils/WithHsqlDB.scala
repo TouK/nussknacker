@@ -27,7 +27,7 @@ trait WithHsqlDB {
 
   def prepareHsqlDDLs: List[String]
 
-  override def beforeAll(): Unit = {
+  override protected def beforeAll(): Unit = {
     // DriverManager initializes drivers once per JVM start thus drivers loaded later are skipped.
     // We must ensue that they are load manually
     DriverManager.registerDriver(new jdbcDriver())
@@ -39,7 +39,7 @@ trait WithHsqlDB {
     }
   }
 
-  override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     Option(conn).foreach(_.close())
   }
 

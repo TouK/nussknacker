@@ -25,12 +25,12 @@ trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithH
       )
     )
 
-  override def beforeAll(): Unit = {
+  override protected def beforeAll(): Unit = {
     service.open(LiteEngineRuntimeContextPreparer.noOp.prepare(jobData))
     super.beforeAll()
   }
 
-  override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     service.close()
     super.afterAll()
   }

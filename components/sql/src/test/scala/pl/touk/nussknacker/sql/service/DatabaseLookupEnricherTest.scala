@@ -1,10 +1,18 @@
 package pl.touk.nussknacker.sql.service
 
+import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.OutputVariableNameValue
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
+import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
@@ -13,7 +21,8 @@ import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 import java.io.{ByteArrayOutputStream, FileOutputStream, ObjectOutputStream}
 import scala.concurrent.Await
 
-class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
+// TODO_PAWEL kolejnosc i czy sie odpalaja wszystkie before all
+class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest with FlinkSpec {
 
   import scala.jdk.CollectionConverters._
   import scala.concurrent.duration._
@@ -38,6 +47,33 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
     oos.writeObject(service)
     oos.flush()
     oos.close()
+  }
+
+  test("Test on flink") {
+    import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
+    val testScenarioRunner = TestScenarioRunner
+      .flinkBased(config, flinkMiniCluster)
+      .withExtraComponents(List(ComponentDefinition("dbLookup", service)))
+      .build()
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("test")
+        .parallelism(1)
+        .source("start", "source")
+        .enricher(
+          id = "personEnricher",
+          output = "person",
+          svcId = "dbLookup",
+          params = "Table" -> Expression.spel("'persons'"),
+          "Cache TTL"  -> Expression.spel("T(java.time.Duration).ofDays(1L)"),
+          "Key column" -> Expression.spel("'id'"),
+          "Key value"  -> Expression.spel("#input")
+        )
+        .processorEnd("end", "invocationCollector", "value" -> Expression.spel("#person"))
+
+    val sth = testScenarioRunner.runWithData(scenario, List(1))
+    val a   = 5
   }
 
   test("DatabaseLookupEnricher#implementation without cache") {
