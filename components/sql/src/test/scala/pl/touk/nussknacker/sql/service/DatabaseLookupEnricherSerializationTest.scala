@@ -16,11 +16,11 @@ import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
-import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
+import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory}
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 import pl.touk.nussknacker.engine.spel.Implicits._
 
-import java.io.{ByteArrayOutputStream, FileOutputStream, ObjectOutputStream}
+import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 
 case class TestRecord(id: Int = 1, timeHours: Int = 0) {
   def timestamp: Long = timeHours * 3600L * 1000
@@ -40,13 +40,13 @@ class DatabaseLookupEnricherSerializationTest extends BaseHsqlQueryEnricherTest 
 
   override val service = new DatabaseLookupEnricher(hsqlDbPoolConfig, provider(hsqlDbPoolConfig))
 
-  private val sinkId                    = "end"
-  private val resultVariableName        = "resultVar"
-  private val forEachOutputVariableName = "forEachVar"
-  private val forEachNodeResultId       = "for-each-result"
+  private val sinkId                 = "end"
+  private val resultVariableName     = "resultVar"
+  private val dbLookupEnricherOutput = "dbVar"
+  private val dbLookupNodeResultId   = "db-result"
 
   private def aProcessWithDbLookupNode(): CanonicalProcess = {
-    val resultExpression: String = s"#$forEachOutputVariableName.NAME"
+    val resultExpression: String = s"#$dbLookupEnricherOutput.NAME"
     return ScenarioBuilder
       .streaming("forEachProcess")
       .parallelism(1)
@@ -54,14 +54,14 @@ class DatabaseLookupEnricherSerializationTest extends BaseHsqlQueryEnricherTest 
       .source("start", "start")
       .enricher(
         id = "personEnricher",
-        output = forEachOutputVariableName,
+        output = dbLookupEnricherOutput,
         svcId = "dbLookup",
         params = "Table" -> Expression.spel("'PERSONS'"),
         "Cache TTL"  -> Expression.spel("T(java.time.Duration).ofDays(1L)"),
         "Key column" -> Expression.spel("'ID'"),
         "Key value"  -> Expression.spel("#input.id")
       )
-      .buildSimpleVariable(forEachNodeResultId, "resultVar", resultExpression)
+      .buildSimpleVariable(dbLookupNodeResultId, resultVariableName, resultExpression)
       .emptySink(sinkId, "dead-end")
   }
 
