@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { get, has, isEmpty, isEqual, uniqBy } from "lodash";
-import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils";
+import { has, isEmpty, isEqual, uniqBy } from "lodash";
 import ProcessUtils from "../../common/ProcessUtils";
 import {
     Edge,

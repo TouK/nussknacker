@@ -179,7 +179,7 @@ class ProcessUtils {
         }
     };
 
-    extractComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition => {
+    extractComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition | null => {
         return components?.[this.determineComponentId(node)];
     };
 

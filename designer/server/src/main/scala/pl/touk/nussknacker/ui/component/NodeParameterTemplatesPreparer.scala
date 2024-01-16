@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
 
 object NodeParameterTemplatesPreparer {
 
