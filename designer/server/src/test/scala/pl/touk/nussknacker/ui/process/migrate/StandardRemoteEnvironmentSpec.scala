@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class StandardRemoteEnvironmentSpec
@@ -416,7 +417,8 @@ class StandardRemoteEnvironmentSpec
 
     val migrationResult = remoteEnvironment
       .testMigration(
-        batchingExecutionContext = ExecutionContext.global
+        batchingExecutionContext = ExecutionContext.global,
+        batchingRequestTimeout = 5 seconds
       )
       .futureValue
       .rightValue

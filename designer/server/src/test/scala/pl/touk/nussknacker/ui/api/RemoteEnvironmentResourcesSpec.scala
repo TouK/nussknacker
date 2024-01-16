@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteEnvironmentResourcesSpec
@@ -208,7 +209,8 @@ class RemoteEnvironmentResourcesSpec
 
     override def testMigration(
         processToInclude: ScenarioWithDetails => Boolean,
-        batchingExecutionContext: ExecutionContext
+        batchingExecutionContext: ExecutionContext,
+        batchingRequestTimeout: FiniteDuration
     )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }
