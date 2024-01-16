@@ -81,7 +81,7 @@ export default function OutputParametersList({
         () => ProcessUtils.extractComponentDefinition(editedNode, processDefinitionData.components),
         [editedNode, processDefinitionData.components],
     );
-    const isDefinitionAvailable = !!componentDefinition.outputParameters && isEditMode;
+    const isDefinitionAvailable = !!componentDefinition?.outputParameters && isEditMode;
 
     const [variableNames, setVariableNames] = useState<Record<string, string>>(() => {
         if (!isDefinitionAvailable) {

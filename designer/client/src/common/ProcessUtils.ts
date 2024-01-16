@@ -179,13 +179,8 @@ class ProcessUtils {
         }
     };
 
-    extractComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition => {
-        const definition = components?.[this.determineComponentId(node)];
-        const emptyDefinition = {
-            parameters: null,
-            returnType: null,
-        };
-        return definition || emptyDefinition;
+    extractComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition | null => {
+        return components?.[this.determineComponentId(node)];
     };
 
     determineComponentId = (node?: NodeType): string | null => {
@@ -267,13 +262,6 @@ class ProcessUtils {
         }
     };
 
-    determineNodeConfigName = (node: NodeType): string => {
-        // First we try to find the component's name (configs for components are resolved by component's name).
-        // When we can't determine component's name, it means that the node is a special process properties node,
-        // not a node that uses a component so we use a special, fake $properties node configuration for it
-        return this.determineComponentName(node) || "$properties";
-    };
-
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
     _findPreviousNodes = (nodeId: NodeId, process: Process): NodeId[] => {
@@ -285,18 +273,6 @@ class ProcessUtils {
             return [nodeEdge.from].concat(previousNodes);
         }
     };
-
-    //Remove if it doesn't use
-    prepareFilterCategories = (categories, loggedUser) =>
-        map(
-            (categories || []).filter((c) => loggedUser.canRead(c)),
-            (e) => {
-                return {
-                    value: e,
-                    label: e,
-                };
-            },
-        );
 }
 
 export default new ProcessUtils();

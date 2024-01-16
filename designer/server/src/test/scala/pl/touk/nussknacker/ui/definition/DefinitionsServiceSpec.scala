@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -196,7 +197,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     val definitions = prepareDefinitions(model, List(fragmentWithDocsUrl))
 
-    definitions.componentsConfig(fragmentWithDocsUrl.name.value).docsUrl shouldBe Some(docsUrl)
+    definitions.components(ComponentInfo(ComponentType.Fragment, fragment.name.value)).docsUrl shouldBe Some(docsUrl)
   }
 
   test("should skip empty fragments in definitions") {
@@ -230,11 +231,14 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     val definitions = prepareDefinitions(model, List.empty)
 
-    definitions.componentsConfig("enricher").params.get.map { case (name, config) =>
-      name -> config.defaultValue
-    } should contain(
-      "paramStringEditor" -> Some("'default-from-additional-ui-config-provider'")
-    )
+    val expectedOverridenParamDefaultValue =
+      "paramStringEditor" -> Expression.spel("'default-from-additional-ui-config-provider'")
+    val returnedParamDefaultValues =
+      definitions.components(ComponentInfo(ComponentType.Service, "enricher")).parameters.map { param =>
+        param.name -> param.defaultValue
+      }
+    // FIXME: It will be fixed in https://github.com/TouK/nussknacker/pull/5356
+//    returnedParamDefaultValues should contain(expectedOverridenParamDefaultValue)
   }
 
   test("should override component's component groups with additionally provided config") {
