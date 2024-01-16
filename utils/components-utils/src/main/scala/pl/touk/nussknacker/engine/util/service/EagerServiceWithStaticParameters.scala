@@ -111,13 +111,14 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
     implicit val metaImplicit: MetaData = metaData
     new ServiceInvoker {
 
-      override def invokeService(params: Map[String, Any])(
+      override def invokeService(context: Context, params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
           componentUseCase: ComponentUseCase
-      ): Future[Any] =
+      ): Future[Any] = {
+        implicit val contextId: ContextId = ContextId(context.id)
         invoke(params ++ eagerParameters)
+      }
 
     }
   }

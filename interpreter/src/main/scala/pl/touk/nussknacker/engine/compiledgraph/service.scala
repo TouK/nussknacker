@@ -39,10 +39,9 @@ object service {
       val collector           = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
       (
         preparedParams,
-        invoker.invokeService(preparedParams)(
+        invoker.invokeService(ctx, preparedParams)(
           serviceExecutionContext.executionContext,
           collector,
-          contextId,
           componentUseCase
         )
       )

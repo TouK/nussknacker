@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.service
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.{ContextId, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, ServiceInvoker}
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.sql.db.WithDBConnectionPool
 import pl.touk.nussknacker.sql.db.query._
@@ -31,10 +31,9 @@ class DatabaseEnricherInvoker(
     case UpdateResultStrategy => new UpdateQueryExecutor()
   }
 
-  override def invokeService(params: Map[String, Any])(
+  override def invokeService(context: Context, params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ContextId,
       componentUseCase: ComponentUseCase
   ): Future[queryExecutor.QueryResult] =
     getTimeMeasurement().measuring {

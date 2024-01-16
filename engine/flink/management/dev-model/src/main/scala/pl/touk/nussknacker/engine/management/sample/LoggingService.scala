@@ -26,10 +26,9 @@ object LoggingService extends EagerService {
         (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
       )
 
-      override def invokeService(params: Map[String, Any])(
+      override def invokeService(context: Context, params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          contextId: ContextId,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
         val message = params("message").asInstanceOf[String]

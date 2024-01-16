@@ -205,10 +205,9 @@ object SampleNodes {
     @MethodToInvoke
     def invoke(@ParamName("name") name: String): ServiceInvoker = synchronized {
       val newI = new ServiceInvoker with WithLifecycle {
-        override def invokeService(params: Map[String, Any])(
+        override def invokeService(context: Context, params: Map[String, Any])(
             implicit ec: ExecutionContext,
             collector: ServiceInvocationCollector,
-            contextId: ContextId,
             componentUseCase: ComponentUseCase
         ): Future[Any] = {
           if (!opened) {
@@ -232,10 +231,9 @@ object SampleNodes {
         @ParamName("dynamic") dynamic: LazyParameter[String]
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(params: Map[String, Any])(
+      override def invokeService(context: Context, params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          contextId: ContextId,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
         collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
@@ -441,10 +439,9 @@ object SampleNodes {
         outputVar,
         returnType,
         new ServiceInvoker {
-          override def invokeService(params: Map[String, Any])(
+          override def invokeService(context: Context, params: Map[String, Any])(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
-              contextId: ContextId,
               componentUseCase: ComponentUseCase
           ): Future[Any] = {
             val result = (1 to count)

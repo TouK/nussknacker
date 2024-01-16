@@ -1,9 +1,13 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, MetaData, NodeId, ProcessListener}
+import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy.{
+  EvaluableLazyParameterStrategy,
+  PostponedEvaluatorLazyParameterStrategy
+}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph
@@ -12,8 +16,7 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 class ParameterEvaluator(
     globalVariablesPreparer: GlobalVariablesPreparer,
-    listeners: Seq[ProcessListener],
-    postponedLazyParametersEvaluator: Boolean
+    listeners: Seq[ProcessListener]
 ) {
 
   private val compileTimeExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
@@ -24,7 +27,11 @@ class ParameterEvaluator(
   def prepareParameter(
       typedParameter: TypedParameter,
       definition: ParameterDef
-  )(implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
+  )(
+      implicit processMetaData: MetaData,
+      nodeId: NodeId,
+      lazyParameterCreationStrategy: LazyParameterCreationStrategy
+  ): (AnyRef, BaseDefinedParameter) = {
     if (definition.isLazyParameter) {
       prepareLazyParameter(typedParameter, definition)
     } else {
@@ -34,7 +41,8 @@ class ParameterEvaluator(
 
   private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(
       implicit processMetaData: MetaData,
-      nodeId: NodeId
+      nodeId: NodeId,
+      lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): (AnyRef, BaseDefinedParameter) = {
     param.typedValue match {
       case e: TypedExpression if !definition.branchParam =>
@@ -72,22 +80,24 @@ class ParameterEvaluator(
 
   private def prepareLazyParameterExpression[T](definition: ParameterDef, exprValue: TypedExpression)(
       implicit processMetaData: MetaData,
-      nodeId: NodeId
+      nodeId: NodeId,
+      lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): LazyParameter[Nothing] = {
-    if (postponedLazyParametersEvaluator) {
-      PostponedEvaluatorLazyParameter(
-        nodeId,
-        definition,
-        graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
-        exprValue.returnType
-      )
-    } else {
-      new EvaluableLazyParameter(
-        CompiledParameter(exprValue, definition),
-        runtimeExpressionEvaluator,
-        nodeId,
-        processMetaData
-      )
+    lazyParameterCreationStrategy match {
+      case EvaluableLazyParameterStrategy =>
+        new EvaluableLazyParameter(
+          CompiledParameter(exprValue, definition),
+          runtimeExpressionEvaluator,
+          nodeId,
+          processMetaData
+        )
+      case PostponedEvaluatorLazyParameterStrategy =>
+        PostponedEvaluatorLazyParameter(
+          nodeId,
+          definition,
+          graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
+          exprValue.returnType
+        )
     }
   }
 
@@ -97,5 +107,18 @@ class ParameterEvaluator(
   )(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
     compileTimeExpressionEvaluator.evaluateParameter(param, ctx).value
   }
+
+}
+
+sealed trait LazyParameterCreationStrategy
+
+object LazyParameterCreationStrategy {
+
+  val default: LazyParameterCreationStrategy   = EvaluableLazyParameterStrategy
+  val postponed: LazyParameterCreationStrategy = PostponedEvaluatorLazyParameterStrategy
+
+  private[nodecompilation] case object EvaluableLazyParameterStrategy extends LazyParameterCreationStrategy
+
+  private[nodecompilation] case object PostponedEvaluatorLazyParameterStrategy extends LazyParameterCreationStrategy
 
 }

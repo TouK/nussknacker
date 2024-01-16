@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
 import pl.touk.nussknacker.engine.api.{
+  Context,
   ContextId,
   EagerService,
   LazyParameter,
@@ -22,10 +23,9 @@ object TestService extends EagerService {
   @MethodToInvoke
   def invoke(@ParamName("param") value: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
 
-    override def invokeService(params: Map[String, Any])(
+    override def invokeService(context: Context, params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
-        contextId: ContextId,
         componentUseCase: ComponentUseCase
     ): Future[String] = {
       collector.collect(s"test-service-$value", Option(MockedValued)) {

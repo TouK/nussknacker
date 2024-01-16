@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
@@ -32,7 +32,7 @@ object ProcessCompilerData {
       resultsCollector: ResultCollector,
       componentUseCase: ComponentUseCase,
       customProcessValidator: CustomProcessValidator,
-      postponedLazyParametersEvaluator: Boolean = false
+      nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
   ): ProcessCompilerData = {
     val servicesDefs = definitionWithTypes.modelDefinition.components
       .filter(_._1.`type` == ComponentType.Service)
@@ -57,7 +57,7 @@ object ProcessCompilerData {
       listeners,
       resultsCollector,
       componentUseCase,
-      postponedLazyParametersEvaluator
+      nonServicesLazyParamStrategy
     )
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     val processCompiler = new ProcessCompiler(

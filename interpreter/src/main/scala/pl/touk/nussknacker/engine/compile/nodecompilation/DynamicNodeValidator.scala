@@ -28,6 +28,8 @@ class DynamicNodeValidator(
     parameterEvaluator: ParameterEvaluator
 ) {
 
+  private implicit val lazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
+
   def validateNode(
       component: GenericNodeTransformation[_],
       parametersFromNode: List[NodeParameter],
@@ -213,7 +215,6 @@ object DynamicNodeValidator {
       new ParameterEvaluator(
         globalVariablesPreparer,
         Seq.empty,
-        postponedLazyParametersEvaluator = false
       )
     )
   }

@@ -57,7 +57,7 @@ class NodeDataValidator(modelData: ModelData) {
     Seq.empty,
     PreventInvocationCollector,
     ComponentUseCase.Validation,
-    postponedLazyParametersEvaluator = false
+    nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )
 
   def validate(

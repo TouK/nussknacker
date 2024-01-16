@@ -1126,10 +1126,9 @@ object InterpreterSpec {
         param: String
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(params: Map[String, Any])(
+      override def invokeService(context: Context, params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
         Future.successful(param)
@@ -1154,10 +1153,9 @@ object InterpreterSpec {
         lazyOne.returnType, {
           if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
           new ServiceInvoker {
-            override def invokeService(params: Map[String, Any])(
+            override def invokeService(context: Context, params: Map[String, Any])(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
-                contextId: ContextId,
                 componentUseCase: ComponentUseCase
             ): Future[AnyRef] = {
               Future.successful(params("lazy").asInstanceOf[AnyRef])
@@ -1202,10 +1200,9 @@ object InterpreterSpec {
       val paramName = staticParam.extractValue(params)
 
       new ServiceInvoker {
-        override def invokeService(params: Map[String, Any])(
+        override def invokeService(context: Context, params: Map[String, Any])(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
-            contextId: ContextId,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
           Future.successful(params(paramName).asInstanceOf[AnyRef])

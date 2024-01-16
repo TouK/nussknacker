@@ -79,7 +79,7 @@ class NodeCompiler(
     listeners: Seq[ProcessListener],
     resultCollector: ResultCollector,
     componentUseCase: ComponentUseCase,
-    postponedLazyParametersEvaluator: Boolean
+    nonServicesLazyParamStrategy: LazyParameterCreationStrategy
 ) {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
@@ -91,7 +91,7 @@ class NodeCompiler(
       listeners,
       resultCollector,
       componentUseCase,
-      postponedLazyParametersEvaluator
+      nonServicesLazyParamStrategy
     )
   }
 
@@ -103,7 +103,7 @@ class NodeCompiler(
     definitions.expressionConfig
 
   private val parametersEvaluator =
-    new ParameterEvaluator(globalVariablesPreparer, listeners, postponedLazyParametersEvaluator)
+    new ParameterEvaluator(globalVariablesPreparer, listeners)
   private val factory = new ComponentExecutorFactory(parametersEvaluator)
   private val dynamicNodeValidator =
     new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator)
@@ -552,7 +552,8 @@ class NodeCompiler(
             compiledParameters,
             outputVariableNameOpt,
             additionalDependencies,
-            componentUseCase
+            componentUseCase,
+            nonServicesLazyParamStrategy
           )
           .map { componentExecutor =>
             val typingInfo = compiledParameters.flatMap {

@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
+import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
@@ -86,7 +87,7 @@ class FlinkProcessCompilerDataFactory(
         resultCollector,
         componentUseCase,
         customProcessValidator,
-        postponedLazyParametersEvaluator = true
+        nonServicesLazyParamStrategy = LazyParameterCreationStrategy.postponed
       )
 
     new FlinkProcessCompilerData(
