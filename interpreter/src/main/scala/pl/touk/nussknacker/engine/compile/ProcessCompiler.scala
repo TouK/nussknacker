@@ -348,6 +348,7 @@ object ProcessValidator {
       fragmentDefinitionExtractor,
       expressionCompiler,
       classLoader,
+      Seq.empty,
       PreventInvocationCollector,
       ComponentUseCase.Validation,
       postponedLazyParametersEvaluator = false

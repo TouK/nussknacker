@@ -38,6 +38,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     fragmentComponentDefinitionExtractor,
     expressionCompiler,
     modelData.modelClassLoader.classLoader,
+    Seq.empty,
     ProductionServiceInvocationCollector,
     ComponentUseCase.TestDataGeneration,
     postponedLazyParametersEvaluator = false

@@ -3,13 +3,21 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator, postponedLazyParametersEvaluator: Boolean) {
+class ParameterEvaluator(
+    globalVariablesPreparer: GlobalVariablesPreparer,
+    listeners: Seq[ProcessListener],
+    postponedLazyParametersEvaluator: Boolean
+) {
+
+  private val compileTimeExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
+  private val runtimeExpressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
 
   private val contextToUse: Context = Context("objectCreate")
 
@@ -76,7 +84,7 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator, postponedLazy
     } else {
       new InstantExpressionLazyParameter(
         CompiledParameter(exprValue, definition),
-        expressionEvaluator,
+        runtimeExpressionEvaluator,
         nodeId,
         processMetaData
       )
@@ -87,7 +95,7 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator, postponedLazy
       param: CompiledParameter,
       ctx: Context
   )(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
-    expressionEvaluator.evaluateParameter(param, ctx).value
+    compileTimeExpressionEvaluator.evaluateParameter(param, ctx).value
   }
 
 }

@@ -76,6 +76,7 @@ class NodeCompiler(
     fragmentDefinitionExtractor: FragmentCompleteDefinitionExtractor,
     expressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
+    listeners: Seq[ProcessListener],
     resultCollector: ResultCollector,
     componentUseCase: ComponentUseCase,
     postponedLazyParametersEvaluator: Boolean
@@ -87,6 +88,7 @@ class NodeCompiler(
       fragmentDefinitionExtractor,
       expressionCompiler.withExpressionParsers(modify),
       classLoader,
+      listeners,
       resultCollector,
       componentUseCase,
       postponedLazyParametersEvaluator
@@ -100,10 +102,9 @@ class NodeCompiler(
   private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
     definitions.expressionConfig
 
-  private val expressionEvaluator =
-    ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
-  private val parametersEvaluator = new ParameterEvaluator(expressionEvaluator, postponedLazyParametersEvaluator)
-  private val factory             = new ComponentExecutorFactory(parametersEvaluator)
+  private val parametersEvaluator =
+    new ParameterEvaluator(globalVariablesPreparer, listeners, postponedLazyParametersEvaluator)
+  private val factory = new ComponentExecutorFactory(parametersEvaluator)
   private val dynamicNodeValidator =
     new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator)
   private val builtInNodeCompiler = new BuiltInNodeCompiler(expressionCompiler)

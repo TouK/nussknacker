@@ -54,6 +54,7 @@ class NodeDataValidator(modelData: ModelData) {
     ),
     expressionCompiler,
     modelData.modelClassLoader.classLoader,
+    Seq.empty,
     PreventInvocationCollector,
     ComponentUseCase.Validation,
     postponedLazyParametersEvaluator = false

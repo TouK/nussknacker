@@ -54,6 +54,7 @@ object ProcessCompilerData {
       fragmentDefinitionExtractor,
       expressionCompiler,
       userCodeClassLoader,
+      listeners,
       resultsCollector,
       componentUseCase,
       postponedLazyParametersEvaluator

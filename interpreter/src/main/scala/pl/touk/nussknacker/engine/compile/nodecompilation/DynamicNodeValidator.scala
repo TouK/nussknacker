@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
@@ -212,7 +211,8 @@ object DynamicNodeValidator {
       ExpressionCompiler.withoutOptimization(modelData),
       globalVariablesPreparer,
       new ParameterEvaluator(
-        ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer),
+        globalVariablesPreparer,
+        Seq.empty,
         postponedLazyParametersEvaluator = false
       )
     )
