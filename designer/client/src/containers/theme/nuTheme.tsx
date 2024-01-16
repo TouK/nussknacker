@@ -302,6 +302,35 @@ export const nuTheme = createTheme({
         MuiCssBaseline: {
             styleOverrides: globalStyles,
         },
+        MuiFormControl: {
+            styleOverrides: {
+                root: {
+                    display: "flex",
+                    flexDirection: "row",
+                },
+            },
+        },
+        MuiFormLabel: {
+            styleOverrides: {
+                root: {
+                    color: custom.colors.canvasBackground,
+                    flexBasis: "20%",
+                    maxWidth: "20em",
+                    verticalAlign: "sub",
+                    marginTop: "9px",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                },
+            },
+        },
+        MuiFormHelperText: {
+            styleOverrides: {
+                root: {
+                    marginLeft: 0,
+                    color: custom.colors.success,
+                },
+            },
+        },
     },
     custom,
 });
