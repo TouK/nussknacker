@@ -79,7 +79,7 @@ object SourceFactory {
     @MethodToInvoke
     def create()(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
       .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, inputType, None))
-      .implementedBy(createSource(nodeId))
+      .withLogic(createSource(nodeId))
 
     override def typesToExtract: List[typing.TypedClass] = List(inputType).collect { case single: SingleTypingResult =>
       single.objType

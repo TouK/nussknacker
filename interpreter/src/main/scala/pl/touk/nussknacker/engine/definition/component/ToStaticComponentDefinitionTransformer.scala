@@ -16,8 +16,8 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, ParameterEvaluator}
 import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer.staticReturnType
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -34,15 +34,15 @@ class ToStaticComponentDefinitionTransformer(
 ) extends LazyLogging {
 
   def toStaticComponentDefinition(
-      componentDefWithImpl: ComponentDefinitionWithImplementation
+      componentDefWithImpl: ComponentDefinitionWithLogic
   ): ComponentStaticDefinition = {
     componentDefWithImpl match {
-      case standard: MethodBasedComponentDefinitionWithImplementation => standard.staticDefinition
-      case dynamic: DynamicComponentDefinitionWithImplementation =>
+      case standard: MethodBasedComponentDefinitionWithLogic => standard.staticDefinition
+      case dynamic: DynamicComponentDefinitionWithLogic =>
         val parameters = determineInitialParameters(dynamic)
         ComponentStaticDefinition(
           parameters,
-          staticReturnType(dynamic.implementation),
+          staticReturnType(dynamic.component),
           dynamic.componentConfig,
           dynamic.originalGroupName,
           dynamic.componentTypeSpecificData
@@ -50,7 +50,7 @@ class ToStaticComponentDefinitionTransformer(
     }
   }
 
-  private def determineInitialParameters(dynamic: DynamicComponentDefinitionWithImplementation): List[Parameter] = {
+  private def determineInitialParameters(dynamic: DynamicComponentDefinitionWithLogic): List[Parameter] = {
     def inferParameters(transformer: GenericNodeTransformation[_])(inputContext: transformer.InputContext) = {
       // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
       //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
@@ -62,7 +62,7 @@ class ToStaticComponentDefinitionTransformer(
           transformer,
           Nil,
           Nil,
-          if (dynamic.implementation.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
+          if (dynamic.component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
           else None,
           dynamic.componentConfig
         )(inputContext)
@@ -77,7 +77,7 @@ class ToStaticComponentDefinitionTransformer(
         }
     }
 
-    dynamic.implementation match {
+    dynamic.component match {
       case withStatic: WithStaticParameters =>
         StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.componentConfig)
       case single: SingleInputGenericNodeTransformation[_] =>

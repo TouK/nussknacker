@@ -222,7 +222,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     )
   }
 
-  override def implementation(
+  override def runLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[TransformationState]

@@ -10,16 +10,13 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  ComponentImplementationInvoker
-}
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithLogic, ComponentLogic}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
-import pl.touk.nussknacker.engine.process.compiler.StubbedComponentImplementationInvoker.returnType
+import pl.touk.nussknacker.engine.process.compiler.StubbedComponentLogic.returnType
 import shapeless.syntax.typeable.typeableOps
 
 abstract class StubbedFlinkProcessCompilerDataFactory(
@@ -40,9 +37,9 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
   import pl.touk.nussknacker.engine.util.Implicits._
 
   override protected def adjustDefinitions(
-      originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+      originalModelDefinition: ModelDefinition[ComponentDefinitionWithLogic],
       definitionContext: ComponentDefinitionContext
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+  ): ModelDefinition[ComponentDefinitionWithLogic] = {
     val collectedSources = process.allStartNodes.map(_.head.data).collect { case source: Source =>
       source
     }
@@ -84,30 +81,28 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
   }
 
   protected def prepareService(
-      service: ComponentDefinitionWithImplementation,
+      service: ComponentDefinitionWithLogic,
       context: ComponentDefinitionContext
-  ): ComponentDefinitionWithImplementation
+  ): ComponentDefinitionWithLogic
 
   protected def prepareSourceFactory(
-      sourceFactory: ComponentDefinitionWithImplementation,
+      sourceFactory: ComponentDefinitionWithLogic,
       context: ComponentDefinitionContext
-  ): ComponentDefinitionWithImplementation
+  ): ComponentDefinitionWithLogic
 
 }
 
-abstract class StubbedComponentImplementationInvoker(
-    original: ComponentImplementationInvoker,
-    originalDefinitionReturnType: Option[TypingResult]
-) extends ComponentImplementationInvoker {
+abstract class StubbedComponentLogic(original: ComponentLogic, originalDefinitionReturnType: Option[TypingResult])
+    extends ComponentLogic {
 
-  def this(componentDefinitionWithImpl: ComponentDefinitionWithImplementation) = {
+  def this(componentDefinitionWithImpl: ComponentDefinitionWithLogic) = {
     this(
-      componentDefinitionWithImpl.implementationInvoker,
+      componentDefinitionWithImpl.componentLogic,
       returnType(componentDefinitionWithImpl)
     )
   }
 
-  override def invokeMethod(
+  override final def run(
       params: Map[String, Any],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef]
@@ -128,26 +123,26 @@ abstract class StubbedComponentImplementationInvoker(
         }
         .getOrElse(throw new IllegalArgumentException("Node id is missing in additional parameters"))
 
-      handleInvoke(impl, typingResult, nodeId)
+      handleRun(impl, typingResult, nodeId)
     }
 
-    val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
+    val originalValue = original.run(params, outputVariableNameOpt, additional)
     originalValue match {
       case contextTransformation: ContextTransformation =>
-        contextTransformation.copy(implementation = transform(contextTransformation.implementation))
+        contextTransformation.copy(logic = transform(contextTransformation.logic))
       case componentExecutor => transform(componentExecutor)
     }
   }
 
-  def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any
+  def handleRun(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any
 }
 
-object StubbedComponentImplementationInvoker {
+object StubbedComponentLogic {
 
-  private def returnType(componentDefinitionWithImpl: ComponentDefinitionWithImplementation): Option[TypingResult] = {
+  private def returnType(componentDefinitionWithImpl: ComponentDefinitionWithLogic): Option[TypingResult] = {
     componentDefinitionWithImpl match {
-      case methodBasedDefinition: MethodBasedComponentDefinitionWithImplementation => methodBasedDefinition.returnType
-      case _: DynamicComponentDefinitionWithImplementation                         => None
+      case methodBasedDefinition: MethodBasedComponentDefinitionWithLogic => methodBasedDefinition.returnType
+      case _: DynamicComponentDefinitionWithLogic                         => None
     }
   }
 

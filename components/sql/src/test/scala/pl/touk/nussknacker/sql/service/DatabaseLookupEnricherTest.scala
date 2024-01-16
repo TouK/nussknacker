@@ -49,7 +49,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       contextId = ContextId(context.id),
       componentUseCase = componentUseCase
     )
-    val serviceLogic = service.implementation(Map(), dependencies = Nil, Some(state))
+    val serviceLogic = service.runLogic(Map(), dependencies = Nil, Some(state))
     val paramsEvaluator = ParamsEvaluator.create(
       context,
       _ => Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)

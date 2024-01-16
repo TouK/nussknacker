@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinitionSet,
   StaticMethodDefinition
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -118,7 +118,7 @@ class ExpressionSuggesterSpec
     )
   )
 
-  private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
+  private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithLogic] =
     ModelDefinitionBuilder.empty
       .withGlobalVariable("util", new Util)
       .build

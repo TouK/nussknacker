@@ -39,7 +39,7 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       contextId = ContextId(context.id),
       componentUseCase = componentUseCase
     )
-    val serviceLogic    = service.implementation(Map.empty, dependencies = Nil, Some(state))
+    val serviceLogic    = service.runLogic(Map.empty, dependencies = Nil, Some(state))
     val paramsEvaluator = ParamsEvaluator.create(context, _ => Map("arg1" -> 1))
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
     val resultF = serviceLogic.run(paramsEvaluator)
@@ -72,7 +72,7 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       contextId = ContextId(context.id),
       componentUseCase = componentUseCase
     )
-    val serviceLogic    = service.implementation(Map.empty, dependencies = Nil, Some(state))
+    val serviceLogic    = service.runLogic(Map.empty, dependencies = Nil, Some(state))
     val paramsEvaluator = ParamsEvaluator.create(context, _ => Map("arg1" -> 1))
     returnType(service, state).display shouldBe "Integer"
     val resultF = serviceLogic.run(paramsEvaluator)

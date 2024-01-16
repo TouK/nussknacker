@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinition,
   ModelDefinitionExtractor,
@@ -26,7 +26,7 @@ import java.net.URL
 object ModelData extends LazyLogging {
 
   type ExtractDefinitionFun =
-    (ClassLoader, ProcessObjectDependencies) => ModelDefinition[ComponentDefinitionWithImplementation]
+    (ClassLoader, ProcessObjectDependencies) => ModelDefinition[ComponentDefinitionWithLogic]
 
   def apply(processingTypeConfig: ProcessingTypeConfig): ModelData = {
     ModelData(
@@ -114,7 +114,7 @@ object ClassLoaderModelData {
     override def apply(
         classLoader: ClassLoader,
         modelDependencies: ProcessObjectDependencies
-    ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+    ): ModelDefinition[ComponentDefinitionWithLogic] = {
       ModelDefinitionExtractor.extractModelDefinition(
         configCreator,
         classLoader,
@@ -147,7 +147,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // See parameters of implementing functions
   def extractModelDefinitionFun: ExtractDefinitionFun
 
-  final def modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation] =
+  final def modelDefinition: ModelDefinition[ComponentDefinitionWithLogic] =
     modelDefinitionWithClasses.modelDefinition
 
   private lazy val dictServicesFactory: DictServicesFactory =

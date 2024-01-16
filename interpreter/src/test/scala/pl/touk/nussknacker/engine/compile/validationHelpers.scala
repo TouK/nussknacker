@@ -54,7 +54,7 @@ object validationHelpers {
     def execute(@OutputVariableName variableName: String)(implicit nodeId: NodeId) = {
       ContextTransformation
         .definedBy(_.withVariable(variableName, Typed[String], paramName = None))
-        .implementedBy(null)
+        .withLogic(null)
     }
 
   }
@@ -65,7 +65,7 @@ object validationHelpers {
     def execute() = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .implementedBy(null)
+        .withLogic(null)
     }
 
   }
@@ -83,7 +83,7 @@ object validationHelpers {
           }.toMap)
           context.withVariable(variableName, newType, paramName = None)
         }
-        .implementedBy(null)
+        .withLogic(null)
     }
 
   }
@@ -105,7 +105,7 @@ object validationHelpers {
           }.toMap)
           Valid(ValidationContext(Map(variableName -> newType)))
         }
-        .implementedBy(null)
+        .withLogic(null)
     }
 
   }
@@ -136,7 +136,7 @@ object validationHelpers {
             mainBranchContext.withVariable(variableName, newType, paramName = None)
           }
         }
-        .implementedBy(null)
+        .withLogic(null)
     }
 
   }
@@ -147,7 +147,7 @@ object validationHelpers {
     def execute(@ParamName("stringVal") stringVal: String): ContextTransformation = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .implementedBy(null)
+        .withLogic(null)
     }
 
     override def canBeEnding: Boolean = false
@@ -189,7 +189,7 @@ object validationHelpers {
             case _          => Invalid(CustomNodeError("Validation contexts do not match", Option.empty)).toValidatedNel
           }
         })
-        .implementedBy(null)
+        .withLogic(null)
     }
 
   }
@@ -206,7 +206,7 @@ object validationHelpers {
       NextParameters(Parameter[String]("param1") :: Nil)
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -261,7 +261,7 @@ object validationHelpers {
         FinalResults(context, state = Some(Invalid(())))
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -280,7 +280,7 @@ object validationHelpers {
       finalResult(context, rest, "otherNameThanInput")
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -302,7 +302,7 @@ object validationHelpers {
 
   class GenericParametersSourceNoTestSupport extends GenericParametersSource {
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -316,7 +316,7 @@ object validationHelpers {
 
   class GenericParametersSourceNoGenerate extends GenericParametersSource {
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -331,7 +331,7 @@ object validationHelpers {
 
   class SourceWithTestParameters extends GenericParametersSource {
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -467,7 +467,7 @@ object validationHelpers {
       prepareFinalResultWithOptionalVariable(context, Some((name, result)), None)
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -510,7 +510,7 @@ object validationHelpers {
         FinalResults(context, state = Some(extraParamValue))
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -565,7 +565,7 @@ object validationHelpers {
 
     private def right(byBranch: Map[String, Boolean]): String = byBranch.find(!_._2).get._1
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -584,7 +584,7 @@ object validationHelpers {
       NextParameters(Nil)
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]

@@ -3,17 +3,17 @@ package pl.touk.nussknacker.engine.definition.component
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
-  DynamicComponentDefinitionWithImplementation,
-  DynamicComponentImplementationInvoker
+  DynamicComponentDefinitionWithLogic,
+  DynamicComponentLogic
 }
 import pl.touk.nussknacker.engine.definition.component.methodbased.{
-  MethodBasedComponentDefinitionWithImplementation,
-  MethodBasedComponentImplementationInvoker,
+  MethodBasedComponentDefinitionWithLogic,
+  MethodBasedComponentLogic,
   MethodDefinition,
   MethodDefinitionExtractor
 }
@@ -29,7 +29,7 @@ object ComponentDefinitionExtractor {
   def extract(
       inputComponentDefinition: ComponentDefinition,
       additionalConfigs: ComponentsUiConfig
-  ): Option[(String, ComponentDefinitionWithImplementation)] = {
+  ): Option[(String, ComponentDefinitionWithLogic)] = {
     val configBasedOnDefinition = SingleComponentConfig.zero
       .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
     ComponentDefinitionExtractor
@@ -47,7 +47,7 @@ object ComponentDefinitionExtractor {
       component: Component,
       configFromDefinition: SingleComponentConfig,
       additionalConfigs: ComponentsUiConfig
-  ): Option[ComponentDefinitionWithImplementation] = {
+  ): Option[ComponentDefinitionWithLogic] = {
     val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
       component match {
         case _: SourceFactory => (MethodDefinitionExtractor.Source, SourceSpecificData)
@@ -75,12 +75,12 @@ object ComponentDefinitionExtractor {
 
     (component match {
       case e: GenericNodeTransformation[_] =>
-        val implementationInvoker = new DynamicComponentImplementationInvoker(e)
+        val logic = new DynamicComponentLogic(e)
         Right(
           withConfigForNotDisabledComponent(ToStaticComponentDefinitionTransformer.staticReturnType(e)) {
             case ConfigWithOriginalGroupName(componentConfig, originalGroupName) =>
-              DynamicComponentDefinitionWithImplementation(
-                implementationInvoker,
+              DynamicComponentDefinitionWithLogic(
+                logic,
                 e,
                 componentConfig,
                 originalGroupName,
@@ -106,9 +106,9 @@ object ComponentDefinitionExtractor {
                   originalGroupName,
                   componentTypeSpecificData
                 )
-                val implementationInvoker = extractImplementationInvoker(component, methodDef)
-                MethodBasedComponentDefinitionWithImplementation(
-                  implementationInvoker,
+                val logic = extractComponentLogic(component, methodDef)
+                MethodBasedComponentDefinitionWithLogic(
+                  logic,
                   component,
                   staticDefinition
                 )
@@ -118,17 +118,14 @@ object ComponentDefinitionExtractor {
 
   }
 
-  private def extractImplementationInvoker(
-      component: Component,
-      methodDef: MethodDefinition
-  ): ComponentImplementationInvoker = {
-    val invoker = new MethodBasedComponentImplementationInvoker(component, methodDef)
+  private def extractComponentLogic(component: Component, methodDef: MethodDefinition): ComponentLogic = {
+    val logic = new MethodBasedComponentLogic(component, methodDef)
     if (component.isInstanceOf[Service] && classOf[CompletionStage[_]].isAssignableFrom(methodDef.runtimeClass)) {
-      invoker.transformResult { completionStage =>
+      logic.transform { completionStage =>
         FutureConverters.toScala(completionStage.asInstanceOf[CompletionStage[_]])
       }
     } else {
-      invoker
+      logic
     }
   }
 

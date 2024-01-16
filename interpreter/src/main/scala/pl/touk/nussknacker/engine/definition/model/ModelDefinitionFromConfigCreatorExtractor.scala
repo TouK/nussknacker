@@ -7,10 +7,7 @@ import pl.touk.nussknacker.engine.api.process.{
   ProcessObjectDependencies,
   WithCategories
 }
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionExtractor,
-  ComponentDefinitionWithImplementation
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionExtractor, ComponentDefinitionWithLogic}
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
   GlobalVariableDefinitionExtractor
@@ -24,7 +21,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       categoryOpt: Option[String],
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+  ): ModelDefinition[ComponentDefinitionWithLogic] = {
 
     val sourceFactories          = creator.sourceFactories(modelDependencies).toList
     val sinkFactories            = creator.sinkFactories(modelDependencies).toList
@@ -38,7 +35,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
 
     val settings = creator.classExtractionSettings(modelDependencies)
 
-    ModelDefinition[ComponentDefinitionWithImplementation](
+    ModelDefinition[ComponentDefinitionWithLogic](
       components,
       toDefinition(expressionConfig, categoryOpt),
       settings
@@ -49,7 +46,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       components: List[(String, WithCategories[Component])],
       categoryOpt: Option[String],
       componentsUiConfig: ComponentsUiConfig
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+  ): List[(String, ComponentDefinitionWithLogic)] = {
     collectAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component, componentConfig) =>
       ComponentDefinitionExtractor
         .extract(componentName, component, componentConfig, componentsUiConfig)
@@ -60,7 +57,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
   private def toDefinition(
       expressionConfig: ExpressionConfig,
       categoryOpt: Option[String],
-  ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] = {
+  ): ExpressionConfigDefinition[ComponentDefinitionWithLogic] = {
     val filteredVariables = collectAvailableForCategory(expressionConfig.globalProcessVariables.toList, categoryOpt)
     val variables = filteredVariables.map { case (name, variable, _) =>
       name -> GlobalVariableDefinitionExtractor.extractDefinition(variable)

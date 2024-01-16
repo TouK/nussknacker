@@ -61,7 +61,7 @@ object DynamicMultipleParamsService extends EagerService with SingleInputGeneric
       FinalResults(context)
   }
 
-  override def implementation(
+  override def runLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

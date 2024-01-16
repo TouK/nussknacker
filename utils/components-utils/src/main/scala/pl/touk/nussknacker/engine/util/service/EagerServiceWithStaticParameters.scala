@@ -43,7 +43,7 @@ trait EagerServiceWithStaticParameters
 
   def hasOutput: Boolean
 
-  def serviceImplementation(
+  def serviceLogic(
       eagerParameters: Map[String, Any],
       typingResult: TypingResult,
       metaData: MetaData
@@ -69,12 +69,12 @@ trait EagerServiceWithStaticParameters
   override def nodeDependencies: List[NodeDependency] =
     if (hasOutput) List(OutputVariableNameDependency, metaData) else List(metaData)
 
-  override def implementation(
+  override def runLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[TypingResult]
   ): ServiceLogic = {
-    serviceImplementation(
+    serviceLogic(
       params.filterNot(_._2.isInstanceOf[LazyParameter[_]]),
       finalState.getOrElse(Unknown),
       metaData.extract(dependencies)
@@ -97,7 +97,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       paramsEvaluator: ParamsEvaluator
   )(implicit runContext: RunContext, metaData: MetaData, executionContext: ExecutionContext): Future[Any]
 
-  override def serviceImplementation(
+  override def serviceLogic(
       eagerParameters: Map[String, Any],
       typingResult: TypingResult,
       metaData: MetaData

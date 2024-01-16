@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.ServiceLogic.{FunctionBasedParamsEvaluator
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.util.definition.WithJobData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -26,7 +26,7 @@ class MethodBasedServiceLogicTest extends AnyFlatSpec with PatientScalaFutures w
 
   it should "invoke service method with declared parameters as scala params" in {
     val mock       = new MockService(jobData)
-    val definition = ComponentDefinitionWithImplementation.withEmptyConfig(mock)
+    val definition = ComponentDefinitionWithLogic.withEmptyConfig(mock)
     implicit val runContext: RunContext = RunContext(
       collector = EmptyInvocationCollector.Instance,
       contextId = ContextId(ctx.id),
@@ -42,7 +42,7 @@ class MethodBasedServiceLogicTest extends AnyFlatSpec with PatientScalaFutures w
 
   it should "throw excpetion with nice message when parameters do not match" in {
     val mock       = new MockService(jobData)
-    val definition = ComponentDefinitionWithImplementation.withEmptyConfig(mock)
+    val definition = ComponentDefinitionWithLogic.withEmptyConfig(mock)
     implicit val runContext: RunContext = RunContext(
       collector = EmptyInvocationCollector.Instance,
       contextId = ContextId(ctx.id),

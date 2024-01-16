@@ -81,7 +81,7 @@ object ProcessCompilerData {
       LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
       interpreter,
       listeners,
-      servicesDefs.map { case (info, servicesDef) => info.name -> servicesDef.implementation.asInstanceOf[Lifecycle] }
+      servicesDefs.map { case (info, servicesDef) => info.name -> servicesDef.component.asInstanceOf[Lifecycle] }
     )
 
   }

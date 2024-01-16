@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
@@ -49,7 +49,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
   private val modelDefinition = ModelDefinition(
-    ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+    ComponentDefinitionWithLogic.forList(components, ComponentsUiConfig.Empty),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default
   )

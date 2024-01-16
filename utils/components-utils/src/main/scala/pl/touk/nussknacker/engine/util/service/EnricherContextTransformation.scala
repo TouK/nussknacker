@@ -25,7 +25,7 @@ object EnricherContextTransformation {
   )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
       .definedBy(vc => returnType.andThen(rt => vc.withVariable(OutputVar.enricher(outputVariableName), rt)))
-      .implementedBy(implementation)
+      .withLogic(implementation)
   }
 
 }

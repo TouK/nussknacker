@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process.{
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
   FragmentWithoutValidatorsDefinitionExtractor
@@ -29,7 +29,7 @@ class StubbedFragmentSourceDefinitionPreparer(
     fragmentDefinitionExtractor: FragmentWithoutValidatorsDefinitionExtractor
 ) {
 
-  def createSourceDefinition(frag: FragmentInputDefinition): MethodBasedComponentDefinitionWithImplementation = {
+  def createSourceDefinition(frag: FragmentInputDefinition): MethodBasedComponentDefinitionWithLogic = {
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
     val staticDefinition = FragmentComponentDefinition(
       // We don't want to pass input  parameters definition as parameters to definition of factory creating stubbed source because
@@ -38,7 +38,7 @@ class StubbedFragmentSourceDefinitionPreparer(
       outputNames = List.empty,
       docsUrl = None
     )
-    MethodBasedComponentDefinitionWithImplementation(
+    MethodBasedComponentDefinitionWithLogic(
       (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
       null,
       staticDefinition

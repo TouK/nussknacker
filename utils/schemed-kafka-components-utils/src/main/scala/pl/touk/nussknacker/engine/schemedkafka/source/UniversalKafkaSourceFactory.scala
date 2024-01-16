@@ -148,7 +148,7 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
-  override def implementation(
+  override def runLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

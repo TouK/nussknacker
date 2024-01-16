@@ -37,7 +37,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     )
     components should have size 7
     components.map(_._1) should contain theSameElementsAs (1 to 7).map(i => s"component-v$i")
-    components.map(_._2.implementation) should contain theSameElementsAs (1 to 7).map(i => DynamicService(s"v$i"))
+    components.map(_._2.component) should contain theSameElementsAs (1 to 7).map(i => DynamicService(s"v$i"))
   }
 
   test("should handle multiple providers") {
@@ -52,7 +52,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     val expectedNames = (1 to 2).map(i => s"component-v$i") ++ (1 to 3).map(i => s"t1-component-v$i")
     components.map(_._1) should contain theSameElementsAs expectedNames
     val expectedServices = (1 to 2).map(i => DynamicService(s"v$i")) ++ (1 to 3).map(i => DynamicService(s"v$i"))
-    components.map(_._2.implementation) should contain theSameElementsAs expectedServices
+    components.map(_._2.component) should contain theSameElementsAs expectedServices
   }
 
   test("should discover components with same name and different component type for same provider") {
@@ -65,7 +65,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
 
     components.size shouldBe 2
     components.map(_._1) shouldBe List("component", "component")
-    val implementations = components.map(_._2.implementation)
+    val implementations = components.map(_._2.component)
     implementations.head shouldBe a[Service]
     implementations(1) shouldBe a[SinkFactory]
   }
@@ -98,7 +98,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     components should have size 1
     val (componentName, component) = components.head
     componentName shouldBe "auto-component"
-    component.implementation shouldBe AutoService
+    component.component shouldBe AutoService
   }
 
   test("should skip incompatible auto loadable providers") {
@@ -140,7 +140,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
 
   private def extractComponents(
       map: (String, Any)*
-  ): List[(String, ComponentDefinitionWithImplementation)] =
+  ): List[(String, ComponentDefinitionWithLogic)] =
     extractComponents(map.toMap, ComponentsFromProvidersExtractor(_))
 
   private def extractComponents(

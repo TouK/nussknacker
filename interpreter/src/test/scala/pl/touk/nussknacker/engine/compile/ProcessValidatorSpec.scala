@@ -19,10 +19,7 @@ import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  CustomComponentSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithLogic, CustomComponentSpecificData}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
@@ -1200,7 +1197,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val failingDefinition = base
       .transform {
         case component if component.componentType == ComponentType.Source =>
-          component.withImplementationInvoker((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
+          component.withComponentLogic((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
             throw new RuntimeException("You passed incorrect parameter, cannot proceed")
           })
         case other => other
@@ -1225,7 +1222,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val base = baseDefinition
     val withServiceRef = base.withComponent(
       "returningTypeService",
-      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceReturningTypeSample)
+      ComponentDefinitionWithLogic.withEmptyConfig(ServiceReturningTypeSample)
     )
 
     val process =
@@ -1254,7 +1251,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val base = baseDefinition
     val withServiceRef = base.withComponent(
       "returningTypeService",
-      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceReturningTypeWithExplicitMethodSample)
+      ComponentDefinitionWithLogic.withEmptyConfig(ServiceReturningTypeWithExplicitMethodSample)
     )
 
     val process =
@@ -1282,7 +1279,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val base = baseDefinition
     val withServiceRef = base.withComponent(
       "withCustomValidation",
-      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceWithCustomValidation)
+      ComponentDefinitionWithLogic.withEmptyConfig(ServiceWithCustomValidation)
     )
 
     val process =
@@ -1599,7 +1596,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   private def validate(
       process: CanonicalProcess,
-      definitions: ModelDefinition[ComponentDefinitionWithImplementation]
+      definitions: ModelDefinition[ComponentDefinitionWithLogic]
   ): CompilationResult[Unit] = {
     ProcessValidator
       .default(
@@ -1681,7 +1678,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       )
     }
 
-    override def serviceImplementation(
+    override def serviceLogic(
         eagerParameters: Map[String, Any],
         typingResult: TypingResult,
         metaData: MetaData

@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -171,7 +171,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         additionalComponents
 
     val definitions = ModelDefinition(
-      ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+      ComponentDefinitionWithLogic.forList(components, ComponentsUiConfig.Empty),
       ModelDefinitionBuilder.emptyExpressionConfig.copy(
         languages = LanguageConfiguration(List(LiteralExpressionParser))
       ),
@@ -1185,7 +1185,7 @@ object InterpreterSpec {
         )
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[Nothing]

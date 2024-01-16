@@ -40,7 +40,7 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       contextId = ContextId(context.id),
       componentUseCase = componentUseCase
     )
-    val serviceLogic = service.implementation(
+    val serviceLogic = service.runLogic(
       params = Map(CacheTTLParamName -> java.time.Duration.ofDays(1)),
       dependencies = Nil,
       finalState = Some(state)

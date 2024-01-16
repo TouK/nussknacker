@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{
   ProcessConfigCreator,
   ProcessObjectDependencies
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionFromConfigCreatorExtractor}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{
@@ -57,9 +57,9 @@ object LocalModelData {
     override def apply(
         classLoader: ClassLoader,
         modelDependencies: ProcessObjectDependencies
-    ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+    ): ModelDefinition[ComponentDefinitionWithLogic] = {
       val componentsUiConfig    = ComponentsUiConfigParser.parse(modelDependencies.config)
-      val componentsDefWithImpl = ComponentDefinitionWithImplementation.forList(components, componentsUiConfig)
+      val componentsDefWithImpl = ComponentDefinitionWithLogic.forList(components, componentsUiConfig)
       // To avoid classloading magic, for local model we load components manually and skip ComponentProvider's loading
       ModelDefinitionFromConfigCreatorExtractor
         .extractModelDefinition(

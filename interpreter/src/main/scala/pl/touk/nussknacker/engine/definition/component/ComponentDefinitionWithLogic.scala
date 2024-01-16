@@ -8,33 +8,33 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 // into definition. Implementation should be mainly used via implementationInvoker which can be transformed
 // (e.g.) for purpose of stubbing.
 // TODO: This class currently is used also for global variables. We should rather extract some other class for them
-trait ComponentDefinitionWithImplementation extends BaseComponentDefinition {
+trait ComponentDefinitionWithLogic extends BaseComponentDefinition {
 
-  def implementationInvoker: ComponentImplementationInvoker
+  def componentLogic: ComponentLogic
 
   // For purpose of transforming (e.g.) stubbing of the implementation
-  def withImplementationInvoker(
-      implementationInvoker: ComponentImplementationInvoker
-  ): ComponentDefinitionWithImplementation
+  def withComponentLogic(
+      implementationInvoker: ComponentLogic
+  ): ComponentDefinitionWithLogic
 
   // TODO In should be of type Component, but currently this class is used also for global variables
-  def implementation: Any
+  def component: Any
 
   def componentTypeSpecificData: ComponentTypeSpecificData
 
 }
 
-object ComponentDefinitionWithImplementation {
+object ComponentDefinitionWithLogic {
 
   def forList(
       components: List[ComponentDefinition],
       additionalConfigs: ComponentsUiConfig
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+  ): List[(String, ComponentDefinitionWithLogic)] = {
     components.flatMap(ComponentDefinitionExtractor.extract(_, additionalConfigs))
   }
 
   // This method is mainly for the tests purpose. It doesn't take into an account additionalConfigs provided from the model configuration
-  def withEmptyConfig(component: Component): ComponentDefinitionWithImplementation = {
+  def withEmptyConfig(component: Component): ComponentDefinitionWithLogic = {
     ComponentDefinitionExtractor
       .extract("dumbName", component, SingleComponentConfig.zero, ComponentsUiConfig.Empty)
       .getOrElse(

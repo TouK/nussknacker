@@ -214,7 +214,7 @@ object CustomExtractor extends CustomStreamTransformer {
   )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
       .definedBy(ctx => ctx.withVariable(OutputVar.customNode(outputVariableName), expression.returnType))
-      .implementedBy(new CustomExtractor(outputVariableName, expression))
+      .withLogic(new CustomExtractor(outputVariableName, expression))
   }
 
 }

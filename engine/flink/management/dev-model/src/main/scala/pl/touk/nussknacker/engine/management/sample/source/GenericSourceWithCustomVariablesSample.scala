@@ -69,7 +69,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
       FinalResults.forValidation(context)(customContextInitializer.validationContext)
   }
 
-  override def implementation(
+  override def runLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

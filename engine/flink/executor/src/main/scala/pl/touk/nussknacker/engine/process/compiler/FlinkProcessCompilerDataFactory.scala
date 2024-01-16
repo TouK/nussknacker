@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
@@ -133,9 +133,9 @@ class FlinkProcessCompilerDataFactory(
   }
 
   protected def adjustDefinitions(
-      originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+      originalModelDefinition: ModelDefinition[ComponentDefinitionWithLogic],
       definitionContext: ComponentDefinitionContext
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = originalModelDefinition
+  ): ModelDefinition[ComponentDefinitionWithLogic] = originalModelDefinition
 
   private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {
     // we are loading DictServicesFactory on TaskManager side. It may be tricky because of class loaders...
@@ -172,6 +172,6 @@ case class ComponentDefinitionContext(
     userCodeClassLoader: ClassLoader,
     // below are for purpose of TestDataPreparer
     dictRegistry: EngineDictRegistry,
-    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
+    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithLogic],
     classDefinitions: ClassDefinitionSet
 )

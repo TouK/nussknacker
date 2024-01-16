@@ -304,16 +304,15 @@ object SampleNodes {
     ): ContextTransformation = {
       ContextTransformation
         .definedBy(Valid(_))
-        .implementedBy(FlinkCustomStreamTransformation {
-          (start: DataStream[Context], context: FlinkCustomNodeContext) =>
-            start
-              .filter(
-                new AbstractOneParamLazyParameterFunction(input, context.lazyParameterHelper)
-                  with FilterFunction[Context] {
-                  override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
-                }
-              )
-              .map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
+        .withLogic(FlinkCustomStreamTransformation { (start: DataStream[Context], context: FlinkCustomNodeContext) =>
+          start
+            .filter(
+              new AbstractOneParamLazyParameterFunction(input, context.lazyParameterHelper)
+                with FilterFunction[Context] {
+                override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
+              }
+            )
+            .map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
         })
     }
 
@@ -325,7 +324,7 @@ object SampleNodes {
     def execute(@ParamName("value") value: LazyParameter[String]) = {
       ContextTransformation
         .definedBy((in: context.ValidationContext) => Valid(in.clearVariables))
-        .implementedBy(
+        .withLogic(
           FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
             start
               .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
@@ -348,7 +347,7 @@ object SampleNodes {
         .definedBy((in: Map[String, context.ValidationContext]) =>
           in.head._2.clearVariables.withVariable(outputVarName, Unknown, None)
         )
-        .implementedBy(new FlinkCustomJoinTransformation {
+        .withLogic(new FlinkCustomJoinTransformation {
           override def transform(
               inputs: Map[String, DataStream[Context]],
               context: FlinkCustomNodeContext
@@ -380,7 +379,7 @@ object SampleNodes {
           val parent  = contexts.values.flatMap(_.parent).headOption
           Valid(ValidationContext(Map(variableName -> newType), Map.empty, parent))
         }
-        .implementedBy(new FlinkCustomJoinTransformation {
+        .withLogic(new FlinkCustomJoinTransformation {
 
           override def transform(
               inputs: Map[String, DataStream[Context]],
@@ -492,7 +491,7 @@ object SampleNodes {
     ) = {
       ContextTransformation
         .definedBy((in: context.ValidationContext) => in.clearVariables.withVariable(outputVarName, Typed[Int], None))
-        .implementedBy(
+        .withLogic(
           FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
             start
               .map(_ => 1: java.lang.Integer)
@@ -654,7 +653,7 @@ object SampleNodes {
       }
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -694,7 +693,7 @@ object SampleNodes {
         .valueOr(errors => FinalResults(context, errors.toList))
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -760,7 +759,7 @@ object SampleNodes {
       FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), Typed[String]))
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -829,7 +828,7 @@ object SampleNodes {
         FinalResults.forValidation(context)(customContextInitializer.validationContext)
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -893,7 +892,7 @@ object SampleNodes {
       case TransformationStep(("value", _) :: ("type", _) :: ("version", _) :: Nil, None)     => FinalResults(context)
     }
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]

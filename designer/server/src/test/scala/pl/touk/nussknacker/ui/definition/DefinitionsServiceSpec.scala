@@ -72,7 +72,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     override def nodeDependencies: List[NodeDependency] = List.empty
 
-    override def implementation(
+    override def runLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]

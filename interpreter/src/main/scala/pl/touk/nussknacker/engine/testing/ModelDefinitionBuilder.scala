@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Language
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
   GlobalVariableDefinitionExtractor
@@ -117,23 +117,21 @@ final case class ModelDefinitionBuilder(
       }
   }
 
-  def build: ModelDefinition[ComponentDefinitionWithImplementation] = {
-    val globalVariablesDefinition: Map[String, ComponentDefinitionWithImplementation] =
+  def build: ModelDefinition[ComponentDefinitionWithLogic] = {
+    val globalVariablesDefinition: Map[String, ComponentDefinitionWithLogic] =
       globalVariables.mapValuesNow(GlobalVariableDefinitionExtractor.extractDefinition)
-    ModelDefinition[ComponentDefinitionWithImplementation](
-      components.map { case (k, v) => k -> withNullImplementation(v) },
+    ModelDefinition[ComponentDefinitionWithLogic](
+      components.map { case (k, v) => k -> withLogicReturningNull(v) },
       emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
       ClassExtractionSettings.Default
     )
   }
 
-  private def withNullImplementation(
-      staticDefinition: ComponentStaticDefinition
-  ): ComponentDefinitionWithImplementation =
-    MethodBasedComponentDefinitionWithImplementation(
-      ComponentImplementationInvoker.nullImplementationInvoker,
-      null,
-      staticDefinition
+  private def withLogicReturningNull(staticDefinition: ComponentStaticDefinition): ComponentDefinitionWithLogic =
+    MethodBasedComponentDefinitionWithLogic(
+      componentLogic = ComponentLogic.nullImplementationComponentLogic,
+      component = null,
+      staticDefinition = staticDefinition
     )
 
 }
@@ -146,9 +144,9 @@ object ModelDefinitionBuilder {
     new ModelDefinitionBuilder(components = List.empty, globalVariables = Map.empty, groupNameMapping)
   }
 
-  val emptyExpressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
+  val emptyExpressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithLogic] =
     ExpressionConfigDefinition(
-      Map.empty[String, ComponentDefinitionWithImplementation],
+      Map.empty[String, ComponentDefinitionWithLogic],
       List.empty,
       defaultAdditionalClasses,
       languages = LanguageConfiguration.default,
@@ -164,11 +162,11 @@ object ModelDefinitionBuilder {
       customConversionsProviders = List.empty
     )
 
-  implicit class ToStaticDefinitionConverter(modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation]) {
+  implicit class ToStaticDefinitionConverter(modelDefinition: ModelDefinition[ComponentDefinitionWithLogic]) {
 
     def toStaticComponentsDefinition: ModelDefinition[ComponentStaticDefinition] = modelDefinition.transform {
-      case methodBased: MethodBasedComponentDefinitionWithImplementation => methodBased.staticDefinition
-      case dynamic: DynamicComponentDefinitionWithImplementation =>
+      case methodBased: MethodBasedComponentDefinitionWithLogic => methodBased.staticDefinition
+      case dynamic: DynamicComponentDefinitionWithLogic =>
         throw new IllegalStateException(
           s"ModelDefinitionBuilder.toStaticComponentsDefinition used with a dynamic component: $dynamic"
         )

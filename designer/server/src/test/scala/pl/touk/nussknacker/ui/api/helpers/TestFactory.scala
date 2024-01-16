@@ -8,7 +8,7 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
@@ -173,7 +173,7 @@ object TestFactory extends TestPermissions {
   def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] =
     ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
 
-  def createValidator(modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation]): ProcessValidator = {
+  def createValidator(modelDefinition: ModelDefinition[ComponentDefinitionWithLogic]): ProcessValidator = {
     ProcessValidator.default(
       ModelDefinitionWithClasses(modelDefinition),
       new SimpleDictRegistry(Map.empty),

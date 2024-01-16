@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
@@ -55,11 +55,11 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
     ) {
 
       override protected def adjustDefinitions(
-          originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+          originalModelDefinition: ModelDefinition[ComponentDefinitionWithLogic],
           definitionContext: ComponentDefinitionContext
-      ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+      ): ModelDefinition[ComponentDefinitionWithLogic] = {
         val testComponents =
-          ComponentDefinitionWithImplementation.forList(testExtensionsHolder.components, ComponentsUiConfig.Empty)
+          ComponentDefinitionWithLogic.forList(testExtensionsHolder.components, ComponentsUiConfig.Empty)
 
         originalModelDefinition
           .withComponents(testComponents)

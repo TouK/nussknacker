@@ -37,7 +37,7 @@ sealed trait GenericNodeTransformation[T] {
       implicit nodeId: NodeId
   ): NodeTransformationDefinition
 
-  def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T
+  def runLogic(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T
 
   // Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]

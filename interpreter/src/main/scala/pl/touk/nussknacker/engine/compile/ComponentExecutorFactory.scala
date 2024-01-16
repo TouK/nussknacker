@@ -8,14 +8,14 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.ParameterEvaluator
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 
 // This class helps to create an Executor using Component. Most Components are just a factories that creates "Executors".
 // The situation is different for non-eager Services where Component is an Executor, so invokeMethod is run for each request
 class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends LazyLogging {
 
-  def createComponentExecutor[ComponentExecutor](
-      componentDefWithImpl: ComponentDefinitionWithImplementation,
+  def createComponentLogicExecutor[ComponentExecutor](
+      componentDefWithLogic: ComponentDefinitionWithLogic,
       compiledParameters: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
       additionalDependencies: Seq[AnyRef],
@@ -23,7 +23,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
   )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ComponentExecutor] = {
     NodeValidationExceptionHandler.handleExceptions {
       doCreateComponentExecutor[ComponentExecutor](
-        componentDefWithImpl,
+        componentDefWithLogic,
         compiledParameters,
         outputVariableNameOpt,
         additionalDependencies,
@@ -33,7 +33,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
   }
 
   private def doCreateComponentExecutor[ComponentExecutor](
-      componentDefWithImpl: ComponentDefinitionWithImplementation,
+      componentDefWithLogic: ComponentDefinitionWithLogic,
       params: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef],
@@ -42,8 +42,8 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
     val paramsMap = params.map { case (tp, p) =>
       p.name -> parameterEvaluator.prepareParameter(tp, p)._1
     }.toMap
-    componentDefWithImpl.implementationInvoker
-      .invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional)
+    componentDefWithLogic.componentLogic
+      .run(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional)
       .asInstanceOf[ComponentExecutor]
   }
 

@@ -12,10 +12,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  CustomComponentSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithLogic, CustomComponentSpecificData}
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -72,7 +69,7 @@ object ProcessTestData {
 
   def modelDefinition(
       groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]] = Map.empty
-  ): ModelDefinition[ComponentDefinitionWithImplementation] =
+  ): ModelDefinition[ComponentDefinitionWithLogic] =
     ModelDefinitionBuilder
       .empty(groupNameMapping)
       .withSource(existingSourceFactory)

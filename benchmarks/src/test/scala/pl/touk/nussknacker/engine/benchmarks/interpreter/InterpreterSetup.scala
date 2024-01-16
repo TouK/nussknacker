@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
@@ -52,7 +52,7 @@ class InterpreterSetup[T: ClassTag] {
     ) ::: additionalComponents
 
     val definitions = ModelDefinition(
-      ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+      ComponentDefinitionWithLogic.forList(components, ComponentsUiConfig.Empty),
       ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default
     )

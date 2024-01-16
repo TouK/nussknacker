@@ -15,7 +15,7 @@ trait NuRestAssureExtensions {
 
   }
 
-  implicit class AppConfiguration[T <: RequestSpecification](requestSpecification: T) {
+  implicit class ApplicationState[T <: RequestSpecification](requestSpecification: T) {
 
     def applicationState(f: => Unit): T = {
       val _ = f

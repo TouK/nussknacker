@@ -9,10 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  CustomComponentSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithLogic, CustomComponentSpecificData}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -160,7 +157,7 @@ class UIComponentGroupsPreparerSpec
   }
 
   private def enrichModelDefinitionWithBuiltInComponents(
-      modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+      modelDefinition: ModelDefinition[ComponentDefinitionWithLogic],
       groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
       forFragment: Boolean = false
   ) = {
