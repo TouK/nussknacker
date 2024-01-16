@@ -13,23 +13,24 @@ object MetaDataProviderFactory {
   private val igniteDriverPrefix = "org.apache.ignite.IgniteJdbc"
 }
 
-class MetaDataProviderFactory {
+class MetaDataProviderFactory extends Serializable {
 
   def create(dbPoolConfig: DBPoolConfig): JdbcMetaDataProvider = {
     val props = new Properties()
     dbPoolConfig.dataSourceProperties.foreach { case (k, v) =>
       props.put(k, v)
     }
-    val ds = ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      new DriverDataSource(
-        dbPoolConfig.url,
-        dbPoolConfig.driverClassName,
-        props,
-        dbPoolConfig.username,
-        dbPoolConfig.password
-      )
-    }
     val getConnection: () => Connection = () => {
+      // TODO_PAWEL is it ok?
+      val ds = ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
+        new DriverDataSource(
+          dbPoolConfig.url,
+          dbPoolConfig.driverClassName,
+          props,
+          dbPoolConfig.username,
+          dbPoolConfig.password
+        )
+      }
       val conn = ds.getConnection
       dbPoolConfig.schema.foreach(conn.setSchema)
       conn
