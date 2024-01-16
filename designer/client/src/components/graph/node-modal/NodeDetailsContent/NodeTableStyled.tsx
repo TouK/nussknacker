@@ -74,20 +74,12 @@ export const NodeTableStyled = styled("form")(
                 background-image: -ms-linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
             }
         }
-        .node-error {
-            width: 100%;
-            color: ${theme.custom.colors.error};
-            font-size: 14px;
-            font-weight: 400;
-        }
         .node-tip {
             width: 24px;
             height: 24px;
             svg {
                 // disable svg <title> behavior
                 pointer-events: none;
-            }
-            &.node-error-tip {
             }
         }
         .node-input {

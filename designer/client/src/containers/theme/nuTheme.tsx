@@ -1,6 +1,12 @@
 import { tintPrimary } from "./helpers";
 import { createTheme } from "@mui/material";
 
+declare module "@mui/material/FormHelperText" {
+    interface FormHelperTextPropsVariantOverrides {
+        largeMessage: true;
+    }
+}
+
 declare module "@mui/material/styles" {
     // eslint-disable-next-line @typescript-eslint/no-empty-interface
     interface Theme {
@@ -331,6 +337,7 @@ export const nuTheme = createTheme({
                     color: custom.colors.success,
                 },
             },
+            variants: [{ props: { variant: "largeMessage" }, style: { fontSize: ".875rem" } }],
         },
     },
     custom,

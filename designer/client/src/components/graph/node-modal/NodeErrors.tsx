@@ -3,6 +3,7 @@ import DangerousIcon from "@mui/icons-material/Dangerous";
 import NodeTip from "./NodeTip";
 import { css } from "@emotion/css";
 import { NodeValidationError } from "../../../types";
+import { FormHelperText } from "@mui/material";
 
 export default function NodeErrors(props: { errors: NodeValidationError[]; message: string }): JSX.Element {
     const { errors = [], message: errorMessage } = props;
@@ -31,9 +32,9 @@ export default function NodeErrors(props: { errors: NodeValidationError[]; messa
             />
             <div>
                 {errors.map(({ description, fieldName, message }, index) => (
-                    <div className="node-error" key={index} title={description}>
+                    <FormHelperText error variant={"largeMessage"} key={index} title={description}>
                         {message + (fieldName ? ` (field: ${fieldName})` : "")}
-                    </div>
+                    </FormHelperText>
                 ))}
             </div>
         </div>
