@@ -84,7 +84,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                             param.defaultValue.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null;
                         return (
                             <FormControl key={param.name}>
-                                <FieldLabel nodeId={param.name} parameterDefinitions={action.parameters} paramName={param.name} />
+                                <FieldLabel parameterDefinitions={action.parameters} paramName={param.name} />
                                 <Editor
                                     editorConfig={param?.editor}
                                     className={"node-value"}

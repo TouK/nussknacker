@@ -52,7 +52,8 @@ object ParametersExtractor {
         isLazyParameter = true,
         scalaOptionParameter = false,
         javaOptionalParameter = false,
-        hintText = None
+        hintText = None,
+        labelOpt = None
       ),
       isBodyPart = isBodyPart
     )
