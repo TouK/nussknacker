@@ -33,8 +33,7 @@ class AsyncExecutionTimeMeasurement(
     serviceName: String,
     tags: Map[String, String],
     instantTimerWindow: Duration = 20 seconds
-) extends LazyLogging
-    with Serializable {
+) extends LazyLogging {
 
   protected def metricName: NonEmptyList[String] = NonEmptyList.of("service")
 
