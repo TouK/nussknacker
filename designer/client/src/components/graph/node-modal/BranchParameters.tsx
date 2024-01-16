@@ -3,9 +3,9 @@ import ExpressionField from "./editors/expression/ExpressionField";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
-import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 import { BranchParameterRowStyled } from "../focusableStyled";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { FormControl } from "@mui/material";
 
 export interface BranchParametersProps {
     node: NodeType;
@@ -38,7 +38,7 @@ export default function BranchParameters({
             {branchParameters?.map((param) => {
                 const paramName = param.name;
                 return (
-                    <NodeRow key={paramName}>
+                    <FormControl key={paramName}>
                         <div className="node-label" title={paramName}>
                             {paramName}:
                         </div>
@@ -86,7 +86,7 @@ export default function BranchParameters({
                                 })}
                             </div>
                         </div>
-                    </NodeRow>
+                    </FormControl>
                 );
             })}
         </>

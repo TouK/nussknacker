@@ -1,6 +1,5 @@
 import React from "react";
 import { Switch, Typography, styled, FormLabel, css } from "@mui/material";
-import { NodeRow } from "../../../../NodeDetailsContent/NodeStyled";
 import InfoIcon from "@mui/icons-material/Info";
 import { StyledNodeTip } from "../../../../FieldLabel";
 
@@ -59,8 +58,6 @@ export const ListItemWrapper = styled("div")`
         height: 100px;
     }
 `;
-
-export const SettingRow = styled(NodeRow)``;
 
 export const CustomSwitch = styled(Switch)`
     input[type="checkbox"] {

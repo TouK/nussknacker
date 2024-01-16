@@ -1,9 +1,8 @@
-import { Chip } from "@mui/material";
+import { Chip, FormHelperText } from "@mui/material";
 import React from "react";
 import { FieldName, FixedValuesOption } from "../../../item";
 import { ListItemContainer, ListItemWrapper } from "./StyledSettingsComponnets";
 import { Option } from "../../../TypeSelect";
-import { ValidationLabel } from "../../../../../../common/ValidationLabel";
 import { NodeValidationError } from "../../../../../../../types";
 
 interface ListItemsProps {
@@ -41,9 +40,9 @@ export const ListItems = ({ items, handleDelete, errors = [], fieldName }: ListI
                         }
 
                         return (
-                            <ValidationLabel type={"ERROR"} key={index}>
+                            <FormHelperText title={`${item.label}: ${error.message}`} error key={index}>
                                 {item.label}: {error.message}
-                            </ValidationLabel>
+                            </FormHelperText>
                         );
                     })}
             </ListItemWrapper>

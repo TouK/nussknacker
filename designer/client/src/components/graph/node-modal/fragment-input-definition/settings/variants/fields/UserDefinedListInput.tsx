@@ -1,4 +1,4 @@
-import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 import { EditableEditor } from "../../../../editors/EditableEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import AceEditor from "react-ace";
@@ -15,6 +15,7 @@ import { GenericValidationRequest } from "../../../../../../../actions/nk/generi
 import { debounce } from "lodash";
 import { EditorType } from "../../../../editors/expression/Editor";
 import { useSettings } from "../../SettingsProvider";
+import { FormControl } from "@mui/material";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
@@ -164,7 +165,7 @@ export const UserDefinedListInput = ({
     }, [processingType, temporaryItemName, temporaryListItemTyp]);
 
     return (
-        <SettingRow>
+        <FormControl>
             <SettingLabelStyled>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
             <EditableEditor
                 validationLabelInfo={temporaryValuesTyping && "Typing..."}
@@ -194,6 +195,6 @@ export const UserDefinedListInput = ({
                     fieldName={`$param.${name}.$fixedValuesList`}
                 />
             )}
-        </SettingRow>
+        </FormControl>
     );
 };

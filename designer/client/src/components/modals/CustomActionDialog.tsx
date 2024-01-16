@@ -14,8 +14,7 @@ import { ChangeableValue } from "../ChangeableValue";
 import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
-import { ValidationLabel } from "../common/ValidationLabel";
-import { NodeRow } from "../graph/node-modal/NodeDetailsContent/NodeStyled";
+import { FormControl, FormHelperText, FormLabel } from "@mui/material";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -46,10 +45,8 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                 const Editor: SimpleEditor | ExtendedEditor = editors[editorType];
                 const fieldName = param.name;
                 return (
-                    <NodeRow key={param.name}>
-                        <div className="node-label" title={fieldName}>
-                            {fieldName}:
-                        </div>
+                    <FormControl key={param.name}>
+                        <FormLabel title={fieldName}>{fieldName}:</FormLabel>
                         <Editor
                             editorConfig={param?.editor}
                             className={"node-value"}
@@ -64,7 +61,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                             showValidation={false}
                             variableTypes={{}}
                         />
-                    </NodeRow>
+                    </FormControl>
                 );
             })}
         </NodeTable>
@@ -103,7 +100,9 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
         <WindowContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ padding: "1em", minWidth: 600 }))}>
                 <CustomActionForm action={action} value={value} onChange={setValue} />
-                <ValidationLabel type="ERROR">{validationError}</ValidationLabel>
+                <FormHelperText title={validationError} error>
+                    {validationError}
+                </FormHelperText>
             </div>
         </WindowContent>
     );

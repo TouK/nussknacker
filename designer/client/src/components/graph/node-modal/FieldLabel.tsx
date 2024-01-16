@@ -1,10 +1,9 @@
-import { styled } from "@mui/material";
+import { FormLabel, styled } from "@mui/material";
 import React from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { NodeId, ParameterConfig, ProcessDefinitionData, UIParameter } from "../../../types";
-import { NodeLabelStyled } from "./node";
 import NodeTip from "./NodeTip";
 import InfoIcon from "@mui/icons-material/Info";
 
@@ -49,13 +48,13 @@ export function FieldLabel({
 
     return (
         <>
-            <NodeLabelStyled title={paramName}>
+            <FormLabel title={paramName}>
                 <div>
                     <div>{label}:</div>
                     {parameter ? <Footer title={readableType}>{readableType}</Footer> : null}
                 </div>
                 {parameter?.hintText && <StyledNodeTip title={parameter?.hintText} icon={<InfoIcon />} />}
-            </NodeLabelStyled>
+            </FormLabel>
         </>
     );
 }

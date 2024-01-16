@@ -3,11 +3,8 @@ import { customCheckbox } from "./CustomCheckbox";
 
 export const NodeTableStyled = styled("form")(
     ({ theme }) => css`
-        display: flex;
-        flex-direction: column;
         font-size: 11px;
-        margin: 10px 25px 14px;
-        row-gap: 14px;
+        margin: 0 25px;
         .movable-row {
             margin-top: 0;
             flex-wrap: nowrap;
@@ -92,10 +89,6 @@ export const NodeTableStyled = styled("form")(
             }
             &.node-error-tip {
             }
-        }
-        .node-test-results {
-            border: 1px solid ${theme.custom.colors.ok};
-            padding: 5px;
         }
         .node-input {
             height: 35px;

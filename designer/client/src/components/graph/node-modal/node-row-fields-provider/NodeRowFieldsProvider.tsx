@@ -1,7 +1,6 @@
 import React, { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from "react";
 import { FieldsControl } from "./FieldsControl";
-import { NodeRow } from "../node";
-import { NodeValue } from "../node";
+import { NodeRow, NodeValue } from "../node";
 
 interface FieldsContext {
     add?: () => void;

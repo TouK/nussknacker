@@ -3,10 +3,11 @@ import { Option } from "../../../FieldsSelect";
 import { TypeSelect } from "../../../TypeSelect";
 import { useTranslation } from "react-i18next";
 import { FixedValuesType, InputMode, onChangeType, StringOrBooleanParameterVariant } from "../../../item";
-import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 import { useSettings } from "../../SettingsProvider";
 import { FixedValuesPresets, NodeValidationError } from "../../../../../../../types";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
+import { FormControl } from "@mui/material";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
@@ -31,7 +32,7 @@ export default function InputModeSelect(props: Props) {
             : InputMode.FixedList;
     return (
         <>
-            <SettingRow>
+            <FormControl>
                 <SettingLabelStyled required>{t("fragment.settings.inputMode", "Input mode:")}</SettingLabelStyled>
                 <TypeSelect
                     readOnly={props.readOnly}
@@ -86,7 +87,7 @@ export default function InputModeSelect(props: Props) {
                     options={inputModeOptions}
                     fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$inputMode`)}
                 />
-            </SettingRow>
+            </FormControl>
         </>
     );
 }

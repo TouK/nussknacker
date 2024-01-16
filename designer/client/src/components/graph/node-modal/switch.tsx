@@ -5,7 +5,6 @@ import { isEmpty, isEqual } from "lodash";
 import { useDiffMark } from "./PathsToMark";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
-import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import { StaticExpressionField } from "./StaticExpressionField";
 import { NodeField } from "./NodeField";
@@ -57,7 +56,7 @@ export function Switch({
     const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id));
 
     return (
-        <NodeTableBody>
+        <>
             <IdField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
@@ -121,6 +120,6 @@ export function Switch({
                 setProperty={setProperty}
                 errors={errors}
             />
-        </NodeTableBody>
+        </>
     );
 }

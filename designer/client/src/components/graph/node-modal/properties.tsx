@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import { getScenarioPropertiesConfig } from "./NodeDetailsContent/selectors";
 import React, { useMemo } from "react";
 import { sortBy } from "lodash";
-import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import ScenarioProperty from "./ScenarioProperty";
 import { DescriptionField } from "./DescriptionField";
@@ -35,7 +34,7 @@ export function Properties({
     );
 
     return (
-        <NodeTableBody>
+        <>
             <IdField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
@@ -66,6 +65,6 @@ export function Properties({
                 setProperty={setProperty}
                 errors={errors}
             />
-        </NodeTableBody>
+        </>
     );
 }

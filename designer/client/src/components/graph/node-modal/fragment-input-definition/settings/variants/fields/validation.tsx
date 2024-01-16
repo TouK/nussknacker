@@ -1,6 +1,6 @@
 import React from "react";
 import { t } from "i18next";
-import { FormControlLabel } from "@mui/material";
+import { FormControl, FormControlLabel } from "@mui/material";
 import ValidationFields from "./ValidationFields";
 import {
     onChangeType,
@@ -9,7 +9,7 @@ import {
     DefaultParameterVariant,
     ValueCompileTimeValidation,
 } from "../../../item";
-import { SettingRow, SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
+import { SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import { useSettings } from "../../SettingsProvider";
@@ -31,7 +31,7 @@ export function ValidationsFields(props: Validation) {
 
     return (
         <>
-            <SettingRow>
+            <FormControl>
                 <SettingLabelStyled required>{t("fragment.validation.validation", "Validation:")}</SettingLabelStyled>
                 <FormControlLabel
                     control={
@@ -69,7 +69,7 @@ export function ValidationsFields(props: Validation) {
                         )}
                     </SettingLabelStyled>
                 </div>
-            </SettingRow>
+            </FormControl>
             {validationEnabled && (
                 <ValidationFields
                     path={path}

@@ -3,8 +3,8 @@ import InfoIcon from "@mui/icons-material/Info";
 import NodeTip from "../NodeTip";
 import TestValue from "./TestValue";
 import { NodeResultsForContext } from "../../../../common/TestResultUtils";
-import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { FormControl, FormLabel } from "@mui/material";
 
 interface ExpressionTestResultsProps {
     fieldName: string;
@@ -21,8 +21,8 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
     return testValue ? (
         <div>
             {props.children}
-            <NodeRow className="node-test-results">
-                <div className="node-label">
+            <FormControl>
+                <FormLabel>
                     <NodeTip
                         title={"Value evaluated in test case"}
                         icon={<InfoIcon sx={(theme) => ({ color: theme.custom.colors.info, alignSelf: "center" })} />}
@@ -30,9 +30,9 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
                     {testValue.pretty ? (
                         <PrettyIconComponent sx={{ cursor: "pointer" }} onClick={() => toggleTestResults((s) => !s)} />
                     ) : null}
-                </div>
+                </FormLabel>
                 <TestValue value={testValue} shouldHideTestResults={hideTestResults} />
-            </NodeRow>
+            </FormControl>
         </div>
     ) : (
         <>{props.children}</>

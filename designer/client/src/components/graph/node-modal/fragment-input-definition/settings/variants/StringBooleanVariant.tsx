@@ -1,7 +1,7 @@
 import React from "react";
-import { FormControlLabel } from "@mui/material";
+import { FormControl, FormControlLabel } from "@mui/material";
 import InputModeSelect from "./fields/InputModeSelect";
-import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
+import { CustomSwitch, SettingLabelStyled, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import {
     InputMode,
     isAnyValueParameter,
@@ -35,7 +35,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
 
     return (
         <SettingsWrapper {...props}>
-            <SettingRow>
+            <FormControl>
                 <SettingLabelStyled required>{t("fragment.required", "Required:")}</SettingLabelStyled>
                 <FormControlLabel
                     control={
@@ -47,7 +47,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                     }
                     label=""
                 />
-            </SettingRow>
+            </FormControl>
             <InputModeSelect
                 path={path}
                 onChange={onChange}

@@ -1,5 +1,4 @@
 import { NodeType, NodeValidationError } from "../../../types";
-import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import { DescriptionField } from "./DescriptionField";
 import React from "react";
@@ -20,7 +19,7 @@ export function Split({
     errors: NodeValidationError[];
 }): JSX.Element {
     return (
-        <NodeTableBody>
+        <>
             <IdField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
@@ -37,6 +36,6 @@ export function Split({
                 setProperty={setProperty}
                 errors={errors}
             />
-        </NodeTableBody>
+        </>
     );
 }

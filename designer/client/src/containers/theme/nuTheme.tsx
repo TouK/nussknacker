@@ -307,6 +307,7 @@ export const nuTheme = createTheme({
                 root: {
                     display: "flex",
                     flexDirection: "row",
+                    margin: "14px 0",
                 },
             },
         },

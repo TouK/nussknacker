@@ -1,6 +1,5 @@
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";
 import { ParameterExpressionField } from "./ParameterExpressionField";
@@ -32,7 +31,7 @@ export function EnricherProcessor({
     showValidation?: boolean;
 }): JSX.Element {
     return (
-        <NodeTableBody>
+        <>
             <IdField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
@@ -91,6 +90,6 @@ export function EnricherProcessor({
                 setProperty={setProperty}
                 errors={errors}
             />
-        </NodeTableBody>
+        </>
     );
 }

@@ -3,7 +3,6 @@ import EditableEditor from "./editors/EditableEditor";
 import LabeledInput from "./editors/field/LabeledInput";
 import LabeledTextarea from "./editors/field/LabeledTextarea";
 import { NodeType, NodeValidationError, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes } from "../../../types";
-import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { useDiffMark } from "./PathsToMark";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
@@ -49,7 +48,7 @@ export default function Variable({
     const readOnly = !isEditMode;
 
     return (
-        <NodeTableBody className="node-variable-builder-body">
+        <>
             <IdField
                 node={node}
                 isEditMode={isEditMode}
@@ -90,6 +89,6 @@ export default function Variable({
             >
                 {renderFieldLabel("Description")}
             </LabeledTextarea>
-        </NodeTableBody>
+        </>
     );
 }

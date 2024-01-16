@@ -1,7 +1,6 @@
 import { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 import React, { useCallback } from "react";
-import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import { DisableField } from "./DisableField";
 import { ParameterExpressionField } from "./ParameterExpressionField";
@@ -39,7 +38,7 @@ export function FragmentInput(props: FragmentInput): JSX.Element {
     const parameters = useParametersList(node, processDefinitionData, isEditMode, setNodeState);
 
     return (
-        <NodeTableBody>
+        <>
             <IdField
                 node={node}
                 isEditMode={isEditMode}
@@ -89,6 +88,6 @@ export function FragmentInput(props: FragmentInput): JSX.Element {
                 setProperty={setProperty}
                 errors={errors}
             />
-        </NodeTableBody>
+        </>
     );
 }

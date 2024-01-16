@@ -1,10 +1,10 @@
 import React from "react";
-import { NodeLabelStyled } from "./NodeStyled";
+import { FormLabel } from "@mui/material";
 
 export function NodeLabel({ label, className }: { label: string; className?: string }): JSX.Element {
     return (
-        <NodeLabelStyled className={className} title={label}>
+        <FormLabel className={className} title={label}>
             {label}:
-        </NodeLabelStyled>
+        </FormLabel>
     );
 }

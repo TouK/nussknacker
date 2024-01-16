@@ -2,7 +2,6 @@ import { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } fro
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useTestResults } from "./TestResultsWrapper";
 import React, { useMemo } from "react";
-import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import { NodeField } from "./NodeField";
 import { FieldType } from "./editors/field/Field";
@@ -40,7 +39,7 @@ export function JoinCustomNode({
         [node, processDefinitionData.components],
     );
     return (
-        <NodeTableBody>
+        <>
             <IdField
                 node={node}
                 isEditMode={isEditMode}
@@ -102,6 +101,6 @@ export function JoinCustomNode({
                 setProperty={setProperty}
                 errors={errors}
             />
-        </NodeTableBody>
+        </>
     );
 }
