@@ -8,6 +8,8 @@ import scala.jdk.CollectionConverters._
 
 trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithHsqlDB {
 
+  val handleOpenAndClose = true
+
   val hsqlDbPoolConfig: DBPoolConfig = DBPoolConfig(
     driverClassName = hsqlConfigValues("driverClassName"),
     url = hsqlConfigValues("url"),
@@ -26,12 +28,16 @@ trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithH
     )
 
   override protected def beforeAll(): Unit = {
-    service.open(LiteEngineRuntimeContextPreparer.noOp.prepare(jobData))
+    if (handleOpenAndClose) {
+      service.open(LiteEngineRuntimeContextPreparer.noOp.prepare(jobData))
+    }
     super.beforeAll()
   }
 
   override protected def afterAll(): Unit = {
-    service.close()
+    if (handleOpenAndClose) {
+      service.close()
+    }
     super.afterAll()
   }
 

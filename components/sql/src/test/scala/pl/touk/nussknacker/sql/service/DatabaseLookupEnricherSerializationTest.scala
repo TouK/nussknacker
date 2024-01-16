@@ -3,11 +3,6 @@ package pl.touk.nussknacker.sql.service
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.OutputVariableNameValue
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
-import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -20,34 +15,26 @@ import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingLis
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess}
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
-import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 import pl.touk.nussknacker.engine.spel.Implicits._
 
 import java.io.{ByteArrayOutputStream, FileOutputStream, ObjectOutputStream}
-import scala.concurrent.Await
 
 case class TestRecord(id: Int = 1, timeHours: Int = 0) {
   def timestamp: Long = timeHours * 3600L * 1000
 }
 
 // TODO_PAWEL kolejnosc i czy sie odpalaja wszystkie before all
-class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest with FlinkSpec {
+class DatabaseLookupEnricherSerializationTest extends BaseHsqlQueryEnricherTest with FlinkSpec {
 
-  import scala.jdk.CollectionConverters._
-  import scala.concurrent.duration._
+  override val handleOpenAndClose: Boolean = false
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')"
   )
-
-  private val notExistingDbUrl = s"jdbc:hsqldb:mem:dummy"
-
-  private val unknownDbUrl = s"jdbc:hsqldb:mem:dummy"
 
   private def provider: DBPoolConfig => JdbcMetaDataProvider = (conf: DBPoolConfig) =>
     new MetaDataProviderFactory().create(conf)
@@ -138,105 +125,5 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest with FlinkSpe
   private def extractResultValues(results: TestProcess.TestResults): List[String] = results
     .nodeResults(sinkId)
     .map(_.get[String](resultVariableName).get)
-
-  test("Test on flink") {
-
-    val env       = flinkMiniCluster.createExecutionEnvironment()
-    val modelData = LocalModelData(ConfigFactory.empty(), List(ComponentDefinition("dbLookup", service)))
-    val scenario =
-      ScenarioBuilder
-        .streaming("test")
-        .parallelism(1)
-        .source("start", "source")
-        .enricher(
-          id = "personEnricher",
-          output = "person",
-          svcId = "dbLookup",
-          params = "Table" -> Expression.spel("'PERSONS'"),
-          "Cache TTL"  -> Expression.spel("T(java.time.Duration).ofDays(1L)"),
-          "Key column" -> Expression.spel("'ID'"),
-          "Key value"  -> Expression.spel("#input")
-        )
-        .processorEnd("end", "invocationCollector", "value" -> Expression.spel("#person"))
-
-    import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
-    val testScenarioRunner = TestScenarioRunner
-      .flinkBased(config, flinkMiniCluster)
-      .withExtraComponents(List(ComponentDefinition("dbLookup", service)))
-      .build()
-
-    val sth = testScenarioRunner.runWithData(scenario, List(1))
-    val a   = 5
-  }
-
-  test("DatabaseLookupEnricher#implementation without cache") {
-    val query = "select * from persons where id = ?"
-    val st    = conn.prepareStatement(query)
-    val meta  = st.getMetaData
-    st.close()
-    val state = DatabaseQueryEnricher.TransformationState(
-      query = query,
-      argsCount = 1,
-      tableDef = TableDefinition(meta),
-      strategy = ResultSetStrategy
-    )
-    val invoker = service.implementation(Map(), dependencies = Nil, Some(state))
-    returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
-    val resultF = invoker.invokeService(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
-    val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-    result shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "John"))
-    )
-
-    conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = invoker.invokeService(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
-    val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-    result2 shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
-    )
-  }
-
-  test("should retrieve table names as parameters") {
-    implicit val nodeId: NodeId = NodeId("dummy")
-    val definition = service.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
-    val result: service.TransformationStepResult = definition(service.TransformationStep(List(), None))
-    result match {
-      case service.NextParameters(parameters, _, _) =>
-        parameters.head.editor.get shouldBe FixedValuesParameterEditor(
-          List(FixedExpressionValue("'PERSONS'", "PERSONS"))
-        )
-      case _ =>
-    }
-  }
-
-  test("should return empty list for not existing database") {
-    val newConfig                      = hsqlDbPoolConfig.copy(url = notExistingDbUrl)
-    val serviceWithNotExistingDatabase = new DatabaseLookupEnricher(newConfig, provider(newConfig))
-    implicit val nodeId: NodeId        = NodeId("dummy")
-    val definition =
-      serviceWithNotExistingDatabase.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
-    val result: serviceWithNotExistingDatabase.TransformationStepResult =
-      definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
-    result match {
-      case serviceWithNotExistingDatabase.NextParameters(parameters, _, _) =>
-        parameters.head.editor.get shouldBe FixedValuesParameterEditor(List())
-      case _ =>
-    }
-  }
-
-  test("should return empty list for unknown database") {
-    val newConfig                      = hsqlDbPoolConfig.copy(url = unknownDbUrl)
-    val serviceWithNotExistingDatabase = new DatabaseLookupEnricher(newConfig, provider(newConfig))
-    implicit val nodeId: NodeId        = NodeId("dummy")
-    val definition =
-      serviceWithNotExistingDatabase.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
-    val result: serviceWithNotExistingDatabase.TransformationStepResult =
-      definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
-    result match {
-      case serviceWithNotExistingDatabase.NextParameters(parameters, _, _) =>
-        parameters.head.editor.get shouldBe FixedValuesParameterEditor(List())
-      case _ =>
-    }
-  }
 
 }
