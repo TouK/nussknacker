@@ -138,6 +138,20 @@ class UIComponentGroupsPreparerSpec
     )
   }
 
+  test("hide sources for fragments") {
+    val model =
+      enrichModelDefinitionWithBuiltInComponents(
+        ModelDefinitionBuilder.empty.withSource("source").build,
+        Map.empty,
+        forFragment = true
+      )
+    val groups = ComponentGroupsPreparer.prepareComponentGroups(model)
+    groups.map(_.name) shouldEqual List(
+      DefaultsComponentGroupName.FragmentsDefinitionGroupName,
+      DefaultsComponentGroupName.BaseGroupName
+    )
+  }
+
   private def validateGroups(groups: List[UIComponentGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
     groups.filterNot(ng => ng.components.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
