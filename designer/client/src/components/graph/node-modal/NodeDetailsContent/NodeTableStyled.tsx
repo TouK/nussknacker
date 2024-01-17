@@ -1,7 +1,7 @@
 import { css, styled } from "@mui/material";
 import { customCheckbox } from "./CustomCheckbox";
 
-export const NodeTableStyled = styled("form")(
+export const NodeTableStyled = styled("div")(
     ({ theme }) => css`
         font-size: 11px;
         margin: 0 25px;

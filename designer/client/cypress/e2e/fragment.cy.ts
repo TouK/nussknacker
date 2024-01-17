@@ -39,12 +39,12 @@ describe("Fragment", () => {
 
         // Display Add list item errors when blank value
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{enter}");
-        cy.get("[data-testid='settings:4']").find("[type='ERROR']").should("be.visible");
+        cy.get("[data-testid='settings:4']").find("[data-testid='error-message']").should("be.visible");
         cy.get("[data-testid='settings:4']").contains("This field is mandatory and can not be empty");
 
         // Display Add list item errors from a backend when Non reference value occurs
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("w");
-        cy.get("[data-testid='settings:4']").find("[type='ERROR']").should("be.visible");
+        cy.get("[data-testid='settings:4']").find("[data-testid='error-message']").should("be.visible");
         cy.get("[data-testid='settings:4']").contains(
             "Failed to parse expression: Non reference 'w' occurred. Maybe you missed '#' in front of it?",
         );
@@ -53,7 +53,7 @@ describe("Fragment", () => {
         // Display Add list item value without error
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{backspace}");
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("#meta.processName");
-        cy.get("[data-testid='settings:4']").find("[type='ERROR']").should("not.exist");
+        cy.get("[data-testid='settings:4']").find("[data-testid='error-message']").should("not.be.visible");
         cy.get("[data-testid='settings:4']").contains("Typing...").should("not.exist");
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{enter}");
         cy.get("[data-testid='settings:4']").find("[role='button']").contains("#meta.processName");
@@ -66,7 +66,7 @@ describe("Fragment", () => {
             .contains(/Add list item/i)
             .siblings()
             .eq(0)
-            .find("[type='ERROR']")
+            .find("[data-testid='error-message']")
             .contains("This field has to be unique")
             .should("be.visible");
 
@@ -90,8 +90,8 @@ describe("Fragment", () => {
             .contains(/Input mode/i)
             .siblings()
             .eq(0)
-            .find("[type='ERROR']")
-            .should("not.exist");
+            .find("[data-testid='error-message']")
+            .should("not.be.visible");
         cy.get("@window").find("[data-testid='settings:5']").matchImage();
 
         // Provide non String or Boolean Any Value inputMode
@@ -114,8 +114,8 @@ describe("Fragment", () => {
             .contains(/Validation expression/i)
             .siblings()
             .eq(0)
-            .find("[type='ERROR']")
-            .should("not.exist");
+            .find("[data-testid='error-message']")
+            .should("not.be.visible");
 
         cy.get("@window").find("[data-testid='settings:6']").matchImage();
 
@@ -184,7 +184,7 @@ describe("Fragment", () => {
             .its("response.statusCode")
             .should("eq", 200)
             .then(() => {
-                cy.get("@window").get("[title='Value']").siblings().eq(0).find("[type='ERROR']").should("exist");
+                cy.get("@window").get("[title='Value']").siblings().eq(0).find("[data-testid='error-message']").should("exist");
             });
         cy.wait("@suggestions").its("response.statusCode").should("eq", 200);
         cy.get(".ace_autocomplete").should("be.visible");
@@ -219,7 +219,12 @@ describe("Fragment", () => {
         cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").get("[title='name_value_string_any_value']").siblings().eq(0).find("[id='ace-editor']").type("test");
 
-        cy.get("@window").get("[title='name_value_string_any_value']").siblings().eq(0).find("[type='ERROR']").should("be.visible");
+        cy.get("@window")
+            .get("[title='name_value_string_any_value']")
+            .siblings()
+            .eq(0)
+            .find("[data-testid='error-message']")
+            .should("be.visible");
 
         cy.get("[data-testid=window]").find("section").scrollTo("bottom");
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
