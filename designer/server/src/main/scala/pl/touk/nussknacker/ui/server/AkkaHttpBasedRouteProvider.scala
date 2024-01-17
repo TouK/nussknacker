@@ -302,7 +302,6 @@ class AkkaHttpBasedRouteProvider(
             processActivityRepository,
             processResolver
           ),
-//          new ProcessActivityResource(processActivityRepository, processService, processAuthorizer),
           new ManagementResources(
             processAuthorizer,
             processService,
@@ -325,14 +324,6 @@ class AkkaHttpBasedRouteProvider(
             }
           ),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
-//          new AttachmentResources(
-//            new ProcessAttachmentService(
-//              AttachmentsConfig.create(resolvedConfig),
-//              processActivityRepository
-//            ),
-//            processService,
-//            processAuthorizer
-//          ),
           new StatusResources(stateDefinitionService),
         )
 
