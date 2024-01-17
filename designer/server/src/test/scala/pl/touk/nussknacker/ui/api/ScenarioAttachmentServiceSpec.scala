@@ -20,7 +20,7 @@ class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with Scala
   private val service = new ScenarioAttachmentService(AttachmentsConfig(10), TestProcessActivityRepository)
 
   test("should respect size limit") {
-    val random12bytes = new ByteArrayInputStream(new Random().nextBytes(12))
+    val random12bytes = new ByteArrayInputStream(nextBytes(12))
 
     val error = service.saveAttachment(ProcessId(123L), VersionId(12L), "data", random12bytes).failed.futureValue
 
@@ -28,9 +28,15 @@ class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with Scala
   }
 
   test("should accept attachment with allowed size") {
-    val random10bytes = new ByteArrayInputStream(new Random().nextBytes(10))
+    val random10bytes = new ByteArrayInputStream(nextBytes(10))
 
     service.saveAttachment(ProcessId(123L), VersionId(12L), "data", random10bytes).futureValue
+  }
+
+  private def nextBytes(length: Int): Array[Byte] = {
+    val b = new Array[Byte](length)
+    new Random().nextBytes(b)
+    b
   }
 
 }
