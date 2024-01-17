@@ -1,24 +1,24 @@
-import { Edge, Process, ProcessDefinitionData } from "../../types";
+import { Edge, ScenarioGraph, ProcessDefinitionData } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { ProcessType } from "../../components/Process/types";
+import { Scenario } from "../../components/Process/types";
 
-function getEdgeValidator(processToDisplay: Process, processDefinitionData?: ProcessDefinitionData) {
+function getEdgeValidator(scenarioGraph: ScenarioGraph, processDefinitionData?: ProcessDefinitionData) {
     return ({ from }: Edge): boolean => {
         // TODO: we could not only check if hasOutput for from, but also check if Edge.edgeType.name matches
         //       available edges(name) from the definition
-        return NodeUtils.hasOutputs(NodeUtils.getNodeById(from, processToDisplay), processDefinitionData);
+        return NodeUtils.hasOutputs(NodeUtils.getNodeById(from, scenarioGraph), processDefinitionData);
     };
 }
 
 // TODO: This should be one on the BE side
-export function correctFetchedDetails(data: ProcessType, definitionData?: ProcessDefinitionData): ProcessType {
-    const { json: processToDisplay } = data;
-    const { edges } = processToDisplay;
-    const isValidEdge = getEdgeValidator(processToDisplay, definitionData);
+export function correctFetchedDetails(data: Scenario, definitionData?: ProcessDefinitionData): Scenario {
+    const { json: scenarioGraph } = data;
+    const { edges } = scenarioGraph;
+    const isValidEdge = getEdgeValidator(scenarioGraph, definitionData);
     return {
         ...data,
         json: {
-            ...processToDisplay,
+            ...scenarioGraph,
             edges: edges.filter(isValidEdge),
         },
     };

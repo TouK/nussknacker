@@ -10,7 +10,7 @@ import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../..
 import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
 import HttpService from "../../../../../../../http/HttpService";
 import { useSelector } from "react-redux";
-import { getProcessToDisplay } from "../../../../../../../reducers/selectors/graph";
+import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
 import { GenericValidationRequest } from "../../../../../../../actions/nk/genericAction";
 import { debounce } from "lodash";
 import { EditorType } from "../../../../editors/expression/Editor";
@@ -137,7 +137,7 @@ export const UserDefinedListInput = ({
         },
     };
 
-    const { processingType } = useSelector(getProcessToDisplay);
+    const processingType = useSelector(getProcessingType);
     const temporaryItemName: FieldName = `$param.${name}.$fixedValuesListTemporaryItem`;
 
     const validateTemporaryListItem = useMemo(() => {
