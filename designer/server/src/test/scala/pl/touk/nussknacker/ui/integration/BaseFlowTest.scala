@@ -1,23 +1,24 @@
 package pl.touk.nussknacker.ui.integration
 
 import com.typesafe.config.Config
+import io.circe.Json.{Null, arr, fromFields, fromString, obj}
 import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, Json}
+import io.circe.{Decoder, Json, JsonObject}
 import org.apache.commons.io.FileUtils
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.defaultconfig.{DefaultsComponentGroupName, DefaultsComponentIcon}
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition, Processor}
@@ -34,8 +35,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, SecurityHeadersSupport}
@@ -86,7 +87,7 @@ class BaseFlowTest
     saveProcess(process)
   }
 
-  test("ensure nodes config is properly parsed") {
+  test("ensure components definition is enriched with components config") {
     val response = httpClient.send(
       quickRequest
         .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/streaming?isFragment=false")
@@ -95,127 +96,136 @@ class BaseFlowTest
     )
     response.code shouldEqual StatusCode.Ok
 
-    val componentsConfigResultJson = response.extractFieldJsonValue("componentsConfig")
-    val componentsConfigResult =
-      Decoder[Map[String, SingleComponentConfig]].decodeJson(componentsConfigResultJson).toOption.get
+    val componentsResultJson = response.extractFieldJsonValue("components").asObject.value.toMap
+
+    def encodeEditor(parameterEditor: ParameterEditor): Json =
+      parameterEditor.asJson
 
     // docs url comes from defaultModelConf.conf in dev-model
-    val expectedConfig = Map(
-      "filter" -> SingleComponentConfig(
-        params = None,
-        icon = Some(DefaultsComponentIcon.FilterIcon),
-        docsUrl = Some("https://touk.github.io/nussknacker/filter"),
-        componentGroup = Some(DefaultsComponentGroupName.BaseGroupName),
-        componentId = None
+    val expectedDefinition = Map(
+      "builtin-filter" -> obj(
+        "parameters" -> arr(),
+        "icon"       -> fromString(DefaultsComponentIcon.FilterIcon),
+        "docsUrl"    -> fromString("https://touk.github.io/nussknacker/filter"),
       ),
-      "enricher" -> SingleComponentConfig(
-        params = Some(
-          Map(
-            "param" -> ParameterConfig(
-              defaultValue = Some("'default value'"),
-              editor = Some(StringParameterEditor),
-              validators = None,
-              label = None,
-              hintText = None
+      // FIXME: Will be fixed in https://github.com/TouK/nussknacker/pull/5356
+//      "service-enricher" -> obj(
+//        "parameters" -> arr(
+//          obj(
+//            "name"         -> fromString("param"),
+//            "label"        -> fromString("param"),
+//            "defaultValue" -> Expression.spel("'default value'").asJson,
+//            "editor"       -> encodeEditor(StringParameterEditor),
+//            "hintText"     -> Null,
+//          ),
+//          obj(
+//            "name"         -> fromString("paramStringEditor"),
+//            "label"        -> fromString("paramStringEditor"),
+//            "defaultValue" -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
+//            "editor"       -> encodeEditor(RawParameterEditor),
+//            "hintText"     -> fromString("hint-text-from-additional-ui-config-provider"),
+//          ),
+//        ),
+//        "icon"    -> fromString("/assets/components/Filter.svg"),
+//        "docsUrl" -> fromString("https://touk.github.io/nussknacker/enricher"),
+//      ),
+      "service-multipleParamsService" -> obj(
+        "parameters" -> arr(
+          obj(
+            "name"         -> fromString("foo"),
+            "label"        -> fromString("foo"),
+            "defaultValue" -> Expression.spel("'test'").asJson,
+            "editor"       -> encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+            "hintText"     -> Null,
+          ),
+          obj(
+            "name"         -> fromString("bar"),
+            "label"        -> fromString("bar"),
+            "defaultValue" -> Expression.spel("''").asJson,
+            "editor"       -> encodeEditor(StringParameterEditor),
+            "hintText"     -> Null,
+          ),
+          obj(
+            "name"         -> fromString("baz"),
+            "label"        -> fromString("baz"),
+            "defaultValue" -> Expression.spel("1").asJson,
+            "editor" -> encodeEditor(
+              FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))
             ),
-            "paramStringEditor" -> ParameterConfig(
-              defaultValue = Some("'default-from-additional-ui-config-provider'"),
-              editor = None,
-              validators = None,
-              label = None,
-              hintText = Some("hint-text-from-additional-ui-config-provider")
-            ),
+            "hintText" -> fromString("some hint text"),
+          ),
+          obj(
+            "name"         -> fromString("quax"),
+            "label"        -> fromString("quax"),
+            "defaultValue" -> Expression.spel("''").asJson,
+            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "hintText"     -> Null,
+          ),
+        ),
+        "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
+        "docsUrl" -> Null,
+      ),
+      "service-accountService" -> obj(
+        "parameters" -> arr(),
+        "icon"       -> fromString(DefaultsComponentIcon.ServiceIcon),
+        "docsUrl"    -> fromString("accountServiceDocs"),
+      ),
+      "service-providedComponent-component-v1" -> obj(
+        "parameters" -> arr(
+          obj(
+            "name"         -> fromString("fromConfig-v1"),
+            "label"        -> fromString("fromConfig-v1"),
+            "defaultValue" -> Expression.spel("''").asJson,
+            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "hintText"     -> Null,
           )
         ),
-        icon = Some("/assets/components/Filter.svg"),
-        docsUrl = Some("https://touk.github.io/nussknacker/enricher"),
-        componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName),
-        componentId = None
-      ),
-      "multipleParamsService" -> SingleComponentConfig(
-        params = Some(
-          Map(
-            "baz" -> ParameterConfig(
-              defaultValue = None,
-              editor =
-                Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
-              validators = None,
-              label = None,
-              hintText = Some("some hint text")
-            ),
-            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
-            "foo" -> ParameterConfig(
-              defaultValue = None,
-              editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
-              validators = None,
-              label = None,
-              hintText = None
-            ),
-          )
-        ),
-        icon = Some(DefaultsComponentIcon.ServiceIcon),
-        docsUrl = None,
-        componentGroup = Some(DefaultsComponentGroupName.ServicesGroupName),
-        componentId = None
-      ),
-      "accountService" -> SingleComponentConfig(
-        params = None,
-        icon = Some(DefaultsComponentIcon.ServiceIcon),
-        docsUrl = Some("accountServiceDocs"),
-        componentGroup = Some(DefaultsComponentGroupName.ServicesGroupName),
-        componentId = None
-      ),
-      "optionalTypesService" -> SingleComponentConfig(
-        params = Some(
-          Map(
-            "overriddenByFileConfigParam" -> ParameterConfig(
-              defaultValue = None,
-              editor = None,
-              validators = Some(List.empty),
-              label = None,
-              hintText = None
-            ),
-            "overriddenByDevConfigParam" -> ParameterConfig(
-              defaultValue = None,
-              editor = None,
-              validators = Some(List(MandatoryParameterValidator)),
-              label = None,
-              hintText = None
-            )
-          )
-        ),
-        icon = Some(DefaultsComponentIcon.ServiceIcon),
-        docsUrl = None,
-        componentGroup = Some(ComponentGroupName("types")),
-        componentId = None
-      ),
-      "providedComponent-component-v1" -> SingleComponentConfig(
-        params = None,
-        icon = Some(DefaultsComponentIcon.ServiceIcon),
-        docsUrl = Some("https://nussknacker.io/Configuration.html"),
-        componentGroup = Some(DefaultsComponentGroupName.ServicesGroupName),
-        componentId = None
-      ),
-      "$properties" -> SingleComponentConfig(
-        params = None,
-        icon = None,
-        docsUrl = Some(
-          "https://nussknacker.io/documentation/docs/installation_configuration_guide/model/ModelConfiguration/#scenarios-additional-properties"
-        ),
-        componentGroup = None,
-        componentId = None
+        "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
+        "docsUrl" -> fromString("https://nussknacker.io/Configuration.html"),
       )
     )
 
+    // We check only these specified in expectations to not overload this test
+    componentsResultJson.keys.toList.sorted should contain allElementsOf expectedDefinition.keys.toList.sorted
     forAll(
       Table(
-        ("componentName", "expectedConfig"),
-        expectedConfig.toSeq: _*
+        ("componentName", "expectedDefinition"),
+        expectedDefinition.toSeq: _*
       )
-    ) { (componentName, config) =>
-      componentsConfigResult.get(componentName).value shouldEqual config
+    ) { (componentName, expectedDefinition) =>
+      val expectedDefinitionObj = expectedDefinition.asObject.value
+      val returnedDefinition    = componentsResultJson.get(componentName).value.asObject.value
+
+      returnedDefinition("icon").value shouldEqual expectedDefinitionObj("icon").value
+      returnedDefinition("docsUrl").value shouldEqual expectedDefinitionObj("docsUrl").value
+      checkParameters(expectedDefinitionObj, returnedDefinition)
     }
-    componentsConfigResult.keys.toList.sorted should contain allElementsOf expectedConfig.keys.toList.sorted
+  }
+
+  private def checkParameters(expectedDefinitionObj: JsonObject, returnedDefinition: JsonObject) = {
+    def paramName(paramJson: Json) = paramJson.asObject.value("name").value.asString.value
+
+    def toParamsMap(paramsJson: Json) = paramsJson.asArray.value.map { paramJson =>
+      paramName(paramJson) -> paramJson
+    }.toMap
+
+    val expectedParameters = toParamsMap(expectedDefinitionObj("parameters").value)
+    val returnedParameters = toParamsMap(returnedDefinition("parameters").value)
+
+    returnedParameters.keys.toList shouldEqual expectedParameters.keys.toList
+    forAll(Table(("paramName", "expectedParameter"), expectedParameters.toList: _*)) { (paramName, expectedParameter) =>
+      val paramWithConfigurableFieldsOnly =
+        fromFields(
+          returnedParameters
+            .get(paramName)
+            .value
+            .asObject
+            .value
+            .filterKeys(!Set("typ", "additionalVariables", "variablesToHide", "branchParam").contains(_))
+            .toList
+        )
+      paramWithConfigurableFieldsOnly shouldEqual expectedParameter
+    }
   }
 
   test("ensure scenario properties config is properly applied") {

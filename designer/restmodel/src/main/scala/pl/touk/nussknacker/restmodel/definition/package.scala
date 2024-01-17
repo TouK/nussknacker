@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.graph.EdgeType
 
 import java.net.URI
 
@@ -25,8 +25,6 @@ package object definition {
       componentGroups: List[UIComponentGroup],
       components: Map[ComponentInfo, UIComponentDefinition],
       classes: List[TypingResult],
-      // TODO: remove it, use components field on the FE side instead
-      componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[UINodeEdges],
       customActions: List[UICustomAction]
@@ -71,6 +69,8 @@ package object definition {
       //    (see. ProcessUtils.findAvailableVariables). This heuristic is used when DisplayableProcess can't be translated
       //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
+      icon: String,
+      docsUrl: Option[String],
       // This field is defined only for fragments
       outputParameters: Option[List[String]]
   )

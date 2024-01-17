@@ -2,7 +2,7 @@ import { EditorProps } from "../components/graph/node-modal/editors/expression/E
 import { TypingResult, UIParameter } from "./definition";
 import { Edge, EdgeType } from "./edge";
 import { NodeType, PropertiesType } from "./node";
-import { ComponentGroup, SingleComponentConfig } from "./component";
+import { ComponentGroup } from "./component";
 import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioProperty";
 import { FixedValuesOption } from "../components/graph/node-modal/fragment-input-definition/item";
 import { ValidationResult } from "./validation";
@@ -45,18 +45,17 @@ export interface ReturnedType {
 }
 
 export interface ComponentDefinition {
-    parameters: UIParameter[] | null;
+    parameters: UIParameter[];
     returnType: ReturnedType | null;
+    icon: string;
+    docsUrl?: string;
     // For fragments only
     outputParameters?: string[] | null;
 }
 
-export type ComponentsConfig = Record<string, SingleComponentConfig>;
-
 export type FixedValuesPresets = Record<string, FixedValuesOption[]>;
 
 export interface ProcessDefinitionData {
-    componentsConfig?: ComponentsConfig;
     components?: Record<string, ComponentDefinition>;
     classes?: TypingResult[];
     componentGroups?: ComponentGroup[];
