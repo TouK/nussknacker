@@ -51,8 +51,7 @@ trait RemoteEnvironment {
   // TODO This method is used by an external project. We should move it to some api module
   def testMigration(
       processToInclude: ScenarioWithDetails => Boolean = _ => true,
-      batchingExecutionContext: ExecutionContext,
-      batchingRequestTimeout: FiniteDuration
+      batchingExecutionContext: ExecutionContext
   )(
       implicit ec: ExecutionContext,
       user: LoggedUser
@@ -123,7 +122,11 @@ class HttpRemoteEnvironment(
   def closeAsync(): Future[Unit] = http.shutdownAllConnectionPools()
 }
 
-final case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int = 10)
+final case class StandardRemoteEnvironmentConfig(
+    uri: String,
+    batchSize: Int = 10,
+    batchTimeout: FiniteDuration = 120 seconds
+)
 
 //TODO: extract interface to remote environment?
 trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {
@@ -216,22 +219,20 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   // We need to be cautious when choosing maxParallelism of batchingExecutionContext as validation may call external systems and we don't want to overwhelm them with requests
   override def testMigration(
       processToInclude: ScenarioWithDetails => Boolean = _ => true,
-      batchingExecutionContext: ExecutionContext,
-      batchingRequestTimeout: FiniteDuration
+      batchingExecutionContext: ExecutionContext
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
       basicProcesses = allBasicProcesses.filterNot(_.isFragment).filter(processToInclude)
       basicFragments = allBasicProcesses.filter(_.isFragment).filter(processToInclude)
-      processes <- fetchGroupByGroup(basicProcesses, batchingExecutionContext, batchingRequestTimeout)
-      fragments <- fetchGroupByGroup(basicFragments, batchingExecutionContext, batchingRequestTimeout)
+      processes <- fetchGroupByGroup(basicProcesses, batchingExecutionContext)
+      fragments <- fetchGroupByGroup(basicFragments, batchingExecutionContext)
     } yield testModelMigrations.testMigrations(processes, fragments, batchingExecutionContext)).value
   }
 
   private def fetchGroupByGroup(
       basicProcesses: List[ScenarioWithDetails],
-      batchingExecutionContext: ExecutionContext,
-      batchingRequestTimeout: FiniteDuration
+      batchingExecutionContext: ExecutionContext
   )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetails]] = {
     val groupedBasicProcesses = basicProcesses
       .map(_.name)
@@ -241,7 +242,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     val parallelCollection = new ParVector(groupedBasicProcesses)
     parallelCollection.tasksupport = new ExecutionContextTaskSupport(batchingExecutionContext)
     val fetchProcessDetailsOperation = parallelCollection.map(processesGroup => {
-      Await.result(fetchProcessesDetails(processesGroup).value, batchingRequestTimeout)
+      Await.result(fetchProcessesDetails(processesGroup).value, config.batchTimeout)
     })
     EitherT {
       Future {

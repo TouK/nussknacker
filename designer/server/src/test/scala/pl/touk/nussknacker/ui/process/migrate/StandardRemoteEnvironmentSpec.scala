@@ -417,8 +417,7 @@ class StandardRemoteEnvironmentSpec
 
     val migrationResult = remoteEnvironment
       .testMigration(
-        batchingExecutionContext = ExecutionContext.global,
-        batchingRequestTimeout = 5 seconds
+        batchingExecutionContext = ExecutionContext.global
       )
       .futureValue
       .rightValue
