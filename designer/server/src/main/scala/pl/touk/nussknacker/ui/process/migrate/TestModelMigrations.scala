@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  GlobalError,
   NodeValidationError,
   ValidationErrors,
   ValidationResult,
@@ -127,11 +128,16 @@ class TestModelMigrations(
         .filterNot(_._2.isEmpty)
     }
 
+    def diffOnGlobalErrors(before: List[GlobalError], after: List[GlobalError]): List[GlobalError] = {
+      val errorsBefore = before.map(globalError => errorToKey(globalError.error)).toSet
+      after.filterNot(globalError => errorsBefore.contains(errorToKey(globalError.error)))
+    }
+
     ValidationResult(
       ValidationErrors(
         diffOnMap(before.errors.invalidNodes, after.errors.invalidNodes),
         diffErrorLists(before.errors.processPropertiesErrors, after.errors.processPropertiesErrors),
-        diffErrorLists(before.errors.globalErrors, after.errors.globalErrors)
+        diffOnGlobalErrors(before.errors.globalErrors, after.errors.globalErrors)
       ),
       ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)),
       Map.empty

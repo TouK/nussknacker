@@ -39,6 +39,8 @@ object ProcessCompilationError {
 
   }
 
+  sealed trait GlobalError
+
   // All errors which we want to be seen in process as properties errors should extend this trait
   sealed trait ScenarioPropertiesError {
     self: ProcessCompilationError =>
@@ -51,7 +53,7 @@ object ProcessCompilationError {
 
   final case class InvalidRootNode(nodeId: String) extends ProcessUncanonizationError with InASingleNode
 
-  object EmptyProcess extends ProcessUncanonizationError {
+  object EmptyProcess extends ProcessUncanonizationError with GlobalError {
     override def nodeIds = Set()
   }
 
@@ -286,7 +288,8 @@ object ProcessCompilationError {
 
   final case class DisablingManyOutputsFragment(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
-  final case class DisablingNoOutputsFragment(id: String) extends ProcessCompilationError {
+  // TODO local: check if this displays ok
+  final case class DisablingNoOutputsFragment(id: String) extends ProcessCompilationError with GlobalError {
     override def nodeIds: Set[String] = Set.empty
   }
 
@@ -302,10 +305,9 @@ object ProcessCompilationError {
       extends DuplicateFragmentOutputNames
       with InASingleNode
 
-  final case class DuplicateFragmentOutputNamesInFragment(duplicatedVarName: String)
-      extends DuplicateFragmentOutputNames {
-    override def nodeIds: Set[String] = Set.empty
-  }
+  final case class DuplicateFragmentOutputNamesInFragment(duplicatedVarName: String, nodeIds: Set[String])
+      extends DuplicateFragmentOutputNames
+      with GlobalError
 
   final case class CustomNodeError(nodeId: String, message: String, paramName: Option[String])
       extends ProcessCompilationError
@@ -316,7 +318,8 @@ object ProcessCompilationError {
       CustomNodeError(nodeId.id, message, paramName)
   }
 
-  final case class FatalUnknownError(message: String) extends ProcessCompilationError {
+  // TODO local: check if this displays ok
+  final case class FatalUnknownError(message: String) extends ProcessCompilationError with GlobalError {
     override def nodeIds: Set[String] = Set()
   }
 

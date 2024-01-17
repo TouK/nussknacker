@@ -144,13 +144,13 @@ protected trait ProcessCompilerBase {
     if (splittedProcess.metaData.isFragment) {
       val nodes               = NodesCollector.collectNodesInAllParts(splittedProcess.sources)
       val fragmentOutputNodes = nodes.collect { case EndingNode(data: FragmentOutputDefinition) => data }
-      val duplicatedOutputNames = fragmentOutputNodes
+      val duplicatedOutputNamesWithNodeIds = fragmentOutputNodes
         .groupBy(_.outputName)
         .collect {
-          case (name, nodes) if nodes.size > 1 => name
+          case (name, nodes) if nodes.size > 1 => name -> nodes.map(_.id).toSet
         }
-      duplicatedOutputNames
-        .map(n => invalidNel(DuplicateFragmentOutputNamesInFragment(n)))
+      duplicatedOutputNamesWithNodeIds
+        .map(n => invalidNel(DuplicateFragmentOutputNamesInFragment(n._1, n._2)))
         .toList
         .sequence
         .map(_ => ())

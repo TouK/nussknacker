@@ -14,7 +14,12 @@ import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefiniti
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  GlobalError,
+  NodeTypingData,
+  ValidationErrors,
+  ValidationResult
+}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -214,22 +219,25 @@ class UIProcessValidator(
       ValidationResult.errors(
         Map(),
         List(),
-        List(PrettyValidationErrors.formatErrorMessage(DuplicatedNodeIds(duplicates.toSet)))
+        List(GlobalError(PrettyValidationErrors.formatErrorMessage(DuplicatedNodeIds(duplicates.toSet)), duplicates))
       )
     }
   }
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
-    val processErrors                   = errors.filter(_.nodeIds.isEmpty)
-    val (propertiesErrors, otherErrors) = processErrors.partition(_.isInstanceOf[ScenarioPropertiesError])
+    val globalErrors     = errors.filter(_.isInstanceOf[ProcessCompilationError.GlobalError])
+    val propertiesErrors = errors.filter(_.isInstanceOf[ScenarioPropertiesError])
+    val nodeErrors = errors.filter { e =>
+      !globalErrors.contains(e) && !propertiesErrors.contains(e)
+    }
 
     ValidationResult.errors(
       invalidNodes = (for {
-        error  <- errors.toList.filterNot(processErrors.contains)
+        error  <- nodeErrors
         nodeId <- error.nodeIds
       } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
-      processPropertiesErrors = propertiesErrors.map(PrettyValidationErrors.formatErrorMessage),
-      globalErrors = otherErrors.map(PrettyValidationErrors.formatErrorMessage)
+      processPropertiesErrors = propertiesErrors.map(e => PrettyValidationErrors.formatErrorMessage(e)),
+      globalErrors = globalErrors.map(e => GlobalError(PrettyValidationErrors.formatErrorMessage(e), e.nodeIds.toList))
     )
   }
 

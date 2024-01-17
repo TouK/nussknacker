@@ -2,17 +2,20 @@ import React from "react";
 import i18next from "i18next";
 import { concat, difference, isEmpty } from "lodash";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
-import { NodeType, NodeValidationError } from "../../../types";
+import { NodeType, NodeValidationError, GlobalValidationError } from "../../../types";
+import { v4 as uuid4 } from "uuid";
 import { Scenario } from "src/components/Process/types";
 
 interface NodeErrorsTips {
     propertiesErrors: NodeValidationError[];
     nodeErrors: Record<string, NodeValidationError[]>;
+    globalErrors: GlobalValidationError[];
     showDetails: (event: React.SyntheticEvent<Element, Event>, details: NodeType) => void;
     scenario: Scenario;
 }
 
-export const NodeErrorsTips = ({ propertiesErrors, nodeErrors, showDetails, scenario }: NodeErrorsTips) => {
+// TODO local: clean this up
+export const NodeErrorsTips = ({ propertiesErrors, nodeErrors, globalErrors, showDetails, scenario }: NodeErrorsTips) => {
     const nodeIds = Object.keys(nodeErrors);
 
     const errorsOnTopPresent = (otherNodeErrorIds: string[], propertiesErrors: NodeValidationError[]) => {
@@ -24,8 +27,29 @@ export const NodeErrorsTips = ({ propertiesErrors, nodeErrors, showDetails, scen
     const otherNodeErrorIds = difference(nodeIds, concat(looseNodeIds, invalidEndNodeIds));
     const errorsOnTop = errorsOnTopPresent(otherNodeErrorIds, propertiesErrors);
 
+    const globalError = (error: NodeValidationError) => (
+        <span key={uuid4()} title={error.description}>
+            {error.message + (error.fieldName ? `(${error.fieldName})` : "")}
+        </span>
+    );
+
+    const globalErrorsLinkSections = globalErrors.map((e, index) =>
+        isEmpty(e.nodeIds) ? (
+            globalError(e.error)
+        ) : (
+            <NodeErrorsLinkSection
+                key={index}
+                nodeIds={e.nodeIds}
+                message={`${e.error.message}: `}
+                showDetails={showDetails}
+                scenario={scenario}
+            />
+        ),
+    );
+
     return (
         <>
+            {globalErrorsLinkSections}
             <NodeErrorsLinkSection
                 nodeIds={concat(otherNodeErrorIds, isEmpty(propertiesErrors) ? [] : "properties")}
                 message={i18next.t("errors.errorsIn", "Errors in: ")}
