@@ -27,7 +27,7 @@ class NodesApiHttpService(
     typeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
     typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
     typeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
-    protected val processService: ProcessService
+    protected val scenarioService: ProcessService
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(config, authenticator)
     with LazyLogging {
@@ -40,26 +40,26 @@ class NodesApiHttpService(
     nodesApiEndpoints.nodesAdditionalInfoEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { implicit loggedUser => pair =>
-        val (processName, nodeData) = pair
+        val (scenarioName, nodeData) = pair
 
-        processService
-          .getProcessId(processName)
-          .flatMap { processId =>
-            processService
+        scenarioService
+          .getProcessId(scenarioName)
+          .flatMap { scenarioId =>
+            scenarioService
               .getLatestProcessWithDetails(
-                ProcessIdWithName(processId, processName),
+                ProcessIdWithName(scenarioId, scenarioName),
                 GetScenarioWithDetailsOptions.detailsOnly
               )
-              .flatMap { process =>
+              .flatMap { scenario =>
                 additionalInfoProviders
-                  .prepareAdditionalInfoForNode(nodeData, process.processingType)
+                  .prepareAdditionalInfoForNode(nodeData, scenario.processingType)
                   .map { additionalInfo =>
                     success(additionalInfo)
                   }
               }
           }
           .recover { case _ =>
-            businessError(s"No scenario $processName found")
+            businessError(s"No scenario $scenarioName found")
           }
       }
   }
@@ -68,25 +68,25 @@ class NodesApiHttpService(
     nodesApiEndpoints.nodesValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { implicit loggedUser => pair =>
-        val (processName, nodeValidationRequestDto) = pair
+        val (scenarioName, nodeValidationRequestDto) = pair
 
-        processService
-          .getProcessId(processName)
-          .flatMap { processId =>
-            processService
+        scenarioService
+          .getProcessId(scenarioName)
+          .flatMap { scenarioId =>
+            scenarioService
               .getLatestProcessWithDetails(
-                ProcessIdWithName(processId, processName),
+                ProcessIdWithName(scenarioId, scenarioName),
                 GetScenarioWithDetailsOptions.detailsOnly
               )
-              .flatMap { process =>
-                implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(process.processingType)
-                val nodeValidator                 = typeToNodeValidator.forTypeUnsafe(process.processingType)
+              .flatMap { scenario =>
+                implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(scenario.processingType)
+                val nodeValidator                 = typeToNodeValidator.forTypeUnsafe(scenario.processingType)
                 val nodeData                      = NodeValidationRequest.apply(nodeValidationRequestDto)
-                Future(success(NodeValidationResultDto.apply(nodeValidator.validate(processName, nodeData))))
+                Future(success(NodeValidationResultDto.apply(nodeValidator.validate(scenarioName, nodeData))))
               }
           }
           .recover { case _ =>
-            businessError(s"No scenario $processName found")
+            businessError(s"No scenario $scenarioName found")
           }
       }
   }
@@ -95,21 +95,21 @@ class NodesApiHttpService(
     nodesApiEndpoints.propertiesAdditionalInfoEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { implicit loggedUser => pair =>
-        val (processName, processProperties) = pair
+        val (scenarioName, scenarioProperties) = pair
 
-        processService
-          .getProcessId(processName)
-          .flatMap { processId =>
-            processService
+        scenarioService
+          .getProcessId(scenarioName)
+          .flatMap { scenarioId =>
+            scenarioService
               .getLatestProcessWithDetails(
-                ProcessIdWithName(processId, processName),
+                ProcessIdWithName(scenarioId, scenarioName),
                 GetScenarioWithDetailsOptions.detailsOnly
               )
-              .flatMap { process =>
+              .flatMap { scenario =>
                 additionalInfoProviders
                   .prepareAdditionalInfoForProperties(
-                    processProperties.toMetaData(processName),
-                    process.processingType
+                    scenarioProperties.toMetaData(scenarioName),
+                    scenario.processingType
                   )
                   .map { additionalInfo =>
                     success(additionalInfo)
@@ -117,7 +117,7 @@ class NodesApiHttpService(
               }
           }
           .recover { case _ =>
-            businessError(s"No scenario $processName found")
+            businessError(s"No scenario $scenarioName found")
           }
       }
   }
@@ -126,17 +126,17 @@ class NodesApiHttpService(
     nodesApiEndpoints.propertiesValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { implicit loggedUser => pair =>
-        val (processName, request) = pair
+        val (scenarioName, request) = pair
 
-        processService
-          .getProcessId(processName)
-          .flatMap { processId =>
-            processService
+        scenarioService
+          .getProcessId(scenarioName)
+          .flatMap { scenarioId =>
+            scenarioService
               .getLatestProcessWithDetails(
-                ProcessIdWithName(processId, processName),
+                ProcessIdWithName(scenarioId, scenarioName),
                 GetScenarioWithDetailsOptions.detailsOnly
               )
-              .flatMap { process =>
+              .flatMap { scenarioWithDetails =>
                 val scenario = ScenarioGraph(
                   ProcessProperties(request.additionalFields),
                   Nil,
@@ -144,8 +144,8 @@ class NodesApiHttpService(
                 )
                 val result =
                   typeToProcessValidator
-                    .forTypeUnsafe(process.processingType)
-                    .validate(scenario, processName, isFragment = false)
+                    .forTypeUnsafe(scenarioWithDetails.processingType)
+                    .validate(scenario, scenarioName, isFragment = false)
                 Future(
                   success(
                     NodeValidationResultDto(
@@ -159,7 +159,7 @@ class NodesApiHttpService(
               }
           }
           .recover { case _ =>
-            businessError(s"No scenario $processName found")
+            businessError(s"No scenario $scenarioName found")
           }
       }
   }

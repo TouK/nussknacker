@@ -274,7 +274,7 @@ class AkkaHttpBasedRouteProvider(
           typeToConfig.mapValues(v => ExpressionSuggester(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)),
         typeToParametersValidator =
           typeToConfig.mapValues(v => new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)),
-        processService = processService
+        scenarioService = processService
       )
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
         config = resolvedConfig,
