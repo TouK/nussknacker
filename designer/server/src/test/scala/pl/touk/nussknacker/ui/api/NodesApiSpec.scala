@@ -517,6 +517,23 @@ class NodesApiSpec
                  |    "validationPerformed": true
                  |}""".stripMargin)
         }
+        "return 404 for not existent fragment validation" in {
+          val fragmentName = "fragment"
+
+          given()
+            .applicationState {
+              createSavedScenario(exampleScenario, Category1, Streaming)
+            }
+            .basicAuth("allpermuser", "allpermuser")
+            .jsonBody(exampleNodeValidationRequestForFragment(fragmentName))
+            .when()
+            .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
+            .Then()
+            .statusCode(404)
+            .body(
+              equalTo(s"No scenario $fragmentName found")
+            )
+        }
       }
       "not authenticated should" - {
         "forbid access" in {
@@ -1156,6 +1173,65 @@ class NodesApiSpec
        |        "column": 5
        |    },
        |    "variableTypes": {}
+       |}""".stripMargin
+
+  private def exampleNodeValidationRequestForFragment(fragmentName: String): String =
+    s"""{
+       |    "outgoingEdges": [
+       |        {
+       |            "from": "$fragmentName",
+       |            "to": "variable",
+       |            "edgeType": {
+       |                "name": "output",
+       |                "type": "FragmentOutput"
+       |            }
+       |        }
+       |    ],
+       |    "nodeData": {
+       |        "additionalFields": {
+       |            "layoutData": {
+       |                "x": 175,
+       |                "y": 180
+       |            }
+       |        },
+       |        "ref": {
+       |            "id": "$fragmentName",
+       |            "parameters": [],
+       |            "outputVariableNames": {
+       |                "output": "output"
+       |            }
+       |        },
+       |        "isDisabled": null,
+       |        "fragmentParams": null,
+       |        "type": "FragmentInput",
+       |        "branchParametersTemplate": [],
+       |        "id": "fragment"
+       |    },
+       |    "processProperties": {
+       |        "isFragment": false,
+       |        "additionalFields": {
+       |            "description": null,
+       |            "properties": {
+       |                "parallelism": "1",
+       |                "checkpointIntervalInSeconds": "",
+       |                "maxEvents": "1",
+       |                "numberOfThreads": "1",
+       |                "spillStateToDisk": "true",
+       |                "environment": "test",
+       |                "useAsyncInterpretation": ""
+       |            },
+       |            "metaDataType": "StreamMetaData"
+       |        }
+       |    },
+       |    "branchVariableTypes": {},
+       |    "variableTypes": {
+       |        "input": {
+       |            "display": "CsvRecord",
+       |            "type": "TypedClass",
+       |            "refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.CsvRecord",
+       |            "params": []
+       |        }
+       |    }
        |}""".stripMargin
 
 }

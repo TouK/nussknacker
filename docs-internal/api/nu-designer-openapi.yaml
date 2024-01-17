@@ -427,14 +427,14 @@ paths:
                     resource
       security:
       - httpAuth: []
-  /api/nodes/{processName}/additionalInfo:
+  /api/nodes/{scenarioName}/additionalInfo:
     post:
       tags:
       - Nodes
       summary: Additional info for provided node
-      operationId: postApiNodesProcessnameAdditionalinfo
+      operationId: postApiNodesScenarionameAdditionalinfo
       parameters:
-      - name: processName
+      - name: scenarioName
         in: path
         required: true
         schema:
@@ -487,14 +487,14 @@ paths:
                 type: string
       security:
       - httpAuth: []
-  /api/nodes/{processName}/validation:
+  /api/nodes/{scenarioName}/validation:
     post:
       tags:
       - Nodes
       summary: Validate provided Node
-      operationId: postApiNodesProcessnameValidation
+      operationId: postApiNodesScenarionameValidation
       parameters:
-      - name: processName
+      - name: scenarioName
         in: path
         required: true
         schema:
@@ -669,14 +669,14 @@ paths:
                 type: string
       security:
       - httpAuth: []
-  /api/properties/{processName}/additionalInfo:
+  /api/properties/{scenarioName}/additionalInfo:
     post:
       tags:
       - Nodes
       summary: Additional info for provided properties
-      operationId: postApiPropertiesProcessnameAdditionalinfo
+      operationId: postApiPropertiesScenarionameAdditionalinfo
       parameters:
-      - name: processName
+      - name: scenarioName
         in: path
         required: true
         schema:
@@ -729,14 +729,14 @@ paths:
                 type: string
       security:
       - httpAuth: []
-  /api/properties/{processName}/validation:
+  /api/properties/{scenarioName}/validation:
     post:
       tags:
       - Nodes
       summary: Validate node properties
-      operationId: postApiPropertiesProcessnameValidation
+      operationId: postApiPropertiesScenarionameValidation
       parameters:
-      - name: processName
+      - name: scenarioName
         in: path
         required: true
         schema:

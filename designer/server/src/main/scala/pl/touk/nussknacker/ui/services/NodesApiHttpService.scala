@@ -85,8 +85,8 @@ class NodesApiHttpService(
                 Future(success(NodeValidationResultDto.apply(nodeValidator.validate(scenarioName, nodeData))))
               }
           }
-          .recover { case _ =>
-            businessError(s"No scenario $scenarioName found")
+          .recover { case e: Throwable =>
+            businessError(e.getMessage)
           }
       }
   }
