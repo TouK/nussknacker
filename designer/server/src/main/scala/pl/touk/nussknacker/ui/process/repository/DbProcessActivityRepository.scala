@@ -14,7 +14,6 @@ import java.sql.Timestamp
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
-// TODO remove json codec
 trait ProcessActivityRepository {
 
   def addComment(processId: ProcessId, processVersionId: VersionId, comment: CommentValue)(
