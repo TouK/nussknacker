@@ -136,12 +136,12 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
   }
 
   override def fetchProcessingType(
-      processId: ProcessId
+      processId: ProcessIdWithName
   )(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
       implicit val fetchStrategy: ScenarioShapeFetchStrategy[_] = ScenarioShapeFetchStrategy.NotFetch
-      fetchLatestProcessDetailsForProcessIdQuery(processId).flatMap {
-        case None          => DBIO.failed(ProcessNotFoundError(processId.value.toString))
+      fetchLatestProcessDetailsForProcessIdQuery(processId.id).flatMap {
+        case None          => DBIO.failed(ProcessNotFoundError(processId.name))
         case Some(process) => DBIO.successful(process.processingType)
       }
     }
@@ -233,7 +233,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
         canonical.asInstanceOf[PS]
       case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchDisplayable) =>
         val displayableProcess =
-          ProcessConverter.toDisplayableOrDie(canonical, process.processingType, process.processCategory)
+          ProcessConverter.toDisplayable(canonical)
         displayableProcess.asInstanceOf[PS]
       case (_, _, ScenarioShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
       case (_, Some(componentsUsages), ScenarioShapeFetchStrategy.FetchComponentsUsages) =>

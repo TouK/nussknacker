@@ -26,10 +26,10 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil.toDisplayable
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
@@ -117,23 +117,42 @@ object ProcessTestData {
       .build
 
   def processValidator: UIProcessValidator = new UIProcessValidator(
+    TestProcessingTypes.Streaming,
     ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition())),
     Map.empty,
     List.empty,
     new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
 
-  val validProcess: CanonicalProcess = validProcessWithName(ProcessName("fooProcess"))
+  val sampleProcessName: ProcessName = ProcessName("fooProcess")
+
+  val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName)
 
   val validProcessWithEmptySpelExpr: CanonicalProcess =
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
 
-  val validDisplayableProcess: DisplayableProcess = toDisplayable(validProcess)
+  val validDisplayableProcess: DisplayableProcess = ProcessConverter.toDisplayable(validProcess)
 
-  val validProcessDetails: ScenarioWithDetails = TestProcessUtil.wrapWithDetails(validDisplayableProcess)
+  val validProcessDetails: ScenarioWithDetails =
+    TestProcessUtil.wrapWithDetails(validDisplayableProcess)
 
   val archivedValidProcessDetails: ScenarioWithDetails =
     TestProcessUtil.wrapWithDetails(validDisplayableProcess).copy(isArchived = true)
+
+  // TODO: merge with this below
+  val sampleScenario: CanonicalProcess = {
+    def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
+      GraphBuilder
+        .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'")
+        .emptySink("end" + idSuffix, "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#output")
+    }
+    ScenarioBuilder
+      .streaming(ProcessTestData.sampleProcessName.value)
+      .parallelism(1)
+      .source("startProcess", "csv-source")
+      .filter("input", "#input != null")
+      .to(endWithMessage("suffix", "message"))
+  }
 
   def validProcessWithName(name: ProcessName): CanonicalProcess = ScenarioBuilder
     .streaming(name.value)
@@ -154,7 +173,7 @@ object ProcessTestData {
     .customNode("custom", "out1", otherExistingServiceId2, param)
     .emptySink("sink", existingSinkFactory)
 
-  val multipleSourcesValidProcess: DisplayableProcess = toDisplayable(
+  val multipleSourcesValidProcess: DisplayableProcess = ProcessConverter.toDisplayable(
     ScenarioBuilder
       .streaming("fooProcess")
       .sources(
@@ -212,7 +231,6 @@ object ProcessTestData {
   }
 
   val processWithInvalidScenarioProperties: DisplayableProcess = DisplayableProcess(
-    name = ProcessName("fooProcess"),
     properties = ProcessProperties.combineTypeSpecificProperties(
       StreamMetaData(Some(2)),
       ProcessAdditionalFields(
@@ -226,14 +244,11 @@ object ProcessTestData {
       )
     ),
     nodes = List.empty,
-    edges = List.empty,
-    processingType = TestProcessingTypes.Streaming,
-    TestCategories.Category1
+    edges = List.empty
   )
 
   val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
-      name = ProcessName("fooProcess"),
       properties = ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(Some(2)),
         ProcessAdditionalFields(Some("process description"), Map.empty, StreamMetaData.typeName)
@@ -251,18 +266,18 @@ object ProcessTestData {
         )
       ),
       edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
-      processingType = TestProcessingTypes.Streaming,
-      TestCategories.Category1
     )
   }
 
-  val emptyFragment = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(), List.empty)
+  val sampleFragmentName: ProcessName = ProcessName("fragment1")
+
+  val emptyFragment: CanonicalProcess = {
+    CanonicalProcess(MetaData(sampleFragmentName.value, FragmentSpecificData()), List(), List.empty)
   }
 
-  val sampleFragmentOneOut = {
+  val sampleFragmentOneOut: CanonicalProcess = {
     CanonicalProcess(
-      MetaData("sub1", FragmentSpecificData()),
+      MetaData(sampleFragmentName.value, FragmentSpecificData()),
       List(
         FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
         canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
@@ -271,9 +286,21 @@ object ProcessTestData {
     )
   }
 
-  val sampleFragment = {
+  // TODO: Merge with this above
+  val sampleFragmentWithInAndOut: CanonicalProcess = CanonicalProcess(
+    MetaData(sampleFragmentName.value, FragmentSpecificData()),
+    List(
+      canonicalnode.FlatNode(
+        FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))
+      ),
+      canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+    ),
+    List.empty
+  )
+
+  val sampleFragment: CanonicalProcess = {
     CanonicalProcess(
-      MetaData("sub1", FragmentSpecificData()),
+      MetaData(sampleFragmentName.value, FragmentSpecificData()),
       List(
         FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
         SplitNode(
@@ -288,9 +315,9 @@ object ProcessTestData {
     )
   }
 
-  val sampleFragment2 = {
+  val sampleFragment2: CanonicalProcess = {
     CanonicalProcess(
-      MetaData("sub1", FragmentSpecificData()),
+      MetaData(sampleFragmentName.value, FragmentSpecificData()),
       List(
         FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param2", FragmentClazzRef[String])))),
         SplitNode(
@@ -307,16 +334,12 @@ object ProcessTestData {
   }
 
   def createEmptyUpdateProcessCommand(
-      processName: ProcessName,
       comment: Option[UpdateProcessComment]
   ): UpdateProcessCommand = {
     val displayableProcess = DisplayableProcess(
-      name = processName,
       properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
       nodes = List.empty,
-      edges = List.empty,
-      processingType = TestProcessingTypes.Streaming,
-      TestCategories.Category1
+      edges = List.empty
     )
 
     UpdateProcessCommand(displayableProcess, comment.getOrElse(UpdateProcessComment("")), None)
@@ -340,18 +363,6 @@ object ProcessTestData {
           )
         ),
       fragment = fragment
-    )
-  }
-
-  def displayableWithAdditionalFields(additionalFields: Option[ProcessAdditionalFields]): DisplayableProcess = {
-    val process    = validDisplayableProcess
-    val properties = process.properties
-
-    process.copy(
-      properties = properties.copy(
-        additionalFields =
-          additionalFields.getOrElse(ProcessAdditionalFields(None, Map.empty, properties.additionalFields.metaDataType))
-      )
     )
   }
 

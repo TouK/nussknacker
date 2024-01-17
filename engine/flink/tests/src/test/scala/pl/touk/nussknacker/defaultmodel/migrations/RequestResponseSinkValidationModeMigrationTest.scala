@@ -14,13 +14,12 @@ class RequestResponseSinkValidationModeMigrationTest extends AnyFunSuite {
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   test("should migrate union node 'value' parameter name to Output expression") {
-
     val process = ScenarioBuilder
       .requestResponse("test")
       .source("source", "request")
       .emptySink("sink", "response")
 
-    val results = RequestResponseSinkValidationModeMigration.migrateProcess(process, "none")
+    val results = RequestResponseSinkValidationModeMigration.migrateProcess(process)
     getFirst[Sink](results).parameters shouldBe List(NodeParameter("Value validation mode", "'lax'"))
   }
 

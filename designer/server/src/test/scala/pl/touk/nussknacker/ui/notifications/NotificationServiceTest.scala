@@ -35,9 +35,9 @@ import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
 class NotificationServiceTest
@@ -160,7 +160,7 @@ class NotificationServiceTest
       actionRepository,
       dbioRunner,
       mock[ProcessingTypeDataProvider[UIProcessValidator, _]],
-      mock[ScenarioResolver],
+      mock[ProcessingTypeDataProvider[ScenarioResolver, _]],
       mock[ProcessChangeListener],
       None,
       clock

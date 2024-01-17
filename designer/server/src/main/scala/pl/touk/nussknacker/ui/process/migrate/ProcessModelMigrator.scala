@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 final case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[ProcessMigration]) {
 
   def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(
-    id = processId,
+    processId = processId,
     canonicalProcess = process,
     comment = Option(migrationsApplied).filter(_.nonEmpty).map(MigrationComment),
     increaseVersionWhenJsonNotChanged = true,
@@ -22,22 +22,23 @@ final case class MigrationResult(process: CanonicalProcess, migrationsApplied: L
 
 }
 
-class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrations, _]) {
+class ProcessModelMigrator(migrations: ProcessMigrations) {
 
   def migrateProcess(
       processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
       skipEmptyMigrations: Boolean
-  )(implicit user: LoggedUser): Option[MigrationResult] = {
-    for {
-      migrations <- migrations.forType(processDetails.processingType)
-      displayable       = processDetails.json
-      migrationsToApply = findMigrationsToApply(migrations, processDetails.modelVersion)
-      if migrationsToApply.nonEmpty || !skipEmptyMigrations
-    } yield migrateWithMigrations(
-      ProcessConverter.fromDisplayable(displayable),
-      displayable.category,
-      migrationsToApply
-    )
+  ): Option[MigrationResult] = {
+    val migrationsToApply = findMigrationsToApply(migrations, processDetails.modelVersion)
+    if (migrationsToApply.nonEmpty || !skipEmptyMigrations) {
+      Some(
+        migrateWithMigrations(
+          ProcessConverter.fromDisplayable(processDetails.json, processDetails.name),
+          migrationsToApply
+        )
+      )
+    } else {
+      None
+    }
   }
 
   private def findMigrationsToApply(
@@ -54,12 +55,11 @@ class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrati
 
   private def migrateWithMigrations(
       process: CanonicalProcess,
-      category: String,
       migrationsToApply: List[ProcessMigration]
   ): MigrationResult = {
     val (resultProcess, migrationsApplied) = migrationsToApply.foldLeft((process, Nil: List[ProcessMigration])) {
       case ((processToConvert, migrationsAppliedAcc), migration) =>
-        val migrated = migration.migrateProcess(processToConvert, category)
+        val migrated = migration.migrateProcess(processToConvert)
         val migrationsApplied =
           if (migrated != processToConvert) migration :: migrationsAppliedAcc else migrationsAppliedAcc
         (migrated, migrationsApplied)

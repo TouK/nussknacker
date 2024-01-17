@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.test
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
@@ -12,7 +12,6 @@ import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.ui.api.{TestDataSettings, TestSourceParameters}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -20,36 +19,42 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioTestService(
-    testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider, _],
+    testInfoProvider: TestInfoProvider,
+    processResolver: UIProcessResolver,
     testDataSettings: TestDataSettings,
     preliminaryScenarioTestDataSerDe: PreliminaryScenarioTestDataSerDe,
-    processResolvers: ProcessingTypeDataProvider[UIProcessResolver, _],
     processCounter: ProcessCounter,
     testExecutorService: ScenarioTestExecutorService,
 ) extends LazyLogging {
 
-  def getTestingCapabilities(displayableProcess: DisplayableProcess)(implicit user: LoggedUser): TestingCapabilities = {
-    val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val canonical        = toCanonicalProcess(displayableProcess)
+  def getTestingCapabilities(displayableProcess: DisplayableProcess, processName: ProcessName, isFragment: Boolean)(
+      implicit user: LoggedUser
+  ): TestingCapabilities = {
+    val canonical = toCanonicalProcess(displayableProcess, processName, isFragment)
     testInfoProvider.getTestingCapabilities(canonical)
   }
 
   def testParametersDefinition(
-      displayableProcess: DisplayableProcess
+      displayableProcess: DisplayableProcess,
+      processName: ProcessName,
+      isFragment: Boolean
   )(implicit user: LoggedUser): List[UISourceParameters] = {
-    val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val canonical        = toCanonicalProcess(displayableProcess)
+    val canonical = toCanonicalProcess(displayableProcess, processName, isFragment)
     testInfoProvider
       .getTestParameters(canonical)
       .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
       .toList
   }
 
-  def generateData(displayableProcess: DisplayableProcess, testSampleSize: Int)(
+  def generateData(
+      displayableProcess: DisplayableProcess,
+      processName: ProcessName,
+      isFragment: Boolean,
+      testSampleSize: Int
+  )(
       implicit user: LoggedUser
   ): Either[String, RawScenarioTestData] = {
-    val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val canonical        = toCanonicalProcess(displayableProcess)
+    val canonical = toCanonicalProcess(displayableProcess, processName, isFragment)
 
     for {
       _ <- Either.cond(
@@ -67,21 +72,20 @@ class ScenarioTestService(
   def performTest[T](
       idWithName: ProcessIdWithName,
       displayableProcess: DisplayableProcess,
+      isFragment: Boolean,
       rawTestData: RawScenarioTestData
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
-    val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
     for {
       preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe
         .deserialize(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
-      canonical = toCanonicalProcess(displayableProcess)
+      canonical = toCanonicalProcess(displayableProcess, idWithName.name, isFragment)
       scenarioTestData <- testInfoProvider
         .prepareTestData(preliminaryScenarioTestData, canonical)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       testResults <- testExecutorService.testProcess(
         idWithName,
         canonical,
-        displayableProcess.processingType,
         scenarioTestData
       )
       _ <- {
@@ -90,17 +94,17 @@ class ScenarioTestService(
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
   }
 
-  def performTest[T](
+  def performTest(
       idWithName: ProcessIdWithName,
       displayableProcess: DisplayableProcess,
+      isFragment: Boolean,
       parameterTestData: TestSourceParameters
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
-    val canonical = toCanonicalProcess(displayableProcess)
+    val canonical = toCanonicalProcess(displayableProcess, idWithName.name, isFragment)
     for {
       testResults <- testExecutorService.testProcess(
         idWithName,
         canonical,
-        displayableProcess.processingType,
         ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions)
       )
       _ <- assertTestResultsAreNotTooBig(testResults)
@@ -108,10 +112,11 @@ class ScenarioTestService(
   }
 
   private def toCanonicalProcess(
-      displayableProcess: DisplayableProcess
+      displayableProcess: DisplayableProcess,
+      processName: ProcessName,
+      isFragment: Boolean
   )(implicit user: LoggedUser): CanonicalProcess = {
-    val processResolver = processResolvers.forTypeUnsafe(displayableProcess.processingType)
-    processResolver.validateAndResolve(displayableProcess)
+    processResolver.validateAndResolve(displayableProcess, processName, isFragment)
   }
 
   private def assertTestResultsAreNotTooBig(testResults: TestResults): Future[Unit] = {

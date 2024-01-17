@@ -4,6 +4,9 @@ import io.circe.{Decoder, Encoder}
 
 import scala.util.{Failure, Success, Try}
 
+// It is a synthetic, autoincremental id of scenario in the database.
+// TODO: We should avoid exposing it anywhere, especially in the API as it is not safety to pass anywhere such an information.
+// TODO: Also we'd rather don't need a synthetic identifier, ProcessName (which meant to be a human friendly id) would be sufficient
 final case class ProcessId(value: Long) {
   override def toString: String = value.toString
 }

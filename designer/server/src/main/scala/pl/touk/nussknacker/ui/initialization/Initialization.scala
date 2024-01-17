@@ -34,7 +34,7 @@ object Initialization {
 
     val operations: List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),
-      new AutomaticMigration(migrations, processRepository, fetchingRepository)
+      new AutomaticMigration(migrations.mapValues(new ProcessModelMigrator(_)), processRepository, fetchingRepository)
     )
 
     runOperationsTransactionally(db, operations)
@@ -84,12 +84,10 @@ class EnvironmentInsert(environmentName: String, dbRef: DbRef) extends InitialOp
 }
 
 class AutomaticMigration(
-    migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
+    migrators: ProcessingTypeDataProvider[ProcessModelMigrator, _],
     processRepository: DBProcessRepository,
     fetchingProcessRepository: DBFetchingProcessRepository[DB]
 ) extends InitialOperation {
-
-  private val migrator = new ProcessModelMigrator(migrations)
 
   def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     val results: DB[List[Unit]] = for {
@@ -104,14 +102,15 @@ class AutomaticMigration(
   private def migrateOne(
       processDetails: ScenarioWithDetailsEntity[DisplayableProcess]
   )(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
-    // TODO: unsafe processId?
-    migrator
-      .migrateProcess(processDetails, skipEmptyMigrations = true)
-      .map(_.toUpdateAction(ProcessId(processDetails.processId.value))) match {
-      case Some(action) =>
-        processRepository.updateProcess(action).map(_ => ())
-      case None => DBIOAction.successful(())
-    }
+    DBIOAction
+      .sequenceOption(for {
+        migrator        <- migrators.forType(processDetails.processingType)
+        migrationResult <- migrator.migrateProcess(processDetails, skipEmptyMigrations = true)
+        updateAction = migrationResult.toUpdateAction(processDetails.processId)
+      } yield {
+        processRepository.updateProcess(updateAction)
+      })
+      .map(_ => ())
   }
 
 }

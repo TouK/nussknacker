@@ -18,8 +18,8 @@ import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{ScenarioComponentsUsagesHelper, ScenarioWithDetailsEntity}
 
@@ -42,8 +42,9 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     List.empty
   )
 
-  private val fragmentScenario = displayableToProcess(
-    ProcessConverter.toDisplayable(fragment, TestProcessingTypes.Streaming, TestCategories.Category1)
+  private val fragmentScenario = displayableToScenarioWithDetailsEntity(
+    ProcessConverter.toDisplayable(fragment),
+    fragment.name
   )
 
   private val process1 = ScenarioBuilder
@@ -53,7 +54,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     .customNode("custom2", "out2", otherExistingStreamTransformer)
     .emptySink("sink", existingSinkFactory)
 
-  private val processDetails1 = displayableToProcess(TestProcessUtil.toDisplayable(process1))
+  private val processDetails1 =
+    displayableToScenarioWithDetailsEntity(ProcessConverter.toDisplayable(process1), process1.name)
 
   private val processDetails1ButDeployed = processDetails1.copy(lastAction =
     Option(
@@ -80,7 +82,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     .customNode("custom", "out1", otherExistingStreamTransformer)
     .emptySink("sink", existingSinkFactory)
 
-  private val processDetails2 = displayableToProcess(TestProcessUtil.toDisplayable(process2))
+  private val processDetails2 =
+    displayableToScenarioWithDetailsEntity(ProcessConverter.toDisplayable(process2), process2.name)
 
   private val processWithSomeBasesStreaming = ScenarioBuilder
     .streaming("processWithSomeBasesStreaming")
@@ -95,8 +98,9 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
     )
 
-  private val processDetailsWithSomeBasesStreaming = displayableToProcess(
-    TestProcessUtil.toDisplayable(processWithSomeBasesStreaming)
+  private val processDetailsWithSomeBasesStreaming = displayableToScenarioWithDetailsEntity(
+    ProcessConverter.toDisplayable(processWithSomeBasesStreaming),
+    processWithSomeBasesStreaming.name
   )
 
   private val processWithSomeBasesFraud = ScenarioBuilder
@@ -111,8 +115,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
     )
 
-  private val processDetailsWithSomeBasesFraud = displayableToProcess(
-    TestProcessUtil.toDisplayable(processWithSomeBasesFraud, TestProcessingTypes.Fraud)
+  private val processDetailsWithSomeBasesFraud = displayableToScenarioWithDetailsEntity(
+    ProcessConverter.toDisplayable(processWithSomeBasesFraud),
+    processWithSomeBasesFraud.name,
+    TestProcessingTypes.Fraud
   )
 
   private val processWithFragment = ScenarioBuilder
@@ -129,7 +135,11 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       )
     )
 
-  private val processDetailsWithFragment = displayableToProcess(TestProcessUtil.toDisplayable(processWithFragment))
+  private val processDetailsWithFragment =
+    displayableToScenarioWithDetailsEntity(
+      ProcessConverter.toDisplayable(processWithFragment),
+      processWithFragment.name
+    )
 
   private val processingTypeAndComponentInfoToComponentId: (ProcessingType, ComponentInfo) => ComponentId = {
     case (_, ComponentInfo(ComponentType.CustomComponent, `otherExistingStreamTransformer`)) =>
@@ -345,7 +355,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       processesDetails: List[ScenarioWithDetailsEntity[DisplayableProcess]]
   ): List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]] = {
     processesDetails.map { details =>
-      details.mapScenario(p => ScenarioComponentsUsagesHelper.compute(toCanonical(p)))
+      details.mapScenario(p => ScenarioComponentsUsagesHelper.compute(toCanonical(p, details.name)))
     }
   }
 

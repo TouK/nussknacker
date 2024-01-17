@@ -37,12 +37,13 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   private val category1User =
     TestFactory.userWithCategoriesReadPermission(username = "testUser", categories = List(Category1))
 
-  private val category1Process = createBasicProcess("category1Process", category = Category1, lastAction = Some(Deploy))
-  private val category1Fragment = createFragment("category1Fragment", category = Category1)
+  private val category1Process =
+    createScenarioEntity("category1Process", category = Category1, lastAction = Some(Deploy))
+  private val category1Fragment = createFragmentEntity("category1Fragment", category = Category1)
   private val category1ArchivedFragment =
-    createBasicProcess("category1ArchivedFragment", isArchived = true, category = Category1)
+    createScenarioEntity("category1ArchivedFragment", isArchived = true, category = Category1)
   private val category2ArchivedProcess =
-    createBasicProcess("category2ArchivedProcess", isArchived = true, category = Category2)
+    createScenarioEntity("category2ArchivedProcess", isArchived = true, category = Category2)
 
   private val processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = List(
     category1Process,
@@ -51,8 +52,8 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     category2ArchivedProcess,
   )
 
-  private val fragmentCategory1 = createFragment("fragmentCategory1", category = Category1)
-  private val fragmentCategory2 = createFragment("fragmentCategory2", category = Category2)
+  private val fragmentCategory1 = createFragmentEntity("fragmentCategory1", category = Category1)
+  private val fragmentCategory2 = createFragmentEntity("fragmentCategory2", category = Category2)
 
   private val fragments = List(
     fragmentCategory1,
@@ -125,22 +126,24 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   it should "import process" in {
     val dBProcessService = createDbProcessService(processes)
 
-    val categoryDisplayable =
-      ProcessTestData.sampleDisplayableProcess.copy(name = category1Process.name, category = Category1)
-    val categoryStringData = ProcessConverter.fromDisplayable(categoryDisplayable).asJson.spaces2
-    val baseProcessData    = ProcessConverter.fromDisplayable(ProcessTestData.sampleDisplayableProcess).asJson.spaces2
+    val categoryStringData =
+      ProcessConverter.fromDisplayable(ProcessTestData.sampleDisplayableProcess, category1Process.name).asJson.spaces2
+    val baseProcessData = ProcessConverter
+      .fromDisplayable(ProcessTestData.sampleDisplayableProcess, ProcessTestData.sampleProcessName)
+      .asJson
+      .spaces2
 
     val testingData = Table(
       ("processId", "data", "expected"),
       (
         category1Process.idWithName,
         categoryStringData,
-        importSuccess(categoryDisplayable)
+        importSuccess(ProcessTestData.sampleDisplayableProcess)
       ), // importing data with the same id
       (
         category1Process.idWithName,
         baseProcessData,
-        importSuccess(categoryDisplayable)
+        importSuccess(ProcessTestData.sampleDisplayableProcess)
       ), // importing data with different id
       (
         category1ArchivedFragment.idWithName,

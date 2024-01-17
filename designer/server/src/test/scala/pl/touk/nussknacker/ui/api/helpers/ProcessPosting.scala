@@ -20,7 +20,7 @@ class ProcessPosting {
   }
 
   def toJson(process: CanonicalProcess): Json = {
-    ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCategories.Category1).asJson
+    ProcessConverter.toDisplayable(process).asJson
   }
 
   def toEntityAsProcessToSave(process: CanonicalProcess, comment: String = ""): RequestEntity = {
@@ -28,7 +28,7 @@ class ProcessPosting {
   }
 
   def toJsonAsProcessToSave(process: CanonicalProcess, comment: String = ""): Json = {
-    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCategories.Category1)
+    val displayable = ProcessConverter.toDisplayable(process)
     UpdateProcessCommand(displayable, UpdateProcessComment(comment), None).asJson
   }
 
@@ -54,10 +54,6 @@ class ProcessPosting {
 
   def toJson(process: UpdateProcessCommand): Json = {
     process.asJson
-  }
-
-  def toEntityAsProcessToSave(process: DisplayableProcess): RequestEntity = {
-    toRequest(toJsonAsProcessToSave(process))
   }
 
   def toJsonAsProcessToSave(process: DisplayableProcess): Json = {

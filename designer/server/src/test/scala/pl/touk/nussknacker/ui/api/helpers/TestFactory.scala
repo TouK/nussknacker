@@ -90,7 +90,9 @@ object TestFactory extends TestPermissions {
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
 
-  def scenarioResolver = new ScenarioResolver(sampleResolver)
+  def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] = mapProcessingTypeDataProvider(
+    TestProcessingTypes.Streaming -> new ScenarioResolver(sampleResolver, TestProcessingTypes.Streaming)
+  )
 
   def deploymentService() = new StubDeploymentService(Map.empty)
 

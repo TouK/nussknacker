@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import cats.instances.future._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
   FetchCanonical,
@@ -33,7 +33,7 @@ object MockFetchingProcessRepository {
   def withProcessesDetails(
       processes: List[ScenarioWithDetailsEntity[DisplayableProcess]]
   )(implicit ec: ExecutionContext): MockFetchingProcessRepository = {
-    val canonicals = processes.map { p => p.mapScenario(ProcessConverter.fromDisplayable) }
+    val canonicals = processes.map { p => p.mapScenario(ProcessConverter.fromDisplayable(_, p.name)) }
 
     new MockFetchingProcessRepository(
       TestFactory.dummyDbRef, // It's only for BasicRepository implementation, we don't use it
@@ -80,9 +80,9 @@ class MockFetchingProcessRepository private (
     Future(processes.find(p => p.processId == processId).map(_.name))
 
   override def fetchProcessingType(
-      processId: ProcessId
+      processId: ProcessIdWithName
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[String] =
-    getUserProcesses[Unit].map(_.find(p => p.processId == processId).map(_.processingType).get)
+    getUserProcesses[Unit].map(_.find(p => p.processId == processId.id).map(_.processingType).get)
 
   private def getUserProcesses[PS: ScenarioShapeFetchStrategy](implicit loggedUser: LoggedUser) =
     getProcesses[PS].map(_.filter(p => loggedUser.isAdmin || loggedUser.can(p.processCategory, Permission.Read)))
@@ -102,9 +102,7 @@ class MockFetchingProcessRepository private (
       case FetchCanonical => process.asInstanceOf[ScenarioWithDetailsEntity[PS]]
       case FetchDisplayable =>
         process
-          .mapScenario(canonical =>
-            ProcessConverter.toDisplayableOrDie(canonical, process.processingType, process.processCategory)
-          )
+          .mapScenario(canonical => ProcessConverter.toDisplayable(canonical))
           .asInstanceOf[ScenarioWithDetailsEntity[PS]]
       case FetchComponentsUsages =>
         process

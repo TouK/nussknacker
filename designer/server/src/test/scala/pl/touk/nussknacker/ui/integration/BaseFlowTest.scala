@@ -286,7 +286,7 @@ class BaseFlowTest
     val response1 = httpClient.send(
       quickRequest
         .post(
-          uri"$nuDesignerHttpAddress/api/processes/${scenario.name}/Category1?isFragment=${scenario.metaData.isFragment}"
+          uri"$nuDesignerHttpAddress/api/processes/${ProcessTestData.sampleProcessName}/Category1?isFragment=false"
         )
         .auth
         .basic("admin", "admin")
@@ -295,7 +295,7 @@ class BaseFlowTest
 
     val response2 = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processValidation")
+        .post(uri"$nuDesignerHttpAddress/api/processValidation/${ProcessTestData.sampleProcessName}")
         .contentType(MediaType.ApplicationJson)
         .body(scenario.asJson.spaces2)
         .auth
@@ -313,15 +313,12 @@ class BaseFlowTest
     val processId = UUID.randomUUID().toString
 
     val process = DisplayableProcess(
-      name = ProcessName(processId),
       properties = ProcessProperties(FragmentSpecificData()),
       nodes = List(
         FragmentInputDefinition("input1", List(FragmentParameter("badParam", FragmentClazzRef("i.do.not.exist")))),
         FragmentOutputDefinition("output1", "out1")
       ),
       edges = List(Edge("input1", "output1", None)),
-      processingType = TestProcessingTypes.Streaming,
-      TestCategories.Category1
     )
 
     val response1 = httpClient.send(
@@ -540,7 +537,7 @@ class BaseFlowTest
 
   private def testProcess(process: CanonicalProcess, data: String): Json = {
     val displayableProcess =
-      ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCategories.Category1)
+      ProcessConverter.toDisplayable(process)
 
     val response = httpClient.send(
       quickRequest

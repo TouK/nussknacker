@@ -46,7 +46,7 @@ import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationSer
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
+import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReload
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
@@ -109,8 +109,6 @@ class AkkaHttpBasedRouteProvider(
 
       val modelData = typeToConfig.mapValues(_.modelData)
 
-      val managers = typeToConfig.mapValues(_.deploymentManager)
-
       val dbioRunner        = DBIOActionRunner(dbRef)
       val actionRepository  = DbProcessActionRepository.create(dbRef, modelData)
       val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
@@ -121,20 +119,37 @@ class AkkaHttpBasedRouteProvider(
       val fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
 
-      val processValidatorAndResolver = typeToConfig.mapValues { processingTypeData =>
+      val scenarioTestServiceDeps = typeToConfig.mapValues { processingTypeData =>
         val validator = new UIProcessValidator(
+          processingTypeData.processingType,
           ProcessValidator.default(processingTypeData.modelData),
           processingTypeData.scenarioPropertiesConfig,
           processingTypeData.additionalValidators,
           fragmentResolver
         )
-        val substitutor = ProcessDictSubstitutor(processingTypeData.modelData.designerDictServices.dictRegistry)
-        val resolver    = new UIProcessResolver(validator, substitutor)
-        (validator, resolver)
+        val substitutor      = ProcessDictSubstitutor(processingTypeData.modelData.designerDictServices.dictRegistry)
+        val resolver         = new UIProcessResolver(validator, substitutor)
+        val scenarioResolver = new ScenarioResolver(fragmentResolver, processingTypeData.processingType)
+        (validator, resolver, scenarioResolver, processingTypeData.modelData, processingTypeData.deploymentManager)
       }
 
-      val processValidator = processValidatorAndResolver.mapValues(_._1)
-      val processResolver  = processValidatorAndResolver.mapValues(_._2)
+      val counter = new ProcessCounter(fragmentRepository)
+
+      val scenarioTestService = scenarioTestServiceDeps.mapValues {
+        case (_, processResolver, scenarioResolver, modelData, deploymentManager) =>
+          new ScenarioTestService(
+            new ModelDataTestInfoProvider(modelData),
+            processResolver,
+            featureTogglesConfig.testDataSettings,
+            new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
+            counter,
+            new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
+          )
+      }
+
+      val processValidator = scenarioTestServiceDeps.mapValues(_._1)
+      val processResolver  = scenarioTestServiceDeps.mapValues(_._2)
+      val scenarioResolver = scenarioTestServiceDeps.mapValues(_._3)
 
       val notificationsConfig = resolvedConfig.as[NotificationConfig]("notifications")
       val processChangeListener = ProcessChangeListenerLoader.loadListeners(
@@ -143,8 +158,8 @@ class AkkaHttpBasedRouteProvider(
         NussknackerServices(new PullProcessRepository(futureProcessRepository))
       )
 
-      val scenarioResolver = new ScenarioResolver(fragmentResolver)
-      val dmDispatcher     = new DeploymentManagerDispatcher(managers, futureProcessRepository)
+      val dmDispatcher =
+        new DeploymentManagerDispatcher(typeToConfig.mapValues(_.deploymentManager), futureProcessRepository)
 
       val deploymentService = new DeploymentServiceImpl(
         dmDispatcher,
@@ -167,8 +182,6 @@ class AkkaHttpBasedRouteProvider(
 
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
 
-      val counter = new ProcessCounter(fragmentRepository)
-
       Initialization.init(modelData.mapValues(_.migrations), dbRef, processRepository, environment)
 
       val newProcessPreparer = NewProcessPreparer(typeToConfig, typeToConfig.mapValues(_.scenarioPropertiesConfig))
@@ -178,7 +191,6 @@ class AkkaHttpBasedRouteProvider(
         dmDispatcher,
         deploymentService
       )
-      val testExecutorService         = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
       def getProcessCategoryService() = typeToConfig.combined.categoryService
 
       val stateDefinitionService = new ProcessStateDefinitionService(
@@ -194,14 +206,6 @@ class AkkaHttpBasedRouteProvider(
         futureProcessRepository,
         actionRepository,
         writeProcessRepository
-      )
-      val scenarioTestService = new ScenarioTestService(
-        modelData.mapValues(new ModelDataTestInfoProvider(_)),
-        featureTogglesConfig.testDataSettings,
-        new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
-        processResolver,
-        counter,
-        testExecutorService
       )
 
       val configProcessToolbarService = new ConfigProcessToolbarService(
@@ -319,7 +323,10 @@ class AkkaHttpBasedRouteProvider(
             .map(migrationConfig =>
               new HttpRemoteEnvironment(
                 migrationConfig,
-                new TestModelMigrations(modelData.mapValues(_.migrations), processValidator),
+                new TestModelMigrations(
+                  modelData.mapValues(data => new ProcessModelMigrator(data.migrations)),
+                  processValidator
+                ),
                 environment
               )
             )

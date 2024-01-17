@@ -11,7 +11,8 @@ import java.time.Instant
 final case class ScenarioWithDetails(
     name: ProcessName,
     // TODO: This field is not passed to FE as we always use ProcessName in our API (see the encoder below)
-    //       We should use entity in places where it is used on BE side or extract another class for DTO without this field
+    //       We should extract another DTO class without this one field, and move this class with defined processId
+    //       into our domain model
     processId: Option[ProcessId],
     processVersionId: VersionId,
     isLatestVersion: Boolean,
@@ -44,7 +45,7 @@ final case class ScenarioWithDetails(
 
   def historyUnsafe: List[ScenarioVersion] = history.getOrElse(throw new IllegalStateException("Missing history"))
 
-  def scenarioGraphUnsafe: DisplayableProcess = scenarioGraphAndValidationResultUnsafe.toDisplayable(name)
+  def scenarioGraphUnsafe: DisplayableProcess = scenarioGraphAndValidationResultUnsafe.toDisplayable
 
   def validationResultUnsafe: ValidationResults.ValidationResult =
     validationResult.getOrElse(throw new IllegalStateException("Missing validation result"))
@@ -55,6 +56,9 @@ final case class ScenarioWithDetails(
 
   def scenarioGraphAndValidationResultUnsafe: ValidatedDisplayableProcess =
     json.getOrElse(throw new IllegalStateException("Missing scenario graph and validation result"))
+
+  def idWithNameUnsafe: ProcessIdWithName =
+    ProcessIdWithName(processIdUnsafe, name)
 
   def processIdUnsafe: ProcessId = processId.getOrElse(throw new IllegalStateException("Missing processId"))
 

@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
@@ -49,7 +48,7 @@ class DictsFlowTest
 
     val response1 = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processValidation")
+        .post(uri"$nuDesignerHttpAddress/api/processValidation/${process.name}")
         .contentType(MediaType.ApplicationJson)
         .body(TestFactory.posting.toJson(process).spaces2)
         .auth
@@ -117,7 +116,7 @@ class DictsFlowTest
 
     val response2 = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processesExport")
+        .post(uri"$nuDesignerHttpAddress/api/processesExport/${process.name}")
         .contentType(MediaType.ApplicationJson)
         .body(TestProcessUtil.toJson(process).noSpaces)
         .auth
@@ -170,7 +169,7 @@ class DictsFlowTest
 
     val response1 = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processValidation")
+        .post(uri"$nuDesignerHttpAddress/api/processValidation/${process.name}")
         .contentType(MediaType.ApplicationJson)
         .body(TestFactory.posting.toJson(process).spaces2)
         .auth

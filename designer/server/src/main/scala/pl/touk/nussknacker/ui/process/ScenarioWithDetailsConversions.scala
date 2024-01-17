@@ -57,7 +57,7 @@ object ScenarioWithDetailsConversions {
     }
 
     def toEntityWithScenarioGraphUnsafe: ScenarioWithDetailsEntity[DisplayableProcess] = {
-      toEntity(scenarioWithDetails.scenarioGraphAndValidationResultUnsafe.toDisplayable(scenarioWithDetails.name))
+      toEntity(scenarioWithDetails.scenarioGraphAndValidationResultUnsafe.toDisplayable)
     }
 
     private def toEntity[T](prepareJson: => T): ScenarioWithDetailsEntity[T] = {

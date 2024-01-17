@@ -10,17 +10,12 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSp
 import pl.touk.nussknacker.engine.graph.node.NodeData
 
 @JsonCodec final case class DisplayableProcess(
-    // TODO: remove - it is already available in ScenarioWithDetails
-    name: ProcessName,
     properties: ProcessProperties,
     nodes: List[NodeData],
-    edges: List[Edge],
-    // TODO: remove both processingType and category - they are already available in ScenarioWithDetails
-    processingType: ProcessingType,
-    category: String
+    edges: List[Edge]
 ) {
 
-  val metaData: MetaData = properties.toMetaData(name)
+  def toMetaData(name: ProcessName): MetaData = properties.toMetaData(name)
 
 }
 

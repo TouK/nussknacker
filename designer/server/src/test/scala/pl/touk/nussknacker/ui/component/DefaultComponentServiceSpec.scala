@@ -376,7 +376,7 @@ class DefaultComponentServiceSpec
     .flatMap(cat =>
       categoryService
         .getTypeForCategory(cat)
-        .map(processingType => createFragment(cat, category = cat, processingType = processingType))
+        .map(processingType => createFragmentEntity(cat, category = cat, processingType = processingType))
     )
     .toSet
 
@@ -655,14 +655,14 @@ class DefaultComponentServiceSpec
     val fraudNotSharedSourceComponentId      = cid(Fraud, ComponentInfo(Source, NotSharedSourceName))
     val fraudCustomerDataEnricherComponentId = cid(Fraud, ComponentInfo(Service, CustomerDataEnricherName))
     val sharedSourceComponentId              = ComponentId(SharedSourceName) // it's shared id - merged at configs file
-    val fragmentComponentId                  = cid(Fraud, ComponentInfo(Fragment, FraudFragmentName))
+    val fragmentComponentId                  = cid(Fraud, ComponentInfo(Fragment, FraudFragmentName.value))
     val filterComponentId                    = bid(BuiltInComponentInfo.Filter)
 
     val componentService = prepareService(modelDataMap, processes, List(FraudFragment))
 
     val testingData = Table(
       ("user", "componentId", "expected"),
-      (admin, fragmentComponentId, List((FraudProcessWithFragment, List(ScenarioUsageData(FraudFragmentName))))),
+      (admin, fragmentComponentId, List((FraudProcessWithFragment, List(ScenarioUsageData(FraudFragmentName.value))))),
       (
         admin,
         sharedSourceComponentId,

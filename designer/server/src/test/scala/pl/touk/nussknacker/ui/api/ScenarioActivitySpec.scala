@@ -6,13 +6,7 @@ import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
-import pl.touk.nussknacker.ui.api.helpers.{
-  NuItTest,
-  NuTestScenarioManager,
-  TestProcessingTypes,
-  WithMockableDeploymentManager
-}
+import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 import java.util.UUID
 
@@ -25,7 +19,6 @@ class ScenarioActivitySpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
   import ScenarioActivitySpecAsserts._
-  import TestProcessingTypes._
 
   private val exampleScenarioName = UUID.randomUUID().toString
   private val commentContent      = "test message"
@@ -43,7 +36,7 @@ class ScenarioActivitySpec
       "return empty comments and attachment for existing process without them" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
           }
           .basicAuth("reader", "reader")
           .when()
@@ -89,7 +82,7 @@ class ScenarioActivitySpec
       "add comment in existing scenario" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
           }
           .plainBody(commentContent)
           .basicAuth("writer", "writer")
@@ -103,7 +96,7 @@ class ScenarioActivitySpec
       "return 404 for no existing scenario" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
           }
           .plainBody(commentContent)
           .basicAuth("writer", "writer")
@@ -130,7 +123,7 @@ class ScenarioActivitySpec
       "forbid access for insufficient privileges" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
           }
           .plainBody(commentContent)
           .basicAuth("reader", "reader")
@@ -148,7 +141,7 @@ class ScenarioActivitySpec
       "remove comment in existing scenario" in {
         val commentId = given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
             createComment(scenarioName = exampleScenarioName, commentContent = commentContent)
           }
           .basicAuth("reader", "reader")
@@ -169,7 +162,7 @@ class ScenarioActivitySpec
       "return 500 for no existing comment" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
           }
           .basicAuth("writer", "writer")
           .when()
@@ -204,7 +197,7 @@ class ScenarioActivitySpec
       "forbid access for insufficient privileges" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
           }
           .basicAuth("reader", "reader")
           .when()
@@ -221,7 +214,7 @@ class ScenarioActivitySpec
       "add attachment to existing scenario" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
           }
           .multiPartBody(fileContent = fileContent, fileName = fileName)
           .basicAuth("writer", "writer")
@@ -237,7 +230,7 @@ class ScenarioActivitySpec
         val fileContent2 = "very important content2"
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
             createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent1, fileName = fileName)
             createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent2, fileName = fileName)
           }
@@ -299,7 +292,7 @@ class ScenarioActivitySpec
       "forbid access for insufficient privileges" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
           }
           .multiPartBody(fileContent = "test", fileName = "test.xml")
           .basicAuth("reader", "reader")
@@ -317,7 +310,7 @@ class ScenarioActivitySpec
       "download existing attachment" in {
         val attachmentId = given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
             createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent)
           }
           .basicAuth("reader", "reader")
@@ -338,7 +331,7 @@ class ScenarioActivitySpec
       "return empty body for no existing attachment" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1, Streaming)
+            createSavedScenario(exampleScenario)
           }
           .basicAuth("writer", "writer")
           .when()

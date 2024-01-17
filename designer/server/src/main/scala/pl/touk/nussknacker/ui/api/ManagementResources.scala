@@ -124,7 +124,7 @@ class ManagementResources(
     dispatcher: DeploymentManagerDispatcher,
     customActionInvokerService: CustomActionInvokerService,
     metricRegistry: MetricRegistry,
-    scenarioTestService: ScenarioTestService,
+    scenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
     typeToConfig: ProcessingTypeDataProvider[ModelData, _]
 )(implicit val ec: ExecutionContext)
     extends Directives
@@ -159,7 +159,7 @@ class ManagementResources(
             complete {
               convertSavepointResultToResponse(
                 dispatcher
-                  .deploymentManagerUnsafe(processId.id)(ec, user)
+                  .deploymentManagerUnsafe(processId)(ec, user)
                   .flatMap(_.savepoint(processId.name, savepointDir))
               )
             }
@@ -172,7 +172,7 @@ class ManagementResources(
               complete {
                 convertSavepointResultToResponse(
                   dispatcher
-                    .deploymentManagerUnsafe(processId.id)(ec, user)
+                    .deploymentManagerUnsafe(processId)(ec, user)
                     .flatMap(_.stop(processId.name, savepointDir, user.toManagerUser))
                 )
               }
@@ -224,17 +224,19 @@ class ManagementResources(
           } ~
           // TODO: maybe Write permission is enough here?
           path("test" / ProcessNameSegment) { processName =>
-            (post & processId(processName)) { idWithName =>
-              canDeploy(idWithName.id) {
+            (post & processDetailsForName(processName)) { details =>
+              canDeploy(details.idWithNameUnsafe) {
                 formFields(Symbol("testData"), Symbol("processJson")) { (testDataContent, displayableProcessJson) =>
                   complete {
                     measureTime("test", metricRegistry) {
                       parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
                         case Right(displayableProcess) =>
-                          scenarioTestService
+                          scenarioTestServices
+                            .forTypeUnsafe(details.processingType)
                             .performTest(
-                              idWithName,
+                              details.idWithNameUnsafe,
                               displayableProcess,
+                              details.isFragment,
                               RawScenarioTestData(testDataContent)
                             )
                             .flatMap { results =>
@@ -249,21 +251,28 @@ class ManagementResources(
               }
             }
           } ~
-          path("generateAndTest" / IntNumber) { testSampleSize =>
+          path("generateAndTest" / ProcessNameSegment / IntNumber) { (processName, testSampleSize) =>
             {
               (post & entity(as[DisplayableProcess])) { displayableProcess =>
                 {
-                  processId(displayableProcess.name) { idWithName =>
-                    canDeploy(idWithName) {
+                  processDetailsForName(processName)(user) { details =>
+                    canDeploy(details.idWithNameUnsafe) {
                       complete {
                         measureTime("generateAndTest", metricRegistry) {
-                          scenarioTestService.generateData(displayableProcess, testSampleSize) match {
+                          val scenarioTestService = scenarioTestServices.forTypeUnsafe(details.processingType)
+                          scenarioTestService.generateData(
+                            displayableProcess,
+                            processName,
+                            details.isFragment,
+                            testSampleSize
+                          ) match {
                             case Left(error) => Future.failed(ProcessUnmarshallingError(error))
                             case Right(rawScenarioTestData) =>
                               scenarioTestService
                                 .performTest(
-                                  idWithName,
+                                  details.idWithNameUnsafe,
                                   displayableProcess,
+                                  details.isFragment,
                                   rawScenarioTestData
                                 )
                                 .flatMap { results =>
@@ -286,19 +295,19 @@ class ManagementResources(
                   prepareTestFromParametersDecoder(modelData)
                 (post & entity(as[TestFromParametersRequest])) { testParametersRequest =>
                   {
-                    processId(processName) { idWithName =>
-                      canDeploy(idWithName) {
-                        complete {
-                          scenarioTestService
-                            .performTest(
-                              idWithName,
-                              testParametersRequest.displayableProcess,
-                              testParametersRequest.sourceParameters
-                            )
-                            .flatMap { results =>
-                              Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-                            }
-                        }
+                    canDeploy(process.idWithNameUnsafe) {
+                      complete {
+                        scenarioTestServices
+                          .forTypeUnsafe(process.processingType)
+                          .performTest(
+                            process.idWithNameUnsafe,
+                            testParametersRequest.displayableProcess,
+                            process.isFragment,
+                            testParametersRequest.sourceParameters
+                          )
+                          .flatMap { results =>
+                            Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                          }
                       }
                     }
                   }

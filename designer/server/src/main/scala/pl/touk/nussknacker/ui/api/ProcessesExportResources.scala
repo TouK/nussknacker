@@ -3,10 +3,14 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.syntax._
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.{
   FetchingProcessRepository,
@@ -16,10 +20,6 @@ import pl.touk.nussknacker.ui.process.repository.{
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util._
-import io.circe.syntax._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,7 +28,7 @@ class ProcessesExportResources(
     protected val processService: ProcessService,
     processActivityRepository: ProcessActivityRepository,
     processResolvers: ProcessingTypeDataProvider[UIProcessResolver, _]
-)(implicit val ec: ExecutionContext, mat: Materializer)
+)(implicit val ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
     with RouteWithUser
@@ -44,6 +44,17 @@ class ProcessesExportResources(
         complete {
           processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).map {
             exportProcess
+          }
+        }
+      } ~ (post & processDetailsForName(processName)) { processDetails =>
+        entity(as[DisplayableProcess]) { process =>
+          complete {
+            exportResolvedProcess(
+              process,
+              processDetails.processingType,
+              processDetails.name,
+              processDetails.isFragment
+            )
           }
         }
       }
@@ -65,34 +76,26 @@ class ProcessesExportResources(
           }
         }
       }
-    } ~ path("processesExport") {
-      post {
-        entity(as[DisplayableProcess]) { process =>
-          complete {
-            exportResolvedProcess(process)
-          }
-        }
-      }
     }
   }
 
   private def exportProcess(processDetails: Option[ScenarioWithDetailsEntity[DisplayableProcess]]): HttpResponse =
-    processDetails.map(_.json) match {
-      case Some(displayableProcess) =>
-        exportProcess(displayableProcess)
-      case None =>
-        HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
+    processDetails.map(details => exportProcess(details.json, details.name)).getOrElse {
+      HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
     }
 
-  private def exportProcess(processDetails: DisplayableProcess): HttpResponse = {
-    fileResponse(ProcessConverter.fromDisplayable(processDetails))
+  private def exportProcess(processDetails: DisplayableProcess, name: ProcessName): HttpResponse = {
+    fileResponse(ProcessConverter.fromDisplayable(processDetails, name))
   }
 
   private def exportResolvedProcess(
-      processWithDictLabels: DisplayableProcess
+      processWithDictLabels: DisplayableProcess,
+      processingType: ProcessingType,
+      processName: ProcessName,
+      isFragment: Boolean
   )(implicit user: LoggedUser): HttpResponse = {
-    val processResolver = processResolvers.forTypeUnsafe(processWithDictLabels.processingType)
-    val resolvedProcess = processResolver.validateAndResolve(processWithDictLabels)
+    val processResolver = processResolvers.forTypeUnsafe(processingType)
+    val resolvedProcess = processResolver.validateAndResolve(processWithDictLabels, processName, isFragment)
     fileResponse(resolvedProcess)
   }
 
