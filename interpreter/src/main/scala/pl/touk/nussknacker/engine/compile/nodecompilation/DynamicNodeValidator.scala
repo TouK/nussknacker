@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
@@ -186,7 +185,7 @@ class DynamicNodeValidator(
       } else {
         val (singleParam, extraNodeParamOpt) = nodeParameters.find(_.name == parameter.name).map((_, None)).getOrElse {
           val paramToAdd =
-            NodeParameter(parameter.name, parameter.defaultValue.getOrElse(Expression.spel("")))
+            NodeParameter(parameter.name, parameter.finalDefaultValue)
           (paramToAdd, Some(paramToAdd))
         }
         val ctxToUse = inputContext match {
