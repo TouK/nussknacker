@@ -47,7 +47,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Additional info for provided node")
       .tag("Nodes")
       .post
-      .in("nodes" / path[ProcessName]("processName") / "additionalInfo")
+      .in("nodes" / path[ProcessName]("scenarioName") / "additionalInfo")
       .in(jsonBody[NodeData])
       .out(
         statusCode(Ok).and(
@@ -68,7 +68,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Validate provided Node")
       .tag("Nodes")
       .post
-      .in("nodes" / path[ProcessName]("processName") / "validation")
+      .in("nodes" / path[ProcessName]("scenarioName") / "validation")
       .in(jsonBody[NodeValidationRequestDto])
       .out(
         statusCode(Ok).and(
@@ -89,7 +89,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Additional info for provided properties")
       .tag("Nodes")
       .post
-      .in("properties" / path[ProcessName]("processName") / "additionalInfo")
+      .in("properties" / path[ProcessName]("scenarioName") / "additionalInfo")
       .in(jsonBody[ProcessProperties])
       .out(
         statusCode(Ok).and(
@@ -110,7 +110,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .summary("Validate node properties")
       .tag("Nodes")
       .post
-      .in("properties" / path[ProcessName]("processName") / "validation")
+      .in("properties" / path[ProcessName]("scenarioName") / "validation")
       .in(jsonBody[PropertiesValidationRequestDto])
       .out(
         statusCode(Ok).and(
@@ -182,19 +182,19 @@ object NodesApiEndpoints {
   object Dtos {
 
     object ProcessNameCodec {
-      def encode(processName: ProcessName): String = processName.value
+      def encode(scenarioName: ProcessName): String = scenarioName.value
 
       def decode(s: String): DecodeResult[ProcessName] = {
-        val processName = ProcessName.apply(s)
-        DecodeResult.Value(processName)
+        val scenarioName = ProcessName.apply(s)
+        DecodeResult.Value(scenarioName)
       }
 
-      implicit val processNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
+      implicit val scenarioNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
     }
 
-    implicit val processNameSchema: Schema[ProcessName]                         = Schema.derived
-    implicit val additionalInfoSchema: Schema[AdditionalInfo]                   = Schema.derived
-    implicit val processAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
+    implicit val scenarioNameSchema: Schema[ProcessName]                         = Schema.derived
+    implicit val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
+    implicit val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
 
     final case class TypingResultDto(
         value: Option[Any],
@@ -415,8 +415,8 @@ object NodesApiEndpoints {
     )
 
     object NodeValidationRequestDto {
-      implicit val nodeDataSchema: Schema[NodeData]                   = Schema.anyObject
-      implicit val processPropertiesSchema: Schema[ProcessProperties] = Schema.any
+      implicit val nodeDataSchema: Schema[NodeData]                    = Schema.anyObject
+      implicit val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.any
     }
 
     @derive(encoder, decoder, schema)
