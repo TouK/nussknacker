@@ -5,7 +5,7 @@ import { EditNodeAction, RenameProcessAction } from "./editNode";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { getProcessToDisplay } from "../../reducers/selectors/graph";
+import { getScenarioGraph } from "../../reducers/selectors/graph";
 
 export type NodesWithPositions = { node: NodeType; position: Position }[];
 
@@ -81,7 +81,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
     return (dispatch, getState) => {
         const state = getState();
         const processDefinitionData = getProcessDefinitionData(state);
-        const processToDisplay = getProcessToDisplay(state);
+        const scenarioGraph = getScenarioGraph(state);
 
         batchGroupBy.startOrContinue();
         dispatch({
@@ -90,7 +90,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
             to: to.id,
         });
 
-        const inputs = NodeUtils.nodeInputs(middle.id, processToDisplay);
+        const inputs = NodeUtils.nodeInputs(middle.id, scenarioGraph);
         if (NodeUtils.canHaveMoreInputs(middle, inputs, processDefinitionData)) {
             dispatch({
                 type: "NODES_CONNECTED",
@@ -101,7 +101,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
             });
         }
 
-        const outputs = NodeUtils.nodeOutputs(middle.id, processToDisplay);
+        const outputs = NodeUtils.nodeOutputs(middle.id, scenarioGraph);
         if (NodeUtils.canHaveMoreOutputs(middle, outputs, processDefinitionData)) {
             dispatch({
                 type: "NODES_CONNECTED",

@@ -3,20 +3,21 @@ import React, { SyntheticEvent } from "react";
 import { useSelector } from "react-redux";
 import NodeUtils from "../../graph/NodeUtils";
 import { getProcessUnsavedNewName } from "../../../reducers/selectors/graph";
-import { NodeId, NodeType, Process } from "../../../types";
+import { NodeId, NodeType } from "../../../types";
 import { ErrorHeader } from "./ErrorHeader";
 import { NodeErrorLink } from "./NodeErrorLink";
+import { Scenario } from "../../Process/types";
 
 interface NodeErrorsLinkSectionProps {
     nodeIds: NodeId[];
     message: string;
     showDetails: (event: SyntheticEvent, details: NodeType) => void;
-    currentProcess: Process;
+    scenario: Scenario;
     errorsOnTop?: boolean;
 }
 
 export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps): JSX.Element {
-    const { nodeIds, message, showDetails, currentProcess, errorsOnTop } = props;
+    const { nodeIds, message, showDetails, scenario, errorsOnTop } = props;
     const unsavedName = useSelector(getProcessUnsavedNewName);
     const separator = ", ";
 
@@ -27,8 +28,8 @@ export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps)
                 {nodeIds.map((nodeId, index) => {
                     const details =
                         nodeId === "properties"
-                            ? NodeUtils.getProcessPropertiesNode(currentProcess, unsavedName)
-                            : NodeUtils.getNodeById(nodeId, currentProcess);
+                            ? NodeUtils.getProcessPropertiesNode(scenario, unsavedName)
+                            : NodeUtils.getNodeById(nodeId, scenario.json);
                     return (
                         <React.Fragment key={nodeId}>
                             <NodeErrorLink onClick={(event) => showDetails(event, details)} nodeId={nodeId} disabled={!details} />

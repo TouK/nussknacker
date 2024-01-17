@@ -3,7 +3,7 @@ import { g } from "jointjs";
 import { mapValues } from "lodash";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
-import { getFetchedProcessDetails, getLayout, getProcessCounts, getProcessToDisplay } from "../../reducers/selectors/graph";
+import { getScenario, getLayout, getProcessCounts } from "../../reducers/selectors/graph";
 import { setLinksHovered } from "./utils/dragHelpers";
 import { Graph } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
@@ -19,8 +19,7 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
     { capabilities },
     forwardedRef,
 ): JSX.Element {
-    const processToDisplay = useSelector(getProcessToDisplay);
-    const fetchedProcessDetails = useSelector(getFetchedProcessDetails);
+    const scenario = useSelector(getScenario);
     const processCounts = useSelector(getProcessCounts);
     const layout = useSelector(getLayout);
 
@@ -84,8 +83,7 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
             capabilities={capabilities}
             divId={"nk-graph-main"}
             nodeSelectionEnabled
-            processToDisplay={processToDisplay}
-            fetchedProcessDetails={fetchedProcessDetails}
+            scenario={scenario}
             processCounts={processCounts}
             layout={layout}
             {...actions}

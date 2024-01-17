@@ -1991,6 +1991,7 @@ lazy val root = (project in file("."))
   .aggregate(modulesWithBom: _*)
   .settings(commonSettings)
   .settings(
+    name              := "nussknacker",
     // crossScalaVersions must be set to Nil on the aggregating project
     releaseCrossBuild := true,
     publish / skip    := true,

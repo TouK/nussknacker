@@ -11,7 +11,7 @@ export function ScenarioCell({ filterText, ...props }: GridRenderCellParams & { 
     return (
         <CellLink component={ExternalLink} underline="hover" disabled={!value} href={scenarioHref(row.name)}>
             <Stack direction="row" alignItems="center">
-                <ScenarioAvatar process={row} />
+                <ScenarioAvatar scenario={row} />
                 <Highlight value={value} filterText={filterText} />
                 <OpenInNew
                     sx={{

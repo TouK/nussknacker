@@ -3,9 +3,10 @@ import { defaults } from "lodash";
 import { useCallback, useMemo } from "react";
 import { useUserSettings } from "../common/userSettings";
 import { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
-import { NodeType, Process } from "../types";
+import { NodeType } from "../types";
 import { WindowKind } from "./WindowKind";
 import { InfoDialogData } from "../components/modals/GenericInfoDialog";
+import { Scenario } from "../components/Process/types";
 
 export function useWindows(parent?: WindowId) {
     const { open: _open, closeAll } = useWindowManager(parent);
@@ -21,13 +22,13 @@ export function useWindows(parent?: WindowId) {
     );
 
     const openNodeWindow = useCallback(
-        (node: NodeType, process: Process, readonly?: boolean) =>
+        (node: NodeType, scenario: Scenario, readonly?: boolean) =>
             open({
                 id: node.id,
                 title: node.id,
                 isResizable: true,
                 kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
-                meta: { node, process },
+                meta: { node, scenario },
             }),
         [open],
     );

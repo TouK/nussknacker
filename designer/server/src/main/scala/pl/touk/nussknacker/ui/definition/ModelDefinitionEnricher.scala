@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsD
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 
+// TODO: Rename to ModelDefinitionAligner
 class ModelDefinitionEnricher(
     builtInComponentsDefinitionsPreparer: BuiltInComponentsStaticDefinitionsPreparer,
     fragmentDefinitionExtractor: FragmentWithoutValidatorsDefinitionExtractor,
@@ -16,10 +17,18 @@ class ModelDefinitionEnricher(
     componentInfoToId: ComponentInfo => ComponentId
 ) {
 
+  // TODO: it currently not only enrich with built-in components and fragments but also remove sources for fragments
   def modelDefinitionWithBuiltInComponentsAndFragments(
       forFragment: Boolean,
       fragmentScenarios: List[CanonicalProcess],
   ): ModelDefinition[ComponentStaticDefinition] = {
+    val filteredModel = if (forFragment) {
+      modelDefinition
+        .filterComponents((componentInfo, _) => componentInfo.`type` != ComponentType.Source)
+    } else {
+      modelDefinition
+    }
+
     val builtInComponents =
       builtInComponentsDefinitionsPreparer.prepareStaticDefinitions(forFragment)
     val fragmentComponents =
@@ -27,7 +36,7 @@ class ModelDefinitionEnricher(
       if (forFragment) List.empty
       else extractFragmentComponents(fragmentScenarios)
 
-    modelDefinition
+    filteredModel
       .withComponents(builtInComponents)
       .withComponents(fragmentComponents.toList)
   }

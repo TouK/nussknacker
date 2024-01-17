@@ -25,8 +25,15 @@ describe("ProcessHistory suite", () => {
         const store = mockStore({
             graphReducer: {
                 history: {
+                    past: {
+                        scenario: {
+                            json: {},
+                            history: [processEntry(3), processEntry(2), processEntry(1)],
+                        },
+                    },
                     present: {
-                        fetchedProcessDetails: {
+                        scenario: {
+                            json: {},
                             history: [processEntry(3), processEntry(2), processEntry(1)],
                         },
                     },
