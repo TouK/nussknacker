@@ -9,8 +9,8 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeData}
 import pl.touk.nussknacker.engine.api.component.{
+  AdditionalUIConfigProvider,
   AdditionalUIConfigProviderFactory,
   EmptyAdditionalUIConfigProviderFactory
 }
@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeData}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
@@ -31,7 +32,11 @@ import pl.touk.nussknacker.ui.config.{
   UsageStatisticsReportsConfig
 }
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, DefinitionsService, ModelDefinitionEnricher}
+import pl.touk.nussknacker.ui.definition.{
+  DefinitionsService,
+  ModelDefinitionEnricher,
+  ScenarioPropertiesConfigFinalizer
+}
 import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -90,12 +95,14 @@ class AkkaHttpBasedRouteProvider(
       featureTogglesConfig = FeatureTogglesConfig.create(resolvedConfig)
       _                    = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
-      deploymentServiceSupplier = new DelayedInitDeploymentServiceSupplier
+      deploymentServiceSupplier  = new DelayedInitDeploymentServiceSupplier
+      additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
       typeToConfig <- prepareProcessingTypeData(
         config,
         deploymentServiceSupplier,
         processingTypeDataStateFactory,
-        sttpBackend
+        sttpBackend,
+        additionalUIConfigProvider
       )
     } yield {
       val analyticsConfig = AnalyticsConfig(resolvedConfig)
@@ -202,13 +209,9 @@ class AkkaHttpBasedRouteProvider(
         () => getProcessCategoryService().getAllCategories
       )
 
-      val additionalUIConfigProvider  = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
-      val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(additionalUIConfigProvider)
-
       def prepareModelDefinitionEnricher(processingTypeData: ProcessingTypeData): ModelDefinitionEnricher =
         ModelDefinitionEnricher(
           processingTypeData.modelData,
-          additionalUIConfigFinalizer,
           processingTypeData.staticModelDefinition
         )
 
@@ -218,8 +221,7 @@ class AkkaHttpBasedRouteProvider(
           .mapValues { processingTypeData =>
             val modelDefinitionEnricher = prepareModelDefinitionEnricher(processingTypeData)
             ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
-          }
-          .mapCombined(combined => combined.componentIdProvider),
+          },
         processService,
         fragmentRepository
       )
@@ -295,7 +297,7 @@ class AkkaHttpBasedRouteProvider(
               DefinitionsService(
                 processingTypeData,
                 prepareModelDefinitionEnricher(processingTypeData),
-                additionalUIConfigFinalizer,
+                new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
                 fragmentRepository
               )
             }
@@ -470,14 +472,15 @@ class AkkaHttpBasedRouteProvider(
       designerConfig: ConfigWithUnresolvedVersion,
       deploymentServiceSupplier: Supplier[DeploymentService],
       processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
-      sttpBackend: SttpBackend[Future, Any]
+      sttpBackend: SttpBackend[Future, Any],
+      additionalUIConfigProvider: AdditionalUIConfigProvider
   )(implicit executionContext: ExecutionContext): Resource[IO, ProcessingTypeDataReload] = {
     implicit val sttpBackendImplicit: SttpBackend[Future, Any] = sttpBackend
     Resource
       .make(
         acquire = IO(
           new ProcessingTypeDataReload(() =>
-            processingTypeDataStateFactory.create(designerConfig, deploymentServiceSupplier)
+            processingTypeDataStateFactory.create(designerConfig, deploymentServiceSupplier, additionalUIConfigProvider)
           )
         )
       )(

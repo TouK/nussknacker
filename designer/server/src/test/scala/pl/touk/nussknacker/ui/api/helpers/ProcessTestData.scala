@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -27,7 +27,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil.toDisplayable
-import pl.touk.nussknacker.ui.component.ComponentIdProvider
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -62,13 +61,6 @@ object ProcessTestData {
   val otherExistingStreamTransformer2          = "otherTransformer2"
   val optionalEndingStreamTransformer          = "optionalEndingTransformer"
   val union                                    = "union"
-
-  class SimpleTestComponentIdProvider extends ComponentIdProvider {
-    def createComponentId(processingType: String, componentInfo: ComponentInfo): ComponentId =
-      ComponentId.default(processingType, componentInfo)
-
-    def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] = ???
-  }
 
   def modelDefinition(
       groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]] = Map.empty
