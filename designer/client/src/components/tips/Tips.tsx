@@ -4,7 +4,7 @@ import { Scrollbars } from "react-custom-scrollbars";
 import { useSelector } from "react-redux";
 import { v4 as uuid4 } from "uuid";
 import ProcessUtils from "../../common/ProcessUtils";
-import { getProcessToDisplay, getTestResults } from "../../reducers/selectors/graph";
+import { getScenario, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import { useWindows } from "../../windowManager";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
@@ -16,19 +16,19 @@ import { NodeType } from "../../types";
 
 export default function Tips(): JSX.Element {
     const { openNodeWindow } = useWindows();
-    const currentProcess = useSelector(getProcessToDisplay);
+    const scenario = useSelector(getScenario);
 
     const showDetails = useCallback(
         (event: React.MouseEvent, node: NodeType) => {
             event.preventDefault();
-            openNodeWindow(node, currentProcess);
+            openNodeWindow(node, scenario);
         },
-        [openNodeWindow, currentProcess],
+        [openNodeWindow, scenario],
     );
 
     const { isToolTipsHighlighted: isHighlighted } = useSelector(getUi);
     const testResults = useSelector(getTestResults);
-    const { errors, warnings } = ProcessUtils.getValidationResult(currentProcess);
+    const { errors, warnings } = ProcessUtils.getValidationResult(scenario.json);
 
     return (
         <ToolbarWrapper title={i18next.t("panels.tips.title", "Tips")} id="TIPS-PANEL">
@@ -38,18 +38,13 @@ export default function Tips(): JSX.Element {
                     renderThumbVertical={(props) => <div key={uuid4()} {...props} />}
                     hideTracksWhenNotNeeded={true}
                 >
-                    <ValidTips
-                        testing={!!testResults}
-                        hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(currentProcess)}
-                    />
-                    {!ProcessUtils.hasNoErrors(currentProcess) && (
-                        <Errors errors={errors} showDetails={showDetails} currentProcess={currentProcess} />
-                    )}
-                    {!ProcessUtils.hasNoWarnings(currentProcess) && (
+                    <ValidTips testing={!!testResults} hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(scenario)} />
+                    {!ProcessUtils.hasNoErrors(scenario) && <Errors errors={errors} showDetails={showDetails} scenario={scenario} />}
+                    {!ProcessUtils.hasNoWarnings(scenario) && (
                         <Warnings
                             warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
                             showDetails={showDetails}
-                            currentProcess={currentProcess}
+                            scenarioGraph={scenario.json}
                         />
                     )}
                 </Scrollbars>

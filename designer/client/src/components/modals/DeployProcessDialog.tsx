@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import { ProcessName } from "../../types";
+import { ProcessName } from "../Process/types";
 import { PromptContent, WindowKind } from "../../windowManager";
 import CommentInput from "../comment/CommentInput";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";

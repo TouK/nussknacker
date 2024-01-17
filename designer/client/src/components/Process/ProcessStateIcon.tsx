@@ -1,5 +1,5 @@
 import React from "react";
-import { ProcessStateType, ProcessType } from "./types";
+import { ProcessStateType, Scenario } from "./types";
 import ProcessStateUtils from "./ProcessStateUtils";
 import UrlIcon from "../UrlIcon";
 import { Box, Divider, Popover, Typography } from "@mui/material";
@@ -7,12 +7,12 @@ import { Errors } from "./ProcessErrors";
 
 interface Props {
     processState?: ProcessStateType;
-    process: ProcessType;
+    scenario: Scenario;
 }
 
-function ProcessStateIcon({ process, processState }: Props) {
-    const icon = ProcessStateUtils.getStatusIcon(process, processState);
-    const tooltip = ProcessStateUtils.getStatusTooltip(process, processState);
+function ProcessStateIcon({ scenario, processState }: Props) {
+    const icon = ProcessStateUtils.getStatusIcon(scenario, processState);
+    const tooltip = ProcessStateUtils.getStatusTooltip(scenario, processState);
     const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
 
     return (
@@ -32,7 +32,7 @@ function ProcessStateIcon({ process, processState }: Props) {
                 open={!!anchorEl}
             >
                 <Typography p={1} variant="h6">
-                    {process.name}
+                    {scenario.name}
                 </Typography>
                 <Divider />
                 <Box p={1}>

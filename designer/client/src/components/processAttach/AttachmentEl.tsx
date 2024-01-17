@@ -4,7 +4,7 @@ import { Attachment } from "../../reducers/processActivity";
 import HttpService from "../../http/HttpService";
 import Date from "../common/Date";
 import { AttachmentDetails, DownloadAttachment, DownloadButton, AttachHeader } from "./StyledAttach";
-import { ProcessName } from "../../types";
+import { ProcessName } from "../Process/types";
 
 export function AttachmentEl({ data, processName }: { data: Attachment; processName: ProcessName }) {
     return (
