@@ -9,12 +9,14 @@ export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {
     const propertiesErrors = errors.processPropertiesErrors;
 
     return isEmpty(nodeErrors) && isEmpty(propertiesErrors) && isEmpty(globalErrors) ? null : (
-        <NodeErrorsTips
-            propertiesErrors={errors.processPropertiesErrors}
-            nodeErrors={errors.invalidNodes}
-            globalErrors={errors.globalErrors}
-            showDetails={showDetails}
-            scenario={scenario}
-        />
+        <div>
+            <NodeErrorsTips
+                propertiesErrors={errors.processPropertiesErrors}
+                nodeErrors={errors.invalidNodes}
+                globalErrors={errors.globalErrors}
+                showDetails={showDetails}
+                scenario={scenario}
+            />
+        </div>
     );
 };
