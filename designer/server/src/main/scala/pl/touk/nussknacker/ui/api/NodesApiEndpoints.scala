@@ -321,89 +321,83 @@ object NodesApiEndpoints {
         }
       }
 
-      private def toOptionString(valueOpt: Option[Any]): Option[String] =
-        valueOpt match {
-          case Some(value) => Some(value.toString)
-          case None        => None
-        }
-
       def typingResultToDto(typingResult: TypingResult): TypingResultDto = {
         typingResult match {
           case result: TypedObjectWithValue =>
             TypingResultDto(
               value = Some(result.value),
               display = result.display,
-              `type` = typing.TypedObjectWithValue.toString(),
+              `type` = result.getClass.toString.stripPrefix(classPathForTypingResult),
               refClazzName = result.underlying.klass.toString.stripPrefix("class "),
               params = List.empty,
               fields = None
             )
           case result: TypedClass =>
             TypingResultDto(
-              value = toOptionString(result.valueOpt),
+              value = result.valueOpt,
               display = result.display,
-              `type` = "TypedClass",
+              `type` = result.getClass.toString.stripPrefix(classPathForTypingResult),
               refClazzName = result.klass.toString.stripPrefix("class "),
               params = result.params.map(param => typingResultToDto(param)),
               fields = None
             )
           case result: TypedUnion =>
             TypingResultDto(
-              value = toOptionString(result.valueOpt),
+              value = result.valueOpt,
               display = result.display,
-              `type` = TypedUnion.getClass.toString.stripPrefix("class "),
+              `type` = result.getClass.toString.stripPrefix(classPathForTypingResult),
               refClazzName = "TypedUnion",
               params = List.empty,
               fields = None
             )
           case result: TypedTaggedValue =>
             TypingResultDto(
-              value = toOptionString(result.valueOpt),
+              value = result.valueOpt,
               display = result.display,
-              `type` = "TypedTaggedValue",
+              `type` = result.getClass.toString.stripPrefix(classPathForTypingResult),
               refClazzName = result.data.getClass.toString.stripPrefix("class "),
               params = List.empty,
               fields = None
             )
           case result: typing.TypedObjectWithData =>
             TypingResultDto(
-              value = toOptionString(result.valueOpt),
+              value = result.valueOpt,
               display = result.display,
-              `type` = "TypedObjectWithData",
+              `type` = result.getClass.toString.stripPrefix(classPathForTypingResult),
               refClazzName = result.withoutValue.display.getClass.toString,
               params = List.empty,
               fields = None
             )
           case result: typing.TypedDict =>
             TypingResultDto(
-              value = toOptionString(result.valueOpt),
+              value = result.valueOpt,
               display = result.display,
-              `type` = typing.TypedDict.getClass.toString.stripPrefix("class "),
+              `type` = result.getClass.toString.stripPrefix(classPathForTypingResult),
               refClazzName = result.objType.klass.toString,
               params = List.empty,
               fields = None
             )
           case result: typing.TypedObjectTypingResult =>
             TypingResultDto(
-              value = None,
+              value = result.valueOpt,
               display = result.display,
-              `type` = "TypedObjectTypingResult",
-              refClazzName = "java.util.Map",
+              `type` = result.getClass.toString.stripPrefix(classPathForTypingResult),
+              refClazzName = result.fields.getClass.toString,
               params = List(typingResultToDto(Typed.genericTypeClass(Class.forName("java.lang.String"), List.empty))) ++
                 result.fields.values.toList.map { res => typingResultToDto(res) },
               fields = Some(result.fields.map { case (key, result) => (key, typingResultToDto(result)) })
             )
           case result: typing.SingleTypingResult =>
             TypingResultDto(
-              value = toOptionString(result.valueOpt),
+              value = result.valueOpt,
               display = result.display,
-              `type` = typing.TypedObjectWithValue.toString(),
+              `type` = result.getClass.toString.stripPrefix(classPathForTypingResult),
               refClazzName = result.getClass.toString.stripPrefix("class "),
               params = List.empty,
               fields = None
             )
           case typing.TypedNull =>
-            TypingResultDto(Some(null), "Null", "null", "null", List.empty, None)
+            TypingResultDto(Some(null), "Null", "Typed.Null", "null", List.empty, None)
           case typing.Unknown =>
             TypingResultDto(None, "Unknown", "Unknown", "java.lang.Object", List.empty, None)
         }
@@ -672,4 +666,5 @@ object NodesApiEndpoints {
 
   }
 
+  private val classPathForTypingResult = "class pl.touk.nussknacker.engine.api.typed.typing$"
 }
