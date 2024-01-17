@@ -88,6 +88,7 @@ object ValidationResults {
     def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
   }
 
+  // TODO local: rename to UIGlobalError? To not confuse with other GlobalError?
   @JsonCodec final case class GlobalError(error: NodeValidationError, nodeIds: List[String])
 
   @JsonCodec final case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
