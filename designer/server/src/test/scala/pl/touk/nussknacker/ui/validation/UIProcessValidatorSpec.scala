@@ -234,12 +234,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validateWithConfiguredProperties(process)
 
     result.errors.globalErrors shouldBe List(
-      NodeValidationError(
-        "DuplicatedNodeIds",
-        "Two nodes cannot have same id",
-        "Duplicate node ids: inID",
-        None,
-        RenderNotAllowed
+      GlobalError(
+        NodeValidationError(
+          "DuplicatedNodeIds",
+          "Two nodes cannot have same id",
+          "Duplicate node ids: inID",
+          None,
+          RenderNotAllowed
+        ),
+        List("inID")
       )
     )
   }
@@ -262,12 +265,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validateWithConfiguredProperties(process)
 
     result.errors.globalErrors shouldBe List(
-      NodeValidationError(
-        "DuplicatedNodeIds",
-        "Two nodes cannot have same id",
-        "Duplicate node ids: switchID",
-        None,
-        RenderNotAllowed
+      GlobalError(
+        NodeValidationError(
+          "DuplicatedNodeIds",
+          "Two nodes cannot have same id",
+          "Duplicate node ids: switchID",
+          None,
+          RenderNotAllowed
+        ),
+        List("switchID")
       )
     )
     result.errors.invalidNodes shouldBe empty
