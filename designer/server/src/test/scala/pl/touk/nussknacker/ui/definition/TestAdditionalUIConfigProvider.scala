@@ -25,7 +25,7 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
   val componentAdditionalConfigMap: Map[ComponentId, ComponentAdditionalConfig] = Map(
     ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
       parameterConfigs = Map(
-        "paramStringEditor" -> ParameterAdditionalUIConfig(
+        "param" -> ParameterAdditionalUIConfig(
           required = true,
           initialValue = Some(
             FixedExpressionValue(

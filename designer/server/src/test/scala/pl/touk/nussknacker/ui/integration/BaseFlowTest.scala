@@ -10,7 +10,6 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
-import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -114,18 +113,28 @@ class BaseFlowTest
           obj(
             "name"         -> fromString("param"),
             "label"        -> fromString("param"),
-            "defaultValue" -> Expression.spel("'default value'").asJson,
-            "editor"       -> encodeEditor(StringParameterEditor),
-            "hintText"     -> Null,
+            "defaultValue" -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
+            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "hintText"     -> fromString("hint-text-from-additional-ui-config-provider"),
           ),
           obj(
-            "name"         -> fromString("paramStringEditor"),
-            "label"        -> fromString("paramStringEditor"),
-            "defaultValue" -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
-            "editor"       -> encodeEditor(RawParameterEditor),
-            "hintText"     -> fromString("hint-text-from-additional-ui-config-provider"),
-            // validators = Some(List(MandatoryParameterValidator)),
-
+            "name"  -> fromString("tariffType"),
+            "label" -> fromString("tariffType"),
+            "defaultValue" -> Expression
+              .spel("T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL")
+              .asJson,
+            "editor" -> encodeEditor(
+              DualParameterEditor(
+                FixedValuesParameterEditor(
+                  List(
+                    FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL", "normal"),
+                    FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).GOLD", "gold")
+                  )
+                ),
+                DualEditorMode.SIMPLE
+              )
+            ),
+            "hintText" -> Null,
           ),
         ),
         "icon"    -> fromString("/assets/components/Filter.svg"),

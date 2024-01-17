@@ -31,8 +31,8 @@ import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioProp
 import pl.touk.nussknacker.ui.security.api.AdminUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with OptionValues {
 
@@ -227,7 +227,25 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
       List(ComponentDefinition("enricher", TestService)),
-      additionalConfigsFromProvider = TestAdditionalUIConfigProvider.componentAdditionalConfigMap
+      additionalConfigsFromProvider = Map(
+        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            "paramStringEditor" -> ParameterAdditionalUIConfig(
+              required = false,
+              initialValue = Some(
+                FixedExpressionValue(
+                  "'default-from-additional-ui-config-provider'",
+                  "default-from-additional-ui-config-provider"
+                )
+              ),
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = None
+            )
+          ),
+          componentGroup = None
+        )
+      )
     )
 
     val definitions = prepareDefinitions(model, List.empty)
@@ -238,15 +256,19 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       definitions.components(ComponentInfo(ComponentType.Service, "enricher")).parameters.map { param =>
         param.name -> param.defaultValue
       }
-    // FIXME: It will be fixed in https://github.com/TouK/nussknacker/pull/5356
-//    returnedParamDefaultValues should contain(expectedOverridenParamDefaultValue)
+    returnedParamDefaultValues should contain(expectedOverridenParamDefaultValue)
   }
 
   test("should override component's component groups with additionally provided config") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
       List(ComponentDefinition("enricher", TestService)),
-      additionalConfigsFromProvider = TestAdditionalUIConfigProvider.componentAdditionalConfigMap
+      additionalConfigsFromProvider = Map(
+        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+          parameterConfigs = Map.empty,
+          componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName)
+        )
+      )
     )
 
     val definitions = prepareDefinitions(model, List.empty)
