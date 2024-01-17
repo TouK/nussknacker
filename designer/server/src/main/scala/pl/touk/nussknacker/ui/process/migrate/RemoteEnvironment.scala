@@ -64,7 +64,7 @@ final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, mes
 
 final case class MigrationValidationError(errors: ValidationErrors)
     extends FatalError({
-      val messages = errors.globalErrors.map(_.message) ++
+      val messages = errors.globalErrors.map(_.error.message) ++
         errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) =>
           s"$node - ${nerror.map(_.message).mkString(", ")}"
         }
