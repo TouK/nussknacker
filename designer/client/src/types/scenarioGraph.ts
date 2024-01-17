@@ -8,7 +8,6 @@ import { FixedValuesOption } from "../components/graph/node-modal/fragment-input
 import { ValidationResult } from "./validation";
 
 export type ScenarioGraph = {
-    id: string;
     nodes: NodeType[];
     edges: Edge[];
     properties: PropertiesType;
