@@ -32,7 +32,7 @@ class ModelDefinitionEnricher(
       .withComponents(fragmentComponents.toList)
   }
 
-  def extractFragmentComponents(
+  private def extractFragmentComponents(
       fragmentsScenarios: List[CanonicalProcess],
   ): Map[String, ComponentStaticDefinition] = {
     (for {
