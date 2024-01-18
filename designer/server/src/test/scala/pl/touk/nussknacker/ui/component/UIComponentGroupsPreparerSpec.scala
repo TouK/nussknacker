@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   CustomComponentSpecificData
 }
-import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
@@ -181,9 +181,11 @@ class UIComponentGroupsPreparerSpec
   ) = {
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
       new BuiltInComponentsStaticDefinitionsPreparer(new ComponentsUiConfig(Map.empty, groupNameMapping)),
-      new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
+      new FragmentComponentDefinitionExtractor(
+        getClass.getClassLoader,
+        ComponentId.default(TestProcessingTypes.Streaming, _)
+      ),
       modelDefinition.toStaticComponentsDefinition,
-      ComponentId.default(TestProcessingTypes.Streaming, _)
     )
 
     modelDefinitionEnricher
