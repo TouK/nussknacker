@@ -316,18 +316,20 @@ export const nuTheme = createTheme({
                 root: {
                     display: "flex",
                     flexDirection: "row",
-                    margin: "14px 0",
+                    margin: "16px 0",
                 },
             },
         },
         MuiFormLabel: {
             styleOverrides: {
                 root: {
+                    display: "flex",
+                    alignItems: "center",
                     color: custom.colors.canvasBackground,
                     flexBasis: "20%",
                     maxWidth: "20em",
                     verticalAlign: "sub",
-                    marginTop: "9px",
+                    height: "35px",
                     fontSize: "0.75rem",
                     fontWeight: 700,
                 },
