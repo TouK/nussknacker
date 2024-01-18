@@ -35,6 +35,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 
+import scala.concurrent.duration.FiniteDuration
+
 class RemoteEnvironmentResourcesSpec
     extends AnyFlatSpec
     with ScalatestRouteTest
@@ -212,7 +214,8 @@ class RemoteEnvironmentResourcesSpec
     ): Future[List[ScenarioVersion]] = Future.successful(List())
 
     override def testMigration(
-        processToInclude: ScenarioWithDetails => Boolean
+        processToInclude: ScenarioWithDetails => Boolean,
+        batchingExecutionContext: ExecutionContext
     )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }

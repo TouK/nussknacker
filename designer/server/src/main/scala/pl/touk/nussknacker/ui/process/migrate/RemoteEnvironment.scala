@@ -28,8 +28,10 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
 
+import scala.collection.parallel.ExecutionContextTaskSupport
+import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 trait RemoteEnvironment {
 
@@ -46,7 +48,10 @@ trait RemoteEnvironment {
       loggedUser: LoggedUser
   ): Future[Either[NuDesignerError, Unit]]
 
-  def testMigration(processToInclude: ScenarioWithDetails => Boolean = _ => true)(
+  def testMigration(
+      processToInclude: ScenarioWithDetails => Boolean = _ => true,
+      batchingExecutionContext: ExecutionContext
+  )(
       implicit ec: ExecutionContext,
       user: LoggedUser
   ): Future[Either[NuDesignerError, List[TestMigrationResult]]]
@@ -82,7 +87,7 @@ class HttpRemoteEnvironment(
     httpConfig: HttpRemoteEnvironmentConfig,
     val testModelMigrations: TestModelMigrations,
     val environmentId: String
-)(implicit as: ActorSystem, val materializer: Materializer, ec: ExecutionContext)
+)(implicit as: ActorSystem, val materializer: Materializer)
     extends StandardRemoteEnvironment
     with LazyLogging
     with AutoCloseable {
@@ -116,7 +121,11 @@ class HttpRemoteEnvironment(
   def closeAsync(): Future[Unit] = http.shutdownAllConnectionPools()
 }
 
-final case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int = 10)
+final case class StandardRemoteEnvironmentConfig(
+    uri: String,
+    batchSize: Int = 10,
+    batchTimeout: FiniteDuration = 120 seconds
+)
 
 //TODO: extract interface to remote environment?
 trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {
@@ -208,30 +217,39 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   override def testMigration(
-      processToInclude: ScenarioWithDetails => Boolean = _ => true
+      processToInclude: ScenarioWithDetails => Boolean = _ => true,
+      batchingExecutionContext: ExecutionContext
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
       basicProcesses = allBasicProcesses.filterNot(_.isFragment).filter(processToInclude)
       basicFragments = allBasicProcesses.filter(_.isFragment).filter(processToInclude)
-      processes <- fetchGroupByGroup(basicProcesses)
-      fragments <- fetchGroupByGroup(basicFragments)
-    } yield testModelMigrations.testMigrations(processes, fragments)).value
+      processes <- fetchGroupByGroup(basicProcesses, batchingExecutionContext)
+      fragments <- fetchGroupByGroup(basicFragments, batchingExecutionContext)
+    } yield testModelMigrations.testMigrations(processes, fragments, batchingExecutionContext)).value
   }
 
   private def fetchGroupByGroup(
-      basicProcesses: List[ScenarioWithDetails]
+      basicProcesses: List[ScenarioWithDetails],
+      batchingExecutionContext: ExecutionContext
   )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetails]] = {
-    basicProcesses
+    val groupedBasicProcesses = basicProcesses
       .map(_.name)
       .grouped(config.batchSize)
-      .foldLeft(EitherT.rightT[Future, NuDesignerError](List.empty[ScenarioWithDetails])) {
-        case (acc, processesGroup) =>
-          for {
-            current <- acc
-            fetched <- fetchProcessesDetails(processesGroup)
-          } yield current ::: fetched
+      .toVector
+    // We create ParVector manually instead of calling par for compatibility with Scala 2.12
+    val parallelCollection = new ParVector(groupedBasicProcesses)
+    parallelCollection.tasksupport = new ExecutionContextTaskSupport(batchingExecutionContext)
+    val fetchProcessDetailsOperation = parallelCollection.map(processesGroup => {
+      Await.result(fetchProcessesDetails(processesGroup).value, config.batchTimeout)
+    })
+    EitherT {
+      Future {
+        for {
+          scenariosWithDetails <- fetchProcessDetailsOperation.toList.sequence
+        } yield scenariosWithDetails.flatten
       }
+    }
   }
 
   private def fetchProcesses(

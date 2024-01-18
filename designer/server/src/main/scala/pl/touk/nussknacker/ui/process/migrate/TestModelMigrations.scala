@@ -21,6 +21,10 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import scala.collection.parallel.ExecutionContextTaskSupport
+import scala.collection.parallel.immutable.ParVector
+import scala.concurrent.ExecutionContext
+
 class TestModelMigrations(
     migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
     processValidator: ProcessingTypeDataProvider[UIProcessValidator, _]
@@ -28,7 +32,8 @@ class TestModelMigrations(
 
   def testMigrations(
       processes: List[ScenarioWithDetails],
-      fragments: List[ScenarioWithDetails]
+      fragments: List[ScenarioWithDetails],
+      batchingExecutionContext: ExecutionContext
   )(implicit user: LoggedUser): List[TestMigrationResult] = {
     logger.debug(
       s"Testing scenario migrations (scenarios=${processes.count(_ => true)}, fragments=${fragments.count(_ => true)})"
@@ -41,7 +46,7 @@ class TestModelMigrations(
         new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
       )
     )
-    (migratedFragments ++ migratedProcesses).map { migrationDetails =>
+    processInParallel(migratedFragments ++ migratedProcesses, batchingExecutionContext) { migrationDetails =>
       val validationResult =
         validator.forTypeUnsafe(migrationDetails.newProcess.processingType).validate(migrationDetails.newProcess)
       val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
@@ -85,6 +90,15 @@ class TestModelMigrations(
       override def loadFragments(versions: Map[String, VersionId], category: Category): Set[FragmentDetails] =
         loadFragments(versions).filter(_.category == category)
     }
+  }
+
+  private def processInParallel(input: List[MigratedProcessDetails], batchingExecutionContext: ExecutionContext)(
+      process: MigratedProcessDetails => TestMigrationResult
+  ): List[TestMigrationResult] = {
+    // We create ParVector manually instead of calling par for compatibility with Scala 2.12
+    val parallelCollection = new ParVector(input.toVector)
+    parallelCollection.tasksupport = new ExecutionContextTaskSupport(batchingExecutionContext)
+    parallelCollection.map(process).toList
   }
 
   private def extractNewErrors(before: ValidationResult, after: ValidationResult): ValidationResult = {

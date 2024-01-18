@@ -1853,7 +1853,14 @@ lazy val designer = (project in file("designer/server"))
         "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
         "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
         "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % "test"
-      ) ++ forScalaVersion(scalaVersion.value, Seq(), (2, 13) -> Seq("org.scala-lang.modules" %% "scala-xml" % "2.1.0"))
+      ) ++ forScalaVersion(
+        scalaVersion.value,
+        Seq(),
+        (2, 13) -> Seq(
+          "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
+          "org.scala-lang.modules" %% "scala-xml"                  % "2.1.0"
+        )
+      )
     }
   )
   .dependsOn(

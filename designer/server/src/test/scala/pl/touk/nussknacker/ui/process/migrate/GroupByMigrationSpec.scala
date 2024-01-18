@@ -10,13 +10,15 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, 
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
+import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 
 class GroupByMigrationSpec extends AnyFunSuite {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val migrations = ProcessMigrations.listOf(GroupByMigration)
+  private val batchingExecutionContext = ExecutionContext.global
+  private val migrations               = ProcessMigrations.listOf(GroupByMigration)
 
   private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
@@ -31,7 +33,8 @@ class GroupByMigrationSpec extends AnyFunSuite {
           .emptySink("sink", existingSinkFactory)
       )
 
-    val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
+    val results =
+      testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List(), batchingExecutionContext)
 
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
@@ -50,7 +53,8 @@ class GroupByMigrationSpec extends AnyFunSuite {
           .emptySink("sink", existingSinkFactory)
       )
 
-    val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
+    val results =
+      testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List(), batchingExecutionContext)
 
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
@@ -68,7 +72,8 @@ class GroupByMigrationSpec extends AnyFunSuite {
           .emptySink("sink", existingSinkFactory)
       )
 
-    val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
+    val results =
+      testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List(), batchingExecutionContext)
 
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
