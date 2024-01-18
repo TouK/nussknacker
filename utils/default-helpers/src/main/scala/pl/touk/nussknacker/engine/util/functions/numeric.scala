@@ -23,8 +23,6 @@ import pl.touk.nussknacker.engine.util.functions.numeric.{
   ToNumberTypingFunction
 }
 
-import scala.util.{Success, Try}
-
 trait numeric extends MathUtils with HideToString {
   @GenericType(typingFunction = classOf[MinMaxTypingFunction])
   override def min(n1: Number, n2: Number): Number = super.min(n1, n2)
@@ -59,27 +57,7 @@ trait numeric extends MathUtils with HideToString {
   @Documentation(description = "Parse string to number")
   @GenericType(typingFunction = classOf[ToNumberTypingFunction])
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number = stringOrNumber match {
-    case s: CharSequence =>
-      val ss                                       = s.toString
-      val tryByte: Try[java.lang.Byte]             = Try(java.lang.Byte.parseByte(ss))
-      val tryShort: Try[java.lang.Short]           = Try(java.lang.Short.parseShort(ss))
-      val tryInteger: Try[java.lang.Integer]       = Try(java.lang.Integer.parseInt(ss))
-      val tryLong: Try[java.lang.Long]             = Try(java.lang.Long.parseLong(ss))
-      val tryFloat: Try[java.lang.Float]           = Try(java.lang.Float.parseFloat(ss))
-      val tryDouble: Try[java.lang.Double]         = Try(java.lang.Double.parseDouble(ss))
-      val tryBigDecimal: Try[java.math.BigDecimal] = Try(new java.math.BigDecimal(ss))
-      val tryBigInteger: Try[java.math.BigInteger] = Try(new java.math.BigInteger(ss))
-
-      val tries: List[Try[java.lang.Number]] =
-        List(tryByte, tryShort, tryInteger, tryLong, tryFloat, tryDouble, tryBigDecimal, tryBigInteger)
-
-      val firstSuccess: Option[Number] = tries
-        .collectFirst { case Success(value) =>
-          value
-        }
-        .orElse(Some(new java.math.BigDecimal(ss)))
-
-      firstSuccess.get
+    case s: CharSequence     => new java.math.BigDecimal(s.toString)
     case n: java.lang.Number => n
   }
 
