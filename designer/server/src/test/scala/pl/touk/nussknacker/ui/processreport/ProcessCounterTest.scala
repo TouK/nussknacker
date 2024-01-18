@@ -31,7 +31,11 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .emptySink("sink11", "")
 
     val computed =
-      defaultCounter.computeCounts(process, Map("source1" -> RawCount(30L, 5L), "filter1" -> RawCount(20, 10)).get)
+      defaultCounter.computeCounts(
+        process,
+        isFragment = false,
+        Map("source1" -> RawCount(30L, 5L), "filter1" -> RawCount(20, 10)).get
+      )
 
     computed shouldBe Map(
       "source1" -> NodeCount(30, 5),
@@ -64,6 +68,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       )
     val result = defaultCounter.computeCounts(
       process,
+      isFragment = false,
       Map(
         "source1" -> RawCount(1, 0),
         "source2" -> RawCount(2, 0),
@@ -108,6 +113,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
 
     val computed = counter.computeCounts(
       process,
+      isFragment = false,
       Map(
         "source1"              -> RawCount(70L, 0L),
         "filter1"              -> RawCount(60, 1),
@@ -145,6 +151,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
 
     val computed = counter.computeCounts(
       fragment,
+      isFragment = true,
       Map(
         "fragment1"   -> RawCount(30, 0),
         "filter"      -> RawCount(20, 5),

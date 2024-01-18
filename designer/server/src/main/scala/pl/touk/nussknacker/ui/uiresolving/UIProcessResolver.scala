@@ -52,14 +52,14 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
       processName: ProcessName,
       isFragment: Boolean,
   )(implicit loggedUser: LoggedUser): ValidatedDisplayableProcess = {
-    val validationResult = validateBeforeUiReverseResolving(canonical)
+    val validationResult = validateBeforeUiReverseResolving(canonical, isFragment)
     reverseResolveExpressions(canonical, processName, isFragment, validationResult)
   }
 
-  def validateBeforeUiReverseResolving(canonical: CanonicalProcess)(
+  def validateBeforeUiReverseResolving(canonical: CanonicalProcess, isFragment: Boolean)(
       implicit loggedUser: LoggedUser
   ): ValidationResult =
-    uiValidator.validateCanonicalProcess(canonical)
+    uiValidator.validateCanonicalProcess(canonical, isFragment)
 
   private def reverseResolveExpressions(
       canonical: CanonicalProcess,

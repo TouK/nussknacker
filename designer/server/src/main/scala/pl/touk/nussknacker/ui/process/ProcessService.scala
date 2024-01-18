@@ -359,7 +359,8 @@ class DBProcessService(
         command.forwardedUserName
       )
 
-      val propertiesErrors = validateInitialScenarioProperties(emptyCanonicalProcess, processingType)
+      val propertiesErrors =
+        validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.isFragment)
 
       if (propertiesErrors.nonEmpty) {
         throw ProcessValidationError(propertiesErrors.map(_.message).mkString(", "))
@@ -416,19 +417,20 @@ class DBProcessService(
       val displayable = ProcessConverter.toDisplayable(canonical)
       val validationResult = processResolverByProcessingType
         .forTypeUnsafe(process.processingType)
-        .validateBeforeUiReverseResolving(canonical)
+        .validateBeforeUiReverseResolving(canonical, process.isFragment)
       Future.successful(ValidatedDisplayableProcess.withValidationResult(displayable, validationResult))
     }
   }
 
   private def validateInitialScenarioProperties(
       canonicalProcess: CanonicalProcess,
-      processingType: ProcessingType
+      processingType: ProcessingType,
+      isFragment: Boolean
   )(implicit user: LoggedUser) = {
     val validationResult =
       processResolverByProcessingType
         .forTypeUnsafe(processingType)
-        .validateBeforeUiReverseResolving(canonicalProcess)
+        .validateBeforeUiReverseResolving(canonicalProcess, isFragment)
     validationResult.errors.processPropertiesErrors
   }
 

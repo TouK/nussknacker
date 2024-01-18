@@ -51,7 +51,7 @@ class ProcessReportResources(
           processRepository
             .fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id)
             .flatMap[ToResponseMarshallable] {
-              case Some(process) => computeCounts(processName, process.json, request)
+              case Some(process) => computeCounts(processName, process.json, process.isFragment, request)
               case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
             }
         }
@@ -74,11 +74,12 @@ class ProcessReportResources(
   private def computeCounts(
       processName: ProcessName,
       process: DisplayableProcess,
+      isFragment: Boolean,
       countsRequest: CountsRequest
   )(implicit loggedUser: LoggedUser): Future[ToResponseMarshallable] = {
     countsReporter
       .prepareRawCounts(processName, countsRequest)
-      .map(computeFinalCounts(processName, process, _))
+      .map(computeFinalCounts(processName, process, isFragment, _))
       .recover { case CannotFetchCountsError(msg) =>
         HttpResponse(status = StatusCodes.BadRequest, entity = msg)
       }
@@ -87,10 +88,12 @@ class ProcessReportResources(
   private def computeFinalCounts(
       processName: ProcessName,
       displayable: DisplayableProcess,
+      isFragment: Boolean,
       nodeCountFunction: String => Option[Long]
   )(implicit loggedUser: LoggedUser): ToResponseMarshallable = {
     val computedCounts = processCounter.computeCounts(
       ProcessConverter.fromDisplayable(displayable, processName),
+      isFragment,
       nodeId => nodeCountFunction(nodeId).map(count => RawCount(count, 0))
     )
     computedCounts.asJson

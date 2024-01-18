@@ -37,9 +37,10 @@ trait NuTestScenarioManager extends ScalaFutures {
     TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   protected def createSavedScenario(
-      scenario: CanonicalProcess
+      scenario: CanonicalProcess,
+      isFragment: Boolean = false
   ): ProcessId = {
-    saveAndGetId(scenario, scenario.metaData.isFragment).futureValue
+    saveAndGetId(scenario, isFragment).futureValue
   }
 
   def createDeployedExampleScenario(scenarioName: ProcessName): ProcessId = {
@@ -50,10 +51,11 @@ trait NuTestScenarioManager extends ScalaFutures {
   }
 
   def createDeployedScenario(
-      scenario: CanonicalProcess
+      scenario: CanonicalProcess,
+      isFragment: Boolean = false
   ): ProcessId = {
     (for {
-      id <- Future(createSavedScenario(scenario))
+      id <- Future(createSavedScenario(scenario, isFragment))
       _  <- prepareDeploy(id)
     } yield id).futureValue
   }

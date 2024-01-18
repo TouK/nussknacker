@@ -91,7 +91,7 @@ class ScenarioTestService(
       _ <- {
         assertTestResultsAreNotTooBig(testResults)
       }
-    } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
+    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
   }
 
   def performTest(
@@ -108,7 +108,7 @@ class ScenarioTestService(
         ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions)
       )
       _ <- assertTestResultsAreNotTooBig(testResults)
-    } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
+    } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
   }
 
   private def toCanonicalProcess(
@@ -131,7 +131,7 @@ class ScenarioTestService(
     }
   }
 
-  private def computeCounts(canonical: CanonicalProcess, results: TestResults)(
+  private def computeCounts(canonical: CanonicalProcess, isFragment: Boolean, results: TestResults)(
       implicit loggedUser: LoggedUser
   ): Map[String, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
@@ -140,7 +140,7 @@ class ScenarioTestService(
         results.exceptions.find(_.nodeComponentInfo.map(_.nodeId).contains(key)).size.toLong
       )
     }
-    processCounter.computeCounts(canonical, counts.get)
+    processCounter.computeCounts(canonical, isFragment, counts.get)
   }
 
 }

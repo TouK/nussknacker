@@ -81,7 +81,7 @@ class UnionTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       ComponentDefinition("typed-source", TypedSourceFactory) :: LiteBaseComponentProvider.Components
     )
     val validator        = ProcessValidator.default(modelData)
-    val validationResult = validator.validate(scenario)
+    val validationResult = validator.validate(scenario, isFragment = false)
     validationResult
   }
 

@@ -188,7 +188,7 @@ class DeploymentServiceImpl(
   )(implicit user: LoggedUser): Unit = {
     val validationResult = processValidator
       .forTypeUnsafe(processDetails.processingType)
-      .validateCanonicalProcess(processDetails.json)
+      .validateCanonicalProcess(processDetails.json, processDetails.isFragment)
     if (validationResult.hasErrors) {
       throw DeployingInvalidScenarioError(validationResult.errors)
     }

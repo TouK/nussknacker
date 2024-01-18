@@ -60,7 +60,7 @@ class UIProcessValidator(
       val canonical = ProcessConverter.fromDisplayable(displayable, processName)
       // The deduplication is needed for errors that are validated on both uiValidation for DisplayableProcess and
       // CanonicalProcess validation.
-      deduplicateErrors(uiValidationResult.add(validateCanonicalProcess(canonical)))
+      deduplicateErrors(uiValidationResult.add(validateCanonicalProcess(canonical, isFragment)))
     } else {
       uiValidationResult
     }
@@ -82,6 +82,7 @@ class UIProcessValidator(
 
   def validateCanonicalProcess(
       canonical: CanonicalProcess,
+      isFragment: Boolean
   )(implicit loggedUser: LoggedUser): ValidationResult = {
     // TODO: should we validate after resolve?
     val additionalValidatorErrors = additionalValidators
@@ -96,7 +97,7 @@ class UIProcessValidator(
            2. TODO: handle types when fragment resolution fails... */
         fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType) match {
           case Valid(process) =>
-            val validated = validator.validate(process)
+            val validated = validator.validate(process, isFragment)
             // FIXME: Validation errors for fragment nodes are not properly handled by FE
             validated.result
               .fold(formatErrors, _ => ValidationResult.success)
