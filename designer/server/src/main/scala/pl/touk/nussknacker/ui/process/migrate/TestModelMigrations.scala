@@ -20,7 +20,9 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
-import scala.concurrent.Future
+import scala.collection.parallel.ExecutionContextTaskSupport
+import scala.collection.parallel.immutable.ParVector
+import scala.concurrent.{ExecutionContext, Future}
 
 class TestModelMigrations(
     migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
@@ -29,7 +31,8 @@ class TestModelMigrations(
 
   def testMigrations(
       processes: List[ScenarioWithDetails],
-      fragments: List[ScenarioWithDetails]
+      fragments: List[ScenarioWithDetails],
+      batchingExecutionContext: ExecutionContext
   )(implicit user: LoggedUser): List[TestMigrationResult] = {
     logger.debug(
       s"Testing scenario migrations (scenarios=${processes.count(_ => true)}, fragments=${fragments.count(_ => true)})"
@@ -42,7 +45,7 @@ class TestModelMigrations(
         new FragmentResolver(prepareFragmentRepository(migratedFragments.map(_.newProcess)))
       )
     )
-    (migratedFragments ++ migratedProcesses).map { migrationDetails =>
+    processInParallel(migratedFragments ++ migratedProcesses, batchingExecutionContext) { migrationDetails =>
       val validationResult =
         validator.forTypeUnsafe(migrationDetails.newProcess.processingType).validate(migrationDetails.newProcess)
       val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
@@ -89,6 +92,15 @@ class TestModelMigrations(
         throw new IllegalStateException("FragmentRepository.get(ProcessName) used during migration")
     }
 
+  }
+
+  private def processInParallel(input: List[MigratedProcessDetails], batchingExecutionContext: ExecutionContext)(
+      process: MigratedProcessDetails => TestMigrationResult
+  ): List[TestMigrationResult] = {
+    // We create ParVector manually instead of calling par for compatibility with Scala 2.12
+    val parallelCollection = new ParVector(input.toVector)
+    parallelCollection.tasksupport = new ExecutionContextTaskSupport(batchingExecutionContext)
+    parallelCollection.map(process).toList
   }
 
   private def extractNewErrors(before: ValidationResult, after: ValidationResult): ValidationResult = {
