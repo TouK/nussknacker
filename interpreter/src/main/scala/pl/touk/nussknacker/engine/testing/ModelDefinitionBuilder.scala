@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
@@ -20,10 +20,14 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.emptyExpression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 final case class ModelDefinitionBuilder(
+    componentInfoToId: ComponentInfo => ComponentId,
     components: List[(String, ComponentStaticDefinition)],
     globalVariables: Map[String, AnyRef],
     private val groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
 ) {
+
+  def withComponentInfoToId(componentInfoToId: ComponentInfo => ComponentId): ModelDefinitionBuilder =
+    copy(componentInfoToId = componentInfoToId)
 
   def withService(name: String, params: Parameter*): ModelDefinitionBuilder =
     withService(name, Some(Unknown), params: _*)
@@ -54,20 +58,28 @@ final case class ModelDefinitionBuilder(
       name: String,
       returnType: Option[TypingResult],
       componentSpecificData: CustomComponentSpecificData,
-      config: SingleComponentConfig,
+      componentId: Option[ComponentId],
       params: Parameter*,
   ): ModelDefinitionBuilder =
     wrapWithNotDisabledCustomComponentDefinition(
       params.toList,
       returnType,
       componentSpecificData
-    ).map(withComponent(name, _, config)).getOrElse(this)
+    ).map(withComponent(name, _, componentId)).getOrElse(this)
 
   private def withComponent(
       name: String,
       componentStaticDefinition: ComponentStaticDefinition,
-      config: SingleComponentConfig = SingleComponentConfig.zero
+      componentId: Option[ComponentId] = None
   ): ModelDefinitionBuilder = {
+    val config = componentStaticDefinition.componentConfig.copy(
+      componentId = componentId.orElse(
+        componentStaticDefinition.componentConfig.componentId.orElse(
+          Some(componentInfoToId(ComponentInfo(componentStaticDefinition.componentType, name)))
+        )
+      )
+    )
+
     copy(components = (name -> componentStaticDefinition.copy(componentConfig = config)) :: components)
   }
 
@@ -145,7 +157,12 @@ object ModelDefinitionBuilder {
   val empty: ModelDefinitionBuilder = empty(groupNameMapping = Map.empty)
 
   def empty(groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]): ModelDefinitionBuilder = {
-    new ModelDefinitionBuilder(components = List.empty, globalVariables = Map.empty, groupNameMapping)
+    new ModelDefinitionBuilder(
+      componentInfoToId = info => ComponentId(info.toString),
+      components = List.empty,
+      globalVariables = Map.empty,
+      groupNameMapping
+    )
   }
 
   val emptyExpressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =

@@ -7,16 +7,18 @@ import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, CustomComponentSpecificData}
-import pl.touk.nussknacker.engine.definition.model.ModelDefinition
+import pl.touk.nussknacker.engine.definition.component.CustomComponentSpecificData
+import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
+import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinitionConverter
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
@@ -25,6 +27,7 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.definition.ModelDefinitionEnricher
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{ScenarioComponentsUsagesHelper, ScenarioWithDetailsEntity}
 
@@ -136,33 +139,48 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   private val processDetailsWithFragment = displayableToProcess(TestProcessUtil.toDisplayable(processWithFragment))
 
-  private val modelDefinition = ModelDefinitionBuilder
-    .empty(Map.empty)
-    .withSink(existingSinkFactory)
-    .withSink(existingSinkFactory2)
-    .withSource(existingSourceFactory)
-    .withCustom(
-      otherExistingStreamTransformer,
-      Some(Typed[String]),
-      CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
-      SingleComponentConfig.zero.copy(
+  private def nonFragmentComponents(componentInfoToId: ComponentInfo => ComponentId) = {
+    val modelDefinition = ModelDefinitionBuilder
+      .empty(Map.empty)
+      .withComponentInfoToId(componentInfoToId)
+      .withSink(existingSinkFactory)
+      .withSink(existingSinkFactory2)
+      .withSource(existingSourceFactory)
+      .withCustom(
+        otherExistingStreamTransformer,
+        Some(Typed[String]),
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
         componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer))
       )
-    )
-    .withCustom(
-      otherExistingStreamTransformer2,
-      Some(Typed[String]),
-      CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
-      SingleComponentConfig.zero
-    )
-    .build
-    .toStaticComponentsDefinition
+      .withCustom(
+        otherExistingStreamTransformer2,
+        Some(Typed[String]),
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        componentId = None
+      )
+      .build
 
-  private val processingTypeToModelDefinitionWithoutFragmentComponents
-      : Map[ProcessingType, ModelDefinition[ComponentStaticDefinition]] = {
+    val modelDefinitionEnricher = new ModelDefinitionEnricher(
+      new BuiltInComponentsStaticDefinitionsPreparer(new ComponentsUiConfig(Map.empty, Map.empty)),
+      new FragmentComponentDefinitionExtractor(
+        getClass.getClassLoader,
+        componentInfoToId
+      ),
+      modelDefinition.toStaticComponentsDefinition,
+    )
+
+    modelDefinitionEnricher
+      .modelDefinitionWithBuiltInComponentsAndFragments(
+        forFragment = false,
+        fragmentScenarios = List.empty
+      )
+      .components
+  }
+
+  private val processingTypeToNonFragmentComponents = {
     Map(
-      TestProcessingTypes.Streaming -> modelDefinition,
-      TestProcessingTypes.Fraud     -> modelDefinition
+      TestProcessingTypes.Streaming -> nonFragmentComponents(ComponentId.default(TestProcessingTypes.Streaming, _)),
+      TestProcessingTypes.Fraud     -> nonFragmentComponents(ComponentId.default(TestProcessingTypes.Fraud, _))
     )
   }
 
@@ -243,7 +261,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     forAll(table) { (processesDetails, expectedData) =>
       val result = ComponentsUsageHelper.computeComponentsUsageCount(
         withComponentsUsages(processesDetails),
-        processingTypeToModelDefinitionWithoutFragmentComponents
+        processingTypeToNonFragmentComponents
       )
       result shouldBe expectedData
     }
@@ -346,7 +364,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       val result = ComponentsUsageHelper
         .computeComponentsUsage(
           withComponentsUsages(processesDetails),
-          processingTypeToModelDefinitionWithoutFragmentComponents
+          processingTypeToNonFragmentComponents
         )
         .mapValuesNow(_.map { case (baseProcessDetails, nodeIds) =>
           (baseProcessDetails.mapScenario(_ => ()), nodeIds)

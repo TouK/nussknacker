@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.component
 import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
@@ -65,17 +66,11 @@ class DefaultComponentService(
 
   import cats.syntax.traverse._
 
-  private def processingTypeToModelDefinitionWithoutFragmentComponents(
+  private def processingTypeToNonFragmentComponents(
       implicit user: LoggedUser
   ) =
     processingTypeDataProvider.all.toList.map { case (processingType, processingTypeData) =>
-      val modelDefinition =
-        processingTypeData.modelDefinitionEnricher.modelDefinitionWithBuiltInComponentsAndFragments(
-          forFragment = false, // It excludes fragment's components: input / output
-          fragmentScenarios = List.empty
-        )
-
-      processingType -> modelDefinition
+      processingType -> definedComponents(processingTypeData, fragments = List.empty)
     }.toMap
 
   override def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
@@ -102,7 +97,7 @@ class DefaultComponentService(
         val componentsUsage =
           ComponentsUsageHelper.computeComponentsUsage(
             processDetailsList,
-            processingTypeToModelDefinitionWithoutFragmentComponents
+            processingTypeToNonFragmentComponents
           )
 
         componentsUsage
@@ -124,18 +119,23 @@ class DefaultComponentService(
     fragmentsRepository
       .fetchLatestFragments(processingType)
       .map { fragments =>
-        val componentsDefinition =
-          processingTypeData.modelDefinitionEnricher.modelDefinitionWithBuiltInComponentsAndFragments(
-            forFragment = false, // It excludes fragment's components: input / output
-            fragments
-          )
-
         createComponents(
-          componentsDefinition.components,
+          definedComponents(processingTypeData, fragments),
           processingTypeData.category,
         )
       }
   }
+
+  private def definedComponents(
+      processingTypeData: ComponentServiceProcessingTypeData,
+      fragments: List[CanonicalProcess]
+  ) =
+    processingTypeData.modelDefinitionEnricher
+      .modelDefinitionWithBuiltInComponentsAndFragments(
+        forFragment = false, // It excludes fragment's components: input / output
+        fragments
+      )
+      .components
 
   private def createComponents(
       // TODO: We should use ComponentDefinitionWithImplementation instead of ComponentStaticDefinition.
@@ -169,7 +169,7 @@ class DefaultComponentService(
       .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map(processes =>
         ComponentsUsageHelper
-          .computeComponentsUsageCount(processes, processingTypeToModelDefinitionWithoutFragmentComponents)
+          .computeComponentsUsageCount(processes, processingTypeToNonFragmentComponents)
       )
   }
 

@@ -9,7 +9,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
@@ -55,19 +55,19 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     .withSource("typedMapSource", Some(Typed[TypedMap]), Parameter[TypedObjectDefinition]("type"))
     .withSink("sink")
     .withSink("sinkWithLazyParam", Parameter[String]("lazyString").copy(isLazyParameter = true))
-    .withCustom("customTransformer", Some(Typed[SimpleRecord]), nonEndingOneInputComponent, SingleComponentConfig.zero)
+    .withCustom("customTransformer", Some(Typed[SimpleRecord]), nonEndingOneInputComponent, componentId = None)
     .withCustom(
       "withParamsTransformer",
       Some(Typed[SimpleRecord]),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[String]("par1")
     )
     .withCustom(
       "manyParams",
       Some(Typed[SimpleRecord]),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[String]("par1").copy(isLazyParameter = true),
       Parameter[String]("par2"),
       Parameter[String]("par3").copy(isLazyParameter = true),
@@ -77,7 +77,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       "withManyParameters",
       Some(Typed[SimpleRecord]),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[String]("lazyString").copy(isLazyParameter = true),
       Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
       Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0)))
@@ -86,56 +86,56 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       "withoutReturnType",
       None,
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[String]("par1")
     )
     .withCustom(
       "withMandatoryParams",
       Some(Unknown),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[String]("mandatoryParam")
     )
     .withCustom(
       "withNotBlankParams",
       Some(Unknown),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       NotBlankParameter("notBlankParam", Typed[String])
     )
     .withCustom(
       "withNullableLiteralIntegerParam",
       Some(Unknown),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[Integer]("nullableLiteralIntegerParam").copy(validators = List(CompileTimeEvaluableValueValidator))
     )
     .withCustom(
       "withRegExpParam",
       Some(Unknown),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[Integer]("regExpParam").copy(validators = List(CompileTimeEvaluableValueValidator))
     )
     .withCustom(
       "withJsonParam",
       Some(Unknown),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[String]("jsonParam").copy(validators = List(JsonValidator))
     )
     .withCustom(
       "withCustomValidatorParam",
       Some(Unknown),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
     )
     .withCustom(
       "withAdditionalVariable",
       Some(Unknown),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[String]("param").copy(
         additionalVariables = Map("additional" -> AdditionalVariableProvidedInRuntime[Int]),
         isLazyParameter = true
@@ -145,7 +145,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       "withVariablesToHide",
       Some(Unknown),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)
     )
 
@@ -161,7 +161,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       "custom",
       Some(Typed[AnotherSimpleRecord]),
       nonEndingOneInputComponent,
-      SingleComponentConfig.zero,
+      componentId = None,
       Parameter[String]("par1")
     )
 
