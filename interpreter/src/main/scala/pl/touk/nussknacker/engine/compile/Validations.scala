@@ -31,16 +31,13 @@ object Validations {
   }
 
   def validateWithCustomValidators(
-      parameterDefinitions: List[Parameter],
       parameters: List[(TypedParameter, Parameter)]
   )(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
-    val definitionsMap = parameterDefinitions.map(param => (param.name, param)).toMap
     val validationResults = for {
-      param           <- parameters
-      paramDefinition <- definitionsMap.get(param._1.name)
-      paramValidationResult = validate(paramDefinition, param)
+      (typedParam, paramDef) <- parameters
+      paramValidationResult = validate(paramDef.validators, typedParam)
     } yield paramValidationResult
     validationResults.sequence.map(_ => parameters)
   }

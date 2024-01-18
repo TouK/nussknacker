@@ -833,7 +833,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   }
 
-  test("validate based on additional config from provider") {
+  test("validate based on additional config from provider - MandatoryParameterValidator") {
     val process = createProcess(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
@@ -876,6 +876,65 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "EmptyMandatoryParameter",
                 _,
                 _,
+                Some("optionalParam"),
+                NodeValidationErrorType.SaveAllowed
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test("validate based on additional config from provider - ValidationExpressionParameterValidator") {
+    val process = createProcess(
+      List(
+        Source("inID", SourceRef(existingSourceFactory, List())),
+        Enricher(
+          "custom",
+          ServiceRef("optionalParameterService", List(NodeParameter("optionalParam", Expression.spel("'Barabasz'")))),
+          "out"
+        ),
+        Sink("out", SinkRef(existingSinkFactory, List()))
+      ),
+      List(Edge("inID", "custom", None), Edge("custom", "out", None))
+    )
+
+    val validationExpression = s"#${ValidationExpressionParameterValidator.variableName}.length() < 7"
+    val validator = new UIProcessValidator(
+      ProcessValidator.default(
+        LocalModelData(
+          ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+          List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
+          additionalConfigsFromProvider = Map(
+            ComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
+              parameterConfigs = Map(
+                "optionalParam" -> ParameterAdditionalUIConfig(
+                  required = false,
+                  None,
+                  None,
+                  None,
+                  Some(ParameterValueCompileTimeValidation(validationExpression, Some("some custom failure message")))
+                )
+              )
+            )
+          )
+        )
+      ),
+      Map.empty,
+      List.empty,
+      new FragmentResolver(new StubFragmentRepository(Map.empty))
+    )
+
+    val result = validator.validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                "some custom failure message",
+                s"Please provide value that satisfies the validation expression '#${ValidationExpressionParameterValidator.variableName}.length() < 7'",
                 Some("optionalParam"),
                 NodeValidationErrorType.SaveAllowed
               )

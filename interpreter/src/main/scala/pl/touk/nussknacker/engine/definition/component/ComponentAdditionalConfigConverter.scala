@@ -6,7 +6,10 @@ import pl.touk.nussknacker.engine.api.component.{
   ParameterConfig,
   SingleComponentConfig
 }
-import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
+import pl.touk.nussknacker.engine.api.definition.{
+  MandatoryParameterValidator,
+  ValidationExpressionParameterValidatorToCompile
+}
 import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
 
 object ComponentAdditionalConfigConverter {
@@ -26,27 +29,30 @@ object ComponentAdditionalConfigConverter {
   private def toParameterConfig(
       paramAdditionalConfig: ParameterAdditionalUIConfig,
       paramName: String
-  ): ParameterConfig = ParameterConfig(
-    defaultValue = paramAdditionalConfig.initialValue.map(
-      _.expression
-    ), // validating initialValue with context and expressionCompiler will be similar to handling 'valueCompileTimeValidation', see AdditionalUIConfigProvider TODOs
-    editor = paramAdditionalConfig.valueEditor.flatMap(editor =>
-      ValueEditorValidator
-        .validateAndGetEditor(
-          valueEditor = editor,
-          initialValue = paramAdditionalConfig.initialValue,
-          paramName = paramName,
-          nodeIds = Set.empty
-        )
-        .toOption
-    ),
-    validators = if (paramAdditionalConfig.required) {
-      Some(List(MandatoryParameterValidator))
-    } else {
-      None
-    }, // see AdditionalUIConfigProvider TODOs
-    label = None,
-    hintText = paramAdditionalConfig.hintText
-  )
+  ): ParameterConfig = {
+    val validators = (if (paramAdditionalConfig.required) List(MandatoryParameterValidator) else List.empty) ++
+      paramAdditionalConfig.valueCompileTimeValidation
+        .map(validation => List(ValidationExpressionParameterValidatorToCompile(validation)))
+        .getOrElse(List.empty)
+
+    ParameterConfig(
+      defaultValue = paramAdditionalConfig.initialValue.map(
+        _.expression
+      ), // TODO currently this isn't validated (e.g. can be of incorrect type) - not a big issue as it's only used to initially fill the FE form, if sent with this wrong value the process will fail validation
+      editor = paramAdditionalConfig.valueEditor.flatMap(editor =>
+        ValueEditorValidator
+          .validateAndGetEditor(
+            valueEditor = editor,
+            initialValue = paramAdditionalConfig.initialValue,
+            paramName = paramName,
+            nodeIds = Set.empty
+          )
+          .toOption
+      ),
+      validators = Option.when(validators.nonEmpty)(validators),
+      label = None,
+      hintText = paramAdditionalConfig.hintText
+    )
+  }
 
 }

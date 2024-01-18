@@ -10,9 +10,8 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.ValidationExpressionParameterValidator.variableName
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
-import pl.touk.nussknacker.engine.api.expression.{Expression => ApiExpression}
+import pl.touk.nussknacker.engine.api.parameter.ParameterValueCompileTimeValidation
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
@@ -252,6 +251,31 @@ case object JsonValidator extends ParameterValidator {
       "Please fill field with valid json",
       paramName,
       nodeId
+    )
+
+}
+
+case class ValidationExpressionParameterValidatorToCompile(
+    validationExpression: Expression,
+    validationFailedMessage: Option[String]
+) extends ParameterValidator {
+
+  override def isValid(paramName: String, expression: Expression, value: Option[Any], label: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] = throw new IllegalStateException(
+    s"$this must be converted to ValidationExpressionParameterValidator before being used"
+  )
+
+}
+
+object ValidationExpressionParameterValidatorToCompile {
+
+  def apply(
+      parameterValueCompileTimeValidation: ParameterValueCompileTimeValidation
+  ): ValidationExpressionParameterValidatorToCompile =
+    ValidationExpressionParameterValidatorToCompile(
+      parameterValueCompileTimeValidation.validationExpression,
+      parameterValueCompileTimeValidation.validationFailedMessage
     )
 
 }

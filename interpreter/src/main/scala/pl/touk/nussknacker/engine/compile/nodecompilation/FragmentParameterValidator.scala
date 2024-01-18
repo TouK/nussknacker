@@ -6,17 +6,10 @@ import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{
-  FixedExpressionValue,
-  Parameter,
-  ParameterEditor,
-  ValidationExpressionParameterValidator
-}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValues
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{
@@ -62,8 +55,17 @@ object FragmentParameterValidator {
       fragmentParameter.name,
     )
 
-    val validationExpressionResult =
-      compileExpressionValidator(fragmentParameter, validationContext(fragmentParameter.name), expressionCompiler)
+    val validationExpressionResult = fragmentParameter.valueCompileTimeValidation
+      .map(validation =>
+        expressionCompiler
+          .compileValidationExpressionParameterValidator(
+            ValidationExpressionParameterValidatorToCompile(validation),
+            fragmentParameter.name,
+            validationContext(fragmentParameter.name)
+          )
+          .map(Some(_))
+      )
+      .getOrElse(Valid(None))
 
     List(
       fixedExpressionValuesValidationResult.map(_ => None),
@@ -86,53 +88,6 @@ object FragmentParameterValidator {
           nodeIds
         )
       )
-
-  private def compileExpressionValidator(
-      fragmentParameter: FragmentParameter,
-      typ: TypingResult,
-      expressionCompiler: ExpressionCompiler
-  )(implicit nodeId: NodeId) =
-    fragmentParameter.valueCompileTimeValidation.map { expr =>
-      expressionCompiler
-        .compile(
-          expr.validationExpression,
-          fieldName = Some(fragmentParameter.name),
-          validationCtx = ValidationContext(
-            Map(ValidationExpressionParameterValidator.variableName -> typ)
-          ), // TODO in the future, we'd like to support more references, see ValidationExpressionParameterValidator
-          expectedType = Typed[Boolean],
-        )
-        .leftMap(_.map {
-          case e: ExpressionParserCompilationError =>
-            InvalidValidationExpression(
-              e.message,
-              nodeId.id,
-              fragmentParameter.name,
-              e.originalExpr
-            )
-          case e => e
-        })
-        .andThen {
-          _.expression match {
-            case _: NullExpression =>
-              invalidNel(
-                InvalidValidationExpression(
-                  "Validation expression cannot be blank",
-                  nodeId.id,
-                  fragmentParameter.name,
-                  expr.validationExpression.expression
-                )
-              )
-            case expression =>
-              Valid(
-                ValidationExpressionParameterValidator(
-                  expression,
-                  fragmentParameter.valueCompileTimeValidation.flatMap(_.validationFailedMessage)
-                )
-              )
-          }
-        }
-    }.sequence
 
   private def validateFixedExpressionValues(
       initialValue: Option[FixedExpressionValue],
