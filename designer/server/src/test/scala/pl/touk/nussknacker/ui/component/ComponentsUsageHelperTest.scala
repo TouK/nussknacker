@@ -4,23 +4,16 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import pl.touk.nussknacker.engine.api.component.ComponentType._
-import pl.touk.nussknacker.engine.api.component.{
-  BuiltInComponentInfo,
-  ComponentId,
-  ComponentInfo,
-  ComponentType,
-  SingleComponentConfig
-}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, _}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
@@ -138,12 +131,12 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   private val processDetailsWithFragment = displayableToProcess(TestProcessUtil.toDisplayable(processWithFragment))
 
-  private val defaultComponentIdProvider = new DefaultComponentIdProvider({
+  private val processingTypeAndComponentInfoToComponentId: (ProcessingType, ComponentInfo) => ComponentId = {
     case (_, ComponentInfo(ComponentType.CustomComponent, `otherExistingStreamTransformer`)) =>
-      Some(SingleComponentConfig.zero.copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer))))
-    case _ =>
-      None
-  })
+      ComponentId(overriddenOtherExistingStreamTransformer)
+    case (processingType, info) =>
+      ComponentId.default(processingType, info)
+  }
 
   test("should compute components usage count") {
     val table = Table(
@@ -221,8 +214,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
     forAll(table) { (processesDetails, expectedData) =>
       val result = ComponentsUsageHelper.computeComponentsUsageCount(
-        defaultComponentIdProvider,
-        withComponentsUsages(processesDetails)
+        withComponentsUsages(processesDetails),
+        processingTypeAndComponentInfoToComponentId
       )
       result shouldBe expectedData
     }
@@ -323,7 +316,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       import pl.touk.nussknacker.engine.util.Implicits._
 
       val result = ComponentsUsageHelper
-        .computeComponentsUsage(defaultComponentIdProvider, withComponentsUsages(processesDetails))
+        .computeComponentsUsage(withComponentsUsages(processesDetails), processingTypeAndComponentInfoToComponentId)
         .mapValuesNow(_.map { case (baseProcessDetails, nodeIds) =>
           (baseProcessDetails.mapScenario(_ => ()), nodeIds)
         })

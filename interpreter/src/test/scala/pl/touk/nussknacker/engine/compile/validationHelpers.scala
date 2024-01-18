@@ -593,4 +593,14 @@ object validationHelpers {
     override def nodeDependencies: List[NodeDependency] = List.empty
   }
 
+  object OptionalParameterService extends Service {
+
+    @MethodToInvoke
+    def method(
+        @ParamName("optionalParam")
+        optionalParam: Option[String],
+    ): Future[String] = ???
+
+  }
+
 }

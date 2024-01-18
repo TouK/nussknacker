@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{Validated, Writer}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType, ParameterConfig}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
 import pl.touk.nussknacker.engine.api.definition._
@@ -30,14 +30,17 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefini
 class FragmentWithoutValidatorsDefinitionExtractor(classLoader: ClassLoader) {
 
   def extractFragmentComponentDefinition(
-      fragment: CanonicalProcess
+      fragment: CanonicalProcess,
+      componentInfoToId: ComponentInfo => ComponentId
   ): Validated[FragmentDefinitionError, ComponentStaticDefinition] = {
     FragmentGraphDefinitionExtractor.extractFragmentGraph(fragment).map { case (input, _, outputs) =>
       val parameters =
         extractFragmentParametersDefinition(input.parameters)(NodeId(input.id)).value
       val outputNames = outputs.map(_.name).sorted
       val docsUrl     = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
-      FragmentComponentDefinition(parameters, outputNames, docsUrl)
+      val componentId = componentInfoToId(ComponentInfo(ComponentType.Fragment, fragment.name.value))
+
+      FragmentComponentDefinition(Some(componentId), parameters, outputNames, docsUrl)
     }
   }
 

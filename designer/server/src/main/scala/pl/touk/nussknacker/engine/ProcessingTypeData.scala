@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine
 import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentId, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentStaticDefinition,
   ToStaticComponentDefinitionTransformer
@@ -15,6 +16,7 @@ import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 import scala.concurrent.{ExecutionContext, Future}
 
 final case class ProcessingTypeData private (
+    processingType: ProcessingType,
     deploymentManager: DeploymentManager,
     modelData: ModelData,
     staticModelDefinition: ModelDefinition[ComponentStaticDefinition],
@@ -35,24 +37,30 @@ final case class ProcessingTypeData private (
 object ProcessingTypeData {
 
   def createProcessingTypeData(
+      processingType: ProcessingType,
       deploymentManagerProvider: DeploymentManagerProvider,
-      processTypeConfig: ProcessingTypeConfig
+      processingTypeConfig: ProcessingTypeConfig,
+      additionalUIConfigProvider: AdditionalUIConfigProvider
   )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
-    val managerConfig = processTypeConfig.deploymentConfig
+    val managerConfig                 = processingTypeConfig.deploymentConfig
+    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
+
     createProcessingTypeData(
+      processingType,
       deploymentManagerProvider,
-      ModelData(processTypeConfig),
+      ModelData(processingTypeConfig, additionalConfigsFromProvider, ComponentId.default(processingType, _)),
       managerConfig,
-      processTypeConfig.category
+      processingTypeConfig.category
     )
   }
 
   def createProcessingTypeData(
+      processingType: ProcessingType,
       deploymentManagerProvider: DeploymentManagerProvider,
       modelData: ModelData,
       managerConfig: Config,
@@ -64,10 +72,11 @@ object ProcessingTypeData {
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
-    createProcessingTypeData(deploymentManagerProvider, manager, modelData, managerConfig, category)
+    createProcessingTypeData(processingType, deploymentManagerProvider, manager, modelData, managerConfig, category)
   }
 
   def createProcessingTypeData(
+      processingType: ProcessingType,
       deploymentManagerProvider: DeploymentManagerProvider,
       manager: DeploymentManager,
       modelData: ModelData,
@@ -85,6 +94,7 @@ object ProcessingTypeData {
       ToStaticComponentDefinitionTransformer.transformModel(modelData, metaDataInitializer.create(_, Map.empty))
 
     ProcessingTypeData(
+      processingType,
       manager,
       modelData,
       staticModelDefinition,

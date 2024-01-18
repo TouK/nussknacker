@@ -18,7 +18,6 @@ import pl.touk.nussknacker.test.{
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
-import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider}
 
 class ComponentApiSpec
     extends AnyFreeSpecLike
@@ -29,8 +28,6 @@ class ComponentApiSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
-
-  private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider({ (_, _) => None })
 
   "The endpoint for getting components when" - {
     "authenticated should" - {
@@ -282,10 +279,7 @@ class ComponentApiSpec
           .emptySink("sink", "kafka")
 
         createSavedScenario(scenario, Category1, Streaming)
-        val componentId = defaultComponentIdProvider.createComponentId(
-          processingType = Streaming,
-          componentInfo = ComponentInfo(ComponentType.Source, sourceComponentName)
-        )
+        val componentId = ComponentId.default(Streaming, ComponentInfo(ComponentType.Source, sourceComponentName))
 
         given()
           .basicAuth("admin", "admin")

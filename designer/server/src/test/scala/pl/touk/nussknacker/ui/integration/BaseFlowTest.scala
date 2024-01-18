@@ -108,27 +108,38 @@ class BaseFlowTest
         "icon"       -> fromString(DefaultsComponentIcon.FilterIcon),
         "docsUrl"    -> fromString("https://touk.github.io/nussknacker/filter"),
       ),
-      // FIXME: Will be fixed in https://github.com/TouK/nussknacker/pull/5356
-//      "service-enricher" -> obj(
-//        "parameters" -> arr(
-//          obj(
-//            "name"         -> fromString("param"),
-//            "label"        -> fromString("param"),
-//            "defaultValue" -> Expression.spel("'default value'").asJson,
-//            "editor"       -> encodeEditor(StringParameterEditor),
-//            "hintText"     -> Null,
-//          ),
-//          obj(
-//            "name"         -> fromString("paramStringEditor"),
-//            "label"        -> fromString("paramStringEditor"),
-//            "defaultValue" -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
-//            "editor"       -> encodeEditor(RawParameterEditor),
-//            "hintText"     -> fromString("hint-text-from-additional-ui-config-provider"),
-//          ),
-//        ),
-//        "icon"    -> fromString("/assets/components/Filter.svg"),
-//        "docsUrl" -> fromString("https://touk.github.io/nussknacker/enricher"),
-//      ),
+      "service-enricher" -> obj(
+        "parameters" -> arr(
+          obj(
+            "name"         -> fromString("param"),
+            "label"        -> fromString("param"),
+            "defaultValue" -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
+            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "hintText"     -> fromString("hint-text-from-additional-ui-config-provider"),
+          ),
+          obj(
+            "name"  -> fromString("tariffType"),
+            "label" -> fromString("tariffType"),
+            "defaultValue" -> Expression
+              .spel("T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL")
+              .asJson,
+            "editor" -> encodeEditor(
+              DualParameterEditor(
+                FixedValuesParameterEditor(
+                  List(
+                    FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL", "normal"),
+                    FixedExpressionValue("T(pl.touk.nussknacker.engine.management.sample.TariffType).GOLD", "gold")
+                  )
+                ),
+                DualEditorMode.SIMPLE
+              )
+            ),
+            "hintText" -> Null,
+          ),
+        ),
+        "icon"    -> fromString("/assets/components/Filter.svg"),
+        "docsUrl" -> fromString("https://touk.github.io/nussknacker/enricher"),
+      ),
       "service-multipleParamsService" -> obj(
         "parameters" -> arr(
           obj(
