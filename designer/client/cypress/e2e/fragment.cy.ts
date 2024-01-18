@@ -53,7 +53,7 @@ describe("Fragment", () => {
         // Display Add list item value without error
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{backspace}");
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("#meta.processName");
-        cy.get("[data-testid='settings:4']").find("[data-testid='form-helper-text']").should("not.be.visible");
+        cy.get("[data-testid='settings:4']").find("[data-testid='form-helper-text']").should("not.exist");
         cy.get("[data-testid='settings:4']").contains("Typing...").should("not.exist");
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{enter}");
         cy.get("[data-testid='settings:4']").find("[role='button']").contains("#meta.processName");
@@ -91,7 +91,7 @@ describe("Fragment", () => {
             .siblings()
             .eq(0)
             .find("[data-testid='form-helper-text']")
-            .should("not.be.visible");
+            .should("not.exist");
         cy.get("@window").find("[data-testid='settings:5']").matchImage();
 
         // Provide non String or Boolean Any Value inputMode
@@ -115,7 +115,7 @@ describe("Fragment", () => {
             .siblings()
             .eq(0)
             .find("[data-testid='form-helper-text']")
-            .should("not.be.visible");
+            .should("not.exist");
 
         cy.get("@window").find("[data-testid='settings:6']").matchImage();
 
