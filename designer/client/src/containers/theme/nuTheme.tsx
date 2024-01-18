@@ -6,7 +6,7 @@ declare module "@mui/material/FormHelperText" {
         largeMessage: true;
     }
     interface FormHelperTextOwnProps {
-        "data-testid": string;
+        "data-testid"?: string;
     }
 }
 
@@ -342,7 +342,7 @@ export const nuTheme = createTheme({
             },
             variants: [{ props: { variant: "largeMessage" }, style: { fontSize: ".875rem" } }],
             defaultProps: {
-                "data-testid": "error-message",
+                "data-testid": "form-helper-text",
             },
         },
     },

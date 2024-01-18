@@ -4,7 +4,7 @@ import { customCheckbox } from "./CustomCheckbox";
 export const NodeTableStyled = styled("div")(
     ({ theme }) => css`
         font-size: 11px;
-        margin: 0 25px;
+        margin: 0 24px;
         .movable-row {
             margin-top: 0;
             flex-wrap: nowrap;
@@ -128,9 +128,6 @@ export const NodeTableStyled = styled("div")(
             padding-top: 15px;
             width: 100%;
             padding-left: 50px;
-            .node-label {
-                text-transform: none;
-            }
         }
         textarea.node-input {
             resize: vertical;

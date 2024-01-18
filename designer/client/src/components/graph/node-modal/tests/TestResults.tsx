@@ -30,7 +30,7 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
                 .sort((a, b) => a.localeCompare(b))
                 .map((key, ikey) => (
                     <FormControl key={ikey}>
-                        <FormLabel className="node-label">{key}:</FormLabel>
+                        <FormLabel>{key}:</FormLabel>
                         <TestValue value={results.testResultsToShow.context.variables[key]} shouldHideTestResults={false} />
                     </FormControl>
                 ))}

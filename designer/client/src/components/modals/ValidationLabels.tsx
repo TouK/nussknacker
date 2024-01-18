@@ -13,7 +13,7 @@ export default function ValidationLabels(props: Props) {
 
     return (
         <>
-            {isEmpty(fieldErrors) ? (
+            {isEmpty(fieldErrors) && validationLabelInfo ? (
                 <FormHelperText title={validationLabelInfo}>{validationLabelInfo}</FormHelperText>
             ) : (
                 fieldErrors.map((fieldErrors, index) => (
