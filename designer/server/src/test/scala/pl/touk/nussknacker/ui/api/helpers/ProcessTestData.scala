@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -92,27 +92,32 @@ object ProcessTestData {
       .withCustom(
         existingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        SingleComponentConfig.zero
       )
       .withCustom(
         otherExistingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        SingleComponentConfig.zero
       )
       .withCustom(
         otherExistingStreamTransformer2,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        SingleComponentConfig.zero
       )
       .withCustom(
         optionalEndingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = true)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
+        SingleComponentConfig.zero
       )
       .withCustom(
         union,
         Some(Unknown),
-        CustomComponentSpecificData(manyInputs = true, canBeEnding = true)
+        CustomComponentSpecificData(manyInputs = true, canBeEnding = true),
+        SingleComponentConfig.zero
       )
       .build
 

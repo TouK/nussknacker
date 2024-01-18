@@ -4,16 +4,21 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import pl.touk.nussknacker.engine.api.component.ComponentType._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, _}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, CustomComponentSpecificData}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinitionConverter
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
@@ -131,11 +136,34 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   private val processDetailsWithFragment = displayableToProcess(TestProcessUtil.toDisplayable(processWithFragment))
 
-  private val processingTypeAndComponentInfoToComponentId: (ProcessingType, ComponentInfo) => ComponentId = {
-    case (_, ComponentInfo(ComponentType.CustomComponent, `otherExistingStreamTransformer`)) =>
-      ComponentId(overriddenOtherExistingStreamTransformer)
-    case (processingType, info) =>
-      ComponentId.default(processingType, info)
+  private val modelDefinition = ModelDefinitionBuilder
+    .empty(Map.empty)
+    .withSink(existingSinkFactory)
+    .withSink(existingSinkFactory2)
+    .withSource(existingSourceFactory)
+    .withCustom(
+      otherExistingStreamTransformer,
+      Some(Typed[String]),
+      CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+      SingleComponentConfig.zero.copy(
+        componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer))
+      )
+    )
+    .withCustom(
+      otherExistingStreamTransformer2,
+      Some(Typed[String]),
+      CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+      SingleComponentConfig.zero
+    )
+    .build
+    .toStaticComponentsDefinition
+
+  private val processingTypeToModelDefinitionWithoutFragmentComponents
+      : Map[ProcessingType, ModelDefinition[ComponentStaticDefinition]] = {
+    Map(
+      TestProcessingTypes.Streaming -> modelDefinition,
+      TestProcessingTypes.Fraud     -> modelDefinition
+    )
   }
 
   test("should compute components usage count") {
@@ -215,7 +243,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     forAll(table) { (processesDetails, expectedData) =>
       val result = ComponentsUsageHelper.computeComponentsUsageCount(
         withComponentsUsages(processesDetails),
-        processingTypeAndComponentInfoToComponentId
+        processingTypeToModelDefinitionWithoutFragmentComponents
       )
       result shouldBe expectedData
     }
@@ -316,7 +344,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       import pl.touk.nussknacker.engine.util.Implicits._
 
       val result = ComponentsUsageHelper
-        .computeComponentsUsage(withComponentsUsages(processesDetails), processingTypeAndComponentInfoToComponentId)
+        .computeComponentsUsage(
+          withComponentsUsages(processesDetails),
+          processingTypeToModelDefinitionWithoutFragmentComponents
+        )
         .mapValuesNow(_.map { case (baseProcessDetails, nodeIds) =>
           (baseProcessDetails.mapScenario(_ => ()), nodeIds)
         })

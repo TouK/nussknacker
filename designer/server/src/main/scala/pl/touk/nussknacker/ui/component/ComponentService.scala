@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import cats.data.Validated.Valid
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.restmodel.component.{
@@ -65,29 +65,18 @@ class DefaultComponentService(
 
   import cats.syntax.traverse._
 
-  private def processingTypeAndComponentInfoToComponentId(
+  private def processingTypeToModelDefinitionWithoutFragmentComponents(
       implicit user: LoggedUser
-  ): (ProcessingType, ComponentInfo) => ComponentId = {
-    val processingTypeToNonFragmentComponentIds = processingTypeDataProvider.all.toList
-      .map { case (processingType, processingTypeData) =>
-        val modelDefinition =
-          processingTypeData.modelDefinitionEnricher.modelDefinitionWithBuiltInComponentsAndFragments(
-            forFragment = false, // It excludes fragment's components: input / output
-            fragmentScenarios = List.empty
-          )
+  ) =
+    processingTypeDataProvider.all.toList.map { case (processingType, processingTypeData) =>
+      val modelDefinition =
+        processingTypeData.modelDefinitionEnricher.modelDefinitionWithBuiltInComponentsAndFragments(
+          forFragment = false, // It excludes fragment's components: input / output
+          fragmentScenarios = List.empty
+        )
 
-        modelDefinition.components.map { case (info, definition) =>
-          (processingType, info) -> definition.componentIdUnsafe
-        }
-      }
-      .reduce(_ ++ _)
-
-    (processingType: ProcessingType, info: ComponentInfo) =>
-      processingTypeToNonFragmentComponentIds.getOrElse(
-        (processingType, info),
-        ComponentId.default(processingType, info)
-      )
-  }
+      processingType -> modelDefinition
+    }.toMap
 
   override def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
     for {
@@ -111,7 +100,10 @@ class DefaultComponentService(
       .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map { processDetailsList =>
         val componentsUsage =
-          ComponentsUsageHelper.computeComponentsUsage(processDetailsList, processingTypeAndComponentInfoToComponentId)
+          ComponentsUsageHelper.computeComponentsUsage(
+            processDetailsList,
+            processingTypeToModelDefinitionWithoutFragmentComponents
+          )
 
         componentsUsage
           .get(componentId)
@@ -176,7 +168,8 @@ class DefaultComponentService(
     processService
       .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map(processes =>
-        ComponentsUsageHelper.computeComponentsUsageCount(processes, processingTypeAndComponentInfoToComponentId)
+        ComponentsUsageHelper
+          .computeComponentsUsageCount(processes, processingTypeToModelDefinitionWithoutFragmentComponents)
       )
   }
 

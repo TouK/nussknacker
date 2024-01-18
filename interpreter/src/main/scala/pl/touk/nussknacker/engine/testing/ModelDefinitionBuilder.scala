@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
@@ -54,19 +54,21 @@ final case class ModelDefinitionBuilder(
       name: String,
       returnType: Option[TypingResult],
       componentSpecificData: CustomComponentSpecificData,
-      params: Parameter*
+      config: SingleComponentConfig,
+      params: Parameter*,
   ): ModelDefinitionBuilder =
     wrapWithNotDisabledCustomComponentDefinition(
       params.toList,
       returnType,
       componentSpecificData
-    ).map(withComponent(name, _)).getOrElse(this)
+    ).map(withComponent(name, _, config)).getOrElse(this)
 
   private def withComponent(
       name: String,
-      componentStaticDefinition: ComponentStaticDefinition
+      componentStaticDefinition: ComponentStaticDefinition,
+      config: SingleComponentConfig = SingleComponentConfig.zero
   ): ModelDefinitionBuilder = {
-    copy(components = (name -> componentStaticDefinition) :: components)
+    copy(components = (name -> componentStaticDefinition.copy(componentConfig = config)) :: components)
   }
 
   def withGlobalVariable(name: String, variable: AnyRef): ModelDefinitionBuilder = {
