@@ -26,10 +26,10 @@ import scala.concurrent.Future
 trait NuTestScenarioManager extends ScalaFutures {
   this: WithTestDb =>
 
-  private implicit val user: LoggedUser                       = TestFactory.adminUser("user")
-  private val dbioRunner: DBIOActionRunner                    = newDBIOActionRunner(testDbRef)
-  private val actionRepository: DbProcessActionRepository[DB] = newActionProcessRepository(testDbRef)
-  private val writeScenarioRepository: DBProcessRepository    = newWriteProcessRepository(testDbRef)
+  private implicit val user: LoggedUser                    = TestFactory.adminUser("user")
+  private val dbioRunner: DBIOActionRunner                 = newDBIOActionRunner(testDbRef)
+  private val actionRepository: DbProcessActionRepository  = newActionProcessRepository(testDbRef)
+  private val writeScenarioRepository: DBProcessRepository = newWriteProcessRepository(testDbRef)
   protected val futureFetchingScenarioRepository: DBFetchingProcessRepository[Future] =
     newFutureFetchingScenarioRepository(testDbRef)
 

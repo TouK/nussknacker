@@ -89,7 +89,7 @@ trait NuResourcesTest
 
   protected val fragmentRepository: DefaultFragmentRepository = newFragmentRepository(testDbRef)
 
-  protected val actionRepository: DbProcessActionRepository[DB] = newActionProcessRepository(testDbRef)
+  protected val actionRepository: DbProcessActionRepository = newActionProcessRepository(testDbRef)
 
   protected val processActivityRepository: DbProcessActivityRepository = newProcessActivityRepository(testDbRef)
 
@@ -150,8 +150,6 @@ trait NuResourcesTest
       )
     )
 
-  protected val newProcessPreparer: NewProcessPreparer = createNewProcessPreparer()
-
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _] =
@@ -195,7 +193,7 @@ trait NuResourcesTest
   protected def createDBProcessService(deploymentService: DeploymentService): DBProcessService =
     new DBProcessService(
       deploymentService,
-      newProcessPreparer,
+      newProcessPreparerByProcessingType,
       () => scenarioCategoryService,
       processResolverByProcessingType,
       dbioRunner,
@@ -468,7 +466,7 @@ trait NuResourcesTest
       isFragment: Boolean = false,
       category: String = Category1,
   ): ProcessId = {
-    val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName, Streaming, isFragment)
+    val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName, isFragment)
     saveAndGetId(emptyProcess, category, isFragment).futureValue
   }
 

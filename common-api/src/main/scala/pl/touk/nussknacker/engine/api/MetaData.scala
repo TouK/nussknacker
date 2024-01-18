@@ -5,6 +5,7 @@ import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, HCursor}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 @JsonCodec case class LayoutData(x: Long, y: Long)
 

@@ -146,12 +146,12 @@ trait ProcessService {
  */
 class DBProcessService(
     deploymentService: DeploymentService,
-    newProcessPreparer: NewProcessPreparer,
+    newProcessPreparers: ProcessingTypeDataProvider[NewProcessPreparer, _],
     getProcessCategoryService: () => ProcessCategoryService,
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
-    processActionRepository: ProcessActionRepository[DB],
+    processActionRepository: ProcessActionRepository,
     processRepository: ProcessRepository[DB]
 )(implicit ec: ExecutionContext)
     extends ProcessService
@@ -348,8 +348,9 @@ class DBProcessService(
       command: CreateProcessCommand
   )(implicit user: LoggedUser): Future[ProcessResponse] =
     withProcessingType(command.category) { processingType =>
+      val newProcessPreparer = newProcessPreparers.forTypeUnsafe(processingType)
       val emptyCanonicalProcess =
-        newProcessPreparer.prepareEmptyProcess(command.processName, processingType, command.isFragment)
+        newProcessPreparer.prepareEmptyProcess(command.processName, command.isFragment)
       val action = CreateProcessAction(
         command.processName,
         command.category,

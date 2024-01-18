@@ -774,7 +774,7 @@ class DefaultComponentServiceSpec
   ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
-      newProcessPreparer = TestFactory.createNewProcessPreparer(),
+      newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
       getProcessCategoryService = () => processCategoryService,
       processResolverByProcessingType = TestFactory.processResolverByProcessingType,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),

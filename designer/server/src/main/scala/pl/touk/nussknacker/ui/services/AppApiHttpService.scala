@@ -3,15 +3,12 @@ package pl.touk.nussknacker.ui.services
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.api.AppApiEndpoints
+import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
@@ -24,7 +21,7 @@ class AppApiHttpService(
     config: Config,
     authenticator: AuthenticationResources,
     processingTypeDataReloader: ProcessingTypeDataReload,
-    modelData: ProcessingTypeDataProvider[ModelData, _],
+    modelInfos: ProcessingTypeDataProvider[Map[String, String], _],
     processService: ProcessService,
     getProcessCategoryService: () => ProcessCategoryService,
     shouldExposeConfig: Boolean
@@ -99,14 +96,13 @@ class AppApiHttpService(
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
           // TODO: Warning, here is a little security leak. Everyone can discover configured processing types.
           //       We should consider adding an authorization of access rights to this data.
-          val modelDataInfo: Map[ProcessingType, Map[String, String]] =
-            modelData.all(NussknackerInternalUser.instance).mapValuesNow(_.configCreator.buildInfo())
+          val modelInfo: Map[ProcessingType, Map[String, String]] = modelInfos.all(NussknackerInternalUser.instance)
           BuildInfoDto(
             BuildInfo.name,
             BuildInfo.gitCommit,
             BuildInfo.buildTime,
             BuildInfo.version,
-            modelDataInfo,
+            modelInfo,
             configuredBuildInfo
           )
         }

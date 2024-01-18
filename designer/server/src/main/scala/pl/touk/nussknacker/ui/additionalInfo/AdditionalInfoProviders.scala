@@ -14,7 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData, _]) {
 
-  // TODO: do not load provider for each request...
+  // TODO: The AdditionalInfoProvider interface should be changed to the factory that creates AdditionalInfoProvider
+  //       based on the model config.
+  // TODO: We should move loading of these extensions into the class were we see how many designer side model
+  //       extensions do we have. See notice next to ModelData.migrations
   private val nodeProviders: ProcessingTypeDataProvider[Option[NodeData => Future[Option[AdditionalInfo]]], _] =
     typeToConfig.mapValues(pt =>
       ScalaServiceLoader

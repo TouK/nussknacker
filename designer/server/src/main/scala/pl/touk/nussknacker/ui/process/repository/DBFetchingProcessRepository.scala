@@ -19,18 +19,20 @@ import scala.language.higherKinds
 
 object DBFetchingProcessRepository {
 
-  def create(dbRef: DbRef, actionRepository: ProcessActionRepository[DB])(implicit ec: ExecutionContext) =
+  def create(dbRef: DbRef, actionRepository: ProcessActionRepository)(implicit ec: ExecutionContext) =
     new DBFetchingProcessRepository[DB](dbRef, actionRepository) with DbioRepository
 
-  def createFutureRepository(dbRef: DbRef, actionRepository: ProcessActionRepository[DB])(
+  def createFutureRepository(dbRef: DbRef, actionRepository: ProcessActionRepository)(
       implicit ec: ExecutionContext
   ) =
     new DBFetchingProcessRepository[Future](dbRef, actionRepository) with BasicRepository
 
 }
 
-abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, actionRepository: ProcessActionRepository[DB])
-    extends FetchingProcessRepository[F]
+abstract class DBFetchingProcessRepository[F[_]: Monad](
+    protected val dbRef: DbRef,
+    actionRepository: ProcessActionRepository
+) extends FetchingProcessRepository[F]
     with LazyLogging {
 
   import api._

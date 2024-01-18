@@ -165,7 +165,12 @@ object ClassLoaderModelData {
 
 trait ModelData extends BaseModelData with AutoCloseable {
 
+  // TODO: We should move model extensions that are used only on designer side into a separate wrapping class e.g. DesignerModelData
+  //       Thanks to that we 1) avoid unnecessary noice on runtime side, but also 2) we still see what kind of model extensions
+  //       do we have. See AdditionalInfoProviders as well
   def migrations: ProcessMigrations
+
+  final def modelInfo: Map[String, String] = configCreator.buildInfo()
 
   def configCreator: ProcessConfigCreator
 
@@ -204,6 +209,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   final lazy val engineDictRegistry: EngineDictRegistry =
     dictServicesFactory.createEngineDictRegistry(modelDefinition.expressionConfig.dictionaries)
 
+  // TODO: remove it, see notice in CustomProcessValidatorFactory
   final def customProcessValidator: CustomProcessValidator = {
     CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, modelConfig)
   }

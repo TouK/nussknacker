@@ -4,10 +4,9 @@ import akka.http.scaladsl.model.HttpHeader
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
@@ -43,8 +42,8 @@ object ProcessRepository {
 
   }
 
-  def create(dbRef: DbRef, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
-    new DBProcessRepository(dbRef, modelData.mapValues(_.migrations.version))
+  def create(dbRef: DbRef, migrations: ProcessingTypeDataProvider[ProcessMigrations, _]): DBProcessRepository =
+    new DBProcessRepository(dbRef, migrations.mapValues(_.version))
 
   final case class CreateProcessAction(
       processName: ProcessName,
@@ -86,7 +85,7 @@ trait ProcessRepository[F[_]] {
 
 }
 
-class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeDataProvider[Int, _])
+class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTypeDataProvider[Int, _])
     extends ProcessRepository[DB]
     with NuTables
     with LazyLogging

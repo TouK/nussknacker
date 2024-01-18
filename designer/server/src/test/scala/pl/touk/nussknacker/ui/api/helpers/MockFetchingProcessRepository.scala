@@ -44,7 +44,7 @@ object MockFetchingProcessRepository {
 }
 
 class MockFetchingProcessRepository private (
-    override val dbRef: DbRef,
+    override protected val dbRef: DbRef,
     processes: List[ScenarioWithDetailsEntity[CanonicalProcess]]
 )(implicit ec: ExecutionContext)
     extends FetchingProcessRepository[Future]

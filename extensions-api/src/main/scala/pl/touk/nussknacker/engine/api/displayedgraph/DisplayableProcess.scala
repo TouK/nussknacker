@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 @JsonCodec final case class DisplayableProcess(
     properties: ProcessProperties,

@@ -107,14 +107,15 @@ class AkkaHttpBasedRouteProvider(
     } yield {
       val analyticsConfig = AnalyticsConfig(resolvedConfig)
 
-      val modelData = typeToConfig.mapValues(_.modelData)
+      val migrations = typeToConfig.mapValues(_.modelData.migrations)
+      val modelInfo  = typeToConfig.mapValues(_.modelData.modelInfo)
 
       val dbioRunner        = DBIOActionRunner(dbRef)
-      val actionRepository  = DbProcessActionRepository.create(dbRef, modelData)
+      val actionRepository  = new DbProcessActionRepository(dbRef, modelInfo)
       val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
       val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
-      val writeProcessRepository  = ProcessRepository.create(dbRef, modelData)
+      val writeProcessRepository  = ProcessRepository.create(dbRef, migrations)
 
       val fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
@@ -182,9 +183,14 @@ class AkkaHttpBasedRouteProvider(
 
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
 
-      Initialization.init(modelData.mapValues(_.migrations), dbRef, processRepository, environment)
+      Initialization.init(migrations, dbRef, processRepository, environment)
 
-      val newProcessPreparer = NewProcessPreparer(typeToConfig, typeToConfig.mapValues(_.scenarioPropertiesConfig))
+      val newProcessPreparer = typeToConfig.mapValues { processingTypeData =>
+        new NewProcessPreparer(
+          processingTypeData.metaDataInitializer,
+          processingTypeData.scenarioPropertiesConfig
+        )
+      }
 
       val customActionInvokerService = new CustomActionInvokerServiceImpl(
         futureProcessRepository,
@@ -235,7 +241,7 @@ class AkkaHttpBasedRouteProvider(
         config = resolvedConfig,
         authenticator = authenticationResources,
         processingTypeDataReloader = typeToConfig,
-        modelData = modelData,
+        modelInfos = modelInfo,
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
         getProcessCategoryService = getProcessCategoryService
@@ -324,7 +330,7 @@ class AkkaHttpBasedRouteProvider(
               new HttpRemoteEnvironment(
                 migrationConfig,
                 new TestModelMigrations(
-                  modelData.mapValues(data => new ProcessModelMigrator(data.migrations)),
+                  migrations.mapValues(new ProcessModelMigrator(_)),
                   processValidator
                 ),
                 environment
