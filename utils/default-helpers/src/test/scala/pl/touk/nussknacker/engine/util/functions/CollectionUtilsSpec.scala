@@ -189,9 +189,9 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluateType("#COLLECTION.sum({#int, #long})", variables) shouldBe "Number".valid
   }
 
-  test("sum should fall back to Double on unknown Number type") {
+  test("sum should fall back to Number on unknown Number type") {
     val custom = new CustomNumber()
-    evaluateAny("#COLLECTION.sum(#list)", Map("list" -> List(1, custom).asJava)) shouldBe 1 + custom.doubleValue()
+    evaluateType("#COLLECTION.sum({#int, #custom})", Map("custom" -> custom, "int" -> 1)) shouldBe "Number".valid
   }
 
   test("sortedAsc") {
