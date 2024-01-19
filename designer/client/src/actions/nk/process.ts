@@ -1,5 +1,5 @@
 import { ThunkAction } from "../reduxTypes";
-import { ProcessDefinitionData } from "../../types";
+import { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import HttpService from "./../../http/HttpService";
 import { Scenario, ProcessName, ProcessVersionId } from "../../components/Process/types";
 import { displayProcessActivity } from "./displayProcessActivity";
@@ -15,7 +15,7 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
         dispatch({ type: "PROCESS_FETCH" });
 
         return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
-            dispatch(displayTestCapabilities(response.data));
+            dispatch(displayTestCapabilities(processName, response.data.scenarioGraph));
             dispatch({
                 type: "DISPLAY_PROCESS",
                 scenario: response.data,
@@ -35,9 +35,9 @@ export function loadProcessState(processName: ProcessName): ThunkAction {
         );
 }
 
-export function fetchTestFormParameters(scenario: Scenario) {
+export function fetchTestFormParameters(processName: ProcessName, scenario: ScenarioGraph) {
     return (dispatch) =>
-        HttpService.getTestFormParameters(scenario.name, scenario).then(({ data }) => {
+        HttpService.getTestFormParameters(processName, scenario).then(({ data }) => {
             dispatch({
                 type: "UPDATE_TEST_FORM_PARAMETERS",
                 testFormParameters: data,
@@ -45,9 +45,9 @@ export function fetchTestFormParameters(scenario: Scenario) {
         });
 }
 
-export function displayTestCapabilities(scenario: Scenario) {
+export function displayTestCapabilities(processName: ProcessName, scenario: ScenarioGraph) {
     return (dispatch) =>
-        HttpService.getTestCapabilities(scenario.name, scenario).then(({ data }) =>
+        HttpService.getTestCapabilities(processName, scenario).then(({ data }) =>
             dispatch({
                 type: "UPDATE_TEST_CAPABILITIES",
                 capabilities: data,

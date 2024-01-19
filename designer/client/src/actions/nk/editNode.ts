@@ -20,7 +20,7 @@ export type RenameProcessAction = {
 export function editNode(scenarioBefore: Scenario, before: NodeType, after: NodeType, outputEdges?: Edge[]): ThunkAction {
     return async (dispatch) => {
         const scenarioGraph = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
-        const response = await HttpService.validateProcess(scenarioBefore.name, { ...scenarioBefore, json: scenarioGraph });
+        const response = await HttpService.validateProcess(scenarioBefore.name, scenarioGraph);
         dispatch(displayProcessCounts({}));
 
         return dispatch({

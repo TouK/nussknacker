@@ -4,13 +4,16 @@ import { RootState } from "../reducers";
 import { ActionTypes as UndoActionTypes } from "redux-undo";
 import { debounce } from "lodash";
 import HttpService from "../http/HttpService";
-import { getProcessToDisplayWithUnsavedName } from "../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph } from "../reducers/selectors/graph";
 
 type ActionType = Action["type"];
 
 const debouncedValidate = debounce((dispatch: ThunkDispatch, getState: () => RootState) => {
-    const scenario = getProcessToDisplayWithUnsavedName(getState());
-    return HttpService.validateProcess(scenario.name, scenario).then(({ data }) =>
+    // TODO: Should we also send a draft of scenario name (unsavedName) as a separate field in the request?
+    //       Or properties validations are sufficient?
+    const scenarioName = getProcessName(getState());
+    const scenarioGraph = getScenarioGraph(getState());
+    return HttpService.validateProcess(scenarioName, scenarioGraph).then(({ data }) =>
         dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
     );
 }, 500);

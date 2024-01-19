@@ -200,7 +200,7 @@ class StandardRemoteEnvironmentSpec
 
       (uri, method) match {
         case GetProcessesDetailsWithoutScenarioGraph() =>
-          Marshal(allProcesses.map(_.copy(json = None))).to[ResponseEntity].map { entity =>
+          Marshal(allProcesses.map(_.copy(scenarioGraph = None))).to[ResponseEntity].map { entity =>
             HttpResponse(entity = entity)
           }
         case GetProcessesDetails(names) =>

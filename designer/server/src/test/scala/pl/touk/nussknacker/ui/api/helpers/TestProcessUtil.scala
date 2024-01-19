@@ -95,7 +95,7 @@ object TestProcessUtil {
   ): ScenarioWithDetails = {
     ScenarioWithDetailsConversions.fromEntity(
       toScenarioWithDetailsEntity(name, isFragment = isFragment)
-        .copy(json = ValidatedDisplayableProcess.withValidationResult(displayable, validationResult))
+        .copy(json = ValidatedDisplayableProcess(displayable, validationResult))
     )
   }
 

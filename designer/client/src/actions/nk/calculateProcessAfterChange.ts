@@ -25,14 +25,14 @@ export function calculateProcessAfterChange(
     return async (dispatch, getState) => {
         if (NodeUtils.nodeIsProperties(after)) {
             const processDefinitionData = await dispatch(fetchProcessDefinition(scenario.processingType, scenario.isFragment));
-            const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario.json, processDefinitionData);
+            const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario.scenarioGraph, processDefinitionData);
             if (after.id !== before.id) {
                 dispatch({ type: "PROCESS_RENAME", name: after.id });
             }
             return { ...processWithNewFragmentSchema, properties: after };
         }
 
-        let changedProcess = scenario.json;
+        let changedProcess = scenario.scenarioGraph;
         if (outputEdges) {
             const processDefinitionData = getProcessDefinitionData(getState());
             const filtered = outputEdges.map(({ to, ...e }) =>
@@ -43,7 +43,7 @@ export function calculateProcessAfterChange(
                           to: "",
                       },
             );
-            changedProcess = replaceNodeOutputEdges(scenario.json, processDefinitionData, filtered, before.id);
+            changedProcess = replaceNodeOutputEdges(scenario.scenarioGraph, processDefinitionData, filtered, before.id);
         }
 
         return mapProcessWithNewNode(changedProcess, before, after);

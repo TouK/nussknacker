@@ -180,7 +180,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     )
 
     Right(
-      ValidatedDisplayableProcess.withValidationResult(
+      ValidatedDisplayableProcess(
         displayableProcess,
         ValidationResult.success.copy(nodeResults = nodeResults)
       )

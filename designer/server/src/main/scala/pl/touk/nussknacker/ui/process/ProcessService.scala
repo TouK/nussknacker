@@ -256,11 +256,7 @@ class DBProcessService(
       case FetchScenarioGraph.ValidateAndResolve(false) =>
         // reduce serialized response JSON by ~5-10 MB (typical typing information size in production use)
         val result = validateAndReverseResolve(entity)
-        result.copy(json = result.json.map { validatedProcess =>
-          validatedProcess.copy(validationResult =
-            validatedProcess.validationResult.map(_.copy(nodeResults = Map.empty))
-          )
-        })
+        result.copy(validationResult = result.validationResult.map(_.copy(nodeResults = Map.empty)))
       case FetchScenarioGraph.DontValidate =>
         toDisplayableProcessDetailsWithoutValidation(entity)
     }
@@ -269,9 +265,8 @@ class DBProcessService(
   private def toDisplayableProcessDetailsWithoutValidation(
       entity: ScenarioWithDetailsEntity[CanonicalProcess]
   ): ScenarioWithDetails = {
-    ScenarioWithDetailsConversions.fromEntity(entity.mapScenario { canonical =>
-      val displayableProcess = ProcessConverter.toDisplayable(canonical)
-      ValidatedDisplayableProcess.withEmptyValidationResult(displayableProcess)
+    ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(entity.mapScenario { canonical =>
+      ProcessConverter.toDisplayable(canonical)
     })
   }
 
@@ -419,7 +414,7 @@ class DBProcessService(
       val validationResult = processResolverByProcessingType
         .forTypeUnsafe(process.processingType)
         .validateBeforeUiReverseResolving(canonical, process.isFragment)
-      Future.successful(ValidatedDisplayableProcess.withValidationResult(displayable, validationResult))
+      Future.successful(ValidatedDisplayableProcess(displayable, validationResult))
     }
   }
 

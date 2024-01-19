@@ -11,7 +11,7 @@ import { getProcessState } from "./scenarioState";
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
 export const getScenario = createSelector(getGraph, (g) => g.scenario);
-export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.json || ({} as ScenarioGraph));
+export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph));
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 export const getProcessName = createSelector(getScenario, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);
@@ -36,10 +36,10 @@ export const isProcessRenamed = createSelector(
     getProcessUnsavedNewName,
     (currentName, unsavedNewName) => unsavedNewName && unsavedNewName !== currentName,
 );
-export const getProcessToDisplayWithUnsavedName = createSelector(
-    [getScenario, getProcessUnsavedNewName, isProcessRenamed],
-    (process, unsavedName, isProcessRenamed) => ({ ...process, name: isProcessRenamed ? unsavedName : process.name }),
-);
+// export const getProcessToDisplayWithUnsavedName = createSelector(
+//     [getScenario, getProcessUnsavedNewName, isProcessRenamed],
+//     (process, unsavedName, isProcessRenamed) => ({ ...process, name: isProcessRenamed ? unsavedName : process.name }),
+// );
 
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
 export const isDeployPossible = createSelector(

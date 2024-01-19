@@ -53,7 +53,8 @@ export interface Scenario {
     lastDeployedAction?: ProcessActionType;
     state: ProcessStateType;
     history?: ProcessVersionType[];
-    json: ScenarioGraph;
+    scenarioGraph: ScenarioGraph;
+    validationResult: ValidationResult;
     processingType: string;
 }
 

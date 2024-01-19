@@ -70,7 +70,7 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
     val substituted   = substitutor.reversed.substitute(canonical, validationResult.typingInfo)
     val displayable   = ProcessConverter.toDisplayable(substituted)
     val uiValidations = uiValidator.uiValidation(displayable, processName, isFragment)
-    ValidatedDisplayableProcess.withValidationResult(displayable, uiValidations.add(validationResult))
+    ValidatedDisplayableProcess(displayable, uiValidations.add(validationResult))
   }
 
 }

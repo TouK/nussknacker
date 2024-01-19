@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { RootState } from "../../../../reducers";
 import { connect } from "react-redux";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
-import { getProcessName, getScenario, getTestCapabilities } from "../../../../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph, getTestCapabilities } from "../../../../reducers/selectors/graph";
 import Icon from "../../../../assets/img/toolbarButtons/from-file.svg";
 import { ToolbarButtonProps } from "../../types";
 import { testProcessFromFile } from "../../../../actions/nk/displayTestResults";
@@ -11,7 +11,7 @@ import { testProcessFromFile } from "../../../../actions/nk/displayTestResults";
 type Props = StateProps & ToolbarButtonProps;
 
 function FromFileButton(props: Props) {
-    const { processName, scenario, testCapabilities, disabled } = props;
+    const { processName, scenarioGraph, testCapabilities, disabled } = props;
     const { testProcessFromFile } = props;
     const { t } = useTranslation();
     const available = !disabled && testCapabilities && testCapabilities.canBeTested;
@@ -23,7 +23,7 @@ function FromFileButton(props: Props) {
             title={t("panels.actions.test-from-file.button.title", "run test on data from file")}
             icon={<Icon />}
             disabled={!available}
-            onDrop={(files) => files.forEach((file) => testProcessFromFile(processName, file, scenario))}
+            onDrop={(files) => files.forEach((file) => testProcessFromFile(processName, file, scenarioGraph))}
         />
     );
 }
@@ -31,7 +31,7 @@ function FromFileButton(props: Props) {
 const mapState = (state: RootState) => ({
     testCapabilities: getTestCapabilities(state),
     processName: getProcessName(state),
-    scenario: getScenario(state),
+    scenarioGraph: getScenarioGraph(state),
 });
 
 const mapDispatch = {

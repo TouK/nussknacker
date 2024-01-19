@@ -115,7 +115,11 @@ export class Graph extends React.Component<Props> {
         // arrow id from paper is needed, so we have to mutate this
         paper.options.defaultLink = (cellView, magnet) => {
             // actual props are needed when link is created
-            const linkCreator = getDefaultLinkCreator(uniqueArrowMarker, this.props.scenario.json, this.props.processDefinitionData);
+            const linkCreator = getDefaultLinkCreator(
+                uniqueArrowMarker,
+                this.props.scenario.scenarioGraph,
+                this.props.processDefinitionData,
+            );
             return linkCreator(cellView, magnet);
         };
 
@@ -243,7 +247,7 @@ export class Graph extends React.Component<Props> {
             if (nodeId) {
                 this.props.showModalNodeDetails(
                     {
-                        ...NodeUtils.getNodeById(nodeId, scenario.json),
+                        ...NodeUtils.getNodeById(nodeId, scenario.scenarioGraph),
                         id: nodeIdPrefixForFragmentTests + nodeId,
                     },
                     scenario,
@@ -298,7 +302,7 @@ export class Graph extends React.Component<Props> {
 
     componentDidMount(): void {
         this.processGraphPaper = this.createPaper();
-        this.drawGraph(this.props.scenario.json, this.props.layout, this.props.processDefinitionData);
+        this.drawGraph(this.props.scenario.scenarioGraph, this.props.layout, this.props.processDefinitionData);
         this.processGraphPaper.unfreeze();
         this._prepareContentForExport();
 
@@ -352,11 +356,11 @@ export class Graph extends React.Component<Props> {
     // eslint-disable-next-line react/no-deprecated
     componentWillUpdate(nextProps: Props): void {
         const processChanged =
-            !isEqual(this.props.scenario.json, nextProps.scenario.json) ||
+            !isEqual(this.props.scenario.scenarioGraph, nextProps.scenario.scenarioGraph) ||
             !isEqual(this.props.layout, nextProps.layout) ||
             !isEqual(this.props.processDefinitionData, nextProps.processDefinitionData);
         if (processChanged) {
-            this.drawGraph(nextProps.scenario.json, nextProps.layout, nextProps.processDefinitionData);
+            this.drawGraph(nextProps.scenario.scenarioGraph, nextProps.layout, nextProps.processDefinitionData);
         }
 
         //when e.g. layout changed we have to remember to highlight nodes
@@ -427,19 +431,19 @@ export class Graph extends React.Component<Props> {
         const to = target.id.toString();
         const previousEdge = linkView.model.attributes.edgeData || {};
         const { scenario, processDefinitionData } = this.props;
-        return NodeUtils.canMakeLink(from, to, scenario.json, processDefinitionData, previousEdge);
+        return NodeUtils.canMakeLink(from, to, scenario.scenarioGraph, processDefinitionData, previousEdge);
     };
 
     validateMagnet = ({ model }: dia.CellView, magnet: SVGElement) => {
         const { scenario, processDefinitionData } = this.props;
-        const from = NodeUtils.getNodeById(model.id.toString(), scenario.json);
+        const from = NodeUtils.getNodeById(model.id.toString(), scenario.scenarioGraph);
         const port = magnet.getAttribute("port");
         if (port === "Out") {
-            const nodeOutputs = NodeUtils.nodeOutputs(from.id, scenario.json);
+            const nodeOutputs = NodeUtils.nodeOutputs(from.id, scenario.scenarioGraph);
             return NodeUtils.canHaveMoreOutputs(from, nodeOutputs, processDefinitionData);
         }
         if (port === "In") {
-            const nodeInputs = NodeUtils.nodeInputs(from.id, scenario.json);
+            const nodeInputs = NodeUtils.nodeInputs(from.id, scenario.scenarioGraph);
             return NodeUtils.canHaveMoreInputs(from, nodeInputs, processDefinitionData);
         }
     };
@@ -451,7 +455,7 @@ export class Graph extends React.Component<Props> {
     };
 
     graphContainsEdge(from: NodeId, to: NodeId): boolean {
-        return this.props.scenario.json.edges.some((edge) => edge.from === from && edge.to === to);
+        return this.props.scenario.scenarioGraph.edges.some((edge) => edge.from === from && edge.to === to);
     }
 
     handleInjectBetweenNodes = (middleMan: shapes.devs.Model, linkBelowCell?: dia.Link): void => {
@@ -464,7 +468,7 @@ export class Graph extends React.Component<Props> {
             const middleManNode = middleMan.get("nodeData");
 
             const canInjectNode = GraphUtils.canInjectNode(
-                scenario.json,
+                scenario.scenarioGraph,
                 sourceNode.id,
                 middleManNode.id,
                 targetNode.id,

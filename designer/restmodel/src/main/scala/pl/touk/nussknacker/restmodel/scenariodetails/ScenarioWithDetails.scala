@@ -4,7 +4,8 @@ import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.restmodel.validation.{ValidatedDisplayableProcess, ValidationResults}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 import java.time.Instant
 
@@ -30,32 +31,26 @@ final case class ScenarioWithDetails(
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[ProcessAction],
     lastAction: Option[ProcessAction],
-    // TODO: move things like processingType, category and validationResult on the root level and rename json to scenarioGraph
-    json: Option[ValidatedDisplayableProcess],
+    scenarioGraph: Option[DisplayableProcess],
+    validationResult: Option[ValidationResult],
     history: Option[List[ScenarioVersion]],
     modelVersion: Option[Int],
     state: Option[ProcessState]
 ) {
 
-  def withScenarioGraphAndValidationResult(
-      scenarioWithValidationResult: ValidatedDisplayableProcess
-  ): ScenarioWithDetails = {
-    copy(json = Some(scenarioWithValidationResult))
-  }
+  def withScenarioGraph(scenarioGraph: DisplayableProcess): ScenarioWithDetails =
+    copy(scenarioGraph = Some(scenarioGraph))
+
+  def withValidationResult(validationResult: ValidationResult): ScenarioWithDetails =
+    copy(validationResult = Some(validationResult))
 
   def historyUnsafe: List[ScenarioVersion] = history.getOrElse(throw new IllegalStateException("Missing history"))
 
-  def scenarioGraphUnsafe: DisplayableProcess = scenarioGraphAndValidationResultUnsafe.toDisplayable
+  def scenarioGraphUnsafe: DisplayableProcess =
+    scenarioGraph.getOrElse(throw new IllegalStateException("Missing scenario graph and validation result"))
 
   def validationResultUnsafe: ValidationResults.ValidationResult =
     validationResult.getOrElse(throw new IllegalStateException("Missing validation result"))
-
-  def validationResult: Option[ValidationResults.ValidationResult] = {
-    scenarioGraphAndValidationResultUnsafe.validationResult
-  }
-
-  def scenarioGraphAndValidationResultUnsafe: ValidatedDisplayableProcess =
-    json.getOrElse(throw new IllegalStateException("Missing scenario graph and validation result"))
 
   def idWithNameUnsafe: ProcessIdWithName =
     ProcessIdWithName(processIdUnsafe, name)
