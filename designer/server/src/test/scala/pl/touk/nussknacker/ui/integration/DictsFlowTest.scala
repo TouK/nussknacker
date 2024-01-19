@@ -32,8 +32,42 @@ class DictsFlowTest
   private val EndNodeId      = "end"
   private val Key            = "foo"
   private val Label          = "Foo"
+  private val DictId         = "dict"
 
   override def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
+
+  test("query dict entries by label pattern") {
+    val response1 = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/$Streaming/dict/$DictId/entry?label=fo")
+        .auth
+        .basic("admin", "admin")
+    )
+    response1.code shouldEqual StatusCode.Ok
+    response1.bodyAsJson shouldEqual Json.arr(
+      Json.obj(
+        "key"   -> Json.fromString(Key),
+        "label" -> Json.fromString(Label)
+      )
+    )
+
+    val response2 = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/$Streaming/dict/notExisting/entry?label=fo")
+        .auth
+        .basic("admin", "admin")
+    )
+    response2.code shouldEqual StatusCode.NotFound
+
+    val response3 = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/$Streaming/dict/$DictId/entry?label=notexisting")
+        .auth
+        .basic("admin", "admin")
+    )
+    response3.code shouldEqual StatusCode.Ok
+    response3.bodyAsJson shouldEqual Json.arr()
+  }
 
   test("save process with expression using dicts and get it back") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"

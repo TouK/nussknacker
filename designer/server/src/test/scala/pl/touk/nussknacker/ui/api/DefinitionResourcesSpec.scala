@@ -48,11 +48,15 @@ class DefinitionResourcesSpec
         processingTypeData.modelData,
         processingTypeData.staticModelDefinition
       )
-      DefinitionsService(
-        processingTypeData,
-        modelDefinitionEnricher,
-        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.processingType),
-        fragmentRepository
+
+      (
+        DefinitionsService(
+          processingTypeData,
+          modelDefinitionEnricher,
+          new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.processingType),
+          fragmentRepository
+        ),
+        processingTypeData.modelData.designerDictServices.dictQueryService
       )
     }
   )

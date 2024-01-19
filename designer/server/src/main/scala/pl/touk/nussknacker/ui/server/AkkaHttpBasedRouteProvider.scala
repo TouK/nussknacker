@@ -294,11 +294,14 @@ class AkkaHttpBasedRouteProvider(
           new ValidationResources(processService, processResolver),
           new DefinitionResources(
             typeToConfig.mapValues { processingTypeData =>
-              DefinitionsService(
-                processingTypeData,
-                prepareModelDefinitionEnricher(processingTypeData),
-                new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
-                fragmentRepository
+              (
+                DefinitionsService(
+                  processingTypeData,
+                  prepareModelDefinitionEnricher(processingTypeData),
+                  new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
+                  fragmentRepository
+                ),
+                processingTypeData.modelData.designerDictServices.dictQueryService
               )
             }
           ),

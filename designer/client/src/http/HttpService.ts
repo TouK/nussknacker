@@ -206,6 +206,10 @@ class HttpService {
         return promise;
     }
 
+    fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
+        return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`);
+    }
+
     fetchComponents(): Promise<AxiosResponse<ComponentType[]>> {
         return api.get<ComponentType[]>("/components");
     }
