@@ -89,7 +89,7 @@ object ExecutionConfigPreparer extends LazyLogging {
   object ProcessSettingsPreparer {
 
     def apply(modelData: ModelData): ExecutionConfigPreparer = {
-      val buildInfo = Encoder[Map[String, String]].apply(modelData.modelInfo).spaces2
+      val buildInfo = Encoder[Map[String, String]].apply(modelData.buildInfo).spaces2
       new ProcessSettingsPreparer(modelData.modelConfig, modelData.objectNaming, buildInfo)
     }
 

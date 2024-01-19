@@ -259,7 +259,7 @@ describe("Process", () => {
     });
 
     it("should preserve condition on link move (switch)", () => {
-        cy.intercept("POST", "/api/*Validation", (req) => {
+        cy.intercept("POST", "/api/*Validation/*", (req) => {
             if (req.body.edges.length == 3) {
                 req.alias = "validation";
             }
@@ -311,7 +311,7 @@ describe("Process", () => {
     });
 
     it("should preserve condition on link move (filter)", () => {
-        cy.intercept("POST", "/api/*Validation", (req) => {
+        cy.intercept("POST", "/api/*Validation/*", (req) => {
             if (req.body.edges.length == 2) {
                 req.alias = "validation";
             }

@@ -110,11 +110,11 @@ class AkkaHttpBasedRouteProvider(
     } yield {
       val analyticsConfig = AnalyticsConfig(resolvedConfig)
 
-      val migrations = typeToConfig.mapValues(_.modelData.migrations)
-      val modelInfo  = typeToConfig.mapValues(_.modelData.modelInfo)
+      val migrations     = typeToConfig.mapValues(_.modelData.migrations)
+      val modelBuildInfo = typeToConfig.mapValues(_.modelData.buildInfo)
 
       val dbioRunner        = DBIOActionRunner(dbRef)
-      val actionRepository  = new DbProcessActionRepository(dbRef, modelInfo)
+      val actionRepository  = new DbProcessActionRepository(dbRef, modelBuildInfo)
       val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
       val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
@@ -244,7 +244,7 @@ class AkkaHttpBasedRouteProvider(
         config = resolvedConfig,
         authenticator = authenticationResources,
         processingTypeDataReloader = typeToConfig,
-        modelInfos = modelInfo,
+        modelBuildInfos = modelBuildInfo,
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
         getProcessCategoryService = getProcessCategoryService

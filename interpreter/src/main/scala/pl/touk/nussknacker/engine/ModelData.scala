@@ -170,7 +170,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   //       do we have. See AdditionalInfoProviders as well
   def migrations: ProcessMigrations
 
-  final def modelInfo: Map[String, String] = configCreator.buildInfo()
+  final def buildInfo: Map[String, String] = configCreator.buildInfo()
 
   def configCreator: ProcessConfigCreator
 

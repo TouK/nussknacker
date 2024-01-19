@@ -21,7 +21,7 @@ class AppApiHttpService(
     config: Config,
     authenticator: AuthenticationResources,
     processingTypeDataReloader: ProcessingTypeDataReload,
-    modelInfos: ProcessingTypeDataProvider[Map[String, String], _],
+    modelBuildInfos: ProcessingTypeDataProvider[Map[String, String], _],
     processService: ProcessService,
     getProcessCategoryService: () => ProcessCategoryService,
     shouldExposeConfig: Boolean
@@ -96,13 +96,14 @@ class AppApiHttpService(
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
           // TODO: Warning, here is a little security leak. Everyone can discover configured processing types.
           //       We should consider adding an authorization of access rights to this data.
-          val modelInfo: Map[ProcessingType, Map[String, String]] = modelInfos.all(NussknackerInternalUser.instance)
+          val modelBuildInfo: Map[ProcessingType, Map[String, String]] =
+            modelBuildInfos.all(NussknackerInternalUser.instance)
           BuildInfoDto(
             BuildInfo.name,
             BuildInfo.gitCommit,
             BuildInfo.buildTime,
             BuildInfo.version,
-            modelInfo,
+            modelBuildInfo,
             configuredBuildInfo
           )
         }
