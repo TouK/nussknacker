@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.model
 
-import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentAdditionalConfig, ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.process.{
   ExpressionConfig,
   ProcessConfigCreator,
@@ -23,7 +23,9 @@ object ModelDefinitionFromConfigCreatorExtractor {
       creator: ProcessConfigCreator,
       categoryOpt: Option[String],
       modelDependencies: ProcessObjectDependencies,
-      componentsUiConfig: ComponentsUiConfig
+      componentsUiConfig: ComponentsUiConfig,
+      componentInfoToId: ComponentInfo => ComponentId,
+      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): ModelDefinition[ComponentDefinitionWithImplementation] = {
 
     val sourceFactories          = creator.sourceFactories(modelDependencies).toList
@@ -34,7 +36,13 @@ object ModelDefinitionFromConfigCreatorExtractor {
 
     val expressionConfig = creator.expressionConfig(modelDependencies)
 
-    val components = extractFromComponentsList(allComponents, categoryOpt, componentsUiConfig)
+    val components = extractFromComponentsList(
+      allComponents,
+      categoryOpt,
+      componentsUiConfig,
+      componentInfoToId,
+      additionalConfigsFromProvider
+    )
 
     val settings = creator.classExtractionSettings(modelDependencies)
 
@@ -48,11 +56,20 @@ object ModelDefinitionFromConfigCreatorExtractor {
   private def extractFromComponentsList(
       components: List[(String, WithCategories[Component])],
       categoryOpt: Option[String],
-      componentsUiConfig: ComponentsUiConfig
+      componentsUiConfig: ComponentsUiConfig,
+      componentInfoToId: ComponentInfo => ComponentId,
+      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     collectAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component, componentConfig) =>
       ComponentDefinitionExtractor
-        .extract(componentName, component, componentConfig, componentsUiConfig)
+        .extract(
+          componentName,
+          component,
+          componentConfig,
+          componentsUiConfig,
+          componentInfoToId,
+          additionalConfigsFromProvider
+        )
         .map(componentName -> _)
     }
   }

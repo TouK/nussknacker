@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -30,8 +31,8 @@ import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioProp
 import pl.touk.nussknacker.ui.security.api.AdminUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with OptionValues {
 
@@ -196,7 +197,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     val definitions = prepareDefinitions(model, List(fragmentWithDocsUrl))
 
-    definitions.componentsConfig(fragmentWithDocsUrl.name.value).docsUrl shouldBe Some(docsUrl)
+    definitions.components(ComponentInfo(ComponentType.Fragment, fragment.name.value)).docsUrl shouldBe Some(docsUrl)
   }
 
   test("should skip empty fragments in definitions") {
@@ -225,22 +226,49 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
   test("should override component's parameter config with additionally provided config") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-      List(ComponentDefinition("enricher", TestService))
+      List(ComponentDefinition("enricher", TestService)),
+      additionalConfigsFromProvider = Map(
+        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            "paramStringEditor" -> ParameterAdditionalUIConfig(
+              required = false,
+              initialValue = Some(
+                FixedExpressionValue(
+                  "'default-from-additional-ui-config-provider'",
+                  "default-from-additional-ui-config-provider"
+                )
+              ),
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = None
+            )
+          ),
+          componentGroup = None
+        )
+      )
     )
 
     val definitions = prepareDefinitions(model, List.empty)
 
-    definitions.componentsConfig("enricher").params.get.map { case (name, config) =>
-      name -> config.defaultValue
-    } should contain(
-      "paramStringEditor" -> Some("'default-from-additional-ui-config-provider'")
-    )
+    val expectedOverridenParamDefaultValue =
+      "paramStringEditor" -> Expression.spel("'default-from-additional-ui-config-provider'")
+    val returnedParamDefaultValues =
+      definitions.components(ComponentInfo(ComponentType.Service, "enricher")).parameters.map { param =>
+        param.name -> param.defaultValue
+      }
+    returnedParamDefaultValues should contain(expectedOverridenParamDefaultValue)
   }
 
   test("should override component's component groups with additionally provided config") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-      List(ComponentDefinition("enricher", TestService))
+      List(ComponentDefinition("enricher", TestService)),
+      additionalConfigsFromProvider = Map(
+        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+          parameterConfigs = Map.empty,
+          componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName)
+        )
+      )
     )
 
     val definitions = prepareDefinitions(model, List.empty)
@@ -267,22 +295,25 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         model,
         MetaDataInitializer(StreamMetaData.typeName).create(_, Map.empty)
       )
-    val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(TestAdditionalUIConfigProvider)
+    val processingType = TestProcessingTypes.Streaming
+
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
       new BuiltInComponentsStaticDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
       new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
-      additionalUIConfigFinalizer,
-      staticModelDefinition
+      staticModelDefinition,
+      ComponentId.default(processingType, _)
     )
+
     new DefinitionsService(
       modelData = model,
       scenarioPropertiesConfig = Map.empty,
       deploymentManager = new MockDeploymentManager,
       modelDefinitionEnricher = modelDefinitionEnricher,
-      additionalUIConfigFinalizer = additionalUIConfigFinalizer,
-      fragmentRepository = new StubFragmentRepository(Map(TestProcessingTypes.Streaming -> fragmentScenarios))
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType),
+      fragmentRepository = new StubFragmentRepository(Map(processingType -> fragmentScenarios))
     ).prepareUIDefinitions(
-      TestProcessingTypes.Streaming,
+      processingType,
       forFragment = false
     )(AdminUser("admin", "admin"))
       .futureValue

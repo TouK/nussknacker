@@ -33,7 +33,7 @@ import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
-import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, ModelDefinitionEnricher}
+import pl.touk.nussknacker.ui.definition.ModelDefinitionEnricher
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
@@ -484,9 +484,19 @@ class DefaultComponentServiceSpec
     new DynamicComponentProvider().create(ConfigFactory.empty, ProcessObjectDependencies.empty)
 
   private val modelDataMap: Map[ProcessingType, (LocalModelData, Category)] = Map(
-    Streaming -> (LocalModelData(streamingConfig, providerComponents, ComponentMarketingTestConfigCreator),
+    Streaming -> (LocalModelData(
+      streamingConfig,
+      providerComponents,
+      ComponentMarketingTestConfigCreator,
+      componentInfoToId = ComponentId.default(Streaming, _)
+    ),
     CategoryMarketing),
-    Fraud -> (LocalModelData(fraudConfig, providerComponents, ComponentFraudTestConfigCreator),
+    Fraud -> (LocalModelData(
+      fraudConfig,
+      providerComponents,
+      ComponentFraudTestConfigCreator,
+      componentInfoToId = ComponentId.default(Fraud, _)
+    ),
     CategoryFraud)
   )
 
@@ -569,9 +579,15 @@ class DefaultComponentServiceSpec
       Streaming -> (LocalModelData(
         streamingConfig,
         providerComponents,
-        ComponentMarketingTestConfigCreator
+        ComponentMarketingTestConfigCreator,
+        componentInfoToId = ComponentId.default(Streaming, _)
       ), CategoryMarketing),
-      Fraud -> (LocalModelData(wrongConfig, providerComponents, WronglyConfiguredConfigCreator), CategoryFraud)
+      Fraud -> (LocalModelData(
+        wrongConfig,
+        providerComponents,
+        WronglyConfiguredConfigCreator,
+        componentInfoToId = ComponentId.default(Fraud, _)
+      ), CategoryFraud)
     )
 
     val componentService = prepareService(badModelDataMap, List.empty, List.empty)
@@ -720,8 +736,9 @@ class DefaultComponentServiceSpec
       fragments: List[ScenarioWithDetailsEntity[DisplayableProcess]]
   ): ComponentService = {
     val processingTypeDataMap: Map[ProcessingType, ProcessingTypeData] = modelDataMap.transform {
-      case (_, (modelData, category)) =>
+      case (processingType, (modelData, category)) =>
         ProcessingTypeData.createProcessingTypeData(
+          processingType,
           MockManagerProvider,
           new MockDeploymentManager,
           modelData,
@@ -729,18 +746,19 @@ class DefaultComponentServiceSpec
           category
         )
     }
-    val processingTypeDataProvider = ProcessingTypeDataProvider(
-      processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
-      ComponentIdProviderFactory.create(processingTypeDataMap)
-    ).mapValues { processingTypeData =>
-      val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(AdditionalUIConfigProvider.empty)
-      val modelDefinitionEnricher = ModelDefinitionEnricher(
-        processingTypeData.modelData,
-        additionalUIConfigFinalizer,
-        processingTypeData.staticModelDefinition
+
+    val processingTypeDataProvider = ProcessingTypeDataProvider
+      .withEmptyCombinedData(
+        processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
       )
-      ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
-    }
+      .mapValues { processingTypeData =>
+        val modelDefinitionEnricher = ModelDefinitionEnricher(
+          processingTypeData.modelData,
+          processingTypeData.staticModelDefinition
+        )
+        ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
+      }
+
     val processService = createDbProcessService(categoryService, scenarios)
     new DefaultComponentService(
       componentLinksConfig,

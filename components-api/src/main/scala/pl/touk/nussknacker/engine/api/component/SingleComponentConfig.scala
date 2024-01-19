@@ -6,11 +6,9 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
 
 /**
-  * This contains not only urls or icons but also parameter restrictions, used in e.g. validation
-  * TODO: maybe icon/docs/componentGroup should be somehow separated as they are UI related?
   * TODO: componentId is work around for components duplication across multiple scenario types
   */
-@JsonCodec case class SingleComponentConfig(
+case class SingleComponentConfig(
     params: Option[Map[String, ParameterConfig]],
     icon: Option[String],
     docsUrl: Option[String],
@@ -62,7 +60,7 @@ object SingleComponentConfig {
 
 }
 
-@JsonCodec case class ParameterConfig(
+case class ParameterConfig(
     defaultValue: Option[String],
     editor: Option[ParameterEditor],
     validators: Option[List[ParameterValidator]],

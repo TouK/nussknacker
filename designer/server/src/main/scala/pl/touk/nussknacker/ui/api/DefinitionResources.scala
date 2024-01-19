@@ -3,14 +3,10 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, DefinitionsService, ModelDefinitionEnricher}
-import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
+import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.NuPathMatchers
-
-import scala.concurrent.ExecutionContext
 
 class DefinitionResources(
     serviceProvider: ProcessingTypeDataProvider[DefinitionsService, _],

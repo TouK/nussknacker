@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
@@ -27,5 +27,11 @@ final case class ComponentStaticDefinition(
     componentConfig.componentGroup.getOrElse(throw new IllegalStateException(s"Component group not defined in $this"))
   def iconUnsafe: String =
     componentConfig.icon.getOrElse(throw new IllegalStateException(s"Icon not defined in $this"))
+
+  def componentIdUnsafe: ComponentId =
+    componentConfig.componentId // relies on ComponentDefinitionExtractor and ModelDefinitionEnricher to provide components with filled componentConfig.componentId
+      .getOrElse(
+        throw new IllegalStateException(s"ComponentId not defined in $this")
+      )
 
 }

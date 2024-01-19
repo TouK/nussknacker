@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.component
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
@@ -28,7 +28,9 @@ object ComponentDefinitionExtractor {
 
   def extract(
       inputComponentDefinition: ComponentDefinition,
-      additionalConfigs: ComponentsUiConfig
+      additionalConfigs: ComponentsUiConfig,
+      componentInfoToId: ComponentInfo => ComponentId,
+      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): Option[(String, ComponentDefinitionWithImplementation)] = {
     val configBasedOnDefinition = SingleComponentConfig.zero
       .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
@@ -37,7 +39,9 @@ object ComponentDefinitionExtractor {
         inputComponentDefinition.name,
         inputComponentDefinition.component,
         configBasedOnDefinition,
-        additionalConfigs
+        additionalConfigs,
+        componentInfoToId,
+        additionalConfigsFromProvider
       )
       .map(inputComponentDefinition.name -> _)
   }
@@ -46,7 +50,9 @@ object ComponentDefinitionExtractor {
       componentName: String,
       component: Component,
       configFromDefinition: SingleComponentConfig,
-      additionalConfigs: ComponentsUiConfig
+      additionalConfigs: ComponentsUiConfig,
+      componentInfoToId: ComponentInfo => ComponentId,
+      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): Option[ComponentDefinitionWithImplementation] = {
     val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
       component match {
@@ -63,6 +69,18 @@ object ComponentDefinitionExtractor {
 
     val componentInfo = ComponentInfo(componentTypeSpecificData.componentType, componentName)
 
+    def additionalConfigFromProvider(overriddenComponentId: Option[ComponentId]) = {
+      val componentId = overriddenComponentId.getOrElse(componentInfoToId(componentInfo))
+
+      additionalConfigsFromProvider
+        .get(componentId)
+        .map(ComponentAdditionalConfigConverter.toSingleComponentConfig)
+        .getOrElse(SingleComponentConfig.zero)
+        .copy(
+          componentId = Some(componentId)
+        )
+    }
+
     def withConfigForNotDisabledComponent[T](
         returnType: Option[TypingResult]
     )(f: ConfigWithOriginalGroupName => T): Option[T] = {
@@ -70,7 +88,11 @@ object ComponentDefinitionExtractor {
         DefaultComponentConfigDeterminer.forNotBuiltInComponentType(componentTypeSpecificData, returnType.isDefined)
       val configFromAdditional = additionalConfigs.getConfig(componentInfo)
       val combinedConfig       = configFromAdditional |+| configFromDefinition |+| defaultConfig
-      translateGroupNameAndFilterOutDisabled(combinedConfig, additionalConfigs).map(f)
+
+      translateGroupNameAndFilterOutDisabled(
+        additionalConfigFromProvider(combinedConfig.componentId) |+| combinedConfig,
+        additionalConfigs
+      ).map(f)
     }
 
     (component match {
@@ -89,10 +111,14 @@ object ComponentDefinitionExtractor {
           }
         )
       case _ =>
-        val configCombinedForParameters =
-          additionalConfigs.getConfig(componentInfo) |+| configFromDefinition
+        val combinedConfig = additionalConfigs.getConfig(componentInfo) |+| configFromDefinition
+
         methodDefinitionExtractor
-          .extractMethodDefinition(component, findMainComponentMethod(component), configCombinedForParameters)
+          .extractMethodDefinition(
+            component,
+            findMainComponentMethod(component),
+            additionalConfigFromProvider(combinedConfig.componentId) |+| combinedConfig
+          )
           .map { methodDef =>
             def notReturnAnything(typ: TypingResult) =
               Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)

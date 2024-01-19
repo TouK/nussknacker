@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { get, has, isEmpty, isEqual, uniqBy } from "lodash";
-import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils";
+import { has, isEmpty, isEqual, uniqBy } from "lodash";
 import ProcessUtils from "../../common/ProcessUtils";
 import {
     Edge,
@@ -9,13 +8,14 @@ import {
     FragmentNodeType,
     NodeId,
     NodeType,
-    Process,
+    ScenarioGraph,
     ProcessDefinitionData,
     PropertiesType,
     UINodeType,
 } from "../../types";
 import { UnknownRecord } from "../../types/common";
 import { createEdge } from "../../reducers/graph/utils";
+import { Scenario } from "../Process/types";
 
 class NodeUtils {
     isNode = (obj: UnknownRecord): obj is NodeType => {
@@ -43,27 +43,31 @@ class NodeUtils {
         return node && this.nodeType(node) === "Join";
     };
 
-    nodesFromProcess = (process: Process): NodeType[] => process.nodes || [];
+    nodesFromScenarioGraph = (scenarioGraph: ScenarioGraph): NodeType[] => scenarioGraph.nodes || [];
 
-    edgesFromProcess = (process: Process) => process.edges || [];
+    edgesFromScenarioGraph = (scenarioGraph: ScenarioGraph) => scenarioGraph.edges || [];
 
     // For sake of consistency with other nodes, name must be renamed to id
-    getProcessPropertiesNode = ({ name, properties }: Process, unsavedName?: string) => ({ id: name || unsavedName, ...properties });
+    getProcessPropertiesNode = ({ name, json: { properties } }: Scenario, unsavedName?: string) => ({
+        id: name || unsavedName,
+        ...properties,
+    });
 
-    getNodeById = (nodeId: NodeId, process: Process) => this.nodesFromProcess(process).find((n) => n.id === nodeId);
+    getNodeById = (nodeId: NodeId, scenarioGraph: ScenarioGraph) => this.nodesFromScenarioGraph(scenarioGraph).find((n) => n.id === nodeId);
 
-    getEdgeById = (edgeId: NodeId, process: Process) => this.edgesFromProcess(process).find((e) => this.edgeId(e) === edgeId);
+    getEdgeById = (edgeId: NodeId, scenarioGraph: ScenarioGraph) =>
+        this.edgesFromScenarioGraph(scenarioGraph).find((e) => this.edgeId(e) === edgeId);
 
-    getAllNodesById = (nodeIds: NodeId[], process: Process) => {
-        const allNodes = this.nodesFromProcess(process).filter((node) => nodeIds.includes(node.id));
+    getAllNodesById = (nodeIds: NodeId[], scenarioGraph: ScenarioGraph) => {
+        const allNodes = this.nodesFromScenarioGraph(scenarioGraph).filter((node) => nodeIds.includes(node.id));
         return uniqBy(allNodes, (n) => n.id);
     };
 
-    getAllNodesByIdWithEdges = (ids: NodeId[], process: Process) => {
-        const nodes = this.getAllNodesById(ids, process);
+    getAllNodesByIdWithEdges = (ids: NodeId[], scenarioGraph: ScenarioGraph) => {
+        const nodes = this.getAllNodesById(ids, scenarioGraph);
         const edgesForNodes = this.getEdgesForConnectedNodes(
             nodes.map((n) => n.id),
-            process,
+            scenarioGraph,
         );
         return {
             nodes: nodes,
@@ -72,17 +76,13 @@ class NodeUtils {
     };
 
     isAvailable = (node: NodeType, processDefinitionData): boolean => {
-        const availableIdsInComponentGroups = ProcessDefinitionUtils.getFlatComponents(processDefinitionData).map((component) =>
-            ProcessUtils.determineComponentId(component.node),
-        );
-        const nodeComponentId = ProcessUtils.determineComponentId(node);
-        return availableIdsInComponentGroups.includes(nodeComponentId);
+        return ProcessUtils.extractComponentDefinition(node, processDefinitionData.components) != null;
     };
 
     getOutputEdges = (nodeId: NodeId, edges: Edge[]): Edge[] => edges.filter((e) => e.from === nodeId);
 
-    getEdgesForConnectedNodes = (nodeIds: NodeId[], process: Process): Edge[] =>
-        process.edges?.filter((edge) => nodeIds.includes(edge.from) && nodeIds.includes(edge.to));
+    getEdgesForConnectedNodes = (nodeIds: NodeId[], scenarioGraph: ScenarioGraph): Edge[] =>
+        scenarioGraph.edges?.filter((edge) => nodeIds.includes(edge.from) && nodeIds.includes(edge.to));
 
     getNextEdgeType = (allEdges: Edge[], node: NodeType, processDefinitionData: ProcessDefinitionData): EdgeType => {
         const edgesForNode = this.getEdgesAvailableForNode(node, processDefinitionData);
@@ -138,16 +138,18 @@ class NodeUtils {
     canMakeLink = (
         fromId: NodeId,
         toId: NodeId,
-        process: Process,
+        scenarioGraph: ScenarioGraph,
         processDefinitionData: ProcessDefinitionData,
         previousEdge?: Edge,
     ): boolean => {
-        const nodeInputs = this.nodeInputs(toId, process);
+        const nodeInputs = this.nodeInputs(toId, scenarioGraph);
         //we do not want to include currently edited edge
-        const nodeOutputs = this.nodeOutputs(fromId, process).filter((e) => e.from !== previousEdge?.from && e.to !== previousEdge?.to);
+        const nodeOutputs = this.nodeOutputs(fromId, scenarioGraph).filter(
+            (e) => e.from !== previousEdge?.from && e.to !== previousEdge?.to,
+        );
 
-        const to = this.getNodeById(toId, process);
-        const from = this.getNodeById(fromId, process);
+        const to = this.getNodeById(toId, scenarioGraph);
+        const from = this.getNodeById(fromId, scenarioGraph);
         if (fromId !== toId) {
             const canHaveMoreInputs = this.canHaveMoreInputs(to, nodeInputs, processDefinitionData);
             const canHaveMoreOutputs = this.canHaveMoreOutputs(from, nodeOutputs, processDefinitionData);
@@ -188,27 +190,27 @@ class NodeUtils {
         fromNode,
         toNode,
         edgeType,
-        process,
+        scenarioGraph,
         processDefinition,
     }: {
         fromNode: NodeType;
         toNode: NodeType;
         edgeType?: EdgeType;
-        process: Process;
+        scenarioGraph: ScenarioGraph;
         processDefinition: ProcessDefinitionData;
     }): Edge => {
         const { edges: availableNodeEdges } = this.getEdgesAvailableForNode(fromNode, processDefinition);
-        const currentNodeEdges = this.getOutputEdges(fromNode?.id, this.edgesFromProcess(process));
+        const currentNodeEdges = this.getOutputEdges(fromNode?.id, this.edgesFromScenarioGraph(scenarioGraph));
         const freeOutputEdge = this.getFirstUnconnectedOutputEdge(currentNodeEdges, availableNodeEdges, edgeType);
         return freeOutputEdge || createEdge(fromNode, toNode, edgeType, currentNodeEdges, processDefinition);
     };
 
-    nodeInputs = (nodeId: NodeId, process: Process) => {
-        return this.edgesFromProcess(process).filter((e) => e.to == nodeId);
+    nodeInputs = (nodeId: NodeId, scenarioGraph: ScenarioGraph) => {
+        return this.edgesFromScenarioGraph(scenarioGraph).filter((e) => e.to == nodeId);
     };
 
-    nodeOutputs = (nodeId: NodeId, process: Process) => {
-        return this.edgesFromProcess(process).filter((e) => e.from == nodeId);
+    nodeOutputs = (nodeId: NodeId, scenarioGraph: ScenarioGraph) => {
+        return this.edgesFromScenarioGraph(scenarioGraph).filter((e) => e.from == nodeId);
     };
 
     edgeId = (edge: Edge): string => {

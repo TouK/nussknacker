@@ -1,7 +1,7 @@
 import { UserData } from "nussknackerUi/common/models/User";
 import { useContext, useEffect, useMemo } from "react";
 import { NkApiContext } from "../settings/nkApiProvider";
-import { ProcessType, StatusDefinitionType } from "nussknackerUi/components/Process/types";
+import { Scenario, StatusDefinitionType } from "nussknackerUi/components/Process/types";
 import { StatusesType } from "nussknackerUi/HttpService";
 import { useQuery, useQueryClient } from "react-query";
 import { UseQueryResult } from "react-query/types/react/types";
@@ -9,7 +9,7 @@ import { DateTime } from "luxon";
 
 const scenarioStatusesQueryKey = "scenariosStatuses";
 
-function useScenariosQuery(): UseQueryResult<ProcessType[]> {
+function useScenariosQuery(): UseQueryResult<Scenario[]> {
     const api = useContext(NkApiContext);
     const query = useQuery({
         queryKey: ["scenarios"],
@@ -78,7 +78,7 @@ export function useUserQuery(): UseQueryResult<UserData> {
     });
 }
 
-export function useScenariosWithStatus(): UseQueryResult<ProcessType[]> {
+export function useScenariosWithStatus(): UseQueryResult<Scenario[]> {
     const scenarios = useScenariosQuery();
     const statuses = useScenariosStatusesQuery();
     return useMemo(() => {
@@ -89,6 +89,6 @@ export function useScenariosWithStatus(): UseQueryResult<ProcessType[]> {
                 ...scenario,
                 state: statuses?.data?.[scenario.name] || scenario.state,
             })),
-        } as UseQueryResult<ProcessType[]>;
+        } as UseQueryResult<Scenario[]>;
     }, [scenarios, statuses]);
 }

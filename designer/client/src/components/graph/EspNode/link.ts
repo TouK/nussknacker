@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, routers } from "jointjs";
-import { Edge, EdgeKind, Process, ProcessDefinitionData } from "../../../types";
+import { Edge, EdgeKind, ScenarioGraph, ProcessDefinitionData } from "../../../types";
 import NodeUtils from "../NodeUtils";
 
 const LINK_TEXT_COLOR = "#686868";
@@ -79,7 +79,7 @@ export const defaultRouter: routers.RouterJSON = {
     },
 };
 
-export function getDefaultLinkCreator(arrowMarkerId: string, process: Process, processDefinition: ProcessDefinitionData) {
+export function getDefaultLinkCreator(arrowMarkerId: string, scenarioGraph: ScenarioGraph, processDefinition: ProcessDefinitionData) {
     return (cellView: dia.CellView, magnet: SVGElement) => {
         const isReversed = magnet?.getAttribute("port") === "In";
 
@@ -111,10 +111,10 @@ export function getDefaultLinkCreator(arrowMarkerId: string, process: Process, p
             const targetId = isReversed ? model?.id : link.target()?.id;
             if (sourceId) {
                 const edge = NodeUtils.getEdgeForConnection({
-                    fromNode: NodeUtils.getNodeById(sourceId, process),
-                    toNode: NodeUtils.getNodeById(targetId, process),
+                    fromNode: NodeUtils.getNodeById(sourceId, scenarioGraph),
+                    toNode: NodeUtils.getNodeById(targetId, scenarioGraph),
                     processDefinition,
-                    process,
+                    scenarioGraph,
                 });
                 link.labels(makeLabels(NodeUtils.edgeLabel(edge)));
             } else {

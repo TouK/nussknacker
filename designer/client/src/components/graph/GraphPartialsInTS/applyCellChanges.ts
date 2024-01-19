@@ -1,18 +1,18 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia } from "jointjs";
 import { flatMap, groupBy, isEqual } from "lodash";
-import { Process, ProcessDefinitionData } from "../../../types";
+import { ScenarioGraph, ProcessDefinitionData } from "../../../types";
 import { makeElement, makeLink } from "../EspNode";
 import NodeUtils from "../NodeUtils";
 import { isEdgeConnected } from "./EdgeUtils";
 import { updateChangedCells } from "./updateChangedCells";
 
-export function applyCellChanges(paper: dia.Paper, process: Process, processDefinitionData: ProcessDefinitionData): void {
+export function applyCellChanges(paper: dia.Paper, scenarioGraph: ScenarioGraph, processDefinitionData: ProcessDefinitionData): void {
     const graph = paper.model;
 
-    const nodeElements = NodeUtils.nodesFromProcess(process).map(makeElement(processDefinitionData));
+    const nodeElements = NodeUtils.nodesFromScenarioGraph(scenarioGraph).map(makeElement(processDefinitionData));
 
-    const edges = NodeUtils.edgesFromProcess(process);
+    const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
     const indexed = flatMap(groupBy(edges, "from"), (edges) => edges.map((edge, i) => ({ ...edge, index: ++i })));
     const edgeElements = indexed.filter(isEdgeConnected).map((value) => makeLink(value, paper));
 

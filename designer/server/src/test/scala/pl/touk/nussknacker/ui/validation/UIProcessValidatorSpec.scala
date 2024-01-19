@@ -9,7 +9,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{BeMatcher, MatchResult}
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
@@ -20,7 +21,6 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValida
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.{LocalModelData, ModelDefinitionBuilder}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
@@ -58,7 +58,9 @@ import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
 class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks with OptionValues {
@@ -814,6 +816,68 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("expression"),
+                NodeValidationErrorType.SaveAllowed
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  object OptionalParameterService extends Service {
+
+    @MethodToInvoke
+    def method(
+        @ParamName("optionalParam")
+        optionalParam: Option[String],
+    ): Future[String] = ???
+
+  }
+
+  test("validate based on additional config from provider") {
+    val process = createProcess(
+      List(
+        Source("inID", SourceRef(existingSourceFactory, List())),
+        Enricher(
+          "custom",
+          ServiceRef("optionalParameterService", List(NodeParameter("optionalParam", Expression.spel("")))),
+          "out"
+        ),
+        Sink("out", SinkRef(existingSinkFactory, List()))
+      ),
+      List(Edge("inID", "custom", None), Edge("custom", "out", None))
+    )
+
+    val validator = new UIProcessValidator(
+      ProcessValidator.default(
+        LocalModelData(
+          ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+          List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
+          additionalConfigsFromProvider = Map(
+            ComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
+              parameterConfigs = Map(
+                "optionalParam" -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
+              )
+            )
+          )
+        )
+      ),
+      Map.empty,
+      List.empty,
+      new FragmentResolver(new StubFragmentRepository(Map.empty))
+    )
+
+    val result = validator.validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "EmptyMandatoryParameter",
+                _,
+                _,
+                Some("optionalParam"),
                 NodeValidationErrorType.SaveAllowed
               )
             )

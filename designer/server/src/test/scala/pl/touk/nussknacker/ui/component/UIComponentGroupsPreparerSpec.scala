@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinit
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.definition.{AdditionalUIConfigFinalizer, ModelDefinitionEnricher}
+import pl.touk.nussknacker.ui.definition.ModelDefinitionEnricher
 
 class UIComponentGroupsPreparerSpec
     extends AnyFunSuite
@@ -138,6 +138,20 @@ class UIComponentGroupsPreparerSpec
     )
   }
 
+  test("hide sources for fragments") {
+    val model =
+      enrichModelDefinitionWithBuiltInComponents(
+        ModelDefinitionBuilder.empty.withSource("source").build,
+        Map.empty,
+        forFragment = true
+      )
+    val groups = ComponentGroupsPreparer.prepareComponentGroups(model)
+    groups.map(_.name) shouldEqual List(
+      DefaultsComponentGroupName.FragmentsDefinitionGroupName,
+      DefaultsComponentGroupName.BaseGroupName
+    )
+  }
+
   private def validateGroups(groups: List[UIComponentGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
     groups.filterNot(ng => ng.components.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
@@ -167,14 +181,14 @@ class UIComponentGroupsPreparerSpec
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
       new BuiltInComponentsStaticDefinitionsPreparer(new ComponentsUiConfig(Map.empty, groupNameMapping)),
       new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
-      new AdditionalUIConfigFinalizer(AdditionalUIConfigProvider.empty),
-      modelDefinition.toStaticComponentsDefinition
+      modelDefinition.toStaticComponentsDefinition,
+      ComponentId.default(TestProcessingTypes.Streaming, _)
     )
+
     modelDefinitionEnricher
       .modelDefinitionWithBuiltInComponentsAndFragments(
         forFragment,
-        fragmentScenarios = List.empty,
-        TestProcessingTypes.Streaming
+        fragmentScenarios = List.empty
       )
   }
 

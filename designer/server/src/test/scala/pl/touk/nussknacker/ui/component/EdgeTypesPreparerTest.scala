@@ -2,20 +2,23 @@ package pl.touk.nussknacker.ui.component
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentId, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, FragmentOutput, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinitionConverter
 import pl.touk.nussknacker.restmodel.definition.UINodeEdges
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 
 class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   test("return edge types for fragment, filters, switches and components with multiple inputs") {
     val sampleFragmentDef = new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader)
-      .extractFragmentComponentDefinition(ProcessTestData.sampleFragment)
+      .extractFragmentComponentDefinition(
+        ProcessTestData.sampleFragment,
+        ComponentId.default(TestProcessingTypes.Streaming, _)
+      )
       .validValue
     val definitionsWithFragments = ProcessTestData
       .modelDefinition()

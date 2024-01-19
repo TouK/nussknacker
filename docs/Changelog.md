@@ -12,6 +12,8 @@
 * [#5323](https://github.com/TouK/nussknacker/pull/5323) Removed support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories)
 * [#5266](https://github.com/TouK/nussknacker/pull/5266) Security improvement: removed accessing class internals of records in expressions
 * [#5361](https://github.com/TouK/nussknacker/pull/5361) Parameter's label can be specified not only via configuration, but also inside Component's implementation now
+* [#5368](https://github.com/TouK/nussknacker/pull/5368) A hidden features allowing to change `icon` and `docsUrl` inside properties modal by using `componentsUiConfig.$proprties` configuration option, was turned off
+* [#5356](https://github.com/TouK/nussknacker/pull/5356) Pushed configs provided by AdditionalUIConfigProvider deeper into domain (at the stage of component definition extraction), allowing it to impact validation. However, changes now require model reload.
 
 1.13.0 (Not released yet)
 -------------------------

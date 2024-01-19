@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
 
 object NodeParameterTemplatesPreparer {
 
@@ -19,5 +18,5 @@ object NodeParameterTemplatesPreparer {
   }
 
   private def createNodeParameterWithDefaultValue(parameterDefinition: Parameter): NodeParameter =
-    NodeParameter(parameterDefinition.name, parameterDefinition.defaultValue.getOrElse(Expression.spel("")))
+    NodeParameter(parameterDefinition.name, parameterDefinition.finalDefaultValue)
 }

@@ -33,6 +33,10 @@ case class ModelDefinition[T <: BaseComponentDefinition] private (
     components.get(info)
   }
 
+  def filterComponents(predicate: (ComponentInfo, T) => Boolean): ModelDefinition[T] = copy(
+    components.filter(predicate tupled)
+  )
+
   def transform[R <: BaseComponentDefinition](f: T => R): ModelDefinition[R] = copy(
     components.mapValuesNow(f),
     expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))

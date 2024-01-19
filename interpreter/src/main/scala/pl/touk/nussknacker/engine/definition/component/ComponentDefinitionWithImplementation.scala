@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 // This class represents component's definition and implementation.
@@ -28,15 +28,29 @@ object ComponentDefinitionWithImplementation {
 
   def forList(
       components: List[ComponentDefinition],
-      additionalConfigs: ComponentsUiConfig
+      additionalConfigs: ComponentsUiConfig,
+      componentInfoToId: ComponentInfo => ComponentId,
+      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
   ): List[(String, ComponentDefinitionWithImplementation)] = {
-    components.flatMap(ComponentDefinitionExtractor.extract(_, additionalConfigs))
+    components.flatMap(
+      ComponentDefinitionExtractor.extract(_, additionalConfigs, componentInfoToId, additionalConfigsFromProvider)
+    )
   }
 
-  // This method is mainly for the tests purpose. It doesn't take into an account additionalConfigs provided from the model configuration
+  /*  This method is mainly for the tests purpose. It doesn't take into an account:
+   *    - additionalConfigs from the model configuration
+   *    - additionalConfigsFromProvider provided by AdditionalUIConfigProvider
+   */
   def withEmptyConfig(component: Component): ComponentDefinitionWithImplementation = {
     ComponentDefinitionExtractor
-      .extract("dumbName", component, SingleComponentConfig.zero, ComponentsUiConfig.Empty)
+      .extract(
+        "dumbName",
+        component,
+        SingleComponentConfig.zero,
+        ComponentsUiConfig.Empty,
+        info => ComponentId(info.toString),
+        Map.empty
+      )
       .getOrElse(
         throw new IllegalStateException(
           s"ComponentDefinitionWithImplementation.withEmptyConfig returned None for: $component but component should be filtered for empty config"

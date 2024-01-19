@@ -20,9 +20,9 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.{
-  AdditionalUIConfigFinalizer,
   DefinitionsService,
   ModelDefinitionEnricher,
+  ScenarioPropertiesConfigFinalizer,
   TestAdditionalUIConfigProvider
 }
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -44,13 +44,16 @@ class DefinitionResourcesSpec
 
   private val definitionResources = new DefinitionResources(
     serviceProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
-      val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(TestAdditionalUIConfigProvider)
       val modelDefinitionEnricher = ModelDefinitionEnricher(
         processingTypeData.modelData,
-        additionalUIConfigFinalizer,
         processingTypeData.staticModelDefinition
       )
-      DefinitionsService(processingTypeData, modelDefinitionEnricher, additionalUIConfigFinalizer, fragmentRepository)
+      DefinitionsService(
+        processingTypeData,
+        modelDefinitionEnricher,
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.processingType),
+        fragmentRepository
+      )
     }
   )
 
