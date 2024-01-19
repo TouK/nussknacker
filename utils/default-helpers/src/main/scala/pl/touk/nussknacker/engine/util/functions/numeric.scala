@@ -60,18 +60,15 @@ trait numeric extends MathUtils with HideToString {
   @GenericType(typingFunction = classOf[ToNumberTypingFunction])
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number = stringOrNumber match {
     case s: CharSequence =>
-      val ss                                       = s.toString
-      val tryByte: Try[java.lang.Byte]             = Try(java.lang.Byte.parseByte(ss))
-      val tryShort: Try[java.lang.Short]           = Try(java.lang.Short.parseShort(ss))
-      val tryInteger: Try[java.lang.Integer]       = Try(java.lang.Integer.parseInt(ss))
-      val tryLong: Try[java.lang.Long]             = Try(java.lang.Long.parseLong(ss))
-      val tryFloat: Try[java.lang.Float]           = Try(java.lang.Float.parseFloat(ss))
-      val tryDouble: Try[java.lang.Double]         = Try(java.lang.Double.parseDouble(ss))
-      val tryBigDecimal: Try[java.math.BigDecimal] = Try(new java.math.BigDecimal(ss))
-      val tryBigInteger: Try[java.math.BigInteger] = Try(new java.math.BigInteger(ss))
+      val ss = s.toString
 
-      val tries: List[Try[java.lang.Number]] =
-        List(tryByte, tryShort, tryInteger, tryLong, tryFloat, tryDouble, tryBigDecimal, tryBigInteger)
+      val tries: List[Try[java.lang.Number]] = List(
+        Try(java.lang.Integer.parseInt(ss)),
+        Try(java.lang.Long.parseLong(ss)),
+        Try(java.lang.Double.parseDouble(ss)),
+        Try(new java.math.BigDecimal(ss)),
+        Try(new java.math.BigInteger(ss))
+      )
 
       val firstSuccess: Option[Number] = tries
         .collectFirst { case Success(value) =>
