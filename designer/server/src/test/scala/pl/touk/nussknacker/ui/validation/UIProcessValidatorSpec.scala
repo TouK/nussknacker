@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import cats.data.{Validated, ValidatedNel}
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -71,6 +71,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   // TODO: tests for user privileges
   private implicit val user: LoggedUser = AdminUser("admin", "admin")
+
+  private val validationExpression = s"#${ValidationExpressionParameterValidator.variableName}.length() < 7"
 
   test("check for not unique edge types") {
     val process = createProcess(
@@ -605,7 +607,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val processValidator = mockedProcessValidator(invalidFragment)
+    val processValidator = mockedProcessValidator(Some(invalidFragment))
     val validationResult = processValidator.validate(process)
 
     validationResult should matchPattern {
@@ -676,7 +678,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val processValidation = mockedProcessValidator(fragment)
+    val processValidation = mockedProcessValidator(Some(fragment))
     val validationResult  = processValidation.validate(process)
 
     validationResult.errors should not be empty
@@ -731,7 +733,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val processValidator = mockedProcessValidator(invalidFragment)
+    val processValidator = mockedProcessValidator(Some(invalidFragment))
 
     val validationResult = processValidator.validate(process)
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
@@ -777,7 +779,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val processValidator = mockedProcessValidator(fragment)
+    val processValidator = mockedProcessValidator(Some(fragment))
     val validationResult = processValidator.validate(process)
 
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
@@ -823,29 +825,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  object OptionalParameterService extends Service {
-
-    @MethodToInvoke
-    def method(
-        @ParamName("optionalParam")
-        optionalParam: Option[String],
-    ): Future[String] = ???
-
-  }
-
-  test("validate based on additional config from provider - MandatoryParameterValidator") {
-    val process = createProcess(
-      List(
-        Source("inID", SourceRef(existingSourceFactory, List())),
-        Enricher(
-          "custom",
-          ServiceRef("optionalParameterService", List(NodeParameter("optionalParam", Expression.spel("")))),
-          "out"
-        ),
-        Sink("out", SinkRef(existingSinkFactory, List()))
-      ),
-      List(Edge("inID", "custom", None), Edge("custom", "out", None))
-    )
+  test("validate service parameter based on additional config from provider - MandatoryParameterValidator") {
+    val process = processWithOptionalParameterService("")
 
     val validator = new UIProcessValidator(
       ProcessValidator.default(
@@ -885,21 +866,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("validate based on additional config from provider - ValidationExpressionParameterValidator") {
-    val process = createProcess(
-      List(
-        Source("inID", SourceRef(existingSourceFactory, List())),
-        Enricher(
-          "custom",
-          ServiceRef("optionalParameterService", List(NodeParameter("optionalParam", Expression.spel("'Barabasz'")))),
-          "out"
-        ),
-        Sink("out", SinkRef(existingSinkFactory, List()))
-      ),
-      List(Edge("inID", "custom", None), Edge("custom", "out", None))
-    )
+  test("validate service parameter based on additional config from provider - ValidationExpressionParameterValidator") {
+    val process = processWithOptionalParameterService("'Barabasz'")
 
-    val validationExpression = s"#${ValidationExpressionParameterValidator.variableName}.length() < 7"
     val validator = new UIProcessValidator(
       ProcessValidator.default(
         LocalModelData(
@@ -924,6 +893,99 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       List.empty,
       new FragmentResolver(new StubFragmentRepository(Map.empty))
     )
+
+    val result = validator.validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                "some custom failure message",
+                s"Please provide value that satisfies the validation expression '#${ValidationExpressionParameterValidator.variableName}.length() < 7'",
+                Some("optionalParam"),
+                NodeValidationErrorType.SaveAllowed
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test("validate service parameter based on input config - MandatoryParameterValidator") {
+    val validator = new UIProcessValidator(
+      ProcessValidator.default(
+        LocalModelData(
+          ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
+            .getConfig("modelConfig")
+            .withValue(
+              "componentsUiConfig.optionalParameterService.params.optionalParam.validators",
+              fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
+            ),
+          List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
+          additionalConfigsFromProvider = Map.empty
+        )
+      ),
+      Map.empty,
+      List.empty,
+      new FragmentResolver(new StubFragmentRepository(Map.empty))
+    )
+
+    val process = processWithOptionalParameterService("")
+
+    val result = validator.validate(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "EmptyMandatoryParameter",
+                _,
+                _,
+                Some("optionalParam"),
+                NodeValidationErrorType.SaveAllowed
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test("validate service parameter based on input config - ValidationExpressionParameterValidator") {
+    val validator = new UIProcessValidator(
+      ProcessValidator.default(
+        LocalModelData(
+          ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
+            .getConfig("modelConfig")
+            .withValue(
+              "componentsUiConfig.optionalParameterService.params.optionalParam.validators",
+              fromIterable(
+                List(
+                  Map(
+                    "type" -> "ValidationExpressionParameterValidatorToCompile",
+                    "validationExpression" -> fromMap(
+                      Map(
+                        "language"   -> "spel",
+                        "expression" -> validationExpression
+                      ).asJava
+                    ),
+                    "validationFailedMessage" -> "some custom failure message",
+                  ).asJava
+                ).asJava
+              )
+            ),
+          List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
+          additionalConfigsFromProvider = Map.empty
+        )
+      ),
+      Map.empty,
+      List.empty,
+      new FragmentResolver(new StubFragmentRepository(Map.empty))
+    )
+
+    val process = processWithOptionalParameterService("'Barabasz'")
 
     val result = validator.validate(process)
 
@@ -1021,7 +1083,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val processValidator = mockedProcessValidator(fragment)
+    val processValidator = mockedProcessValidator(Some(fragment))
 
     val validationResult = processValidator.validate(process)
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
@@ -1048,7 +1110,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short])))
     val processWithFragment = createProcessWithFragmentParams(fragmentId, List(NodeParameter("P1", "123")))
 
-    val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
+    val processValidator = mockedProcessValidator(Some(fragmentDefinition), configWithValidators)
     val result           = processValidator.validate(processWithFragment)
     result.hasErrors shouldBe false
     result.errors.invalidNodes shouldBe Symbol("empty")
@@ -1063,7 +1125,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true)))
     val processWithFragment = createProcessWithFragmentParams(fragmentId, List(NodeParameter("P1", "")))
 
-    val processValidator = mockedProcessValidator(fragmentDefinition, defaultConfig)
+    val processValidator = mockedProcessValidator(Some(fragmentDefinition), defaultConfig)
     val result           = processValidator.validate(processWithFragment)
 
     result.hasErrors shouldBe true
@@ -1096,7 +1158,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val processValidator = mockedProcessValidator(fragmentDefinition, defaultConfig)
+    val processValidator = mockedProcessValidator(Some(fragmentDefinition), defaultConfig)
     val result           = processValidator.validate(processWithFragment)
 
     result.hasErrors shouldBe true
@@ -1128,7 +1190,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             valueEditor = None,
             valueCompileTimeValidation = Some(
               ParameterValueCompileTimeValidation(
-                s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
+                validationExpression,
                 None
               )
             )
@@ -1138,7 +1200,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val processWithFragment =
       createProcessWithFragmentParams(fragmentId, List(NodeParameter(paramName, "\"Tomasz\"")))
 
-    val processValidation = mockedProcessValidator(fragmentDefinition, defaultConfig)
+    val processValidation = mockedProcessValidator(Some(fragmentDefinition), defaultConfig)
     val result            = processValidation.validate(processWithFragment)
 
     result.hasErrors shouldBe false
@@ -1166,7 +1228,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             valueEditor = None,
             valueCompileTimeValidation = Some(
               ParameterValueCompileTimeValidation(
-                s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
+                validationExpression,
                 Some("some failed message")
               )
             )
@@ -1176,7 +1238,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val processWithFragment =
       createProcessWithFragmentParams(fragmentId, List(NodeParameter(paramName, "\"Barabasz\"")))
 
-    val processValidation = mockedProcessValidator(fragmentDefinition, configWithValidators)
+    val processValidation = mockedProcessValidator(Some(fragmentDefinition), configWithValidators)
     val result            = processValidation.validate(processWithFragment)
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
@@ -1202,7 +1264,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       .emptySink("sink", existingSinkFactory)
 
     val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
-    val result      = mockedProcessValidator(process).validate(displayable)
+    val result      = mockedProcessValidator(Some(process)).validate(displayable)
 
     result.errors.processPropertiesErrors shouldBe List(
       PrettyValidationErrors.formatErrorMessage(SampleCustomProcessValidator.badNameError)
@@ -1405,6 +1467,32 @@ private object UIProcessValidatorSpec {
     )
   }
 
+  object OptionalParameterService extends Service {
+
+    @MethodToInvoke
+    def method(
+        @ParamName("optionalParam")
+        optionalParam: Option[String],
+    ): Future[String] = ???
+
+  }
+
+  private def processWithOptionalParameterService(optionalParamValue: String) = createProcess(
+    List(
+      Source("inID", SourceRef(existingSourceFactory, List())),
+      Enricher(
+        "custom",
+        ServiceRef(
+          "optionalParameterService",
+          List(NodeParameter("optionalParam", Expression.spel(optionalParamValue)))
+        ),
+        "out"
+      ),
+      Sink("out", SinkRef(existingSinkFactory, List()))
+    ),
+    List(Edge("inID", "custom", None), Edge("custom", "out", None))
+  )
+
   private def createProcess(
       nodes: List[NodeData],
       edges: List[Edge],
@@ -1440,7 +1528,7 @@ private object UIProcessValidatorSpec {
   }
 
   def mockedProcessValidator(
-      fragment: CanonicalProcess,
+      fragment: Option[CanonicalProcess],
       execConfig: Config = ConfigFactory.empty()
   ): UIProcessValidator = {
     val modelDefinition = ModelDefinitionBuilder.empty
@@ -1454,7 +1542,10 @@ private object UIProcessValidatorSpec {
       List(SampleCustomProcessValidator),
       new FragmentResolver(
         new StubFragmentRepository(
-          Map(TestProcessingTypes.Streaming -> List(fragment))
+          fragment match {
+            case Some(frag) => Map(TestProcessingTypes.Streaming -> List(frag))
+            case None       => Map.empty
+          }
         )
       )
     )
