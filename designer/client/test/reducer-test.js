@@ -11,8 +11,7 @@ const baseProcessState = {
     createdBy: "admin",
     tags: [],
     currentlyDeployedAt: ["test"],
-    json: {
-        name: "DEFGH",
+    scenarioGraph: {
         properties: {
             parallelism: 3,
             additionalFields: {
@@ -87,12 +86,12 @@ const baseProcessState = {
                 to: "sendSms",
             },
         ],
-        validationResult: {
-            errors: {
-                invalidNodes: {},
-                processPropertiesErrors: [],
-                globalErrors: [],
-            },
+    },
+    validationResult: {
+        errors: {
+            invalidNodes: {},
+            processPropertiesErrors: [],
+            globalErrors: [],
         },
     },
     state: {},

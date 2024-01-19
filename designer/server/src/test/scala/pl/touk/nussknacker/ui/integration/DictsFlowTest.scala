@@ -82,7 +82,7 @@ class DictsFlowTest
 
     val returnedEndResultExpression = extractVariableExpressionFromGetProcessResponse(response2.bodyAsJson)
     returnedEndResultExpression shouldEqual expressionUsingDictWithInvalidLabel
-    val invalidNodesAfterGet = response2.extractFieldJsonValue("json", "validationResult", "errors", "invalidNodes")
+    val invalidNodesAfterGet = response2.extractFieldJsonValue("validationResult", "errors", "invalidNodes")
     invalidNodesAfterGet.asObject.value should have size 1
     invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual {
       "ExpressionParserCompilationError"
@@ -140,8 +140,8 @@ class DictsFlowTest
         .contentType(MediaType.MultipartFormData)
         .multipartBody(
           sttpPrepareMultiParts(
-            "testData"    -> """{"sourceId":"source","record":"field1|field2"}""",
-            "processJson" -> TestProcessUtil.toJson(process).noSpaces
+            "testData"      -> """{"sourceId":"source","record":"field1|field2"}""",
+            "scenarioGraph" -> TestProcessUtil.toJson(process).noSpaces
           )()
         )
         .auth
@@ -190,7 +190,7 @@ class DictsFlowTest
     val returnedEndResultExpression = extractVariableExpressionFromGetProcessResponse(response2.bodyAsJson)
     returnedEndResultExpression shouldEqual endResultExpressionToPost
 
-    response2.extractFieldJsonValue("json", "validationResult", "errors", "invalidNodes")
+    response2.extractFieldJsonValue("validationResult", "errors", "invalidNodes")
   }
 
   private def createEmptyScenario(processName: ProcessName) = {
@@ -219,7 +219,7 @@ class DictsFlowTest
   private def extractVariableExpressionFromGetProcessResponse(json: Json) = {
     import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
     json.hcursor
-      .downField("json")
+      .downField("scenarioGraph")
       .downField("nodes")
       .downAt(_.hcursor.get[String]("id").rightValue == VariableNodeId)
       .downField("value")

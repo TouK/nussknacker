@@ -59,7 +59,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "UPDATE_IMPORTED_PROCESS": {
             const oldNodeIds = sortBy(state.scenario.scenarioGraph.nodes.map((n) => n.id));
-            const newNodeids = sortBy(action.processJson.nodes.map((n) => n.id));
+            const newNodeids = sortBy(action.scenarioGraph.nodes.map((n) => n.id));
             const newLayout = isEqual(oldNodeIds, newNodeids) ? state.layout : null;
 
             return {
@@ -68,7 +68,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: newLayout,
                 scenario: {
                     ...state.scenario,
-                    scenarioGraph: action.processJson,
+                    ...action,
                 },
             };
         }

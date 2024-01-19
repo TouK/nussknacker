@@ -36,10 +36,6 @@ export const isProcessRenamed = createSelector(
     getProcessUnsavedNewName,
     (currentName, unsavedNewName) => unsavedNewName && unsavedNewName !== currentName,
 );
-// export const getProcessToDisplayWithUnsavedName = createSelector(
-//     [getScenario, getProcessUnsavedNewName, isProcessRenamed],
-//     (process, unsavedName, isProcessRenamed) => ({ ...process, name: isProcessRenamed ? unsavedName : process.name }),
-// );
 
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
 export const isDeployPossible = createSelector(

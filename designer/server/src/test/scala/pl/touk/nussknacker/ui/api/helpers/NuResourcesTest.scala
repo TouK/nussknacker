@@ -368,8 +368,8 @@ trait NuResourcesTest
   protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
     val displayableProcess = ProcessConverter.toDisplayable(scenario)
     val multiPart = MultipartUtils.prepareMultiParts(
-      "testData"    -> testDataContent,
-      "processJson" -> displayableProcess.asJson.noSpaces
+      "testData"      -> testDataContent,
+      "scenarioGraph" -> displayableProcess.asJson.noSpaces
     )()
     Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
       deployRoute(),

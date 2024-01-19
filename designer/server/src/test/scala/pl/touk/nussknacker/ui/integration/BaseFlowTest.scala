@@ -378,8 +378,8 @@ class BaseFlowTest
         .contentType(MediaType.MultipartFormData)
         .multipartBody(
           sttpPrepareMultiParts(
-            "testData"    -> testDataContent,
-            "processJson" -> TestProcessUtil.toJson(process).noSpaces
+            "testData"      -> testDataContent,
+            "scenarioGraph" -> TestProcessUtil.toJson(process).noSpaces
           )()
         )
         .auth
@@ -544,8 +544,8 @@ class BaseFlowTest
         .contentType(MediaType.MultipartFormData)
         .multipartBody(
           sttpPrepareMultiParts(
-            "testData"    -> data,
-            "processJson" -> displayableProcess.asJson.noSpaces
+            "testData"      -> data,
+            "scenarioGraph" -> displayableProcess.asJson.noSpaces
           )()
         )
         .auth

@@ -572,7 +572,7 @@ class HttpService {
 
         const data = new FormData();
         data.append("testData", file);
-        data.append("processJson", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
+        data.append("scenarioGraph", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
         const promise = api.post(`/processManagement/test/${encodeURIComponent(processName)}`, data);
         promise.catch((error) => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true));

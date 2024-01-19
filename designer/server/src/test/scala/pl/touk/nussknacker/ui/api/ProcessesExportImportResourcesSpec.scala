@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
@@ -91,9 +92,11 @@ class ProcessesExportImportResourcesSpec
       val multipartForm = MultipartUtils.prepareMultiPart(modified.asJson.spaces2, "process")
       Post(s"/processes/import/${ProcessTestData.sampleProcessName}", multipartForm) ~> route ~> check {
         status shouldEqual StatusCodes.OK
-        val imported = responseAs[DisplayableProcess]
-        imported.properties.typeSpecificProperties.asInstanceOf[StreamMetaData].parallelism shouldBe Some(987)
-        imported.nodes shouldBe processToSave.nodes
+        val imported = responseAs[ValidatedDisplayableProcess]
+        imported.scenarioGraph.properties.typeSpecificProperties.asInstanceOf[StreamMetaData].parallelism shouldBe Some(
+          987
+        )
+        imported.scenarioGraph.nodes shouldBe processToSave.nodes
       }
     }
   }

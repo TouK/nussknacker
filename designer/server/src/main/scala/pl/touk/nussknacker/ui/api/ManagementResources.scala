@@ -226,7 +226,7 @@ class ManagementResources(
           path("test" / ProcessNameSegment) { processName =>
             (post & processDetailsForName(processName)) { details =>
               canDeploy(details.idWithNameUnsafe) {
-                formFields(Symbol("testData"), Symbol("processJson")) { (testDataContent, displayableProcessJson) =>
+                formFields(Symbol("testData"), Symbol("scenarioGraph")) { (testDataContent, displayableProcessJson) =>
                   complete {
                     measureTime("test", metricRegistry) {
                       parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {

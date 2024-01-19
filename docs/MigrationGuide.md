@@ -35,6 +35,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5393](https://github.com/TouK/nussknacker/pull/5393) Changes around metadata passing through REST API:
   * `DisplayableProcess` fields that were removed: `name`,  `processingType`, `category` - all these fields already were in `ScenarioWithDetails`
   * `ProcessProperties` field removed: `isFragment` - this field already was in `ScenarioWithDetails`
+  * `ScenarioWithDetails` field `json.validationResult` was moved into the top level of `ScenarioWithDetails`
+  * `ScenarioWithDetails` field `json` was renamed into `scenarioGraph` and changed the type into `DisplayableProcess`
+  * `ValidatedDisplayableProcess` all scenario graph fields were replaced by one `scenarioGraph: DisplayableProcess` field
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:

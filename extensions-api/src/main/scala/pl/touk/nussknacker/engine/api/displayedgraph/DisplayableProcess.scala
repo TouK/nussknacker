@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSp
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
+// TODO: rename to ScenarioGraph
 @JsonCodec final case class DisplayableProcess(
     properties: ProcessProperties,
     nodes: List[NodeData],
