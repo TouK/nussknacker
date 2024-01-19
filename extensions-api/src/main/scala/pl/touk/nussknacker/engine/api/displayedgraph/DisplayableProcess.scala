@@ -26,10 +26,6 @@ final case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
     additionalFields = additionalFields
   )
 
-  // TODO: Remove this after we stop using `DisplayableProcess` for the source of information about scenario's metadata
-  //       (processToDisplay redux state) on the FE side.,
-  val isFragment: Boolean = additionalFields.typeSpecificProperties.isFragment
-
   // TODO: remove typeSpecificData-related code after the migration is completed
   def typeSpecificProperties: TypeSpecificData = additionalFields.typeSpecificProperties
 
@@ -52,8 +48,8 @@ object ProcessProperties {
   }
 
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =
-    Encoder.forProduct2("isFragment", "additionalFields") { p =>
-      (p.isFragment, p.additionalFields)
+    Encoder.forProduct1("additionalFields") { p =>
+      p.additionalFields
     }
 
   // This is a copy-paste from MetaData - see the comment there for the legacy consideration
