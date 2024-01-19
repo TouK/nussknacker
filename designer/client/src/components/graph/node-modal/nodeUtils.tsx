@@ -14,5 +14,5 @@ export function generateUUIDs(editedNode: NodeType, properties: string[]): NodeT
 }
 
 export function getNodeId(scenario: Scenario, node: NodeType): string {
-    return scenario.json.properties.isFragment ? node.id.replace(`${scenario.name}-`, "") : node.id;
+    return scenario.isFragment ? node.id.replace(`${scenario.name}-`, "") : node.id;
 }
