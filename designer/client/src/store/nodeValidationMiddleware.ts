@@ -8,13 +8,12 @@ import { getProcessToDisplayWithUnsavedName } from "../reducers/selectors/graph"
 
 type ActionType = Action["type"];
 
-const debouncedValidate = debounce(
-    (dispatch: ThunkDispatch, getState: () => RootState) =>
-        HttpService.validateProcess(getProcessToDisplayWithUnsavedName(getState())).then(({ data }) =>
-            dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
-        ),
-    500,
-);
+const debouncedValidate = debounce((dispatch: ThunkDispatch, getState: () => RootState) => {
+    const scenario = getProcessToDisplayWithUnsavedName(getState());
+    return HttpService.validateProcess(scenario.name, scenario).then(({ data }) =>
+        dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
+    );
+}, 500);
 
 export function nodeValidationMiddleware(
     validatedActions: ActionType[] = [],

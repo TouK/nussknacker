@@ -22,7 +22,7 @@ function JSONButton(props: Props) {
             icon={<Icon />}
             disabled={!available}
             onClick={() => {
-                HttpService.exportProcess(scenario, versionId);
+                HttpService.exportProcess(scenario.name, scenario, versionId);
             }}
         />
     );

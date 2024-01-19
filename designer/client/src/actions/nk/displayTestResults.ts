@@ -34,7 +34,7 @@ export function testScenarioWithGeneratedData(testSampleSize: string, scenario: 
             type: "PROCESS_LOADING",
         });
 
-        HttpService.testScenarioWithGeneratedData(testSampleSize, scenario)
+        HttpService.testScenarioWithGeneratedData(testSampleSize, scenario.name, scenario)
             .then((response) => dispatch(displayTestResults(response.data)))
             .catch(() => dispatch({ type: "LOADING_FAILED" }));
     };
