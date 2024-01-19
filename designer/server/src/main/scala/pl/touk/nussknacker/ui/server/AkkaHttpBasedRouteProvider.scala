@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProviderFactory,
   EmptyAdditionalUIConfigProviderFactory
 }
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
@@ -97,9 +98,11 @@ class AkkaHttpBasedRouteProvider(
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
       deploymentServiceSupplier  = new DelayedInitDeploymentServiceSupplier
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
+      dbioRunner                 = DBIOActionRunner(dbRef)
       typeToConfig <- prepareProcessingTypeData(
         config,
         deploymentServiceSupplier,
+        AllDeployedScenarioService(dbRef, _),
         processingTypeDataStateFactory,
         sttpBackend,
         additionalUIConfigProvider
@@ -484,6 +487,7 @@ class AkkaHttpBasedRouteProvider(
   private def prepareProcessingTypeData(
       designerConfig: ConfigWithUnresolvedVersion,
       deploymentServiceSupplier: Supplier[DeploymentService],
+      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
       processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
       sttpBackend: SttpBackend[Future, Any],
       additionalUIConfigProvider: AdditionalUIConfigProvider
@@ -493,7 +497,12 @@ class AkkaHttpBasedRouteProvider(
       .make(
         acquire = IO(
           new ProcessingTypeDataReload(() =>
-            processingTypeDataStateFactory.create(designerConfig, deploymentServiceSupplier, additionalUIConfigProvider)
+            processingTypeDataStateFactory.create(
+              designerConfig,
+              deploymentServiceSupplier,
+              createAllDeployedScenarioService,
+              additionalUIConfigProvider
+            )
           )
         )
       )(

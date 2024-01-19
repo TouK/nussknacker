@@ -102,7 +102,7 @@ trait NuResourcesTest
     futureFetchingScenarioRepository
   )
 
-  protected implicit val deploymentService: DeploymentService =
+  protected val deploymentService: DeploymentService =
     new DeploymentServiceImpl(
       dmDispatcher,
       fetchingProcessRepository,
@@ -115,7 +115,11 @@ trait NuResourcesTest
     )
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
-    new DefaultProcessingTypeDeploymentService(Streaming, deploymentService)
+    new DefaultProcessingTypeDeploymentService(
+      Streaming,
+      deploymentService,
+      AllDeployedScenarioService(testDbRef, Streaming)
+    )
 
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
@@ -156,6 +160,8 @@ trait NuResourcesTest
     ProcessingTypeDataProvider(
       ProcessingTypeDataReader.loadProcessingTypeData(
         ConfigWithUnresolvedVersion(testConfig),
+        deploymentService,
+        AllDeployedScenarioService(testDbRef, _),
         TestAdditionalUIConfigProvider
       )
     )

@@ -23,7 +23,6 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
   OnFinished
 }
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
-import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction}
@@ -59,46 +58,6 @@ class DeploymentServiceImpl(
 )(implicit system: ActorSystem)
     extends DeploymentService
     with LazyLogging {
-
-  def getDeployedScenarios(
-      processingType: ProcessingType
-  )(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
-    implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
-    for {
-      deployedProcesses <- {
-        dbioRunner.run(
-          processRepository.fetchLatestProcessesDetails[CanonicalProcess](
-            ScenarioQuery(
-              isFragment = Some(false),
-              isArchived = Some(false),
-              isDeployed = Some(true),
-              processingTypes = Some(Seq(processingType))
-            )
-          )
-        )
-      }
-      dataList <- Future.sequence(deployedProcesses.flatMap { details =>
-        val lastDeployAction = details.lastDeployedAction.get
-        // TODO: what should be in name?
-        val deployingUser  = User(lastDeployAction.user, lastDeployAction.user)
-        val deploymentData = prepareDeploymentData(deployingUser, DeploymentId.fromActionId(lastDeployAction.id))
-        val deployedScenarioDataTry =
-          scenarioResolver.forTypeUnsafe(details.processingType).resolveScenario(details.json).map { resolvedScenario =>
-            DeployedScenarioData(
-              details.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
-              deploymentData,
-              resolvedScenario
-            )
-          }
-        deployedScenarioDataTry match {
-          case Failure(exception) =>
-            logger.error(s"Exception during resolving deployed scenario ${details.name}", exception)
-            None
-          case Success(value) => Some(Future.successful(value))
-        }
-      })
-    } yield dataList
-  }
 
   override def cancelProcess(
       processId: ProcessIdWithName,

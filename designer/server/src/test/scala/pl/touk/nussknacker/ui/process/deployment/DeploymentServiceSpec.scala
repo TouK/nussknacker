@@ -93,7 +93,11 @@ class DeploymentServiceSpec
   private val deploymentService = createDeploymentService(None)
 
   deploymentManager = new MockDeploymentManager(SimpleStateStatus.Running)(
-    new DefaultProcessingTypeDeploymentService(TestProcessingTypes.Streaming, deploymentService)
+    new DefaultProcessingTypeDeploymentService(
+      TestProcessingTypes.Streaming,
+      deploymentService,
+      AllDeployedScenarioService(testDbRef, TestProcessingTypes.Streaming)
+    )
   )
 
   private def createDeploymentService(scenarioStateTimeout: Option[FiniteDuration]): DeploymentService = {
