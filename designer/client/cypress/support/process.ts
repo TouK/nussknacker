@@ -143,10 +143,10 @@ function importTestProcess(name: string, fixture = "testProcess") {
             };
             return cy.postFormData(`/api/processes/import/${name}`, auth, formData);
         })
-        .then((process) => {
+        .then((response) => {
             cy.request("PUT", `/api/processes/${name}`, {
                 comment: "import test data",
-                process,
+                process: response.scenarioGraph,
             });
             return cy.wrap(name);
         });
