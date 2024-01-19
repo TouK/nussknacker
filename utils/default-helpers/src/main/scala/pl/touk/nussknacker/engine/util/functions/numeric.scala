@@ -70,13 +70,12 @@ trait numeric extends MathUtils with HideToString {
         Try(new java.math.BigInteger(ss))
       )
 
-      val firstSuccess: Option[Number] = tries
+      tries
         .collectFirst { case Success(value) =>
           value
         }
-        .orElse(Some(new java.math.BigDecimal(ss)))
+        .getOrElse(new java.math.BigDecimal(ss))
 
-      firstSuccess.get
     case n: java.lang.Number => n
   }
 
