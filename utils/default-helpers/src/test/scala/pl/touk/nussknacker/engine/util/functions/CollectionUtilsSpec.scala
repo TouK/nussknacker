@@ -191,7 +191,21 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
   test("sum should fall back to Number on unknown Number type") {
     val custom = new CustomNumber()
-    evaluateType("#COLLECTION.sum({#int, #custom})", Map("custom" -> custom, "int" -> 1)) shouldBe "Number".valid
+
+    val numericalVariables = Map(
+      "int"    -> 1,
+      "long"   -> 1L,
+      "double" -> 14.23d,
+      "bigDec" -> new java.math.BigDecimal("1"),
+      "bigInt" -> new java.math.BigInteger("1"),
+      "custom" -> custom
+    )
+
+    evaluateType("#COLLECTION.sum({#int, #custom})", numericalVariables) shouldBe "Number".valid
+    evaluateType("#COLLECTION.sum({#long, #custom})", numericalVariables) shouldBe "Number".valid
+    evaluateType("#COLLECTION.sum({#double, #custom})", numericalVariables) shouldBe "Number".valid
+    evaluateType("#COLLECTION.sum({#bigDec, #custom})", numericalVariables) shouldBe "Number".valid
+    evaluateType("#COLLECTION.sum({#bigInt, #custom})", numericalVariables) shouldBe "Number".valid
   }
 
   test("plus should fall back to Number on unknown Number type") {
