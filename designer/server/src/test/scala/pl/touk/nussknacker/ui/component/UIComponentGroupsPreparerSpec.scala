@@ -110,7 +110,6 @@ class UIComponentGroupsPreparerSpec
         "fooTransformer",
         Some(Unknown),
         CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
-        componentId = None,
         parameter
       )
       .build

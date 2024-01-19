@@ -15,6 +15,16 @@ object Implicits {
     def filterKeysNow(f: K => Boolean): Map[K, V] = m.filter { case (k, _) => f(k) }
   }
 
+  implicit class RichScalaNestedMap[K1 <: Any, K2 <: Any, V <: Any](m: Map[K1, Map[K2, V]]) {
+
+    def collapseNestedMap: Map[(K1, K2), V] = m.flatMap { case (k1, innerMap) =>
+      innerMap.map { case (k2, v) =>
+        (k1, k2) -> v
+      }
+    }
+
+  }
+
   implicit class RichTupleList[K, V](seq: List[(K, V)]) {
 
     def toGroupedMap: Map[K, List[V]] =

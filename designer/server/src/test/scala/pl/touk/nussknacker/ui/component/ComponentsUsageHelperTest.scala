@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, FragmentInputDef
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinitionConverter
+import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichScalaNestedMap}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
@@ -156,16 +157,12 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         otherExistingStreamTransformer2,
         Some(Typed[String]),
         CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
-        componentId = None
       )
       .build
 
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
       new BuiltInComponentsStaticDefinitionsPreparer(new ComponentsUiConfig(Map.empty, Map.empty)),
-      new FragmentComponentDefinitionExtractor(
-        getClass.getClassLoader,
-        componentInfoToId
-      ),
+      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, componentInfoToId),
       modelDefinition.toStaticComponentsDefinition,
     )
 
@@ -177,12 +174,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       .components
   }
 
-  private val processingTypeToNonFragmentComponents = {
-    Map(
-      TestProcessingTypes.Streaming -> nonFragmentComponents(ComponentId.default(TestProcessingTypes.Streaming, _)),
-      TestProcessingTypes.Fraud     -> nonFragmentComponents(ComponentId.default(TestProcessingTypes.Fraud, _))
-    )
-  }
+  private val processingTypeAndInfoToNonFragmentComponentId = Map(
+    TestProcessingTypes.Streaming -> nonFragmentComponents(ComponentId.default(TestProcessingTypes.Streaming, _)),
+    TestProcessingTypes.Fraud     -> nonFragmentComponents(ComponentId.default(TestProcessingTypes.Fraud, _))
+  ).collapseNestedMap.mapValuesNow(_.componentIdUnsafe)
 
   test("should compute components usage count") {
     val table = Table(
@@ -261,7 +256,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     forAll(table) { (processesDetails, expectedData) =>
       val result = ComponentsUsageHelper.computeComponentsUsageCount(
         withComponentsUsages(processesDetails),
-        processingTypeToNonFragmentComponents
+        processingTypeAndInfoToNonFragmentComponentId
       )
       result shouldBe expectedData
     }
@@ -364,7 +359,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       val result = ComponentsUsageHelper
         .computeComponentsUsage(
           withComponentsUsages(processesDetails),
-          processingTypeToNonFragmentComponents
+          processingTypeAndInfoToNonFragmentComponentId
         )
         .mapValuesNow(_.map { case (baseProcessDetails, nodeIds) =>
           (baseProcessDetails.mapScenario(_ => ()), nodeIds)

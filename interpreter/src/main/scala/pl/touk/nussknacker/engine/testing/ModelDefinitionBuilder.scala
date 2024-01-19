@@ -58,8 +58,24 @@ final case class ModelDefinitionBuilder(
       name: String,
       returnType: Option[TypingResult],
       componentSpecificData: CustomComponentSpecificData,
+      params: Parameter*
+  ): ModelDefinitionBuilder =
+    withCustom(name, returnType, componentSpecificData, componentId = None, params: _*)
+
+  def withCustom(
+      name: String,
+      returnType: Option[TypingResult],
+      componentSpecificData: CustomComponentSpecificData,
+      componentId: Option[ComponentId] = None,
+  ): ModelDefinitionBuilder =
+    withCustom(name, returnType, componentSpecificData, componentId, Seq.empty: _*)
+
+  def withCustom(
+      name: String,
+      returnType: Option[TypingResult],
+      componentSpecificData: CustomComponentSpecificData,
       componentId: Option[ComponentId],
-      params: Parameter*,
+      params: Parameter*
   ): ModelDefinitionBuilder =
     wrapWithNotDisabledCustomComponentDefinition(
       params.toList,
