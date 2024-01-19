@@ -19,7 +19,7 @@ export const getProcessVersionId = createSelector(getScenario, (d) => d?.process
 export const getProcessCategory = createSelector(getScenario, (d) => d?.processCategory || "");
 export const getProcessingType = createSelector(getScenario, (d) => d?.processingType);
 export const isLatestProcessVersion = createSelector(getScenario, (d) => d?.isLatestVersion);
-export const isFragment = createSelector(getScenarioGraph, (p) => p.properties?.isFragment);
+export const isFragment = createSelector(getScenario, (p) => p?.isFragment);
 export const isArchived = createSelector(getScenario, (p) => p?.isArchived);
 export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state);
 export const hasError = createSelector(getScenario, (p) => !ProcessUtils.hasNoErrors(p));
