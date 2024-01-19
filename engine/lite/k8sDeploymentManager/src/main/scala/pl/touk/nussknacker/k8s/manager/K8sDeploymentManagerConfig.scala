@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.k8s.manager
 
 import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig
 import pl.touk.nussknacker.k8s.manager.ingress.IngressConfig
@@ -12,7 +11,7 @@ import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import scala.concurrent.duration._
 
 object K8sDeploymentManagerConfig {
-  def parse(config: Config): K8sDeploymentManagerConfig = config.rootAs[K8sDeploymentManagerConfig]
+  def parse(config: Config): K8sDeploymentManagerConfig = config.as[K8sDeploymentManagerConfig]
 }
 
 case class K8sDeploymentManagerConfig(

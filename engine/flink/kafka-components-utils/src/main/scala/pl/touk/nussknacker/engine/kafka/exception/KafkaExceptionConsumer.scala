@@ -11,13 +11,12 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sharedproducer.WithSharedKafkaProducer
 import pl.touk.nussknacker.engine.kafka.{DefaultProducerCreator, KafkaConfig, KafkaProducerCreator, KafkaUtils}
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
 
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer = {
     val kafkaConfig           = KafkaConfig.parseConfig(exceptionHandlerConfig)
-    val consumerConfig        = exceptionHandlerConfig.rootAs[KafkaExceptionConsumerConfig]
+    val consumerConfig        = exceptionHandlerConfig.as[KafkaExceptionConsumerConfig]
     val producerCreator       = kafkaProducerCreator(kafkaConfig)
     val serializationSchema   = createSerializationSchema(metaData, consumerConfig)
     val errorTopicInitializer = new KafkaErrorTopicInitializer(kafkaConfig, consumerConfig)

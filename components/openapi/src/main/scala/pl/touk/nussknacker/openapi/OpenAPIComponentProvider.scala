@@ -9,12 +9,10 @@ import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 import pl.touk.nussknacker.openapi.OpenAPIsConfig._
 import pl.touk.nussknacker.openapi.discovery.SwaggerOpenApiDefinitionDiscovery
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.parser.ServiceParseError
-import sttp.model.StatusCode
 
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
@@ -25,7 +23,7 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
 
   override def resolveConfigForExecution(config: Config): Config = {
     // we need to load config to resolve url which can be potentially a system env variable
-    val openAPIsConfig = ConfigFactory.load(config).rootAs[OpenAPIServicesConfig]
+    val openAPIsConfig = ConfigFactory.load(config).as[OpenAPIServicesConfig]
     val services =
       try {
         SwaggerOpenApiDefinitionDiscovery.discoverOpenAPIServices(openAPIsConfig)
@@ -51,7 +49,7 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
   }
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val openAPIsConfig          = config.rootAs[OpenAPIServicesConfig]
+    val openAPIsConfig          = config.as[OpenAPIServicesConfig]
     val serviceDefinitionConfig = config.getList("services").render(ConfigRenderOptions.concise())
     val swaggerServices =
       CirceUtil.decodeJsonUnsafe[List[SwaggerService]](serviceDefinitionConfig, "Failed to parse service config")

@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service._
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
 
@@ -37,7 +36,7 @@ class PeriodicDeploymentManagerProvider(
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
     val periodicBatchConfig = config.as[PeriodicBatchConfig]("deploymentManager")
-    val flinkConfig         = config.rootAs[FlinkConfig]
+    val flinkConfig         = config.as[FlinkConfig]
     PeriodicDeploymentManager(
       delegate = delegateDeploymentManager,
       schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,

@@ -65,6 +65,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
+* [#5409](https://github.com/TouK/nussknacker/pull/5409) Use Ficus built-in `.as` instead of `ConfigEnrichments.rootAs`.
 
 ## In version 1.13.x (Not released yet)
 

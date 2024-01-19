@@ -6,7 +6,6 @@ import io.dropwizard.metrics5.{MetricName, MetricRegistry}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.influxdb.LiteEngineInfluxDbReporter
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.jdk.CollectionConverters._
@@ -28,7 +27,7 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
   }
 
   private def registerReporters(metricRegistry: MetricRegistry, metricsConfig: Config): Unit = {
-    val prefix          = preparePrefix(metricsConfig.rootAs[CommonMetricConfig])
+    val prefix          = preparePrefix(metricsConfig.as[CommonMetricConfig])
     val metricReporters = loadMetricsReporters()
     if (metricReporters.nonEmpty) {
       metricReporters.foreach { reporter =>

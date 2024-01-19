@@ -110,9 +110,8 @@ object JwtConfiguration {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.ValueReader
-  import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
-  implicit val jwtConfigurationVR: ValueReader[JwtConfiguration] = ValueReader.relative(_.rootAs[JwtConfig])
+  implicit val jwtConfigurationVR: ValueReader[JwtConfiguration] = ValueReader.relative(_.as[JwtConfig])
 
   private final case class JwtConfig(
       accessTokenIsJwt: Boolean = false,

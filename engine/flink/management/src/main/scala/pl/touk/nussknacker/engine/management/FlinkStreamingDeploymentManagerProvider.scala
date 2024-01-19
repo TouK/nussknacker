@@ -16,7 +16,6 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
   override def createDeploymentManager(modelData: BaseModelData, config: Config)(
       implicit ec: ExecutionContext,
@@ -24,7 +23,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: ProcessingTypeDeploymentService
   ): DeploymentManager = {
-    val flinkConfig = config.rootAs[FlinkConfig]
+    val flinkConfig = config.as[FlinkConfig]
     CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
       new FlinkStreamingRestManager(flinkConfig, modelData),
       config
