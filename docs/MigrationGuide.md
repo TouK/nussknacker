@@ -32,6 +32,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5361](https://github.com/TouK/nussknacker/pull/5361) `Parameter` has new, optional `labelOpt` field which allows
   to specify label presented to the user without changing identifier used in scenario graph json (`Parameteter.name`)
 * [#5356](https://github.com/TouK/nussknacker/pull/5356) Changes in AdditionalUIConfigProvider.getAllForProcessingType now require model reload to take effect.
+* [#5393](https://github.com/TouK/nussknacker/pull/5393) Changes around metadata passing through REST API:
+  * `DisplayableProcess` fields that were removed: `name`,  `processingType`, `category` - all these fields already were in `ScenarioWithDetails`
+  * `ProcessProperties` field removed: `isFragment` - this field already was in `ScenarioWithDetails`
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
