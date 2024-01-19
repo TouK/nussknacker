@@ -273,6 +273,13 @@ export const nuTheme = createTheme({
             default: colors.canvasBackground,
         },
     },
+    typography: {
+        subtitle2: {
+            fontSize: "12px",
+            lineHeight: "inherit",
+            color: custom.colors.baseColor,
+        },
+    },
     components: {
         MuiSwitch: {
             styleOverrides: {
@@ -324,15 +331,17 @@ export const nuTheme = createTheme({
             styleOverrides: {
                 root: {
                     display: "flex",
-                    alignItems: "center",
+                    marginTop: "9px",
                     color: custom.colors.canvasBackground,
                     flexBasis: "20%",
                     maxWidth: "20em",
-                    verticalAlign: "sub",
-                    height: "35px",
                     fontSize: "0.75rem",
                     fontWeight: 700,
+                    overflowWrap: "anywhere",
                 },
+            },
+            defaultProps: {
+                focused: false,
             },
         },
         MuiFormHelperText: {

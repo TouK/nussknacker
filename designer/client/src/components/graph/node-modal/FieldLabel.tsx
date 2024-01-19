@@ -20,6 +20,7 @@ const Footer = styled("div")({
 
 export const StyledNodeTip = styled(NodeTip)`
     margin: 0 8px;
+    flex: 1;
     svg {
         width: 16px;
         height: 16px;

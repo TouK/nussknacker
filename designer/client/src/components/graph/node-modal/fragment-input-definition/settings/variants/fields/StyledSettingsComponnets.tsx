@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch, Typography, styled, FormLabel, css } from "@mui/material";
+import { Switch, styled, FormLabel, css } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { StyledNodeTip } from "../../../../FieldLabel";
 
@@ -13,16 +13,9 @@ export const SettingsWrapper = styled("div")`
 
 export const SettingLabelStyled = styled(FormLabel)(
     ({ theme }) => css`
-        font-family: Open Sans;
         color: ${theme.custom.colors.baseColor};
         font-size: 12px;
         font-weight: 400;
-        line-height: 16px;
-        letter-spacing: -0.01em;
-        text-align: left;
-        vertical-align: top;
-        margin-top: 9px;
-        display: flex;
         flex-basis: 30%;
     `,
 );
@@ -30,11 +23,10 @@ export const SettingLabelStyled = styled(FormLabel)(
 export const ListItemContainer = styled("div")`
     width: 100%;
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
 `;
 
 export const ListItemWrapper = styled("div")`
-    width: 70%;
     display: flex;
     justify-content: flex-start;
     max-height: 100px;
@@ -68,13 +60,9 @@ export const CustomSwitch = styled(Switch)`
     }
 `;
 
-export const StyledFormControlLabel = styled(Typography)`
-    font-family: Open Sans;
+export const StyledFormControlLabel = styled(FormLabel)`
     font-size: 12px;
     font-weight: 400;
-    line-height: 18px;
-    letter-spacing: 0.15000000596046448px;
-    text-align: left;
 `;
 
 export const fieldLabel = ({ label, required = false, hintText }: { label: string; required?: boolean; hintText?: string }) => (

@@ -107,7 +107,7 @@ describe("Fragment", () => {
             .find("label")
             .contains(/validation/i)
             .siblings()
-            .eq(0)
+            .find("label")
             .click();
         cy.get("[data-testid='settings:6']")
             .find("label")

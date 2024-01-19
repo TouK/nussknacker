@@ -1,6 +1,6 @@
 import React from "react";
 import { t } from "i18next";
-import { FormControl, FormControlLabel } from "@mui/material";
+import { Box, FormControl, FormControlLabel, Typography } from "@mui/material";
 import ValidationFields from "./ValidationFields";
 import {
     onChangeType,
@@ -33,42 +33,42 @@ export function ValidationsFields(props: Validation) {
         <>
             <FormControl>
                 <SettingLabelStyled required>{t("fragment.validation.validation", "Validation:")}</SettingLabelStyled>
-                <FormControlLabel
-                    control={
-                        <CustomSwitch
-                            disabled={readOnly}
-                            checked={validationEnabled}
-                            onChange={(event) => {
-                                if (event.currentTarget.checked) {
-                                    const defaultValueCompileTimeValidation: ValueCompileTimeValidation = {
-                                        validationExpression: {
-                                            language: ExpressionLang.SpEL,
-                                            expression: "true",
-                                        },
-                                        validationFailedMessage: null,
-                                    };
+                <Box className={"node-value"}>
+                    <FormControlLabel
+                        control={
+                            <CustomSwitch
+                                disabled={readOnly}
+                                checked={validationEnabled}
+                                onChange={(event) => {
+                                    if (event.currentTarget.checked) {
+                                        const defaultValueCompileTimeValidation: ValueCompileTimeValidation = {
+                                            validationExpression: {
+                                                language: ExpressionLang.SpEL,
+                                                expression: "true",
+                                            },
+                                            validationFailedMessage: null,
+                                        };
 
-                                    onChange(
-                                        `${path}.valueCompileTimeValidation`,
-                                        temporaryValueCompileTimeValidation || defaultValueCompileTimeValidation,
-                                    );
-                                } else {
-                                    handleTemporaryValueCompileTimeValidation(item.valueCompileTimeValidation);
-                                    onChange(`${path}.valueCompileTimeValidation`, null);
-                                }
-                            }}
-                        />
-                    }
-                    label=""
-                />
-                <div style={{ width: "100%", justifyContent: "flex-end", display: "flex" }}>
-                    <SettingLabelStyled style={{ flexBasis: "70%", minWidth: "70%" }}>
+                                        onChange(
+                                            `${path}.valueCompileTimeValidation`,
+                                            temporaryValueCompileTimeValidation || defaultValueCompileTimeValidation,
+                                        );
+                                    } else {
+                                        handleTemporaryValueCompileTimeValidation(item.valueCompileTimeValidation);
+                                        onChange(`${path}.valueCompileTimeValidation`, null);
+                                    }
+                                }}
+                            />
+                        }
+                        label=""
+                    />
+                    <Typography variant={"subtitle2"}>
                         {t(
                             "fragment.validation.validationWarning",
                             "When validation is enabled, only literal values and operations on them are allowed in the parameter's value (i.e. the value passed to the fragment when it is used). This is because Nussknacker has to be able to evaluate it at deployment time.",
                         )}
-                    </SettingLabelStyled>
-                </div>
+                    </Typography>
+                </Box>
             </FormControl>
             {validationEnabled && (
                 <ValidationFields
