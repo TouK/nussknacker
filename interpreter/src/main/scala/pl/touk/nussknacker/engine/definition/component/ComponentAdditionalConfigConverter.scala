@@ -49,7 +49,7 @@ object ComponentAdditionalConfigConverter {
           )
           .toOption
       ),
-      validators = Option.when(validators.nonEmpty)(validators),
+      validators = if (validators.nonEmpty) Some(validators) else None,
       label = None,
       hintText = paramAdditionalConfig.hintText
     )
