@@ -2,11 +2,10 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
-import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -49,7 +48,8 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
   private val modelDefinition = ModelDefinition(
-    ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+    ComponentDefinitionWithImplementation
+      .forList(components, ComponentsUiConfig.Empty, info => ComponentId(info.toString), Map.empty),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default
   )

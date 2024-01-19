@@ -22,30 +22,31 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
       )
     )
 
-  override def getAllForProcessingType(processingType: String): Map[ComponentId, ComponentAdditionalConfig] = {
-    if (processingType == TestProcessingTypes.Streaming) {
-      Map(
-        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
-          parameterConfigs = Map(
-            "paramStringEditor" -> ParameterAdditionalUIConfig(
-              initialValue = Some(
-                FixedExpressionValue(
-                  "'default-from-additional-ui-config-provider'",
-                  "default-from-additional-ui-config-provider"
-                )
-              ),
-              hintText = Some("hint-text-from-additional-ui-config-provider"),
-              valueEditor = None,
-              valueCompileTimeValidation = None
+  val componentAdditionalConfigMap: Map[ComponentId, ComponentAdditionalConfig] = Map(
+    ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+      parameterConfigs = Map(
+        "param" -> ParameterAdditionalUIConfig(
+          required = true,
+          initialValue = Some(
+            FixedExpressionValue(
+              "'default-from-additional-ui-config-provider'",
+              "default-from-additional-ui-config-provider"
             )
           ),
-          componentGroup = Some(componentGroupName)
+          hintText = Some("hint-text-from-additional-ui-config-provider"),
+          valueEditor = None,
+          valueCompileTimeValidation = None
         )
-      )
-    } else {
+      ),
+      componentGroup = Some(componentGroupName)
+    )
+  )
+
+  override def getAllForProcessingType(processingType: String): Map[ComponentId, ComponentAdditionalConfig] =
+    if (processingType == TestProcessingTypes.Streaming)
+      componentAdditionalConfigMap
+    else
       Map.empty
-    }
-  }
 
   override def getScenarioPropertiesUIConfigs(processingType: String): Map[String, ScenarioPropertyConfig] =
     if (processingType == TestProcessingTypes.Streaming)

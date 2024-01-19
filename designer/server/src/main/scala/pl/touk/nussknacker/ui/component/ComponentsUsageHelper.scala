@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData._
 import pl.touk.nussknacker.restmodel.component.{NodeId, NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -11,22 +11,22 @@ object ComponentsUsageHelper {
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def computeComponentsUsageCount(
-      componentIdProvider: ComponentIdProvider,
-      processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]]
+      processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]],
+      processingTypeAndComponentInfoToComponentId: (ProcessingType, ComponentInfo) => ComponentId,
   ): Map[ComponentId, Long] = {
-    computeComponentsUsage(componentIdProvider, processesDetails)
+    computeComponentsUsage(processesDetails, processingTypeAndComponentInfoToComponentId)
       .mapValuesNow(usages => usages.map { case (_, nodeIds) => nodeIds.size }.sum)
   }
 
   def computeComponentsUsage(
-      componentIdProvider: ComponentIdProvider,
-      processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]]
+      processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]],
+      processingTypeAndComponentInfoToComponentId: (ProcessingType, ComponentInfo) => ComponentId,
   ): Map[ComponentId, List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]] = {
     def flattenUsages(processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]]) = for {
       processDetails    <- processesDetails
       componentInfoNode <- processDetails.json.value.toList
       (componentInfo, nodeIds) = componentInfoNode
-      componentId              = componentIdProvider.createComponentId(processDetails.processingType, componentInfo)
+      componentId = processingTypeAndComponentInfoToComponentId(processDetails.processingType, componentInfo)
       nodeId <- nodeIds
     } yield ScenarioComponentsUsage[NodeId](componentId, componentInfo, processDetails, nodeId)
 

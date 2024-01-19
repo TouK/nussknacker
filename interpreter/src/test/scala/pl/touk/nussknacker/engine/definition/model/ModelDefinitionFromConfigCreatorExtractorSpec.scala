@@ -6,7 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
@@ -202,7 +202,9 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       TestCreator,
       category,
       ProcessObjectDependencies.withConfig(modelConfig),
-      ComponentsUiConfigParser.parse(modelConfig)
+      ComponentsUiConfigParser.parse(modelConfig),
+      info => ComponentId(info.toString),
+      Map.empty
     )
     ModelDefinitionWithClasses(modelDefinition)
   }
