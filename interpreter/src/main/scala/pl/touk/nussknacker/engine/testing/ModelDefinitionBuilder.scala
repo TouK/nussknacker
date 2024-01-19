@@ -66,9 +66,9 @@ final case class ModelDefinitionBuilder(
       name: String,
       returnType: Option[TypingResult],
       componentSpecificData: CustomComponentSpecificData,
-      componentId: Option[ComponentId] = None,
+      componentId: Option[ComponentId]
   ): ModelDefinitionBuilder =
-    withCustom(name, returnType, componentSpecificData, componentId, Seq.empty: _*)
+    withCustom(name, returnType, componentSpecificData, componentId, params = Seq.empty: _*)
 
   def withCustom(
       name: String,
