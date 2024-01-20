@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.definition.clazz
 
-import cats.data.Validated.Invalid
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, StateT}
 import cats.effect.IO
 import cats.implicits.catsSyntaxSemigroup
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericType, MethodTypeInfo, Parameter, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{
@@ -19,7 +20,7 @@ import java.lang.annotation.Annotation
 import java.lang.reflect._
 import java.util.Optional
 
-object ClassDefinitionExtractor {
+object ClassDefinitionExtractor extends LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -69,7 +70,7 @@ object ClassDefinitionExtractor {
     val filteredMethods = methods.filter(extractJavaVersionOfVarArgMethod(_).isEmpty)
 
     val methodNameAndInfoList = filteredMethods
-      .flatMap(extractMethod(_))
+      .flatMap(extractMethod(clazz, _))
 
     val staticMethodInfos =
       methodNameAndInfoList
@@ -151,10 +152,11 @@ object ClassDefinitionExtractor {
   }
 
   private def extractMethod(
+      clazz: Class[_],
       method: Method
   )(implicit settings: ClassExtractionSettings): List[(String, MethodDefinition)] =
     extractAnnotation(method, classOf[GenericType]) match {
-      case None             => extractRegularMethod(method)
+      case None             => extractRegularMethod(clazz, method)
       case Some(annotation) => extractGenericMethod(method, annotation)
     }
 
@@ -187,7 +189,7 @@ object ClassDefinitionExtractor {
 
     collectMethodNames(method).map(methodName =>
       methodName -> FunctionalMethodDefinition(
-        x => typeFunctionInstance.computeResultType(x),
+        (_, x) => typeFunctionInstance.computeResultType(x),
         methodTypeInfo,
         methodName,
         extractNussknackerDocs(method)
@@ -196,32 +198,78 @@ object ClassDefinitionExtractor {
   }
 
   private def extractRegularMethod(
+      clazz: Class[_],
       method: Method
-  )(implicit settings: ClassExtractionSettings): List[(String, StaticMethodDefinition)] =
-    collectMethodNames(method).map(methodName =>
-      methodName -> StaticMethodDefinition(
-        extractMethodTypeInfo(method),
-        methodName,
-        extractNussknackerDocs(method)
-      )
-    )
+  )(implicit settings: ClassExtractionSettings): List[(String, MethodDefinition)] = {
+    collectMethodNames(method).map { methodName =>
+      val reflectionBasedDefinition = extractMethodTypeInfo(method)
+      val methodDefinition = extractMemberMethodDefinition(clazz, method, methodName, reflectionBasedDefinition)
+      methodName -> methodDefinition
+    }
+  }
 
   private def extractPublicFields(
       clazz: Class[_],
       membersPredicate: VisibleMembersPredicate,
       staticMethodsAndFields: Boolean
-  )(implicit settings: ClassExtractionSettings): Map[String, StaticMethodDefinition] = {
+  )(implicit settings: ClassExtractionSettings): Map[String, MethodDefinition] = {
     val interestingFields = clazz.getFields.filter(membersPredicate.shouldBeVisible)
     val fields =
       if (staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
-      field.getName -> StaticMethodDefinition(
-        MethodTypeInfo(Nil, None, extractFieldReturnType(field)),
-        field.getName,
-        extractNussknackerDocs(field)
-      )
+      val reflectionBasedDefinition = MethodTypeInfo(Nil, None, extractFieldReturnType(field))
+      val methodDefinition = extractMemberMethodDefinition(clazz, field, field.getName, reflectionBasedDefinition)
+      field.getName -> methodDefinition
     }.toMap
+  }
+
+  private def extractMemberMethodDefinition(
+      clazz: Class[_],
+      member: Member with AccessibleObject,
+      memberName: String,
+      reflectionBasedDefinition: MethodTypeInfo
+  )(implicit settings: ClassExtractionSettings): MethodDefinition = {
+    settings
+      .typingFunction(clazz, member)
+      .map { typingFun =>
+        FunctionalMethodDefinition(
+          (invocationTarget, _) => {
+            Valid(invocationTarget.withoutValue match {
+              case single: SingleTypingResult =>
+                val returnedResultType = typingFun.resultType(single).valueOr { message =>
+                  logger.warn(
+                    s"ClassExtractionSettings defined typing function for class: ${clazz.getName}, member: ${member.getName} " +
+                      s"which returned error during result type computation: $message. " +
+                      s"Will be used fallback result type: ${reflectionBasedDefinition.result}"
+                  )
+                  reflectionBasedDefinition.result
+                }
+                if (returnedResultType.canBeSubclassOf(returnedResultType)) {
+                  returnedResultType
+                } else {
+                  logger.warn(
+                    s"ClassExtractionSettings defined typing function for class: ${clazz.getName}, member: ${member.getName} " +
+                      s"which returned result type $returnedResultType that can't be a subclass of type ${reflectionBasedDefinition.result} " +
+                      s"computed using reflection. Will be used type computed using reflection"
+                  )
+                  reflectionBasedDefinition.result
+                }
+              case _ => reflectionBasedDefinition.result
+            })
+          },
+          reflectionBasedDefinition,
+          memberName,
+          extractNussknackerDocs(member)
+        )
+      }
+      .getOrElse {
+        StaticMethodDefinition(
+          reflectionBasedDefinition,
+          memberName,
+          extractNussknackerDocs(member)
+        )
+      }
   }
 
   private def extractNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {

@@ -16,8 +16,6 @@ object AvroSchemaTypeDefinitionExtractor {
 
   val DefaultPossibleTypes: Set[TypedClass] = Set(Typed.typedClass[GenericRecord])
 
-  val ExtendedPossibleTypes: Set[TypedClass] = DefaultPossibleTypes ++ Set(Typed.typedClass[java.util.Map[String, Any]])
-
   val dictIdProperty = "nkDictId"
 
   def typeDefinition(schema: Schema): TypingResult = typeDefinition(schema, DefaultPossibleTypes)

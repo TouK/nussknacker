@@ -11321,12 +11321,14 @@
       "get": [
         {
           "name": "get",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Integer"}}
-            ],
-            "result": {"type": "Unknown"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "indexOf": [
@@ -11434,24 +11436,28 @@
       "get": [
         {
           "name": "get",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"type": "Unknown"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "arg0", "refClazz": {"type": "Unknown"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "getOrDefault": [
         {
           "name": "getOrDefault",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}},
-              {"name": "arg1", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"type": "Unknown"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "arg0", "refClazz": {"type": "Unknown"}},
+                {"name": "arg1", "refClazz": {"type": "Unknown"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "isEmpty": [
@@ -11466,20 +11472,22 @@
       "keySet": [
         {
           "name": "keySet",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "Unknown",
-                  "params": [],
-                  "refClazzName": "java.lang.Object",
-                  "type": "Unknown"
-                }
-              ],
-              "refClazzName": "java.util.Set"
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Set"
+              }
             }
-          }
+          ]
         }
       ],
       "size": [
@@ -11503,20 +11511,22 @@
       "values": [
         {
           "name": "values",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "Unknown",
-                  "params": [],
-                  "refClazzName": "java.lang.Object",
-                  "type": "Unknown"
-                }
-              ],
-              "refClazzName": "java.util.Collection"
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Collection"
+              }
             }
-          }
+          ]
         }
       ]
     },
@@ -12763,21 +12773,21 @@
                     "type": "TypedUnion",
                     "union": [
                       {
-                        "display": "String{String}",
+                        "display": "String(String)",
                         "params": [],
                         "refClazzName": "java.lang.String",
                         "type": "TypedObjectWithValue",
                         "value": "String"
                       },
                       {
-                        "display": "String{Double}",
+                        "display": "String(Double)",
                         "params": [],
                         "refClazzName": "java.lang.String",
                         "type": "TypedObjectWithValue",
                         "value": "Double"
                       },
                       {
-                        "display": "String{Int}",
+                        "display": "String(Int)",
                         "params": [],
                         "refClazzName": "java.lang.String",
                         "type": "TypedObjectWithValue",
