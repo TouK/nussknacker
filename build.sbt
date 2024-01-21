@@ -1660,10 +1660,9 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
     libraryDependencies ++= Seq(
       "org.apache.flink"          % "flink-streaming-java" % flinkV     % Provided,
       "org.scalatest"            %% "scalatest"            % scalaTestV % "it,test",
-      "com.clearspring.analytics" % "stream"               % "2.9.8" excludeAll (
-        // It is used only in QDigest which we don't use, while it's >20MB in size...
-        ExclusionRule("it.unimi.dsi", "fastutil"),
-      )
+      "com.clearspring.analytics" % "stream"               % "2.9.8"
+      // It is used only in QDigest which we don't use, while it's >20MB in size...
+        exclude ("it.unimi.dsi", "fastutil"),
     ),
   )
   .dependsOn(
