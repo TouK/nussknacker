@@ -47,9 +47,9 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidation
   SaveNotAllowed
 }
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  GlobalError,
   NodeValidationError,
   NodeValidationErrorType,
+  UIGlobalError,
   ValidationErrors,
   ValidationResult,
   ValidationWarnings
@@ -234,7 +234,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validateWithConfiguredProperties(process)
 
     result.errors.globalErrors shouldBe List(
-      GlobalError(
+      UIGlobalError(
         NodeValidationError(
           "DuplicatedNodeIds",
           "Two nodes cannot have same id",
@@ -265,7 +265,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validateWithConfiguredProperties(process)
 
     result.errors.globalErrors shouldBe List(
-      GlobalError(
+      UIGlobalError(
         NodeValidationError(
           "DuplicatedNodeIds",
           "Two nodes cannot have same id",
@@ -1211,7 +1211,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val displayable = ProcessConverter.toDisplayable(fragment, TestProcessingTypes.Streaming, Category1)
     val result      = TestFactory.flinkProcessValidator.validate(displayable)
     result.errors.globalErrors shouldBe List(
-      GlobalError(
+      UIGlobalError(
         PrettyValidationErrors.formatErrorMessage(
           DuplicateFragmentOutputNamesInFragment(`duplicatedOutputName`, Set("outNode1", "outNode2"))
         ),

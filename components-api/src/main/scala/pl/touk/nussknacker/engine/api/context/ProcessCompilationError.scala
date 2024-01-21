@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
-// TODO: refactor this reliance on nodeIds.empty to determine if error is a node error or global
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
 }
@@ -39,7 +38,7 @@ object ProcessCompilationError {
 
   }
 
-  sealed trait GlobalError
+  sealed trait GlobalError { self: ProcessCompilationError => }
 
   // All errors which we want to be seen in process as properties errors should extend this trait
   sealed trait ScenarioPropertiesError {
@@ -67,7 +66,7 @@ object ProcessCompilationError {
 
   final case class NonUniqueEdge(nodeId: String, target: String) extends ProcessCompilationError with InASingleNode
 
-  final case class LooseNode(nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class LooseNode(nodeId: String) extends ProcessCompilationError with InASingleNode with GlobalError
 
   final case class DisabledNode(nodeId: String) extends ProcessCompilationError with InASingleNode
 
