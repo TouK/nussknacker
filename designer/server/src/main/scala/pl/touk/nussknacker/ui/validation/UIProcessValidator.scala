@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  GlobalError,
   NodeTypingData,
+  UIGlobalError,
   ValidationErrors,
   ValidationResult
 }
@@ -176,6 +176,7 @@ class UIProcessValidator(
       .filterNot(n => displayableProcess.edges.exists(_.to == n.id))
       .map(n => n.id -> List(PrettyValidationErrors.formatErrorMessage(LooseNode(n.id))))
       .toMap
+    // TODO: map errors to validation results consistently to respect global error trait
     ValidationResult.errors(looseNodes, List(), List())
   }
 
@@ -189,13 +190,13 @@ class UIProcessValidator(
       ValidationResult.errors(
         Map(),
         List(),
-        List(GlobalError(PrettyValidationErrors.formatErrorMessage(DuplicatedNodeIds(duplicates.toSet)), duplicates))
+        List(UIGlobalError(PrettyValidationErrors.formatErrorMessage(DuplicatedNodeIds(duplicates.toSet)), duplicates))
       )
     }
   }
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
-    val globalErrors     = errors.filter(_.isInstanceOf[ProcessCompilationError.GlobalError])
+    val globalErrors     = errors.filter(_.isInstanceOf[GlobalError])
     val propertiesErrors = errors.filter(_.isInstanceOf[ScenarioPropertiesError])
     val nodeErrors = errors.filter { e =>
       !globalErrors.contains(e) && !propertiesErrors.contains(e)
@@ -207,7 +208,8 @@ class UIProcessValidator(
         nodeId <- error.nodeIds
       } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
       processPropertiesErrors = propertiesErrors.map(e => PrettyValidationErrors.formatErrorMessage(e)),
-      globalErrors = globalErrors.map(e => GlobalError(PrettyValidationErrors.formatErrorMessage(e), e.nodeIds.toList))
+      globalErrors =
+        globalErrors.map(e => UIGlobalError(PrettyValidationErrors.formatErrorMessage(e), e.nodeIds.toList))
     )
   }
 

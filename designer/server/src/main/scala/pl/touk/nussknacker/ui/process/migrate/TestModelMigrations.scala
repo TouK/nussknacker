@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  GlobalError,
   NodeValidationError,
+  UIGlobalError,
   ValidationErrors,
   ValidationResult,
   ValidationWarnings
@@ -121,7 +121,7 @@ class TestModelMigrations(
         .filterNot(_._2.isEmpty)
     }
 
-    def diffOnGlobalErrors(before: List[GlobalError], after: List[GlobalError]): List[GlobalError] = {
+    def diffOnGlobalErrors(before: List[UIGlobalError], after: List[UIGlobalError]): List[UIGlobalError] = {
       val errorsBefore = before.map(globalError => errorToKey(globalError.error)).toSet
       after.filterNot(globalError => errorsBefore.contains(errorToKey(globalError.error)))
     }

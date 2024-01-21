@@ -83,13 +83,12 @@ object ValidationResults {
   @JsonCodec final case class ValidationErrors(
       invalidNodes: Map[String, List[NodeValidationError]],
       processPropertiesErrors: List[NodeValidationError],
-      globalErrors: List[GlobalError]
+      globalErrors: List[UIGlobalError]
   ) {
     def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
   }
 
-  // TODO local: rename to UIGlobalError? To not confuse with other GlobalError?
-  @JsonCodec final case class GlobalError(error: NodeValidationError, nodeIds: List[String])
+  @JsonCodec final case class UIGlobalError(error: NodeValidationError, nodeIds: List[String])
 
   @JsonCodec final case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
 
@@ -113,13 +112,13 @@ object ValidationResults {
 
     val success: ValidationResult = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
 
-    def globalErrors(globalErrors: List[GlobalError]): ValidationResult =
+    def globalErrors(globalErrors: List[UIGlobalError]): ValidationResult =
       ValidationResult.errors(Map.empty, List.empty, globalErrors)
 
     def errors(
         invalidNodes: Map[String, List[NodeValidationError]],
         processPropertiesErrors: List[NodeValidationError],
-        globalErrors: List[GlobalError]
+        globalErrors: List[UIGlobalError]
     ): ValidationResult = {
       ValidationResult(
         ValidationErrors(
