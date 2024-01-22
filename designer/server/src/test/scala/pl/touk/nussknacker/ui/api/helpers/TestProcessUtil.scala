@@ -10,13 +10,12 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.scenariodetails._
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.process.{ScenarioWithDetailsConversions, repository}
 
 import java.time.Instant
 import java.util.UUID
@@ -87,15 +86,22 @@ object TestProcessUtil {
       isFragment = isFragment
     )
 
-  def wrapWithDetails(
+  def wrapWithDetailsForMigration(
       displayable: DisplayableProcess,
       name: ProcessName = ProcessTestData.sampleProcessName,
       isFragment: Boolean = false,
       validationResult: ValidationResult = ValidationResult.success
-  ): ScenarioWithDetails = {
-    ScenarioWithDetailsConversions.fromEntity(
-      toScenarioWithDetailsEntity(name, isFragment = isFragment)
-        .copy(json = ValidatedDisplayableProcess(displayable, validationResult))
+  ): ScenarioWithDetailsForMigrations = {
+    ScenarioWithDetailsForMigrations(
+      name = name,
+      isArchived = false,
+      isFragment = isFragment,
+      processingType = Streaming,
+      processCategory = TestCategories.Category1,
+      scenarioGraph = Some(displayable),
+      validationResult = Some(validationResult),
+      history = None,
+      modelVersion = None
     )
   }
 

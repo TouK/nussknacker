@@ -41,7 +41,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override val description = "testMigration2"
 
-    override def migrateProcess(canonicalProcess: CanonicalProcess): CanonicalProcess =
+    override def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess =
       canonicalProcess.copy(metaData =
         canonicalProcess.metaData.withTypeSpecificData(typeSpecificData = StreamMetaData(Some(11)))
       )

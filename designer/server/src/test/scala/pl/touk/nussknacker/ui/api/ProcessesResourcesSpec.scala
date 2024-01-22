@@ -673,7 +673,7 @@ class ProcessesResourcesSpec
     getProcess(processName) ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.name shouldBe ProcessTestData.sampleScenario.name
-      processDetails.historyUnsafe.length shouldBe 3
+      processDetails.history.value.length shouldBe 3
     }
   }
 
@@ -718,10 +718,10 @@ class ProcessesResourcesSpec
   test("perform idempotent process save") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess)
     Get(s"/processes/${ProcessTestData.sampleScenario.name}") ~> routeWithAllPermissions ~> check {
-      val processHistoryBeforeDuplicatedWrite = responseAs[ScenarioWithDetails].historyUnsafe
+      val processHistoryBeforeDuplicatedWrite = responseAs[ScenarioWithDetails].history.value
       updateCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess)
       Get(s"/processes/${ProcessTestData.sampleScenario.name}") ~> routeWithAllPermissions ~> check {
-        val processHistoryAfterDuplicatedWrite = responseAs[ScenarioWithDetails].historyUnsafe
+        val processHistoryAfterDuplicatedWrite = responseAs[ScenarioWithDetails].history.value
         processHistoryAfterDuplicatedWrite shouldBe processHistoryBeforeDuplicatedWrite
       }
     }

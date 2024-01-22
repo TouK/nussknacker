@@ -5,6 +5,7 @@ import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}

@@ -10,7 +10,7 @@ import io.circe.parser
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -73,7 +73,7 @@ class StandardRemoteEnvironmentSpec
   }
 
   private def statefulEnvironment(
-      expectedProcessDetails: ScenarioWithDetails,
+      expectedProcessDetails: ScenarioWithDetailsForMigrations,
       expectedProcessCategory: String,
       initialRemoteProcessList: List[ProcessName],
       onMigrate: Future[UpdateProcessCommand] => Unit
@@ -136,7 +136,7 @@ class StandardRemoteEnvironmentSpec
           triedToAddProcess = true
           addedFragment = Some(isFragment)
 
-          Marshal(ProcessTestData.validProcessDetails).to[RequestEntity].map { entity =>
+          Marshal(ProcessTestData.validProcessDetailsForMigrations).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
 
@@ -166,11 +166,11 @@ class StandardRemoteEnvironmentSpec
   }
 
   private def environmentForTestMigration(
-      processes: List[ScenarioWithDetails],
-      fragments: List[ScenarioWithDetails]
+      processes: List[ScenarioWithDetailsForMigrations],
+      fragments: List[ScenarioWithDetailsForMigrations]
   ) = new MockRemoteEnvironment {
 
-    private def allProcesses: List[ScenarioWithDetails] = processes ++ fragments
+    private def allProcesses: List[ScenarioWithDetailsForMigrations] = processes ++ fragments
 
     override protected def request(
         uri: Uri,
@@ -243,7 +243,7 @@ class StandardRemoteEnvironmentSpec
       remoteEnvironment.migrate(
         ProcessTestData.validDisplayableProcess,
         ProcessTestData.sampleProcessName,
-        ProcessTestData.validProcessDetails.processCategory,
+        ProcessTestData.validProcessDetailsForMigrations.processCategory,
         isFragment = false
       )
     ) { result =>
@@ -261,7 +261,7 @@ class StandardRemoteEnvironmentSpec
   it should "not migrate existing scenario when archived on target environment" in {
 
     var migrated: Option[Future[UpdateProcessCommand]] = None
-    val validArchivedProcess                           = ProcessTestData.archivedValidProcessDetails
+    val validArchivedProcess                           = ProcessTestData.archivedValidProcessDetailsForMigrations
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       validArchivedProcess,
       validArchivedProcess.processCategory,
@@ -272,7 +272,7 @@ class StandardRemoteEnvironmentSpec
       remoteEnvironment.migrate(
         ProcessTestData.validDisplayableProcess,
         sampleProcessName,
-        ProcessTestData.validProcessDetails.processCategory,
+        ProcessTestData.validProcessDetailsForMigrations.processCategory,
         isFragment = false
       )
     ) { result =>
@@ -350,8 +350,8 @@ class StandardRemoteEnvironmentSpec
   it should "migrate valid existing scenario" in {
     var migrated: Option[Future[UpdateProcessCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
-      ProcessTestData.validProcessDetails,
-      ProcessTestData.validProcessDetails.processCategory,
+      ProcessTestData.validProcessDetailsForMigrations,
+      ProcessTestData.validProcessDetailsForMigrations.processCategory,
       sampleProcessName :: Nil,
       migrationFuture => migrated = Some(migrationFuture)
     )
@@ -359,9 +359,9 @@ class StandardRemoteEnvironmentSpec
     whenReady(
       remoteEnvironment.migrate(
         ProcessTestData.validDisplayableProcess,
-        ProcessTestData.validProcessDetails.name,
-        ProcessTestData.validProcessDetails.processCategory,
-        ProcessTestData.validProcessDetails.isFragment
+        ProcessTestData.validProcessDetailsForMigrations.name,
+        ProcessTestData.validProcessDetailsForMigrations.processCategory,
+        ProcessTestData.validProcessDetailsForMigrations.isFragment
       )
     ) { result =>
       result shouldBe Symbol("right")
@@ -380,8 +380,8 @@ class StandardRemoteEnvironmentSpec
   it should "migrate valid non-existing scenario" in {
     var migrated: Option[Future[UpdateProcessCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
-      ProcessTestData.validProcessDetails,
-      ProcessTestData.validProcessDetails.processCategory,
+      ProcessTestData.validProcessDetailsForMigrations,
+      ProcessTestData.validProcessDetailsForMigrations.processCategory,
       Nil,
       migrationFuture => migrated = Some(migrationFuture)
     )
@@ -389,9 +389,9 @@ class StandardRemoteEnvironmentSpec
     whenReady(
       remoteEnvironment.migrate(
         ProcessTestData.validDisplayableProcess,
-        ProcessTestData.validProcessDetails.name,
-        ProcessTestData.validProcessDetails.processCategory,
-        ProcessTestData.validProcessDetails.isFragment
+        ProcessTestData.validProcessDetailsForMigrations.name,
+        ProcessTestData.validProcessDetailsForMigrations.processCategory,
+        ProcessTestData.validProcessDetailsForMigrations.isFragment
       )
     ) { result =>
       result shouldBe Symbol("right")
@@ -411,7 +411,7 @@ class StandardRemoteEnvironmentSpec
     val category                                       = TestCategories.Category1
     var migrated: Option[Future[UpdateProcessCommand]] = None
     val fragment                                       = ProcessConverter.toDisplayable(ProcessTestData.sampleFragment)
-    val validatedFragmentDetails                       = TestProcessUtil.wrapWithDetails(fragment, sampleFragmentName)
+    val validatedFragmentDetails = TestProcessUtil.wrapWithDetailsForMigration(fragment, sampleFragmentName)
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       validatedFragmentDetails,
       expectedProcessCategory = category,
@@ -434,8 +434,8 @@ class StandardRemoteEnvironmentSpec
 
   it should "test migration" in {
     val remoteEnvironment = environmentForTestMigration(
-      processes = ProcessTestData.validProcessDetails :: Nil,
-      fragments = TestProcessUtil.wrapWithDetails(
+      processes = ProcessTestData.validProcessDetailsForMigrations :: Nil,
+      fragments = TestProcessUtil.wrapWithDetailsForMigration(
         ProcessConverter.toDisplayable(ProcessTestData.sampleFragment),
         sampleFragment.name
       ) :: Nil
@@ -451,7 +451,7 @@ class StandardRemoteEnvironmentSpec
     migrationResult should have size 2
     migrationResult.map(
       _.processName
-    ) should contain only (ProcessTestData.validProcessDetails.name, ProcessTestData.sampleFragment.name)
+    ) should contain only (ProcessTestData.validProcessDetailsForMigrations.name, ProcessTestData.sampleFragment.name)
   }
 
 }

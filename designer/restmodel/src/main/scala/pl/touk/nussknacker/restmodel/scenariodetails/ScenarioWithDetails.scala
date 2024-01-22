@@ -44,8 +44,6 @@ final case class ScenarioWithDetails(
   def withValidationResult(validationResult: ValidationResult): ScenarioWithDetails =
     copy(validationResult = Some(validationResult))
 
-  def historyUnsafe: List[ScenarioVersion] = history.getOrElse(throw new IllegalStateException("Missing history"))
-
   def scenarioGraphUnsafe: DisplayableProcess =
     scenarioGraph.getOrElse(throw new IllegalStateException("Missing scenario graph and validation result"))
 

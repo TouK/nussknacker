@@ -31,7 +31,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should perform test migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(1, 2))
-    val process       = wrapWithDetails(validDisplayableProcess)
+    val process       = wrapWithDetailsForMigration(validDisplayableProcess)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -40,7 +40,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should perform test migration on multiple source scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(8))
-    val process       = wrapWithDetails(multipleSourcesValidProcess)
+    val process       = wrapWithDetailsForMigration(multipleSourcesValidProcess)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -49,7 +49,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should perform migration that should fail on new errors") {
     val testMigration = newTestModelMigrations(new TestMigrations(6))
-    val process       = wrapWithDetails(validDisplayableProcess)
+    val process       = wrapWithDetailsForMigration(validDisplayableProcess)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -58,7 +58,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should detect failed migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 3))
-    val process       = wrapWithDetails(validDisplayableProcess)
+    val process       = wrapWithDetailsForMigration(validDisplayableProcess)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -67,7 +67,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should detect failed migration on multiple sources scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(9))
-    val process       = wrapWithDetails(multipleSourcesValidProcess)
+    val process       = wrapWithDetailsForMigration(multipleSourcesValidProcess)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -79,7 +79,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should ignore failed migration when it may fail") {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
-    val process       = wrapWithDetails(validDisplayableProcess)
+    val process       = wrapWithDetailsForMigration(validDisplayableProcess)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -100,7 +100,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
       )
 
     val validationResult = flinkProcessValidator.validate(invalidProcess, sampleProcessName, isFragment = false)
-    val process          = wrapWithDetails(invalidProcess, validationResult = validationResult)
+    val process          = wrapWithDetailsForMigration(invalidProcess, validationResult = validationResult)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -120,8 +120,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
       )
 
     val results = testMigration.testMigrations(
-      List(wrapWithDetails(process)),
-      List(wrapWithDetails(fragment)),
+      List(wrapWithDetailsForMigration(process)),
+      List(wrapWithDetailsForMigration(fragment)),
       batchingExecutionContext
     )
 
@@ -146,8 +146,11 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
       )
 
     val results = testMigration.testMigrations(
-      List(wrapWithDetails(process)),
-      List(wrapWithDetails(fragment, sampleFragmentOneOut.name, isFragment = true).copy(modelVersion = Some(10))),
+      List(wrapWithDetailsForMigration(process)),
+      List(
+        wrapWithDetailsForMigration(fragment, sampleFragmentOneOut.name, isFragment = true)
+          .copy(modelVersion = Some(10))
+      ),
       batchingExecutionContext
     )
 

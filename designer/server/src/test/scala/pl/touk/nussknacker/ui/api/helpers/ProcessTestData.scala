@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -133,11 +133,11 @@ object ProcessTestData {
 
   val validDisplayableProcess: DisplayableProcess = ProcessConverter.toDisplayable(validProcess)
 
-  val validProcessDetails: ScenarioWithDetails =
-    TestProcessUtil.wrapWithDetails(validDisplayableProcess)
+  val validProcessDetailsForMigrations: ScenarioWithDetailsForMigrations =
+    TestProcessUtil.wrapWithDetailsForMigration(validDisplayableProcess)
 
-  val archivedValidProcessDetails: ScenarioWithDetails =
-    TestProcessUtil.wrapWithDetails(validDisplayableProcess).copy(isArchived = true)
+  val archivedValidProcessDetailsForMigrations: ScenarioWithDetailsForMigrations =
+    TestProcessUtil.wrapWithDetailsForMigration(validDisplayableProcess).copy(isArchived = true)
 
   // TODO: merge with this below
   val sampleScenario: CanonicalProcess = {

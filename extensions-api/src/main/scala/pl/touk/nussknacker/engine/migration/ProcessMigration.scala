@@ -10,7 +10,7 @@ trait ProcessMigration {
 
   def description: String
 
-  def migrateProcess(canonicalProcess: CanonicalProcess): CanonicalProcess
+  def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess
 }
 
 object ProcessMigrations {
@@ -45,7 +45,7 @@ trait NodeMigration extends ProcessMigration {
 
   def migrateNode(metaData: MetaData): PartialFunction[NodeData, NodeData]
 
-  override def migrateProcess(canonicalProcess: CanonicalProcess): CanonicalProcess = {
+  override def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess = {
     val rewriter = new ProcessNodesRewriter {
       override protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
         migrateNode(metaData).lift(data).map(_.asInstanceOf[T])

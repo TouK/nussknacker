@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -28,7 +28,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
 
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteEnvironmentResourcesSpec
@@ -212,7 +211,7 @@ class RemoteEnvironmentResourcesSpec
     ): Future[List[ScenarioVersion]] = Future.successful(List())
 
     override def testMigration(
-        processToInclude: ScenarioWithDetails => Boolean,
+        processToInclude: ScenarioWithDetailsForMigrations => Boolean,
         batchingExecutionContext: ExecutionContext
     )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))

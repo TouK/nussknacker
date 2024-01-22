@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{MigrationComment, ScenarioWithDetailsEntity}
@@ -26,11 +27,28 @@ class ProcessModelMigrator(migrations: ProcessMigrations) {
       processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
       skipEmptyMigrations: Boolean
   ): Option[MigrationResult] = {
-    val migrationsToApply = findMigrationsToApply(migrations, processDetails.modelVersion)
+    migrateProcess(
+      processDetails.name,
+      processDetails.json,
+      processDetails.modelVersion,
+      processDetails.processCategory,
+      skipEmptyMigrations
+    )
+  }
+
+  def migrateProcess(
+      scenarioName: ProcessName,
+      scenarioGraph: DisplayableProcess,
+      modelVersion: Option[Int],
+      category: String,
+      skipEmptyMigrations: Boolean
+  ): Option[MigrationResult] = {
+    val migrationsToApply = findMigrationsToApply(migrations, modelVersion)
     if (migrationsToApply.nonEmpty || !skipEmptyMigrations) {
       Some(
         migrateWithMigrations(
-          ProcessConverter.fromDisplayable(processDetails.json, processDetails.name),
+          ProcessConverter.fromDisplayable(scenarioGraph, scenarioName),
+          category,
           migrationsToApply
         )
       )
@@ -53,11 +71,12 @@ class ProcessModelMigrator(migrations: ProcessMigrations) {
 
   private def migrateWithMigrations(
       process: CanonicalProcess,
+      category: String,
       migrationsToApply: List[ProcessMigration]
   ): MigrationResult = {
     val (resultProcess, migrationsApplied) = migrationsToApply.foldLeft((process, Nil: List[ProcessMigration])) {
       case ((processToConvert, migrationsAppliedAcc), migration) =>
-        val migrated = migration.migrateProcess(processToConvert)
+        val migrated = migration.migrateProcess(processToConvert, category)
         val migrationsApplied =
           if (migrated != processToConvert) migration :: migrationsAppliedAcc else migrationsAppliedAcc
         (migrated, migrationsApplied)

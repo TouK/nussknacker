@@ -5,14 +5,13 @@ import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   ValidationErrors,
   ValidationResult,
   ValidationWarnings
 }
-import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -29,8 +28,8 @@ class TestModelMigrations(
 ) extends LazyLogging {
 
   def testMigrations(
-      processes: List[ScenarioWithDetails],
-      fragments: List[ScenarioWithDetails],
+      processes: List[ScenarioWithDetailsForMigrations],
+      fragments: List[ScenarioWithDetailsForMigrations],
       batchingExecutionContext: ExecutionContext
   )(implicit user: LoggedUser): List[TestMigrationResult] = {
     logger.debug(
@@ -58,22 +57,26 @@ class TestModelMigrations(
   }
 
   private def migrateProcess(
-      process: ScenarioWithDetails
+      scenarioWithDetails: ScenarioWithDetailsForMigrations
   )(implicit user: LoggedUser): Option[MigratedProcessDetails] = {
     for {
-      migrator <- migrators.forType(process.processingType)
+      migrator <- migrators.forType(scenarioWithDetails.processingType)
+
       MigrationResult(newProcess, _) <- migrator.migrateProcess(
-        process.toEntityWithScenarioGraphUnsafe,
+        scenarioWithDetails.name,
+        scenarioWithDetails.scenarioGraphUnsafe,
+        scenarioWithDetails.modelVersion,
+        scenarioWithDetails.processCategory,
         skipEmptyMigrations = false
       )
       displayable = ProcessConverter.toDisplayable(newProcess)
     } yield {
       MigratedProcessDetails(
-        process.name,
-        process.processingType,
-        process.isFragment,
+        scenarioWithDetails.name,
+        scenarioWithDetails.processingType,
+        scenarioWithDetails.isFragment,
         displayable,
-        process.validationResultUnsafe
+        scenarioWithDetails.validationResultUnsafe
       )
     }
   }

@@ -15,7 +15,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -54,7 +54,7 @@ trait RemoteEnvironment {
 
   // TODO This method is used by an external project. We should move it to some api module
   def testMigration(
-      processToInclude: ScenarioWithDetails => Boolean = _ => true,
+      processToInclude: ScenarioWithDetailsForMigrations => Boolean = _ => true,
       batchingExecutionContext: ExecutionContext
   )(
       implicit ec: ExecutionContext,
@@ -148,7 +148,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   implicit def materializer: Materializer
 
   override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ScenarioVersion]] =
-    invokeJson[ScenarioWithDetails](HttpMethods.GET, List("processes", processName.value)).map { result =>
+    invokeJson[ScenarioWithDetailsForMigrations](HttpMethods.GET, List("processes", processName.value)).map { result =>
       result.fold(_ => List(), _.historyUnsafe)
     }
 
@@ -234,7 +234,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   // We need to be cautious when choosing maxParallelism of batchingExecutionContext as validation may call external systems and we don't want to overwhelm them with requests
   override def testMigration(
-      processToInclude: ScenarioWithDetails => Boolean = _ => true,
+      processToInclude: ScenarioWithDetailsForMigrations => Boolean = _ => true,
       batchingExecutionContext: ExecutionContext
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
     (for {
@@ -247,9 +247,9 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchGroupByGroup(
-      basicProcesses: List[ScenarioWithDetails],
+      basicProcesses: List[ScenarioWithDetailsForMigrations],
       batchingExecutionContext: ExecutionContext
-  )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetails]] = {
+  )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetailsForMigrations]] = {
     val groupedBasicProcesses = basicProcesses
       .map(_.name)
       .grouped(config.batchSize)
@@ -271,14 +271,18 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def fetchProcesses(
       implicit ec: ExecutionContext
-  ): Future[Either[NuDesignerError, List[ScenarioWithDetails]]] = {
-    invokeJson[List[ScenarioWithDetails]](HttpMethods.GET, List("processes"), Query(("isArchived", "false")))
+  ): Future[Either[NuDesignerError, List[ScenarioWithDetailsForMigrations]]] = {
+    invokeJson[List[ScenarioWithDetailsForMigrations]](
+      HttpMethods.GET,
+      List("processes"),
+      Query(("isArchived", "false"))
+    )
   }
 
   private def fetchProcessVersion(name: ProcessName, remoteProcessVersion: Option[VersionId])(
       implicit ec: ExecutionContext
-  ): Future[Either[NuDesignerError, ScenarioWithDetails]] = {
-    invokeJson[ScenarioWithDetails](
+  ): Future[Either[NuDesignerError, ScenarioWithDetailsForMigrations]] = {
+    invokeJson[ScenarioWithDetailsForMigrations](
       HttpMethods.GET,
       List("processes", name.value) ++ remoteProcessVersion.map(_.value.toString).toList,
       Query()
@@ -287,12 +291,12 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def fetchProcessDetails(
       name: ProcessName
-  )(implicit ec: ExecutionContext): FutureE[Either[NuDesignerError, ScenarioWithDetails]] = {
-    EitherT(invokeJson[ScenarioWithDetails](HttpMethods.GET, List("processes", name.value)).map(_.asRight))
+  )(implicit ec: ExecutionContext): FutureE[Either[NuDesignerError, ScenarioWithDetailsForMigrations]] = {
+    EitherT(invokeJson[ScenarioWithDetailsForMigrations](HttpMethods.GET, List("processes", name.value)).map(_.asRight))
   }
 
   private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
-    invokeJson[List[ScenarioWithDetails]](
+    invokeJson[List[ScenarioWithDetailsForMigrations]](
       HttpMethods.GET,
       "processesDetails" :: Nil,
       Query(
