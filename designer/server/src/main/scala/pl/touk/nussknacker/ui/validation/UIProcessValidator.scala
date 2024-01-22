@@ -94,23 +94,19 @@ class UIProcessValidator(
       case Invalid(fragmentResolutionErrors) => formatErrors(fragmentResolutionErrors)
       case Valid(scenario) =>
         val validationResult = validateAndFormatResult(scenario)
-
         val containsDisabledNodes =
           canonical.withoutDisabledNodes.collectAllNodes.size != canonical.collectAllNodes.size
-        if (containsDisabledNodes) {
 
+        if (containsDisabledNodes) {
           val resolvedScenarioWithoutDisabledNodes =
             fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType)
-
           resolvedScenarioWithoutDisabledNodes match {
-            case Invalid(e)                          => formatErrors(e)
+            case Invalid(fragmentResolutionErrors)   => formatErrors(fragmentResolutionErrors)
             case Valid(scenarioWithoutDisabledNodes) =>
               // FIXME: Validation errors for fragment nodes are not properly handled by FE
               // We add typing data from disabled nodes to have typing and suggestions for expressions in disabled nodes
               val resultWithoutDisabledNodes = validateAndFormatResult(scenarioWithoutDisabledNodes)
-              resultWithoutDisabledNodes.copy(nodeResults =
-                resultWithoutDisabledNodes.nodeResults ++ validationResult.nodeResults
-              )
+              resultWithoutDisabledNodes.copy(nodeResults = validationResult.nodeResults)
           }
         } else {
           validationResult
