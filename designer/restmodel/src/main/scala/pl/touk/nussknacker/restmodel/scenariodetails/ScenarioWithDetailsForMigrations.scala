@@ -8,16 +8,16 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
 // It is a minimal set of information used by migration mechanism
 @JsonCodec final case class ScenarioWithDetailsForMigrations(
-    name: ProcessName,
-    isArchived: Boolean,
-    isFragment: Boolean,
-    processingType: ProcessingType,
-    processCategory: String,
-    scenarioGraph: Option[DisplayableProcess],
-    validationResult: Option[ValidationResult],
-    history: Option[List[ScenarioVersion]],
-    modelVersion: Option[Int],
-) {
+    override val name: ProcessName,
+    override val isArchived: Boolean,
+    override val isFragment: Boolean,
+    override val processingType: ProcessingType,
+    override val processCategory: String,
+    override val scenarioGraph: Option[DisplayableProcess],
+    override val validationResult: Option[ValidationResult],
+    override val history: Option[List[ScenarioVersion]],
+    override val modelVersion: Option[Int],
+) extends BaseScenarioWithDetailsForMigrations {
 
   def historyUnsafe: List[ScenarioVersion] = history.getOrElse(throw new IllegalStateException("Missing history"))
 
@@ -27,4 +27,17 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
   def validationResultUnsafe: ValidationResults.ValidationResult =
     validationResult.getOrElse(throw new IllegalStateException("Missing validation result"))
 
+}
+
+// This trait is extracted for easier monitoring changes in the /processes api that have an influence on the migration API
+trait BaseScenarioWithDetailsForMigrations {
+  def name: ProcessName
+  def isArchived: Boolean
+  def isFragment: Boolean
+  def processingType: ProcessingType
+  def processCategory: String
+  def scenarioGraph: Option[DisplayableProcess]
+  def validationResult: Option[ValidationResult]
+  def history: Option[List[ScenarioVersion]]
+  def modelVersion: Option[Int]
 }

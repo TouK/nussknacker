@@ -9,9 +9,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
 import java.time.Instant
 
-// Warning, keep it synchronized with ScenarioWithDetailsForMigrations
 final case class ScenarioWithDetails(
-    name: ProcessName,
+    override val name: ProcessName,
     // TODO: This field is not passed to FE as we always use ProcessName in our API (see the encoder below)
     //       We should extract another DTO class without this one field, and move this class with defined processId
     //       into our domain model
@@ -19,10 +18,10 @@ final case class ScenarioWithDetails(
     processVersionId: VersionId,
     isLatestVersion: Boolean,
     description: Option[String],
-    isArchived: Boolean,
-    isFragment: Boolean,
-    processingType: ProcessingType,
-    processCategory: String,
+    override val isArchived: Boolean,
+    override val isFragment: Boolean,
+    override val processingType: ProcessingType,
+    override val processCategory: String,
     modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
     modifiedAt: Instant,
     modifiedBy: String,
@@ -32,12 +31,12 @@ final case class ScenarioWithDetails(
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[ProcessAction],
     lastAction: Option[ProcessAction],
-    scenarioGraph: Option[DisplayableProcess],
-    validationResult: Option[ValidationResult],
-    history: Option[List[ScenarioVersion]],
-    modelVersion: Option[Int],
+    override val scenarioGraph: Option[DisplayableProcess],
+    override val validationResult: Option[ValidationResult],
+    override val history: Option[List[ScenarioVersion]],
+    override val modelVersion: Option[Int],
     state: Option[ProcessState]
-) {
+) extends BaseScenarioWithDetailsForMigrations {
 
   def withScenarioGraph(scenarioGraph: DisplayableProcess): ScenarioWithDetails =
     copy(scenarioGraph = Some(scenarioGraph))
