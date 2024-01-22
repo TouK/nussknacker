@@ -35,9 +35,9 @@ export function loadProcessState(processName: ProcessName): ThunkAction {
         );
 }
 
-export function fetchTestFormParameters(processName: ProcessName, scenario: ScenarioGraph) {
+export function fetchTestFormParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
     return (dispatch) =>
-        HttpService.getTestFormParameters(processName, scenario).then(({ data }) => {
+        HttpService.getTestFormParameters(processName, scenarioGraph).then(({ data }) => {
             dispatch({
                 type: "UPDATE_TEST_FORM_PARAMETERS",
                 testFormParameters: data,
@@ -45,9 +45,9 @@ export function fetchTestFormParameters(processName: ProcessName, scenario: Scen
         });
 }
 
-export function displayTestCapabilities(processName: ProcessName, scenario: ScenarioGraph) {
+export function displayTestCapabilities(processName: ProcessName, scenarioGraph: ScenarioGraph) {
     return (dispatch) =>
-        HttpService.getTestCapabilities(processName, scenario).then(({ data }) =>
+        HttpService.getTestCapabilities(processName, scenarioGraph).then(({ data }) =>
             dispatch({
                 type: "UPDATE_TEST_CAPABILITIES",
                 capabilities: data,
