@@ -203,7 +203,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     validators.map(v => definition.copy(validators = v))
   }
 
-  def compileValidationExpressionParameterValidator(
+  private def compileValidationExpressionParameterValidator(
       toCompileValidator: ValidationExpressionParameterValidatorToCompile,
       paramName: String,
       paramType: TypingResult
