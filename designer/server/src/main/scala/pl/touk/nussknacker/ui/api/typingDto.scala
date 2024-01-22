@@ -292,7 +292,8 @@ object typingDto {
   }
 
   object TypedUnionDto {
-    implicit lazy val unionSchema: Schema[TypedUnionDto] = Schema.any
+    implicit lazy val unionSchema: Schema[TypedUnionDto] =
+      Schema.any.name(Schema.SName("TypedUnionDto")).title("TypedUnionDto")
 
     def apply(typedUnion: TypedUnion)(implicit modelData: ModelData): TypedUnionDto = {
       TypedUnionDto(typedUnion.possibleTypes.map(typ => SingleTypingResultDto.apply(typ)))

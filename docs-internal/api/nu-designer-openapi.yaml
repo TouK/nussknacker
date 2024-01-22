@@ -903,6 +903,8 @@ components:
     AdditionalInfo:
       oneOf:
       - $ref: '#/components/schemas/MarkdownAdditionalInfo'
+    BoolParameterEditor:
+      type: object
     BranchEndData:
       required:
       - definition
@@ -1064,6 +1066,8 @@ components:
           type: string
         lastAction:
           $ref: '#/components/schemas/ProcessAction'
+    CronParameterEditor:
+      type: object
     CustomNode:
       required:
       - id
@@ -1090,6 +1094,20 @@ components:
       - versions
       - activity
       - state
+    DateParameterEditor:
+      type: object
+    DateTimeParameterEditor:
+      type: object
+    Dict:
+      required:
+      - id
+      - valueType
+      type: object
+      properties:
+        id:
+          type: string
+        valueType:
+          $ref: '#/components/schemas/TypedTaggedValueDto'
     DisplayableUser:
       required:
       - id
@@ -1114,6 +1132,23 @@ components:
           type: array
           items:
             type: string
+    DualParameterEditor:
+      required:
+      - simpleEditor
+      - defaultMode
+      type: object
+      properties:
+        simpleEditor:
+          $ref: '#/components/schemas/SimpleParameterEditor'
+        defaultMode:
+          type: string
+    DurationParameterEditor:
+      type: object
+      properties:
+        timeRangeComponents:
+          type: array
+          items:
+            type: object
     Edge:
       required:
       - from
@@ -1232,6 +1267,13 @@ components:
           type: string
         label:
           type: string
+    FixedValuesParameterEditor:
+      type: object
+      properties:
+        possibleValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValue'
     FragmentClazzRef:
       required:
       - refClazzName
@@ -1427,6 +1469,8 @@ components:
             $ref: '#/components/schemas/BranchParameters'
         additionalFields:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    JsonParameterEditor:
+      type: object
     LayoutData:
       required:
       - x
@@ -1532,7 +1576,8 @@ components:
       properties:
         nodeData:
           type: object
-        processProperties: {}
+        processProperties:
+          $ref: '#/components/schemas/ProcessProperties'
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultDto'
         branchVariableTypes:
@@ -1608,6 +1653,23 @@ components:
           type: string
         refClazz:
           $ref: '#/components/schemas/TypingResultDto'
+    ParameterEditor:
+      oneOf:
+      - $ref: '#/components/schemas/BoolParameterEditor'
+      - $ref: '#/components/schemas/CronParameterEditor'
+      - $ref: '#/components/schemas/DateParameterEditor'
+      - $ref: '#/components/schemas/DateTimeParameterEditor'
+      - $ref: '#/components/schemas/DualParameterEditor'
+      - $ref: '#/components/schemas/DurationParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/PeriodParameterEditor'
+      - $ref: '#/components/schemas/RawParameterEditor'
+      - $ref: '#/components/schemas/SpelTemplateParameterEditor'
+      - $ref: '#/components/schemas/SqlParameterEditor'
+      - $ref: '#/components/schemas/StringParameterEditor'
+      - $ref: '#/components/schemas/TextareaParameterEditor'
+      - $ref: '#/components/schemas/TimeParameterEditor'
     ParameterValueCompileTimeValidation:
       required:
       - validationExpression
@@ -1641,6 +1703,13 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
+    PeriodParameterEditor:
+      type: object
+      properties:
+        timeRangeComponents:
+          type: array
+          items:
+            type: object
     ProcessAction:
       required:
       - id
@@ -1773,6 +1842,8 @@ components:
           $ref: '#/components/schemas/ProcessAdditionalFields'
         name:
           $ref: '#/components/schemas/ProcessName'
+    RawParameterEditor:
+      type: object
     ScenarioUsageData:
       required:
       - nodeId
@@ -1791,6 +1862,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
+    SimpleParameterEditor:
+      oneOf:
+      - $ref: '#/components/schemas/BoolParameterEditor'
+      - $ref: '#/components/schemas/CronParameterEditor'
+      - $ref: '#/components/schemas/DateParameterEditor'
+      - $ref: '#/components/schemas/DateTimeParameterEditor'
+      - $ref: '#/components/schemas/DurationParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/PeriodParameterEditor'
+      - $ref: '#/components/schemas/SpelTemplateParameterEditor'
+      - $ref: '#/components/schemas/SqlParameterEditor'
+      - $ref: '#/components/schemas/StringParameterEditor'
+      - $ref: '#/components/schemas/TextareaParameterEditor'
+      - $ref: '#/components/schemas/TimeParameterEditor'
     Sink:
       required:
       - id
@@ -1843,6 +1929,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
+    SpelTemplateParameterEditor:
+      type: object
     Split:
       required:
       - id
@@ -1852,6 +1940,8 @@ components:
           type: string
         additionalFields:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    SqlParameterEditor:
+      type: object
     Status:
       type: string
       enum:
@@ -1860,6 +1950,8 @@ components:
       type: string
       enum:
       - ERROR
+    StringParameterEditor:
+      type: object
     Switch:
       required:
       - id
@@ -1877,18 +1969,118 @@ components:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SwitchDefault:
       type: object
-    TypedNullDto:
+    TextareaParameterEditor:
       type: object
+    TimeParameterEditor:
+      type: object
+    TypedClassDto:
+      title: TypedClassDto
+      required:
+      - display
+      - type
+      - refClazzName
+      type: object
+      properties:
+        display:
+          type: string
+        type:
+          type: string
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResultDto'
+    TypedDictDto:
+      title: TypedDictDto
+      required:
+      - display
+      - type
+      - dict
+      type: object
+      properties:
+        display:
+          type: string
+        type:
+          type: string
+        dict:
+          $ref: '#/components/schemas/Dict'
+    TypedNullDto:
+      title: TypedNullDto
+      type: object
+    TypedObjectTypingResultDto:
+      title: TypedObjectTypingResultDto
+      required:
+      - display
+      - type
+      - fields
+      - refClazzName
+      type: object
+      properties:
+        display:
+          type: string
+        type:
+          type: string
+        fields: {}
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResultDto'
+    TypedObjectWithValueDto:
+      title: TypedObjectWithValueDto
+      required:
+      - value
+      - display
+      - type
+      - refClazzName
+      type: object
+      properties:
+        value: {}
+        display:
+          type: string
+        type:
+          type: string
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResultDto'
+    TypedTaggedValueDto:
+      title: TypedTaggedValueDto
+      required:
+      - tag
+      - display
+      - type
+      - refClazzName
+      type: object
+      properties:
+        tag:
+          type: string
+        display:
+          type: string
+        type:
+          type: string
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResultDto'
+    TypedUnionDto:
+      title: TypedUnionDto
     TypingResultDto:
       oneOf:
+      - $ref: '#/components/schemas/TypedClassDto'
+      - $ref: '#/components/schemas/TypedDictDto'
       - $ref: '#/components/schemas/TypedNullDto'
+      - $ref: '#/components/schemas/TypedObjectTypingResultDto'
+      - $ref: '#/components/schemas/TypedObjectWithValueDto'
+      - $ref: '#/components/schemas/TypedTaggedValueDto'
+      - $ref: '#/components/schemas/TypedUnionDto'
       - $ref: '#/components/schemas/UnknownDto'
-      - {}
-      - {}
-      - {}
-      - {}
-      - {}
-      - {}
     UIParameterDto:
       required:
       - name
@@ -1905,7 +2097,7 @@ components:
         typ:
           $ref: '#/components/schemas/TypingResultDto'
         editor:
-          type: object
+          $ref: '#/components/schemas/ParameterEditor'
         defaultValue:
           $ref: '#/components/schemas/Expression'
         additionalVariables:
@@ -1936,6 +2128,7 @@ components:
         expression:
           $ref: '#/components/schemas/Expression'
     UnknownDto:
+      title: UnknownDto
       type: object
     UserDefinedAdditionalNodeFields:
       type: object

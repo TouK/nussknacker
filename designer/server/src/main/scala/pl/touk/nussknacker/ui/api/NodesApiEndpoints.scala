@@ -275,7 +275,7 @@ object NodesApiEndpoints {
 
     object NodeValidationRequestDto {
       implicit lazy val nodeDataSchema: Schema[NodeData]                    = Schema.anyObject
-      implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.any
+      implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.derived
     }
 
     @derive(encoder, decoder, schema)
@@ -332,7 +332,7 @@ object NodesApiEndpoints {
     )
 
     object UIParameterDto {
-      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]    = Schema.anyObject
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]    = Schema.derived
       implicit lazy val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
       implicit lazy val expressionSchema: Schema[Expression]              = Schema.derived
       implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
