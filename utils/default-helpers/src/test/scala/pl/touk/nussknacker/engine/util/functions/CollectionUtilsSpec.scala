@@ -230,10 +230,10 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluateType("#double+ #custom", numericalVariables) shouldBe "Number".valid
 
     evaluateType("#custom + #bigDec", numericalVariables) shouldBe "Number".valid
-    evaluateType("#bigDec+ #custom", numericalVariables) shouldBe "Number".valid
+    evaluateType("#bigDec + #custom", numericalVariables) shouldBe "Number".valid
 
     evaluateType("#custom + #bigInt", numericalVariables) shouldBe "Number".valid
-    evaluateType("#bigInt+ #custom", numericalVariables) shouldBe "Number".valid
+    evaluateType("#bigInt + #custom", numericalVariables) shouldBe "Number".valid
   }
 
   test("sortedAsc") {
