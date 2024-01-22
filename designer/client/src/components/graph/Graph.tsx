@@ -502,7 +502,7 @@ export class Graph extends React.Component<Props> {
         const validationErrors = ProcessUtils.getValidationErrors(process);
         const invalidNodeIds = [
             ...(keys(validationErrors?.invalidNodes)),
-            ...(validationErrors.globalErrors.flatMap((e) => e.nodeIds) || []),
+            ...(validationErrors.globalErrors.flatMap((e) => e.nodeIds)),
         ];
 
         // fast indicator for loose nodes, faster than async validation
