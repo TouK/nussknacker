@@ -30,6 +30,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
   ValidationResponse
 }
 import pl.touk.nussknacker.engine.compile.validationHelpers._
+import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.graph.EdgeType.{FragmentOutput, NextSwitch}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}

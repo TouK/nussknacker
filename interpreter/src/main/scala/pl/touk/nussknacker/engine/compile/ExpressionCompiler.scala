@@ -6,11 +6,7 @@ import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{
-  Parameter,
-  ValidationExpressionParameterValidator,
-  ValidationExpressionParameterValidatorToCompile
-}
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ValidationExpressionParameterValidatorToCompile, Validator}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.{
   Expression => CompiledExpression,
@@ -22,6 +18,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
@@ -124,13 +121,14 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       parameterDefinitions,
       nodeParameters ++ nodeBranchParameters.flatMap(_.parameters)
     )
-    val paramDefMap = parameterDefinitions.map(p => p.name -> compileValidators(p)).toMap
+    val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions)
+    val paramDefMap        = parameterDefinitions.map(p => p.name -> p).toMap
 
     val compiledParams = nodeParameters
       .flatMap { p =>
         paramDefMap
           .get(p.name)
-          .map(_.andThen(pd => compileParam(p, ctx, pd, treatEagerParametersAsLazy).map((_, pd))))
+          .map(pd => compileParam(p, ctx, pd, treatEagerParametersAsLazy).map((_, pd)))
       }
     val compiledBranchParams = (for {
       branchParams <- nodeBranchParameters
@@ -139,14 +137,19 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       case (paramName, branchIdAndExpressions) =>
         paramDefMap
           .get(paramName)
-          .map(_.andThen(pd => compileBranchParam(branchIdAndExpressions, branchContexts, pd).map((_, pd))))
+          .map(pd => compileBranchParam(branchIdAndExpressions, branchContexts, pd).map((_, pd)))
     }
     val allCompiledParams = (compiledParams ++ compiledBranchParams).sequence
 
     allCompiledParams
-      .andThen(allParams => Validations.validateWithCustomValidators(allParams))
+      .andThen(allParams => Validations.validateWithCustomValidators(allParams, paramValidatorsMap))
       .combine(redundantMissingValidation.map(_ => List()))
   }
+
+  private def parameterValidatorsMap(parameterDefinitions: List[Parameter])(implicit nodeId: NodeId) =
+    parameterDefinitions
+      .map(p => p.name -> p.validators.map { v => compileValidator(v, p.name, p.typ) }.sequence)
+      .toMap
 
   def compileParam(
       nodeParam: NodeParameter,
@@ -186,22 +189,20 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       .map(exprByBranchId => TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
   }
 
-  def compileValidators(
-      definition: Parameter
-  )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
-    val validators = definition.validators.map {
+  def compileValidator(
+      validator: Validator,
+      paramName: String,
+      paramType: TypingResult
+  )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Validator] =
+    validator match {
       case v: ValidationExpressionParameterValidatorToCompile =>
         compileValidationExpressionParameterValidator(
           v,
-          definition.name,
-          definition.typ
+          paramName,
+          paramType
         )
-
       case v => Valid(v)
-    }.sequence
-
-    validators.map(v => definition.copy(validators = v))
-  }
+    }
 
   private def compileValidationExpressionParameterValidator(
       toCompileValidator: ValidationExpressionParameterValidatorToCompile,

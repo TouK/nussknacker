@@ -157,16 +157,16 @@ class NodeCompiler(
 
         // For default case, we creates source that support test with parameters
         case None =>
-          val paramDefinitionsWithCompiledValidators = parameterDefinitions.value.map { paramDef =>
-            expressionCompiler.compileValidators(paramDef)
+          val validatorsCompilationResult = parameterDefinitions.value.flatMap { paramDef =>
+            paramDef.validators.map(v => expressionCompiler.compileValidator(v, paramDef.name, paramDef.typ))
           }.sequence
 
           NodeCompilationResult(
             Map.empty,
             None,
             Valid(validationContext),
-            paramDefinitionsWithCompiledValidators.andThen(paramDefs =>
-              Valid(new FragmentSourceWithTestWithParametersSupportFactory(paramDefs).createSource())
+            validatorsCompilationResult.andThen(_ =>
+              Valid(new FragmentSourceWithTestWithParametersSupportFactory(parameterDefinitions.value).createSource())
             )
           )
       }
