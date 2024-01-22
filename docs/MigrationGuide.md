@@ -78,6 +78,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `$processingType-$componentType-$componentName` format was replaced by `$componentType-$componentName` format
 * [#5323](https://github.com/TouK/nussknacker/pull/5323) Support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) was removed.
   In the new format, you should specify `category` field inside each scenario type.
+* [#5419](https://github.com/TouK/nussknacker/pull/5419) Support for system properties was removed from model configuration
+  (they aren't resolved and added to merged configuration)
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
