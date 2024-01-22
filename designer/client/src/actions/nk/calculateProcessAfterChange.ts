@@ -24,9 +24,7 @@ export function calculateProcessAfterChange(
 ): ThunkAction<Promise<ScenarioGraph>> {
     return async (dispatch, getState) => {
         if (NodeUtils.nodeIsProperties(after)) {
-            const processDefinitionData = await dispatch(
-                fetchProcessDefinition(scenario.processingType, scenario.json.properties.isFragment),
-            );
+            const processDefinitionData = await dispatch(fetchProcessDefinition(scenario.processingType, scenario.isFragment));
             const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario.json, processDefinitionData);
             if (after.id !== before.id) {
                 dispatch({ type: "PROCESS_RENAME", name: after.id });

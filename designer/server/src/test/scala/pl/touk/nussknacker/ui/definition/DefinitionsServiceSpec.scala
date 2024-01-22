@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, Proces
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
-import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -299,9 +299,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
       new BuiltInComponentsStaticDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
-      new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
-      staticModelDefinition,
-      ComponentId.default(processingType, _)
+      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, ComponentId.default(processingType, _)),
+      staticModelDefinition
     )
 
     new DefinitionsService(

@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker
 }
-import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersWithoutValidatorsDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
 import pl.touk.nussknacker.engine.process.compiler.StubbedComponentImplementationInvoker.returnType
@@ -58,10 +58,12 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
         ComponentInfo(ComponentType.Source, sourceName) -> stubbedDefinition
       }
 
-    val fragmentDefinitionExtractor = new FragmentWithoutValidatorsDefinitionExtractor(
+    val fragmentParametersDefinitionExtractor = new FragmentParametersWithoutValidatorsDefinitionExtractor(
       definitionContext.userCodeClassLoader
     )
-    val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(fragmentDefinitionExtractor)
+    val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
+      fragmentParametersDefinitionExtractor
+    )
 
     val stubbedSourceForFragments =
       process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
