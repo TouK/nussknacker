@@ -98,7 +98,6 @@ class AkkaHttpBasedRouteProvider(
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
       deploymentServiceSupplier  = new DelayedInitDeploymentServiceSupplier
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
-      dbioRunner                 = DBIOActionRunner(dbRef)
       typeToConfig <- prepareProcessingTypeData(
         config,
         deploymentServiceSupplier,

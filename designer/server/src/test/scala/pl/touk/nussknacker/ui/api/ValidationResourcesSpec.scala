@@ -255,7 +255,12 @@ class ValidationResourcesSpec
   private def validateScenario(displayable: DisplayableProcess, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ) = {
-    Post(Uri(path = Path.Empty / "processValidation" / name.value), posting.toEntity(displayable)) ~> route ~> check {
+    // TODO: Test for the rename (name in path other then name in request)
+    val request = ScenarioValidationRequest(name, displayable)
+    Post(
+      Uri(path = Path.Empty / "processValidation" / name.value),
+      posting.toRequestEntity(request)
+    ) ~> route ~> check {
       testCode
     }
   }

@@ -16,7 +16,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
 
   // TODO: The AdditionalInfoProvider interface should be changed to the factory that creates AdditionalInfoProvider
   //       based on the model config.
-  // TODO: We should move loading of these extensions into the class were we see how many designer side model
+  // TODO: We should move loading of these extensions into the class where we see how many designer side model
   //       extensions do we have. See notice next to ModelData.migrations
   private val nodeProviders: ProcessingTypeDataProvider[Option[NodeData => Future[Option[AdditionalInfo]]], _] =
     typeToConfig.mapValues(pt =>

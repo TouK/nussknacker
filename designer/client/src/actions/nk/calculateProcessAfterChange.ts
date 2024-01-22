@@ -26,6 +26,7 @@ export function calculateProcessAfterChange(
         if (NodeUtils.nodeIsProperties(after)) {
             const processDefinitionData = await dispatch(fetchProcessDefinition(scenario.processingType, scenario.isFragment));
             const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario.scenarioGraph, processDefinitionData);
+            // TODO: We shouldn't keep scenario name in properties.id - it is a top-level scenario property
             if (after.id !== before.id) {
                 dispatch({ type: "PROCESS_RENAME", name: after.id });
             }

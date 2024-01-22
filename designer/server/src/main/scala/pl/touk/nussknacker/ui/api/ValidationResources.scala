@@ -2,7 +2,9 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -24,13 +26,13 @@ class ValidationResources(
   def securedRoute(implicit user: LoggedUser): Route =
     path("processValidation" / ProcessNameSegment) { processName =>
       (post & processDetailsForName(processName)) { details: ScenarioWithDetails =>
-        entity(as[DisplayableProcess]) { displayable =>
+        entity(as[ScenarioValidationRequest]) { request =>
           complete {
             NuDesignerErrorToHttp.toResponseEither(
               FatalValidationError.renderNotAllowedAsError(
                 processResolver
                   .forTypeUnsafe(details.processingType)
-                  .validateBeforeUiResolving(displayable, details.name, details.isFragment)
+                  .validateBeforeUiResolving(request.scenarioGraph, request.processName, details.isFragment)
               )
             )
           }
@@ -39,3 +41,5 @@ class ValidationResources(
     }
 
 }
+
+@JsonCodec case class ScenarioValidationRequest(processName: ProcessName, scenarioGraph: DisplayableProcess)

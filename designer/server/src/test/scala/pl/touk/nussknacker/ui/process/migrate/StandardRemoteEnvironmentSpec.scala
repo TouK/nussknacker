@@ -373,7 +373,7 @@ class StandardRemoteEnvironmentSpec
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
-      processToSave.process shouldBe ProcessTestData.validDisplayableProcess
+      processToSave.scenarioGraph shouldBe ProcessTestData.validDisplayableProcess
     }
   }
 
@@ -403,7 +403,7 @@ class StandardRemoteEnvironmentSpec
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
-      processToSave.process shouldBe ProcessTestData.validDisplayableProcess
+      processToSave.scenarioGraph shouldBe ProcessTestData.validDisplayableProcess
     }
   }
 
@@ -428,7 +428,7 @@ class StandardRemoteEnvironmentSpec
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
-      processToSave.process shouldBe fragment
+      processToSave.scenarioGraph shouldBe fragment
     }
   }
 

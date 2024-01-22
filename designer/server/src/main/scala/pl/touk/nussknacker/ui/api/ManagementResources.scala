@@ -301,7 +301,7 @@ class ManagementResources(
                           .forTypeUnsafe(process.processingType)
                           .performTest(
                             process.idWithNameUnsafe,
-                            testParametersRequest.displayableProcess,
+                            testParametersRequest.scenarioGraph,
                             process.isFragment,
                             testParametersRequest.sourceParameters
                           )

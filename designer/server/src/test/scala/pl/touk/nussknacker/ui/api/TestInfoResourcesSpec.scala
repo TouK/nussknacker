@@ -71,7 +71,10 @@ class TestInfoResourcesSpec
 
   test("generates data") {
     saveProcess(process) {
-      Post(s"/testInfo/${ProcessTestData.sampleProcessName}/generate/5", posting.toEntity(process)) ~> withPermissions(
+      Post(
+        s"/testInfo/${ProcessTestData.sampleProcessName}/generate/5",
+        posting.toRequestEntity(process)
+      ) ~> withPermissions(
         route(),
         testPermissionAll
       ) ~> check {
@@ -87,14 +90,17 @@ class TestInfoResourcesSpec
     saveProcess(process) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/generate/100",
-        posting.toEntity(process)
+        posting.toRequestEntity(process)
       ) ~> withPermissions(
         route(),
         testPermissionAll
       ) ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
-      Post(s"/testInfo/${ProcessTestData.sampleProcessName}/generate/1", posting.toEntity(process)) ~> withPermissions(
+      Post(
+        s"/testInfo/${ProcessTestData.sampleProcessName}/generate/1",
+        posting.toRequestEntity(process)
+      ) ~> withPermissions(
         route(additionalDataSize = 20000),
         testPermissionAll
       ) ~> check {
@@ -107,7 +113,7 @@ class TestInfoResourcesSpec
     saveProcess(process) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/capabilities",
-        posting.toEntity(process)
+        posting.toRequestEntity(process)
       ) ~> withPermissions(
         route(),
         testPermissionAll
@@ -124,7 +130,7 @@ class TestInfoResourcesSpec
     saveProcess(process) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/capabilities",
-        posting.toEntity(process)
+        posting.toRequestEntity(process)
       ) ~> withPermissions(
         route(),
         testPermissionRead

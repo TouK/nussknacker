@@ -184,7 +184,7 @@ object NodesResources {
 
 @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
     sourceParameters: TestSourceParameters,
-    displayableProcess: DisplayableProcess
+    scenarioGraph: DisplayableProcess
 )
 
 @JsonCodec(encodeOnly = true) final case class ParametersValidationResult(

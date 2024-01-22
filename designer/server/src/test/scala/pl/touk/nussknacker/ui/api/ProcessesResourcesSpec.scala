@@ -730,14 +730,14 @@ class ProcessesResourcesSpec
   test("not authorize user with read permissions to modify node") {
     Put(
       s"/processes/$Category1/$processName",
-      posting.toEntityAsProcessToSave(ProcessTestData.validProcess)
+      posting.toRequestEntity(posting.toJsonAsProcessToSave(ProcessTestData.validProcess))
     ) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
 
     val modifiedParallelism = 123
     val props               = ProcessProperties(StreamMetaData(Some(modifiedParallelism)))
-    Put(s"/processes/$Category1/$processName", posting.toEntity(props)) ~> routeWithRead ~> check {
+    Put(s"/processes/$Category1/$processName", posting.toRequestEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
   }

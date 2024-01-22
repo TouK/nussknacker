@@ -50,7 +50,7 @@ object ProcessService {
   )
 
   @JsonCodec final case class UpdateProcessCommand(
-      process: DisplayableProcess,
+      scenarioGraph: DisplayableProcess,
       comment: UpdateProcessComment,
       forwardedUserName: Option[RemoteUserName]
   )
@@ -379,9 +379,9 @@ class DBProcessService(
       val processResolver = processResolverByProcessingType.forTypeUnsafe(details.processingType)
       val validation =
         FatalValidationError.saveNotAllowedAsError(
-          processResolver.validateBeforeUiResolving(action.process, details.name, details.isFragment)
+          processResolver.validateBeforeUiResolving(action.scenarioGraph, details.name, details.isFragment)
         )
-      val substituted = processResolver.resolveExpressions(action.process, details.name, validation.typingInfo)
+      val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
       val updateProcessAction = UpdateProcessAction(
         processIdWithName.id,
         substituted,

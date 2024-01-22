@@ -50,7 +50,7 @@ class DictsFlowTest
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processValidation/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJson(process).spaces2)
+        .body(TestFactory.posting.toScenarioGraphJson(process).spaces2)
         .auth
         .basic("admin", "admin")
     )
@@ -171,7 +171,7 @@ class DictsFlowTest
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processValidation/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJson(process).spaces2)
+        .body(TestFactory.posting.toScenarioGraphJson(process).spaces2)
         .auth
         .basic("admin", "admin")
     )

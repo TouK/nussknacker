@@ -67,7 +67,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `/processManagement/generateAndTest/$samples` was changed to `/processManagement/generateAndTest/$scenarioName/$samples`
   * `/processesExport/*` was changed to `/processesExport/$scenarioName/*` and changed response type
   * `/processes/import/$scenarioName` was changed response into `{"scenarioGraph": {...}, "validationResult": {...}`
-  * `/processes/*` and `/processesDetails/*` changed response type
+  * GET `/processes/*` and `/processesDetails/*` changed response type
+  * PUT `/processes/$scenarioName` was changed request field from `process` to `scenarioGraph`
+  * `/adminProcessManagement/testWithParameters/$scenarioName` was changed request field from `displayableProcess` to `scenarioGraph`
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:

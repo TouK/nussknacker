@@ -397,13 +397,15 @@ class HttpService {
     }
 
     //to prevent closing edit node modal and corrupting graph display
-    validateProcess(processName: string, scenarioGraph: ScenarioGraph) {
-        return api
-            .post(`/processValidation/${encodeURIComponent(processName)}`, this.#sanitizeScenarioGraph(scenarioGraph))
-            .catch((error) => {
-                this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true);
-                return Promise.reject(error);
-            });
+    validateProcess(processName: string, unsavedOrCurrentName: string, scenarioGraph: ScenarioGraph) {
+        const request = {
+            processName: unsavedOrCurrentName,
+            scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
+        };
+        return api.post(`/processValidation/${encodeURIComponent(processName)}`, request).catch((error) => {
+            this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true);
+            return Promise.reject(error);
+        });
     }
 
     validateNode(processName: string, node: ValidationRequest): Promise<AxiosResponse<ValidationData>> {
@@ -522,7 +524,7 @@ class HttpService {
 
     //to prevent closing edit node modal and corrupting graph display
     saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string) {
-        const data = { process: this.#sanitizeScenarioGraph(scenarioGraph), comment: comment };
+        const data = { scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph), comment: comment };
         return api.put(`/processes/${encodeURIComponent(processName)}`, data).catch((error) => {
             this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true);
             return Promise.reject(error);
@@ -587,7 +589,7 @@ class HttpService {
         const sanitized = this.#sanitizeScenarioGraph(scenarioGraph);
         const request = {
             sourceParameters: testData,
-            displayableProcess: sanitized,
+            scenarioGraph: sanitized,
         };
 
         const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processName)}`, request);

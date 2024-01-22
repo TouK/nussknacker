@@ -322,7 +322,7 @@ trait NuResourcesTest
   ): Assertion =
     Put(
       s"/processes/$name",
-      TestFactory.posting.toEntity(command)
+      TestFactory.posting.toRequestEntity(command)
     ) ~> processesRouteWithAllPermissions ~> check {
       testCode
     }
@@ -362,7 +362,7 @@ trait NuResourcesTest
     )
 
   protected def customAction(processName: ProcessName, reqPayload: CustomActionRequest): RouteTestResult =
-    Post(s"/processManagement/customAction/$processName", TestFactory.posting.toRequest(reqPayload)) ~>
+    Post(s"/processManagement/customAction/$processName", TestFactory.posting.toRequestEntity(reqPayload)) ~>
       withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
 
   protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
