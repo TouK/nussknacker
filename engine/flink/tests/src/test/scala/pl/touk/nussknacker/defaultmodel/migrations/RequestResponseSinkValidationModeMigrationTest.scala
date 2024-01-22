@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node.Sink
-import pl.touk.nussknacker.ui.api.helpers.TestCategories
 
 import scala.reflect.ClassTag
 
@@ -20,7 +19,7 @@ class RequestResponseSinkValidationModeMigrationTest extends AnyFunSuite {
       .source("source", "request")
       .emptySink("sink", "response")
 
-    val results = RequestResponseSinkValidationModeMigration.migrateProcess(process, TestCategories.Category1)
+    val results = RequestResponseSinkValidationModeMigration.migrateProcess(process, "none")
     getFirst[Sink](results).parameters shouldBe List(NodeParameter("Value validation mode", "'lax'"))
   }
 
