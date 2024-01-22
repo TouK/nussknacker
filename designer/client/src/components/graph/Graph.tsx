@@ -501,7 +501,7 @@ export class Graph extends React.Component<Props> {
 
         const validationErrors = ProcessUtils.getValidationErrors(process);
         const invalidNodeIds = [
-            ...(keys(validationErrors.invalidNodes) || []),
+            ...(keys(validationErrors?.invalidNodes)),
             ...(validationErrors.globalErrors.flatMap((e) => e.nodeIds) || []),
         ];
 
