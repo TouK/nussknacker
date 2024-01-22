@@ -47,7 +47,14 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
     val config = LocalModelData(inputConfig, new EmptyProcessConfigCreator).processConfig
 
     config.hasPath("shouldNotLoad") shouldBe false
+  }
 
+  test("should not contain java.class.path") {
+    val config = LocalModelData(inputConfig, new EmptyProcessConfigCreator).processConfig
+
+    // classpath can grow very long and there's a 65 KB limit on a single String value in Configuration
+    // that we already hit in CI, see: https://github.com/lightbend/config/issues/627
+    config.hasPath("java.class.path") shouldBe false
   }
 
 }
