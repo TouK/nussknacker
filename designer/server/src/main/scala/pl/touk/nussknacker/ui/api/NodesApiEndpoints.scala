@@ -196,9 +196,9 @@ object NodesApiEndpoints {
       implicit val scenarioNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
     }
 
-    implicit val scenarioNameSchema: Schema[ProcessName]                         = Schema.derived
-    implicit val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
-    implicit val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
+    implicit lazy val scenarioNameSchema: Schema[ProcessName]                         = Schema.derived
+    implicit lazy val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
+    implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
 
     object TypingResultDtoHelpers {
 
@@ -274,8 +274,8 @@ object NodesApiEndpoints {
     )
 
     object NodeValidationRequestDto {
-      implicit val nodeDataSchema: Schema[NodeData]                    = Schema.anyObject
-      implicit val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.any
+      implicit lazy val nodeDataSchema: Schema[NodeData]                    = Schema.anyObject
+      implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.any
     }
 
     @derive(encoder, decoder, schema)
@@ -332,10 +332,10 @@ object NodesApiEndpoints {
     )
 
     object UIParameterDto {
-      implicit val parameterEditorSchema: Schema[ParameterEditor]    = Schema.anyObject
-      implicit val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
-      implicit val expressionSchema: Schema[Expression]              = Schema.derived
-      implicit val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]    = Schema.anyObject
+      implicit lazy val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
+      implicit lazy val expressionSchema: Schema[Expression]              = Schema.derived
+      implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
     }
 
     @derive(schema, encoder, decoder)
@@ -363,8 +363,8 @@ object NodesApiEndpoints {
         expression: Expression
     )
 
-    implicit val expressionSchema: Schema[Expression]           = Schema.derived
-    implicit val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
+    implicit lazy val expressionSchema: Schema[Expression]           = Schema.derived
+    implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 
     @derive(schema, encoder, decoder)
     final case class ExpressionSuggestionRequestDto(
