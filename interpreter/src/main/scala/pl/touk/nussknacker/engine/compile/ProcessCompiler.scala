@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated._
-import cats.implicits.toTraverseOps
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
@@ -14,13 +13,14 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
-import pl.touk.nussknacker.engine.graph.node.{NodeData, Source => _, _}
+import pl.touk.nussknacker.engine.graph.node.{Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
@@ -62,11 +62,12 @@ trait ProcessValidator extends LazyLogging {
   def validate(process: CanonicalProcess, isFragment: Boolean): CompilationResult[Unit] = {
 
     try {
-      CompilationResult.map3(
+      CompilationResult.map4(
         CompilationResult(IdValidator.validate(process, isFragment)),
         CompilationResult(validateWithCustomProcessValidators(process)),
+        CompilationResult(validateUniqueFragmentOutputNames(process)),
         compile(process).map(_ => ()): CompilationResult[Unit]
-      )((_, _, _) => { () })
+      )((_, _, _, _) => { () })
     } catch {
       case NonFatal(e) =>
         logger.warn(s"Unexpected error during compilation of ${process.name}", e)
@@ -110,11 +111,10 @@ protected trait ProcessCompilerBase {
     globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(metaData)
 
   private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] =
-    CompilationResult.map3(
+    CompilationResult.map2(
       CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
-      CompilationResult(validateUniqueFragmentOutputNames(splittedProcess)),
       compileSources(splittedProcess.sources)(splittedProcess.metaData)
-    ) { (_, _, sources) =>
+    ) { (_, sources) =>
       CompiledProcessParts(splittedProcess.metaData, sources)
     }
 
@@ -136,27 +136,6 @@ protected trait ProcessCompilerBase {
         (nextResult, branchContexts.addPart(nextSourcePart, compiledPart))
       }
     result.map(NonEmptyList.fromListUnsafe)
-  }
-
-  private def validateUniqueFragmentOutputNames(
-      splittedProcess: SplittedProcess
-  ): ValidatedNel[ProcessCompilationError, Unit] = {
-    if (splittedProcess.metaData.isFragment) {
-      val nodes               = NodesCollector.collectNodesInAllParts(splittedProcess.sources)
-      val fragmentOutputNodes = nodes.collect { case EndingNode(data: FragmentOutputDefinition) => data }
-      val duplicatedOutputNamesWithNodeIds = fragmentOutputNodes
-        .groupBy(_.outputName)
-        .collect {
-          case (name, nodes) if nodes.size > 1 => name -> nodes.map(_.id).toSet
-        }
-      duplicatedOutputNamesWithNodeIds
-        .map(n => invalidNel(DuplicateFragmentOutputNamesInFragment(n._1, n._2)))
-        .toList
-        .sequence
-        .map(_ => ())
-    } else {
-      valid(())
-    }
   }
 
   private def findDuplicates(parts: NonEmptyList[SourcePart]): Validated[ProcessCompilationError, Unit] = {
