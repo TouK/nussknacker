@@ -9,6 +9,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
 import java.time.Instant
 
+// Warning, keep it synchronized with ScenarioWithDetailsForMigrations
 final case class ScenarioWithDetails(
     name: ProcessName,
     // TODO: This field is not passed to FE as we always use ProcessName in our API (see the encoder below)

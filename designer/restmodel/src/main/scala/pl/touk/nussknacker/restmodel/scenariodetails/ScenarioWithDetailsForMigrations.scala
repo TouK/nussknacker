@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, Scen
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
+// It is a minimal set of information used by migration mechanism
 @JsonCodec final case class ScenarioWithDetailsForMigrations(
     name: ProcessName,
     isArchived: Boolean,
