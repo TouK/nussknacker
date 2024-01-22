@@ -3,7 +3,7 @@ import { fetchProcessDefinition } from "./processDefinitionData";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/graph/utils/graphUtils";
 import { alignFragmentWithSchema } from "../../components/graph/utils/fragmentSchemaAligner";
-import { Edge, NodeType, ScenarioGraph, ProcessDefinitionData } from "../../types";
+import { Edge, NodeType, ScenarioGraph, ProcessDefinitionData, ScenarioGraphWithName } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { Scenario } from "../../components/Process/types";
 
@@ -21,7 +21,7 @@ export function calculateProcessAfterChange(
     before: NodeType,
     after: NodeType,
     outputEdges: Edge[],
-): ThunkAction<Promise<ScenarioGraph>> {
+): ThunkAction<Promise<ScenarioGraphWithName>> {
     return async (dispatch, getState) => {
         if (NodeUtils.nodeIsProperties(after)) {
             const processDefinitionData = await dispatch(fetchProcessDefinition(scenario.processingType, scenario.isFragment));
@@ -30,7 +30,10 @@ export function calculateProcessAfterChange(
             if (after.id !== before.id) {
                 dispatch({ type: "PROCESS_RENAME", name: after.id });
             }
-            return { ...processWithNewFragmentSchema, properties: after };
+            return {
+                processName: after.id,
+                scenarioGraph: { ...processWithNewFragmentSchema, properties: after },
+            };
         }
 
         let changedProcess = scenario.scenarioGraph;
@@ -47,6 +50,9 @@ export function calculateProcessAfterChange(
             changedProcess = replaceNodeOutputEdges(scenario.scenarioGraph, processDefinitionData, filtered, before.id);
         }
 
-        return mapProcessWithNewNode(changedProcess, before, after);
+        return {
+            processName: scenario.scenarioGraph.properties.id || scenario.name,
+            scenarioGraph: mapProcessWithNewNode(changedProcess, before, after),
+        };
     };
 }
