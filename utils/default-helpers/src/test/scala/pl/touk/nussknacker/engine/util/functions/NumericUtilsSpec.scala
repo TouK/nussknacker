@@ -8,7 +8,7 @@ import java.math.BigInteger
 
 class NumericUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
-  test("numeric") {
+  test("string to number conversion should return narrow numeric types in the runtime") {
     evaluateType("#NUMERIC.toNumber('42')") shouldBe "Number".valid
     evaluateAny("#NUMERIC.toNumber('42')") shouldBe 42
 

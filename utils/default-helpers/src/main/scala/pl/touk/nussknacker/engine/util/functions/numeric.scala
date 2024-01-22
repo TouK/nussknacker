@@ -62,6 +62,7 @@ trait numeric extends MathUtils with HideToString {
     case s: CharSequence =>
       val ss = s.toString
 
+      // we pick the narrowest type as possible to reduce the amount of memory and computations overheads
       val tries: List[Try[java.lang.Number]] = List(
         Try(java.lang.Integer.parseInt(ss)),
         Try(java.lang.Long.parseLong(ss)),
