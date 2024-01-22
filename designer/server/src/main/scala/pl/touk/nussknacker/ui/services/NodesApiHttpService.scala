@@ -6,9 +6,9 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDto.{toTypingResult, typingResultToDto}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{ExpressionSuggestionDto, NodeValidationResultDto, ParameterDto, ParametersValidationResultDto}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDtoHelpers.{toDto, toTypingResult}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.{NodeValidationRequest, ParametersValidationRequest}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -175,7 +175,6 @@ class NodesApiHttpService(
           val validator                     = typeToParametersValidator.forTypeUnsafe(processingType)
           val requestWithTypingResult       = ParametersValidationRequest.apply(request)
           val validationResults             = validator.validate(requestWithTypingResult)
-
           Future(
             success(
               ParametersValidationResultDto(validationResults, validationPerformed = true)
@@ -208,10 +207,10 @@ class NodesApiHttpService(
                 suggestion.map { suggest =>
                   ExpressionSuggestionDto(
                     suggest.methodName,
-                    typingResultToDto(suggest.refClazz),
+                    toDto(suggest.refClazz),
                     suggest.fromClass,
                     suggest.description,
-                    suggest.parameters.map { param => ParameterDto(param.name, typingResultToDto(param.refClazz)) }
+                    suggest.parameters.map { param => ParameterDto(param.name, toDto(param.refClazz)) }
                   )
                 }
               )

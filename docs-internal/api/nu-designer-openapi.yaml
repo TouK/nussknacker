@@ -1167,7 +1167,8 @@ components:
       properties:
         methodName:
           type: string
-        refClazz: {}
+        refClazz:
+          $ref: '#/components/schemas/TypingResultDto'
         fromClass:
           type: boolean
         description:
@@ -1458,7 +1459,8 @@ components:
         type: string
     Map_TypingResultDto:
       type: object
-      additionalProperties: {}
+      additionalProperties:
+        $ref: '#/components/schemas/TypingResultDto'
     MarkdownAdditionalInfo:
       required:
       - content
@@ -1552,7 +1554,8 @@ components:
           - 'null'
           items:
             $ref: '#/components/schemas/UIParameterDto'
-        expressionType: {}
+        expressionType:
+          $ref: '#/components/schemas/TypingResultDto'
         validationErrors:
           type: array
           items:
@@ -1603,7 +1606,8 @@ components:
       properties:
         name:
           type: string
-        refClazz: {}
+        refClazz:
+          $ref: '#/components/schemas/TypingResultDto'
     ParameterValueCompileTimeValidation:
       required:
       - validationExpression
@@ -1873,6 +1877,18 @@ components:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SwitchDefault:
       type: object
+    TypedNullDto:
+      type: object
+    TypingResultDto:
+      oneOf:
+      - $ref: '#/components/schemas/TypedNullDto'
+      - $ref: '#/components/schemas/UnknownDto'
+      - {}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {}
     UIParameterDto:
       required:
       - name
@@ -1886,7 +1902,8 @@ components:
       properties:
         name:
           type: string
-        typ: {}
+        typ:
+          $ref: '#/components/schemas/TypingResultDto'
         editor:
           type: object
         defaultValue:
@@ -1914,9 +1931,12 @@ components:
       properties:
         name:
           type: string
-        typ: {}
+        typ:
+          $ref: '#/components/schemas/TypingResultDto'
         expression:
           $ref: '#/components/schemas/Expression'
+    UnknownDto:
+      type: object
     UserDefinedAdditionalNodeFields:
       type: object
       properties:
