@@ -150,7 +150,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessVersion]] =
     invokeJson[ProcessDetails](HttpMethods.GET, List("processes", processName.value)).map { result =>
-      result.fold(_ => List(), _.history)
+      result.fold(_ => List(), _.history.getOrElse(Nil))
     }
 
   protected def request(

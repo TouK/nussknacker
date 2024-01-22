@@ -90,7 +90,7 @@ object processdetails {
       modifiedBy: String,
       createdAt: Instant,
       createdBy: String,
-      tags: List[String],
+      tags: Option[List[String]],
       lastDeployedAction: Option[ProcessAction],
       lastStateAction: Option[
         ProcessAction
@@ -99,7 +99,7 @@ object processdetails {
         ProcessAction
       ], // TODO: Consider replacing it by lastStateAction, check were on FE we use lastAction, eg. archive date at the archive list
       json: ProcessShape,
-      history: List[ProcessVersion],
+      history: Option[List[ProcessVersion]],
       modelVersion: Option[Int],
       // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
       // After that it remains always defined.

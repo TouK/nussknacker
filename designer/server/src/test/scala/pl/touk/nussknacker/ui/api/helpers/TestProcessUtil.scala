@@ -116,7 +116,7 @@ object TestProcessUtil {
       modifiedBy = "user1",
       createdAt = Instant.now(),
       createdBy = "user1",
-      tags = List(),
+      tags = Some(List()),
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
         case action if StateActionsTypes.contains(action) => createProcessAction(action)
@@ -125,7 +125,7 @@ object TestProcessUtil {
         createProcessAction(Deploy)
       },
       json = jsonData,
-      history = history.getOrElse(Nil),
+      history = history,
       modelVersion = None
     )
   }

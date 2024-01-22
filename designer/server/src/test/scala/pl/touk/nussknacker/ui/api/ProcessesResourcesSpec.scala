@@ -664,7 +664,7 @@ class ProcessesResourcesSpec
     getProcess(processName) ~> check {
       val processDetails = responseAs[ProcessDetails]
       processDetails.name shouldBe SampleProcess.process.id
-      processDetails.history.length shouldBe 3
+      processDetails.history.map(_.length) shouldBe Some(3)
       // processDetails.history.forall(_.processId == processDetails.id) shouldBe true //TODO: uncomment this when we will support id as Long / ProcessId
     }
   }

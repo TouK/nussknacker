@@ -185,9 +185,11 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
         a.actionType == ProcessActionType.Deploy && a.state == ProcessActionState.Finished
       ),
       isLatestVersion = isLatestVersion,
-      tags = tags,
-      history = processVersions.map(v =>
-        ProcessDBQueryRepository.toProcessVersion(v, actions.filter(p => p.processVersionId == v.id))
+      tags = Some(tags),
+      history = Some(
+        processVersions.map(v =>
+          ProcessDBQueryRepository.toProcessVersion(v, actions.filter(p => p.processVersionId == v.id))
+        )
       ),
     )
   }
@@ -199,8 +201,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
       lastStateActionData: Option[ProcessAction],
       lastDeployedActionData: Option[ProcessAction],
       isLatestVersion: Boolean,
-      tags: Seq[TagsEntityData] = List.empty,
-      history: Seq[ProcessVersion] = List.empty
+      tags: Option[Seq[TagsEntityData]] = None,
+      history: Option[Seq[ProcessVersion]] = None,
   ): BaseProcessDetails[PS] = {
     BaseProcessDetails[PS](
       id = process.name.value, // TODO: replace by Long / ProcessId
@@ -216,14 +218,14 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
       lastAction = lastActionData,
       lastStateAction = lastStateActionData,
       lastDeployedAction = lastDeployedActionData,
-      tags = tags.map(_.name).toList,
+      tags = tags.map(seq => seq.map(_.name).toList),
       modificationDate = processVersion.createDate.toInstant,
       modifiedAt = processVersion.createDate.toInstant,
       modifiedBy = processVersion.user,
       createdAt = process.createdAt.toInstant,
       createdBy = process.createdBy,
       json = convertToTargetShape(processVersion, process),
-      history = history.toList,
+      history = history.map(_.toList),
       modelVersion = processVersion.modelVersion
     )
   }
