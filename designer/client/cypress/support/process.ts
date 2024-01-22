@@ -146,7 +146,7 @@ function importTestProcess(name: string, fixture = "testProcess") {
         .then((response) => {
             cy.request("PUT", `/api/processes/${name}`, {
                 comment: "import test data",
-                process: response.scenarioGraph,
+                scenarioGraph: response.scenarioGraph,
             });
             return cy.wrap(name);
         });

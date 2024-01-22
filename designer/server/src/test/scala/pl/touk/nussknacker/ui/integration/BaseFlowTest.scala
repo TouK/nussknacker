@@ -32,7 +32,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationResult
 }
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
-import pl.touk.nussknacker.ui.api.NodeValidationRequest
+import pl.touk.nussknacker.ui.api.{NodeValidationRequest, ScenarioValidationRequest}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
@@ -296,7 +296,7 @@ class BaseFlowTest
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processValidation/${ProcessTestData.sampleProcessName}")
         .contentType(MediaType.ApplicationJson)
-        .body(scenario.asJson.spaces2)
+        .body(ScenarioValidationRequest(ProcessTestData.sampleProcessName, scenario).asJson.spaces2)
         .auth
         .basic("admin", "admin")
     )

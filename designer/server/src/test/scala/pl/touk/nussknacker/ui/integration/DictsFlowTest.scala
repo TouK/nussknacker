@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.integration
 
 import com.typesafe.config.Config
 import io.circe.Json
+import io.circe.syntax.EncoderOps
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
@@ -10,7 +11,9 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
+import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{UriContext, quickRequest}
@@ -50,7 +53,7 @@ class DictsFlowTest
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processValidation/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toScenarioGraphJson(process).spaces2)
+        .body(ScenarioValidationRequest(process.name, ProcessConverter.toDisplayable(process)).asJson.spaces2)
         .auth
         .basic("admin", "admin")
     )
@@ -171,7 +174,7 @@ class DictsFlowTest
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processValidation/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toScenarioGraphJson(process).spaces2)
+        .body(ScenarioValidationRequest(process.name, ProcessConverter.toDisplayable(process)).asJson.spaces2)
         .auth
         .basic("admin", "admin")
     )
