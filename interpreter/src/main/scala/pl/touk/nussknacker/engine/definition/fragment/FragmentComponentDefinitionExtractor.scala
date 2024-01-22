@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 
 class FragmentComponentDefinitionExtractor(classLoader: ClassLoader, componentInfoToId: ComponentInfo => ComponentId) {
 
-  val parametersExtractor = new FragmentParametersWithoutValidatorsDefinitionExtractor(classLoader)
+  val parametersExtractor = new FragmentParametersDefinitionExtractor(classLoader)
 
   def extractFragmentComponentDefinition(
       fragment: CanonicalProcess,

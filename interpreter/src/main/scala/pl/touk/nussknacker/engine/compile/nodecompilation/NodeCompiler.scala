@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.definition.component.dynamic.{
   FinalStateValue
 }
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersCompleteDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -75,7 +75,7 @@ object NodeCompiler {
 
 class NodeCompiler(
     definitions: ModelDefinition[ComponentDefinitionWithImplementation],
-    fragmentDefinitionExtractor: FragmentParametersCompleteDefinitionExtractor,
+    fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor,
     expressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
     resultCollector: ResultCollector,
@@ -139,8 +139,7 @@ class NodeCompiler(
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case frag @ FragmentInputDefinition(id, _, _) =>
-      val parameterDefinitions =
-        fragmentDefinitionExtractor.extractParametersDefinition(frag, contextWithOnlyGlobalVariables)
+      val parameterDefinitions                 = fragmentDefinitionExtractor.extractParametersDefinition(frag)
       val variables: Map[String, TypingResult] = parameterDefinitions.value.map(a => a.name -> a.typ).toMap
       val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
 
@@ -158,13 +157,30 @@ class NodeCompiler(
 
         // For default case, we creates source that support test with parameters
         case None =>
+          val paramDefinitionsWithCompiledValidators = parameterDefinitions.value.map { paramDef =>
+            expressionCompiler.compileValidators(paramDef)
+          }.sequence
+
           NodeCompilationResult(
             Map.empty,
             None,
             Valid(validationContext),
-            Valid(new FragmentSourceWithTestWithParametersSupportFactory(parameterDefinitions.value).createSource())
+            paramDefinitionsWithCompiledValidators.andThen(paramDefs =>
+              Valid(new FragmentSourceWithTestWithParametersSupportFactory(paramDefs).createSource())
+            )
           )
       }
+
+      val fixedValuesErrors = frag.parameters
+        .map { param =>
+          FragmentParameterValidator.validateFixedExpressionValues(
+            param,
+            validationContext,
+            expressionCompiler
+          )
+        }
+        .sequence
+        .map(_ => ())
 
       val parameterNameValidation = validateParameterNames(parameterDefinitions.value)
 
@@ -180,7 +196,8 @@ class NodeCompiler(
       )
 
       val displayableErrors =
-        if (displayUniqueNameReliantErrors) parameterNameValidation |+| parameterExtractionValidation
+        if (displayUniqueNameReliantErrors)
+          parameterNameValidation |+| parameterExtractionValidation |+| fixedValuesErrors
         else parameterNameValidation
 
       compilationResult.copy(compiledObject = displayableErrors.andThen(_ => compilationResult.compiledObject))
@@ -243,7 +260,7 @@ class NodeCompiler(
   ): NodeCompilationResult[List[CompiledParameter]] = {
 
     val ref            = fragmentInput.ref
-    val validParamDefs = fragmentDefinitionExtractor.extractParametersDefinition(fragmentInput, ctx)
+    val validParamDefs = fragmentDefinitionExtractor.extractParametersDefinition(fragmentInput)
 
     val childCtx = ctx.pushNewContext()
     val newCtx =

@@ -505,30 +505,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                     )
                   ),
                   valueCompileTimeValidation = None
-                ),
-                FragmentParameter(
-                  "subParam3",
-                  FragmentClazzRef[java.lang.String],
-                  required = false,
-                  initialValue = None,
-                  hintText = None,
-                  valueEditor = None,
-                  valueCompileTimeValidation =
-                    Some(ParameterValueCompileTimeValidation(Expression.spel("'a' + 'b'"), Some("some failed message")))
-                ),
-                FragmentParameter(
-                  "subParam4",
-                  FragmentClazzRef[java.lang.String],
-                  required = false,
-                  initialValue = None,
-                  hintText = None,
-                  valueEditor = None,
-                  valueCompileTimeValidation = Some(
-                    ParameterValueCompileTimeValidation(
-                      s"#${ValidationExpressionParameterValidator.variableName} < 7", // invalid operation (comparing string with int)
-                      None
-                    )
-                  )
                 )
               )
             )
@@ -561,19 +537,74 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "There is a problem with expression: 'someValue'",
               Some("$param.subParam2.$fixedValuesList"),
               NodeValidationErrorType.SaveAllowed
-            ),
+            )
+          ) =>
+    }
+  }
+
+  test("validates fragment input definition expression validator while validating fragment") {
+    val fragmentWithInvalidParam =
+      CanonicalProcess(
+        MetaData("sub1", FragmentSpecificData()),
+        List(
+          FlatNode(
+            FragmentInputDefinition(
+              "in",
+              List(
+                FragmentParameter(
+                  "subParam1",
+                  FragmentClazzRef[java.lang.String],
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = None,
+                  valueCompileTimeValidation =
+                    Some(ParameterValueCompileTimeValidation(Expression.spel("'a' + 'b'"), Some("some failed message")))
+                ),
+                FragmentParameter(
+                  "subParam2",
+                  FragmentClazzRef[java.lang.String],
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = None,
+                  valueCompileTimeValidation = Some(
+                    ParameterValueCompileTimeValidation(
+                      s"#${ValidationExpressionParameterValidator.variableName} < 7", // invalid operation (comparing string with int)
+                      None
+                    )
+                  )
+                )
+              )
+            )
+          ),
+          FlatNode(
+            FragmentOutputDefinition("out", "out1", List.empty)
+          )
+        ),
+        List.empty
+      )
+
+    val displayableFragment =
+      ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, Category1)
+
+    val validationResult = configuredValidator.validate(displayableFragment)
+
+    validationResult.errors should not be empty
+    validationResult.errors.invalidNodes("in") should matchPattern {
+      case List(
             NodeValidationError(
               "InvalidValidationExpression",
               "Invalid validation expression: Bad expression type, expected: Boolean, found: String(ab)",
               "There is a problem with validation expression: 'a' + 'b'",
-              Some("$param.subParam3.$validationExpression"),
+              Some("$param.subParam1.$validationExpression"),
               NodeValidationErrorType.SaveAllowed
             ),
             NodeValidationError(
               "InvalidValidationExpression",
               "Invalid validation expression: Wrong part types",
               "There is a problem with validation expression: #value < 7",
-              Some("$param.subParam4.$validationExpression"),
+              Some("$param.subParam2.$validationExpression"),
               NodeValidationErrorType.SaveAllowed
             )
           ) =>

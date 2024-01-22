@@ -186,7 +186,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       .map(exprByBranchId => TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
   }
 
-  private def compileValidators(
+  def compileValidators(
       definition: Parameter
   )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
     val validators = definition.validators.map {
