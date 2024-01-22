@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyInterpreterDependencies, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
-import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
@@ -45,7 +45,7 @@ object ProcessCompilerData {
       definitionWithTypes.modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions
     )
-    val fragmentDefinitionExtractor = FragmentCompleteDefinitionExtractor(
+    val fragmentParametersDefinitionExtractor = FragmentParametersCompleteDefinitionExtractor(
       userCodeClassLoader,
       expressionCompiler
     )
@@ -53,7 +53,7 @@ object ProcessCompilerData {
     // for testing environment it's important to take classloader from user jar
     val nodeCompiler = new NodeCompiler(
       definitionWithTypes.modelDefinition,
-      fragmentDefinitionExtractor,
+      fragmentParametersDefinitionExtractor,
       expressionCompiler,
       userCodeClassLoader,
       resultsCollector,

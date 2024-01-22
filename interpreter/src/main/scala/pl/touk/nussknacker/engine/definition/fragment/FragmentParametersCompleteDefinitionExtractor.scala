@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 
-class FragmentCompleteDefinitionExtractor(
-    withoutValidatorsExtractor: FragmentWithoutValidatorsDefinitionExtractor,
+class FragmentParametersCompleteDefinitionExtractor(
+    withoutValidatorsExtractor: FragmentParametersWithoutValidatorsDefinitionExtractor,
     expressionCompiler: ExpressionCompiler
 ) {
 
@@ -122,15 +122,15 @@ class FragmentCompleteDefinitionExtractor(
 
 }
 
-object FragmentCompleteDefinitionExtractor {
+object FragmentParametersCompleteDefinitionExtractor {
 
   def apply(
       classLoader: ClassLoader,
       expressionCompiler: ExpressionCompiler
-  ): FragmentCompleteDefinitionExtractor = {
-    val withoutValidatorsExtractor = new FragmentWithoutValidatorsDefinitionExtractor(classLoader)
+  ): FragmentParametersCompleteDefinitionExtractor = {
+    val withoutValidatorsExtractor = new FragmentParametersWithoutValidatorsDefinitionExtractor(classLoader)
 
-    new FragmentCompleteDefinitionExtractor(
+    new FragmentParametersCompleteDefinitionExtractor(
       withoutValidatorsExtractor,
       expressionCompiler
     )
