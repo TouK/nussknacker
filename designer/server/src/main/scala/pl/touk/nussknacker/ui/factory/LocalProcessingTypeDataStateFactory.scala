@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService
+import pl.touk.nussknacker.ui.process.deployment.{AllDeployedScenarioService, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataState
@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel.{category, typeName}
 import _root_.sttp.client3.SttpBackend
 import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.toValueWithPermission
 
@@ -27,6 +28,7 @@ class LocalProcessingTypeDataStateFactory(
   override def create(
       designerConfig: ConfigWithUnresolvedVersion,
       deploymentServiceSupplier: Supplier[DeploymentService],
+      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
       additionalUIConfigProvider: AdditionalUIConfigProvider
   )(
       implicit ec: ExecutionContext,
@@ -34,8 +36,9 @@ class LocalProcessingTypeDataStateFactory(
       sttpBackend: SttpBackend[Future, Any]
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val deploymentService: DeploymentService = deploymentServiceSupplier.get()
+    val allDeploymentsService                = createAllDeployedScenarioService(typeName)
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService =
-      new DefaultProcessingTypeDeploymentService(typeName, deploymentService)
+      new DefaultProcessingTypeDeploymentService(typeName, deploymentService, allDeploymentsService)
     val data =
       ProcessingTypeData.createProcessingTypeData(
         typeName,

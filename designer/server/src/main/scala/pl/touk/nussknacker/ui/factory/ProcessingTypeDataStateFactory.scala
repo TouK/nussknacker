@@ -2,8 +2,9 @@ package pl.touk.nussknacker.ui.factory
 
 import akka.actor.ActorSystem
 import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ProcessingTypeData}
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService
+import pl.touk.nussknacker.ui.process.deployment.{AllDeployedScenarioService, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataState
 import sttp.client3.SttpBackend
 
@@ -15,6 +16,7 @@ trait ProcessingTypeDataStateFactory {
   def create(
       designerConfig: ConfigWithUnresolvedVersion,
       deploymentServiceSupplier: Supplier[DeploymentService],
+      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
       additionalUIConfigProvider: AdditionalUIConfigProvider
   )(
       implicit ec: ExecutionContext,

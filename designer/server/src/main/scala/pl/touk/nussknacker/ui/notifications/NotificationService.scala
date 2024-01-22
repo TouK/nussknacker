@@ -19,7 +19,7 @@ trait NotificationService {
 }
 
 class NotificationServiceImpl(
-    actionRepository: DbProcessActionRepository[DB],
+    actionRepository: DbProcessActionRepository,
     dbioRunner: DBIOActionRunner,
     config: NotificationConfig,
     clock: Clock = Clock.systemUTC()

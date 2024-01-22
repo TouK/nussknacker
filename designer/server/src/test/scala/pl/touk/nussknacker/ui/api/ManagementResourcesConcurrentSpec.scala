@@ -9,7 +9,7 @@ import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, SampleScenario}
+import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
 
 import scala.jdk.CollectionConverters._
 
@@ -27,7 +27,8 @@ class ManagementResourcesConcurrentSpec
 
   test("not allow concurrent deployment of same process") {
     val processName = ProcessName(s"sameConcurrentDeployments")
-    saveProcessAndAssertSuccess(processName, SampleScenario.scenario)
+    val scenario    = ProcessTestData.sampleScenario.withProcessName(processName)
+    saveCanonicalProcessAndAssertSuccess(scenario)
 
     deploymentManager.withWaitForDeployFinish(processName) {
       val firstDeployResult  = deployProcess(processName)
@@ -55,7 +56,8 @@ class ManagementResourcesConcurrentSpec
   test("allow concurrent deployment and cancel of same process") {
     val processName = ProcessName("concurrentDeployAndCancel")
 
-    saveProcessAndAssertSuccess(processName, SampleScenario.scenario)
+    val scenario = ProcessTestData.sampleScenario.withProcessName(processName)
+    saveCanonicalProcessAndAssertSuccess(scenario)
     deploymentManager.withWaitForDeployFinish(processName) {
       val firstDeployResult = deployProcess(processName)
       // we have to check if deploy was invoke, otherwise cancel can be faster than deploy

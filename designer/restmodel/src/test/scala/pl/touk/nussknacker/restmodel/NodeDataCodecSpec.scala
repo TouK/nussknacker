@@ -17,7 +17,6 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
 
   test("displayable process encode and decode") {
     val process = DisplayableProcess(
-      ProcessName(""),
       ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(),
         ProcessAdditionalFields(Some("a"), Map("field1" -> "value1"), StreamMetaData.typeName)
@@ -34,9 +33,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
       ),
       List(
         Edge("from1", "to1", None)
-      ),
-      "",
-      "category1"
+      )
     )
 
     val encoded = Encoder[DisplayableProcess].apply(process)
@@ -55,13 +52,9 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
   }
 
   test("decode displayable process in legacy format with typeSpecificProperties") {
-    val givenProcessName    = ProcessName("foo1")
-    val givenProcessingType = "fooProcessingType"
-    val givenCategory       = "FooCategory"
-    val givenParallelism    = 10
+    val givenParallelism = 10
     val legacyJsonWithNoFields =
       s"""{
-         |  "name" : "$givenProcessName",
          |  "properties" : {
          |    "typeSpecificProperties" : {
          |      "parallelism" : $givenParallelism,
@@ -70,16 +63,13 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
          |    "additionalFields" : null
          |  },
          |  "nodes" : [],
-         |  "edges" : [],
-         |  "processingType" : "$givenProcessingType",
-         |  "category" : "$givenCategory"
+         |  "edges" : []
          |}""".stripMargin
 
     val parsedLegacy = parser.parse(legacyJsonWithNoFields).rightValue
 
     val decoded = Decoder[DisplayableProcess].decodeJson(parsedLegacy).rightValue
     decoded shouldEqual DisplayableProcess(
-      givenProcessName,
       ProcessProperties(
         ProcessAdditionalFields(
           None,
@@ -93,9 +83,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
         )
       ),
       List.empty,
-      List.empty,
-      givenProcessingType,
-      givenCategory
+      List.empty
     )
 
   }

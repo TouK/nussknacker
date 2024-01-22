@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ProcessCounter(fragmentRepository: FragmentRepository) {
 
-  def computeCounts(canonicalProcess: CanonicalProcess, counts: String => Option[RawCount])(
+  def computeCounts(canonicalProcess: CanonicalProcess, isFragment: Boolean, counts: String => Option[RawCount])(
       implicit user: LoggedUser
   ): Map[String, NodeCount] = {
 
@@ -39,7 +39,7 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
       nodes.flatMap {
         // TODO: this is a bit of a hack. Metric for fragment input is counted in node with fragment occurrence id...
         // We want to count it though while testing fragments
-        case FlatNode(FragmentInputDefinition(id, _, _)) if !canonicalProcess.metaData.isFragment =>
+        case FlatNode(FragmentInputDefinition(id, _, _)) if !isFragment =>
           Map(id -> nodeCountOption(None))
         // BranchEndData is kind of artificial entity
         case FlatNode(BranchEndData(_))  => Map.empty[String, NodeCount]

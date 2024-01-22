@@ -50,37 +50,21 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   )
 
   test("validate non empty config with required property") {
-    val process = ProcessTestData.displayableWithAdditionalFields(
-      Some(
-        ProcessAdditionalFields(
-          description = None,
-          properties = Map(
-            "propReq" -> "5"
-          ),
-          metaDataType = StreamMetaData.typeName
-        )
-      )
+    val result = validator.validate(
+      Map(
+        "propReq" -> "5"
+      ).toList
     )
-
-    val result = validator.validate(process)
 
     result.errors.processPropertiesErrors shouldBe List.empty
   }
 
   test("validate non empty config without required property") {
-    val process = ProcessTestData.displayableWithAdditionalFields(
-      Some(
-        ProcessAdditionalFields(
-          description = None,
-          properties = Map(
-            "propOpt" -> "a"
-          ),
-          metaDataType = StreamMetaData.typeName
-        )
-      )
+    val result = validator.validate(
+      Map(
+        "propOpt" -> "a"
+      ).toList
     )
-
-    val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
@@ -96,19 +80,11 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate non empty config with empty required property") {
-    val process = ProcessTestData.displayableWithAdditionalFields(
-      Some(
-        ProcessAdditionalFields(
-          description = None,
-          properties = Map(
-            "propReq" -> ""
-          ),
-          metaDataType = StreamMetaData.typeName
-        )
-      )
+    val result = validator.validate(
+      Map(
+        "propReq" -> ""
+      ).toList
     )
-
-    val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
@@ -118,40 +94,24 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate regexp config with empty property") {
-    val process = ProcessTestData.displayableWithAdditionalFields(
-      Some(
-        ProcessAdditionalFields(
-          description = None,
-          properties = Map(
-            "propReq"    -> "1",
-            "propRegExp" -> ""
-          ),
-          metaDataType = StreamMetaData.typeName
-        )
-      )
+    val result = validator.validate(
+      Map(
+        "propReq"    -> "1",
+        "propRegExp" -> ""
+      ).toList
     )
-
-    val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern { case List() =>
     }
   }
 
   test("validate config with invalid property") {
-    val process = ProcessTestData.displayableWithAdditionalFields(
-      Some(
-        ProcessAdditionalFields(
-          description = None,
-          properties = Map(
-            "propReq"    -> "1",
-            "propRegExp" -> "asd"
-          ),
-          metaDataType = StreamMetaData.typeName
-        )
-      )
+    val result = validator.validate(
+      Map(
+        "propReq"    -> "1",
+        "propRegExp" -> "asd"
+      ).toList
     )
-
-    val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
@@ -167,19 +127,11 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate non empty config with required property with wrong type") {
-    val process = ProcessTestData.displayableWithAdditionalFields(
-      Some(
-        ProcessAdditionalFields(
-          description = None,
-          properties = Map(
-            "propReq" -> "some text"
-          ),
-          metaDataType = StreamMetaData.typeName
-        )
-      )
+    val result = validator.validate(
+      Map(
+        "propReq" -> "some text"
+      ).toList
     )
-
-    val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
@@ -195,9 +147,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate empty config") {
-    val process = ProcessTestData.displayableWithAdditionalFields(None)
-
-    val result = validator.validate(process)
+    val result = validator.validate(List.empty)
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
@@ -213,19 +163,11 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate non empty config with fixed value property with wrong value") {
-    val process = ProcessTestData.displayableWithAdditionalFields(
-      Some(
-        ProcessAdditionalFields(
-          description = None,
-          properties = Map(
-            optFixedFieldName -> "some text"
-          ),
-          metaDataType = StreamMetaData.typeName
-        )
-      )
+    val result = validator.validate(
+      Map(
+        optFixedFieldName -> "some text"
+      ).toList
     )
-
-    val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
@@ -249,24 +191,16 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
 
   test("validate non empty config with unknown property") {
     val unknownProperty = "unknown"
-    val process = ProcessTestData.displayableWithAdditionalFields(
-      Some(
-        ProcessAdditionalFields(
-          description = None,
-          properties = Map(
-            "propReq" -> "5",
-            "unknown" -> "some text"
-          ),
-          metaDataType = StreamMetaData.typeName
-        )
-      )
+    val result = validator.validate(
+      Map(
+        "propReq"       -> "5",
+        unknownProperty -> "some text"
+      ).toList
     )
-
-    val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
-            NodeValidationError("UnknownProperty", _, _, Some(unknownProperty), NodeValidationErrorType.SaveAllowed)
+            NodeValidationError("UnknownProperty", _, _, Some(`unknownProperty`), NodeValidationErrorType.SaveAllowed)
           ) =>
     }
   }

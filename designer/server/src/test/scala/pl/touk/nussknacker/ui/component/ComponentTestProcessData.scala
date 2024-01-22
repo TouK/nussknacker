@@ -3,11 +3,12 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 import java.time.Instant
@@ -37,10 +38,10 @@ object ComponentTestProcessData {
 
   val DeployedMarketingProcessName = "deployedMarketingProcess"
 
-  val FraudFragmentName            = "fraudFragmentName"
-  val DeployedFraudProcessName     = "deployedFraudProcess"
-  val CanceledFraudProcessName     = "canceledFraudProcessName"
-  val FraudProcessWithFragmentName = "fraudProcessWithFragment"
+  val FraudFragmentName: ProcessName            = ProcessName("fraudFragmentName")
+  val DeployedFraudProcessName: ProcessName     = ProcessName("deployedFraudProcess")
+  val CanceledFraudProcessName: ProcessName     = ProcessName("canceledFraudProcessName")
+  val FraudProcessWithFragmentName: ProcessName = ProcessName("fraudProcessWithFragment")
 
   private val deployedAction = prepareTestAction(ProcessActionType.Deploy)
   private val canceledAction = prepareTestAction(ProcessActionType.Cancel)
@@ -62,72 +63,86 @@ object ComponentTestProcessData {
       buildInfo = Map.empty
     )
 
-  val MarketingProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
-    displayable = createSimpleDisplayableProcess("marketingProcess", Streaming, SharedSourceConf, SharedSinkConf),
+  val MarketingProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToScenarioWithDetailsEntity(
+    displayable = createSimpleDisplayableProcess(SharedSourceConf, SharedSinkConf),
+    name = ProcessName("marketingProcess"),
+    processingType = Streaming,
     category = CategoryMarketing
   )
 
-  val FraudProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
-    displayable = createSimpleDisplayableProcess("fraudProcess", Fraud, SharedSourceConf, SharedSinkConf),
+  val FraudProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToScenarioWithDetailsEntity(
+    displayable = createSimpleDisplayableProcess(SharedSourceConf, SharedSinkConf),
+    name = ProcessName("fraudProcess"),
+    processingType = Fraud,
     category = CategoryFraud
   )
 
-  val FraudProcessWithNotSharedSource: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
-    displayable =
-      createSimpleDisplayableProcess("fraudProcessWithNotSharedSource", Fraud, NotSharedSourceConf, SharedSinkConf),
-    category = CategoryFraud
-  )
+  val FraudProcessWithNotSharedSource: ScenarioWithDetailsEntity[DisplayableProcess] =
+    displayableToScenarioWithDetailsEntity(
+      displayable = createSimpleDisplayableProcess(NotSharedSourceConf, SharedSinkConf),
+      name = ProcessName("fraudProcessWithNotSharedSource"),
+      processingType = Fraud,
+      category = CategoryFraud
+    )
 
-  val DeployedFraudProcessWith2Filters: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
-    displayable = {
-      val process = ScenarioBuilder
-        .streaming(DeployedFraudProcessName)
-        .source(DefaultSourceName, SharedSourceName)
-        .filter(DefaultFilterName, "#input.id != null")
-        .filter(SecondFilterName, "#input.id != null")
-        .emptySink(DefaultSinkName, DefaultSinkName)
+  val DeployedFraudProcessWith2Filters: ScenarioWithDetailsEntity[DisplayableProcess] =
+    displayableToScenarioWithDetailsEntity(
+      displayable = {
+        val process = ScenarioBuilder
+          .streaming("not-used-name")
+          .source(DefaultSourceName, SharedSourceName)
+          .filter(DefaultFilterName, "#input.id != null")
+          .filter(SecondFilterName, "#input.id != null")
+          .emptySink(DefaultSinkName, DefaultSinkName)
+        ProcessConverter.toDisplayable(process)
+      },
+      name = DeployedFraudProcessName,
+      processingType = Fraud,
+      category = CategoryFraud
+    ).copy(lastAction = Some(deployedAction))
 
-      toDisplayable(process, processingType = Fraud)
-    },
-    category = CategoryFraud
-  ).copy(lastAction = Some(deployedAction))
+  val CanceledFraudProcessWith2Enrichers: ScenarioWithDetailsEntity[DisplayableProcess] =
+    displayableToScenarioWithDetailsEntity(
+      displayable = {
+        val process = ScenarioBuilder
+          .streaming("not-used-name")
+          .source(DefaultSourceName, SharedSourceName)
+          .enricher(DefaultCustomName, "customOut", CustomerDataEnricherName)
+          .enricher(SecondCustomName, "secondCustomOut", CustomerDataEnricherName)
+          .emptySink(DefaultSinkName, DefaultSinkName)
+        ProcessConverter.toDisplayable(process)
+      },
+      name = CanceledFraudProcessName,
+      processingType = Fraud,
+      category = CategoryFraud
+    ).copy(lastAction = Some(canceledAction))
 
-  val CanceledFraudProcessWith2Enrichers: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
-    displayable = {
-      val process = ScenarioBuilder
-        .streaming(CanceledFraudProcessName)
-        .source(DefaultSourceName, SharedSourceName)
-        .enricher(DefaultCustomName, "customOut", CustomerDataEnricherName)
-        .enricher(SecondCustomName, "secondCustomOut", CustomerDataEnricherName)
-        .emptySink(DefaultSinkName, DefaultSinkName)
-
-      toDisplayable(process, processingType = Fraud)
-    },
-    category = CategoryFraud
-  ).copy(lastAction = Some(canceledAction))
-
-  val ArchivedFraudProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
-    displayable = createSimpleDisplayableProcess("archivedFraudProcess", Fraud, SecondSharedSourceConf, SharedSinkConf),
+  val ArchivedFraudProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToScenarioWithDetailsEntity(
+    displayable = createSimpleDisplayableProcess(SecondSharedSourceConf, SharedSinkConf),
+    name = ProcessName("archivedFraudProcess"),
     isArchived = true,
+    processingType = Fraud,
     category = CategoryFraud
   ).copy(lastAction = Some(archivedAction))
 
-  val FraudFragment: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
+  val FraudFragment: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToScenarioWithDetailsEntity(
     displayable = {
       val scenario = ScenarioBuilder
-        .fragment(FraudFragmentName, "in" -> classOf[String])
+        .fragment("not-used-name", "in" -> classOf[String])
         .filter(FragmentFilterName, "#input.id != null")
         .fragmentOutput("fraudEnd", "output")
-      toDisplayable(scenario, processingType = Fraud)
+      ProcessConverter.toDisplayable(scenario)
     },
+    name = FraudFragmentName,
+    processingType = Fraud,
     category = CategoryFraud,
     isFragment = true,
   )
 
-  val FraudProcessWithFragment: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
-    toDisplayable(
+  val FraudProcessWithFragment: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToScenarioWithDetailsEntity(
+    ProcessConverter.toDisplayable(
       ScenarioBuilder
-        .streaming(FraudProcessWithFragmentName)
+        .streaming("not-used-name")
         .source(SecondSourceName, SharedSourceName)
         .filter(SecondFilterName, "#input.id != null")
         .fragment(
@@ -138,25 +153,21 @@ object ComponentTestProcessData {
           Map(
             "sink" -> GraphBuilder.emptySink(DefaultSinkName, FraudSinkName)
           )
-        ),
-      Fraud
+        )
     ),
+    name = FraudProcessWithFragmentName,
+    processingType = Fraud,
     category = CategoryFraud
   )
 
   private def createSimpleDisplayableProcess(
-      id: String,
-      processingType: String,
       source: NodeConf,
       sink: NodeConf
-  ): DisplayableProcess = toDisplayable(
-    espProcess = {
-      ScenarioBuilder
-        .streaming(id)
-        .source(source.name, source.id)
-        .emptySink(sink.name, sink.id)
-    },
-    processingType = processingType
+  ): DisplayableProcess = ProcessConverter.toDisplayable(
+    ScenarioBuilder
+      .streaming("not-used-name")
+      .source(source.name, source.id)
+      .emptySink(sink.name, sink.id)
   )
 
   /**

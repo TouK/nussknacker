@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
 import pl.touk.nussknacker.ui.config.processtoolbar._
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
@@ -546,6 +547,12 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  private def createProcess(name: String, category: ProcessingType, isFragment: Boolean, isArchived: Boolean) =
-    TestProcessUtil.toDetails(ProcessName(name), category, isFragment = isFragment, isArchived = isArchived)
+  private def createProcess(name: String, category: Category, isFragment: Boolean, isArchived: Boolean) =
+    TestProcessUtil.toScenarioWithDetailsEntity(
+      ProcessName(name),
+      category,
+      isFragment = isFragment,
+      isArchived = isArchived
+    )
+
 }
