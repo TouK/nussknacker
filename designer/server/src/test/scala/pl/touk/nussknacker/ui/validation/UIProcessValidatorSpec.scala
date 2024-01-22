@@ -935,7 +935,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               NodeValidationError(
                 "CustomParameterValidationError",
                 "some custom failure message",
-                s"Please provide value that satisfies the validation expression '#${ValidationExpressionParameterValidator.variableName}.length() < 7'",
+                "Please provide value that satisfies the validation expression '#value.length() < 7'",
                 Some("optionalParam"),
                 NodeValidationErrorType.SaveAllowed
               )
@@ -1028,7 +1028,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               NodeValidationError(
                 "CustomParameterValidationError",
                 "some custom failure message",
-                s"Please provide value that satisfies the validation expression '#${ValidationExpressionParameterValidator.variableName}.length() < 7'",
+                s"Please provide value that satisfies the validation expression '#value.length() < 7'",
                 Some("optionalParam"),
                 NodeValidationErrorType.SaveAllowed
               )
