@@ -79,7 +79,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
       Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0)))
     )
-    .withCustom("withoutReturnType", None, nonEndingOneInputComponent, Parameter[String]("par1"))
+    .withCustom(
+      "withoutReturnType",
+      None,
+      nonEndingOneInputComponent,
+      Parameter[String]("par1")
+    )
     .withCustom(
       "withMandatoryParams",
       Some(Unknown),

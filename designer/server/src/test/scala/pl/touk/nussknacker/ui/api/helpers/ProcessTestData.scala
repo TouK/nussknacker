@@ -92,27 +92,27 @@ object ProcessTestData {
       .withCustom(
         existingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
       )
       .withCustom(
         otherExistingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
       )
       .withCustom(
         otherExistingStreamTransformer2,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
       )
       .withCustom(
         optionalEndingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = true)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
       )
       .withCustom(
         union,
         Some(Unknown),
-        CustomComponentSpecificData(manyInputs = true, canBeEnding = true)
+        CustomComponentSpecificData(manyInputs = true, canBeEnding = true),
       )
       .build
 
