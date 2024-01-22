@@ -287,7 +287,6 @@ object ProcessCompilationError {
 
   final case class DisablingManyOutputsFragment(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
-  // TODO local: check if this displays ok
   final case class DisablingNoOutputsFragment(id: String) extends ProcessCompilationError with GlobalError {
     override def nodeIds: Set[String] = Set.empty
   }
@@ -317,7 +316,6 @@ object ProcessCompilationError {
       CustomNodeError(nodeId.id, message, paramName)
   }
 
-  // TODO local: check if this displays ok
   final case class FatalUnknownError(message: String) extends ProcessCompilationError with GlobalError {
     override def nodeIds: Set[String] = Set()
   }

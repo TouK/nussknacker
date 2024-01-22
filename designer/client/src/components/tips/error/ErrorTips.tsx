@@ -21,8 +21,7 @@ export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {
     const otherNodeErrorIds = difference(nodeIds, concat(looseNodeIds, invalidEndNodeIds));
     const errorsOnTop = errorsOnTopPresent(otherNodeErrorIds, processPropertiesErrors);
 
-    // TODO local: is this fieldName in global error message ever used? remove if not
-    const renderGlobalErrorSimpleMessage = (error) => (
+    const renderGlobalErrorSimpleMessage = (error: NodeValidationError) => (
         <span key={uuid4()} title={error.description}>
             {error.message + (error.fieldName ? `(${error.fieldName})` : "")}
         </span>
