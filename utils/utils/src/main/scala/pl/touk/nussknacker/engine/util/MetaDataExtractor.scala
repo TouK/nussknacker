@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util
 
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData}
 
 import java.time._
 import java.time.format.DateTimeFormatter

@@ -3,9 +3,9 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -33,10 +33,10 @@ class ProcessesChangeListenerSpec
   private val routeWithAdminPermissions = withAdminPermissions(processesRoute)
   implicit val loggedUser: LoggedUser   = LoggedUser("1", "lu", testCategory)
 
-  private val processName = SampleScenario.scenario.name
+  private val processName = ProcessTestData.sampleScenario.name
 
   test("listen to category change") {
-    val processId = createEmptyProcess(processName, Category1, false)
+    val processId = createEmptyProcess(processName)
 
     Post(s"/processes/category/$processName/$Category2") ~> routeWithAdminPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern {
@@ -54,9 +54,9 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to process update") {
-    val processId = createEmptyProcess(processName, Category1, false)
+    val processId = createEmptyProcess(processName)
 
-    updateProcess(processName, ProcessTestData.validProcess) {
+    updateCanonicalProcess(ProcessTestData.validProcess) {
       eventually {
         processChangeListener.events.toArray.last should matchPattern { case OnSaved(`processId`, VersionId(2L)) => }
       }
@@ -64,7 +64,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to process archive / unarchive") {
-    val processId = createEmptyProcess(processName, Category1, false)
+    val processId = createEmptyProcess(processName)
 
     Post(s"/archive/$processName") ~> routeWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnArchived(`processId`) => }
@@ -75,7 +75,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to process rename") {
-    val processId = createEmptyProcess(processName, Category1, false)
+    val processId = createEmptyProcess(processName)
     val newName   = ProcessName("new_name")
 
     Put(s"/processes/$processName/rename/$newName") ~> routeWithAllPermissions ~> checkEventually {
@@ -86,7 +86,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to delete process") {
-    val processId = createArchivedProcess(processName, false)
+    val processId = createArchivedProcess(processName)
 
     Delete(s"/processes/$processName") ~> routeWithAllPermissions ~> check {
       status shouldBe StatusCodes.OK
@@ -97,7 +97,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to deployment success") {
-    val processId = createValidProcess(processName, Category1, false)
+    val processId = createValidProcess(processName)
     val comment   = Some("deployComment")
 
     deployProcess(
@@ -112,7 +112,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to deployment failure") {
-    val processId = createValidProcess(processName, Category1, false)
+    val processId = createValidProcess(processName)
 
     deploymentManager.withFailingDeployment(processName) {
       deployProcess(processName) ~> checkEventually {
@@ -122,11 +122,11 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to deployment cancel") {
-    val processId = createDeployedExampleScenario(processName.value)
+    val processId = createDeployedExampleScenario(processName)
     val comment   = Some("cancelComment")
 
     cancelProcess(
-      SampleScenario.scenario.name,
+      ProcessTestData.sampleScenario.name,
       Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
       comment
     ) ~> checkEventually {

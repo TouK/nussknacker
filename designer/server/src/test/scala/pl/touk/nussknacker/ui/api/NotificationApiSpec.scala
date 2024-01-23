@@ -4,6 +4,7 @@ import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
@@ -46,7 +47,7 @@ class NotificationApiSpec
             equalTo("[]")
           )
 
-        val scenarioName = "canceled-scenario-01"
+        val scenarioName = ProcessName("canceled-scenario-01")
 
         given()
           .applicationState {

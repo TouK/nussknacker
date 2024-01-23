@@ -27,13 +27,13 @@ describe("ProcessHistory suite", () => {
                 history: {
                     past: {
                         scenario: {
-                            json: {},
+                            scenarioGraph: {},
                             history: [processEntry(3), processEntry(2), processEntry(1)],
                         },
                     },
                     present: {
                         scenario: {
-                            json: {},
+                            scenarioGraph: {},
                             history: [processEntry(3), processEntry(2), processEntry(1)],
                         },
                     },

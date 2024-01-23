@@ -37,11 +37,6 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
       ec: ExecutionContext
   ): Future[Unit] = Future.successful(())
 
-  override def getDeployedScenarios(processingType: ProcessingType)(
-      implicit ec: ExecutionContext
-  ): Future[List[DeployedScenarioData]] =
-    Future.successful(List.empty)
-
   override def invalidateInProgressActions(): Unit = {}
 
   override def markProcessFinishedIfLastActionDeploy(processingType: ProcessingType, processName: ProcessName)(

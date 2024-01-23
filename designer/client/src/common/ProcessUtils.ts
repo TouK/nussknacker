@@ -32,12 +32,12 @@ class ProcessUtils {
             return true;
         }
 
-        return !savedProcessState || isEqual(omitValidation(scenario.json), omitValidation(savedProcessState.json));
+        return !savedProcessState || isEqual(omitValidation(scenario.scenarioGraph), omitValidation(savedProcessState.scenarioGraph));
     };
 
     canExport = (state: RootState): boolean => {
         const scenario = state.graphReducer.scenario;
-        return isEmpty(scenario) ? false : !isEmpty(scenario.json.nodes);
+        return isEmpty(scenario) ? false : !isEmpty(scenario.scenarioGraph.nodes);
     };
 
     //fixme maybe return hasErrors flag from backend?
@@ -65,11 +65,11 @@ class ProcessUtils {
         );
     };
 
-    getValidationResult = (scenarioGraph: ScenarioGraph): ValidationResult =>
-        scenarioGraph?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
+    getValidationResult = (scenario: Scenario): ValidationResult =>
+        scenario?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
 
     hasNoWarnings = (scenario: Scenario) => {
-        const warnings = this.getValidationResult(scenario.json).warnings;
+        const warnings = this.getValidationResult(scenario).warnings;
         return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
     };
 
@@ -78,7 +78,7 @@ class ProcessUtils {
     };
 
     getValidationErrors(scenario: Scenario) {
-        return this.getValidationResult(scenario.json).errors;
+        return this.getValidationResult(scenario).errors;
     }
 
     findContextForBranch = (node: NodeType, branchId: string) => {
@@ -100,17 +100,18 @@ class ProcessUtils {
         );
     };
 
-    getNodeResults = (scenarioGraph: ScenarioGraph): NodeResults => this.getValidationResult(scenarioGraph).nodeResults;
+    getNodeResults = (scenario: Scenario): NodeResults => this.getValidationResult(scenario).nodeResults;
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
     escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
     findAvailableVariables =
-        (components: Record<string, ComponentDefinition>, scenarioGraph: ScenarioGraph) =>
+        (components: Record<string, ComponentDefinition>, scenario: Scenario) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
-            const nodeResults = this.getNodeResults(scenarioGraph);
+            const nodeResults = this.getNodeResults(scenario);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
-            const variablesForNode = variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, scenarioGraph, components);
+            const variablesForNode =
+                variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, scenario.scenarioGraph, components);
             const variablesToHideForParam = parameterDefinition?.variablesToHide || [];
             const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key));
             const additionalVariablesForParam = parameterDefinition?.additionalVariables || {};

@@ -15,6 +15,8 @@ import scala.concurrent.Future
 trait AdditionalInfoProvider {
 
   def nodeAdditionalInfo(config: Config)(node: NodeData): Future[Option[AdditionalInfo]]
+
+  // TODO We should pass here only scenario properties
   def propertiesAdditionalInfo(config: Config)(metaData: MetaData): Future[Option[AdditionalInfo]]
 
 }

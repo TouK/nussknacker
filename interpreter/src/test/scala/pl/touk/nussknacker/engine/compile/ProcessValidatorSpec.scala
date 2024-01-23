@@ -451,7 +451,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           val fragment = ScenarioBuilder
             .fragmentWithInputNodeId(fragmentId, "sourceId")
             .emptySink("sinkId", "sink")
-          validate(fragment, baseDefinition).result match {
+          validate(fragment, baseDefinition, isFragment = true).result match {
             case Valid(_)   => expectedErrors shouldBe empty
             case Invalid(e) => e.toList shouldBe expectedErrors
 
@@ -1596,8 +1596,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
     withNonUsed shouldBe Symbol("valid")
 
-    val withUsed  = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
-    val outputVar = OutputVar.fragmentOutput("output1", "")
+    val withUsed = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
     withUsed should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable(usedVarName, "sample-out", Some(outputVar)), Nil)) =>
     }
@@ -1605,7 +1604,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   private def validate(
       process: CanonicalProcess,
-      definitions: ModelDefinition[ComponentDefinitionWithImplementation]
+      definitions: ModelDefinition[ComponentDefinitionWithImplementation],
+      isFragment: Boolean = false
   ): CompilationResult[Unit] = {
     ProcessValidator
       .default(
@@ -1613,7 +1613,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         new SimpleDictRegistry(Map.empty),
         CustomProcessValidatorLoader.emptyCustomProcessValidator
       )
-      .validate(process)
+      .validate(process, isFragment)
   }
 
   case class SimpleRecord(

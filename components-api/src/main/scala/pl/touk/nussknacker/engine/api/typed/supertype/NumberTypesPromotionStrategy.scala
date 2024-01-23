@@ -156,7 +156,7 @@ object NumberTypesPromotionStrategy {
         val floating = both.find(FloatingNumbers.contains).get
         handleFloatingType(floating)
       } else { // unknown Number
-        Typed.typedClass[Double]
+        Typed.typedClass[Number]
       }
     }
 

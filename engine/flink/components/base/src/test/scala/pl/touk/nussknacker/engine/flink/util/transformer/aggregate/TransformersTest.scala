@@ -195,7 +195,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val testProcess =
       sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
 
-    val result = processValidator.validate(testProcess)
+    val result = processValidator.validate(testProcess, isFragment = false)
 
     inside(result.result) {
       case Invalid(
@@ -617,7 +617,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
-    processValidator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false))
+    processValidator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false), isFragment = false)
   }
 
   private def tumbling(

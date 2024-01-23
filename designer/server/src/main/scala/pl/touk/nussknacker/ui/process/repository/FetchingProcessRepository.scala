@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import cats.Monad
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -29,7 +29,7 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
 
   // TODO: It should return F[Option[ProcessingType]]
   def fetchProcessingType(
-      processId: ProcessId
+      processId: ProcessIdWithName
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[ProcessingType]
 
 }

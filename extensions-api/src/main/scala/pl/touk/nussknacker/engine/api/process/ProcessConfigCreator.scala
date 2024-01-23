@@ -22,6 +22,7 @@ trait ProcessConfigCreator extends Serializable {
 
   def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig
 
+  // TODO: Rename to modelInfo or similar, as it can contain any information related to model, not only build info
   def buildInfo(): Map[String, String]
 
   def asyncExecutionContextPreparer(

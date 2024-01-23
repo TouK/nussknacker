@@ -7,15 +7,20 @@ import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process._
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.process.ProcessService._
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{
   ProcessNotFoundError,
   ProcessVersionNotFoundError
@@ -29,12 +34,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import pl.touk.nussknacker.ui.validation.{FatalValidationError, UIProcessValidator}
-import ScenarioWithDetailsConversions._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.validation.FatalValidationError
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,7 +50,7 @@ object ProcessService {
   )
 
   @JsonCodec final case class UpdateProcessCommand(
-      process: DisplayableProcess,
+      scenarioGraph: DisplayableProcess,
       comment: UpdateProcessComment,
       forwardedUserName: Option[RemoteUserName]
   )
@@ -146,12 +146,12 @@ trait ProcessService {
  */
 class DBProcessService(
     deploymentService: DeploymentService,
-    newProcessPreparer: NewProcessPreparer,
+    newProcessPreparers: ProcessingTypeDataProvider[NewProcessPreparer, _],
     getProcessCategoryService: () => ProcessCategoryService,
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
-    processActionRepository: ProcessActionRepository[DB],
+    processActionRepository: ProcessActionRepository,
     processRepository: ProcessRepository[DB]
 )(implicit ec: ExecutionContext)
     extends ProcessService
@@ -160,7 +160,7 @@ class DBProcessService(
   override def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId] = {
     fetchingProcessRepository
       .fetchProcessId(processName)
-      .map(_.getOrElse(throw ProcessNotFoundError(processName.toString)))
+      .map(_.getOrElse(throw ProcessNotFoundError(processName)))
   }
 
   override def getLatestProcessWithDetails(
@@ -175,7 +175,7 @@ class DBProcessService(
         override def apply[PS: ScenarioShapeFetchStrategy]: Future[Id[ScenarioWithDetailsEntity[PS]]] =
           fetchingProcessRepository
             .fetchLatestProcessDetailsForProcessId[PS](processIdWithName.id)
-            .map(_.getOrElse(throw ProcessNotFoundError(processIdWithName.id.value.toString)))
+            .map(_.getOrElse(throw ProcessNotFoundError(processIdWithName.name)))
       },
       options
     )
@@ -194,7 +194,7 @@ class DBProcessService(
         override def apply[PS: ScenarioShapeFetchStrategy]: Future[ScenarioWithDetailsEntity[PS]] =
           fetchingProcessRepository
             .fetchProcessDetailsForId[PS](processIdWithName.id, versionId)
-            .map(_.getOrElse(throw ProcessVersionNotFoundError(processIdWithName.id, versionId)))
+            .map(_.getOrElse(throw ProcessVersionNotFoundError(processIdWithName.name, versionId)))
       },
       options
     )
@@ -256,11 +256,7 @@ class DBProcessService(
       case FetchScenarioGraph.ValidateAndResolve(false) =>
         // reduce serialized response JSON by ~5-10 MB (typical typing information size in production use)
         val result = validateAndReverseResolve(entity)
-        result.copy(json = result.json.map { validatedProcess =>
-          validatedProcess.copy(validationResult =
-            validatedProcess.validationResult.map(_.copy(nodeResults = Map.empty))
-          )
-        })
+        result.copy(validationResult = result.validationResult.map(_.copy(nodeResults = Map.empty)))
       case FetchScenarioGraph.DontValidate =>
         toDisplayableProcessDetailsWithoutValidation(entity)
     }
@@ -269,13 +265,8 @@ class DBProcessService(
   private def toDisplayableProcessDetailsWithoutValidation(
       entity: ScenarioWithDetailsEntity[CanonicalProcess]
   ): ScenarioWithDetails = {
-    ScenarioWithDetailsConversions.fromEntity(entity.mapScenario { canonical =>
-      val displayableProcess = ProcessConverter.toDisplayable(
-        canonical,
-        entity.processingType,
-        entity.processCategory
-      )
-      ValidatedDisplayableProcess.withEmptyValidationResult(displayableProcess)
+    ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(entity.mapScenario { canonical =>
+      ProcessConverter.toDisplayable(canonical)
     })
   }
 
@@ -283,9 +274,8 @@ class DBProcessService(
       entity: ScenarioWithDetailsEntity[CanonicalProcess]
   )(implicit user: LoggedUser): ScenarioWithDetails = {
     ScenarioWithDetailsConversions.fromEntity(entity.mapScenario { canonical: CanonicalProcess =>
-      val processingType  = entity.processingType
       val processResolver = processResolverByProcessingType.forTypeUnsafe(entity.processingType)
-      processResolver.validateAndReverseResolve(canonical, processingType, entity.processCategory)
+      processResolver.validateAndReverseResolve(canonical, entity.name, entity.isFragment)
     })
   }
 
@@ -319,7 +309,7 @@ class DBProcessService(
         dbioRunner
           .runInTransaction(
             DBIOAction.seq(
-              processRepository.archive(processId = process.processIdUnsafe, isArchived = false),
+              processRepository.archive(processId = process.idWithNameUnsafe, isArchived = false),
               processActionRepository
                 .markProcessAsUnArchived(processId = process.processIdUnsafe, process.processVersionId)
             )
@@ -332,7 +322,7 @@ class DBProcessService(
   override def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit] =
     withArchivedProcess(processIdWithName, "Can't delete not archived scenario.") {
       dbioRunner
-        .runInTransaction(processRepository.deleteProcess(processIdWithName.id))
+        .runInTransaction(processRepository.deleteProcess(processIdWithName))
     }
 
   override def updateCategory(processIdWithName: ProcessIdWithName, category: String)(
@@ -342,7 +332,7 @@ class DBProcessService(
       withProcessingType(category) { _ =>
         dbioRunner.runInTransaction(
           processRepository
-            .updateCategory(processIdWithName.id, category)
+            .updateCategory(processIdWithName, category)
             .map(_ => UpdateProcessCategoryResponse(process.processCategory, category))
         )
       }
@@ -353,8 +343,9 @@ class DBProcessService(
       command: CreateProcessCommand
   )(implicit user: LoggedUser): Future[ProcessResponse] =
     withProcessingType(command.category) { processingType =>
+      val newProcessPreparer = newProcessPreparers.forTypeUnsafe(processingType)
       val emptyCanonicalProcess =
-        newProcessPreparer.prepareEmptyProcess(command.processName, processingType, command.isFragment)
+        newProcessPreparer.prepareEmptyProcess(command.processName, command.isFragment)
       val action = CreateProcessAction(
         command.processName,
         command.category,
@@ -364,7 +355,8 @@ class DBProcessService(
         command.forwardedUserName
       )
 
-      val propertiesErrors = validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.category)
+      val propertiesErrors =
+        validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.isFragment)
 
       if (propertiesErrors.nonEmpty) {
         throw ProcessValidationError(propertiesErrors.map(_.message).mkString(", "))
@@ -383,13 +375,13 @@ class DBProcessService(
   override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse] =
-    withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { _ =>
-      val processResolver = processResolverByProcessingType.forTypeUnsafe(action.process.processingType)
+    withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
+      val processResolver = processResolverByProcessingType.forTypeUnsafe(details.processingType)
       val validation =
         FatalValidationError.saveNotAllowedAsError(
-          processResolver.validateBeforeUiResolving(action.process)
+          processResolver.validateBeforeUiResolving(action.scenarioGraph, details.name, details.isFragment)
         )
-      val substituted = processResolver.resolveExpressions(action.process, validation.typingInfo)
+      val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
       val updateProcessAction = UpdateProcessAction(
         processIdWithName.id,
         substituted,
@@ -418,29 +410,23 @@ class DBProcessService(
         .valueOr(msg => throw ProcessUnmarshallingError(msg))
 
       val canonical   = jsonCanonicalProcess.withProcessName(processId.name)
-      val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
+      val displayable = ProcessConverter.toDisplayable(canonical)
       val validationResult = processResolverByProcessingType
         .forTypeUnsafe(process.processingType)
-        .validateBeforeUiReverseResolving(
-          canonical,
-          process.processCategory
-        )
-      Future.successful(ValidatedDisplayableProcess.withValidationResult(displayable, validationResult))
+        .validateBeforeUiReverseResolving(canonical, process.isFragment)
+      Future.successful(ValidatedDisplayableProcess(displayable, validationResult))
     }
   }
 
   private def validateInitialScenarioProperties(
       canonicalProcess: CanonicalProcess,
       processingType: ProcessingType,
-      category: String
+      isFragment: Boolean
   )(implicit user: LoggedUser) = {
     val validationResult =
       processResolverByProcessingType
         .forTypeUnsafe(processingType)
-        .validateBeforeUiReverseResolving(
-          canonicalProcess,
-          category
-        )
+        .validateBeforeUiReverseResolving(canonicalProcess, isFragment)
     validationResult.errors.processPropertiesErrors
   }
 
@@ -463,7 +449,7 @@ class DBProcessService(
     dbioRunner
       .runInTransaction(
         DBIOAction.seq(
-          processRepository.archive(processId = process.processIdUnsafe, isArchived = true),
+          processRepository.archive(processId = process.idWithNameUnsafe, isArchived = true),
           processActionRepository.markProcessAsArchived(processId = process.processIdUnsafe, process.processVersionId)
         )
       )
