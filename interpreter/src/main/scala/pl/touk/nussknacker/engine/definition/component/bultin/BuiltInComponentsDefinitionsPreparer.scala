@@ -3,17 +3,18 @@ package pl.touk.nussknacker.engine.definition.component.bultin
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component.BuiltInComponentInfo
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   BuiltInComponentSpecificData,
   ComponentDefinitionExtractor,
-  ComponentStaticDefinition,
-  ConfigWithOriginalGroupName
+  ComponentDefinitionWithImplementation,
+  ComponentStaticDefinition
 }
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
-class BuiltInComponentsStaticDefinitionsPreparer(componentsUiConfig: ComponentsUiConfig) {
+class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfig) {
 
-  def prepareStaticDefinitions(forFragment: Boolean): List[(String, ComponentStaticDefinition)] = {
+  def prepareDefinitions(forFragment: Boolean): List[(String, ComponentDefinitionWithImplementation)] = {
     val componentInfos = if (forFragment) {
       BuiltInComponentInfo.AllAvailableForFragment
     } else {
@@ -22,16 +23,15 @@ class BuiltInComponentsStaticDefinitionsPreparer(componentsUiConfig: ComponentsU
     componentInfos.flatMap { info =>
       val defaultConfig  = DefaultComponentConfigDeterminer.forBuiltInComponent(info)
       val combinedConfig = componentsUiConfig.getConfig(info) |+| defaultConfig
-      ComponentDefinitionExtractor.translateGroupNameAndFilterOutDisabled(combinedConfig, componentsUiConfig).map {
-        case ConfigWithOriginalGroupName(finalConfig, originalGroupName) =>
-          info.name -> ComponentStaticDefinition(
-            parameters = List.empty,
-            returnType = None,
-            componentConfig = finalConfig,
-            originalGroupName = originalGroupName,
-            componentTypeSpecificData = BuiltInComponentSpecificData
+      ComponentDefinitionExtractor
+        .filterOutDisabledAndComputeFinalUiDefinition(combinedConfig, componentsUiConfig.groupName)
+        .map { case (uiDefinition, _) =>
+          info.name -> MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+            BuiltInComponentSpecificData,
+            ComponentStaticDefinition(List.empty, None),
+            uiDefinition
           )
-      }
+        }
     }
   }
 

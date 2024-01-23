@@ -84,7 +84,7 @@ class GlobalVariablesPreparer(
 object GlobalVariablesPreparer {
 
   def apply(
-      expressionDefinition: ExpressionConfigDefinition[ComponentDefinitionWithImplementation]
+      expressionDefinition: ExpressionConfigDefinition
   ): GlobalVariablesPreparer = {
     // We have an assumption that GlobalVariables are handled by MethodBasedComponentDefinitionWithImplementation
     // See GlobalVariableDefinitionExtractor

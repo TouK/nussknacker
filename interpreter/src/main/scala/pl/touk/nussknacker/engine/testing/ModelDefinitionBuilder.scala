@@ -8,20 +8,18 @@ import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Language
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
   GlobalVariableDefinitionExtractor
 }
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.emptyExpressionConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 final case class ModelDefinitionBuilder(
     componentInfoToId: ComponentInfo => ComponentId,
-    components: List[(String, ComponentStaticDefinition)],
+    components: List[(String, ComponentDefinitionWithImplementation)],
     globalVariables: Map[String, AnyRef],
     private val groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
 ) {
@@ -37,22 +35,16 @@ final case class ModelDefinitionBuilder(
       returnType: Option[TypingResult],
       params: Parameter*
   ): ModelDefinitionBuilder =
-    wrapWithNotDisabledServiceDefinition(params.toList, returnType)
-      .map(withComponent(name, _))
-      .getOrElse(this)
+    wrapService(name, ComponentStaticDefinition(params.toList, returnType))
 
   def withSource(name: String, params: Parameter*): ModelDefinitionBuilder =
     withSource(name, Some(Unknown), params: _*)
 
   def withSource(name: String, returnType: Option[TypingResult], params: Parameter*): ModelDefinitionBuilder =
-    wrapWithNotDisabledSourceDefinition(params.toList, returnType)
-      .map(withComponent(name, _))
-      .getOrElse(this)
+    withSource(name, ComponentStaticDefinition(params.toList, returnType))
 
   def withSink(name: String, params: Parameter*): ModelDefinitionBuilder =
-    wrapWithNotDisabledSinkDefinition(params.toList)
-      .map(withComponent(name, _))
-      .getOrElse(this)
+    withSink(name, ComponentStaticDefinition(params.toList, None))
 
   def withCustom(
       name: String,
@@ -60,111 +52,96 @@ final case class ModelDefinitionBuilder(
       componentSpecificData: CustomComponentSpecificData,
       params: Parameter*
   ): ModelDefinitionBuilder =
-    withCustom(name, returnType, componentSpecificData, componentId = None, params: _*)
+    withCustom(name, returnType, componentSpecificData, componentGroupName = None, componentId = None, params: _*)
 
   def withCustom(
       name: String,
       returnType: Option[TypingResult],
       componentSpecificData: CustomComponentSpecificData,
-      componentId: Option[ComponentId]
-  ): ModelDefinitionBuilder =
-    withCustom(name, returnType, componentSpecificData, componentId, params = Seq.empty: _*)
-
-  def withCustom(
-      name: String,
-      returnType: Option[TypingResult],
-      componentSpecificData: CustomComponentSpecificData,
+      componentGroupName: Option[ComponentGroupName],
       componentId: Option[ComponentId],
       params: Parameter*
   ): ModelDefinitionBuilder =
-    wrapWithNotDisabledCustomComponentDefinition(
-      params.toList,
-      returnType,
-      componentSpecificData
-    ).map(withComponent(name, _, componentId)).getOrElse(this)
-
-  private def withComponent(
-      name: String,
-      componentStaticDefinition: ComponentStaticDefinition,
-      componentId: Option[ComponentId] = None
-  ): ModelDefinitionBuilder = {
-    val config = componentStaticDefinition.componentConfig.copy(
-      componentId = componentId.orElse(
-        componentStaticDefinition.componentConfig.componentId.orElse(
-          Some(componentInfoToId(ComponentInfo(componentStaticDefinition.componentType, name)))
-        )
-      )
+    wrapCustom(
+      name,
+      ComponentStaticDefinition(params.toList, returnType),
+      componentSpecificData,
+      componentGroupName,
+      componentId
     )
-
-    copy(components = (name -> componentStaticDefinition.copy(componentConfig = config)) :: components)
-  }
 
   def withGlobalVariable(name: String, variable: AnyRef): ModelDefinitionBuilder = {
     copy(globalVariables = globalVariables + (name -> variable))
   }
 
-  private def wrapWithNotDisabledSourceDefinition(
-      parameters: List[Parameter],
-      returnType: Option[TypingResult]
-  ): Option[ComponentStaticDefinition] =
-    wrapWithNotDisabledStaticDefinition(parameters, returnType, SourceSpecificData)
+  private def withSource(
+      name: String,
+      staticDefinition: ComponentStaticDefinition
+  ): ModelDefinitionBuilder =
+    withComponent(name, staticDefinition, SourceSpecificData, componentGroupName = None, componentId = None)
 
-  private def wrapWithNotDisabledSinkDefinition(
-      parameters: List[Parameter],
-  ): Option[ComponentStaticDefinition] =
-    wrapWithNotDisabledStaticDefinition(parameters, None, SinkSpecificData)
+  private def withSink(
+      name: String,
+      staticDefinition: ComponentStaticDefinition,
+  ): ModelDefinitionBuilder =
+    withComponent(name, staticDefinition, SinkSpecificData, componentGroupName = None, componentId = None)
 
-  private def wrapWithNotDisabledServiceDefinition(
-      parameters: List[Parameter],
-      returnType: Option[TypingResult]
-  ): Option[ComponentStaticDefinition] =
-    wrapWithNotDisabledStaticDefinition(parameters, returnType, ServiceSpecificData)
+  private def wrapService(
+      name: String,
+      staticDefinition: ComponentStaticDefinition,
+  ): ModelDefinitionBuilder =
+    withComponent(name, staticDefinition, ServiceSpecificData, componentGroupName = None, componentId = None)
 
-  private def wrapWithNotDisabledCustomComponentDefinition(
-      parameters: List[Parameter],
-      returnType: Option[TypingResult],
-      componentSpecificData: CustomComponentSpecificData
-  ): Option[ComponentStaticDefinition] =
-    wrapWithNotDisabledStaticDefinition(parameters, returnType, componentSpecificData)
+  private def wrapCustom(
+      name: String,
+      staticDefinition: ComponentStaticDefinition,
+      componentSpecificData: CustomComponentSpecificData,
+      componentGroupName: Option[ComponentGroupName],
+      componentId: Option[ComponentId]
+  ): ModelDefinitionBuilder =
+    withComponent(name, staticDefinition, componentSpecificData, componentGroupName, componentId)
 
-  private def wrapWithNotDisabledStaticDefinition(
-      parameters: List[Parameter],
-      returnType: Option[TypingResult],
-      componentTypeSpecificData: ComponentTypeSpecificData
-  ): Option[ComponentStaticDefinition] = {
-    val config =
-      DefaultComponentConfigDeterminer.forNotBuiltInComponentType(componentTypeSpecificData, returnType.isDefined)
+  private def withComponent(
+      name: String,
+      staticDefinition: ComponentStaticDefinition,
+      componentTypeSpecificData: ComponentTypeSpecificData,
+      componentGroupName: Option[ComponentGroupName],
+      componentId: Option[ComponentId]
+  ): ModelDefinitionBuilder = {
+    val defaultConfig =
+      DefaultComponentConfigDeterminer.forNotBuiltInComponentType(
+        componentTypeSpecificData,
+        staticDefinition.returnType.isDefined
+      )
+    val configWithOverridenGroupName =
+      componentGroupName.map(group => defaultConfig.copy(componentGroup = Some(group))).getOrElse(defaultConfig)
+    val info = ComponentInfo(componentTypeSpecificData.componentType, name)
+    val configWithComponentId =
+      configWithOverridenGroupName.copy(componentId = Some(componentId.getOrElse(componentInfoToId(info))))
     ComponentDefinitionExtractor
-      .translateGroupNameAndFilterOutDisabled(config, new ComponentsUiConfig(Map.empty, groupNameMapping))
-      .map { case ConfigWithOriginalGroupName(configWithMappedName, originalGroupName) =>
-        ComponentStaticDefinition(
-          parameters,
-          returnType,
-          configWithMappedName,
-          originalGroupName,
-          componentTypeSpecificData
+      .filterOutDisabledAndComputeFinalUiDefinition(configWithComponentId, Some(_))
+      .map { case (uiDefinition, _) =>
+        MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+          componentTypeSpecificData,
+          staticDefinition,
+          uiDefinition
         )
       }
+      .map { component =>
+        copy(components = (name -> component) :: components)
+      }
+      .getOrElse(this)
   }
 
-  def build: ModelDefinition[ComponentDefinitionWithImplementation] = {
+  def build: ModelDefinition = {
     val globalVariablesDefinition: Map[String, ComponentDefinitionWithImplementation] =
       globalVariables.mapValuesNow(GlobalVariableDefinitionExtractor.extractDefinition)
-    ModelDefinition[ComponentDefinitionWithImplementation](
-      components.map { case (k, v) => k -> withNullImplementation(v) },
+    ModelDefinition(
+      components,
       emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
       ClassExtractionSettings.Default
     )
   }
-
-  private def withNullImplementation(
-      staticDefinition: ComponentStaticDefinition
-  ): ComponentDefinitionWithImplementation =
-    MethodBasedComponentDefinitionWithImplementation(
-      ComponentImplementationInvoker.nullImplementationInvoker,
-      null,
-      staticDefinition
-    )
 
 }
 
@@ -181,7 +158,7 @@ object ModelDefinitionBuilder {
     )
   }
 
-  val emptyExpressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
+  val emptyExpressionConfig: ExpressionConfigDefinition =
     ExpressionConfigDefinition(
       Map.empty[String, ComponentDefinitionWithImplementation],
       List.empty,
@@ -198,17 +175,5 @@ object ModelDefinitionBuilder {
       spelExpressionExcludeList = SpelExpressionExcludeList.default,
       customConversionsProviders = List.empty
     )
-
-  implicit class ToStaticDefinitionConverter(modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation]) {
-
-    def toStaticComponentsDefinition: ModelDefinition[ComponentStaticDefinition] = modelDefinition.transform {
-      case methodBased: MethodBasedComponentDefinitionWithImplementation => methodBased.staticDefinition
-      case dynamic: DynamicComponentDefinitionWithImplementation =>
-        throw new IllegalStateException(
-          s"ModelDefinitionBuilder.toStaticComponentsDefinition used with a dynamic component: $dynamic"
-        )
-    }
-
-  }
 
 }

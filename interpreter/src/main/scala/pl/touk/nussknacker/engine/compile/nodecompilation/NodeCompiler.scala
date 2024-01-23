@@ -74,7 +74,7 @@ object NodeCompiler {
 }
 
 class NodeCompiler(
-    definitions: ModelDefinition[ComponentDefinitionWithImplementation],
+    definitions: ModelDefinition,
     fragmentDefinitionExtractor: FragmentParametersCompleteDefinitionExtractor,
     expressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
@@ -97,7 +97,7 @@ class NodeCompiler(
 
   private lazy val globalVariablesPreparer          = GlobalVariablesPreparer(expressionConfig)
   private implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
-  private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
+  private val expressionConfig: ExpressionConfigDefinition =
     definitions.expressionConfig
 
   private val expressionEvaluator =
@@ -612,7 +612,7 @@ class NodeCompiler(
           parameters,
           branchParameters,
           outputVar,
-          dynamicDefinition.componentConfig
+          dynamicDefinition.parametersConfig
         )(
           singleCtx
         )
@@ -622,7 +622,7 @@ class NodeCompiler(
           parameters,
           branchParameters,
           outputVar,
-          dynamicDefinition.componentConfig
+          dynamicDefinition.parametersConfig
         )(
           joinCtx
         )

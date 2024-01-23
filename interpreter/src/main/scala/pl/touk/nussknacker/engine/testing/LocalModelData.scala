@@ -68,7 +68,7 @@ object LocalModelData {
         modelDependencies: ProcessObjectDependencies,
         componentInfoToId: ComponentInfo => ComponentId,
         additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-    ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+    ): ModelDefinition = {
       val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
       val componentsDefWithImpl = ComponentDefinitionWithImplementation.forList(
         components,

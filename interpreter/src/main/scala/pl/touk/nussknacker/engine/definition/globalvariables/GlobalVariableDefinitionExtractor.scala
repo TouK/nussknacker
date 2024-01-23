@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.definition.globalvariables
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentImplementationInvoker,
   ComponentStaticDefinition,
+  ComponentUiDefinition,
   GlobalVariablesSpecificData
 }
 
@@ -17,19 +18,21 @@ object GlobalVariableDefinitionExtractor {
       case typedGlobalVariable: TypedGlobalVariable => typedGlobalVariable.initialReturnType
       case obj                                      => Typed.fromInstance(obj)
     }
-    val staticDefinition = ComponentStaticDefinition(
-      parameters = Nil,
-      returnType = Some(returnType),
-      componentConfig = SingleComponentConfig.zero,
-      originalGroupName = ComponentGroupName("dumbGroup"),
-      componentTypeSpecificData = GlobalVariablesSpecificData
-    )
+
     MethodBasedComponentDefinitionWithImplementation(
       // Global variables are always accessed by MethodBasedComponentDefinitionWithImplementation.obj - see GlobalVariablesPreparer
       // and comment in ComponentDefinitionWithImplementation.implementationInvoker
       ComponentImplementationInvoker.nullImplementationInvoker,
       variable,
-      staticDefinition
+      GlobalVariablesSpecificData,
+      ComponentStaticDefinition(List.empty, Some(returnType)),
+      ComponentUiDefinition(
+        originalGroupName = ComponentGroupName("dumbGroup"),
+        componentGroup = ComponentGroupName("dumbGroup"),
+        icon = "dumpIcon",
+        docsUrl = None,
+        componentId = ComponentId("dumbId")
+      )
     )
   }
 

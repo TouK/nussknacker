@@ -3,19 +3,13 @@ package pl.touk.nussknacker.engine
 import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  ComponentAdditionalConfig,
-  ComponentId,
-  ScenarioPropertyConfig
-}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentStaticDefinition,
-  ToStaticComponentDefinitionTransformer
+  DynamicComponentToStaticDefinitionTransformer
 }
-import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,7 +18,8 @@ final case class ProcessingTypeData private (
     processingType: ProcessingType,
     deploymentManager: DeploymentManager,
     modelData: ModelData,
-    staticModelDefinition: ModelDefinition[ComponentStaticDefinition],
+    // We hold this map as a cache - it is a quite costly operation to compute this Map (it invokes external services)
+    staticDefinitionForDynamicComponents: Map[ComponentInfo, ComponentStaticDefinition],
     metaDataInitializer: MetaDataInitializer,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     additionalValidators: List[CustomProcessValidator],
@@ -103,14 +98,17 @@ object ProcessingTypeData {
         .getOrElse[Map[String, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
 
     val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(managerConfig)
-    val staticModelDefinition =
-      ToStaticComponentDefinitionTransformer.transformModel(modelData, metaDataInitializer.create(_, Map.empty))
+    val staticDefinitionForDynamicComponents =
+      DynamicComponentToStaticDefinitionTransformer.collectStaticDefinitionsForDynamicComponents(
+        modelData,
+        metaDataInitializer.create(_, Map.empty)
+      )
 
     ProcessingTypeData(
       processingType,
       manager,
       modelData,
-      staticModelDefinition,
+      staticDefinitionForDynamicComponents,
       metaDataInitializer,
       scenarioProperties,
       deploymentManagerProvider.additionalValidators(managerConfig),

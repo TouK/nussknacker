@@ -64,7 +64,7 @@ object ProcessTestData {
 
   def modelDefinition(
       groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]] = Map.empty
-  ): ModelDefinition[ComponentDefinitionWithImplementation] =
+  ): ModelDefinition =
     ModelDefinitionBuilder
       .empty(groupNameMapping)
       .withSource(existingSourceFactory)

@@ -33,11 +33,7 @@ import pl.touk.nussknacker.ui.config.{
   UsageStatisticsReportsConfig
 }
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.definition.{
-  DefinitionsService,
-  ModelDefinitionEnricher,
-  ScenarioPropertiesConfigFinalizer
-}
+import pl.touk.nussknacker.ui.definition.{DefinitionsService, ModelDefinitionAligner, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -221,17 +217,14 @@ class AkkaHttpBasedRouteProvider(
         () => getProcessCategoryService().getAllCategories
       )
 
-      def prepareModelDefinitionEnricher(processingTypeData: ProcessingTypeData): ModelDefinitionEnricher =
-        ModelDefinitionEnricher(
-          processingTypeData.modelData,
-          processingTypeData.staticModelDefinition
-        )
+      def prepareModelDefinitionAligner(processingTypeData: ProcessingTypeData): ModelDefinitionAligner =
+        ModelDefinitionAligner(processingTypeData.modelData)
 
       val componentService = new DefaultComponentService(
         ComponentLinksConfigExtractor.extract(resolvedConfig),
         typeToConfig
           .mapValues { processingTypeData =>
-            val modelDefinitionEnricher = prepareModelDefinitionEnricher(processingTypeData)
+            val modelDefinitionEnricher = prepareModelDefinitionAligner(processingTypeData)
             ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
           },
         processService,
@@ -308,7 +301,7 @@ class AkkaHttpBasedRouteProvider(
             typeToConfig.mapValues { processingTypeData =>
               DefinitionsService(
                 processingTypeData,
-                prepareModelDefinitionEnricher(processingTypeData),
+                prepareModelDefinitionAligner(processingTypeData),
                 new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
                 fragmentRepository
               )

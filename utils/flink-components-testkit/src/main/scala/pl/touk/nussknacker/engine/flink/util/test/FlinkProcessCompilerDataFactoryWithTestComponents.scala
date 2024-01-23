@@ -56,9 +56,9 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
     ) {
 
       override protected def adjustDefinitions(
-          originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+          originalModelDefinition: ModelDefinition,
           definitionContext: ComponentDefinitionContext
-      ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+      ): ModelDefinition = {
         val testComponents =
           ComponentDefinitionWithImplementation.forList(
             components = testExtensionsHolder.components,

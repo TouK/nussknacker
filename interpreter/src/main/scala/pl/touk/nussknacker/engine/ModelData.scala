@@ -32,7 +32,7 @@ object ModelData extends LazyLogging {
         ProcessObjectDependencies,
         ComponentInfo => ComponentId,
         Map[ComponentId, ComponentAdditionalConfig]
-    ) => ModelDefinition[ComponentDefinitionWithImplementation]
+    ) => ModelDefinition
 
   def apply(
       processingTypeConfig: ProcessingTypeConfig,
@@ -148,7 +148,7 @@ object ClassLoaderModelData {
         modelDependencies: ProcessObjectDependencies,
         componentInfoToId: ComponentInfo => ComponentId,
         additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-    ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+    ): ModelDefinition = {
       ModelDefinitionExtractor.extractModelDefinition(
         configCreator,
         classLoader,
@@ -197,7 +197,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // See parameters of implementing functions
   def extractModelDefinitionFun: ExtractDefinitionFun
 
-  final def modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation] =
+  final def modelDefinition: ModelDefinition =
     modelDefinitionWithClasses.modelDefinition
 
   private lazy val dictServicesFactory: DictServicesFactory =

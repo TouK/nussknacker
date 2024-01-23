@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 class SpelExpressionSuggester(
-    expressionConfig: ExpressionConfigDefinition[_],
+    expressionConfig: ExpressionConfigDefinition,
     clssDefinitions: ClassDefinitionSet,
     uiDictServices: UiDictServices,
     classLoader: ClassLoader

@@ -26,7 +26,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       componentsUiConfig: ComponentsUiConfig,
       componentInfoToId: ComponentInfo => ComponentId,
       additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+  ): ModelDefinition = {
 
     val sourceFactories          = creator.sourceFactories(modelDependencies).toList
     val sinkFactories            = creator.sinkFactories(modelDependencies).toList
@@ -46,7 +46,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
 
     val settings = creator.classExtractionSettings(modelDependencies)
 
-    ModelDefinition[ComponentDefinitionWithImplementation](
+    ModelDefinition(
       components,
       toDefinition(expressionConfig, categoryOpt),
       settings
@@ -77,7 +77,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
   private def toDefinition(
       expressionConfig: ExpressionConfig,
       categoryOpt: Option[String],
-  ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] = {
+  ): ExpressionConfigDefinition = {
     val filteredVariables = collectAvailableForCategory(expressionConfig.globalProcessVariables.toList, categoryOpt)
     val variables = filteredVariables.map { case (name, variable, _) =>
       name -> GlobalVariableDefinitionExtractor.extractDefinition(variable)

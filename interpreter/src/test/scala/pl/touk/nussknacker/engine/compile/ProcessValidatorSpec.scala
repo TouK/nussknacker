@@ -1604,7 +1604,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   private def validate(
       process: CanonicalProcess,
-      definitions: ModelDefinition[ComponentDefinitionWithImplementation],
+      definitions: ModelDefinition,
       isFragment: Boolean = false
   ): CompilationResult[Unit] = {
     ProcessValidator

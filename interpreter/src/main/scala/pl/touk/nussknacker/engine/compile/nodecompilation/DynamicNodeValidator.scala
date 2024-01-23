@@ -5,7 +5,7 @@ import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -33,13 +33,13 @@ class DynamicNodeValidator(
       parametersFromNode: List[NodeParameter],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
-      componentConfig: SingleComponentConfig
+      parametersConfig: Map[String, ParameterConfig]
   )(
       inputContext: component.InputContext
   )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
     NodeValidationExceptionHandler.handleExceptionsInValidation {
       val processor =
-        new TransformationStepsProcessor(component, branchParametersFromNode, outputVariable, componentConfig)(
+        new TransformationStepsProcessor(component, branchParametersFromNode, outputVariable, parametersConfig)(
           inputContext
         )
       processor.processRemainingTransformationSteps(Nil, None, Nil, parametersFromNode)
@@ -50,7 +50,7 @@ class DynamicNodeValidator(
       component: GenericNodeTransformation[_],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
-      componentConfig: SingleComponentConfig
+      parametersConfig: Map[String, ParameterConfig],
   )(inputContextRaw: Any)(implicit nodeId: NodeId, metaData: MetaData)
       extends LazyLogging {
 
@@ -110,7 +110,7 @@ class DynamicNodeValidator(
               returnUnmatchedFallback
             case component.NextParameters(newParameters, newParameterErrors, state) =>
               val enrichedParameters =
-                StandardParameterEnrichment.enrichParameterDefinitions(newParameters, componentConfig)
+                StandardParameterEnrichment.enrichParameterDefinitions(newParameters, parametersConfig)
               val (parametersCombined, newErrorsCombined, newNodeParameters) =
                 enrichedParameters.foldLeft((evaluatedSoFar, errorsCombined ++ newParameterErrors, nodeParameters)) {
                   case ((parametersAcc, errorsAcc, nodeParametersAcc), newParam) =>

@@ -56,12 +56,14 @@ object DefaultComponentConfigDeterminer {
     )
   }
 
-  def forFragment(componentId: Option[ComponentId], docsUrl: Option[String]): SingleComponentConfig =
-    SingleComponentConfig(
-      params = None,
-      Some(DefaultsComponentIcon.FragmentIcon),
+  // For fragments, we don't need to return SingleComponentConfig, because this config won't merged with anything else
+  // We can just return final, ComponentUiDefinition
+  def forFragment(componentId: ComponentId, docsUrl: Option[String]): ComponentUiDefinition =
+    ComponentUiDefinition(
+      DefaultsComponentGroupName.FragmentsGroupName,
+      DefaultsComponentGroupName.FragmentsGroupName,
+      DefaultsComponentIcon.FragmentIcon,
       docsUrl = docsUrl,
-      componentGroup = Some(DefaultsComponentGroupName.FragmentsGroupName),
       componentId = componentId
     )
 

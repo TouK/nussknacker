@@ -723,7 +723,7 @@ object Typer {
 
   def default(
       classLoader: ClassLoader,
-      expressionConfig: ExpressionConfigDefinition[_],
+      expressionConfig: ExpressionConfigDefinition,
       spelDictTyper: SpelDictTyper,
       classDefinitionSet: ClassDefinitionSet
   ): Typer = {

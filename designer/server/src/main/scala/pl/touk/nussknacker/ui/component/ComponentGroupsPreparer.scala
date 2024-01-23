@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
-import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.definition._
 
@@ -11,11 +10,9 @@ import scala.collection.immutable.ListMap
 
 object ComponentGroupsPreparer {
 
-  def prepareComponentGroups(
-      definitions: ModelDefinition[ComponentStaticDefinition],
-  ): List[UIComponentGroup] = {
+  def prepareComponentGroups(components: Map[ComponentInfo, ComponentWithStaticDefinition]): List[UIComponentGroup] = {
     ComponentNodeTemplatePreparer
-      .componentNodeTemplatesWithGroupNames(definitions)
+      .componentNodeTemplatesWithGroupNames(components)
       .map(templateWithGroups =>
         (templateWithGroups.originalGroupName, templateWithGroups.mappedGroupName) -> templateWithGroups.nodeTemplate
       )

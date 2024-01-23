@@ -3,24 +3,22 @@ package pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
-import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 
-// TODO: Rename to ModelDefinitionAligner
-class ModelDefinitionEnricher(
-    builtInComponentsDefinitionsPreparer: BuiltInComponentsStaticDefinitionsPreparer,
-    fragmentComponentDefinitionExtractor: FragmentComponentDefinitionExtractor,
-    modelDefinition: ModelDefinition[ComponentStaticDefinition]
+class ModelDefinitionAligner(
+                               builtInComponentsDefinitionsPreparer: BuiltInComponentsDefinitionsPreparer,
+                               fragmentComponentDefinitionExtractor: FragmentComponentDefinitionExtractor,
+                               modelDefinition: ModelDefinition
 ) {
 
-  // TODO: it currently not only enrich with built-in components and fragments but also remove sources for fragments
-  def modelDefinitionWithBuiltInComponentsAndFragments(
+  def getAlignedModelDefinitionWithBuiltInComponentsAndFragments(
       forFragment: Boolean,
       fragmentScenarios: List[CanonicalProcess],
-  ): ModelDefinition[ComponentStaticDefinition] = {
+  ): ModelDefinition = {
     val filteredModel = if (forFragment) {
       modelDefinition
         .filterComponents((componentInfo, _) => componentInfo.`type` != ComponentType.Source)
@@ -29,7 +27,7 @@ class ModelDefinitionEnricher(
     }
 
     val builtInComponents =
-      builtInComponentsDefinitionsPreparer.prepareStaticDefinitions(forFragment)
+      builtInComponentsDefinitionsPreparer.prepareDefinitions(forFragment)
     val fragmentComponents =
       // TODO: Support for fragments using other fragments
       if (forFragment) List.empty
@@ -42,7 +40,7 @@ class ModelDefinitionEnricher(
 
   private def extractFragmentComponents(
       fragmentsScenarios: List[CanonicalProcess],
-  ): Map[String, ComponentStaticDefinition] = {
+  ): Map[String, ComponentDefinitionWithImplementation] = {
     (for {
       scenario   <- fragmentsScenarios
       definition <- fragmentComponentDefinitionExtractor.extractFragmentComponentDefinition(scenario).toOption
@@ -53,17 +51,14 @@ class ModelDefinitionEnricher(
 
 }
 
-object ModelDefinitionEnricher {
+object ModelDefinitionAligner {
 
-  def apply(
-      modelData: ModelData,
-      modelDefinition: ModelDefinition[ComponentStaticDefinition]
-  ): ModelDefinitionEnricher = {
+  def apply(modelData: ModelData): ModelDefinitionAligner = {
     val builtInComponentConfig = ComponentsUiConfigParser.parse(modelData.modelConfig)
-    new ModelDefinitionEnricher(
-      new BuiltInComponentsStaticDefinitionsPreparer(builtInComponentConfig),
+    new ModelDefinitionAligner(
+      new BuiltInComponentsDefinitionsPreparer(builtInComponentConfig),
       new FragmentComponentDefinitionExtractor(modelData.modelClassLoader.classLoader, modelData.componentInfoToId),
-      modelDefinition
+      modelData.modelDefinition
     )
   }
 

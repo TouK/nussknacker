@@ -4,7 +4,10 @@ import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  ComponentWithStaticDefinition
+}
 import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichScalaNestedMap}
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
@@ -17,7 +20,7 @@ import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.toComponentUsagesInScenario
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
-import pl.touk.nussknacker.ui.definition.ModelDefinitionEnricher
+import pl.touk.nussknacker.ui.definition.ModelDefinitionAligner
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -123,20 +126,20 @@ class DefaultComponentService(
   private def createComponents(
       // TODO: We should use ComponentDefinitionWithImplementation instead of ComponentStaticDefinition.
       //       ComponentStaticDefinition should be needed only when static list of parameters and returnType is necessary
-      componentsDefinition: Map[ComponentInfo, ComponentStaticDefinition],
+      componentsDefinition: Map[ComponentInfo, ComponentDefinitionWithImplementation],
       category: Category,
   ): List[ComponentListElement] = {
     componentsDefinition.toList
       .map { case (info, definition) =>
-        val componentId = definition.componentIdUnsafe
+        val componentId = definition.componentId
         val links       = createComponentLinks(componentId, info, definition)
 
         ComponentListElement(
           id = componentId,
           name = info.name,
-          icon = definition.iconUnsafe,
+          icon = definition.icon,
           componentType = info.`type`,
-          componentGroupName = definition.componentGroupUnsafe,
+          componentGroupName = definition.componentGroup,
           categories = List(category),
           links = links,
           usageCount = -1 // It will be enriched in the next step, after merge of components definitions
@@ -164,14 +167,14 @@ class DefaultComponentService(
       }
       .toMap
       .collapseNestedMap
-      .mapValuesNow(_.componentIdUnsafe)
+      .mapValuesNow(_.componentId)
 
   private def definedComponents(
       processingTypeData: ComponentServiceProcessingTypeData,
       fragments: List[CanonicalProcess]
   ) =
-    processingTypeData.modelDefinitionEnricher
-      .modelDefinitionWithBuiltInComponentsAndFragments(
+    processingTypeData.modelDefinitionAligner
+      .getAlignedModelDefinitionWithBuiltInComponentsAndFragments(
         forFragment = false, // It excludes fragment's components: input / output
         fragments
       )
@@ -180,14 +183,14 @@ class DefaultComponentService(
   private def createComponentLinks(
       componentId: ComponentId,
       info: ComponentInfo,
-      component: ComponentStaticDefinition
+      component: ComponentDefinitionWithImplementation
   ): List[ComponentLink] = {
     val componentLinks = componentLinksConfig
       .filter(_.isAvailable(info.`type`))
       .map(_.toComponentLink(componentId, info.name))
 
     // If component configuration contains documentation link then we add base link
-    component.componentConfig.docsUrl
+    component.docsUrl
       .map(ComponentLink.createDocumentationLink)
       .map(doc => List(doc) ++ componentLinks)
       .getOrElse(componentLinks)
@@ -217,4 +220,4 @@ class DefaultComponentService(
 private final case class ComponentNotFoundError(componentId: ComponentId)
     extends NotFoundError(s"Component $componentId not exist.")
 
-case class ComponentServiceProcessingTypeData(modelDefinitionEnricher: ModelDefinitionEnricher, category: Category)
+case class ComponentServiceProcessingTypeData(modelDefinitionAligner: ModelDefinitionAligner, category: Category)

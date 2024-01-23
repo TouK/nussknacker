@@ -33,7 +33,7 @@ import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
-import pl.touk.nussknacker.ui.definition.ModelDefinitionEnricher
+import pl.touk.nussknacker.ui.definition.ModelDefinitionAligner
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
@@ -752,9 +752,8 @@ class DefaultComponentServiceSpec
         processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
       )
       .mapValues { processingTypeData =>
-        val modelDefinitionEnricher = ModelDefinitionEnricher(
-          processingTypeData.modelData,
-          processingTypeData.staticModelDefinition
+        val modelDefinitionEnricher = ModelDefinitionAligner(
+          processingTypeData.modelData
         )
         ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
       }

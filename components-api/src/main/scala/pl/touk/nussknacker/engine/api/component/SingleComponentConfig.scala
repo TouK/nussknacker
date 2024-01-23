@@ -15,12 +15,7 @@ case class SingleComponentConfig(
     componentGroup: Option[ComponentGroupName],
     componentId: Option[ComponentId],
     disabled: Boolean = false
-) {
-  def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
-
-  def componentGroupUnsafe: ComponentGroupName =
-    componentGroup.getOrElse(throw new IllegalStateException(s"Component group not defined in $this"))
-}
+)
 
 object SingleComponentConfig {
 
