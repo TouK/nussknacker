@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
-  GlobalVariableDefinitionExtractor
+  GlobalVariableDefinitionWithImplementation
 }
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
@@ -80,7 +80,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
   ): ExpressionConfigDefinition = {
     val filteredVariables = collectAvailableForCategory(expressionConfig.globalProcessVariables.toList, categoryOpt)
     val variables = filteredVariables.map { case (name, variable, _) =>
-      name -> GlobalVariableDefinitionExtractor.extractDefinition(variable)
+      name -> GlobalVariableDefinitionWithImplementation(variable)
     }.toMap
     ExpressionConfigDefinition(
       variables,

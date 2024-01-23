@@ -38,10 +38,11 @@ case class ModelDefinition private (
       components.filter(predicate tupled)
     )
 
-  def transform(f: ComponentDefinitionWithImplementation => ComponentDefinitionWithImplementation): ModelDefinition =
+  def mapComponents(
+      f: ComponentDefinitionWithImplementation => ComponentDefinitionWithImplementation
+  ): ModelDefinition =
     copy(
       components.mapValuesNow(f),
-      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
     )
 
   private def checkDuplicates(components: List[(ComponentInfo, ComponentDefinitionWithImplementation)]): Unit = {

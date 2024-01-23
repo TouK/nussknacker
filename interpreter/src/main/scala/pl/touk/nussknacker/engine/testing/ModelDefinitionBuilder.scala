@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComp
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
-  GlobalVariableDefinitionExtractor
+  GlobalVariableDefinitionWithImplementation
 }
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.emptyExpressionConfig
@@ -119,7 +119,10 @@ final case class ModelDefinitionBuilder(
     val configWithComponentId =
       configWithOverridenGroupName.copy(componentId = Some(componentId.getOrElse(componentInfoToId(info))))
     ComponentDefinitionExtractor
-      .filterOutDisabledAndComputeFinalUiDefinition(configWithComponentId, Some(_))
+      .filterOutDisabledAndComputeFinalUiDefinition(
+        configWithComponentId,
+        groupName => groupNameMapping.getOrElse(groupName, Some(groupName))
+      )
       .map { case (uiDefinition, _) =>
         MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
           componentTypeSpecificData,
@@ -134,8 +137,8 @@ final case class ModelDefinitionBuilder(
   }
 
   def build: ModelDefinition = {
-    val globalVariablesDefinition: Map[String, ComponentDefinitionWithImplementation] =
-      globalVariables.mapValuesNow(GlobalVariableDefinitionExtractor.extractDefinition)
+    val globalVariablesDefinition: Map[String, GlobalVariableDefinitionWithImplementation] =
+      globalVariables.mapValuesNow(GlobalVariableDefinitionWithImplementation(_))
     ModelDefinition(
       components,
       emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
@@ -160,7 +163,7 @@ object ModelDefinitionBuilder {
 
   val emptyExpressionConfig: ExpressionConfigDefinition =
     ExpressionConfigDefinition(
-      Map.empty[String, ComponentDefinitionWithImplementation],
+      Map.empty[String, GlobalVariableDefinitionWithImplementation],
       List.empty,
       defaultAdditionalClasses,
       languages = LanguageConfiguration.default,

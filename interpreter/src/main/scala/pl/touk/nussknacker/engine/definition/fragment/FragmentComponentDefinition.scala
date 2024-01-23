@@ -22,7 +22,7 @@ object FragmentComponentDefinition {
       componentId: ComponentId
   ): ComponentDefinitionWithImplementation = {
     val uiDefinition = DefaultComponentConfigDeterminer.forFragment(componentId, docsUrl)
-    // Currently fragments are represented as method-based component, probably we change it to some dedicated type
+    // Currently fragments are represented as method-based component, probably we should change it to some dedicated type
     MethodBasedComponentDefinitionWithImplementation(
       implementationInvoker,
       null,

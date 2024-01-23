@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.definition.component
 
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 // This class represents component's definition and implementation. It is used on the designer side for definitions used
@@ -9,8 +11,7 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 // Implementation part is in implementation field. It should be rarely used - instead we should extract information
 // into definition. Implementation should be mainly used via implementationInvoker which can be transformed
 // (e.g.) for purpose of stubbing.
-// TODO: This class currently is used also for global variables and fragments. We should rather extract some other class for them
-trait ComponentDefinitionWithImplementation {
+trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   def implementationInvoker: ComponentImplementationInvoker
 
@@ -19,8 +20,7 @@ trait ComponentDefinitionWithImplementation {
       implementationInvoker: ComponentImplementationInvoker
   ): ComponentDefinitionWithImplementation
 
-  // TODO In should be of Component type, but currently this class is used also for global variables and fragments
-  def implementation: Any
+  def implementation: Component
 
   def componentTypeSpecificData: ComponentTypeSpecificData
 
@@ -37,6 +37,22 @@ trait ComponentDefinitionWithImplementation {
   final def icon: String = uiDefinition.icon
 
   final def docsUrl: Option[String] = uiDefinition.docsUrl
+
+  override final def definedTypes: List[TypingResult] = {
+    val fromExplicitTypes = implementation match {
+      case explicit: WithExplicitTypesToExtract => explicit.typesToExtract
+      case _                                    => Nil
+    }
+    typesFromStaticDefinition ++ fromExplicitTypes
+  }
+
+  protected def typesFromStaticDefinition: List[TypingResult]
+
+}
+
+trait ObjectOperatingOnTypes {
+
+  def definedTypes: List[TypingResult]
 
 }
 

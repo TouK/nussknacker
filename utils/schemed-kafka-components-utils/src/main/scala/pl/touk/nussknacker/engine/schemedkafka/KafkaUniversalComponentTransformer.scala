@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import FixedExpressionValue.nullFixedValue
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
@@ -34,7 +35,7 @@ object KafkaUniversalComponentTransformer {
 
 trait KafkaUniversalComponentTransformer[T]
     extends SingleInputGenericNodeTransformation[T]
-    with WithCachedTopicsExistenceValidator {
+    with WithCachedTopicsExistenceValidator { self: Component =>
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
