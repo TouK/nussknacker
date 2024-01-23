@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.DynamicNodeValidator
-import pl.touk.nussknacker.engine.definition.component.DynamicComponentToStaticDefinitionTransformer.staticReturnType
+import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer.staticReturnType
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 
@@ -19,12 +19,12 @@ import pl.touk.nussknacker.engine.definition.component.parameter.StandardParamet
 // - We want to avoid flickering of parameters after first entering into the node
 // - Sometimes user want to just use the component without filling parameters with own data - in this case we want to make sure
 //   that parameters will be available in the scenario, even with a default values
-class DynamicComponentToStaticDefinitionTransformer(
+class DynamicComponentStaticDefinitionDeterminer(
     nodeValidator: DynamicNodeValidator,
     createMetaData: ProcessName => MetaData
 ) extends LazyLogging {
 
-  def toStaticDefinition(dynamic: DynamicComponentDefinitionWithImplementation): ComponentStaticDefinition = {
+  private def determineStaticDefinition(dynamic: DynamicComponentDefinitionWithImplementation): ComponentStaticDefinition = {
     val parameters = determineInitialParameters(dynamic)
     ComponentStaticDefinition(
       parameters,
@@ -71,7 +71,7 @@ class DynamicComponentToStaticDefinitionTransformer(
 
 }
 
-object DynamicComponentToStaticDefinitionTransformer {
+object DynamicComponentStaticDefinitionDeterminer {
 
   def collectStaticDefinitionsForDynamicComponents(
       modelDataForType: ModelData,
@@ -79,13 +79,13 @@ object DynamicComponentToStaticDefinitionTransformer {
   ): Map[ComponentInfo, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
     val toStaticComponentDefinitionTransformer =
-      new DynamicComponentToStaticDefinitionTransformer(nodeValidator, createMetaData)
+      new DynamicComponentStaticDefinitionDeterminer(nodeValidator, createMetaData)
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {
       modelDataForType.modelDefinition.components.toList.collect {
         case (info, dynamic: DynamicComponentDefinitionWithImplementation) =>
-          info -> toStaticComponentDefinitionTransformer.toStaticDefinition(dynamic)
+          info -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
       }.toMap
     }
   }

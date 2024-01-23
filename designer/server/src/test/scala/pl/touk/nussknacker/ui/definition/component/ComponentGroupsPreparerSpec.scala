@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.ui.definition.component
 
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsCom
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
-  ComponentWithStaticDefinition,
   CustomComponentSpecificData
 }
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
@@ -25,9 +24,9 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.definition.ModelDefinitionAligner
+import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, component}
 
-class UIComponentGroupsPreparerSpec
+class ComponentGroupsPreparerSpec
     extends AnyFunSuite
     with Matchers
     with TestPermissions
@@ -132,7 +131,7 @@ class UIComponentGroupsPreparerSpec
 
   test("return components for fragments") {
     val model =
-      alignedModelDefinitionWithStaticDefinition(ModelDefinitionBuilder.empty.build, Map.empty, forFragment = true)
+      getAlignedComponentsWithStaticDefinition(ModelDefinitionBuilder.empty.build, Map.empty, forFragment = true)
     val groups = ComponentGroupsPreparer.prepareComponentGroups(model)
     groups.map(_.name) shouldEqual List(
       DefaultsComponentGroupName.FragmentsDefinitionGroupName,
@@ -148,7 +147,7 @@ class UIComponentGroupsPreparerSpec
 
   test("hide sources for fragments") {
     val model =
-      alignedModelDefinitionWithStaticDefinition(
+      getAlignedComponentsWithStaticDefinition(
         ModelDefinitionBuilder.empty.withSource("source").build,
         Map.empty,
         forFragment = true
@@ -165,7 +164,7 @@ class UIComponentGroupsPreparerSpec
   }
 
   private def prepareGroupForServices(services: List[String]): List[UIComponentGroup] = {
-    val modelDefinition = alignedModelDefinitionWithStaticDefinition(
+    val modelDefinition = getAlignedComponentsWithStaticDefinition(
       services
         .foldRight(ModelDefinitionBuilder.empty)((s, p) => p.withService(s))
         .build,
@@ -178,30 +177,30 @@ class UIComponentGroupsPreparerSpec
       groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
   ) = {
     val modelDefinition = ProcessTestData.modelDefinition(groupNameMapping)
-    alignedModelDefinitionWithStaticDefinition(modelDefinition, groupNameMapping)
+    getAlignedComponentsWithStaticDefinition(modelDefinition, groupNameMapping)
   }
 
-  private def alignedModelDefinitionWithStaticDefinition(
+  private def getAlignedComponentsWithStaticDefinition(
       modelDefinition: ModelDefinition,
       groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
       forFragment: Boolean = false
   ) = {
-    val modelDefinitionAligner = new ModelDefinitionAligner(
+    val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(new ComponentsUiConfig(Map.empty, groupNameMapping)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
+        Some(_),
         ComponentId.default(TestProcessingTypes.Streaming, _)
       ),
       modelDefinition,
     )
 
     withStaticDefinition(
-      modelDefinitionAligner
-        .getAlignedModelDefinitionWithBuiltInComponentsAndFragments(
+      alignedComponentsDefinitionProvider
+        .getAlignedComponentsWithBuiltInComponentsAndFragments(
           forFragment,
-          fragmentScenarios = List.empty
+          fragments = List.empty
         )
-        .components
     )
 
   }
@@ -212,7 +211,7 @@ class UIComponentGroupsPreparerSpec
     components
       .mapValuesNow {
         case methodBased: MethodBasedComponentDefinitionWithImplementation =>
-          ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
+          component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
         case other => throw new IllegalStateException(s"Unexpected component class: ${other.getClass.getName}")
       }
   }

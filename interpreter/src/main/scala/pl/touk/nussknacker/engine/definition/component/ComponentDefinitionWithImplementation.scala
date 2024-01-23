@@ -6,10 +6,10 @@ import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
-// This class represents component's definition and implementation. It is used on the designer side for definitions used
-// in the GUI, and for validations. It is also used on the runtime side for runtime and for stubbed runtime.
-// Implementation part is in implementation field. It should be rarely used - instead we should extract information
-// into definition. Implementation should be mainly used via implementationInvoker which can be transformed
+// This class represents component's definition and implementation. It is used on the designer side for definitions
+// served to the FE and for validations. It is used on the runtime side for component's runtime execution and for stubbing.
+// Implementing component is in hte implementation field. It should be rarely used - instead, we should extract information
+// into definition. Runtime logic should be mainly used via implementationInvoker which can be transformed
 // (e.g.) for purpose of stubbing.
 trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 

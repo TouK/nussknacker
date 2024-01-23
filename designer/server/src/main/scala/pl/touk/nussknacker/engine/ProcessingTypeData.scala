@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingT
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentStaticDefinition,
-  DynamicComponentToStaticDefinitionTransformer
+  DynamicComponentStaticDefinitionDeterminer
 }
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
@@ -18,7 +18,7 @@ final case class ProcessingTypeData private (
     processingType: ProcessingType,
     deploymentManager: DeploymentManager,
     modelData: ModelData,
-    // We hold this map as a cache - it is a quite costly operation to compute this Map (it invokes external services)
+    // We hold this map as a cache - computing it is a quite costly operation (it invokes external services)
     staticDefinitionForDynamicComponents: Map[ComponentInfo, ComponentStaticDefinition],
     metaDataInitializer: MetaDataInitializer,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
@@ -99,7 +99,7 @@ object ProcessingTypeData {
 
     val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(managerConfig)
     val staticDefinitionForDynamicComponents =
-      DynamicComponentToStaticDefinitionTransformer.collectStaticDefinitionsForDynamicComponents(
+      DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(
         modelData,
         metaDataInitializer.create(_, Map.empty)
       )

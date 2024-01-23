@@ -48,7 +48,7 @@ object DefaultComponentConfigDeterminer {
     }
     SingleComponentConfig(
       params = None,
-      Some(DefaultsComponentIcon.forBuiltInComponent(info)),
+      icon = Some(DefaultsComponentIcon.forBuiltInComponent(info)),
       // TODO: move from defaultModelConfig.conf to here + convention instead of code
       docsUrl = None,
       componentGroup = Some(componentGroup),
@@ -58,14 +58,21 @@ object DefaultComponentConfigDeterminer {
 
   // For fragments, we don't need to return SingleComponentConfig, because this config won't merged with anything else
   // We can just return final, ComponentUiDefinition
-  def forFragment(componentId: ComponentId, docsUrl: Option[String]): ComponentUiDefinition =
+  def forFragment(
+      docsUrl: Option[String],
+      translateGroupName: ComponentGroupName => Option[ComponentGroupName],
+      componentId: ComponentId,
+  ): ComponentUiDefinition = {
+    val originalGroupName = DefaultsComponentGroupName.FragmentsGroupName
     ComponentUiDefinition(
-      DefaultsComponentGroupName.FragmentsGroupName,
-      DefaultsComponentGroupName.FragmentsGroupName,
-      DefaultsComponentIcon.FragmentIcon,
+      originalGroupName = originalGroupName,
+      componentGroup = translateGroupName(originalGroupName)
+        .getOrElse(throw new IllegalStateException("Fragments can't be assigned to the null component group")),
+      icon = DefaultsComponentIcon.FragmentIcon,
       docsUrl = docsUrl,
       componentId = componentId
     )
+  }
 
   private case class ComponentConfigData(componentGroup: ComponentGroupName, icon: String)
 

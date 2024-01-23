@@ -26,6 +26,7 @@ class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfi
       ComponentDefinitionExtractor
         .filterOutDisabledAndComputeFinalUiDefinition(combinedConfig, componentsUiConfig.groupName)
         .map { case (uiDefinition, _) =>
+          // Currently built-in components are represented as method-based component, probably we should change it to some dedicated type
           info.name -> MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
             BuiltInComponentSpecificData,
             ComponentStaticDefinition(List.empty, None),

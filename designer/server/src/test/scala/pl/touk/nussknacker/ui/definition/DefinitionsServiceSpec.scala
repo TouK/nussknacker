@@ -268,9 +268,13 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
   private def prepareDefinitions(model: ModelData, fragmentScenarios: List[CanonicalProcess]) = {
     val processingType = TestProcessingTypes.Streaming
 
-    val modelDefinitionAligner = new ModelDefinitionAligner(
+    val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
-      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, ComponentId.default(processingType, _)),
+      new FragmentComponentDefinitionExtractor(
+        getClass.getClassLoader,
+        Some(_),
+        ComponentId.default(processingType, _)
+      ),
       model.modelDefinition
     )
 
@@ -279,7 +283,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       staticDefinitionForDynamicComponents = Map.empty,
       scenarioPropertiesConfig = Map.empty,
       deploymentManager = new MockDeploymentManager,
-      modelDefinitionAligner = modelDefinitionAligner,
+      alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType),
       fragmentRepository = new StubFragmentRepository(Map(processingType -> fragmentScenarios))

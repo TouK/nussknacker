@@ -6,16 +6,12 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentStaticDefinition,
-  ComponentWithStaticDefinition,
-  FragmentSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.component.{ComponentGroupsPreparer, EdgeTypesPreparer}
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioPropertyConfig}
+import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -29,7 +25,7 @@ class DefinitionsService(
     staticDefinitionForDynamicComponents: Map[ComponentInfo, ComponentStaticDefinition],
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
-    modelDefinitionAligner: ModelDefinitionAligner,
+    alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     fragmentRepository: FragmentRepository
 )(implicit ec: ExecutionContext) {
@@ -38,18 +34,18 @@ class DefinitionsService(
       implicit user: LoggedUser
   ): Future[UIDefinitions] = {
     fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
-      val enrichedModelDefinition =
-        modelDefinitionAligner
-          .getAlignedModelDefinitionWithBuiltInComponentsAndFragments(forFragment, fragments)
-      val withStaticDefinition = enrichedModelDefinition.components.map {
+      val alignedComponentsDefinition =
+        alignedComponentsDefinitionProvider
+          .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
+      val withStaticDefinition = alignedComponentsDefinition.map {
         case (info, dynamic: DynamicComponentDefinitionWithImplementation) =>
           val staticDefinition = staticDefinitionForDynamicComponents.getOrElse(
             info,
             throw new IllegalStateException(s"Static definition for dynamic component: $info should be precomputed")
           )
-          info -> ComponentWithStaticDefinition(dynamic, staticDefinition)
+          info -> component.ComponentWithStaticDefinition(dynamic, staticDefinition)
         case (info, methodBased: MethodBasedComponentDefinitionWithImplementation) =>
-          info -> ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
+          info -> component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
         case (info, other) =>
           throw new IllegalStateException(s"Unknown component $info representation: $other")
       }
@@ -100,7 +96,7 @@ object DefinitionsService {
 
   def apply(
       processingTypeData: ProcessingTypeData,
-      modelDefinitionAligner: ModelDefinitionAligner,
+      alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
       fragmentRepository: FragmentRepository
   )(implicit ec: ExecutionContext) =
@@ -109,7 +105,7 @@ object DefinitionsService {
       processingTypeData.staticDefinitionForDynamicComponents,
       processingTypeData.scenarioPropertiesConfig,
       processingTypeData.deploymentManager,
-      modelDefinitionAligner,
+      alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
       fragmentRepository
     )

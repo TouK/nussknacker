@@ -24,7 +24,6 @@ import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeDa
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
 import pl.touk.nussknacker.ui.config.{
   AnalyticsConfig,
   AttachmentsConfig,
@@ -33,7 +32,12 @@ import pl.touk.nussknacker.ui.config.{
   UsageStatisticsReportsConfig
 }
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.definition.{DefinitionsService, ModelDefinitionAligner, ScenarioPropertiesConfigFinalizer}
+import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
+import pl.touk.nussknacker.ui.definition.{
+  AlignedComponentsDefinitionProvider,
+  DefinitionsService,
+  ScenarioPropertiesConfigFinalizer
+}
 import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -217,15 +221,17 @@ class AkkaHttpBasedRouteProvider(
         () => getProcessCategoryService().getAllCategories
       )
 
-      def prepareModelDefinitionAligner(processingTypeData: ProcessingTypeData): ModelDefinitionAligner =
-        ModelDefinitionAligner(processingTypeData.modelData)
+      def prepareAlignedComponentsDefinitionProvider(
+          processingTypeData: ProcessingTypeData
+      ): AlignedComponentsDefinitionProvider =
+        AlignedComponentsDefinitionProvider(processingTypeData.modelData)
 
       val componentService = new DefaultComponentService(
         ComponentLinksConfigExtractor.extract(resolvedConfig),
         typeToConfig
           .mapValues { processingTypeData =>
-            val modelDefinitionEnricher = prepareModelDefinitionAligner(processingTypeData)
-            ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
+            val alignedModelDefinitionProvider = prepareAlignedComponentsDefinitionProvider(processingTypeData)
+            ComponentServiceProcessingTypeData(alignedModelDefinitionProvider, processingTypeData.category)
           },
         processService,
         fragmentRepository
@@ -301,7 +307,7 @@ class AkkaHttpBasedRouteProvider(
             typeToConfig.mapValues { processingTypeData =>
               DefinitionsService(
                 processingTypeData,
-                prepareModelDefinitionAligner(processingTypeData),
+                prepareAlignedComponentsDefinitionProvider(processingTypeData),
                 new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
                 fragmentRepository
               )

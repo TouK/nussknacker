@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -15,6 +15,7 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
   test("return edge types for fragment, filters, switches and components with multiple inputs") {
     val sampleFragmentDef = new FragmentComponentDefinitionExtractor(
       getClass.getClassLoader,
+      Some(_),
       ComponentId.default(TestProcessingTypes.Streaming, _)
     )
       .extractFragmentComponentDefinition(ProcessTestData.sampleFragment)

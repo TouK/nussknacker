@@ -1,13 +1,10 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.ui.definition.component
 
 import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  ComponentWithStaticDefinition
-}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichScalaNestedMap}
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
@@ -18,9 +15,9 @@ import pl.touk.nussknacker.restmodel.component.{
 }
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.component.DefaultComponentService.toComponentUsagesInScenario
+import DefaultComponentService.toComponentUsagesInScenario
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
-import pl.touk.nussknacker.ui.definition.ModelDefinitionAligner
+import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -173,12 +170,11 @@ class DefaultComponentService(
       processingTypeData: ComponentServiceProcessingTypeData,
       fragments: List[CanonicalProcess]
   ) =
-    processingTypeData.modelDefinitionAligner
-      .getAlignedModelDefinitionWithBuiltInComponentsAndFragments(
+    processingTypeData.alignedComponentsDefinitionProvider
+      .getAlignedComponentsWithBuiltInComponentsAndFragments(
         forFragment = false, // It excludes fragment's components: input / output
         fragments
       )
-      .components
 
   private def createComponentLinks(
       componentId: ComponentId,
@@ -220,4 +216,7 @@ class DefaultComponentService(
 private final case class ComponentNotFoundError(componentId: ComponentId)
     extends NotFoundError(s"Component $componentId not exist.")
 
-case class ComponentServiceProcessingTypeData(modelDefinitionAligner: ModelDefinitionAligner, category: Category)
+case class ComponentServiceProcessingTypeData(
+    alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
+    category: Category
+)

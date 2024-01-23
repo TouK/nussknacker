@@ -1,11 +1,7 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentInfo}
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  CustomComponentSpecificData,
-  FragmentSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, CustomComponentSpecificData, FragmentSpecificData}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.engine.graph.expression.Expression

@@ -98,7 +98,7 @@ object ComponentDefinitionExtractor {
       case e: GenericNodeTransformation[_] =>
         val implementationInvoker = new DynamicComponentImplementationInvoker(e)
         Right(
-          withUiDefinitionForNotDisabledComponent(DynamicComponentToStaticDefinitionTransformer.staticReturnType(e)) {
+          withUiDefinitionForNotDisabledComponent(DynamicComponentStaticDefinitionDeterminer.staticReturnType(e)) {
             (uiDefinition, parametersConfig) =>
               DynamicComponentDefinitionWithImplementation(
                 implementationInvoker,
@@ -176,7 +176,7 @@ object ComponentDefinitionExtractor {
       finalCombinedConfig: SingleComponentConfig,
       translateGroupName: ComponentGroupName => Option[ComponentGroupName]
   ): Option[(ComponentUiDefinition, Map[String, ParameterConfig])] = {
-    // At this stage, after combining all properties with
+    // At this stage, after combining all properties with default config, we are sure that some properties are defined
     def getDefinedProperty[T](propertyName: String, getProperty: SingleComponentConfig => Option[T]) =
       getProperty(finalCombinedConfig).getOrElse(
         throw new IllegalStateException(s"Component's $propertyName not defined in $finalCombinedConfig")
@@ -184,7 +184,7 @@ object ComponentDefinitionExtractor {
     val originalGroupName = getDefinedProperty("componentGroup", _.componentGroup)
     val translatedGroupNameOpt = translateGroupName(
       originalGroupName
-    ) // None mean special "null" group which hides components within this group
+    ) // None mean the special "null" group which hides components that are in this group
     translatedGroupNameOpt.filterNot(_ => finalCombinedConfig.disabled).map { translatedGroupName =>
       val uiDefinition = ComponentUiDefinition(
         originalGroupName,

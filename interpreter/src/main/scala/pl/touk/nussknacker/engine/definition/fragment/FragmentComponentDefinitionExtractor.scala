@@ -1,16 +1,19 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
 import cats.data.Validated
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
-  ComponentImplementationInvoker,
-  ComponentWithStaticDefinition
+  ComponentImplementationInvoker
 }
 
-class FragmentComponentDefinitionExtractor(classLoader: ClassLoader, componentInfoToId: ComponentInfo => ComponentId) {
+class FragmentComponentDefinitionExtractor(
+    classLoader: ClassLoader,
+    translateGroupName: ComponentGroupName => Option[ComponentGroupName],
+    componentInfoToId: ComponentInfo => ComponentId
+) {
 
   val parametersExtractor = new FragmentParametersWithoutValidatorsDefinitionExtractor(classLoader)
 
@@ -29,6 +32,7 @@ class FragmentComponentDefinitionExtractor(classLoader: ClassLoader, componentIn
         parameters = parameters,
         outputNames = outputNames,
         docsUrl = docsUrl,
+        translateGroupName = translateGroupName,
         componentId = componentId,
       )
     }

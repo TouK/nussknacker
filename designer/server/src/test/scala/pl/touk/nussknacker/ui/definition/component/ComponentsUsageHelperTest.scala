@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.ui.definition.component
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.definition.ModelDefinitionAligner
+import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{ScenarioComponentsUsagesHelper, ScenarioWithDetailsEntity}
 
@@ -170,18 +170,17 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       )
       .build
 
-    val modelDefinitionAligner = new ModelDefinitionAligner(
+    val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(new ComponentsUiConfig(Map.empty, Map.empty)),
-      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, componentInfoToId),
+      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, Some(_), componentInfoToId),
       modelDefinition
     )
 
-    modelDefinitionAligner
-      .getAlignedModelDefinitionWithBuiltInComponentsAndFragments(
+    alignedComponentsDefinitionProvider
+      .getAlignedComponentsWithBuiltInComponentsAndFragments(
         forFragment = false,
-        fragmentScenarios = List.empty
+        fragments = List.empty
       )
-      .components
   }
 
   private val processingTypeAndInfoToNonFragmentComponentId = Map(

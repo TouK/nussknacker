@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentApiEndpoints
-import pl.touk.nussknacker.ui.component.ComponentService
+import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
