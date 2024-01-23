@@ -12,7 +12,11 @@ import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrate
   DoNothing,
   ReplaceGetterWithProperty
 }
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
+import pl.touk.nussknacker.engine.api.process.{
+  ClassExtractionSettings,
+  TypingFunctionForClassMember,
+  VisibleMembersPredicate
+}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 
@@ -232,37 +236,7 @@ object ClassDefinitionExtractor extends LazyLogging {
   )(implicit settings: ClassExtractionSettings): MethodDefinition = {
     settings
       .typingFunction(clazz, member)
-      .map { typingFun =>
-        FunctionalMethodDefinition(
-          (invocationTarget, _) => {
-            Valid(invocationTarget.withoutValue match {
-              case single: SingleTypingResult =>
-                val returnedResultType = typingFun.resultType(single).valueOr { message =>
-                  logger.warn(
-                    s"ClassExtractionSettings defined typing function for class: ${clazz.getName}, member: ${member.getName} " +
-                      s"which returned error during result type computation: $message. " +
-                      s"Will be used fallback result type: ${reflectionBasedDefinition.result}"
-                  )
-                  reflectionBasedDefinition.result
-                }
-                if (returnedResultType.canBeSubclassOf(returnedResultType)) {
-                  returnedResultType
-                } else {
-                  logger.warn(
-                    s"ClassExtractionSettings defined typing function for class: ${clazz.getName}, member: ${member.getName} " +
-                      s"which returned result type $returnedResultType that can't be a subclass of type ${reflectionBasedDefinition.result} " +
-                      s"computed using reflection. Will be used type computed using reflection"
-                  )
-                  reflectionBasedDefinition.result
-                }
-              case _ => reflectionBasedDefinition.result
-            })
-          },
-          reflectionBasedDefinition,
-          memberName,
-          extractNussknackerDocs(member)
-        )
-      }
+      .map(prepareFunctionMethodDefinition(clazz, member, memberName, reflectionBasedDefinition, _))
       .getOrElse {
         StaticMethodDefinition(
           reflectionBasedDefinition,
@@ -270,6 +244,44 @@ object ClassDefinitionExtractor extends LazyLogging {
           extractNussknackerDocs(member)
         )
       }
+  }
+
+  private def prepareFunctionMethodDefinition(
+      clazz: Class[_],
+      member: Member with AccessibleObject,
+      memberName: String,
+      reflectionBasedDefinition: MethodTypeInfo,
+      typingFun: TypingFunctionForClassMember
+  ) = {
+    FunctionalMethodDefinition(
+      (invocationTarget, _) => {
+        Valid(invocationTarget.withoutValue match {
+          case single: SingleTypingResult =>
+            val returnedResultType = typingFun.resultType(single).valueOr { message =>
+              logger.warn(
+                s"ClassExtractionSettings defined typing function for class: ${clazz.getName}, member: ${member.getName} " +
+                  s"which returned error during result type computation: $message. " +
+                  s"Will be used fallback result type: ${reflectionBasedDefinition.result}"
+              )
+              reflectionBasedDefinition.result
+            }
+            if (returnedResultType.canBeSubclassOf(returnedResultType)) {
+              returnedResultType
+            } else {
+              logger.warn(
+                s"ClassExtractionSettings defined typing function for class: ${clazz.getName}, member: ${member.getName} " +
+                  s"which returned result type $returnedResultType that can't be a subclass of type ${reflectionBasedDefinition.result} " +
+                  s"computed using reflection. Will be used type computed using reflection"
+              )
+              reflectionBasedDefinition.result
+            }
+          case _ => reflectionBasedDefinition.result
+        })
+      },
+      reflectionBasedDefinition,
+      memberName,
+      extractNussknackerDocs(member)
+    )
   }
 
   private def extractNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {
