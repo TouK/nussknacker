@@ -72,22 +72,44 @@ object CompilationResult extends Applicative[CompilationResult] {
 
   }
 
-  private def fromUncanonizationError(err: canonize.ProcessUncanonizationError): ProcessUncanonizationError = {
-    err match {
+  private def fromUncanonizationErrors(
+      errors: NonEmptyList[canonize.ProcessUncanonizationError]
+  ): NonEmptyList[ProcessCompilationError] = {
+    def mapOne(e: canonize.ProcessUncanonizationError): ProcessUncanonizationError = e match {
       case canonize.EmptyProcess                => EmptyProcess
-      case canonize.InvalidRootNode(nodeId)     => InvalidRootNode(nodeId)
-      case canonize.InvalidTailOfBranch(nodeId) => InvalidTailOfBranch(nodeId)
+      case canonize.InvalidRootNode(nodeId)     => InvalidRootNode(Set(nodeId))
+      case canonize.InvalidTailOfBranch(nodeId) => InvalidTailOfBranch(Set(nodeId))
     }
+    errors.foldLeft(NonEmptyList.one(mapOne(errors.head)))((acc, error) =>
+      error match {
+        case canonize.EmptyProcess => EmptyProcess :: acc
+        case canonize.InvalidRootNode(nodeId) =>
+          acc.find(_.isInstanceOf[InvalidRootNode]) match {
+            case Some(value) =>
+              NonEmptyList(InvalidRootNode(value.nodeIds + nodeId), acc.filterNot(_.isInstanceOf[InvalidRootNode]))
+            case None => NonEmptyList.one(mapOne(error))
+          }
+        case canonize.InvalidTailOfBranch(nodeId) =>
+          acc.find(_.isInstanceOf[InvalidTailOfBranch]) match {
+            case Some(value) =>
+              NonEmptyList(
+                InvalidTailOfBranch(value.nodeIds + nodeId),
+                acc.filterNot(_.isInstanceOf[InvalidTailOfBranch])
+              )
+            case None => NonEmptyList.one(mapOne(error))
+          }
+      }
+    )
   }
 
   implicit def artificialExtractor[A]: MaybeArtificialExtractor[CompilationResult[A]] =
     (errors: List[canonize.ProcessUncanonizationError], rawValue: CompilationResult[A]) => {
       errors match {
         case Nil => rawValue
-        case e :: es =>
+        case head :: tail =>
           rawValue.copy(
             typing = rawValue.typing.filterKeysNow(key => !key.startsWith(MaybeArtificial.DummyObjectNamePrefix)),
-            result = Invalid(NonEmptyList.of(fromUncanonizationError(e), es.map(fromUncanonizationError): _*))
+            result = Invalid(fromUncanonizationErrors(NonEmptyList(head, tail)))
           )
       }
     }

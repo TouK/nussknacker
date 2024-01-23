@@ -78,10 +78,22 @@ object PrettyValidationErrors {
           s"Node $nodeId has duplicate outgoing edges to: $target, it cannot be saved properly",
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
-      case LooseNode(nodeId) =>
+      case LooseNode(nodeIds) =>
+        val (message, description) = nodeIds.toList match {
+          case nodeId :: Nil =>
+            (
+              "Loose node",
+              s"Node $nodeId is not connected to source, it cannot be saved properly"
+            )
+          case _ =>
+            (
+              "Loose nodes",
+              s"Nodes ${nodeIds.mkString(", ")} are not connected to source, it cannot be saved properly"
+            )
+        }
         node(
-          "Loose node",
-          s"Node $nodeId is not connected to source, it cannot be saved properly",
+          message,
+          description,
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
       case DisabledNode(nodeId) =>
@@ -141,10 +153,10 @@ object PrettyValidationErrors {
       case UnresolvedFragment(id) => node("Unresolved fragment", s"fragment $id encountered, this should not happen")
       case FragmentOutputNotDefined(id, _) => node(s"Output $id not defined", "Please check fragment definition")
       case UnknownFragmentOutput(id, _)    => node(s"Unknown fragment output $id", "Please check fragment definition")
-      case DisablingManyOutputsFragment(id, _) =>
-        node(s"Cannot disable fragment $id. Has many outputs", "Please check fragment definition")
-      case DisablingNoOutputsFragment(id) =>
-        node(s"Cannot disable fragment $id. Hasn't outputs", "Please check fragment definition")
+      case DisablingManyOutputsFragment(_) =>
+        node(s"Cannot disable fragment with multiple outputs", "Please check fragment definition")
+      case DisablingNoOutputsFragment(_) =>
+        node(s"Cannot disable fragment with no outputs", "Please check fragment definition")
       case MissingRequiredProperty(fieldName, label, _) => missingRequiredProperty(typ, fieldName, label)
       case UnknownProperty(propertyName, _)             => unknownProperty(typ, propertyName)
       case InvalidPropertyFixedValue(fieldName, label, value, values, _) =>

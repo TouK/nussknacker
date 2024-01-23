@@ -162,15 +162,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
     val result = validateWithConfiguredProperties(process)
 
-    result.errors.invalidNodes shouldBe Map(
-      "loose" -> List(
+    result.errors.globalErrors shouldBe List(
+      UIGlobalError(
         NodeValidationError(
           "LooseNode",
           "Loose node",
           "Node loose is not connected to source, it cannot be saved properly",
           None,
           SaveNotAllowed
-        )
+        ),
+        List("loose")
       )
     )
   }
@@ -1208,8 +1209,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         fragmentOutput("outNode1", duplicatedOutputName),
         fragmentOutput("outNode2", duplicatedOutputName),
       )
-    val displayable = ProcessConverter.toDisplayable(fragment, TestProcessingTypes.Streaming, Category1)
-    val result      = TestFactory.flinkProcessValidator.validate(displayable)
+    val displayable = ProcessConverter.toDisplayable(fragment)
+    val result      = TestFactory.flinkProcessValidator.validate(displayable, ProcessName(" "), isFragment = true)
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         PrettyValidationErrors.formatErrorMessage(
@@ -1235,10 +1236,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       .fragmentOneOut("fragment", "fragment1", "output1", "outVar1")
       .emptySink("id1", "sink")
 
-    val displayable = ProcessConverter.toDisplayable(scenario, TestProcessingTypes.Streaming, Category1)
+    val displayable = ProcessConverter.toDisplayable(scenario)
 
     val processValidator = mockedProcessValidator(fragment, defaultConfig)
-    val result           = processValidator.validate(displayable)
+    val result           = processValidator.validate(displayable, ProcessName(" "), isFragment = true)
 
     result.errors.invalidNodes shouldBe Map(
       "fragment" -> List(
@@ -1264,9 +1265,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
       val result = validate(displayable)
 
-      result.errors.invalidNodes.get(unexpectedEnd.id) should matchPattern {
-        case Some(
-              List(NodeValidationError("InvalidTailOfBranch", _, _, _, NodeValidationErrorType.SaveAllowed))
+      result.errors.globalErrors should matchPattern {
+        case List(
+              UIGlobalError(
+                NodeValidationError("InvalidTailOfBranch", _, _, _, NodeValidationErrorType.SaveAllowed),
+                List("e")
+              )
             ) =>
       }
     }

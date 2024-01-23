@@ -11,9 +11,10 @@ import pl.touk.nussknacker.engine.graph.node.FragmentOutputDefinition
 object FragmentValidator {
 
   def validateUniqueFragmentOutputNames(
-      process: CanonicalProcess
+      process: CanonicalProcess,
+      isFragment: Boolean
   ): ValidatedNel[ProcessCompilationError, Unit] = {
-    if (process.metaData.isFragment) {
+    if (isFragment) {
       val nodes               = process.collectAllNodes
       val fragmentOutputNodes = nodes.collect { case fo: FragmentOutputDefinition => fo }
       val duplicatedOutputNamesWithNodeIds = fragmentOutputNodes
