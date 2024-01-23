@@ -58,4 +58,11 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
     config.hasPath("java.class.path") shouldBe false
   }
 
+  test("should resolve environment variables") {
+    val config  = LocalModelData(ConfigFactory.empty(), List.empty).modelConfig
+    val envPath = System.getenv("PATH")
+    envPath shouldNot be(null)
+    config.getString("envPathProperty") shouldBe envPath
+  }
+
 }
