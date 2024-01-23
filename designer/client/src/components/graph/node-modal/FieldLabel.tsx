@@ -1,19 +1,13 @@
 import { styled } from "@mui/material";
 import React from "react";
-import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { NodeId, ParameterConfig, ProcessDefinitionData, UIParameter } from "../../../types";
+import { UIParameter } from "../../../types";
 import { NodeLabelStyled } from "./node";
 import NodeTip from "./NodeTip";
 import InfoIcon from "@mui/icons-material/Info";
 
 export function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {
     return definitions?.find((param) => param.name === paramName);
-}
-
-function getNodeParams(processDefinitionData: ProcessDefinitionData, nodeId: NodeId): Record<string, ParameterConfig> {
-    return processDefinitionData.componentsConfig[nodeId]?.params;
 }
 
 const Footer = styled("div")({
@@ -32,19 +26,9 @@ export const StyledNodeTip = styled(NodeTip)`
         height: 16px;
     }
 `;
-export function FieldLabel({
-    nodeId,
-    paramName,
-    parameterDefinitions,
-}: {
-    nodeId: NodeId;
-    paramName: string;
-    parameterDefinitions: UIParameter[];
-}): JSX.Element {
-    const processDefinitionData = useSelector(getProcessDefinitionData);
-    const params = getNodeParams(processDefinitionData, nodeId);
+export function FieldLabel({ paramName, parameterDefinitions }: { paramName: string; parameterDefinitions: UIParameter[] }): JSX.Element {
     const parameter = findParamDefinitionByName(parameterDefinitions, paramName);
-    const label = params?.[paramName]?.label ?? paramName;
+    const label = parameter?.label || paramName; // Fallback to paramName is for hard-coded parameters like Description
     const readableType = ProcessUtils.humanReadableType(parameter?.typ || null);
 
     return (

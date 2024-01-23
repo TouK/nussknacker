@@ -63,10 +63,21 @@ object ValidationResults {
   }
 
   @JsonCodec final case class NodeTypingData(
+      // variableTypes are needed bcause we hold the draft of a scenario on the FE side and we don't want FE
+      // to send to BE the whole scenario graph every time when someone change something in a single node.
+      // Because of that we send variable types that are before each node, and FE send to BE only these types instead of the whole scenario
       variableTypes: Map[String, TypingResult],
+      // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters) in
+      // a chain of information about parameter definition. It will be used only when:
+      // - API of a dynamic component was changed
+      // - FE didn't send node validation request yet
+      // TODO: We should remove this and instead of this, we should do node's parameters adjustment
+      //       before we return the scenario graph on the BE side
       parameters: Option[List[UIParameter]],
-      // currently we not showing typing info in gui but maybe in near future will
-      // be used for enhanced typing in FE
+      // typingInfo is returned to present inferred types of a parameters - it is in the separate map instead of kept with
+      // parameters, because we have a hardcoded parameters for built-in components
+      // We could return just a TypingResult (without intermediateResults) but it would require copying of nested
+      // structures. Because of that, we remove these information on the encoding level
       typingInfo: Map[String, ExpressionTypingInfo]
   )
 

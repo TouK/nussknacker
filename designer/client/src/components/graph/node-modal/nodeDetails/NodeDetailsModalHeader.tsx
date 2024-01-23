@@ -21,8 +21,8 @@ const findNodeClass = (node: NodeType) =>
 const getNodeAttributes = (node: NodeType) => nodeAttributes[NodeUtils.nodeType(node)];
 
 const NodeDetailsModalHeader = ({ node }: { node: NodeType }): JSX.Element => {
-    const { componentsConfig = {} } = useSelector(getProcessDefinitionData);
-    const { docsUrl } = useMemo(() => componentsConfig[ProcessUtils.determineNodeConfigName(node)] || {}, [componentsConfig, node]);
+    const { components = {} } = useSelector(getProcessDefinitionData);
+    const docsUrl = useMemo(() => ProcessUtils.extractComponentDefinition(node, components)?.docsUrl, [components, node]);
 
     const attributes = getNodeAttributes(node);
     const titleStyles = NkModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color);

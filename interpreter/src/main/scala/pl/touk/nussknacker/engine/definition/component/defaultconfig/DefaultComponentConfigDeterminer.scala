@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.defaultconfig
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.definition.component._
 
 object DefaultComponentConfigDeterminer {
@@ -40,22 +40,30 @@ object DefaultComponentConfigDeterminer {
     )
   }
 
-  def forBuiltInComponent(info: ComponentInfo): SingleComponentConfig = SingleComponentConfig(
-    params = None,
-    Some(DefaultsComponentIcon.forBuiltInComponent(info)),
-    // TODO: move from defaultModelConfig.conf to here + convention instead of code
-    docsUrl = None,
-    componentGroup = Some(DefaultsComponentGroupName.BaseGroupName),
-    componentId = None
-  )
+  def forBuiltInComponent(info: ComponentInfo): SingleComponentConfig = {
+    val componentGroup = if (BuiltInComponentInfo.FragmentDefinitionComponents.contains(info)) {
+      DefaultsComponentGroupName.FragmentsDefinitionGroupName
+    } else {
+      DefaultsComponentGroupName.BaseGroupName
+    }
+    SingleComponentConfig(
+      params = None,
+      Some(DefaultsComponentIcon.forBuiltInComponent(info)),
+      // TODO: move from defaultModelConfig.conf to here + convention instead of code
+      docsUrl = None,
+      componentGroup = Some(componentGroup),
+      componentId = Some(ComponentId.forBuiltInComponent(info))
+    )
+  }
 
-  def forFragment(docsUrl: Option[String]): SingleComponentConfig = SingleComponentConfig(
-    params = None,
-    Some(DefaultsComponentIcon.FragmentIcon),
-    docsUrl = docsUrl,
-    componentGroup = Some(DefaultsComponentGroupName.FragmentsGroupName),
-    componentId = None
-  )
+  def forFragment(componentId: Option[ComponentId], docsUrl: Option[String]): SingleComponentConfig =
+    SingleComponentConfig(
+      params = None,
+      Some(DefaultsComponentIcon.FragmentIcon),
+      docsUrl = docsUrl,
+      componentGroup = Some(DefaultsComponentGroupName.FragmentsGroupName),
+      componentId = componentId
+    )
 
   private case class ComponentConfigData(componentGroup: ComponentGroupName, icon: String)
 

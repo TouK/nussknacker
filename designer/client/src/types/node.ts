@@ -1,4 +1,4 @@
-import { ProcessAdditionalFields, ReturnedType } from "./process";
+import { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
 import { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
 
 type Type = "Properties" | "FragmentInput" | string;
@@ -16,14 +16,10 @@ export type BranchParametersTemplate = $TodoType;
 export type NodeType<F extends Field = Field> = {
     id: string;
     type: Type;
-    isFragment?: boolean;
     isDisabled?: boolean;
     additionalFields?: {
         description: string;
         layoutData?: LayoutData;
-        properties: {
-            layout?: string;
-        };
     };
     parameters?: Parameter[];
     branchParameters?: BranchParams[];

@@ -1677,10 +1677,9 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
     libraryDependencies ++= Seq(
       "org.apache.flink"          % "flink-streaming-java" % flinkV     % Provided,
       "org.scalatest"            %% "scalatest"            % scalaTestV % Test,
-      "com.clearspring.analytics" % "stream"               % "2.9.8" excludeAll (
-        // It is used only in QDigest which we don't use, while it's >20MB in size...
-        ExclusionRule("it.unimi.dsi", "fastutil"),
-      )
+      "com.clearspring.analytics" % "stream"               % "2.9.8"
+      // It is used only in QDigest which we don't use, while it's >20MB in size...
+        exclude ("it.unimi.dsi", "fastutil"),
     ),
   )
   .dependsOn(
@@ -1854,7 +1853,14 @@ lazy val designer = (project in file("designer/server"))
         "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
         "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
         "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % "test"
-      ) ++ forScalaVersion(scalaVersion.value, Seq(), (2, 13) -> Seq("org.scala-lang.modules" %% "scala-xml" % "2.1.0"))
+      ) ++ forScalaVersion(
+        scalaVersion.value,
+        Seq(),
+        (2, 13) -> Seq(
+          "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
+          "org.scala-lang.modules" %% "scala-xml"                  % "2.1.0"
+        )
+      )
     }
   )
   .dependsOn(
@@ -1991,6 +1997,7 @@ lazy val root = (project in file("."))
   .aggregate(modulesWithBom: _*)
   .settings(commonSettings)
   .settings(
+    name              := "nussknacker",
     // crossScalaVersions must be set to Nil on the aggregating project
     releaseCrossBuild := true,
     publish / skip    := true,

@@ -175,27 +175,30 @@ trait KafkaAvroSpecMixin
       case ExistingSchemaVersion(version) => s"'$version'"
     }
 
-  protected def runAndVerifyResult(
+  protected def runAndVerifyResultSingleEvent(
       process: CanonicalProcess,
       topic: TopicConfig,
       event: Any,
-      expected: AnyRef
+      expected: AnyRef,
+      additionalVerificationBeforeScenarioCancel: => Unit = {}
   ): Unit =
-    runAndVerifyResult(process, topic, List(event), List(expected))
+    runAndVerifyResult(process, topic, List(event), List(expected), additionalVerificationBeforeScenarioCancel)
 
   protected def runAndVerifyResult(
       process: CanonicalProcess,
       topic: TopicConfig,
       events: List[Any],
-      expected: AnyRef
+      expected: AnyRef,
+      additionalVerificationBeforeScenarioCancel: => Unit = {}
   ): Unit =
-    runAndVerifyResult(process, topic, events, List(expected))
+    runAndVerifyResult(process, topic, events, List(expected), additionalVerificationBeforeScenarioCancel)
 
   private def runAndVerifyResult(
       process: CanonicalProcess,
       topic: TopicConfig,
       events: List[Any],
-      expected: List[AnyRef]
+      expected: List[AnyRef],
+      additionalVerificationBeforeScenarioCancel: => Unit
   ): Unit = {
     kafkaClient.createTopic(topic.input, partitions = 1)
     events.foreach(obj => pushMessage(obj, topic.input))
@@ -203,6 +206,7 @@ trait KafkaAvroSpecMixin
 
     run(process) {
       consumeAndVerifyMessages(topic.output, expected)
+      additionalVerificationBeforeScenarioCancel
     }
   }
 

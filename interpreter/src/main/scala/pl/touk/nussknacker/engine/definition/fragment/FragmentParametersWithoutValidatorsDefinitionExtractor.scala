@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
+import cats.Id
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{Validated, Writer}
+import cats.data.{Writer, WriterT}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -24,22 +23,10 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentPar
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 
 /*
- * This class exists as a more lightweight alternative to FragmentComponentDefinitionExtractor - it doesn't rely on ExpressionCompiler and ValidationContext
+ * This class exists as a more lightweight alternative to FragmentParametersCompleteDefinitionExtractor - it doesn't rely on ExpressionCompiler and ValidationContext
  * However, it doesn't validate the parameters' initialValue and valueEditor and doesn't extract (and validate the correctness of) the parameters' validators - use in cases where it's not needed
  */
-class FragmentWithoutValidatorsDefinitionExtractor(classLoader: ClassLoader) {
-
-  def extractFragmentComponentDefinition(
-      fragment: CanonicalProcess
-  ): Validated[FragmentDefinitionError, ComponentStaticDefinition] = {
-    FragmentGraphDefinitionExtractor.extractFragmentGraph(fragment).map { case (input, _, outputs) =>
-      val parameters =
-        extractFragmentParametersDefinition(input.parameters)(NodeId(input.id)).value
-      val outputNames = outputs.map(_.name).sorted
-      val docsUrl     = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
-      FragmentComponentDefinition(parameters, outputNames, docsUrl)
-    }
-  }
+class FragmentParametersWithoutValidatorsDefinitionExtractor(classLoader: ClassLoader) {
 
   def extractParametersDefinition(
       fragmentInput: FragmentInput,
@@ -56,9 +43,9 @@ class FragmentWithoutValidatorsDefinitionExtractor(classLoader: ClassLoader) {
     )
   }
 
-  private def extractFragmentParametersDefinition(parameters: List[FragmentParameter])(
+  def extractFragmentParametersDefinition(parameters: List[FragmentParameter])(
       implicit nodeId: NodeId
-  ) = {
+  ): WriterT[Id, List[PartSubGraphCompilationError], List[Id[Parameter]]] = {
     parameters
       .map(p =>
         getParamTypingResult(p)

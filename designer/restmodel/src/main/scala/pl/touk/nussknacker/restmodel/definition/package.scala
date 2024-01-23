@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.graph.EdgeType
 
 import java.net.URI
 
@@ -25,8 +25,6 @@ package object definition {
       componentGroups: List[UIComponentGroup],
       components: Map[ComponentInfo, UIComponentDefinition],
       classes: List[TypingResult],
-      // TODO: remove it, use components field on the FE side instead
-      componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[UINodeEdges],
       customActions: List[UICustomAction]
@@ -42,6 +40,7 @@ package object definition {
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
+      // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
       defaultValue: Expression,
       // additionalVariables and variablesToHide are served to FE because suggestions API requires full set of variables
       // and ScenarioWithDetails.json.validationResult.nodeResults is not enough
@@ -50,7 +49,8 @@ package object definition {
       // FE need this information because branch parameters aren't changed dynamically during node validation so they never
       // should be invalidated
       branchParam: Boolean,
-      hintText: Option[String]
+      hintText: Option[String],
+      label: String
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
@@ -69,7 +69,9 @@ package object definition {
       //    (see. ProcessUtils.findAvailableVariables). This heuristic is used when DisplayableProcess can't be translated
       //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
-      // For fragments only
+      icon: String,
+      docsUrl: Option[String],
+      // This field is defined only for fragments
       outputParameters: Option[List[String]]
   )
 

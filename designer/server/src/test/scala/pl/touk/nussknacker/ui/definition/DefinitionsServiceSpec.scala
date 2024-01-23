@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
+import com.typesafe.config.ConfigFactory
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
@@ -12,21 +14,27 @@ import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, Proces
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
-import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, StubFragmentRepository, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{
+  MockDeploymentManager,
+  ProcessTestData,
+  StubFragmentRepository,
+  TestProcessingTypes
+}
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.security.api.AdminUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
+class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with OptionValues {
 
   object TestService extends Service {
 
@@ -96,7 +104,36 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     )
   }
 
-  test("should hide node in hidden category") {
+  test("should read parameter's label from configuration") {
+    val labelSpecifiedInConfiguration = "Human Readable Label"
+    val model: ModelData = LocalModelData(
+      ConfigFactory.parseString(s"""componentsUiConfig {
+          |  service-enricher: {
+          |    params {
+          |      paramRawEditor {
+          |        label: "$labelSpecifiedInConfiguration"
+          |      }
+          |    }
+          |  }
+          |}
+          |""".stripMargin),
+      List(ComponentDefinition("enricher", TestService))
+    )
+
+    val definitions = prepareDefinitions(model, List.empty)
+
+    definitions
+      .components(ComponentInfo(ComponentType.Service, "enricher"))
+      .parameters
+      .map(p => (p.name, p.label))
+      .toMap shouldBe Map(
+      "paramDualEditor"   -> "paramDualEditor",
+      "paramStringEditor" -> "paramStringEditor",
+      "paramRawEditor"    -> labelSpecifiedInConfiguration
+    )
+  }
+
+  test("should hide component in hidden component group") {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model = LocalModelData(
       typeConfig.modelConfig.resolved,
@@ -111,7 +148,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
             "hiddenEnricher" -> WithCategories
               .anyCategory(TestService)
               .withComponentConfig(
-                SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("hiddenCategory")))
+                SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("hiddenComponentGroup")))
               )
           )
       }
@@ -119,7 +156,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     val definitions = prepareDefinitions(model, List.empty)
 
-    definitions.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
+    definitions.componentGroups.filter(_.name == ComponentGroupName("hiddenComponentGroup")) shouldBe empty
   }
 
   test("should be able to setup component group name programmatically") {
@@ -160,38 +197,78 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     val definitions = prepareDefinitions(model, List(fragmentWithDocsUrl))
 
-    definitions.componentsConfig(fragmentWithDocsUrl.name.value).docsUrl shouldBe Some(docsUrl)
+    definitions.components(ComponentInfo(ComponentType.Fragment, fragment.name.value)).docsUrl shouldBe Some(docsUrl)
   }
 
   test("should skip empty fragments in definitions") {
     val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
-    val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
+    val fragment    = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val definitions = prepareDefinitions(model, List(fragment))
 
     definitions.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)) shouldBe empty
   }
 
+  test("should return outputParameters in fragment's definition") {
+    val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
+
+    val fragment    = ProcessTestData.sampleFragmentOneOut
+    val definitions = prepareDefinitions(model, List(ProcessTestData.sampleFragmentOneOut))
+
+    val fragmentDefinition =
+      definitions.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)).value
+    val outputParameters = fragmentDefinition.outputParameters.value
+    outputParameters shouldEqual List("output")
+  }
+
   test("should override component's parameter config with additionally provided config") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-      List(ComponentDefinition("enricher", TestService))
+      List(ComponentDefinition("enricher", TestService)),
+      additionalConfigsFromProvider = Map(
+        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            "paramStringEditor" -> ParameterAdditionalUIConfig(
+              required = false,
+              initialValue = Some(
+                FixedExpressionValue(
+                  "'default-from-additional-ui-config-provider'",
+                  "default-from-additional-ui-config-provider"
+                )
+              ),
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = None
+            )
+          ),
+          componentGroup = None
+        )
+      )
     )
 
     val definitions = prepareDefinitions(model, List.empty)
 
-    definitions.componentsConfig("enricher").params.get.map { case (name, config) =>
-      name -> config.defaultValue
-    } should contain(
-      "paramStringEditor" -> Some("'default-from-additional-ui-config-provider'")
-    )
+    val expectedOverridenParamDefaultValue =
+      "paramStringEditor" -> Expression.spel("'default-from-additional-ui-config-provider'")
+    val returnedParamDefaultValues =
+      definitions.components(ComponentInfo(ComponentType.Service, "enricher")).parameters.map { param =>
+        param.name -> param.defaultValue
+      }
+    returnedParamDefaultValues should contain(expectedOverridenParamDefaultValue)
   }
 
   test("should override component's component groups with additionally provided config") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-      List(ComponentDefinition("enricher", TestService))
+      List(ComponentDefinition("enricher", TestService)),
+      additionalConfigsFromProvider = Map(
+        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+          parameterConfigs = Map.empty,
+          componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName)
+        )
+      )
     )
 
     val definitions = prepareDefinitions(model, List.empty)
@@ -218,24 +295,27 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         model,
         MetaDataInitializer(StreamMetaData.typeName).create(_, Map.empty)
       )
-    val additionalUIConfigFinalizer = new AdditionalUIConfigFinalizer(TestAdditionalUIConfigProvider)
+    val processingType = TestProcessingTypes.Streaming
+
     val modelDefinitionEnricher = new ModelDefinitionEnricher(
       new BuiltInComponentsStaticDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
-      new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader),
-      additionalUIConfigFinalizer,
+      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, ComponentId.default(processingType, _)),
       staticModelDefinition
     )
+
     new DefinitionsService(
       modelData = model,
       scenarioPropertiesConfig = Map.empty,
       deploymentManager = new MockDeploymentManager,
       modelDefinitionEnricher = modelDefinitionEnricher,
-      additionalUIConfigFinalizer = additionalUIConfigFinalizer,
-      fragmentRepository = new StubFragmentRepository(Map(TestProcessingTypes.Streaming -> fragmentScenarios))
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType),
+      fragmentRepository = new StubFragmentRepository(Map(processingType -> fragmentScenarios))
     ).prepareUIDefinitions(
-      TestProcessingTypes.Streaming,
+      processingType,
       forFragment = false
-    )(AdminUser("admin", "admin")).futureValue
+    )(AdminUser("admin", "admin"))
+      .futureValue
   }
 
 }

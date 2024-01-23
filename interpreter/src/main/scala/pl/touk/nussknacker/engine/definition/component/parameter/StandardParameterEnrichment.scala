@@ -35,12 +35,14 @@ object StandardParameterEnrichment {
       )
     )
     val finalHintText = original.hintText.orElse(parameterConfig.hintText)
+    val finalLabel    = original.labelOpt.orElse(parameterConfig.label)
 
     original.copy(
       editor = finalEditor,
       validators = finalValidators,
       defaultValue = finalDefaultValue,
-      hintText = finalHintText
+      hintText = finalHintText,
+      labelOpt = finalLabel
     )
   }
 

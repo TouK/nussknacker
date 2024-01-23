@@ -1,7 +1,7 @@
 import HttpService from "../../http/HttpService";
 import { displayProcessActivity } from "./displayProcessActivity";
-import { ProcessName } from "../../types";
 import { ThunkAction } from "../reduxTypes";
+import { ProcessName } from "../../components/Process/types";
 
 export function addComment(processName: ProcessName, processVersionId, comment): ThunkAction {
     return (dispatch) => {

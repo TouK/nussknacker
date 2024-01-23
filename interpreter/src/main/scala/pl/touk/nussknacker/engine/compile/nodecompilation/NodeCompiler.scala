@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.definition.component.dynamic.{
   FinalStateValue
 }
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -51,6 +51,9 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
+import cats.implicits._
+import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
+import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.validateParameterNames
 
 object NodeCompiler {
 
@@ -72,7 +75,7 @@ object NodeCompiler {
 
 class NodeCompiler(
     definitions: ModelDefinition[ComponentDefinitionWithImplementation],
-    fragmentDefinitionExtractor: FragmentCompleteDefinitionExtractor,
+    fragmentDefinitionExtractor: FragmentParametersCompleteDefinitionExtractor,
     expressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
     resultCollector: ResultCollector,
@@ -163,12 +166,24 @@ class NodeCompiler(
           )
       }
 
-      val parameterExtractionValidation =
-        NonEmptyList.fromList(parameterDefinitions.written).map(invalid).getOrElse(valid(List.empty))
+      val parameterNameValidation = validateParameterNames(parameterDefinitions.value)
 
-      compilationResult.copy(compiledObject =
-        parameterExtractionValidation.andThen(_ => compilationResult.compiledObject)
+      val parameterExtractionValidation =
+        NonEmptyList.fromList(parameterDefinitions.written).map(errors => invalid(errors)).getOrElse(valid(()))
+
+      // by relying on name for the field names used on FE, we display the same errors under all fields with the
+      // duplicated name
+      // TODO: display all errors when switching to field name errors not reliant on parameter name
+      val displayUniqueNameReliantErrors = parameterNameValidation.fold(
+        errors => !errors.exists(_.isInstanceOf[DuplicateFragmentInputParameter]),
+        _ => true
       )
+
+      val displayableErrors =
+        if (displayUniqueNameReliantErrors) parameterNameValidation |+| parameterExtractionValidation
+        else parameterNameValidation
+
+      compilationResult.copy(compiledObject = displayableErrors.andThen(_ => compilationResult.compiledObject))
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(

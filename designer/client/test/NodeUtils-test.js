@@ -133,53 +133,15 @@ describe("isAvailable", () => {
 
     beforeAll(() => {
         processDefinitionData = {
-            componentGroups: [
-                {
-                    name: "base",
-                    components: [
-                        {
-                            type: "filter",
-                            label: "filter",
-                            node: {
-                                type: "Filter",
-                                id: "",
-                                expression: {
-                                    language: "spel",
-                                    expression: "true",
-                                },
-                            },
-                            branchParametersTemplate: [],
-                        },
-                    ],
+            components: {
+                "service-clientHttpService": {
+                    parameters: [],
+                    returnType: null,
+                    icon: "/foo",
+                    docsUrl: null,
+                    outputParameters: null,
                 },
-                {
-                    name: "enrichers",
-                    components: [
-                        {
-                            type: "enricher",
-                            label: "clientHttpService",
-                            node: {
-                                type: "Enricher",
-                                id: "",
-                                service: {
-                                    id: "clientHttpService",
-                                    parameters: [
-                                        {
-                                            name: "id",
-                                            expression: {
-                                                language: "spel",
-                                                expression: "''",
-                                            },
-                                        },
-                                    ],
-                                },
-                                output: "output",
-                            },
-                            branchParametersTemplate: [],
-                        },
-                    ],
-                },
-            ],
+            },
         };
 
         component = {

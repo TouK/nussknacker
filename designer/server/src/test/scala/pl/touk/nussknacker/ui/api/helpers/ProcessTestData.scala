@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -27,7 +27,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil.toDisplayable
-import pl.touk.nussknacker.ui.component.ComponentIdProvider
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -63,13 +62,6 @@ object ProcessTestData {
   val optionalEndingStreamTransformer          = "optionalEndingTransformer"
   val union                                    = "union"
 
-  class SimpleTestComponentIdProvider extends ComponentIdProvider {
-    def createComponentId(processingType: String, componentInfo: ComponentInfo): ComponentId =
-      ComponentId.default(processingType, componentInfo)
-
-    def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] = ???
-  }
-
   def modelDefinition(
       groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]] = Map.empty
   ): ModelDefinition[ComponentDefinitionWithImplementation] =
@@ -100,27 +92,27 @@ object ProcessTestData {
       .withCustom(
         existingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
       )
       .withCustom(
         otherExistingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
       )
       .withCustom(
         otherExistingStreamTransformer2,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
       )
       .withCustom(
         optionalEndingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = true)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
       )
       .withCustom(
         union,
         Some(Unknown),
-        CustomComponentSpecificData(manyInputs = true, canBeEnding = true)
+        CustomComponentSpecificData(manyInputs = true, canBeEnding = true),
       )
       .build
 

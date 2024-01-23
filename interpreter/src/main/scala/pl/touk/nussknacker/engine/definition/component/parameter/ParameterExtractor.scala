@@ -64,7 +64,8 @@ object ParameterExtractor {
       isLazyParameter = isLazyParameter,
       scalaOptionParameter = isScalaOptionParameter,
       javaOptionalParameter = isJavaOptionalParameter,
-      hintText = None
+      hintText = parameterConfig.hintText,
+      labelOpt = parameterConfig.label
     )
   }
 

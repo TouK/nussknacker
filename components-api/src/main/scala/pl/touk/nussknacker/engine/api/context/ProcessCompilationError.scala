@@ -257,16 +257,20 @@ object ProcessCompilationError {
       OverwrittenVariable(variableName, nodeId.id, paramName)
   }
 
-  final case class InvalidVariableOutputName(name: String, nodeId: String, paramName: Option[String])
+  final case class InvalidVariableName(name: String, nodeId: String, paramName: Option[String])
       extends PartSubGraphCompilationError
       with InASingleNode
 
-  object InvalidVariableOutputName {
+  object InvalidVariableName {
     def apply(variableName: String, paramName: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      InvalidVariableOutputName(variableName, nodeId.id, paramName)
+      InvalidVariableName(variableName, nodeId.id, paramName)
   }
 
   final case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
+
+  final case class DuplicateFragmentInputParameter(paramName: String, nodeId: String)
+      extends PartSubGraphCompilationError
+      with InASingleNode
 
   final case class RequireValueFromEmptyFixedList(paramName: String, nodeIds: Set[String])
       extends PartSubGraphCompilationError

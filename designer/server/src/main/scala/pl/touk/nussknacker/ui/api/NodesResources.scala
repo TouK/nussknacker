@@ -199,7 +199,13 @@ object NodesResources {
 )
 
 @JsonCodec(encodeOnly = true) final case class NodeValidationResult(
+    // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
     parameters: Option[List[UIParameter]],
+    // expressionType is returned to present inferred types of a single, hardcoded parameter of the node
+    // We currently support only type inference for an expression in the built-in components: variable and switch
+    // and fields of the record-variable and fragment output (we return TypedObjectTypingResult in this case)
+    // TODO: We should keep this in a map, instead of TypedObjectTypingResult as it is done in ValidationResult.typingInfo
+    //       Thanks to that we could remove some code on the FE side and be closer to support also not built-in components
     expressionType: Option[TypingResult],
     validationErrors: List[NodeValidationError],
     validationPerformed: Boolean

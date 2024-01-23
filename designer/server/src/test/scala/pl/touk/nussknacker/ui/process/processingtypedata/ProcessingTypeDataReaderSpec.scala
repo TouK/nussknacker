@@ -7,12 +7,13 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
-import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
@@ -61,7 +62,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
     val provider = ProcessingTypeDataProvider(
       StubbedProcessingTypeDataReader
-        .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+        .loadProcessingTypeData(ConfigWithUnresolvedVersion(config), TestAdditionalUIConfigProvider)
     )
     val scenarioTypes = provider
       .all(AdminUser("admin", "admin"))
@@ -85,7 +86,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
     val provider = ProcessingTypeDataProvider(
       StubbedProcessingTypeDataReader
-        .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+        .loadProcessingTypeData(ConfigWithUnresolvedVersion(config), TestAdditionalUIConfigProvider)
     )
 
     val fooCategoryUser = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
@@ -106,13 +107,18 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
   object StubbedProcessingTypeDataReader extends ProcessingTypeDataReader {
 
-    override protected def createProcessingTypeData(name: ProcessingType, typeConfig: ProcessingTypeConfig)(
+    override protected def createProcessingTypeData(
+        processingType: ProcessingType,
+        typeConfig: ProcessingTypeConfig,
+        additionalUIConfigProvider: AdditionalUIConfigProvider
+    )(
         implicit ec: ExecutionContext,
         actorSystem: ActorSystem,
         sttpBackend: SttpBackend[Future, Any],
         deploymentService: DeploymentService
     ): ProcessingTypeData = {
       ProcessingTypeData(
+        processingType,
         new MockDeploymentManager,
         null,
         null,
@@ -129,7 +135,6 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
     ): CombinedProcessingTypeData = {
       CombinedProcessingTypeData(
         statusNameToStateDefinitionsMapping = Map.empty,
-        componentIdProvider = new DefaultComponentIdProvider({ (_, _) => None }),
         categoryService = ConfigProcessCategoryService(valueMap.mapValuesNow(_.category))
       )
     }

@@ -8,7 +8,6 @@ import SystemUtils from "../common/SystemUtils";
 import ScopedCssBaseline from "@mui/material/ScopedCssBaseline";
 import { useNavigate, useParams } from "react-router-dom";
 import { RemoteComponent } from "./ExternalLib/RemoteComponent";
-import { NuThemeProvider } from "./theme/nuThemeProvider";
 
 export type BaseTab = {
     tab: BaseTabData;

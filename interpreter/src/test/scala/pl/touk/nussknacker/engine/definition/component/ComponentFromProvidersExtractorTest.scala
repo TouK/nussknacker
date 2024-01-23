@@ -158,7 +158,12 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     ) { cl =>
       val extractor = makeExtractor(cl)
       val resolved  = loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(map.toSeq: _*)), cl)
-      extractor.extractComponents(ProcessObjectDependencies.withConfig(resolved.config), ComponentsUiConfig.Empty)
+      extractor.extractComponents(
+        ProcessObjectDependencies.withConfig(resolved.config),
+        ComponentsUiConfig.Empty,
+        info => ComponentId(info.toString),
+        Map.empty
+      )
     }
   }
 
@@ -167,7 +172,12 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       val extractor = ComponentsFromProvidersExtractor(cl)
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
-      extractor.extractComponents(ProcessObjectDependencies.withConfig(resolved.config), ComponentsUiConfig.Empty)
+      extractor.extractComponents(
+        ProcessObjectDependencies.withConfig(resolved.config),
+        ComponentsUiConfig.Empty,
+        info => ComponentId(info.toString),
+        Map.empty
+      )
     }
   }
 

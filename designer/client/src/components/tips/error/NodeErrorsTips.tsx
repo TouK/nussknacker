@@ -2,16 +2,17 @@ import React from "react";
 import i18next from "i18next";
 import { concat, difference, isEmpty } from "lodash";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
-import { NodeType, Process, NodeValidationError } from "../../../types";
+import { NodeType, NodeValidationError } from "../../../types";
+import { Scenario } from "src/components/Process/types";
 
 interface NodeErrorsTips {
     propertiesErrors: NodeValidationError[];
     nodeErrors: Record<string, NodeValidationError[]>;
     showDetails: (event: React.SyntheticEvent<Element, Event>, details: NodeType) => void;
-    currentProcess: Process;
+    scenario: Scenario;
 }
 
-export const NodeErrorsTips = ({ propertiesErrors, nodeErrors, showDetails, currentProcess }: NodeErrorsTips) => {
+export const NodeErrorsTips = ({ propertiesErrors, nodeErrors, showDetails, scenario }: NodeErrorsTips) => {
     const nodeIds = Object.keys(nodeErrors);
 
     const errorsOnTopPresent = (otherNodeErrorIds: string[], propertiesErrors: NodeValidationError[]) => {
@@ -29,20 +30,20 @@ export const NodeErrorsTips = ({ propertiesErrors, nodeErrors, showDetails, curr
                 nodeIds={concat(otherNodeErrorIds, isEmpty(propertiesErrors) ? [] : "properties")}
                 message={i18next.t("errors.errorsIn", "Errors in: ")}
                 showDetails={showDetails}
-                currentProcess={currentProcess}
+                scenario={scenario}
             />
             <NodeErrorsLinkSection
                 nodeIds={looseNodeIds}
                 message={i18next.t("errors.looseNodes", "Loose nodes: ")}
                 showDetails={showDetails}
-                currentProcess={currentProcess}
+                scenario={scenario}
                 errorsOnTop={errorsOnTop}
             />
             <NodeErrorsLinkSection
                 nodeIds={invalidEndNodeIds}
                 message={i18next.t("errors.invalidScenarioEnd", "Scenario must end with a sink, processor or fragment: ")}
                 showDetails={showDetails}
-                currentProcess={currentProcess}
+                scenario={scenario}
                 errorsOnTop={errorsOnTop}
             />
         </>

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
-  FragmentWithoutValidatorsDefinitionExtractor
+  FragmentParametersWithoutValidatorsDefinitionExtractor
 }
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -26,17 +26,18 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 // Needed to build source based on FragmentInputDefinition. It allows fragment to be treated as scenario (when it comes to testing)
 // This source adds input parameters to context and allows testing with ad-hoc testing.
 class StubbedFragmentSourceDefinitionPreparer(
-    fragmentDefinitionExtractor: FragmentWithoutValidatorsDefinitionExtractor
+    fragmentDefinitionExtractor: FragmentParametersWithoutValidatorsDefinitionExtractor
 ) {
 
   def createSourceDefinition(frag: FragmentInputDefinition): MethodBasedComponentDefinitionWithImplementation = {
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
     val staticDefinition = FragmentComponentDefinition(
-      // We don't want to pass input  parameters definition as parameters to definition of factory creating stubbed source because
+      componentId = None,
+      // We don't want to pass input parameters definition as parameters to definition of factory creating stubbed source because
       // use them only for testParametersDefinition which are used in the runtime not in compile-time.
       parameters = List.empty,
       outputNames = List.empty,
-      docsUrl = None
+      docsUrl = None,
     )
     MethodBasedComponentDefinitionWithImplementation(
       (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),

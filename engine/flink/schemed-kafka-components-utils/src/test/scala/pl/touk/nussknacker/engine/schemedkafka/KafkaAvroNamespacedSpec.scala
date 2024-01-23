@@ -59,7 +59,7 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
     val sinkParam          = UniversalSinkParam(processTopicConfig, ExistingSchemaVersion(1), "#input")
     val process            = createAvroProcess(sourceParam, sinkParam)
 
-    runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
+    runAndVerifyResult(process, topicConfig, List(PaymentV1.record), PaymentV1.record)
   }
 
 }

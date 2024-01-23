@@ -1,4 +1,4 @@
-import { Edge, NodeType, NodeValidationError } from "../../../types";
+import { Edge, NodeType, NodeValidationError, PropertiesType } from "../../../types";
 import React, { SetStateAction, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
@@ -87,9 +87,9 @@ export function NodeTypeDetailsContent({
 
     const renderFieldLabel = useCallback(
         (paramName: string): JSX.Element => {
-            return <FieldLabel nodeId={node.id} parameterDefinitions={parameterDefinitions} paramName={paramName} />;
+            return <FieldLabel parameterDefinitions={parameterDefinitions} paramName={paramName} />;
         },
-        [node.id, parameterDefinitions],
+        [parameterDefinitions],
     );
 
     const removeElement = useCallback(
@@ -331,7 +331,7 @@ export function NodeTypeDetailsContent({
                 <Properties
                     errors={errors}
                     isEditMode={isEditMode}
-                    node={node}
+                    node={node as PropertiesType}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showSwitch={showSwitch}

@@ -3,27 +3,22 @@ import { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
 import ProcessUtils from "../../common/ProcessUtils";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData } from "../../types";
+import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
 import { GraphState } from "./types";
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
     return map(layout, (n) => (oldId === n.id ? { ...n, id: newId } : n));
 }
 
-export function updateAfterNodeIdChange(layout: Layout, process: Process, oldId: NodeId, newId: NodeId) {
-    const newLayout = updateLayoutAfterNodeIdChange(layout, oldId, newId);
-    return {
-        processToDisplay: process,
-        layout: newLayout,
-    };
-}
-
 export function updateAfterNodeDelete(state: GraphState, idToDelete: NodeId) {
     return {
         ...state,
-        processToDisplay: {
-            ...state.processToDisplay,
-            nodes: state.processToDisplay.nodes.filter((n) => n.id !== idToDelete),
+        scenario: {
+            ...state.scenario,
+            json: {
+                ...state.scenario.json,
+                nodes: state.scenario.json.nodes.filter((n) => n.id !== idToDelete),
+            },
         },
         layout: state.layout.filter((n) => n.id !== idToDelete),
     };
@@ -53,7 +48,9 @@ export function prepareNewNodesWithLayout(
 ): { layout: NodePosition[]; nodes: NodeType[]; uniqueIds?: NodeId[] } {
     const {
         layout,
-        processToDisplay: { nodes = [] },
+        scenario: {
+            json: { nodes = [] },
+        },
     } = state;
 
     const alreadyUsedIds = nodes.map((node) => node.id);
@@ -73,9 +70,12 @@ export function prepareNewNodesWithLayout(
 export function addNodesWithLayout(state: GraphState, { nodes, layout }: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
     return {
         ...state,
-        processToDisplay: {
-            ...state.processToDisplay,
-            nodes,
+        scenario: {
+            ...state.scenario,
+            json: {
+                ...state.scenario.json,
+                nodes,
+            },
         },
         layout,
     };
@@ -124,8 +124,8 @@ export function enrichNodeWithProcessDependentData(
 
     switch (NodeUtils.nodeType(node)) {
         case "Join": {
-            const { parameters } = ProcessUtils.extractComponentDefinition(node, processDefinitionData.components);
-            const declaredBranchParameters = parameters.filter((p) => p.branchParam);
+            const parameters = ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.parameters;
+            const declaredBranchParameters = parameters?.filter((p) => p.branchParam) || [];
             const incomingEdges = edges.filter((e) => e.to === node.id);
             const branchParameters = incomingEdges.map((edge) => {
                 const branchId = edge.from;
