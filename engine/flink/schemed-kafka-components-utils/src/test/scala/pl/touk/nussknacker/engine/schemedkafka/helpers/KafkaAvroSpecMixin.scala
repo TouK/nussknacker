@@ -95,7 +95,7 @@ trait KafkaAvroSpecMixin
   protected lazy val nodeId: NodeId = NodeId("mock-node-id")
 
   protected def universalSourceFactory(useStringForKey: Boolean): KafkaSource = {
-    new UniversalKafkaSourceFactory[Any, Any](
+    new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
       testModelDependencies,

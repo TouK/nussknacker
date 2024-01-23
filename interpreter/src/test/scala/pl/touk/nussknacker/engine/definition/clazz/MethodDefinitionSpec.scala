@@ -36,7 +36,7 @@ class MethodDefinitionSpec extends AnyFunSuite with Matchers {
       args: List[TypingResult],
       expected: ValidatedNel[String, TypingResult]
   ): Unit =
-    definition.computeResultType(args).leftMap(_.map(_.message)) shouldBe expected
+    definition.computeResultType(Unknown, args).leftMap(_.map(_.message)) shouldBe expected
 
   private def checkApplyValid(definition: MethodDefinition, args: List[TypingResult], expected: TypingResult): Unit =
     checkApply(definition, args, expected.validNel)
@@ -110,7 +110,7 @@ class MethodDefinitionSpec extends AnyFunSuite with Matchers {
 
   test("should automatically validate arguments of generic functions") {
     val methodDefinition = FunctionalMethodDefinition(
-      _ => Typed[Int].validNel,
+      (_, _) => Typed[Int].validNel,
       MethodTypeInfo(
         Parameter("a", Typed[Int]) :: Parameter("b", Typed[Double]) :: Nil,
         Some(Parameter("c", Typed[String])),
@@ -120,25 +120,29 @@ class MethodDefinitionSpec extends AnyFunSuite with Matchers {
       None
     )
 
-    methodDefinition.computeResultType(List(Typed[Int], Typed[Double])) should be valid;
-    methodDefinition.computeResultType(List(Typed[Int], Typed[Double], Typed[String])) should be valid;
-    methodDefinition.computeResultType(List(Typed[Int], Typed[Double], Typed[String], Typed[String])) should be valid
+    methodDefinition.computeResultType(Unknown, List(Typed[Int], Typed[Double])) should be valid;
+    methodDefinition.computeResultType(Unknown, List(Typed[Int], Typed[Double], Typed[String])) should be valid;
+    methodDefinition.computeResultType(
+      Unknown,
+      List(Typed[Int], Typed[Double], Typed[String], Typed[String])
+    ) should be valid
 
-    methodDefinition.computeResultType(List(Typed[Int])) should be invalid;
-    methodDefinition.computeResultType(List(Typed[Int], Typed[String])) should be invalid;
-    methodDefinition.computeResultType(List(Typed[Double], Typed[Int], Typed[String])) should be invalid;
-    methodDefinition.computeResultType(List()) should be invalid
+    methodDefinition.computeResultType(Unknown, List(Typed[Int])) should be invalid;
+    methodDefinition.computeResultType(Unknown, List(Typed[Int], Typed[String])) should be invalid;
+    methodDefinition.computeResultType(Unknown, List(Typed[Double], Typed[Int], Typed[String])) should be invalid;
+    methodDefinition.computeResultType(Unknown, List()) should be invalid
   }
 
   test("should validate result against proper signatures") {
     val sig1 = MethodTypeInfo.withoutVarargs(Parameter("a", Typed[Int]) :: Nil, Typed[Int])
     val sig2 = MethodTypeInfo.withoutVarargs(Parameter("a", Typed[String]) :: Nil, Typed[String])
 
-    val methodDefinition = FunctionalMethodDefinition(_ => Typed[Int].validNel, NonEmptyList.of(sig1, sig2), "f", None)
+    val methodDefinition =
+      FunctionalMethodDefinition((_, _) => Typed[Int].validNel, NonEmptyList.of(sig1, sig2), "f", None)
 
-    methodDefinition.computeResultType(Typed[Int] :: Nil) shouldBe Typed[Int].validNel
+    methodDefinition.computeResultType(Unknown, Typed[Int] :: Nil) shouldBe Typed[Int].validNel
     intercept[AssertionError] {
-      methodDefinition.computeResultType(Typed[String] :: Nil)
+      methodDefinition.computeResultType(Unknown, Typed[String] :: Nil)
     }.getMessage shouldBe "Generic function f returned type Integer that does not match any of declared types (String) when called with arguments (String)"
   }
 

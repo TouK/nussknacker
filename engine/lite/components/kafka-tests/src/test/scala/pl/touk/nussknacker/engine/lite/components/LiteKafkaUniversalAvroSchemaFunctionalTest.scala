@@ -1141,6 +1141,18 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
     error.getCause.getMessage shouldBe s"""Not in union ${nestedRecordV2FieldsSchema}: {"sub": {"price": $sampleDouble}, "str": "$sampleString"} (field=$RecordFieldName)"""
   }
 
+  test("should allow to dynamically get record field by name") {
+    val config = sConfig(
+      AvroUtils.createRecord(recordIntegerSchema, Map(RecordFieldName -> sampleInteger)),
+      recordIntegerSchema,
+      integerSchema,
+      SpecialSpELElement("#input.get('field')")
+    )
+    val results = runWithValueResults(config)
+
+    results.validValue.successes shouldBe List(sampleInteger)
+  }
+
   private def runWithValueResults(config: ScenarioConfig) =
     runWithResults(config).map(
       _.mapSuccesses(r =>
