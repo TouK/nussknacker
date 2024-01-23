@@ -83,7 +83,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
 
-## In version 1.13.x (Not released yet)
+## In version 1.13.0 
 
 ### Code API changes
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Method definition `def authenticationMethod(): Auth[AuthCredentials, _]` was changed to `def authenticationMethod(): EndpointInput[AuthCredentials]`

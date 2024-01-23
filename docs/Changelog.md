@@ -15,7 +15,7 @@
 * [#5368](https://github.com/TouK/nussknacker/pull/5368) A hidden features allowing to change `icon` and `docsUrl` inside properties modal by using `componentsUiConfig.$proprties` configuration option, was turned off
 * [#5356](https://github.com/TouK/nussknacker/pull/5356) Pushed configs provided by AdditionalUIConfigProvider deeper into domain (at the stage of component definition extraction), allowing it to impact validation. However, changes now require model reload.
 
-1.13.0 (Not released yet)
+1.13.0 (12 Jan 2024)
 -------------------------
 * [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Refactor: Allow to use custom authentication methods in user-defined Authentication Providers

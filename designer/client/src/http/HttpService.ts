@@ -363,7 +363,7 @@ class HttpService {
     }
 
     changeProcessName(processName, newProcessName): Promise<boolean> {
-        const failedToChangeNameMessage = i18next.t("notification.error.failedToChangeName", "Failed to change scenario name:");
+        const failedToChangeNameMessage = i18next.t("notification.error.failedToChangeName", "Failed to change scenario name");
         if (newProcessName == null || newProcessName === "") {
             this.#addErrorMessage(failedToChangeNameMessage, i18next.t("notification.error.newNameEmpty", "Name cannot be empty"), true);
             return Promise.resolve(false);

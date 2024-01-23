@@ -8,7 +8,7 @@ export type AdjustReturn = {
     unusedParameters: Parameter[];
 };
 
-const findUnusedParameters = (parameters: Array<Parameter>, definitions: Array<UIParameter> = []) => {
+const findUnusedParameters = (parameters: Array<Parameter>, definitions: UIParameter[] = []) => {
     return parameters.filter((param) => !definitions.find((def) => def.name == param.name));
 };
 
@@ -32,7 +32,7 @@ const parametersPath = (node) => {
 
 //We want to change parameters in node based on current node definition. This function can be used in
 //two cases: dynamic parameters handling and automatic node migrations (e.g. in fragments). Currently we use it only for dynamic parameters
-export function adjustParameters(node: NodeType, parameterDefinitions: Array<UIParameter>): AdjustReturn {
+export function adjustParameters(node: NodeType, parameterDefinitions: UIParameter[]): AdjustReturn {
     const path = parametersPath(node);
 
     if (!path) {
