@@ -2,52 +2,34 @@ package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.ComponentInfo
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  GenericNodeTransformation,
-  JoinGenericNodeTransformation,
-  SingleInputGenericNodeTransformation,
-  WithStaticParameters
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, SingleInputGenericNodeTransformation, WithStaticParameters}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, ParameterEvaluator}
-import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer.staticReturnType
+import pl.touk.nussknacker.engine.compile.nodecompilation.DynamicNodeValidator
+import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer.staticReturnType
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.definition.model.ModelDefinition
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 // This class purpose is to provide initial set of parameters that will be presented after first usage of a component.
 // It is necessary to provide them, because:
 // - We want to avoid flickering of parameters after first entering into the node
 // - Sometimes user want to just use the component without filling parameters with own data - in this case we want to make sure
 //   that parameters will be available in the scenario, even with a default values
-class ToStaticComponentDefinitionTransformer(
+class DynamicComponentStaticDefinitionDeterminer(
     nodeValidator: DynamicNodeValidator,
     createMetaData: ProcessName => MetaData
 ) extends LazyLogging {
 
-  def toStaticComponentDefinition(
-      componentDefWithImpl: ComponentDefinitionWithImplementation
-  ): ComponentStaticDefinition = {
-    componentDefWithImpl match {
-      case standard: MethodBasedComponentDefinitionWithImplementation => standard.staticDefinition
-      case dynamic: DynamicComponentDefinitionWithImplementation =>
-        val parameters = determineInitialParameters(dynamic)
-        ComponentStaticDefinition(
-          parameters,
-          staticReturnType(dynamic.implementation),
-          dynamic.componentConfig,
-          dynamic.originalGroupName,
-          dynamic.componentTypeSpecificData
-        )
-    }
+  private def determineStaticDefinition(dynamic: DynamicComponentDefinitionWithImplementation): ComponentStaticDefinition = {
+    val parameters = determineInitialParameters(dynamic)
+    ComponentStaticDefinition(
+      parameters,
+      staticReturnType(dynamic.implementation)
+    )
   }
 
   private def determineInitialParameters(dynamic: DynamicComponentDefinitionWithImplementation): List[Parameter] = {
@@ -64,7 +46,7 @@ class ToStaticComponentDefinitionTransformer(
           Nil,
           if (dynamic.implementation.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
           else None,
-          dynamic.componentConfig
+          dynamic.parametersConfig
         )(inputContext)
         .map(_.parameters)
         .valueOr { err =>
@@ -79,7 +61,7 @@ class ToStaticComponentDefinitionTransformer(
 
     dynamic.implementation match {
       case withStatic: WithStaticParameters =>
-        StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.componentConfig)
+        StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.parametersConfig)
       case single: SingleInputGenericNodeTransformation[_] =>
         inferParameters(single)(ValidationContext())
       case join: JoinGenericNodeTransformation[_] =>
@@ -89,19 +71,22 @@ class ToStaticComponentDefinitionTransformer(
 
 }
 
-object ToStaticComponentDefinitionTransformer {
+object DynamicComponentStaticDefinitionDeterminer {
 
-  def transformModel(
+  def collectStaticDefinitionsForDynamicComponents(
       modelDataForType: ModelData,
       createMetaData: ProcessName => MetaData
-  ): ModelDefinition[ComponentStaticDefinition] = {
+  ): Map[ComponentInfo, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
     val toStaticComponentDefinitionTransformer =
-      new ToStaticComponentDefinitionTransformer(nodeValidator, createMetaData)
+      new DynamicComponentStaticDefinitionDeterminer(nodeValidator, createMetaData)
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {
-      modelDataForType.modelDefinition.transform(toStaticComponentDefinitionTransformer.toStaticComponentDefinition)
+      modelDataForType.modelDefinition.components.toList.collect {
+        case (info, dynamic: DynamicComponentDefinitionWithImplementation) =>
+          info -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
+      }.toMap
     }
   }
 

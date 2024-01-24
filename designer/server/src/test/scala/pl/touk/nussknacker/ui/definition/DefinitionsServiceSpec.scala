@@ -6,20 +6,17 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer
-import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
+import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{
   MockDeploymentManager,
@@ -58,27 +55,6 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         @RawEditor
         param3: String
     ): Future[String] = ???
-
-  }
-
-  object SampleGenericNodeTransformation
-      extends CustomStreamTransformer
-      with SingleInputGenericNodeTransformation[AnyRef] {
-
-    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
-        implicit nodeId: NodeId
-    ): this.NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
-      FinalResults(context, Nil)
-    }
-
-    override def nodeDependencies: List[NodeDependency] = List.empty
-
-    override def implementation(
-        params: Map[String, Any],
-        dependencies: List[NodeDependencyValue],
-        finalState: Option[State]
-    ): AnyRef =
-      ???
 
   }
 
@@ -167,12 +143,12 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       List.empty,
       // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
       new EmptyProcessConfigCreator {
-        override def customStreamTransformers(
+        override def services(
             modelDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[CustomStreamTransformer]] = {
+        ): Map[String, WithCategories[Service]] = {
           Map(
             "someGenericNode" -> WithCategories
-              .anyCategory(SampleGenericNodeTransformation)
+              .anyCategory(TestService)
               .withComponentConfig(
                 SingleComponentConfig.zero.copy(componentGroup = Some(targetGroupName))
               )
@@ -290,32 +266,28 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
   }
 
   private def prepareDefinitions(model: ModelData, fragmentScenarios: List[CanonicalProcess]) = {
-    val staticModelDefinition =
-      ToStaticComponentDefinitionTransformer.transformModel(
-        model,
-        MetaDataInitializer(StreamMetaData.typeName).create(_, Map.empty)
-      )
     val processingType = TestProcessingTypes.Streaming
 
-    val modelDefinitionEnricher = new ModelDefinitionEnricher(
-      new BuiltInComponentsStaticDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
-      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, ComponentId.default(processingType, _)),
-      staticModelDefinition
+    val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
+      new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
+      new FragmentComponentDefinitionExtractor(
+        getClass.getClassLoader,
+        Some(_),
+        ComponentId.default(processingType, _)
+      ),
+      model.modelDefinition
     )
 
     new DefinitionsService(
       modelData = model,
+      staticDefinitionForDynamicComponents = Map.empty,
       scenarioPropertiesConfig = Map.empty,
       deploymentManager = new MockDeploymentManager,
-      modelDefinitionEnricher = modelDefinitionEnricher,
+      alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType),
       fragmentRepository = new StubFragmentRepository(Map(processingType -> fragmentScenarios))
-    ).prepareUIDefinitions(
-      processingType,
-      forFragment = false
-    )(AdminUser("admin", "admin"))
-      .futureValue
+    ).prepareUIDefinitions(processingType, forFragment = false)(AdminUser("admin", "admin")).futureValue
   }
 
 }

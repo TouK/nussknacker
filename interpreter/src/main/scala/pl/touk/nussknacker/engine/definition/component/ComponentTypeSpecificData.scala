@@ -28,10 +28,6 @@ case object BuiltInComponentSpecificData extends ComponentTypeSpecificData {
   override def componentType: ComponentType = ComponentType.BuiltIn
 }
 
-case object GlobalVariablesSpecificData extends ComponentTypeSpecificData {
-  override def componentType: ComponentType = ComponentType.BuiltIn
-}
-
 case class FragmentSpecificData(outputNames: List[String]) extends ComponentTypeSpecificData {
   override def componentType: ComponentType = ComponentType.Fragment
 }

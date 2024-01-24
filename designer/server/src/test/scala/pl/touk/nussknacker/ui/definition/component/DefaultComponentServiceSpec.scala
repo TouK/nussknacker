@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.ui.definition.component
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
@@ -31,9 +31,15 @@ import pl.touk.nussknacker.ui.api.helpers.{
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
+import pl.touk.nussknacker.ui.component.{
+  ComponentFraudTestConfigCreator,
+  ComponentMarketingTestConfigCreator,
+  DynamicComponentProvider,
+  WronglyConfiguredConfigCreator
+}
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
-import pl.touk.nussknacker.ui.definition.ModelDefinitionEnricher
+import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
@@ -574,7 +580,7 @@ class DefaultComponentServiceSpec
   }
 
   it should "throws exception when components are wrong configured" in {
-    import WrongConfigurationAttribute._
+    import pl.touk.nussknacker.ui.definition.component.WrongConfigurationAttribute._
     val badModelDataMap = Map(
       Streaming -> (LocalModelData(
         streamingConfig,
@@ -752,9 +758,8 @@ class DefaultComponentServiceSpec
         processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
       )
       .mapValues { processingTypeData =>
-        val modelDefinitionEnricher = ModelDefinitionEnricher(
-          processingTypeData.modelData,
-          processingTypeData.staticModelDefinition
+        val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
+          processingTypeData.modelData
         )
         ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
       }

@@ -33,7 +33,7 @@ object ExpressionCompiler {
   def withOptimization(
       loader: ClassLoader,
       dictRegistry: DictRegistry,
-      expressionConfig: ExpressionConfigDefinition[_],
+      expressionConfig: ExpressionConfigDefinition,
       classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler =
     default(loader, dictRegistry, expressionConfig, expressionConfig.optimizeCompilation, classDefinitionSet)
@@ -41,7 +41,7 @@ object ExpressionCompiler {
   def withoutOptimization(
       loader: ClassLoader,
       dictRegistry: DictRegistry,
-      expressionConfig: ExpressionConfigDefinition[_],
+      expressionConfig: ExpressionConfigDefinition,
       classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler =
     default(loader, dictRegistry, expressionConfig, optimizeCompilation = false, classDefinitionSet)
@@ -58,7 +58,7 @@ object ExpressionCompiler {
   private def default(
       classLoader: ClassLoader,
       dictRegistry: DictRegistry,
-      expressionConfig: ExpressionConfigDefinition[_],
+      expressionConfig: ExpressionConfigDefinition,
       optimizeCompilation: Boolean,
       classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler = {

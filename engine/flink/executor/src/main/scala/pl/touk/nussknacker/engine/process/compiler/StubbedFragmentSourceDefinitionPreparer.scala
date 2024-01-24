@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.engine.api.process.{
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
   FragmentParametersDefinitionExtractor
@@ -29,20 +30,17 @@ class StubbedFragmentSourceDefinitionPreparer(
     fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor
 ) {
 
-  def createSourceDefinition(frag: FragmentInputDefinition): MethodBasedComponentDefinitionWithImplementation = {
+  def createSourceDefinition(frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
-    val staticDefinition = FragmentComponentDefinition(
-      componentId = None,
+    FragmentComponentDefinition(
+      implementationInvoker = (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
       // We don't want to pass input parameters definition as parameters to definition of factory creating stubbed source because
       // use them only for testParametersDefinition which are used in the runtime not in compile-time.
       parameters = List.empty,
       outputNames = List.empty,
       docsUrl = None,
-    )
-    MethodBasedComponentDefinitionWithImplementation(
-      (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
-      null,
-      staticDefinition
+      translateGroupName = Some(_),
+      componentId = ComponentId("dumpId"),
     )
   }
 

@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.parameter
 
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-
-import java.util.Optional
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariable,
   AdditionalVariableProvidedInRuntime,
@@ -23,18 +21,19 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
   ValidatorsExtractor
 }
 
+import java.util.Optional
 import scala.util.control.NonFatal
 
 object ParameterExtractor {
 
-  def extractParameter(p: java.lang.reflect.Parameter, componentConfig: SingleComponentConfig): Parameter = {
+  def extractParameter(p: java.lang.reflect.Parameter, parametersConfig: Map[String, ParameterConfig]): Parameter = {
     val nodeParamNames = Option(p.getAnnotation(classOf[ParamName]))
       .map(_.value())
     val branchParamName = Option(p.getAnnotation(classOf[BranchParamName]))
       .map(_.value())
     val name = (nodeParamNames orElse branchParamName)
       .getOrElse(throwIllegalArgument(p, isBranch = false, "missing @ParamName or @BranchParamName annotation"))
-    val parameterConfig = componentConfig.paramConfig(name)
+    val parameterConfig = parametersConfig.getOrElse(name, ParameterConfig.empty)
 
     val rawParamType = ClassDefinitionExtractor.extractParameterType(p)
     val paramWithUnwrappedBranch =

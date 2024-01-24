@@ -55,17 +55,15 @@ object ProcessCompilerData {
       resultsCollector,
       componentUseCase
     )
-    val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
+    val subCompiler             = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
+    val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
     val processCompiler = new ProcessCompiler(
       userCodeClassLoader,
       subCompiler,
-      GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig),
+      globalVariablesPreparer,
       nodeCompiler,
       customProcessValidator
     )
-
-    val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
-
     val expressionEvaluator =
       ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
 

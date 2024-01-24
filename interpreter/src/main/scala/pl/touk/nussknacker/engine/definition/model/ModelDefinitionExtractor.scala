@@ -18,7 +18,7 @@ object ModelDefinitionExtractor {
       category: Option[String],
       componentInfoToId: ComponentInfo => ComponentId,
       additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+  ): ModelDefinition = {
     val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
     val modelDefinitionBasedOnConfigCreator =
       ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(

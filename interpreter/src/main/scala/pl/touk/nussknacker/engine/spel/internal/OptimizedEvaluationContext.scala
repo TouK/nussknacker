@@ -78,7 +78,7 @@ class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any]) extend
 
 object EvaluationContextPreparer {
 
-  def default(classLoader: ClassLoader, expressionConfig: ExpressionConfigDefinition[_]): EvaluationContextPreparer = {
+  def default(classLoader: ClassLoader, expressionConfig: ExpressionConfigDefinition): EvaluationContextPreparer = {
     val conversionService = determineConversionService(expressionConfig)
     val propertyAccessors = internal.propertyAccessors.configured()
     new EvaluationContextPreparer(
@@ -90,7 +90,7 @@ object EvaluationContextPreparer {
     )
   }
 
-  private def determineConversionService(expressionConfig: ExpressionConfigDefinition[_]) = {
+  private def determineConversionService(expressionConfig: ExpressionConfigDefinition) = {
     val spelConversionServices = expressionConfig.customConversionsProviders.collect {
       case spelProvider: SpelConversionsProvider => spelProvider.getConversionService
     }

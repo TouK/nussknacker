@@ -40,9 +40,9 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
   import pl.touk.nussknacker.engine.util.Implicits._
 
   override protected def adjustDefinitions(
-      originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+      originalModelDefinition: ModelDefinition,
       definitionContext: ComponentDefinitionContext
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+  ): ModelDefinition = {
     val collectedSources = process.allStartNodes.map(_.head.data).collect { case source: Source =>
       source
     }

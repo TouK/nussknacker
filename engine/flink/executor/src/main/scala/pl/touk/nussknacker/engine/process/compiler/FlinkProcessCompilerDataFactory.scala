@@ -135,9 +135,9 @@ class FlinkProcessCompilerDataFactory(
   }
 
   protected def adjustDefinitions(
-      originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+      originalModelDefinition: ModelDefinition,
       definitionContext: ComponentDefinitionContext
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = originalModelDefinition
+  ): ModelDefinition = originalModelDefinition
 
   private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {
     // we are loading DictServicesFactory on TaskManager side. It may be tricky because of class loaders...
@@ -174,6 +174,6 @@ case class ComponentDefinitionContext(
     userCodeClassLoader: ClassLoader,
     // below are for purpose of TestDataPreparer
     dictRegistry: EngineDictRegistry,
-    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
+    expressionConfig: ExpressionConfigDefinition,
     classDefinitions: ClassDefinitionSet
 )

@@ -1,14 +1,17 @@
 package pl.touk.nussknacker.engine.definition.component
 
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
-// This class represents component's definition and implementation.
-// Implementation part is in implementation field. It should be rarely used - instead we should extract information
-// into definition. Implementation should be mainly used via implementationInvoker which can be transformed
+// This class represents component's definition and implementation. It is used on the designer side for definitions
+// served to the FE and for validations. It is used on the runtime side for component's runtime execution and for stubbing.
+// Implementing component is in hte implementation field. It should be rarely used - instead, we should extract information
+// into definition. Runtime logic should be mainly used via implementationInvoker which can be transformed
 // (e.g.) for purpose of stubbing.
-// TODO: This class currently is used also for global variables. We should rather extract some other class for them
-trait ComponentDefinitionWithImplementation extends BaseComponentDefinition {
+trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   def implementationInvoker: ComponentImplementationInvoker
 
@@ -17,12 +20,49 @@ trait ComponentDefinitionWithImplementation extends BaseComponentDefinition {
       implementationInvoker: ComponentImplementationInvoker
   ): ComponentDefinitionWithImplementation
 
-  // TODO In should be of type Component, but currently this class is used also for global variables
-  def implementation: Any
+  def implementation: Component
 
   def componentTypeSpecificData: ComponentTypeSpecificData
 
+  final def componentType: ComponentType = componentTypeSpecificData.componentType
+
+  protected def uiDefinition: ComponentUiDefinition
+
+  final def componentId: ComponentId = uiDefinition.componentId
+
+  final def componentGroup: ComponentGroupName = uiDefinition.componentGroup
+
+  final def originalGroupName: ComponentGroupName = uiDefinition.originalGroupName
+
+  final def icon: String = uiDefinition.icon
+
+  final def docsUrl: Option[String] = uiDefinition.docsUrl
+
+  override final def definedTypes: List[TypingResult] = {
+    val fromExplicitTypes = implementation match {
+      case explicit: WithExplicitTypesToExtract => explicit.typesToExtract
+      case _                                    => Nil
+    }
+    typesFromStaticDefinition ++ fromExplicitTypes
+  }
+
+  protected def typesFromStaticDefinition: List[TypingResult]
+
 }
+
+trait ObjectOperatingOnTypes {
+
+  def definedTypes: List[TypingResult]
+
+}
+
+final case class ComponentUiDefinition(
+    originalGroupName: ComponentGroupName,
+    componentGroup: ComponentGroupName,
+    icon: String,
+    docsUrl: Option[String],
+    componentId: ComponentId
+)
 
 object ComponentDefinitionWithImplementation {
 

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 
 class StubModelDataWithModelDefinition(
-    definition: ModelDefinition[ComponentDefinitionWithImplementation],
+    definition: ModelDefinition,
     configDuringExecution: Config = ConfigFactory.empty()
 ) extends ModelData {
 

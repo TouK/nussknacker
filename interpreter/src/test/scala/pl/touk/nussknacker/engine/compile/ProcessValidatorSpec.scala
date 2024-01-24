@@ -1204,7 +1204,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should propagate error from source creation") {
     val base = baseDefinition
     val failingDefinition = base
-      .transform {
+      .mapComponents {
         case component if component.componentType == ComponentType.Source =>
           component.withImplementationInvoker((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
             throw new RuntimeException("You passed incorrect parameter, cannot proceed")
@@ -1604,7 +1604,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   private def validate(
       process: CanonicalProcess,
-      definitions: ModelDefinition[ComponentDefinitionWithImplementation],
+      definitions: ModelDefinition,
       isFragment: Boolean = false
   ): CompilationResult[Unit] = {
     ProcessValidator
