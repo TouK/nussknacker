@@ -66,6 +66,9 @@ object ProcessConfigCreatorMapping {
           jSettings.getExcludeClassPredicates.asScala.toSeq,
           jSettings.getExcludeClassMemberPredicates.asScala.toSeq,
           jSettings.getIncludeClassMemberPredicates.asScala.toSeq,
+          jSettings.getTypingFunctionRules.asScala.toSeq.map { entry =>
+            TypingFunctionRule(entry.getKey, entry.getValue)
+          },
           jSettings.getPropertyExtractionStrategy
         )
       }

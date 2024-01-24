@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../item";
 import { SettingRow, fieldLabel } from "./StyledSettingsComponnets";
-import { NodeValidationError, VariableTypes } from "../../../../../../../types";
+import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import EditableEditor from "../../../../editors/EditableEditor";
 import { NodeInput } from "../../../../../../withFocus";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
+import { useSelector } from "react-redux";
+import { getProcessDefinitionData } from "../../../../../../../reducers/selectors/settings";
 
 interface ValidationFields extends ValueCompileTimeValidation {
     variableTypes: VariableTypes;
@@ -14,6 +16,7 @@ interface ValidationFields extends ValueCompileTimeValidation {
     readOnly: boolean;
     errors: NodeValidationError[];
     name: string;
+    typ: ReturnedType;
 }
 
 export default function ValidationFields({
@@ -25,10 +28,20 @@ export default function ValidationFields({
     readOnly,
     errors,
     name,
+    typ,
 }: ValidationFields) {
     const { t } = useTranslation();
+    const definitionData = useSelector(getProcessDefinitionData);
 
     const validationExpressionFieldName: FieldName = `$param.${name}.$validationExpression`;
+
+    const extendedVariableType = useMemo(
+        () => ({
+            ...variableTypes,
+            value: definitionData.classes.find((typesInformationType) => typesInformationType.refClazzName === typ.refClazzName),
+        }),
+        [definitionData.classes, typ.refClazzName, variableTypes],
+    );
 
     return (
         <>
@@ -39,7 +52,7 @@ export default function ValidationFields({
                 }
                 expressionObj={validationExpression}
                 onValueChange={(value) => onChange(`${path}.valueCompileTimeValidation.validationExpression.expression`, value)}
-                variableTypes={variableTypes}
+                variableTypes={extendedVariableType}
                 readOnly={readOnly}
                 fieldErrors={getValidationErrorsForField(errors, validationExpressionFieldName)}
                 showValidation

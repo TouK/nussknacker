@@ -47,7 +47,7 @@ class DefaultFragmentRepository(processRepository: FetchingProcessRepository[Fut
     processRepository
       .fetchProcessId(fragmentName)
       .flatMap { processIdOpt =>
-        val processId = processIdOpt.getOrElse(throw ProcessNotFoundError(fragmentName.toString))
+        val processId = processIdOpt.getOrElse(throw ProcessNotFoundError(fragmentName))
         processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId)
       }
       .map(_.map(_.json))

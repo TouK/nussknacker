@@ -41,6 +41,7 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
     lastAction: Option[
       ProcessAction
     ], // TODO: Consider replacing it by lastStateAction, check were on FE we use lastAction, eg. archive date at the archive list
+    // TODO: Rename into scenarioGraph when we store DisplayableProcess instead of CanonicalProcess in the db
     json: ScenarioShape,
     history: Option[List[ScenarioVersion]],
     modelVersion: Option[Int]

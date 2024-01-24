@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import HttpService from "../../http/HttpService";
-import { getProcessName, getScenario } from "../../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { PromptContent } from "../../windowManager";
 import {
@@ -22,7 +22,7 @@ import { isEmpty } from "lodash";
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
     const processName = useSelector(getProcessName);
-    const scenario = useSelector(getScenario);
+    const scenarioGraph = useSelector(getScenarioGraph);
     const maxSize = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
     const [{ testSampleSize }, setState] = useState({
@@ -31,9 +31,9 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     });
 
     const confirmAction = useCallback(async () => {
-        await HttpService.generateTestData(processName, testSampleSize, scenario);
+        await HttpService.generateTestData(processName, testSampleSize, scenarioGraph);
         props.close();
-    }, [processName, testSampleSize, scenario, props]);
+    }, [processName, testSampleSize, scenarioGraph, props]);
 
     const validators = [literalIntegerValueValidator, minimalNumberValidator(0), maximalNumberValidator(maxSize), mandatoryValueValidator];
     const errors = extendErrors([], testSampleSize, "testData", validators);

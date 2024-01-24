@@ -31,7 +31,6 @@ export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormP
         <div
             className={cx(
                 css({
-                    minWidth: 600,
                     paddingTop: 10,
                     paddingBottom: 20,
                 }),

@@ -87,7 +87,9 @@ object TestFactory extends TestPermissions {
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
 
-  def scenarioResolver = new ScenarioResolver(sampleResolver)
+  def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] = mapProcessingTypeDataProvider(
+    TestProcessingTypes.Streaming -> new ScenarioResolver(sampleResolver, TestProcessingTypes.Streaming)
+  )
 
   def deploymentService() = new StubDeploymentService(Map.empty)
 
@@ -116,10 +118,10 @@ object TestFactory extends TestPermissions {
     new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
-    new DbProcessActionRepository[DB](dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
+    new DbProcessActionRepository(dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
       with DbioRepository
 
-  def newDummyActionRepository(): DbProcessActionRepository[DB] =
+  def newDummyActionRepository(): DbProcessActionRepository =
     newActionProcessRepository(dummyDbRef)
 
   def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef)
@@ -127,10 +129,16 @@ object TestFactory extends TestPermissions {
   def asAdmin(route: RouteWithUser): Route =
     route.securedRouteWithErrorHandling(adminUser())
 
-  def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.streamingTypeSpecificInitialData),
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties)
-  )
+  val newProcessPreparer: NewProcessPreparer =
+    new NewProcessPreparer(
+      ProcessTestData.streamingTypeSpecificInitialData,
+      FlinkStreamingPropertiesConfig.properties
+    )
+
+  val newProcessPreparerByProcessingType: ProcessingTypeDataProvider[NewProcessPreparer, _] =
+    mapProcessingTypeDataProvider(
+      TestProcessingTypes.Streaming -> newProcessPreparer
+    )
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
     route.securedRouteWithErrorHandling(user(permissions = permissions))
@@ -166,9 +174,6 @@ object TestFactory extends TestPermissions {
       Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
     )
   }
-
-  def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] =
-    ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
 
   def createCategoryService(designerConfig: Config): ProcessCategoryService =
     ConfigProcessCategoryService(

@@ -50,7 +50,7 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
         isForInputDefinition = false
       ),
       UINodeEdges(
-        ComponentInfo(ComponentType.Fragment, "sub1"),
+        ComponentInfo(ComponentType.Fragment, ProcessTestData.sampleFragmentName.value),
         List(FragmentOutput("out1"), FragmentOutput("out2")),
         canChooseNodes = false,
         isForInputDefinition = false

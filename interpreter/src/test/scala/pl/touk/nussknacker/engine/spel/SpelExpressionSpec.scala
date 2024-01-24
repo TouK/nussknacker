@@ -9,12 +9,12 @@ import org.scalacheck.Gen
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
-import pl.touk.nussknacker.engine.api.expression.TypedExpression
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
+import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.{
   ExpressionParseError,
   GenericFunctionTypingError,
@@ -47,7 +47,7 @@ import java.nio.charset.Charset
 import java.time.chrono.ChronoLocalDate
 import java.time.{LocalDate, LocalDateTime}
 import java.util
-import java.util.{Collections, Currency, Locale, UUID}
+import java.util.{Collections, Currency, Locale, Optional, UUID}
 import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
@@ -64,8 +64,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   private implicit val nid: NodeId = NodeId("")
-
-  private implicit val classLoader: ClassLoader = getClass.getClassLoader
 
   private val bigValue = BigDecimal.valueOf(4187338076L)
 
@@ -1200,6 +1198,27 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         e.expected shouldBe expected
     }
     parser.parse("""{"aField": {"additional": "str"}}""", ValidationContext.empty, expected) shouldBe Symbol("valid")
+  }
+
+  test("should use generic parameters in method return types") {
+    forAll(
+      Table(
+        ("expression", "expectedResultType"),
+        ("{foo: 1, bar: 2}.get('foo')", Typed[Int]),
+        ("{foo: 1, bar: 'string'}.get('foo')", Unknown),
+        ("{foo: 1, bar: 2}.getOrDefault('foo', 1)", Typed[Int]),
+        ("{foo: 1, bar: 2}.values", Typed.fromDetailedType[java.util.Collection[Integer]]),
+        ("{foo: 1, bar: 2}.keySet", Typed.fromDetailedType[java.util.Set[String]]),
+        ("{1, 2}.get(0)", Typed[Int]),
+        ("#optional.get", Typed[Int]),
+        ("#optional.orElse(123)", Typed[Int]),
+      )
+    ) { (expression, expectedResultType) =>
+      val validationContext = ValidationContext.empty
+        .withVariable("optional", Typed.fromDetailedType[Optional[Integer]], None)
+        .validValue
+      parseV[Any](expression, validationContext).validValue.typingInfo.typingResult shouldBe expectedResultType
+    }
   }
 
 }

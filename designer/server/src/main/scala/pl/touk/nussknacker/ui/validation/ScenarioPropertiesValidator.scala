@@ -26,9 +26,7 @@ class ScenarioPropertiesValidator(
 
   type PropertyConfig = Map[String, ScenarioPropertyConfig]
 
-  def validate(process: DisplayableProcess): ValidationResult = {
-    val scenarioProperties = process.properties.additionalFields.properties.toList
-
+  def validate(scenarioProperties: List[(String, String)]): ValidationResult = {
     val validated = (
       getConfiguredValidationsResults(scenarioPropertiesConfig, scenarioProperties),
       getMissingRequiredPropertyValidationResults(scenarioPropertiesConfig, scenarioProperties),

@@ -3,24 +3,20 @@ package pl.touk.nussknacker.engine.api.displayedgraph
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.{Decoder, Encoder, HCursor}
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode._
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
+// TODO: rename to ScenarioGraph
 @JsonCodec final case class DisplayableProcess(
-    // TODO: remove - it is already available in ScenarioWithDetails
-    name: ProcessName,
     properties: ProcessProperties,
     nodes: List[NodeData],
-    edges: List[Edge],
-    // TODO: remove both processingType and category - they are already available in ScenarioWithDetails
-    processingType: ProcessingType,
-    category: String
+    edges: List[Edge]
 ) {
 
-  val metaData: MetaData = properties.toMetaData(name)
+  def toMetaData(name: ProcessName): MetaData = properties.toMetaData(name)
 
 }
 
@@ -30,10 +26,6 @@ final case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
     id = scenarioName.value,
     additionalFields = additionalFields
   )
-
-  // TODO: Remove this after we stop using `DisplayableProcess` for the source of information about scenario's metadata
-  //       (processToDisplay redux state) on the FE side.,
-  val isFragment: Boolean = additionalFields.typeSpecificProperties.isFragment
 
   // TODO: remove typeSpecificData-related code after the migration is completed
   def typeSpecificProperties: TypeSpecificData = additionalFields.typeSpecificProperties
@@ -57,8 +49,8 @@ object ProcessProperties {
   }
 
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =
-    Encoder.forProduct2("isFragment", "additionalFields") { p =>
-      (p.isFragment, p.additionalFields)
+    Encoder.forProduct1("additionalFields") { p =>
+      p.additionalFields
     }
 
   // This is a copy-paste from MetaData - see the comment there for the legacy consideration

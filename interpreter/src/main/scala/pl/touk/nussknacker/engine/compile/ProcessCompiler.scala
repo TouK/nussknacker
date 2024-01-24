@@ -58,11 +58,11 @@ class ProcessCompiler(
 
 trait ProcessValidator extends LazyLogging {
 
-  def validate(process: CanonicalProcess): CompilationResult[Unit] = {
+  def validate(process: CanonicalProcess, isFragment: Boolean): CompilationResult[Unit] = {
 
     try {
       CompilationResult.map3(
-        CompilationResult(IdValidator.validate(process)),
+        CompilationResult(IdValidator.validate(process, isFragment)),
         CompilationResult(validateWithCustomProcessValidators(process)),
         compile(process).map(_ => ()): CompilationResult[Unit]
       )((_, _, compiled) => {

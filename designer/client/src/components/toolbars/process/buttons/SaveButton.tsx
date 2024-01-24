@@ -7,7 +7,6 @@ import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
-
 function SaveButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
     const { disabled } = props;

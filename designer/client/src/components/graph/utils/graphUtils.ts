@@ -24,7 +24,6 @@ export function mapProcessWithNewNode(scenarioGraph: ScenarioGraph, before: Node
         nodes: map(scenarioGraph.nodes, (n) => {
             return isEqual(n, before) ? after : mapBranchParametersWithNewNode(before.id, after.id, n);
         }),
-        properties: NodeUtils.nodeIsProperties(after) ? after : scenarioGraph.properties,
     };
 }
 

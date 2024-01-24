@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessingTypes}
 
 class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -24,13 +23,13 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   def canonicalDisplayableRoundTrip(canonicalProcess: CanonicalProcess): CanonicalProcess = {
     val displayable =
-      ProcessConverter.toDisplayable(canonicalProcess, TestProcessingTypes.Streaming, TestCategories.Category1)
-    ProcessConverter.fromDisplayable(displayable)
+      ProcessConverter.toDisplayable(canonicalProcess)
+    ProcessConverter.fromDisplayable(displayable, canonicalProcess.name)
   }
 
   def displayableCanonicalRoundTrip(process: DisplayableProcess): DisplayableProcess = {
-    val canonical = ProcessConverter.fromDisplayable(process)
-    ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
+    val canonical = ProcessConverter.fromDisplayable(process, ProcessName("not-used-name"))
+    ProcessConverter.toDisplayable(canonical)
   }
 
   test("be able to convert empty process") {
@@ -41,15 +40,12 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   test("be able to handle different node order") {
     val process = DisplayableProcess(
-      ProcessName("t1"),
       ProcessProperties(metaData),
       List(
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
       ),
       List(Edge("s", "e", None)),
-      TestProcessingTypes.Streaming,
-      TestCategories.Category1
     )
 
     displayableCanonicalRoundTrip(process).nodes.toSet shouldBe process.nodes.toSet
@@ -57,7 +53,6 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   test("convert process with branches") {
     val process = DisplayableProcess(
-      ProcessName("t1"),
       ProcessProperties(metaData),
       List(
         Processor("e", ServiceRef("ref", List.empty)),
@@ -69,13 +64,12 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         Edge("s1", "j1", None),
         Edge("s2", "j1", None),
         Edge("j1", "e", None)
-      ),
-      TestProcessingTypes.Streaming,
-      TestCategories.Category1
+      )
     )
 
+    val name = ProcessName("t1")
     val processViaBuilder = ScenarioBuilder
-      .streaming("t1")
+      .streaming(name.value)
       .parallelism(metaData.parallelism.get)
       .stateOnDisk(metaData.spillStateToDisk.get)
       .sources(
@@ -87,7 +81,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     displayableCanonicalRoundTrip(process).nodes.sortBy(_.id) shouldBe process.nodes.sortBy(_.id)
     displayableCanonicalRoundTrip(process).edges.toSet shouldBe process.edges.toSet
 
-    val canonical = ProcessConverter.fromDisplayable(process)
+    val canonical = ProcessConverter.fromDisplayable(process, name)
 
     canonical shouldBe processViaBuilder
   }
@@ -110,7 +104,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
           .emptySink("end", "outType1")
       )
 
-    val displayableProcess = ProcessConverter.toDisplayable(process, "type1", TestCategories.Category1)
+    val displayableProcess = ProcessConverter.toDisplayable(process)
 
     displayableProcess.edges.toSet shouldBe Set(
       Edge("sourceId1", "join1", None),
@@ -118,7 +112,6 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       Edge("filter2", "join1", Some(FilterTrue)),
       Edge("join1", "end", None)
     )
-
   }
 
   test("finds all nodes in diamond-shaped process") {
@@ -158,7 +151,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
             .join("join1", "union", Some("outPutVar"), List("branch1" -> Nil, "branch2" -> Nil))
             .emptySink("end", "outType1")
         )
-      val edges = ProcessConverter.toDisplayable(process, "", TestCategories.Category1).edges
+      val edges = ProcessConverter.toDisplayable(process).edges
       edges.toSet shouldBe Set(
         Edge("source1", nodeId, None),
         Edge(nodeId, "join1", typ),

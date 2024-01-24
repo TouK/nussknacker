@@ -4,8 +4,8 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, HCursor}
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 @JsonCodec case class LayoutData(x: Long, y: Long)
 
@@ -15,8 +15,6 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 //       - Scenario graph should contains only nodes and edges - ProcessName is already passed to the engine as a separate
 //         information next to version, modelVersion, user that deploy scenario and other
 @ConfiguredJsonCodec(encodeOnly = true) case class MetaData(id: String, additionalFields: ProcessAdditionalFields) {
-  def isFragment: Boolean = typeSpecificData.isFragment
-
   def typeSpecificData: TypeSpecificData = additionalFields.typeSpecificProperties
 
   def withTypeSpecificData(typeSpecificData: TypeSpecificData): MetaData = {

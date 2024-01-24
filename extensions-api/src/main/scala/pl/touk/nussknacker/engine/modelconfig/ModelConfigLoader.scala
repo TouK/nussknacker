@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.modelconfig
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.impl.ConfigImpl
+import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.modelconfig.ModelConfigLoader.defaultModelConfigResource
@@ -100,8 +101,11 @@ abstract class ModelConfigLoader extends Serializable with LazyLogging {
       service1Url: ${baseUrl}/service1
       and have baseUrl taken from application config
      */
-    // We want to respect overrides (like system properties) and standard fallbacks (like reference.conf)
-    ConfigFactory.load(classLoader, withFallbackToDefaults(inputConfig, classLoader))
+    // We want to respect standard fallbacks (reference.conf), but leave resolution of overrides
+    // by CONFIG_FORCE_* environment variables to Designer
+    withFallbackToDefaults(inputConfig, classLoader)
+      .withFallback(ConfigImpl.defaultReferenceUnresolved(classLoader))
+      .resolve(ConfigResolveOptions.defaults)
   }
 
   final protected def withFallbackToDefaults(inputConfig: Config, classLoader: ClassLoader): Config = {
