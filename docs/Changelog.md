@@ -17,6 +17,12 @@
 * [#5413](https://github.com/TouK/nussknacker/pull/5413) Generic types (Records, Lists and other collections) now uses generic parameters in their method's return type e.g. `{foo: 1, bar: 2}.get('foo')` returns `Integer` instead of `Unknown`
 * [#5413](https://github.com/TouK/nussknacker/pull/5413) Avro Records now has additional `get(String)` method allowing to access fields dynamically
 * [#5419](https://github.com/TouK/nussknacker/pull/5419) Remove system properties from merged model config
+* [#5363](https://github.com/TouK/nussknacker/pull/5363) Improvements and fixes related to scenario level errors:
+  * Fixed bug where scenario level error related to node flashed when opening a node
+  * Fixed highlighting of fragment nodes causing errors
+  * Display fragment level validation errors when editing fragment
+  * Improved error messages
+* [#5364](https://github.com/TouK/nussknacker/pull/5364) Fixed suggestions and validation in disabled nodes
 
 1.13.0 (12 Jan 2024)
 -------------------------
