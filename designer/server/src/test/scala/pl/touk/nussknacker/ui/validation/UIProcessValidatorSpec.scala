@@ -1228,10 +1228,50 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validate(displayable)
     result.hasErrors shouldBe true
 
-    val nodeResults = result.nodeResults.mapValuesNow(_.variableTypes)
-    nodeResults.get("s").value shouldEqual Map.empty
-    nodeResults.get("v").value shouldEqual Map("input" -> Unknown)
-    nodeResults.get("e").value shouldEqual Map("input" -> Unknown, "test" -> Typed.fromInstance(""))
+    val nodeVariableTypes = result.nodeResults.mapValuesNow(_.variableTypes)
+    nodeVariableTypes.get("s").value shouldEqual Map.empty
+    nodeVariableTypes.get("v").value shouldEqual Map("input" -> Unknown)
+    nodeVariableTypes.get("e").value shouldEqual Map("input" -> Unknown, "test" -> Typed.fromInstance(""))
+  }
+
+  test("return variable type information for scenario with disabled filter") {
+    val disabledFilterScenario = ScenarioBuilder
+      .streaming("id")
+      .source("start", existingSourceFactory)
+      .buildSimpleVariable("variable", "varName", Expression.spel("'string'"))
+      .filter("filter", "false", disabled = Some(true))
+      .emptySink("sink", existingSinkFactory)
+
+    val displayable = ProcessConverter.toDisplayable(disabledFilterScenario)
+    val result      = validate(displayable)
+
+    val nodeVariableTypes = result.nodeResults.mapValuesNow(_.variableTypes)
+    nodeVariableTypes.get("filter").value shouldEqual Map("input" -> Unknown, "varName" -> Typed.fromInstance("string"))
+  }
+
+  test("return variable type information without variables from disabled node in subsequent nodes") {
+    val fragmentId         = "fragmentId"
+    val fragmentParameters = List.empty
+
+    val fragmentDefinition: CanonicalProcess =
+      createFragmentDefinition(fragmentId, fragmentParameters)
+    val processWithFragment =
+      createProcess(
+        nodes = List(
+          Source("source", SourceRef(sourceTypeName, Nil)),
+          FragmentInput("subIn", FragmentRef(fragmentId, fragmentParameters), isDisabled = Some(true)),
+          Sink("sink", SinkRef(sinkTypeName, Nil))
+        ),
+        edges = List(
+          Edge("source", "subIn", None),
+          Edge("subIn", "sink", Some(EdgeType.FragmentOutput("out1")))
+        )
+      )
+
+    val result = validate(processWithFragment)
+
+    val nodeVariableTypes = result.nodeResults.mapValuesNow(_.variableTypes)
+    nodeVariableTypes.get("sink").value shouldEqual Map("input" -> Unknown)
   }
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
