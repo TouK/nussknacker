@@ -95,9 +95,10 @@ object ManagementResources {
     implicit val exceptionsEncoder: Encoder[NuExceptionInfo[_ <: Throwable]] =
       (value: NuExceptionInfo[_ <: Throwable]) =>
         Json.obj(
-          "nodeComponentInfo" -> value.nodeComponentInfo.asJson,
-          "throwable"         -> throwableEncoder(value.throwable),
-          "context"           -> value.context.asJson
+          // We don't need componentId on the FE here
+          "nodeId"    -> value.nodeComponentInfo.map(_.nodeId).asJson,
+          "throwable" -> throwableEncoder(value.throwable),
+          "context"   -> value.context.asJson
         )
 
     override def apply(a: TestResults): Json = a match {

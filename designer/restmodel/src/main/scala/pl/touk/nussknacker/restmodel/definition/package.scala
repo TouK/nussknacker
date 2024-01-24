@@ -98,7 +98,7 @@ package object definition {
         branchParametersTemplate: List[NodeParameter]
     ): UIComponentNodeTemplate =
       UIComponentNodeTemplate(
-        componentId.`type`,
+        componentId,
         componentId.name,
         nodeTemplate,
         branchParametersTemplate
@@ -107,9 +107,8 @@ package object definition {
   }
 
   @JsonCodec(encodeOnly = true) final case class UIComponentNodeTemplate(
-      // This field is used to generate unique key in DOM model on FE side (the label isn't unique)
-      // TODO: use ComponentId instead
-      `type`: ComponentType,
+      // componentId is used as a key in a DOM model - see ToolboxComponentGroup
+      componentId: ComponentId,
       label: String,
       node: NodeData,
       branchParametersTemplate: List[NodeParameter] = List.empty

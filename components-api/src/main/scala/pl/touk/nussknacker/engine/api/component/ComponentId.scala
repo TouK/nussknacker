@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.api.component
 
-import io.circe.KeyEncoder
+import io.circe.{Encoder, KeyEncoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 
-// TODO: serialize always as a string-string
-@JsonCodec
 final case class ComponentId(`type`: ComponentType, name: String) {
   override def toString: String = `type`.toString + "-" + name
 }
@@ -13,6 +11,8 @@ final case class ComponentId(`type`: ComponentType, name: String) {
 object ComponentId {
 
   implicit val keyEncoder: KeyEncoder[ComponentId] = KeyEncoder.encodeKeyString.contramap(_.toString)
+
+  implicit val encoder: Encoder[ComponentId] = Encoder.encodeString.contramap(_.toString)
 
 }
 

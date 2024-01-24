@@ -11,5 +11,7 @@ object NodeComponentInfo {
 
 }
 
-// TODO: componentInfo -> componentId + simple serialization
-final case class NodeComponentInfo(nodeId: String, componentInfo: Option[ComponentId])
+// componentId is not used anywhere in this repo - it is only for external project's purpose for now
+// TODO: Remove Option from componentId - every Node used in runtime is related with some Component. After doing it, we should
+//       report this id in KafkaExceptionInfo - see KafkaJsonExceptionSerializationSchema
+final case class NodeComponentInfo(nodeId: String, componentId: Option[ComponentId])
