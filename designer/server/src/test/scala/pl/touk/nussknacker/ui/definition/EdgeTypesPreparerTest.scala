@@ -2,7 +2,12 @@ package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentId, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{
+  BuiltInComponentId,
+  ComponentId,
+  ComponentType,
+  DesignerWideComponentId
+}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, FragmentOutput, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -16,7 +21,7 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
     val sampleFragmentDef = new FragmentComponentDefinitionExtractor(
       getClass.getClassLoader,
       Some(_),
-      ComponentId.default(TestProcessingTypes.Streaming, _)
+      DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
     )
       .extractFragmentComponentDefinition(ProcessTestData.sampleFragment)
       .validValue
@@ -31,31 +36,31 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
 
     edgeTypes.toSet shouldBe Set(
       UINodeEdges(
-        BuiltInComponentInfo.Split,
+        BuiltInComponentId.Split,
         List.empty,
         canChooseNodes = true,
         isForInputDefinition = false
       ),
       UINodeEdges(
-        BuiltInComponentInfo.Choice,
+        BuiltInComponentId.Choice,
         List(NextSwitch(Expression.spel("true")), SwitchDefault),
         canChooseNodes = true,
         isForInputDefinition = false
       ),
       UINodeEdges(
-        BuiltInComponentInfo.Filter,
+        BuiltInComponentId.Filter,
         List(FilterTrue, FilterFalse),
         canChooseNodes = false,
         isForInputDefinition = false
       ),
       UINodeEdges(
-        ComponentInfo(ComponentType.Fragment, ProcessTestData.sampleFragmentName.value),
+        ComponentId(ComponentType.Fragment, ProcessTestData.sampleFragmentName.value),
         List(FragmentOutput("out1"), FragmentOutput("out2")),
         canChooseNodes = false,
         isForInputDefinition = false
       ),
       UINodeEdges(
-        ComponentInfo(ComponentType.CustomComponent, "union"),
+        ComponentId(ComponentType.CustomComponent, "union"),
         List.empty,
         canChooseNodes = true,
         isForInputDefinition = true

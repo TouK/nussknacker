@@ -161,7 +161,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       extractor.extractComponents(
         ProcessObjectDependencies.withConfig(resolved.config),
         ComponentsUiConfig.Empty,
-        info => ComponentId(info.toString),
+        id => DesignerWideComponentId(id.toString),
         Map.empty
       )
     }
@@ -175,7 +175,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       extractor.extractComponents(
         ProcessObjectDependencies.withConfig(resolved.config),
         ComponentsUiConfig.Empty,
-        info => ComponentId(info.toString),
+        id => DesignerWideComponentId(id.toString),
         Map.empty
       )
     }

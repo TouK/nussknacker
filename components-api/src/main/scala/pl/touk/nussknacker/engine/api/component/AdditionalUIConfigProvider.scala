@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValida
  */
 trait AdditionalUIConfigProvider extends Serializable {
 
-  def getAllForProcessingType(processingType: String): Map[ComponentId, ComponentAdditionalConfig]
+  def getAllForProcessingType(processingType: String): Map[DesignerWideComponentId, ComponentAdditionalConfig]
 
   // `ScenarioPropertyConfig.validators` does nothing (only usage goes to createUIScenarioPropertyConfig)
   def getScenarioPropertiesUIConfigs(processingType: String): Map[String, ScenarioPropertyConfig]

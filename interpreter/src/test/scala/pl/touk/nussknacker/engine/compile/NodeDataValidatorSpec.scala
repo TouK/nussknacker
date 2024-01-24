@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   ComponentDefinition,
-  ComponentId,
+  DesignerWideComponentId,
   ParameterAdditionalUIConfig
 }
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -86,7 +86,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         ComponentDefinition("optionalParameterService", OptionalParameterService)
       ),
       additionalConfigsFromProvider = Map(
-        ComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
+        DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
             "optionalParam" -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
           )

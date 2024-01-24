@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.component
 
 import cats.data.Validated.Valid
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -30,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ComponentService {
   def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]]
 
-  def getComponentUsages(componentId: ComponentId)(
+  def getComponentUsages(designerWideComponentId: DesignerWideComponentId)(
       implicit user: LoggedUser
   ): Future[XError[List[ComponentUsagesInScenario]]]
 
@@ -83,7 +83,7 @@ class DefaultComponentService(
   }
 
   override def getComponentUsages(
-      componentId: ComponentId
+      designerWideComponentId: DesignerWideComponentId
   )(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
       .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
@@ -95,7 +95,7 @@ class DefaultComponentService(
           )
 
         componentsUsage
-          .get(componentId)
+          .get(designerWideComponentId)
           .map(data =>
             Right(
               data
@@ -103,7 +103,7 @@ class DefaultComponentService(
                 .sortBy(_.name.value)
             )
           )
-          .getOrElse(Left(ComponentNotFoundError(componentId)))
+          .getOrElse(Left(ComponentNotFoundError(designerWideComponentId)))
       }
 
   private def extractComponentsFromProcessingType(
@@ -121,19 +121,19 @@ class DefaultComponentService(
   }
 
   private def createComponents(
-      componentsDefinition: Map[ComponentInfo, ComponentDefinitionWithImplementation],
+      componentsDefinition: Map[ComponentId, ComponentDefinitionWithImplementation],
       category: Category,
   ): List[ComponentListElement] = {
     componentsDefinition.toList
-      .map { case (info, definition) =>
-        val componentId = definition.componentId
-        val links       = createComponentLinks(componentId, info, definition)
+      .map { case (id, definition) =>
+        val designerWideId = definition.designerWideId
+        val links          = createComponentLinks(designerWideId, id, definition)
 
         ComponentListElement(
-          id = componentId,
-          name = info.name,
+          id = designerWideId,
+          name = id.name,
           icon = definition.icon,
-          componentType = info.`type`,
+          componentType = id.`type`,
           componentGroupName = definition.componentGroup,
           categories = List(category),
           links = links,
@@ -145,7 +145,7 @@ class DefaultComponentService(
   private def getUserAccessibleComponentUsages(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): Future[Map[ComponentId, Long]] = {
+  ): Future[Map[DesignerWideComponentId, Long]] = {
     processService
       .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map(processes =>
@@ -162,7 +162,7 @@ class DefaultComponentService(
       }
       .toMap
       .collapseNestedMap
-      .mapValuesNow(_.componentId)
+      .mapValuesNow(_.designerWideId)
 
   private def definedComponents(
       processingTypeData: ComponentServiceProcessingTypeData,
@@ -175,13 +175,13 @@ class DefaultComponentService(
       )
 
   private def createComponentLinks(
-      componentId: ComponentId,
-      info: ComponentInfo,
+      designerWideId: DesignerWideComponentId,
+      id: ComponentId,
       component: ComponentDefinitionWithImplementation
   ): List[ComponentLink] = {
     val componentLinks = componentLinksConfig
-      .filter(_.isAvailable(info.`type`))
-      .map(_.toComponentLink(componentId, info.name))
+      .filter(_.isAvailable(id.`type`))
+      .map(_.toComponentLink(designerWideId, id.name))
 
     // If component configuration contains documentation link then we add base link
     component.docsUrl
@@ -211,8 +211,8 @@ class DefaultComponentService(
 
 }
 
-private final case class ComponentNotFoundError(componentId: ComponentId)
-    extends NotFoundError(s"Component $componentId not exist.")
+private final case class ComponentNotFoundError(designerWideComponentId: DesignerWideComponentId)
+    extends NotFoundError(s"Component $designerWideComponentId not exist.")
 
 case class ComponentServiceProcessingTypeData(
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,

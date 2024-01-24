@@ -1,7 +1,12 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
 import cats.data.Validated
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentGroupName,
+  ComponentId,
+  ComponentType,
+  DesignerWideComponentId
+}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.{
@@ -12,7 +17,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 class FragmentComponentDefinitionExtractor(
     classLoader: ClassLoader,
     translateGroupName: ComponentGroupName => Option[ComponentGroupName],
-    componentInfoToId: ComponentInfo => ComponentId
+    determineDesignerWideId: ComponentId => DesignerWideComponentId
 ) {
 
   val parametersExtractor = new FragmentParametersWithoutValidatorsDefinitionExtractor(classLoader)
@@ -25,7 +30,7 @@ class FragmentComponentDefinitionExtractor(
         parametersExtractor.extractFragmentParametersDefinition(input.parameters)(NodeId(input.id)).value
       val outputNames = outputs.map(_.name).sorted
       val docsUrl     = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
-      val componentId = componentInfoToId(ComponentInfo(ComponentType.Fragment, fragment.name.value))
+      val componentId = determineDesignerWideId(ComponentId(ComponentType.Fragment, fragment.name.value))
 
       FragmentComponentDefinition(
         implementationInvoker = ComponentImplementationInvoker.nullImplementationInvoker,
@@ -33,7 +38,7 @@ class FragmentComponentDefinitionExtractor(
         outputNames = outputNames,
         docsUrl = docsUrl,
         translateGroupName = translateGroupName,
-        componentId = componentId,
+        designerWideId = componentId,
       )
     }
   }

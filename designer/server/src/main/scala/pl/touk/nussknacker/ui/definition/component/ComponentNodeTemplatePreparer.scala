@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.definition.component
 
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -15,67 +15,67 @@ import pl.touk.nussknacker.restmodel.definition.UIComponentNodeTemplate
 private[component] object ComponentNodeTemplatePreparer {
 
   def componentNodeTemplatesWithGroupNames(
-      components: Map[ComponentInfo, ComponentWithStaticDefinition]
+      components: Map[ComponentId, ComponentWithStaticDefinition]
   ): List[ComponentNodeTemplateWithGroupNames] = {
     def parameterTemplates(staticDefinition: ComponentStaticDefinition): List[NodeParameter] =
       NodeParameterTemplatesPreparer.prepareNodeParameterTemplates(staticDefinition.parameters)
 
-    def serviceRef(info: ComponentInfo, staticDefinition: ComponentStaticDefinition) =
-      ServiceRef(info.name, parameterTemplates(staticDefinition))
+    def serviceRef(id: ComponentId, staticDefinition: ComponentStaticDefinition) =
+      ServiceRef(id.name, parameterTemplates(staticDefinition))
 
     def prepareComponentNodeTemplateWithGroup(
-        info: ComponentInfo,
+        id: ComponentId,
         component: ComponentDefinitionWithImplementation,
         staticDefinition: ComponentStaticDefinition
     ) = {
-      val nodeTemplate = (info, component.componentTypeSpecificData) match {
-        case (BuiltInComponentInfo.Filter, _) =>
+      val nodeTemplate = (id, component.componentTypeSpecificData) match {
+        case (BuiltInComponentId.Filter, _) =>
           Filter("", Expression.spel("true"))
-        case (BuiltInComponentInfo.Split, _) =>
+        case (BuiltInComponentId.Split, _) =>
           Split("")
-        case (BuiltInComponentInfo.Choice, _) =>
+        case (BuiltInComponentId.Choice, _) =>
           Switch("")
-        case (BuiltInComponentInfo.Variable, _) =>
+        case (BuiltInComponentId.Variable, _) =>
           Variable("", "varName", Expression.spel("'value'"))
-        case (BuiltInComponentInfo.RecordVariable, _) =>
+        case (BuiltInComponentId.RecordVariable, _) =>
           VariableBuilder("", "varName", List(Field("fieldName", Expression.spel("'value'"))))
-        case (BuiltInComponentInfo.FragmentInputDefinition, _) =>
+        case (BuiltInComponentId.FragmentInputDefinition, _) =>
           FragmentInputDefinition("", List.empty)
-        case (BuiltInComponentInfo.FragmentOutputDefinition, _) =>
+        case (BuiltInComponentId.FragmentOutputDefinition, _) =>
           FragmentOutputDefinition("", "output", List.empty)
-        case (info, ServiceSpecificData) if staticDefinition.hasReturn =>
-          Enricher("", serviceRef(info, staticDefinition), "output")
-        case (info, ServiceSpecificData) =>
-          Processor("", serviceRef(info, staticDefinition))
-        case (info, CustomComponentSpecificData(true, _)) =>
+        case (id, ServiceSpecificData) if staticDefinition.hasReturn =>
+          Enricher("", serviceRef(id, staticDefinition), "output")
+        case (id, ServiceSpecificData) =>
+          Processor("", serviceRef(id, staticDefinition))
+        case (id, CustomComponentSpecificData(true, _)) =>
           Join(
             "",
             if (staticDefinition.hasReturn) Some("outputVar") else None,
-            info.name,
+            id.name,
             parameterTemplates(staticDefinition),
             List.empty
           )
-        case (info, CustomComponentSpecificData(false, _)) =>
+        case (id, CustomComponentSpecificData(false, _)) =>
           CustomNode(
             "",
             if (staticDefinition.hasReturn) Some("outputVar") else None,
-            info.name,
+            id.name,
             parameterTemplates(staticDefinition)
           )
-        case (info, SinkSpecificData) =>
-          Sink("", SinkRef(info.name, parameterTemplates(staticDefinition)))
-        case (info, SourceSpecificData) =>
-          Source("", SourceRef(info.name, parameterTemplates(staticDefinition)))
-        case (info, FragmentSpecificData(outputNames)) =>
+        case (id, SinkSpecificData) =>
+          Sink("", SinkRef(id.name, parameterTemplates(staticDefinition)))
+        case (id, SourceSpecificData) =>
+          Source("", SourceRef(id.name, parameterTemplates(staticDefinition)))
+        case (id, FragmentSpecificData(outputNames)) =>
           val outputs = outputNames.map(name => (name, name)).toMap
-          FragmentInput("", FragmentRef(info.name, parameterTemplates(staticDefinition), outputs))
+          FragmentInput("", FragmentRef(id.name, parameterTemplates(staticDefinition), outputs))
         case (_, BuiltInComponentSpecificData) =>
           throw new IllegalStateException(s"Not expected component: $info with definition: $component")
       }
       val branchParametersTemplate =
         NodeParameterTemplatesPreparer.prepareNodeBranchParameterTemplates(staticDefinition.parameters)
       val componentNodeTemplate = UIComponentNodeTemplate.create(
-        info,
+        id,
         nodeTemplate,
         branchParametersTemplate
       )
@@ -86,8 +86,8 @@ private[component] object ComponentNodeTemplatePreparer {
       )
     }
 
-    components.toList.map { case (info, ComponentWithStaticDefinition(component, staticDefinition)) =>
-      prepareComponentNodeTemplateWithGroup(info, component, staticDefinition)
+    components.toList.map { case (id, ComponentWithStaticDefinition(component, staticDefinition)) =>
+      prepareComponentNodeTemplateWithGroup(id, component, staticDefinition)
     }
   }
 

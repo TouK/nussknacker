@@ -19,7 +19,7 @@ final case class ProcessingTypeData private (
     deploymentManager: DeploymentManager,
     modelData: ModelData,
     // We hold this map as a cache - computing it is a quite costly operation (it invokes external services)
-    staticDefinitionForDynamicComponents: Map[ComponentInfo, ComponentStaticDefinition],
+    staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
     metaDataInitializer: MetaDataInitializer,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     additionalValidators: List[CustomProcessValidator],
@@ -62,9 +62,9 @@ object ProcessingTypeData {
   private def createModelData(
       processingType: ProcessingType,
       processingTypeConfig: ProcessingTypeConfig,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ) = {
-    ModelData(processingTypeConfig, additionalConfigsFromProvider, ComponentId.default(processingType, _))
+    ModelData(processingTypeConfig, additionalConfigsFromProvider, DesignerWideComponentId.default(processingType, _))
   }
 
   def createProcessingTypeData(

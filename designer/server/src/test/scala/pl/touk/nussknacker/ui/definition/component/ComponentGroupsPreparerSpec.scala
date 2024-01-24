@@ -84,7 +84,7 @@ class ComponentGroupsPreparerSpec
     val baseComponents = baseComponentsGroups.flatMap(_.components)
     baseComponents
       .filter(n => n.`type` == ComponentType.BuiltIn)
-      .map(_.label) should contain allElementsOf BuiltInComponentInfo.AllAvailableForScenario.map(_.name)
+      .map(_.label) should contain allElementsOf BuiltInComponentId.AllAvailableForScenario.map(_.name)
     baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 5
   }
 
@@ -96,7 +96,7 @@ class ComponentGroupsPreparerSpec
           returnType = Some(Unknown),
           componentSpecificData = CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
           componentGroupName = Some(ComponentGroupName("group1")),
-          componentId = None
+          designerWideComponentId = None
         )
         .build
         .components
@@ -140,8 +140,8 @@ class ComponentGroupsPreparerSpec
     val fragmentDefinitionComponentLabels =
       groups.find(_.name == DefaultsComponentGroupName.FragmentsDefinitionGroupName).value.components.map(_.label)
     fragmentDefinitionComponentLabels shouldEqual List(
-      BuiltInComponentInfo.FragmentInputDefinition.name,
-      BuiltInComponentInfo.FragmentOutputDefinition.name
+      BuiltInComponentId.FragmentInputDefinition.name,
+      BuiltInComponentId.FragmentOutputDefinition.name
     )
   }
 
@@ -190,7 +190,7 @@ class ComponentGroupsPreparerSpec
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         Some(_),
-        ComponentId.default(TestProcessingTypes.Streaming, _)
+        DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
       ),
       modelDefinition,
     )
@@ -206,8 +206,8 @@ class ComponentGroupsPreparerSpec
   }
 
   private def withStaticDefinition(
-      components: Map[ComponentInfo, ComponentDefinitionWithImplementation]
-  ): Map[ComponentInfo, ComponentWithStaticDefinition] = {
+      components: Map[ComponentId, ComponentDefinitionWithImplementation]
+  ): Map[ComponentId, ComponentWithStaticDefinition] = {
     components
       .mapValuesNow {
         case methodBased: MethodBasedComponentDefinitionWithImplementation =>

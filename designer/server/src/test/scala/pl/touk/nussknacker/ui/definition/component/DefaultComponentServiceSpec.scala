@@ -127,13 +127,13 @@ class DefaultComponentServiceSpec
     )
   )
 
-  private val overrideSinkComponentId         = ComponentId(s"$Sink-$SourceSinkSameNameComponentName")
-  private val overrideSourceComponentId       = ComponentId(s"$Source-$SourceSinkSameNameComponentName")
-  private val customerDataEnricherComponentId = ComponentId(CustomerDataEnricherName)
-  private val sharedEnricherComponentId       = ComponentId(SharedEnricherName)
-  private val customStreamComponentId         = ComponentId(CustomStreamName)
-  private val sharedSourceComponentId         = ComponentId(SharedSourceName)
-  private val sharedProvidedComponentId       = ComponentId(SharedProvidedComponentName)
+  private val overrideSinkComponentId         = DesignerWideComponentId(s"$Sink-$SourceSinkSameNameComponentName")
+  private val overrideSourceComponentId       = DesignerWideComponentId(s"$Source-$SourceSinkSameNameComponentName")
+  private val customerDataEnricherComponentId = DesignerWideComponentId(CustomerDataEnricherName)
+  private val sharedEnricherComponentId       = DesignerWideComponentId(SharedEnricherName)
+  private val customStreamComponentId         = DesignerWideComponentId(CustomStreamName)
+  private val sharedSourceComponentId         = DesignerWideComponentId(SharedSourceName)
+  private val sharedProvidedComponentId       = DesignerWideComponentId(SharedProvidedComponentName)
 
   private val streamingConfig: Config = ConfigFactory.parseString(s"""
        |{
@@ -143,7 +143,7 @@ class DefaultComponentServiceSpec
        |      componentGroup: "$responseGroupName"
        |      componentId: "$customerDataEnricherComponentId"
        |    },
-       |    ${BuiltInComponentInfo.Filter.name} {
+       |    ${BuiltInComponentId.Filter.name} {
        |      icon: "$overriddenIcon"
        |      docsUrl: "$filterDocsUrl"
        |    },
@@ -156,10 +156,10 @@ class DefaultComponentServiceSpec
        |    $SharedProvidedComponentName {
        |      componentId: $SharedProvidedComponentName
        |    },
-       |    ${ComponentInfo(Source, SourceSinkSameNameComponentName)} {
+       |    ${ComponentId(Source, SourceSinkSameNameComponentName)} {
        |      componentId: "$overrideSourceComponentId"
        |    }
-       |    ${ComponentInfo(Sink, SourceSinkSameNameComponentName)} {
+       |    ${ComponentId(Sink, SourceSinkSameNameComponentName)} {
        |      componentId: "$overrideSinkComponentId"
        |    }
        |  }
@@ -181,7 +181,7 @@ class DefaultComponentServiceSpec
        |    $CategoryFraud {
        |      icon: "$overriddenIcon"
        |    }
-       |    ${BuiltInComponentInfo.Filter.name} {
+       |    ${BuiltInComponentId.Filter.name} {
        |      icon: "$overriddenIcon"
        |      docsUrl: "$filterDocsUrl"
        |    },
@@ -191,10 +191,10 @@ class DefaultComponentServiceSpec
        |    $SharedProvidedComponentName {
        |      componentId: $SharedProvidedComponentName
        |    },
-       |    ${ComponentInfo(Source, SourceSinkSameNameComponentName)} {
+       |    ${ComponentId(Source, SourceSinkSameNameComponentName)} {
        |      componentId: "$overrideSourceComponentId"
        |    }
-       |    ${ComponentInfo(Sink, SourceSinkSameNameComponentName)} {
+       |    ${ComponentId(Sink, SourceSinkSameNameComponentName)} {
        |      componentId: "$overrideSinkComponentId"
        |    }
        |  }
@@ -232,114 +232,114 @@ class DefaultComponentServiceSpec
 
   private val baseComponents: List[ComponentListElement] =
     List(
-      baseComponent(BuiltInComponentInfo.Filter, overriddenIcon, BaseGroupName, AllCategories),
-      baseComponent(BuiltInComponentInfo.Split, SplitIcon, BaseGroupName, AllCategories),
-      baseComponent(BuiltInComponentInfo.Choice, ChoiceIcon, BaseGroupName, AllCategories),
-      baseComponent(BuiltInComponentInfo.Variable, VariableIcon, BaseGroupName, AllCategories),
-      baseComponent(BuiltInComponentInfo.RecordVariable, RecordVariableIcon, BaseGroupName, AllCategories),
+      baseComponent(BuiltInComponentId.Filter, overriddenIcon, BaseGroupName, AllCategories),
+      baseComponent(BuiltInComponentId.Split, SplitIcon, BaseGroupName, AllCategories),
+      baseComponent(BuiltInComponentId.Choice, ChoiceIcon, BaseGroupName, AllCategories),
+      baseComponent(BuiltInComponentId.Variable, VariableIcon, BaseGroupName, AllCategories),
+      baseComponent(BuiltInComponentId.RecordVariable, RecordVariableIcon, BaseGroupName, AllCategories),
     )
 
   private def prepareSharedComponents(implicit user: LoggedUser): List[ComponentListElement] =
     List(
       sharedComponent(
-        ComponentInfo(Source, SharedSourceName),
+        ComponentId(Source, SharedSourceName),
         SourceIcon,
         SourcesGroupName,
       ),
       sharedComponent(
-        ComponentInfo(Sink, SharedSinkName),
+        ComponentId(Sink, SharedSinkName),
         SinkIcon,
         executionGroupName,
       ),
       sharedComponent(
-        ComponentInfo(Service, SharedEnricherName),
+        ComponentId(Service, SharedEnricherName),
         overriddenIcon,
         EnrichersGroupName,
       ),
       sharedComponent(
-        ComponentInfo(Service, SharedProvidedComponentName),
+        ComponentId(Service, SharedProvidedComponentName),
         ServiceIcon,
         executionGroupName,
       ),
       sharedComponent(
-        ComponentInfo(Source, SourceSinkSameNameComponentName),
+        ComponentId(Source, SourceSinkSameNameComponentName),
         SourceIcon,
         SourcesGroupName,
-        componentId = Some(overrideSourceComponentId)
+        designerWideComponentId = Some(overrideSourceComponentId)
       ),
       sharedComponent(
-        ComponentInfo(Sink, SourceSinkSameNameComponentName),
+        ComponentId(Sink, SourceSinkSameNameComponentName),
         SinkIcon,
         executionGroupName,
-        componentId = Some(overrideSinkComponentId)
+        designerWideComponentId = Some(overrideSinkComponentId)
       ),
     )
 
   private def prepareMarketingComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
     marketingComponent(
-      ComponentInfo(CustomComponent, CustomStreamName),
+      ComponentId(CustomComponent, CustomStreamName),
       CustomComponentIcon,
       CustomGroupName,
-      componentId = Some(customStreamComponentId)
+      designerWideComponentId = Some(customStreamComponentId)
     ),
     marketingComponent(
-      ComponentInfo(Service, CustomerDataEnricherName),
+      ComponentId(Service, CustomerDataEnricherName),
       overriddenIcon,
       responseGroupName,
-      componentId = Some(customerDataEnricherComponentId)
+      designerWideComponentId = Some(customerDataEnricherComponentId)
     ),
     marketingComponent(
-      ComponentInfo(Service, FuseBlockServiceName),
+      ComponentId(Service, FuseBlockServiceName),
       ServiceIcon,
       executionGroupName
     ),
-    marketingComponent(ComponentInfo(Sink, MonitorName), SinkIcon, executionGroupName),
+    marketingComponent(ComponentId(Sink, MonitorName), SinkIcon, executionGroupName),
     marketingComponent(
-      ComponentInfo(CustomComponent, OptionalCustomStreamName),
+      ComponentId(CustomComponent, OptionalCustomStreamName),
       CustomComponentIcon,
       OptionalEndingCustomGroupName
     ),
-    marketingComponent(ComponentInfo(Source, SuperMarketingSourceName), SourceIcon, SourcesGroupName),
-    marketingComponent(ComponentInfo(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
+    marketingComponent(ComponentId(Source, SuperMarketingSourceName), SourceIcon, SourcesGroupName),
+    marketingComponent(ComponentId(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
     marketingComponent(
-      ComponentInfo(Service, SingleProvidedComponentName),
+      ComponentId(Service, SingleProvidedComponentName),
       ServiceIcon,
       executionGroupName
     ),
   )
 
   private def prepareFraudComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
-    fraudComponent(ComponentInfo(CustomComponent, CustomStreamName), CustomComponentIcon, CustomGroupName),
-    fraudComponent(ComponentInfo(Service, CustomerDataEnricherName), EnricherIcon, EnrichersGroupName),
-    fraudComponent(ComponentInfo(Service, FuseBlockServiceName), ServiceIcon, executionGroupName),
+    fraudComponent(ComponentId(CustomComponent, CustomStreamName), CustomComponentIcon, CustomGroupName),
+    fraudComponent(ComponentId(Service, CustomerDataEnricherName), EnricherIcon, EnrichersGroupName),
+    fraudComponent(ComponentId(Service, FuseBlockServiceName), ServiceIcon, executionGroupName),
     fraudComponent(
-      ComponentInfo(CustomComponent, OptionalCustomStreamName),
+      ComponentId(CustomComponent, OptionalCustomStreamName),
       CustomComponentIcon,
       OptionalEndingCustomGroupName
     ),
-    fraudComponent(ComponentInfo(Sink, SecondMonitorName), SinkIcon, executionGroupName),
-    fraudComponent(ComponentInfo(Service, SingleProvidedComponentName), ServiceIcon, executionGroupName),
-    fraudComponent(ComponentInfo(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
-    fraudComponent(ComponentInfo(Sink, FraudSinkName), SinkIcon, executionGroupName),
+    fraudComponent(ComponentId(Sink, SecondMonitorName), SinkIcon, executionGroupName),
+    fraudComponent(ComponentId(Service, SingleProvidedComponentName), ServiceIcon, executionGroupName),
+    fraudComponent(ComponentId(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
+    fraudComponent(ComponentId(Sink, FraudSinkName), SinkIcon, executionGroupName),
   )
 
   private def sharedComponent(
-      componentInfo: ComponentInfo,
+      componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
-      componentId: Option[ComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None
   )(implicit user: LoggedUser) = {
-    val id         = componentId.getOrElse(ComponentId(componentInfo.name))
-    val links      = createLinks(id, componentInfo)
+    val id         = designerWideComponentId.getOrElse(DesignerWideComponentId(componentId.name))
+    val links      = createLinks(id, componentId)
     val usageCount = componentCount(id, user)
 
     val availableCategories = AllCategories.filter(user.can(_, Permission.Read)).sorted
 
     ComponentListElement(
       id,
-      componentInfo.name,
+      componentId.name,
       icon,
-      componentInfo.`type`,
+      componentId.`type`,
       componentGroupName,
       availableCategories,
       links,
@@ -348,19 +348,19 @@ class DefaultComponentServiceSpec
   }
 
   private val fragmentMarketingComponents: List[ComponentListElement] = {
-    val cat           = CategoryMarketing
-    val componentInfo = ComponentInfo(Fragment, cat)
-    val componentId   = cid(Streaming, componentInfo)
-    val icon          = DefaultsComponentIcon.fromComponentInfo(componentInfo, None)
-    val links         = createLinks(componentId, componentInfo)
+    val cat         = CategoryMarketing
+    val componentId = ComponentId(Fragment, cat)
+    val componentId = cid(Streaming, componentId)
+    val icon        = DefaultsComponentIcon.fromComponentId(componentId, None)
+    val links       = createLinks(componentId, componentId)
     List(ComponentListElement(componentId, cat, icon, Fragment, FragmentsGroupName, List(cat), links, 0))
   }
 
   private val fragmentFraudComponents: List[ComponentListElement] = {
-    val cat           = CategoryFraud
-    val componentInfo = ComponentInfo(Fragment, cat)
-    val componentId   = cid(Fraud, componentInfo)
-    val links         = createLinks(componentId, componentInfo)
+    val cat         = CategoryFraud
+    val componentId = ComponentId(Fragment, cat)
+    val componentId = cid(Fraud, componentId)
+    val links       = createLinks(componentId, componentId)
     List(
       ComponentListElement(
         componentId,
@@ -387,37 +387,37 @@ class DefaultComponentServiceSpec
     .toSet
 
   private def marketingComponent(
-      componentInfo: ComponentInfo,
+      componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
-      componentId: Option[ComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None
   )(implicit user: LoggedUser) =
-    createComponent(Streaming, componentInfo, icon, componentGroupName, List(CategoryMarketing), componentId)
+    createComponent(Streaming, componentId, icon, componentGroupName, List(CategoryMarketing), designerWideComponentId)
 
   private def fraudComponent(
-      componentInfo: ComponentInfo,
+      componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
-      componentId: Option[ComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None
   )(implicit user: LoggedUser) =
-    createComponent(Fraud, componentInfo, icon, componentGroupName, List(CategoryFraud), componentId)
+    createComponent(Fraud, componentId, icon, componentGroupName, List(CategoryFraud), designerWideComponentId)
 
   private def createComponent(
       processingType: String,
-      componentInfo: ComponentInfo,
+      componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
       categories: List[String],
-      componentId: Option[ComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None
   )(implicit user: LoggedUser) = {
-    val compId     = componentId.getOrElse(cid(processingType, componentInfo))
-    val links      = createLinks(compId, componentInfo)
+    val compId     = designerWideComponentId.getOrElse(cid(processingType, componentId))
+    val links      = createLinks(compId, componentId)
     val usageCount = componentCount(compId, user)
     ComponentListElement(
       compId,
-      componentInfo.name,
+      componentId.name,
       icon,
-      componentInfo.`type`,
+      componentId.`type`,
       componentGroupName,
       categories,
       links,
@@ -426,19 +426,19 @@ class DefaultComponentServiceSpec
   }
 
   private def baseComponent(
-      componentInfo: ComponentInfo,
+      componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
       categories: List[String]
   ): ComponentListElement = {
-    val componentId = bid(componentInfo)
-    val docsLinks   = if (componentInfo.name == BuiltInComponentInfo.Filter.name) List(filterDocsLink) else Nil
-    val links       = docsLinks ++ createLinks(componentId, componentInfo)
+    val componentId = bid(componentId)
+    val docsLinks   = if (componentId.name == BuiltInComponentId.Filter.name) List(filterDocsLink) else Nil
+    val links       = docsLinks ++ createLinks(componentId, componentId)
     ComponentListElement(
       componentId,
-      componentInfo.name,
+      componentId.name,
       icon,
-      componentInfo.`type`,
+      componentId.`type`,
       componentGroupName,
       categories,
       links,
@@ -447,18 +447,18 @@ class DefaultComponentServiceSpec
   }
 
   private def createLinks(
-      componentId: ComponentId,
-      componentInfo: ComponentInfo
+      determineDesignerWideId: DesignerWideComponentId,
+      componentId: ComponentId
   ): List[ComponentLink] =
     linkConfigs
-      .filter(_.isAvailable(componentInfo.`type`))
-      .map(_.toComponentLink(componentId, componentInfo.name))
+      .filter(_.isAvailable(componentId.`type`))
+      .map(_.toComponentLink(determineDesignerWideId, componentId.name))
 
-  private def componentCount(componentId: ComponentId, user: LoggedUser) = {
-    val sourceComponentId = ComponentId(SharedSourceName)
-    val sinkComponentId   = ComponentId(SharedSinkName)
+  private def componentCount(determineDesignerWideId: DesignerWideComponentId, user: LoggedUser) = {
+    val sourceComponentId = DesignerWideComponentId(SharedSourceName)
+    val sinkComponentId   = DesignerWideComponentId(SharedSinkName)
 
-    componentId match {
+    determineDesignerWideId match {
       // Order is matter, first should be condition with more number of categories
       case _ @id if id == sourceComponentId && hasAccess(user, CategoryFraud, CategoryMarketing) => 2
       case _ @id if id == sinkComponentId && hasAccess(user, CategoryFraud, CategoryMarketing)   => 2
@@ -494,14 +494,14 @@ class DefaultComponentServiceSpec
       streamingConfig,
       providerComponents,
       ComponentMarketingTestConfigCreator,
-      componentInfoToId = ComponentId.default(Streaming, _)
+      determineDesignerWideId = DesignerWideComponentId.default(Streaming, _)
     ),
     CategoryMarketing),
     Fraud -> (LocalModelData(
       fraudConfig,
       providerComponents,
       ComponentFraudTestConfigCreator,
-      componentInfoToId = ComponentId.default(Fraud, _)
+      determineDesignerWideId = DesignerWideComponentId.default(Fraud, _)
     ),
     CategoryFraud)
   )
@@ -556,16 +556,16 @@ class DefaultComponentServiceSpec
 
   private def checkLinks(returnedComponent: ComponentListElement): Unit = {
     // See linksConfig
-    val availableLinksId = returnedComponent.componentInfo match {
-      case ComponentInfo(Service, _)         => List(usagesLinkId, invokeLinkId, editLinkId)
-      case ComponentInfo(CustomComponent, _) => List(usagesLinkId, editLinkId)
-      case ComponentInfo(BuiltIn, _)         => List(usagesLinkId, filterLinkId)
-      case _                                 => List(usagesLinkId)
+    val availableLinksId = returnedComponent.componentId match {
+      case ComponentId(Service, _)         => List(usagesLinkId, invokeLinkId, editLinkId)
+      case ComponentId(CustomComponent, _) => List(usagesLinkId, editLinkId)
+      case ComponentId(BuiltIn, _)         => List(usagesLinkId, filterLinkId)
+      case _                               => List(usagesLinkId)
     }
 
-    val availableDocsLinksId = returnedComponent.componentInfo match {
-      case BuiltInComponentInfo.Filter => List(filterDocsLink.id)
-      case _                           => Nil
+    val availableDocsLinksId = returnedComponent.componentId match {
+      case BuiltInComponentId.Filter => List(filterDocsLink.id)
+      case _                         => Nil
     }
 
     // Base components from providers contain more links because of documentation
@@ -586,13 +586,13 @@ class DefaultComponentServiceSpec
         streamingConfig,
         providerComponents,
         ComponentMarketingTestConfigCreator,
-        componentInfoToId = ComponentId.default(Streaming, _)
+        determineDesignerWideId = DesignerWideComponentId.default(Streaming, _)
       ), CategoryMarketing),
       Fraud -> (LocalModelData(
         wrongConfig,
         providerComponents,
         WronglyConfiguredConfigCreator,
-        componentInfoToId = ComponentId.default(Fraud, _)
+        determineDesignerWideId = DesignerWideComponentId.default(Fraud, _)
       ), CategoryFraud)
     )
 
@@ -600,9 +600,9 @@ class DefaultComponentServiceSpec
 
     val expectedWrongConfigurations = List(
       ComponentWrongConfiguration(
-        bid(BuiltInComponentInfo.Filter),
+        bid(BuiltInComponentId.Filter),
         IconAttribute,
-        List(overriddenIcon, DefaultsComponentIcon.forBuiltInComponent(BuiltInComponentInfo.Filter))
+        List(overriddenIcon, DefaultsComponentIcon.forBuiltInComponent(BuiltInComponentId.Filter))
       ),
       ComponentWrongConfiguration(sharedSourceComponentId, NameAttribute, List(SharedSourceName, SharedSourceV2Name)),
       ComponentWrongConfiguration(
@@ -658,11 +658,11 @@ class DefaultComponentServiceSpec
       FraudFragment
     )
 
-    val fraudNotSharedSourceComponentId      = cid(Fraud, ComponentInfo(Source, NotSharedSourceName))
-    val fraudCustomerDataEnricherComponentId = cid(Fraud, ComponentInfo(Service, CustomerDataEnricherName))
-    val sharedSourceComponentId              = ComponentId(SharedSourceName) // it's shared id - merged at configs file
-    val fragmentComponentId                  = cid(Fraud, ComponentInfo(Fragment, FraudFragmentName.value))
-    val filterComponentId                    = bid(BuiltInComponentInfo.Filter)
+    val fraudNotSharedSourceComponentId      = cid(Fraud, ComponentId(Source, NotSharedSourceName))
+    val fraudCustomerDataEnricherComponentId = cid(Fraud, ComponentId(Service, CustomerDataEnricherName))
+    val sharedSourceComponentId = DesignerWideComponentId(SharedSourceName) // it's shared id - merged at configs file
+    val fragmentComponentId     = cid(Fraud, ComponentId(Fragment, FraudFragmentName.value))
+    val filterComponentId       = bid(BuiltInComponentId.Filter)
 
     val componentService = prepareService(modelDataMap, processes, List(FraudFragment))
 
@@ -715,11 +715,11 @@ class DefaultComponentServiceSpec
     forAll(testingData) {
       (
           user: LoggedUser,
-          componentId: ComponentId,
+          determineDesignerWideId: DesignerWideComponentId,
           expected: List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]
       ) =>
         val result = componentService
-          .getComponentUsages(componentId)(user)
+          .getComponentUsages(determineDesignerWideId)(user)
           .futureValue
           .map(_.map(n => n.copy(nodesUsagesData = n.nodesUsagesData.sorted)))
         val componentProcesses = expected.map { case (process, nodesUsagesData) =>
@@ -731,7 +731,7 @@ class DefaultComponentServiceSpec
 
   it should "return return error when component doesn't exist" in {
     val componentService    = prepareService(modelDataMap, List.empty, List.empty)
-    val notExistComponentId = ComponentId("not-exist")
+    val notExistComponentId = DesignerWideComponentId("not-exist")
     val result              = componentService.getComponentUsages(notExistComponentId)(admin).futureValue
     result shouldBe Left(ComponentNotFoundError(notExistComponentId))
   }
@@ -788,11 +788,11 @@ class DefaultComponentServiceSpec
       processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 
-  private def cid(processingType: ProcessingType, componentInfo: ComponentInfo): ComponentId =
-    ComponentId.default(processingType, componentInfo)
+  private def cid(processingType: ProcessingType, componentId: ComponentId): DesignerWideComponentId =
+    DesignerWideComponentId.default(processingType, componentId)
 
-  private def bid(componentInfo: ComponentInfo): ComponentId =
-    ComponentId.forBuiltInComponent(componentInfo)
+  private def bid(componentId: ComponentId): DesignerWideComponentId =
+    DesignerWideComponentId.forBuiltInComponent(componentId)
 
   private implicit def ordering: Ordering[NodeUsageData] = (x: NodeUsageData, y: NodeUsageData) => {
     x.nodeId.compareTo(y.nodeId)

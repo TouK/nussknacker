@@ -3,7 +3,7 @@ package pl.touk.nussknacker.restmodel
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import sttp.tapir.Schema
@@ -47,7 +47,7 @@ package object component {
 
   @JsonCodec
   final case class ComponentListElement(
-      id: ComponentId,
+      id: DesignerWideComponentId,
       name: String,
       icon: String,
       componentType: ComponentType,
@@ -56,7 +56,7 @@ package object component {
       links: List[ComponentLink],
       usageCount: Long
   ) {
-    def componentInfo: ComponentInfo = ComponentInfo(componentType, name)
+    def componentId: ComponentId = ComponentId(componentType, name)
   }
 
   @JsonCodec

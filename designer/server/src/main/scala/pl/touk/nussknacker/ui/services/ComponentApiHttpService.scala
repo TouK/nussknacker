@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentApiEndpoints
 import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
@@ -34,11 +34,11 @@ class ComponentApiHttpService(
   expose {
     componentApiEndpoints.componentUsageEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { user: LoggedUser => componentId: ComponentId =>
+      .serverLogic { user: LoggedUser => designerWideComponentId: DesignerWideComponentId =>
         componentService
-          .getComponentUsages(componentId)(user)
+          .getComponentUsages(designerWideComponentId)(user)
           .map {
-            case Left(_)      => businessError(s"Component $componentId not exist.")
+            case Left(_)      => businessError(s"Component $designerWideComponentId not exist.")
             case Right(value) => success(value)
           }
       }

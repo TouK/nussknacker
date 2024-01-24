@@ -1,6 +1,11 @@
 package pl.touk.nussknacker.engine.definition.model
 
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentAdditionalConfig, ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{
+  Component,
+  ComponentAdditionalConfig,
+  ComponentId,
+  DesignerWideComponentId
+}
 import pl.touk.nussknacker.engine.api.process.{
   ExpressionConfig,
   ProcessConfigCreator,
@@ -24,8 +29,8 @@ object ModelDefinitionFromConfigCreatorExtractor {
       categoryOpt: Option[String],
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig,
-      componentInfoToId: ComponentInfo => ComponentId,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): ModelDefinition = {
 
     val sourceFactories          = creator.sourceFactories(modelDependencies).toList
@@ -40,7 +45,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       allComponents,
       categoryOpt,
       componentsUiConfig,
-      componentInfoToId,
+      determineDesignerWideId,
       additionalConfigsFromProvider
     )
 
@@ -57,8 +62,8 @@ object ModelDefinitionFromConfigCreatorExtractor {
       components: List[(String, WithCategories[Component])],
       categoryOpt: Option[String],
       componentsUiConfig: ComponentsUiConfig,
-      componentInfoToId: ComponentInfo => ComponentId,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     collectAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component, componentConfig) =>
       ComponentDefinitionExtractor
@@ -67,7 +72,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
           component,
           componentConfig,
           componentsUiConfig,
-          componentInfoToId,
+          determineDesignerWideId,
           additionalConfigsFromProvider
         )
         .map(componentName -> _)

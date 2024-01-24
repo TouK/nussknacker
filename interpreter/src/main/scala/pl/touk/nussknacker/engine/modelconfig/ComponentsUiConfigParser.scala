@@ -2,7 +2,12 @@ package pl.touk.nussknacker.engine.modelconfig
 
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentGroupName,
+  ComponentId,
+  DesignerWideComponentId,
+  SingleComponentConfig
+}
 
 object ComponentsUiConfigParser {
 
@@ -13,8 +18,8 @@ object ComponentsUiConfigParser {
   private implicit val componentsUiGroupNameReader: ValueReader[ComponentGroupName] =
     ValueReader[String].map(ComponentGroupName(_))
 
-  private implicit val componentsUiComponentIdReader: ValueReader[ComponentId] =
-    ValueReader[String].map(ComponentId.apply)
+  private implicit val componentsUiComponentIdReader: ValueReader[DesignerWideComponentId] =
+    ValueReader[String].map(DesignerWideComponentId.apply)
 
   implicit val componentsGroupNameReader: ValueReader[Map[ComponentGroupName, Option[ComponentGroupName]]] =
     ValueReader[Map[String, Option[String]]]
@@ -42,11 +47,11 @@ class ComponentsUiConfig(
     groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
 ) {
 
-  def getConfig(info: ComponentInfo): SingleComponentConfig = {
+  def getConfig(id: ComponentId): SingleComponentConfig = {
     componentsConfig
-      .get(info.toString)
+      .get(id.toString)
       // Should we still support lookup by name?
-      .orElse(componentsConfig.get(info.name))
+      .orElse(componentsConfig.get(id.name))
       .getOrElse(SingleComponentConfig.zero)
   }
 

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator}
@@ -55,7 +55,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
             throw new IllegalArgumentException(s"Source $sourceName cannot be stubbed - missing definition")
           )
         val stubbedDefinition = prepareSourceFactory(sourceDefinition, definitionContext)
-        ComponentInfo(ComponentType.Source, sourceName) -> stubbedDefinition
+        ComponentId(ComponentType.Source, sourceName) -> stubbedDefinition
       }
 
     val fragmentParametersDefinitionExtractor = new FragmentParametersWithoutValidatorsDefinitionExtractor(
@@ -68,7 +68,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     val stubbedSourceForFragments =
       process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
         val fragmentSourceDefWithImpl = fragmentSourceDefinitionPreparer.createSourceDefinition(frag)
-        ComponentInfo(ComponentType.Fragment, frag.id) -> prepareSourceFactory(
+        ComponentId(ComponentType.Fragment, frag.id) -> prepareSourceFactory(
           fragmentSourceDefWithImpl,
           definitionContext
         )

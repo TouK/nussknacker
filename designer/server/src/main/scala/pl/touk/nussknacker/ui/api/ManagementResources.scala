@@ -12,7 +12,7 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -69,7 +69,7 @@ object ManagementResources {
         "variables" -> a.variables.asJson
       )
 
-    implicit val componentInfoEncoder: Encoder[ComponentInfo]         = deriveConfiguredEncoder
+    implicit val componentInfoEncoder: Encoder[ComponentId]           = deriveConfiguredEncoder
     implicit val nodeComponentInfoEncoder: Encoder[NodeComponentInfo] = deriveConfiguredEncoder
 
     val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))

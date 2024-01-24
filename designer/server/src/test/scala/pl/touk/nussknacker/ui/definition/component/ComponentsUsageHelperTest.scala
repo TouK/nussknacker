@@ -149,10 +149,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       processWithFragment.name
     )
 
-  private def nonFragmentComponents(componentInfoToId: ComponentInfo => ComponentId) = {
+  private def nonFragmentComponents(determineDesignerWideId: ComponentId => DesignerWideComponentId) = {
     val modelDefinition = ModelDefinitionBuilder
       .empty(Map.empty)
-      .withComponentInfoToId(componentInfoToId)
+      .withDesignerWideComponentIdDeterminingStrategy(determineDesignerWideId)
       .withSink(existingSinkFactory)
       .withSink(existingSinkFactory2)
       .withSource(existingSourceFactory)
@@ -161,7 +161,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         Some(Typed[String]),
         CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
         componentGroupName = None,
-        componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer))
+        designerWideComponentId = Some(DesignerWideComponentId(overriddenOtherExistingStreamTransformer))
       )
       .withCustom(
         otherExistingStreamTransformer2,
@@ -172,7 +172,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(new ComponentsUiConfig(Map.empty, Map.empty)),
-      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, Some(_), componentInfoToId),
+      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, Some(_), determineDesignerWideId),
       modelDefinition
     )
 
@@ -183,10 +183,12 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       )
   }
 
-  private val processingTypeAndInfoToNonFragmentComponentId = Map(
-    TestProcessingTypes.Streaming -> nonFragmentComponents(ComponentId.default(TestProcessingTypes.Streaming, _)),
-    TestProcessingTypes.Fraud     -> nonFragmentComponents(ComponentId.default(TestProcessingTypes.Fraud, _))
-  ).collapseNestedMap.mapValuesNow(_.componentId)
+  private val processingTypeAndInfoToNonFragmentDesignerWideId = Map(
+    TestProcessingTypes.Streaming -> nonFragmentComponents(
+      DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
+    ),
+    TestProcessingTypes.Fraud -> nonFragmentComponents(DesignerWideComponentId.default(TestProcessingTypes.Fraud, _))
+  ).collapseNestedMap.mapValuesNow(_.designerWideId)
 
   test("should compute components usage count") {
     val table = Table(
@@ -199,8 +201,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
           sid(Sink, existingSinkFactory2)               -> 1,
           sid(Source, existingSourceFactory)            -> 2,
           oid(overriddenOtherExistingStreamTransformer) -> 1,
-          bid(BuiltInComponentInfo.Choice)              -> 1,
-          bid(BuiltInComponentInfo.Filter)              -> 2
+          bid(BuiltInComponentId.Choice)                -> 1,
+          bid(BuiltInComponentId.Filter)                -> 2
         )
       ),
       (
@@ -210,8 +212,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
           sid(Source, existingSourceFactory)                    -> 1,
           oid(overriddenOtherExistingStreamTransformer)         -> 1,
           sid(CustomComponent, otherExistingStreamTransformer2) -> 1,
-          bid(BuiltInComponentInfo.FragmentInputDefinition)     -> 1,
-          bid(BuiltInComponentInfo.FragmentOutputDefinition)    -> 1
+          bid(BuiltInComponentId.FragmentInputDefinition)       -> 1,
+          bid(BuiltInComponentId.FragmentOutputDefinition)      -> 1
         )
       ),
       (
@@ -222,10 +224,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
           sid(Source, existingSourceFactory)                    -> 2,
           oid(overriddenOtherExistingStreamTransformer)         -> 1,
           sid(CustomComponent, otherExistingStreamTransformer2) -> 1,
-          bid(BuiltInComponentInfo.Choice)                      -> 1,
-          bid(BuiltInComponentInfo.Filter)                      -> 2,
-          bid(BuiltInComponentInfo.FragmentInputDefinition)     -> 1,
-          bid(BuiltInComponentInfo.FragmentOutputDefinition)    -> 1
+          bid(BuiltInComponentId.Choice)                        -> 1,
+          bid(BuiltInComponentId.Filter)                        -> 2,
+          bid(BuiltInComponentId.FragmentInputDefinition)       -> 1,
+          bid(BuiltInComponentId.FragmentOutputDefinition)      -> 1
         )
       ),
       (
@@ -237,8 +239,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
           fid(Sink, existingSinkFactory)     -> 1,
           fid(Sink, existingSinkFactory2)    -> 1,
           fid(Source, existingSourceFactory) -> 1,
-          bid(BuiltInComponentInfo.Choice)   -> 2,
-          bid(BuiltInComponentInfo.Filter)   -> 3
+          bid(BuiltInComponentId.Choice)     -> 2,
+          bid(BuiltInComponentId.Filter)     -> 3
         )
       ),
       (
@@ -248,16 +250,16 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
           sid(Sink, existingSinkFactory)                        -> 1,
           sid(Fragment, fragment.name.value)                    -> 1,
           sid(CustomComponent, otherExistingStreamTransformer2) -> 2,
-          bid(BuiltInComponentInfo.FragmentInputDefinition)     -> 1,
-          bid(BuiltInComponentInfo.FragmentOutputDefinition)    -> 1
+          bid(BuiltInComponentId.FragmentInputDefinition)       -> 1,
+          bid(BuiltInComponentId.FragmentOutputDefinition)      -> 1
         )
       ),
       (
         List(fragmentScenario, fragmentScenario),
         Map(
           sid(CustomComponent, otherExistingStreamTransformer2) -> 2,
-          bid(BuiltInComponentInfo.FragmentInputDefinition)     -> 2,
-          bid(BuiltInComponentInfo.FragmentOutputDefinition)    -> 2
+          bid(BuiltInComponentId.FragmentInputDefinition)       -> 2,
+          bid(BuiltInComponentId.FragmentOutputDefinition)      -> 2
         )
       )
     )
@@ -265,7 +267,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     forAll(table) { (processesDetails, expectedData) =>
       val result = ComponentsUsageHelper.computeComponentsUsageCount(
         withComponentsUsages(processesDetails),
-        processingTypeAndInfoToNonFragmentComponentId
+        processingTypeAndInfoToNonFragmentDesignerWideId
       )
       result shouldBe expectedData
     }
@@ -274,7 +276,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   test("should compute components usage") {
     val table: TableFor2[
       List[ScenarioWithDetailsEntity[DisplayableProcess]],
-      Map[ComponentId, List[
+      Map[DesignerWideComponentId, List[
         (ScenarioWithDetailsEntity[DisplayableProcess], List[NodeUsageData])
       ]]
     ] = Table(
@@ -325,11 +327,11 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
           sid(Sink, existingSinkFactory2) -> List(
             (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("out2")))
           ),
-          bid(BuiltInComponentInfo.Filter) -> List(
+          bid(BuiltInComponentId.Filter) -> List(
             (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("checkId"))),
             (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("checkId"), ScenarioUsageData("checkId2")))
           ),
-          bid(BuiltInComponentInfo.Choice) -> List(
+          bid(BuiltInComponentId.Choice) -> List(
             (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("switchFraud"))),
             (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("switchStreaming")))
           ),
@@ -352,10 +354,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
           sid(Fragment, fragment.name.value) -> List(
             (processDetailsWithFragment, List(ScenarioUsageData(fragment.name.value)))
           ),
-          bid(BuiltInComponentInfo.FragmentInputDefinition) -> List(
+          bid(BuiltInComponentId.FragmentInputDefinition) -> List(
             (fragmentScenario, List(ScenarioUsageData("start")))
           ),
-          bid(BuiltInComponentInfo.FragmentOutputDefinition) -> List(
+          bid(BuiltInComponentId.FragmentOutputDefinition) -> List(
             (fragmentScenario, List(ScenarioUsageData("out1")))
           ),
         )
@@ -368,7 +370,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       val result = ComponentsUsageHelper
         .computeComponentsUsage(
           withComponentsUsages(processesDetails),
-          processingTypeAndInfoToNonFragmentComponentId
+          processingTypeAndInfoToNonFragmentDesignerWideId
         )
         .mapValuesNow(_.map { case (baseProcessDetails, nodeIds) =>
           (baseProcessDetails.mapScenario(_ => ()), nodeIds)
@@ -385,14 +387,14 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   private def sid(componentType: ComponentType, id: String) =
-    ComponentId.default(Streaming, ComponentInfo(componentType, id))
+    DesignerWideComponentId.default(Streaming, ComponentId(componentType, id))
 
   private def fid(componentType: ComponentType, id: String) =
-    ComponentId.default(Fraud, ComponentInfo(componentType, id))
+    DesignerWideComponentId.default(Fraud, ComponentId(componentType, id))
 
-  private def bid(componentInfo: ComponentInfo) = ComponentId.forBuiltInComponent(componentInfo)
+  private def bid(componentId: ComponentId) = DesignerWideComponentId.forBuiltInComponent(componentId)
 
-  private def oid(overriddenName: String) = ComponentId(overriddenName)
+  private def oid(overriddenName: String) = DesignerWideComponentId(overriddenName)
 
   private def withComponentsUsages(
       processesDetails: List[ScenarioWithDetailsEntity[DisplayableProcess]]
@@ -403,8 +405,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   private def withEmptyProcess(
-      usagesMap: Map[ComponentId, List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]]
-  ): Map[ComponentId, List[(ScenarioWithDetailsEntity[Unit], List[NodeUsageData])]] = {
+      usagesMap: Map[DesignerWideComponentId, List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]]
+  ): Map[DesignerWideComponentId, List[(ScenarioWithDetailsEntity[Unit], List[NodeUsageData])]] = {
     usagesMap.transform { case (_, usages) =>
       usages.map { case (processDetails, nodeIds) => (processDetails.mapScenario(_ => ()), nodeIds) }
     }

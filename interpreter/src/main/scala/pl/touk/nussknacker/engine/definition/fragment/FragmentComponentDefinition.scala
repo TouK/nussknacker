@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
@@ -20,9 +20,10 @@ object FragmentComponentDefinition {
       outputNames: List[String],
       docsUrl: Option[String],
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
-      componentId: ComponentId,
+      designerWideId: DesignerWideComponentId,
   ): ComponentDefinitionWithImplementation = {
-    val uiDefinition = DefaultComponentConfigDeterminer.forFragment(docsUrl, translateGroupName, componentId)
+    val uiDefinition =
+      DefaultComponentConfigDeterminer.forFragment(docsUrl, translateGroupName, designerWideId)
     // Currently fragments are represented as method-based component, probably we should change it to some dedicated type
     MethodBasedComponentDefinitionWithImplementation(
       implementationInvoker,

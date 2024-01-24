@@ -28,7 +28,7 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   protected def uiDefinition: ComponentUiDefinition
 
-  final def componentId: ComponentId = uiDefinition.componentId
+  final def designerWideId: DesignerWideComponentId = uiDefinition.designerWideId
 
   final def componentGroup: ComponentGroupName = uiDefinition.componentGroup
 
@@ -61,7 +61,7 @@ final case class ComponentUiDefinition(
     componentGroup: ComponentGroupName,
     icon: String,
     docsUrl: Option[String],
-    componentId: ComponentId
+    designerWideId: DesignerWideComponentId
 )
 
 object ComponentDefinitionWithImplementation {
@@ -69,11 +69,11 @@ object ComponentDefinitionWithImplementation {
   def forList(
       components: List[ComponentDefinition],
       additionalConfigs: ComponentsUiConfig,
-      componentInfoToId: ComponentInfo => ComponentId,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     components.flatMap(
-      ComponentDefinitionExtractor.extract(_, additionalConfigs, componentInfoToId, additionalConfigsFromProvider)
+      ComponentDefinitionExtractor.extract(_, additionalConfigs, determineDesignerWideId, additionalConfigsFromProvider)
     )
   }
 
@@ -88,7 +88,7 @@ object ComponentDefinitionWithImplementation {
         component,
         SingleComponentConfig.zero,
         ComponentsUiConfig.Empty,
-        info => ComponentId(info.toString),
+        id => DesignerWideComponentId(id.toString),
         Map.empty
       )
       .getOrElse(

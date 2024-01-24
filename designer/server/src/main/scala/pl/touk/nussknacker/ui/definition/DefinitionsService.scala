@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 // enters the scenario view. The core domain logic should be done during Model definition extraction
 class DefinitionsService(
     modelData: ModelData,
-    staticDefinitionForDynamicComponents: Map[ComponentInfo, ComponentStaticDefinition],
+    staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
@@ -38,15 +38,15 @@ class DefinitionsService(
         alignedComponentsDefinitionProvider
           .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
       val withStaticDefinition = alignedComponentsDefinition.map {
-        case (info, dynamic: DynamicComponentDefinitionWithImplementation) =>
+        case (id, dynamic: DynamicComponentDefinitionWithImplementation) =>
           val staticDefinition = staticDefinitionForDynamicComponents.getOrElse(
-            info,
+            id,
             throw new IllegalStateException(s"Static definition for dynamic component: $info should be precomputed")
           )
-          info -> component.ComponentWithStaticDefinition(dynamic, staticDefinition)
-        case (info, methodBased: MethodBasedComponentDefinitionWithImplementation) =>
-          info -> component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
-        case (info, other) =>
+          id -> component.ComponentWithStaticDefinition(dynamic, staticDefinition)
+        case (id, methodBased: MethodBasedComponentDefinitionWithImplementation) =>
+          id -> component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
+        case (id, other) =>
           throw new IllegalStateException(s"Unknown component $info representation: $other")
       }
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
@@ -60,7 +60,7 @@ class DefinitionsService(
   }
 
   private def prepareUIDefinitions(
-      components: Map[ComponentInfo, ComponentWithStaticDefinition],
+      components: Map[ComponentId, ComponentWithStaticDefinition],
       forFragment: Boolean,
       finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
   ): UIDefinitions = {

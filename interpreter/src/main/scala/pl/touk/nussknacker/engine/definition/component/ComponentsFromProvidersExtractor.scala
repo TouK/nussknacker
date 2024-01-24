@@ -29,8 +29,8 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
   def extractComponents(
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig,
-      componentInfoToId: ComponentInfo => ComponentId,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     loadCorrectProviders(modelDependencies.config).toList
       .flatMap { case (_, (config, provider)) =>
@@ -39,7 +39,7 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
           provider,
           modelDependencies,
           componentsUiConfig,
-          componentInfoToId,
+          determineDesignerWideId,
           additionalConfigsFromProvider
         )
       }
@@ -120,8 +120,8 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
       provider: ComponentProvider,
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig,
-      componentInfoToId: ComponentInfo => ComponentId,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     ComponentDefinitionWithImplementation.forList(
       provider.create(config.config, modelDependencies).map { inputComponentDefinition =>
@@ -130,7 +130,7 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
           .getOrElse(inputComponentDefinition)
       },
       componentsUiConfig,
-      componentInfoToId,
+      determineDesignerWideId,
       additionalConfigsFromProvider
     )
   }

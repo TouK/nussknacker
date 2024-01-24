@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
@@ -17,10 +17,10 @@ class AlignedComponentsDefinitionProvider(
   def getAlignedComponentsWithBuiltInComponentsAndFragments(
       forFragment: Boolean,
       fragments: List[CanonicalProcess],
-  ): Map[ComponentInfo, ComponentDefinitionWithImplementation] = {
+  ): Map[ComponentId, ComponentDefinitionWithImplementation] = {
     val filteredModel = if (forFragment) {
       modelDefinition
-        .filterComponents((componentInfo, _) => componentInfo.`type` != ComponentType.Source)
+        .filterComponents((componentId, _) => componentId.`type` != ComponentType.Source)
     } else {
       modelDefinition
     }
@@ -59,7 +59,7 @@ object AlignedComponentsDefinitionProvider {
       new FragmentComponentDefinitionExtractor(
         modelData.modelClassLoader.classLoader,
         modelData.componentsUiConfig.groupName,
-        modelData.componentInfoToId
+        modelData.determineDesignerWideId
       ),
       modelData.modelDefinition
     )
