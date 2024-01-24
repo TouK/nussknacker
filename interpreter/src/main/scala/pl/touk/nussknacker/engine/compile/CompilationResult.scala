@@ -15,11 +15,13 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessU
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor}
+import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor, ProcessUncanonizationNodeError}
 import pl.touk.nussknacker.engine.canonize
 
 import scala.language.{higherKinds, reflectiveCalls}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+
+import scala.reflect.ClassTag
 
 case class CompilationResult[+Result](
     typing: Map[String, NodeTypingInfo],
@@ -80,24 +82,29 @@ object CompilationResult extends Applicative[CompilationResult] {
       case canonize.InvalidRootNode(nodeId)     => InvalidRootNode(Set(nodeId))
       case canonize.InvalidTailOfBranch(nodeId) => InvalidTailOfBranch(Set(nodeId))
     }
+    def mergeErrors[T <: ProcessUncanonizationError: ClassTag](
+        collectedSoFar: NonEmptyList[ProcessUncanonizationError],
+        error: ProcessUncanonizationNodeError,
+        create: Set[String] => T
+    ): NonEmptyList[ProcessUncanonizationError] = {
+      val (nonMatching, matching) = collectedSoFar.toList.partition {
+        case _: T => true
+        case _    => false
+      }
+      matching match {
+        case Nil =>
+          NonEmptyList.one(mapOne(error))
+        case nonEmpty =>
+          NonEmptyList(create(nonEmpty.flatMap(_.nodeIds).toSet + error.nodeId), nonMatching)
+      }
+    }
     errors.foldLeft(NonEmptyList.one(mapOne(errors.head)))((acc, error) =>
       error match {
         case canonize.EmptyProcess => EmptyProcess :: acc
-        case canonize.InvalidRootNode(nodeId) =>
-          acc.find(_.isInstanceOf[InvalidRootNode]) match {
-            case Some(value) =>
-              NonEmptyList(InvalidRootNode(value.nodeIds + nodeId), acc.filterNot(_.isInstanceOf[InvalidRootNode]))
-            case None => NonEmptyList.one(mapOne(error))
-          }
-        case canonize.InvalidTailOfBranch(nodeId) =>
-          acc.find(_.isInstanceOf[InvalidTailOfBranch]) match {
-            case Some(value) =>
-              NonEmptyList(
-                InvalidTailOfBranch(value.nodeIds + nodeId),
-                acc.filterNot(_.isInstanceOf[InvalidTailOfBranch])
-              )
-            case None => NonEmptyList.one(mapOne(error))
-          }
+        case invalidRoot: canonize.InvalidRootNode =>
+          mergeErrors(acc, invalidRoot, InvalidRootNode)
+        case invalidTail: canonize.InvalidTailOfBranch =>
+          mergeErrors(acc, invalidTail, InvalidTailOfBranch)
       }
     )
   }
