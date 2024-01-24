@@ -6,7 +6,6 @@ import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.generic.{GenericData, GenericRecord}
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -379,7 +378,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
         paramsList,
         Nil,
         Some(VariableConstants.InputVariableName),
-        SingleComponentConfig.zero
+        Map.empty
       )(ValidationContext())
       .toOption
       .get

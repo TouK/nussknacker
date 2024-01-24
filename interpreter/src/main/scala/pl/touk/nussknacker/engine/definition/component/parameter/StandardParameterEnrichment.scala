@@ -19,8 +19,11 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
  */
 object StandardParameterEnrichment {
 
-  def enrichParameterDefinitions(original: List[Parameter], componentConfig: SingleComponentConfig): List[Parameter] = {
-    original.map(p => enrichParameter(p, componentConfig.paramConfig(p.name)))
+  def enrichParameterDefinitions(
+      original: List[Parameter],
+      parametersConfig: Map[String, ParameterConfig]
+  ): List[Parameter] = {
+    original.map(p => enrichParameter(p, parametersConfig.getOrElse(p.name, ParameterConfig.empty)))
   }
 
   private def enrichParameter(original: Parameter, parameterConfig: ParameterConfig): Parameter = {

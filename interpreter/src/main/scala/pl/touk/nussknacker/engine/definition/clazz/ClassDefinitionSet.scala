@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.definition.clazz
 
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ExpressionConfig}
-import pl.touk.nussknacker.engine.definition.component.ComponentClassDefinitionDiscovery
 
 object ClassDefinitionSet {
 

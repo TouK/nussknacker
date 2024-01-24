@@ -21,8 +21,8 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.{
+  AlignedComponentsDefinitionProvider,
   DefinitionsService,
-  ModelDefinitionEnricher,
   ScenarioPropertiesConfigFinalizer,
   TestAdditionalUIConfigProvider
 }
@@ -45,10 +45,7 @@ class DefinitionResourcesSpec
 
   private val definitionResources = new DefinitionResources(
     serviceProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
-      val modelDefinitionEnricher = ModelDefinitionEnricher(
-        processingTypeData.modelData,
-        processingTypeData.staticModelDefinition
-      )
+      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.modelData)
       DefinitionsService(
         processingTypeData,
         modelDefinitionEnricher,

@@ -1,8 +1,7 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.ui.definition.component
 
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentInfo}
 import pl.touk.nussknacker.engine.definition.component._
-import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
@@ -16,16 +15,20 @@ import pl.touk.nussknacker.restmodel.definition.UIComponentNodeTemplate
 private[component] object ComponentNodeTemplatePreparer {
 
   def componentNodeTemplatesWithGroupNames(
-      definitions: ModelDefinition[ComponentStaticDefinition]
+      components: Map[ComponentInfo, ComponentWithStaticDefinition]
   ): List[ComponentNodeTemplateWithGroupNames] = {
-    def parameterTemplates(componentDefinition: ComponentStaticDefinition): List[NodeParameter] =
-      NodeParameterTemplatesPreparer.prepareNodeParameterTemplates(componentDefinition.parameters)
+    def parameterTemplates(staticDefinition: ComponentStaticDefinition): List[NodeParameter] =
+      NodeParameterTemplatesPreparer.prepareNodeParameterTemplates(staticDefinition.parameters)
 
-    def serviceRef(info: ComponentInfo, componentDefinition: ComponentStaticDefinition) =
-      ServiceRef(info.name, parameterTemplates(componentDefinition))
+    def serviceRef(info: ComponentInfo, staticDefinition: ComponentStaticDefinition) =
+      ServiceRef(info.name, parameterTemplates(staticDefinition))
 
-    def prepareComponentNodeTemplateWithGroup(info: ComponentInfo, componentDefinition: ComponentStaticDefinition) = {
-      val nodeTemplate = (info, componentDefinition.componentTypeSpecificData) match {
+    def prepareComponentNodeTemplateWithGroup(
+        info: ComponentInfo,
+        component: ComponentDefinitionWithImplementation,
+        staticDefinition: ComponentStaticDefinition
+    ) = {
+      val nodeTemplate = (info, component.componentTypeSpecificData) match {
         case (BuiltInComponentInfo.Filter, _) =>
           Filter("", Expression.spel("true"))
         case (BuiltInComponentInfo.Split, _) =>
@@ -40,37 +43,37 @@ private[component] object ComponentNodeTemplatePreparer {
           FragmentInputDefinition("", List.empty)
         case (BuiltInComponentInfo.FragmentOutputDefinition, _) =>
           FragmentOutputDefinition("", "output", List.empty)
-        case (info, ServiceSpecificData) if componentDefinition.hasReturn =>
-          Enricher("", serviceRef(info, componentDefinition), "output")
+        case (info, ServiceSpecificData) if staticDefinition.hasReturn =>
+          Enricher("", serviceRef(info, staticDefinition), "output")
         case (info, ServiceSpecificData) =>
-          Processor("", serviceRef(info, componentDefinition))
+          Processor("", serviceRef(info, staticDefinition))
         case (info, CustomComponentSpecificData(true, _)) =>
           Join(
             "",
-            if (componentDefinition.hasReturn) Some("outputVar") else None,
+            if (staticDefinition.hasReturn) Some("outputVar") else None,
             info.name,
-            parameterTemplates(componentDefinition),
+            parameterTemplates(staticDefinition),
             List.empty
           )
         case (info, CustomComponentSpecificData(false, _)) =>
           CustomNode(
             "",
-            if (componentDefinition.hasReturn) Some("outputVar") else None,
+            if (staticDefinition.hasReturn) Some("outputVar") else None,
             info.name,
-            parameterTemplates(componentDefinition)
+            parameterTemplates(staticDefinition)
           )
         case (info, SinkSpecificData) =>
-          Sink("", SinkRef(info.name, parameterTemplates(componentDefinition)))
+          Sink("", SinkRef(info.name, parameterTemplates(staticDefinition)))
         case (info, SourceSpecificData) =>
-          Source("", SourceRef(info.name, parameterTemplates(componentDefinition)))
+          Source("", SourceRef(info.name, parameterTemplates(staticDefinition)))
         case (info, FragmentSpecificData(outputNames)) =>
           val outputs = outputNames.map(name => (name, name)).toMap
-          FragmentInput("", FragmentRef(info.name, parameterTemplates(componentDefinition), outputs))
-        case (_, BuiltInComponentSpecificData | GlobalVariablesSpecificData) =>
-          throw new IllegalStateException(s"Not expected component: $info with definition: $componentDefinition")
+          FragmentInput("", FragmentRef(info.name, parameterTemplates(staticDefinition), outputs))
+        case (_, BuiltInComponentSpecificData) =>
+          throw new IllegalStateException(s"Not expected component: $info with definition: $component")
       }
       val branchParametersTemplate =
-        NodeParameterTemplatesPreparer.prepareNodeBranchParameterTemplates(componentDefinition.parameters)
+        NodeParameterTemplatesPreparer.prepareNodeBranchParameterTemplates(staticDefinition.parameters)
       val componentNodeTemplate = UIComponentNodeTemplate.create(
         info,
         nodeTemplate,
@@ -78,12 +81,14 @@ private[component] object ComponentNodeTemplatePreparer {
       )
       ComponentNodeTemplateWithGroupNames(
         componentNodeTemplate,
-        componentDefinition.originalGroupName,
-        componentDefinition.componentGroupUnsafe
+        component.originalGroupName,
+        component.componentGroup
       )
     }
 
-    definitions.components.toList.map(prepareComponentNodeTemplateWithGroup _ tupled)
+    components.toList.map { case (info, ComponentWithStaticDefinition(component, staticDefinition)) =>
+      prepareComponentNodeTemplateWithGroup(info, component, staticDefinition)
+    }
   }
 
 }

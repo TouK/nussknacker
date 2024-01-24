@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import scala.concurrent.{ExecutionContext, Future}
 
 class ExpressionSuggester(
-    expressionDefinition: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
+    expressionDefinition: ExpressionConfigDefinition,
     classDefinitions: ClassDefinitionSet,
     uiDictServices: UiDictServices,
     classLoader: ClassLoader,

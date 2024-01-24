@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel, Writer}
-import cats.implicits.toTraverseOps
+import cats.data.{NonEmptyList, ValidatedNel}
+import cats.implicits.{toTraverseOps, _}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.api.expression.{
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.validateParameterNames
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.{
   ComponentExecutorFactory,
@@ -51,9 +52,6 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
-import cats.implicits._
-import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
-import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.validateParameterNames
 
 object NodeCompiler {
 
@@ -74,7 +72,7 @@ object NodeCompiler {
 }
 
 class NodeCompiler(
-    definitions: ModelDefinition[ComponentDefinitionWithImplementation],
+    definitions: ModelDefinition,
     fragmentDefinitionExtractor: FragmentParametersCompleteDefinitionExtractor,
     expressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
@@ -97,7 +95,7 @@ class NodeCompiler(
 
   private lazy val globalVariablesPreparer          = GlobalVariablesPreparer(expressionConfig)
   private implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
-  private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
+  private val expressionConfig: ExpressionConfigDefinition =
     definitions.expressionConfig
 
   private val expressionEvaluator =
@@ -612,7 +610,7 @@ class NodeCompiler(
           parameters,
           branchParameters,
           outputVar,
-          dynamicDefinition.componentConfig
+          dynamicDefinition.parametersConfig
         )(
           singleCtx
         )
@@ -622,7 +620,7 @@ class NodeCompiler(
           parameters,
           branchParameters,
           outputVar,
-          dynamicDefinition.componentConfig
+          dynamicDefinition.parametersConfig
         )(
           joinCtx
         )

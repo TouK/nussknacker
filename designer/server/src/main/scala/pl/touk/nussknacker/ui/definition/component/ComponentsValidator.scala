@@ -1,9 +1,9 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.ui.definition.component
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
-import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{
+import WrongConfigurationAttribute.{
   ComponentGroupNameAttribute,
   ComponentTypeAttribute,
   IconAttribute,

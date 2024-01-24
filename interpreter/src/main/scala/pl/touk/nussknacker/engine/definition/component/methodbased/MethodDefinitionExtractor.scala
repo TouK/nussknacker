@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
 import pl.touk.nussknacker.engine.api.Service
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, SourceFactory}
 
 import java.lang.reflect.Method
@@ -14,7 +14,7 @@ private[component] trait MethodDefinitionExtractor[T] {
   def extractMethodDefinition(
       obj: T,
       methodToInvoke: Method,
-      componentConfig: SingleComponentConfig
+      parametersConfig: Map[String, ParameterConfig]
   ): Either[String, MethodDefinition]
 
 }

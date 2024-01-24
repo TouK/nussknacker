@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.component
+package pl.touk.nussknacker.ui.definition.component
 
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -7,8 +7,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsStaticDefinitionsPreparer
+import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   CustomComponentSpecificData
@@ -19,13 +20,13 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinitionConverter
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.definition.ModelDefinitionEnricher
+import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, component}
 
-class UIComponentGroupsPreparerSpec
+class ComponentGroupsPreparerSpec
     extends AnyFunSuite
     with Matchers
     with TestPermissions
@@ -34,7 +35,7 @@ class UIComponentGroupsPreparerSpec
 
   test("return groups sorted in order: inputs, base, other, outputs and then sorted by name within group") {
     val groups = ComponentGroupsPreparer.prepareComponentGroups(
-      prepareModelDefinitionForTestData(
+      prepareComponentsDefinitionForTestData(
         Map(
           ComponentGroupName("custom") -> Some(ComponentGroupName("CUSTOM")),
           ComponentGroupName("sinks")  -> Some(ComponentGroupName("BAR"))
@@ -48,7 +49,7 @@ class UIComponentGroupsPreparerSpec
 
   test("return groups with hidden base group") {
     val groups = ComponentGroupsPreparer.prepareComponentGroups(
-      prepareModelDefinitionForTestData(Map(ComponentGroupName("base") -> None))
+      prepareComponentsDefinitionForTestData(Map(ComponentGroupName("base") -> None))
     )
     groups.map(_.name) shouldBe List("sources", "custom", "enrichers", "optionalEndingCustom", "services", "sinks").map(
       ComponentGroupName(_)
@@ -65,7 +66,7 @@ class UIComponentGroupsPreparerSpec
 
   test("return components with mapped groups") {
     val groups = ComponentGroupsPreparer.prepareComponentGroups(
-      prepareModelDefinitionForTestData(
+      prepareComponentsDefinitionForTestData(
         Map(
           ComponentGroupName("custom")               -> Some(ComponentGroupName("base")),
           ComponentGroupName("optionalEndingCustom") -> Some(ComponentGroupName("base"))
@@ -88,14 +89,18 @@ class UIComponentGroupsPreparerSpec
   }
 
   test("return custom component with correct group") {
-    val definitionWithCustomComponentInSomeGroup =
-      prepareModelDefinitionForTestData(Map.empty).transform {
-        case component if component.componentType == ComponentType.CustomComponent =>
-          val updatedComponentConfig =
-            component.componentConfig.copy(componentGroup = Some(ComponentGroupName("group1")))
-          component.copy(componentConfig = updatedComponentConfig)
-        case other => other
-      }
+    val definitionWithCustomComponentInSomeGroup = withStaticDefinition(
+      ModelDefinitionBuilder.empty
+        .withCustom(
+          name = "fooTransformer",
+          returnType = Some(Unknown),
+          componentSpecificData = CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+          componentGroupName = Some(ComponentGroupName("group1")),
+          componentId = None
+        )
+        .build
+        .components
+    )
     val groups = ComponentGroupsPreparer.prepareComponentGroups(definitionWithCustomComponentInSomeGroup)
 
     groups.exists(_.name == ComponentGroupName("custom")) shouldBe false
@@ -105,15 +110,17 @@ class UIComponentGroupsPreparerSpec
   test("return default value defined in parameter") {
     val defaultValueExpression = Expression("fooLang", "'fooDefault'")
     val parameter              = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValueExpression))
-    val definition = ModelDefinitionBuilder.empty
-      .withCustom(
-        "fooTransformer",
-        Some(Unknown),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
-        parameter
-      )
-      .build
-      .toStaticComponentsDefinition
+    val definition = withStaticDefinition(
+      ModelDefinitionBuilder.empty
+        .withCustom(
+          "fooTransformer",
+          Some(Unknown),
+          CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
+          parameter
+        )
+        .build
+        .components
+    )
 
     val groups           = ComponentGroupsPreparer.prepareComponentGroups(definition)
     val transformerGroup = groups.find(_.name == ComponentGroupName("optionalEndingCustom")).value
@@ -124,7 +131,7 @@ class UIComponentGroupsPreparerSpec
 
   test("return components for fragments") {
     val model =
-      enrichModelDefinitionWithBuiltInComponents(ModelDefinitionBuilder.empty.build, Map.empty, forFragment = true)
+      getAlignedComponentsWithStaticDefinition(ModelDefinitionBuilder.empty.build, Map.empty, forFragment = true)
     val groups = ComponentGroupsPreparer.prepareComponentGroups(model)
     groups.map(_.name) shouldEqual List(
       DefaultsComponentGroupName.FragmentsDefinitionGroupName,
@@ -140,7 +147,7 @@ class UIComponentGroupsPreparerSpec
 
   test("hide sources for fragments") {
     val model =
-      enrichModelDefinitionWithBuiltInComponents(
+      getAlignedComponentsWithStaticDefinition(
         ModelDefinitionBuilder.empty.withSource("source").build,
         Map.empty,
         forFragment = true
@@ -157,7 +164,7 @@ class UIComponentGroupsPreparerSpec
   }
 
   private def prepareGroupForServices(services: List[String]): List[UIComponentGroup] = {
-    val modelDefinition = enrichModelDefinitionWithBuiltInComponents(
+    val modelDefinition = getAlignedComponentsWithStaticDefinition(
       services
         .foldRight(ModelDefinitionBuilder.empty)((s, p) => p.withService(s))
         .build,
@@ -166,32 +173,47 @@ class UIComponentGroupsPreparerSpec
     ComponentGroupsPreparer.prepareComponentGroups(modelDefinition)
   }
 
-  private def prepareModelDefinitionForTestData(
+  private def prepareComponentsDefinitionForTestData(
       groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
   ) = {
     val modelDefinition = ProcessTestData.modelDefinition(groupNameMapping)
-    enrichModelDefinitionWithBuiltInComponents(modelDefinition, groupNameMapping)
+    getAlignedComponentsWithStaticDefinition(modelDefinition, groupNameMapping)
   }
 
-  private def enrichModelDefinitionWithBuiltInComponents(
-      modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+  private def getAlignedComponentsWithStaticDefinition(
+      modelDefinition: ModelDefinition,
       groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
       forFragment: Boolean = false
   ) = {
-    val modelDefinitionEnricher = new ModelDefinitionEnricher(
-      new BuiltInComponentsStaticDefinitionsPreparer(new ComponentsUiConfig(Map.empty, groupNameMapping)),
+    val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
+      new BuiltInComponentsDefinitionsPreparer(new ComponentsUiConfig(Map.empty, groupNameMapping)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
+        Some(_),
         ComponentId.default(TestProcessingTypes.Streaming, _)
       ),
-      modelDefinition.toStaticComponentsDefinition,
+      modelDefinition,
     )
 
-    modelDefinitionEnricher
-      .modelDefinitionWithBuiltInComponentsAndFragments(
-        forFragment,
-        fragmentScenarios = List.empty
-      )
+    withStaticDefinition(
+      alignedComponentsDefinitionProvider
+        .getAlignedComponentsWithBuiltInComponentsAndFragments(
+          forFragment,
+          fragments = List.empty
+        )
+    )
+
+  }
+
+  private def withStaticDefinition(
+      components: Map[ComponentInfo, ComponentDefinitionWithImplementation]
+  ): Map[ComponentInfo, ComponentWithStaticDefinition] = {
+    components
+      .mapValuesNow {
+        case methodBased: MethodBasedComponentDefinitionWithImplementation =>
+          component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
+        case other => throw new IllegalStateException(s"Unexpected component class: ${other.getClass.getName}")
+      }
   }
 
 }

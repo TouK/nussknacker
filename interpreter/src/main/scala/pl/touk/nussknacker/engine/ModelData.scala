@@ -16,7 +16,13 @@ import pl.touk.nussknacker.engine.definition.model.{
 }
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.modelconfig.{
+  ComponentsUiConfig,
+  ComponentsUiConfigParser,
+  DefaultModelConfigLoader,
+  InputConfigDuringExecution,
+  ModelConfigLoader
+}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -32,7 +38,7 @@ object ModelData extends LazyLogging {
         ProcessObjectDependencies,
         ComponentInfo => ComponentId,
         Map[ComponentId, ComponentAdditionalConfig]
-    ) => ModelDefinition[ComponentDefinitionWithImplementation]
+    ) => ModelDefinition
 
   def apply(
       processingTypeConfig: ProcessingTypeConfig,
@@ -148,7 +154,7 @@ object ClassLoaderModelData {
         modelDependencies: ProcessObjectDependencies,
         componentInfoToId: ComponentInfo => ComponentId,
         additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-    ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+    ): ModelDefinition = {
       ModelDefinitionExtractor.extractModelDefinition(
         configCreator,
         classLoader,
@@ -197,7 +203,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // See parameters of implementing functions
   def extractModelDefinitionFun: ExtractDefinitionFun
 
-  final def modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation] =
+  final def modelDefinition: ModelDefinition =
     modelDefinitionWithClasses.modelDefinition
 
   private lazy val dictServicesFactory: DictServicesFactory =
@@ -228,6 +234,8 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   final override lazy val modelConfig: Config =
     modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
+
+  final lazy val componentsUiConfig: ComponentsUiConfig = ComponentsUiConfigParser.parse(modelConfig)
 
   final def close(): Unit = {
     designerDictServices.close()

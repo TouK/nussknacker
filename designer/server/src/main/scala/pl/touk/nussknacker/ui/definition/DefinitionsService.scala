@@ -4,13 +4,14 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
-import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.component.{ComponentGroupsPreparer, EdgeTypesPreparer}
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioPropertyConfig}
+import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -21,9 +22,10 @@ import scala.concurrent.{ExecutionContext, Future}
 // enters the scenario view. The core domain logic should be done during Model definition extraction
 class DefinitionsService(
     modelData: ModelData,
+    staticDefinitionForDynamicComponents: Map[ComponentInfo, ComponentStaticDefinition],
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
-    modelDefinitionEnricher: ModelDefinitionEnricher,
+    alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     fragmentRepository: FragmentRepository
 )(implicit ec: ExecutionContext) {
@@ -32,13 +34,25 @@ class DefinitionsService(
       implicit user: LoggedUser
   ): Future[UIDefinitions] = {
     fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
-      val enrichedModelDefinition =
-        modelDefinitionEnricher
-          .modelDefinitionWithBuiltInComponentsAndFragments(forFragment, fragments)
+      val alignedComponentsDefinition =
+        alignedComponentsDefinitionProvider
+          .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
+      val withStaticDefinition = alignedComponentsDefinition.map {
+        case (info, dynamic: DynamicComponentDefinitionWithImplementation) =>
+          val staticDefinition = staticDefinitionForDynamicComponents.getOrElse(
+            info,
+            throw new IllegalStateException(s"Static definition for dynamic component: $info should be precomputed")
+          )
+          info -> component.ComponentWithStaticDefinition(dynamic, staticDefinition)
+        case (info, methodBased: MethodBasedComponentDefinitionWithImplementation) =>
+          info -> component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
+        case (info, other) =>
+          throw new IllegalStateException(s"Unknown component $info representation: $other")
+      }
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
         .finalizeScenarioProperties(scenarioPropertiesConfig)
       prepareUIDefinitions(
-        enrichedModelDefinition,
+        withStaticDefinition,
         forFragment,
         finalizedScenarioPropertiesConfig
       )
@@ -46,34 +60,31 @@ class DefinitionsService(
   }
 
   private def prepareUIDefinitions(
-      modelDefinitionWithBuiltInComponentsAndFragments: ModelDefinition[ComponentStaticDefinition],
+      components: Map[ComponentInfo, ComponentWithStaticDefinition],
       forFragment: Boolean,
       finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
   ): UIDefinitions = {
     UIDefinitions(
-      componentGroups =
-        ComponentGroupsPreparer.prepareComponentGroups(modelDefinitionWithBuiltInComponentsAndFragments),
-      components =
-        modelDefinitionWithBuiltInComponentsAndFragments.components.mapValuesNow(createUIComponentDefinition),
+      componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
+      components = components.mapValuesNow(createUIComponentDefinition),
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       scenarioPropertiesConfig =
         (if (forFragment) FragmentPropertiesConfig.properties else finalizedScenarioPropertiesConfig)
           .mapValuesNow(createUIScenarioPropertyConfig),
-      edgesForNodes =
-        EdgeTypesPreparer.prepareEdgeTypes(definitions = modelDefinitionWithBuiltInComponentsAndFragments),
+      edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.mapValuesNow(_.component)),
       customActions = deploymentManager.customActions.map(UICustomAction(_))
     )
   }
 
   private def createUIComponentDefinition(
-      componentDefinition: ComponentStaticDefinition
+      componentDefinition: ComponentWithStaticDefinition
   ): UIComponentDefinition = {
     UIComponentDefinition(
-      parameters = componentDefinition.parameters.map(createUIParameter),
-      returnType = componentDefinition.returnType,
-      icon = componentDefinition.iconUnsafe,
-      docsUrl = componentDefinition.componentConfig.docsUrl,
-      outputParameters = Option(componentDefinition.componentTypeSpecificData).collect {
+      parameters = componentDefinition.staticDefinition.parameters.map(createUIParameter),
+      returnType = componentDefinition.staticDefinition.returnType,
+      icon = componentDefinition.component.icon,
+      docsUrl = componentDefinition.component.docsUrl,
+      outputParameters = Option(componentDefinition.component.componentTypeSpecificData).collect {
         case FragmentSpecificData(outputNames) => outputNames
       }
     )
@@ -85,15 +96,16 @@ object DefinitionsService {
 
   def apply(
       processingTypeData: ProcessingTypeData,
-      modelDefinitionEnricher: ModelDefinitionEnricher,
+      alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
       fragmentRepository: FragmentRepository
   )(implicit ec: ExecutionContext) =
     new DefinitionsService(
       processingTypeData.modelData,
+      processingTypeData.staticDefinitionForDynamicComponents,
       processingTypeData.scenarioPropertiesConfig,
       processingTypeData.deploymentManager,
-      modelDefinitionEnricher,
+      alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
       fragmentRepository
     )
