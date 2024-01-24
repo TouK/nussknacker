@@ -121,8 +121,6 @@ class DefaultComponentService(
   }
 
   private def createComponents(
-      // TODO: We should use ComponentDefinitionWithImplementation instead of ComponentStaticDefinition.
-      //       ComponentStaticDefinition should be needed only when static list of parameters and returnType is necessary
       componentsDefinition: Map[ComponentInfo, ComponentDefinitionWithImplementation],
       category: Category,
   ): List[ComponentListElement] = {
