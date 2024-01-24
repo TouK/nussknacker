@@ -196,7 +196,7 @@ class NodeCompiler(
     definitions.getComponent(ComponentType.CustomComponent, data.nodeType) match {
       case Some(componentDefinitionWithImpl)
           if ending && !componentDefinitionWithImpl.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
-        val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(nodeId.id)))
+        val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(Set(nodeId.id))))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
       case Some(componentDefinitionWithImpl) =>
         val default = defaultContextAfter(data, ending, ctx)

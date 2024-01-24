@@ -25,7 +25,12 @@ export type ValidationWarnings = {
 export type ValidationErrors = {
     invalidNodes: Record<string, NodeValidationError[]>;
     processPropertiesErrors: NodeValidationError[];
-    globalErrors: NodeValidationError[];
+    globalErrors: GlobalValidationError[];
+};
+
+export type GlobalValidationError = {
+    error: NodeValidationError;
+    nodeIds: string[];
 };
 
 type ErrorType = "RenderNotAllowed" | "SaveNotAllowed" | "SaveAllowed";

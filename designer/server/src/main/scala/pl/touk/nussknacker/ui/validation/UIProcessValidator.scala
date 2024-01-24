@@ -12,11 +12,15 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
-import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
+import pl.touk.nussknacker.engine.CustomProcessValidator
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeTypingData,
+  UIGlobalError,
+  ValidationErrors,
+  ValidationResult
+}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -195,13 +199,17 @@ class UIProcessValidator(
   }
 
   private def validateLooseNodes(displayableProcess: DisplayableProcess): ValidationResult = {
-    val looseNodes = displayableProcess.nodes
+    val looseNodesIds = displayableProcess.nodes
       // source & fragment inputs don't have inputs
       .filterNot(n => n.isInstanceOf[FragmentInputDefinition] || n.isInstanceOf[Source])
       .filterNot(n => displayableProcess.edges.exists(_.to == n.id))
-      .map(n => n.id -> List(PrettyValidationErrors.formatErrorMessage(LooseNode(n.id))))
-      .toMap
-    ValidationResult.errors(looseNodes, List(), List())
+      .map(_.id)
+
+    if (looseNodesIds.isEmpty) {
+      ValidationResult.success
+    } else {
+      formatErrors(NonEmptyList.one(LooseNode(looseNodesIds.toSet)))
+    }
   }
 
   private def validateDuplicates(displayable: DisplayableProcess): ValidationResult = {
@@ -211,25 +219,25 @@ class UIProcessValidator(
     if (duplicates.isEmpty) {
       ValidationResult.success
     } else {
-      ValidationResult.errors(
-        Map(),
-        List(),
-        List(PrettyValidationErrors.formatErrorMessage(DuplicatedNodeIds(duplicates.toSet)))
-      )
+      formatErrors(NonEmptyList.one(DuplicatedNodeIds(duplicates.toSet)))
     }
   }
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
-    val processErrors                   = errors.filter(_.nodeIds.isEmpty)
-    val (propertiesErrors, otherErrors) = processErrors.partition(_.isInstanceOf[ScenarioPropertiesError])
+    val globalErrors     = errors.filter(_.isInstanceOf[ScenarioGraphLevelError])
+    val propertiesErrors = errors.filter(_.isInstanceOf[ScenarioPropertiesError])
+    val nodeErrors = errors.filter { e =>
+      !globalErrors.contains(e) && !propertiesErrors.contains(e)
+    }
 
     ValidationResult.errors(
       invalidNodes = (for {
-        error  <- errors.toList.filterNot(processErrors.contains)
+        error  <- nodeErrors
         nodeId <- error.nodeIds
       } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
-      processPropertiesErrors = propertiesErrors.map(PrettyValidationErrors.formatErrorMessage),
-      globalErrors = otherErrors.map(PrettyValidationErrors.formatErrorMessage)
+      processPropertiesErrors = propertiesErrors.map(e => PrettyValidationErrors.formatErrorMessage(e)),
+      globalErrors =
+        globalErrors.map(e => UIGlobalError(PrettyValidationErrors.formatErrorMessage(e), e.nodeIds.toList))
     )
   }
 
@@ -247,5 +255,4 @@ class UIProcessValidator(
     )
   }
 
-  private sealed case class ValidatorKey(modelData: ModelData, category: Category)
 }

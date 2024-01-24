@@ -20,6 +20,8 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValida
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
@@ -47,6 +49,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidation
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
+  UIGlobalError,
   ValidationErrors,
   ValidationResult,
   ValidationWarnings
@@ -159,15 +162,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
     val result = validateWithConfiguredProperties(process)
 
-    result.errors.invalidNodes shouldBe Map(
-      "loose" -> List(
+    result.errors.globalErrors shouldBe List(
+      UIGlobalError(
         NodeValidationError(
           "LooseNode",
           "Loose node",
           "Node loose is not connected to source, it cannot be saved properly",
           None,
           SaveNotAllowed
-        )
+        ),
+        List("loose")
       )
     )
   }
@@ -231,12 +235,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validateWithConfiguredProperties(process)
 
     result.errors.globalErrors shouldBe List(
-      NodeValidationError(
-        "DuplicatedNodeIds",
-        "Two nodes cannot have same id",
-        "Duplicate node ids: inID",
-        None,
-        RenderNotAllowed
+      UIGlobalError(
+        NodeValidationError(
+          "DuplicatedNodeIds",
+          "Two nodes cannot have same id",
+          "Duplicate node ids: inID",
+          None,
+          RenderNotAllowed
+        ),
+        List("inID")
       )
     )
   }
@@ -259,12 +266,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val result = validateWithConfiguredProperties(process)
 
     result.errors.globalErrors shouldBe List(
-      NodeValidationError(
-        "DuplicatedNodeIds",
-        "Two nodes cannot have same id",
-        "Duplicate node ids: switchID",
-        None,
-        RenderNotAllowed
+      UIGlobalError(
+        NodeValidationError(
+          "DuplicatedNodeIds",
+          "Two nodes cannot have same id",
+          "Duplicate node ids: switchID",
+          None,
+          RenderNotAllowed
+        ),
+        List("switchID")
       )
     )
     result.errors.invalidNodes shouldBe empty
@@ -1190,6 +1200,54 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     }
   }
 
+  test("validates uniqueness of fragment output names when validating fragment") {
+    val duplicatedOutputName = "output1"
+    val fragment = ScenarioBuilder
+      .fragment("frag1")
+      .split(
+        "splitId",
+        fragmentOutput("outNode1", duplicatedOutputName),
+        fragmentOutput("outNode2", duplicatedOutputName),
+      )
+    val displayable = ProcessConverter.toDisplayable(fragment)
+    val result      = TestFactory.flinkProcessValidator.validate(displayable, ProcessName(" "), isFragment = true)
+    result.errors.globalErrors shouldBe List(
+      UIGlobalError(
+        PrettyValidationErrors.formatErrorMessage(
+          DuplicateFragmentOutputNamesInFragment(`duplicatedOutputName`, Set("outNode1", "outNode2"))
+        ),
+        List("outNode1", "outNode2")
+      )
+    )
+  }
+
+  test("validates uniqueness of fragment output names when validating scenario") {
+    val duplicatedOutputName = "output1"
+    val fragment = ScenarioBuilder
+      .fragment("fragment1")
+      .split(
+        "splitId",
+        fragmentOutput("outNode1", duplicatedOutputName),
+        fragmentOutput("outNode2", duplicatedOutputName),
+      )
+    val scenario = ScenarioBuilder
+      .streaming("scenario1")
+      .source("source", "source1")
+      .fragmentOneOut("fragment", "fragment1", "output1", "outVar1")
+      .emptySink("id1", "sink")
+
+    val displayable = ProcessConverter.toDisplayable(scenario)
+
+    val processValidator = mockedProcessValidator(fragment, defaultConfig)
+    val result           = processValidator.validate(displayable, ProcessName(" "), isFragment = true)
+
+    result.errors.invalidNodes shouldBe Map(
+      "fragment" -> List(
+        PrettyValidationErrors.formatErrorMessage(DuplicateFragmentOutputNamesInScenario("output1", "fragment"))
+      )
+    )
+  }
+
   test("be able to convert process ending not properly") {
     forAll(
       Table(
@@ -1207,9 +1265,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
       val result = validate(displayable)
 
-      result.errors.invalidNodes.get(unexpectedEnd.id) should matchPattern {
-        case Some(
-              List(NodeValidationError("InvalidTailOfBranch", _, _, _, NodeValidationErrorType.SaveAllowed))
+      result.errors.globalErrors should matchPattern {
+        case List(
+              UIGlobalError(
+                NodeValidationError("InvalidTailOfBranch", _, _, _, NodeValidationErrorType.SaveAllowed),
+                List("e")
+              )
             ) =>
       }
     }
