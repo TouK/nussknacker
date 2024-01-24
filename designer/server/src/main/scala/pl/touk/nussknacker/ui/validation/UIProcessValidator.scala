@@ -94,8 +94,10 @@ class UIProcessValidator(
       case Invalid(fragmentResolutionErrors) => formatErrors(fragmentResolutionErrors)
       case Valid(scenario) =>
         val validationResult = validateAndFormatResult(scenario)
-        val containsDisabledNodes =
-          canonical.withoutDisabledNodes.collectAllNodes.size != canonical.collectAllNodes.size
+        val containsDisabledNodes = canonical.collectAllNodes.exists {
+          case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
+          case _                                                           => false
+        }
 
         if (containsDisabledNodes) {
           val resolvedScenarioWithoutDisabledNodes =
