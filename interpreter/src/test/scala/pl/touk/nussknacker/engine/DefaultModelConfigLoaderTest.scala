@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine
 
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.impl.ConfigImpl
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution}
@@ -44,11 +45,26 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
     config.hasPath("otherProperty") shouldBe false
   }
 
+  test("should resolve environment variables") {
+    val config  = LocalModelData(ConfigFactory.empty(), List.empty).modelConfig
+    val envPath = System.getenv("PATH")
+
+    envPath shouldNot be(null)
+    config.getString("envPathProperty") shouldBe envPath
+  }
+
   test("should not load application.conf") {
     val config = LocalModelData(inputConfig, List.empty).modelConfig
 
     config.hasPath("shouldNotLoad") shouldBe false
+  }
 
+  test("should not contain java.class.path") {
+    val config = LocalModelData(inputConfig, List.empty).modelConfig
+
+    // classpath can grow very long and there's a 65 KB limit on a single String value in Configuration
+    // that we already hit in CI, see: https://github.com/lightbend/config/issues/627
+    config.hasPath("java.class.path") shouldBe false
   }
 
 }

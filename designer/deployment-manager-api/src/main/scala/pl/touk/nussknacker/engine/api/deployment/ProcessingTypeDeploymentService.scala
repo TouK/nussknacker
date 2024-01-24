@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId}
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -24,6 +24,7 @@ object typing {
     implicit val encoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder
   }
 
+  // TODO: Rename to Typed
   sealed trait TypingResult {
 
     final def canBeSubclassOf(typingResult: TypingResult): Boolean =
@@ -45,13 +46,14 @@ object typing {
     def objType: TypedClass
   }
 
+  // TODO: Rename to TypedRecord
   object TypedObjectTypingResult {
 
     def apply(definition: TypedObjectDefinition): TypedObjectTypingResult =
       TypedObjectTypingResult(definition.fields)
 
     def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
-      TypedObjectTypingResult(fields, stringMapWithValues[java.util.Map[_, _]](fields))
+      TypedObjectTypingResult(fields, mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
 
     // For backward compatibility, to be removed once downstream projects switch to apply(fields: Map[String, TypingResult])
     def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult = TypedObjectTypingResult(fields.toMap)
@@ -301,7 +303,7 @@ object typing {
           TypedNull
         case map: Map[String @unchecked, _] =>
           val fieldTypes = typeMapFields(map)
-          TypedObjectTypingResult(fieldTypes, stringMapWithValues[Map[_, _]](fieldTypes))
+          TypedObjectTypingResult(fieldTypes, mapBasedRecordUnderlyingType[Map[_, _]](fieldTypes))
         case javaMap: java.util.Map[String @unchecked, _] =>
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
@@ -352,7 +354,7 @@ object typing {
 
   }
 
-  private def stringMapWithValues[T: ClassTag](fields: Map[String, TypingResult]): TypedClass = {
+  private[api] def mapBasedRecordUnderlyingType[T: ClassTag](fields: Map[String, TypingResult]): TypedClass = {
     val valueType = superTypeOfTypes(fields.values)
     Typed.genericTypeClass[T](List(Typed[String], valueType))
   }

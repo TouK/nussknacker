@@ -42,7 +42,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
     List(
       ComponentDefinition(
         KafkaUniversalName,
-        new UniversalKafkaSourceFactory[Any, Any](
+        new UniversalKafkaSourceFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
           dependencies,

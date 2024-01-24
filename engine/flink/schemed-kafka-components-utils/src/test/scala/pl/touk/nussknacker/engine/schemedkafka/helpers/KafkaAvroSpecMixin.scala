@@ -48,7 +48,7 @@ import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactor
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, spel}
-import pl.touk.nussknacker.test.{NuScalaTestAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.test.{NuScalaTestAssertions, VeryPatientScalaFutures}
 
 trait KafkaAvroSpecMixin
     extends AnyFunSuite
@@ -58,7 +58,7 @@ trait KafkaAvroSpecMixin
     with Matchers
     with LazyLogging
     with NuScalaTestAssertions
-    with PatientScalaFutures
+    with VeryPatientScalaFutures
     with Serializable {
 
   type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source]
@@ -95,7 +95,7 @@ trait KafkaAvroSpecMixin
   protected lazy val nodeId: NodeId = NodeId("mock-node-id")
 
   protected def universalSourceFactory(useStringForKey: Boolean): KafkaSource = {
-    new UniversalKafkaSourceFactory[Any, Any](
+    new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
       testModelDependencies,

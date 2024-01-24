@@ -12,21 +12,25 @@ object ComponentsUsageHelper {
 
   def computeComponentsUsageCount(
       processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]],
-      processingTypeAndComponentInfoToComponentId: (ProcessingType, ComponentInfo) => ComponentId,
+      processingTypeAndInfoToNonFragmentComponentId: Map[(ProcessingType, ComponentInfo), ComponentId]
   ): Map[ComponentId, Long] = {
-    computeComponentsUsage(processesDetails, processingTypeAndComponentInfoToComponentId)
+    computeComponentsUsage(processesDetails, processingTypeAndInfoToNonFragmentComponentId)
       .mapValuesNow(usages => usages.map { case (_, nodeIds) => nodeIds.size }.sum)
   }
 
   def computeComponentsUsage(
       processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]],
-      processingTypeAndComponentInfoToComponentId: (ProcessingType, ComponentInfo) => ComponentId,
+      processingTypeAndInfoToNonFragmentComponentId: Map[(ProcessingType, ComponentInfo), ComponentId]
   ): Map[ComponentId, List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]] = {
     def flattenUsages(processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]]) = for {
       processDetails    <- processesDetails
       componentInfoNode <- processDetails.json.value.toList
       (componentInfo, nodeIds) = componentInfoNode
-      componentId = processingTypeAndComponentInfoToComponentId(processDetails.processingType, componentInfo)
+      componentId = processingTypeAndInfoToNonFragmentComponentId
+        .get(processDetails.processingType, componentInfo)
+        .getOrElse(
+          ComponentId.default(processDetails.processingType, componentInfo)
+        ) // the orElse case is for fragments - fragment ids won't be present in the map but must be equal to default
       nodeId <- nodeIds
     } yield ScenarioComponentsUsage[NodeId](componentId, componentInfo, processDetails, nodeId)
 

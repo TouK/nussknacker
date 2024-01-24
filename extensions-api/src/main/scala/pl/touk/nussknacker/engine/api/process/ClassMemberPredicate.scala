@@ -8,6 +8,8 @@ import java.util.regex.Pattern
   */
 trait ClassMemberPredicate {
 
+  final def matchesClassMember(clazz: Class[_], member: Member): Boolean = matchesClass(clazz) && matchesMember(member)
+
   def matchesClass(clazz: Class[_]): Boolean
 
   def matchesMember(member: Member): Boolean

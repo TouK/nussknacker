@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, Proces
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.util.ResourceLoader
-import pl.touk.nussknacker.ui.api.helpers.{SampleScenario, TestCategories, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Comment, ProcessActivity}
 
@@ -23,7 +23,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   it should "export process to " in {
     val process: DisplayableProcess =
-      ProcessConverter.toDisplayable(SampleScenario.scenario, TestProcessingTypes.Streaming, TestCategories.Category1)
+      ProcessConverter.toDisplayable(ProcessTestData.sampleScenario)
     val displayable: DisplayableProcess = process.copy(nodes = process.nodes.map {
       case a: Filter =>
         a.copy(additionalFields = Some(UserDefinedAdditionalNodeFields(Some("mój wnikliwy komętaż"), None)))
@@ -54,12 +54,9 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   it should "export empty process to " in {
     val displayable: DisplayableProcess = DisplayableProcess(
-      ProcessName("Proc11"),
       ProcessProperties(StreamMetaData()),
       List(),
       List(),
-      TestProcessingTypes.Streaming,
-      TestCategories.Category1
     )
 
     val details = createDetails(displayable)
@@ -73,12 +70,9 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   it should "not allow entities in provided SVG" in {
     val displayable: DisplayableProcess = DisplayableProcess(
-      ProcessName("Proc11"),
       ProcessProperties(StreamMetaData()),
       List(),
       List(),
-      TestProcessingTypes.Streaming,
-      TestCategories.Category1
     )
 
     val details = createDetails(displayable)
@@ -91,7 +85,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
     ex.getMessage should include("DOCTYPE is disallowed")
   }
 
-  private def createDetails(displayable: DisplayableProcess) = TestProcessUtil.toDetails(
+  private def createDetails(displayable: DisplayableProcess) = TestProcessUtil.toScenarioWithDetailsEntity(
     ProcessName("My process"),
     json = Some(displayable),
     description = Some(

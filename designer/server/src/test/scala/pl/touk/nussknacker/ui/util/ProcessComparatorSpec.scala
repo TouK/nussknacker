@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterTrue, NextSwitch}
 import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
-import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.ProcessComparator._
 
@@ -113,12 +112,12 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
   }
 
   private def toDisplayable(
-      espProcess: GraphBuilder[CanonicalProcess] => CanonicalProcess,
+      sceanrio: GraphBuilder[CanonicalProcess] => CanonicalProcess,
       description: Option[String] = None,
       properties: Map[String, String] = Map.empty
   ): DisplayableProcess =
-    toDisplayableFromProcess(
-      espProcess(
+    ProcessConverter.toDisplayable(
+      sceanrio(
         ScenarioBuilder
           .streaming("test")
           .additionalFields(
@@ -129,9 +128,6 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
           .source("start", "testSource")
       )
     )
-
-  private def toDisplayableFromProcess(canonicalProcess: CanonicalProcess): DisplayableProcess =
-    ProcessConverter.toDisplayable(canonicalProcess, TestProcessingTypes.Streaming, TestCategories.Category1)
 
   private def caseWithExpression(expr: String, id: Int = 1): Case = {
     Case(expr, GraphBuilder.emptySink(s"end$id", "end"))

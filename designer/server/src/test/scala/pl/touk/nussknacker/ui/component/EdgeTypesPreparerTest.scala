@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.component
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentId, ComponentInfo, ComponentType}
-import pl.touk.nussknacker.engine.definition.fragment.FragmentWithoutValidatorsDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, FragmentOutput, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ToStaticDefinitionConverter
@@ -14,11 +14,11 @@ import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   test("return edge types for fragment, filters, switches and components with multiple inputs") {
-    val sampleFragmentDef = new FragmentWithoutValidatorsDefinitionExtractor(getClass.getClassLoader)
-      .extractFragmentComponentDefinition(
-        ProcessTestData.sampleFragment,
-        ComponentId.default(TestProcessingTypes.Streaming, _)
-      )
+    val sampleFragmentDef = new FragmentComponentDefinitionExtractor(
+      getClass.getClassLoader,
+      ComponentId.default(TestProcessingTypes.Streaming, _)
+    )
+      .extractFragmentComponentDefinition(ProcessTestData.sampleFragment)
       .validValue
     val definitionsWithFragments = ProcessTestData
       .modelDefinition()
@@ -50,7 +50,7 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
         isForInputDefinition = false
       ),
       UINodeEdges(
-        ComponentInfo(ComponentType.Fragment, "sub1"),
+        ComponentInfo(ComponentType.Fragment, ProcessTestData.sampleFragmentName.value),
         List(FragmentOutput("out1"), FragmentOutput("out2")),
         canChooseNodes = false,
         isForInputDefinition = false

@@ -63,7 +63,6 @@ export interface Expression {
 export type PropertiesType = NodeType & {
     type: "Properties";
     additionalFields: ProcessAdditionalFields;
-    isFragment?: boolean;
 };
 
 export type NodeId = NodeType["id"];

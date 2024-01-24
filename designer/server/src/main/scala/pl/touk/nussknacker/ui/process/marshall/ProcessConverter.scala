@@ -2,25 +2,17 @@ package pl.touk.nussknacker.ui.process.marshall
 
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.FragmentOutput
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 
 object ProcessConverter {
 
-  def toDisplayableOrDie(
-      canonicalProcess: CanonicalProcess,
-      processingType: ProcessingType,
-      category: String
-  ): DisplayableProcess = {
-    toDisplayable(canonicalProcess, processingType, category)
-  }
-
-  def toDisplayable(process: CanonicalProcess, processingType: ProcessingType, category: String): DisplayableProcess = {
+  def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
     val (nodes, edges) = {
       process.allStartNodes
         .map(toGraphInner)
@@ -29,7 +21,7 @@ object ProcessConverter {
         }
     }
     val props = ProcessProperties(process.metaData.additionalFields)
-    DisplayableProcess(process.name, props, nodes, edges, processingType, category)
+    DisplayableProcess(props, nodes, edges)
   }
 
   def findNodes(process: CanonicalProcess): List[NodeData] = {
@@ -100,14 +92,14 @@ object ProcessConverter {
     (aList.flatten, bList.flatten)
   }
 
-  def fromDisplayable(process: DisplayableProcess): CanonicalProcess = {
+  def fromDisplayable(process: DisplayableProcess, name: ProcessName): CanonicalProcess = {
     val nodesMap          = process.nodes.groupBy(_.id).mapValuesNow(_.head)
     val edgesFromMapStart = process.edges.groupBy(_.from)
     val rootsUnflattened =
       findRootNodes(process).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
     val nodes              = rootsUnflattened.headOption.getOrElse(List.empty)
     val additionalBranches = if (rootsUnflattened.isEmpty) List.empty else rootsUnflattened.tail
-    CanonicalProcess(process.metaData, nodes, additionalBranches)
+    CanonicalProcess(process.toMetaData(name), nodes, additionalBranches)
   }
 
   private def findRootNodes(process: DisplayableProcess): List[NodeData] =

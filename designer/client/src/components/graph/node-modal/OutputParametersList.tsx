@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Field, { FieldType } from "./editors/field/Field";
 import { FieldError, getValidationErrorsForField } from "./editors/Validators";
-import { NodeType, NodeValidationError, ProcessDefinitionData } from "../../../types";
+import { ComponentDefinition, NodeType, NodeValidationError, ProcessDefinitionData } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useDiffMark } from "./PathsToMark";
 import { useTranslation } from "react-i18next";
@@ -76,7 +76,7 @@ export default function OutputParametersList({
 }): JSX.Element {
     const currentVariableNames = editedNode.ref?.outputVariableNames;
 
-    const componentDefinition = useMemo(
+    const componentDefinition: ComponentDefinition = useMemo(
         () => ProcessUtils.extractComponentDefinition(editedNode, processDefinitionData.components),
         [editedNode, processDefinitionData.components],
     );
@@ -101,7 +101,7 @@ export default function OutputParametersList({
     }, [variableNames, setProperty, isDefinitionAvailable]);
 
     useEffect(() => {
-        componentDefinition.outputParameters
+        componentDefinition?.outputParameters
             ?.filter((paramName) => variableNames[paramName] === undefined)
             .forEach((paramName) => {
                 setVariableNames((prevState) => ({
@@ -109,7 +109,7 @@ export default function OutputParametersList({
                     [paramName]: paramName,
                 }));
             });
-    }, [componentDefinition.outputParameters, variableNames]);
+    }, [componentDefinition?.outputParameters, variableNames]);
 
     const entries = Object.entries(variableNames);
 

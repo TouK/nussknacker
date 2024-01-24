@@ -627,14 +627,14 @@ private[spel] class Typer(
       case typedObjectWithData: TypedObjectWithData =>
         extractSingleProperty(e)(typedObjectWithData.objType)
       case typedClass: TypedClass =>
-        propertyTypeBasedOnMethod(typedClass, e)
+        propertyTypeBasedOnMethod(typedClass, typedClass, e)
           .orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
           .map(valid)
           .getOrElse(invalid(NoPropertyError(t, e.getName)))
-      case TypedObjectTypingResult(fields, objType, _) =>
+      case recordType @ TypedObjectTypingResult(fields, objType, _) =>
         val typeBasedOnFields = fields.get(e.getName)
         typeBasedOnFields
-          .orElse(propertyTypeBasedOnMethod(objType, e))
+          .orElse(propertyTypeBasedOnMethod(objType, recordType, e))
           .map(valid)
           .getOrElse(invalid(NoPropertyError(t, e.getName)))
       case dict: TypedDict =>
@@ -642,8 +642,12 @@ private[spel] class Typer(
     }
   }
 
-  private def propertyTypeBasedOnMethod(typedClass: TypedClass, e: PropertyOrFieldReference) = {
-    classDefinitionSet.get(typedClass.klass).flatMap(_.getPropertyOrFieldType(e.getName))
+  private def propertyTypeBasedOnMethod(
+      clazz: TypedClass,
+      invocationTarget: TypingResult,
+      e: PropertyOrFieldReference
+  ) = {
+    classDefinitionSet.get(clazz.klass).flatMap(_.getPropertyOrFieldType(invocationTarget, e.getName))
   }
 
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {

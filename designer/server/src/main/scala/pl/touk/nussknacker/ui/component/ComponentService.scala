@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.ui.component
 
 import cats.data.Validated.Valid
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichScalaNestedMap}
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
   ComponentListElement,
@@ -65,30 +67,6 @@ class DefaultComponentService(
 
   import cats.syntax.traverse._
 
-  private def processingTypeAndComponentInfoToComponentId(
-      implicit user: LoggedUser
-  ): (ProcessingType, ComponentInfo) => ComponentId = {
-    val processingTypeToNonFragmentComponentIds = processingTypeDataProvider.all.toList
-      .map { case (processingType, processingTypeData) =>
-        val modelDefinition =
-          processingTypeData.modelDefinitionEnricher.modelDefinitionWithBuiltInComponentsAndFragments(
-            forFragment = false, // It excludes fragment's components: input / output
-            fragmentScenarios = List.empty
-          )
-
-        modelDefinition.components.map { case (info, definition) =>
-          (processingType, info) -> definition.componentIdUnsafe
-        }
-      }
-      .reduce(_ ++ _)
-
-    (processingType: ProcessingType, info: ComponentInfo) =>
-      processingTypeToNonFragmentComponentIds.getOrElse(
-        (processingType, info),
-        ComponentId.default(processingType, info)
-      )
-  }
-
   override def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
     for {
       components <- processingTypeDataProvider.all.toList.flatTraverse { case (processingType, processingTypeData) =>
@@ -111,7 +89,10 @@ class DefaultComponentService(
       .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map { processDetailsList =>
         val componentsUsage =
-          ComponentsUsageHelper.computeComponentsUsage(processDetailsList, processingTypeAndComponentInfoToComponentId)
+          ComponentsUsageHelper.computeComponentsUsage(
+            processDetailsList,
+            processingTypeAndInfoToNonFragmentComponentId
+          )
 
         componentsUsage
           .get(componentId)
@@ -132,14 +113,8 @@ class DefaultComponentService(
     fragmentsRepository
       .fetchLatestFragments(processingType)
       .map { fragments =>
-        val componentsDefinition =
-          processingTypeData.modelDefinitionEnricher.modelDefinitionWithBuiltInComponentsAndFragments(
-            forFragment = false, // It excludes fragment's components: input / output
-            fragments
-          )
-
         createComponents(
-          componentsDefinition.components,
+          definedComponents(processingTypeData, fragments),
           processingTypeData.category,
         )
       }
@@ -176,9 +151,31 @@ class DefaultComponentService(
     processService
       .getLatestRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map(processes =>
-        ComponentsUsageHelper.computeComponentsUsageCount(processes, processingTypeAndComponentInfoToComponentId)
+        ComponentsUsageHelper
+          .computeComponentsUsageCount(processes, processingTypeAndInfoToNonFragmentComponentId)
       )
   }
+
+  // Collect all component ids excepts fragments' because fragments can't have ComponentId overridden, so we can use the default id without fetching them
+  private def processingTypeAndInfoToNonFragmentComponentId(implicit user: LoggedUser) =
+    processingTypeDataProvider.all.toList
+      .map { case (processingType, processingTypeData) =>
+        processingType -> definedComponents(processingTypeData, fragments = List.empty)
+      }
+      .toMap
+      .collapseNestedMap
+      .mapValuesNow(_.componentIdUnsafe)
+
+  private def definedComponents(
+      processingTypeData: ComponentServiceProcessingTypeData,
+      fragments: List[CanonicalProcess]
+  ) =
+    processingTypeData.modelDefinitionEnricher
+      .modelDefinitionWithBuiltInComponentsAndFragments(
+        forFragment = false, // It excludes fragment's components: input / output
+        fragments
+      )
+      .components
 
   private def createComponentLinks(
       componentId: ComponentId,

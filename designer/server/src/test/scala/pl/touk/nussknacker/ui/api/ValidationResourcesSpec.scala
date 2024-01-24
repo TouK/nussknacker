@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
+import akka.http.scaladsl.model.Uri.Path
+import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes, Uri}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
@@ -27,6 +28,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 class ValidationResourcesSpec
@@ -140,7 +142,6 @@ class ValidationResourcesSpec
 
   it should "return fatal error for bad ids" in {
     val invalidCharacters = newDisplayableProcess(
-      "p1",
       List(
         Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
         node.Sink("f1\"'", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
@@ -148,14 +149,13 @@ class ValidationResourcesSpec
       List(Edge("s1", "f1\"'", None))
     )
 
-    createAndValidateScenario(invalidCharacters) {
+    createAndValidateScenario(invalidCharacters, ProcessName("p1")) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
       entity should include("Node name contains invalid characters")
     }
 
     val duplicateIds = newDisplayableProcess(
-      "p2",
       List(
         Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
         node.Sink("s1", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
@@ -163,7 +163,7 @@ class ValidationResourcesSpec
       List(Edge("s1", "s1", None))
     )
 
-    createAndValidateScenario(duplicateIds) {
+    createAndValidateScenario(duplicateIds, ProcessName("p2")) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
       entity should include("Duplicate node ids: s1")
@@ -172,7 +172,6 @@ class ValidationResourcesSpec
 
   it should "find errors in scenario of bad shape" in {
     val invalidShapeProcess = newDisplayableProcess(
-      "p1",
       List(
         Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
         node.Filter("f1", Expression.spel("false"))
@@ -180,7 +179,7 @@ class ValidationResourcesSpec
       List(Edge("s1", "f1", None))
     )
 
-    createAndValidateScenario(invalidShapeProcess) {
+    createAndValidateScenario(invalidShapeProcess, ProcessName("p1")) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("InvalidTailOfBranch")
@@ -190,20 +189,6 @@ class ValidationResourcesSpec
   it should "find no errors in a good scenario" in {
     createAndValidateScenario(ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
-    }
-  }
-
-  it should "find no errors in valid but not existing scenario" in {
-    validateScenario(TestProcessUtil.toDisplayable(ProcessTestData.validProcess)) {
-      status shouldEqual StatusCodes.OK
-    }
-  }
-
-  it should "find errors in a bad but not existing scenario" in {
-    validateScenario(TestProcessUtil.toDisplayable(ProcessTestData.invalidProcess)) {
-      status shouldEqual StatusCodes.OK
-      val entity = entityAs[String]
-      entity should include("MissingSourceFactory")
     }
   }
 
@@ -238,9 +223,9 @@ class ValidationResourcesSpec
       node.Sink("sink1", SinkRef(ProcessTestData.existingSinkFactory, List.empty))
     )
     val edges = List(Edge("source1", "filter1", None), Edge("filter1", "proc1", None), Edge("proc1", "sink1", None))
-    val processWithDisabledFilterAndProcessor = newDisplayableProcess("p1", nodes, edges)
+    val processWithDisabledFilterAndProcessor = newDisplayableProcess(nodes, edges)
 
-    createAndValidateScenario(processWithDisabledFilterAndProcessor) {
+    createAndValidateScenario(processWithDisabledFilterAndProcessor, ProcessName("p1")) {
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
       validation.warnings.invalidNodes("filter1").head.message should include("Node filter1 is disabled")
@@ -248,27 +233,34 @@ class ValidationResourcesSpec
     }
   }
 
-  private def newDisplayableProcess(name: String, nodes: List[NodeData], edges: List[Edge]): DisplayableProcess = {
+  private def newDisplayableProcess(nodes: List[NodeData], edges: List[Edge]): DisplayableProcess = {
     DisplayableProcess(
-      name = ProcessName(name),
       properties = ProcessProperties(StreamMetaData(Some(2), Some(false))),
       nodes = nodes,
-      edges = edges,
-      processingType = TestProcessingTypes.Streaming,
-      TestCategories.Category1
+      edges = edges
     )
   }
 
   private def createAndValidateScenario(scenario: CanonicalProcess)(testCode: => Assertion): Assertion =
-    createAndValidateScenario(TestProcessUtil.toDisplayable(scenario))(testCode)
+    createAndValidateScenario(ProcessConverter.toDisplayable(scenario), scenario.name)(testCode)
 
-  private def createAndValidateScenario(displayable: DisplayableProcess)(testCode: => Assertion): Assertion = {
-    createEmptyProcess(displayable.name)
-    validateScenario(displayable)(testCode)
+  private def createAndValidateScenario(
+      displayable: DisplayableProcess,
+      name: ProcessName = ProcessTestData.sampleProcessName
+  )(testCode: => Assertion): Assertion = {
+    createEmptyProcess(name)
+    validateScenario(displayable, name)(testCode)
   }
 
-  private def validateScenario(displayable: DisplayableProcess)(testCode: => Assertion) = {
-    Post("/processValidation", posting.toEntity(displayable)) ~> route ~> check {
+  private def validateScenario(displayable: DisplayableProcess, name: ProcessName = ProcessTestData.sampleProcessName)(
+      testCode: => Assertion
+  ) = {
+    // TODO: Test for the rename (name in path other then name in request)
+    val request = ScenarioValidationRequest(name, displayable)
+    Post(
+      Uri(path = Path.Empty / "processValidation" / name.value),
+      posting.toRequestEntity(request)
+    ) ~> route ~> check {
       testCode
     }
   }

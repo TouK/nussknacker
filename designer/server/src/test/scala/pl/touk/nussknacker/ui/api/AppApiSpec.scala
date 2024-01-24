@@ -9,14 +9,13 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 class AppApiSpec
@@ -33,7 +32,7 @@ class AppApiSpec
     "return simple designer health check (not checking scenario statuses) without authentication" in {
       given()
         .applicationState {
-          createDeployedExampleScenario("id1", category = Category1)
+          createDeployedExampleScenario(ProcessName("id1"))
 
           MockableDeploymentManager.configure(
             Map("id1" -> SimpleStateStatus.Running)
@@ -58,9 +57,9 @@ class AppApiSpec
       "return health check also if cannot retrieve statuses" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1", category = Category1)
-            createDeployedExampleScenario("id2", category = Category1)
-            createDeployedExampleScenario("id3", category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -86,8 +85,8 @@ class AppApiSpec
       "not return health check when scenario is canceled" in {
         given()
           .applicationState {
-            createDeployedCanceledExampleScenario("id1", category = Category1)
-            createDeployedExampleScenario("id2", category = Category1)
+            createDeployedCanceledExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
 
             MockableDeploymentManager.configure(
               Map("id2" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"))
@@ -109,8 +108,8 @@ class AppApiSpec
       "return health check ok if statuses are ok" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1", category = Category1)
-            createDeployedExampleScenario("id2", category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -135,7 +134,7 @@ class AppApiSpec
       "not report deployment in progress as fail" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1")
+            createDeployedExampleScenario(ProcessName("id1"))
 
             MockableDeploymentManager.configure(
               Map("id1" -> SimpleStateStatus.Running)
@@ -159,9 +158,9 @@ class AppApiSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1", category = Category1)
-            createDeployedExampleScenario("id2", category = Category1)
-            createDeployedExampleScenario("id3", category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -185,7 +184,7 @@ class AppApiSpec
       "return ERROR status and list of scenarios with validation errors" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1", category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
 
             MockableDeploymentManager.configure(
               Map("id1" -> SimpleStateStatus.Running)
@@ -229,9 +228,9 @@ class AppApiSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1", category = Category1)
-            createDeployedExampleScenario("id2", category = Category1)
-            createDeployedExampleScenario("id3", category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -327,9 +326,9 @@ class AppApiSpec
       "return user's categories and processing types" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1", category = Category1)
-            createDeployedExampleScenario("id2", category = Category1)
-            createDeployedExampleScenario("id3", category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -358,9 +357,9 @@ class AppApiSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1", category = Category1)
-            createDeployedExampleScenario("id2", category = Category1)
-            createDeployedExampleScenario("id3", category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -384,9 +383,9 @@ class AppApiSpec
       "allow to reload" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1", category = Category1)
-            createDeployedExampleScenario("id2", category = Category1)
-            createDeployedExampleScenario("id3", category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -408,9 +407,9 @@ class AppApiSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1", category = Category1)
-            createDeployedExampleScenario("id2", category = Category1)
-            createDeployedExampleScenario("id3", category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -431,9 +430,9 @@ class AppApiSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario("id1", category = Category1)
-            createDeployedExampleScenario("id2", category = Category1)
-            createDeployedExampleScenario("id3", category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(

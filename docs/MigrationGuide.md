@@ -32,6 +32,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5361](https://github.com/TouK/nussknacker/pull/5361) `Parameter` has new, optional `labelOpt` field which allows
   to specify label presented to the user without changing identifier used in scenario graph json (`Parameteter.name`)
 * [#5356](https://github.com/TouK/nussknacker/pull/5356) Changes in AdditionalUIConfigProvider.getAllForProcessingType now require model reload to take effect.
+* [#5393](https://github.com/TouK/nussknacker/pull/5393) 
+  * Changes around metadata removal from the REST API requests and responses:
+    * `DisplayableProcess` fields that were removed: `name`,  `processingType`, `category` - all these fields already were in `ScenarioWithDetails`
+    * `ProcessProperties` field removed: `isFragment` - this field already was in `ScenarioWithDetails`
+    * `ScenarioWithDetails` field `json.validationResult` was moved into the top level of `ScenarioWithDetails`
+    * `ScenarioWithDetails` field `json` was renamed into `scenarioGraph` and changed the type into `DisplayableProcess`
+    * `ValidatedDisplayableProcess` all scenario graph fields were replaced by one `scenarioGraph: DisplayableProcess` field
+  * Migration mechanisms (`RemoteEnvironment` and `TestModelMigrations`) use `ScenarioWithDetailsForMigrations` instead of `ScenarioWithDetails`
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
@@ -55,18 +63,29 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `processes/**/activity/attachments` - `processId` fields was removed
   * `processes/**/activity/comments` - `processId` fields was removed
   * GET `processes/$name/$version/activity/attachments` - `$version` segment is removed now
+* [#5393](https://github.com/TouK/nussknacker/pull/5393) Changes around metadata removal from the REST API requests and responses:
+  * `/processValidation` was changed to `/processValidation/$scenarioName` and changed request type
+  * `/testInfo/*` was changed to `/testInfo/$scenarioName/*` and changed request type
+  * `/processManagement/generateAndTest/$samples` was changed to `/processManagement/generateAndTest/$scenarioName/$samples`
+  * `/processesExport/*` was changed to `/processesExport/$scenarioName/*` and changed response type
+  * `/processes/import/$scenarioName` was changed response into `{"scenarioGraph": {...}, "validationResult": {...}`
+  * GET `/processes/*` and `/processesDetails/*` changed response type
+  * PUT `/processes/$scenarioName` was changed request field from `process` to `scenarioGraph`
+  * `/adminProcessManagement/testWithParameters/$scenarioName` was changed request field from `displayableProcess` to `scenarioGraph`
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
   * `$processingType-$componentType-$componentName` format was replaced by `$componentType-$componentName` format
 * [#5323](https://github.com/TouK/nussknacker/pull/5323) Support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) was removed.
   In the new format, you should specify `category` field inside each scenario type.
+* [#5419](https://github.com/TouK/nussknacker/pull/5419) Support for system properties was removed from model configuration
+  (they aren't resolved and added to merged configuration)
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
 
-## In version 1.13.x (Not released yet)
+## In version 1.13.0 
 
 ### Code API changes
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Method definition `def authenticationMethod(): Auth[AuthCredentials, _]` was changed to `def authenticationMethod(): EndpointInput[AuthCredentials]`

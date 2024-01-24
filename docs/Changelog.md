@@ -14,8 +14,11 @@
 * [#5361](https://github.com/TouK/nussknacker/pull/5361) Parameter's label can be specified not only via configuration, but also inside Component's implementation now
 * [#5368](https://github.com/TouK/nussknacker/pull/5368) A hidden features allowing to change `icon` and `docsUrl` inside properties modal by using `componentsUiConfig.$proprties` configuration option, was turned off
 * [#5356](https://github.com/TouK/nussknacker/pull/5356) Pushed configs provided by AdditionalUIConfigProvider deeper into domain (at the stage of component definition extraction), allowing it to impact validation. However, changes now require model reload.
+* [#5413](https://github.com/TouK/nussknacker/pull/5413) Generic types (Records, Lists and other collections) now uses generic parameters in their method's return type e.g. `{foo: 1, bar: 2}.get('foo')` returns `Integer` instead of `Unknown`
+* [#5413](https://github.com/TouK/nussknacker/pull/5413) Avro Records now has additional `get(String)` method allowing to access fields dynamically
+* [#5419](https://github.com/TouK/nussknacker/pull/5419) Remove system properties from merged model config
 
-1.13.0 (Not released yet)
+1.13.0 (12 Jan 2024)
 -------------------------
 * [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Refactor: Allow to use custom authentication methods in user-defined Authentication Providers
