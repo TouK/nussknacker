@@ -387,9 +387,9 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
 
     val Value = 123
 
-    override def value(metadata: MetaData): Any = 123
+    override def value(metadata: MetaData): Any = Value
 
-    override def returnType(metadata: MetaData): TypingResult = Typed.fromInstance(123)
+    override def returnType(metadata: MetaData): TypingResult = Typed.fromInstance(Value)
 
     override def initialReturnType: TypingResult = Typed(classOf[Int])
   }
