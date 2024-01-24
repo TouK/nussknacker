@@ -348,22 +348,22 @@ class DefaultComponentServiceSpec
   }
 
   private val fragmentMarketingComponents: List[ComponentListElement] = {
-    val cat         = CategoryMarketing
-    val componentId = ComponentId(Fragment, cat)
-    val componentId = cid(Streaming, componentId)
-    val icon        = DefaultsComponentIcon.fromComponentId(componentId, None)
-    val links       = createLinks(componentId, componentId)
-    List(ComponentListElement(componentId, cat, icon, Fragment, FragmentsGroupName, List(cat), links, 0))
+    val cat                     = CategoryMarketing
+    val componentId             = ComponentId(Fragment, cat)
+    val designerWideComponentId = cid(Streaming, componentId)
+    val icon                    = DefaultsComponentIcon.fromComponentId(componentId, None)
+    val links                   = createLinks(designerWideComponentId, componentId)
+    List(ComponentListElement(designerWideComponentId, cat, icon, Fragment, FragmentsGroupName, List(cat), links, 0))
   }
 
   private val fragmentFraudComponents: List[ComponentListElement] = {
-    val cat         = CategoryFraud
-    val componentId = ComponentId(Fragment, cat)
-    val componentId = cid(Fraud, componentId)
-    val links       = createLinks(componentId, componentId)
+    val cat                     = CategoryFraud
+    val componentId             = ComponentId(Fragment, cat)
+    val designerWideComponentId = cid(Fraud, componentId)
+    val links                   = createLinks(designerWideComponentId, componentId)
     List(
       ComponentListElement(
-        componentId,
+        designerWideComponentId,
         cat,
         DefaultsComponentIcon.FragmentIcon,
         Fragment,
@@ -431,11 +431,11 @@ class DefaultComponentServiceSpec
       componentGroupName: ComponentGroupName,
       categories: List[String]
   ): ComponentListElement = {
-    val componentId = bid(componentId)
-    val docsLinks   = if (componentId.name == BuiltInComponentId.Filter.name) List(filterDocsLink) else Nil
-    val links       = docsLinks ++ createLinks(componentId, componentId)
+    val designerWideComponentId = bid(componentId)
+    val docsLinks               = if (componentId.name == BuiltInComponentId.Filter.name) List(filterDocsLink) else Nil
+    val links                   = docsLinks ++ createLinks(designerWideComponentId, componentId)
     ComponentListElement(
-      componentId,
+      designerWideComponentId,
       componentId.name,
       icon,
       componentId.`type`,

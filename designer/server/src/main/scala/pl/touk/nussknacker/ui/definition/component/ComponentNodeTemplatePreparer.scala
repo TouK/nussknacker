@@ -70,7 +70,7 @@ private[component] object ComponentNodeTemplatePreparer {
           val outputs = outputNames.map(name => (name, name)).toMap
           FragmentInput("", FragmentRef(id.name, parameterTemplates(staticDefinition), outputs))
         case (_, BuiltInComponentSpecificData) =>
-          throw new IllegalStateException(s"Not expected component: $info with definition: $component")
+          throw new IllegalStateException(s"Not expected component: $id with definition: $component")
       }
       val branchParametersTemplate =
         NodeParameterTemplatesPreparer.prepareNodeBranchParameterTemplates(staticDefinition.parameters)

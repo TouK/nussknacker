@@ -41,13 +41,13 @@ class DefinitionsService(
         case (id, dynamic: DynamicComponentDefinitionWithImplementation) =>
           val staticDefinition = staticDefinitionForDynamicComponents.getOrElse(
             id,
-            throw new IllegalStateException(s"Static definition for dynamic component: $info should be precomputed")
+            throw new IllegalStateException(s"Static definition for dynamic component: $id should be precomputed")
           )
           id -> component.ComponentWithStaticDefinition(dynamic, staticDefinition)
         case (id, methodBased: MethodBasedComponentDefinitionWithImplementation) =>
           id -> component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
         case (id, other) =>
-          throw new IllegalStateException(s"Unknown component $info representation: $other")
+          throw new IllegalStateException(s"Unknown component $id representation: $other")
       }
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
         .finalizeScenarioProperties(scenarioPropertiesConfig)
