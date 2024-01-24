@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator}
@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersWithoutValidatorsDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
+import pl.touk.nussknacker.engine.node.ComponentIdExtractor
 import pl.touk.nussknacker.engine.process.compiler.StubbedComponentImplementationInvoker.returnType
 import shapeless.syntax.typeable.typeableOps
 
@@ -37,26 +38,25 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       componentUseCase,
     ) {
 
-  import pl.touk.nussknacker.engine.util.Implicits._
-
   override protected def adjustDefinitions(
       originalModelDefinition: ModelDefinition,
       definitionContext: ComponentDefinitionContext
   ): ModelDefinition = {
-    val collectedSources = process.allStartNodes.map(_.head.data).collect { case source: Source =>
-      source
-    }
-    val usedSourceTypes = collectedSources.map(_.ref.typ)
-    val stubbedSources =
-      usedSourceTypes.map { sourceName =>
-        val sourceDefinition = originalModelDefinition
-          .getComponent(ComponentType.Source, sourceName)
-          .getOrElse(
-            throw new IllegalArgumentException(s"Source $sourceName cannot be stubbed - missing definition")
-          )
-        val stubbedDefinition = prepareSourceFactory(sourceDefinition, definitionContext)
-        ComponentId(ComponentType.Source, sourceName) -> stubbedDefinition
+    val usedSourceIds = process.allStartNodes
+      .map(_.head.data)
+      .collect { case source: Source =>
+        ComponentIdExtractor.fromScenarioNode(source)
       }
+      .flatten
+      .toSet
+
+    val processedComponents = originalModelDefinition.components.map {
+      case source if usedSourceIds.contains(source.id) =>
+        prepareSourceFactory(source, definitionContext)
+      case service if service.componentType == ComponentType.Service =>
+        prepareService(service, definitionContext)
+      case other => other
+    }
 
     val fragmentParametersDefinitionExtractor = new FragmentParametersWithoutValidatorsDefinitionExtractor(
       definitionContext.userCodeClassLoader
@@ -67,22 +67,15 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
 
     val stubbedSourceForFragments =
       process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
-        val fragmentSourceDefWithImpl = fragmentSourceDefinitionPreparer.createSourceDefinition(frag)
-        ComponentId(ComponentType.Fragment, frag.id) -> prepareSourceFactory(
-          fragmentSourceDefWithImpl,
-          definitionContext
-        )
+        // We create source definition only to reuse prepareSourceFactory method.
+        // Source will have fragment component type to avoid collisions with normal sources
+        val fragmentSourceDefWithImpl = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id, frag)
+        prepareSourceFactory(fragmentSourceDefWithImpl, definitionContext)
       }
 
-    val stubbedServices = originalModelDefinition.components
-      .filter(_._1.`type` == ComponentType.Service)
-      .mapValuesNow(prepareService(_, definitionContext))
-
     originalModelDefinition
-      .copy(
-        components =
-          originalModelDefinition.components ++ stubbedSources ++ stubbedSourceForFragments ++ stubbedServices
-      )
+      .copy(components = processedComponents)
+      .withComponents(stubbedSourceForFragments)
   }
 
   protected def prepareService(

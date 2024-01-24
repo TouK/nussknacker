@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers._
@@ -206,10 +205,10 @@ class ComponentGroupsPreparerSpec
   }
 
   private def withStaticDefinition(
-      components: Map[ComponentId, ComponentDefinitionWithImplementation]
-  ): Map[ComponentId, ComponentWithStaticDefinition] = {
+      components: List[ComponentDefinitionWithImplementation]
+  ): List[ComponentWithStaticDefinition] = {
     components
-      .mapValuesNow {
+      .map {
         case methodBased: MethodBasedComponentDefinitionWithImplementation =>
           component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
         case other => throw new IllegalStateException(s"Unexpected component class: ${other.getClass.getName}")

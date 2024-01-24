@@ -219,7 +219,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       determineDesignerWideId = id => DesignerWideComponentId(id.toString)
     )
     val definition = modelData.modelDefinition
-    definition.components should contain key ComponentId(ComponentType.Service, "accountService")
+    definition.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))
   }
 
   private def messagesFromTopic(outTopic: String, count: Int): List[String] =

@@ -24,7 +24,11 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   def componentTypeSpecificData: ComponentTypeSpecificData
 
+  def name: String
+
   final def componentType: ComponentType = componentTypeSpecificData.componentType
+
+  final def id: ComponentId = ComponentId(componentType, name)
 
   protected def uiDefinition: ComponentUiDefinition
 
@@ -71,7 +75,7 @@ object ComponentDefinitionWithImplementation {
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+  ): List[ComponentDefinitionWithImplementation] = {
     components.flatMap(
       ComponentDefinitionExtractor.extract(_, additionalConfigs, determineDesignerWideId, additionalConfigsFromProvider)
     )
@@ -81,10 +85,10 @@ object ComponentDefinitionWithImplementation {
    *    - additionalConfigs from the model configuration
    *    - additionalConfigsFromProvider provided by AdditionalUIConfigProvider
    */
-  def withEmptyConfig(component: Component): ComponentDefinitionWithImplementation = {
+  def withEmptyConfig(name: String, component: Component): ComponentDefinitionWithImplementation = {
     ComponentDefinitionExtractor
       .extract(
-        "dumbName",
+        name,
         component,
         SingleComponentConfig.zero,
         ComponentsUiConfig.Empty,

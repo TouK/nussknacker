@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 final case class ModelDefinitionBuilder(
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
-    components: List[(String, ComponentDefinitionWithImplementation)],
+    components: List[ComponentDefinitionWithImplementation],
     globalVariables: Map[String, AnyRef],
     private val groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
 ) {
@@ -142,13 +142,14 @@ final case class ModelDefinitionBuilder(
       )
       .map { case (uiDefinition, _) =>
         MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+          name,
           componentTypeSpecificData,
           staticDefinition,
           uiDefinition
         )
       }
       .map { component =>
-        copy(components = (name -> component) :: components)
+        copy(components = component :: components)
       }
       .getOrElse(this)
   }

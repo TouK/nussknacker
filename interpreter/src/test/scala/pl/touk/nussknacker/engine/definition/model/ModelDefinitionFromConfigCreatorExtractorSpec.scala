@@ -187,13 +187,15 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   }
 
   test("extract components that are only in specified category") {
-    val customTransformers = modelDefinitionWithTypes(Some(SomeCategory)).modelDefinition.components
+    val customTransformersIds = modelDefinitionWithTypes(Some(SomeCategory)).modelDefinition.components.map(_.id)
 
-    customTransformers should contain key ComponentId(ComponentType.CustomComponent, "transformer1")
-    customTransformers should contain key ComponentId(ComponentType.CustomComponent, "transformedInSomeCategory")
-    customTransformers should not contain key(
-      ComponentId(ComponentType.CustomComponent, "transformedInSomeOtherCategory")
+    customTransformersIds should contain(ComponentId(ComponentType.CustomComponent, "transformer1"))
+    customTransformersIds should contain(ComponentId(ComponentType.CustomComponent, "transformedInSomeCategory"))
+    customTransformersIds should not contain ComponentId(
+      ComponentType.CustomComponent,
+      "transformedInSomeOtherCategory"
     )
+
   }
 
   private def modelDefinitionWithTypes(category: Option[String]) = {

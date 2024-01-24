@@ -31,7 +31,7 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
       new FragmentParametersWithoutValidatorsDefinitionExtractor(getClass.getClassLoader)
     )
     val parameters: Seq[Parameter] = stubbedSourcePreparer
-      .createSourceDefinition(fragmentInputDefinition)
+      .createSourceDefinition("foo", fragmentInputDefinition)
       .implementationInvoker
       .invokeMethod(Map.empty, None, Seq.empty)
       .asInstanceOf[TestWithParametersSupport[Map[String, Any]]]

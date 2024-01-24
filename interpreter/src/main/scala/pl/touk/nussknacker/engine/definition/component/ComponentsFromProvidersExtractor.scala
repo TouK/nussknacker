@@ -31,7 +31,7 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+  ): List[ComponentDefinitionWithImplementation] = {
     loadCorrectProviders(modelDependencies.config).toList
       .flatMap { case (_, (config, provider)) =>
         extract(
@@ -122,7 +122,7 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+  ): List[ComponentDefinitionWithImplementation] = {
     ComponentDefinitionWithImplementation.forList(
       provider.create(config.config, modelDependencies).map { inputComponentDefinition =>
         config.componentPrefix

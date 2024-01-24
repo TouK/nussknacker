@@ -90,9 +90,9 @@ object DynamicComponentStaticDefinitionDeterminer {
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {
-      modelDataForType.modelDefinition.components.toList.collect {
-        case (id, dynamic: DynamicComponentDefinitionWithImplementation) =>
-          id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
+      modelDataForType.modelDefinition.components.collect {
+        case dynamic: DynamicComponentDefinitionWithImplementation =>
+          dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
       }.toMap
     }
   }

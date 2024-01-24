@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichScalaNestedMap}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
@@ -183,12 +182,12 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       )
   }
 
-  private val processingTypeAndInfoToNonFragmentDesignerWideId = Map(
-    TestProcessingTypes.Streaming -> nonFragmentComponents(
-      DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
-    ),
-    TestProcessingTypes.Fraud -> nonFragmentComponents(DesignerWideComponentId.default(TestProcessingTypes.Fraud, _))
-  ).collapseNestedMap.mapValuesNow(_.designerWideId)
+  private val processingTypeAndInfoToNonFragmentDesignerWideId =
+    (nonFragmentComponents(DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)).map { component =>
+      (TestProcessingTypes.Streaming, component.id) -> component.designerWideId
+    } ::: nonFragmentComponents(DesignerWideComponentId.default(TestProcessingTypes.Fraud, _)).map { component =>
+      (TestProcessingTypes.Fraud, component.id) -> component.designerWideId
+    }).toMap
 
   test("should compute components usage count") {
     val table = Table(

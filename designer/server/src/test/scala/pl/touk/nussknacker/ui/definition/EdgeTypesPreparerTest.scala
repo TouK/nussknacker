@@ -27,10 +27,7 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
       .validValue
     val definitionsWithFragments = ProcessTestData
       .modelDefinition()
-      .withComponent(
-        ProcessTestData.sampleFragment.name.value,
-        sampleFragmentDef
-      )
+      .withComponent(sampleFragmentDef)
 
     val edgeTypes = EdgeTypesPreparer.prepareEdgeTypes(definitionsWithFragments.components)
 

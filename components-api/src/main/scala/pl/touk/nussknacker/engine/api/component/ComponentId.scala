@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.api.component
 
 import io.circe.{Encoder, KeyEncoder}
-import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 
-final case class ComponentId(`type`: ComponentType, name: String) {
-  override def toString: String = `type`.toString + "-" + name
+final case class ComponentId(`type`: ComponentType, name: String) extends Ordered[ComponentId] {
+  override def toString: String                = `type`.toString + "-" + name
+  override def compare(that: ComponentId): Int = name.compareTo(that.name)
 }
 
 object ComponentId {

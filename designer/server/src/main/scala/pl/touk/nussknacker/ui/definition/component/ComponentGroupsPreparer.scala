@@ -10,7 +10,7 @@ import scala.collection.immutable.ListMap
 
 object ComponentGroupsPreparer {
 
-  def prepareComponentGroups(components: Map[ComponentId, ComponentWithStaticDefinition]): List[UIComponentGroup] = {
+  def prepareComponentGroups(components: List[ComponentWithStaticDefinition]): List[UIComponentGroup] = {
     ComponentNodeTemplatePreparer
       .componentNodeTemplatesWithGroupNames(components)
       .map(templateWithGroups =>

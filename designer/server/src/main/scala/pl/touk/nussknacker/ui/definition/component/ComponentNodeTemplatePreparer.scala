@@ -15,7 +15,7 @@ import pl.touk.nussknacker.restmodel.definition.UIComponentNodeTemplate
 private[component] object ComponentNodeTemplatePreparer {
 
   def componentNodeTemplatesWithGroupNames(
-      components: Map[ComponentId, ComponentWithStaticDefinition]
+      components: List[ComponentWithStaticDefinition]
   ): List[ComponentNodeTemplateWithGroupNames] = {
     def parameterTemplates(staticDefinition: ComponentStaticDefinition): List[NodeParameter] =
       NodeParameterTemplatesPreparer.prepareNodeParameterTemplates(staticDefinition.parameters)
@@ -24,11 +24,10 @@ private[component] object ComponentNodeTemplatePreparer {
       ServiceRef(id.name, parameterTemplates(staticDefinition))
 
     def prepareComponentNodeTemplateWithGroup(
-        id: ComponentId,
         component: ComponentDefinitionWithImplementation,
         staticDefinition: ComponentStaticDefinition
     ) = {
-      val nodeTemplate = (id, component.componentTypeSpecificData) match {
+      val nodeTemplate = (component.id, component.componentTypeSpecificData) match {
         case (BuiltInComponentId.Filter, _) =>
           Filter("", Expression.spel("true"))
         case (BuiltInComponentId.Split, _) =>
@@ -70,12 +69,12 @@ private[component] object ComponentNodeTemplatePreparer {
           val outputs = outputNames.map(name => (name, name)).toMap
           FragmentInput("", FragmentRef(id.name, parameterTemplates(staticDefinition), outputs))
         case (_, BuiltInComponentSpecificData) =>
-          throw new IllegalStateException(s"Not expected component: $id with definition: $component")
+          throw new IllegalStateException(s"Not expected component: $component")
       }
       val branchParametersTemplate =
         NodeParameterTemplatesPreparer.prepareNodeBranchParameterTemplates(staticDefinition.parameters)
       val componentNodeTemplate = UIComponentNodeTemplate.create(
-        id,
+        component.id,
         nodeTemplate,
         branchParametersTemplate
       )
@@ -86,8 +85,8 @@ private[component] object ComponentNodeTemplatePreparer {
       )
     }
 
-    components.toList.map { case (id, ComponentWithStaticDefinition(component, staticDefinition)) =>
-      prepareComponentNodeTemplateWithGroup(id, component, staticDefinition)
+    components.map { withStatic =>
+      prepareComponentNodeTemplateWithGroup(withStatic.component, withStatic.staticDefinition)
     }
   }
 

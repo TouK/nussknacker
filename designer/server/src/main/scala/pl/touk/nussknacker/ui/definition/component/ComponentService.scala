@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.component.{ComponentId, DesignerWideCompon
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichScalaNestedMap}
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
   ComponentListElement,
@@ -15,9 +14,9 @@ import pl.touk.nussknacker.restmodel.component.{
 }
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import DefaultComponentService.toComponentUsagesInScenario
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
+import pl.touk.nussknacker.ui.definition.component.DefaultComponentService.toComponentUsagesInScenario
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -121,19 +120,19 @@ class DefaultComponentService(
   }
 
   private def createComponents(
-      componentsDefinition: Map[ComponentId, ComponentDefinitionWithImplementation],
+      componentsDefinition: List[ComponentDefinitionWithImplementation],
       category: Category,
   ): List[ComponentListElement] = {
-    componentsDefinition.toList
-      .map { case (id, definition) =>
+    componentsDefinition
+      .map { definition =>
         val designerWideId = definition.designerWideId
-        val links          = createComponentLinks(designerWideId, id, definition)
+        val links          = createComponentLinks(designerWideId, definition)
 
         ComponentListElement(
           id = designerWideId,
-          name = id.name,
+          name = definition.name,
           icon = definition.icon,
-          componentType = id.`type`,
+          componentType = definition.componentType,
           componentGroupName = definition.componentGroup,
           categories = List(category),
           links = links,
@@ -156,13 +155,10 @@ class DefaultComponentService(
 
   // Collect all component ids excepts fragments' because fragments can't have ComponentId overridden, so we can use the default id without fetching them
   private def processingTypeAndInfoToNonFragmentComponentId(implicit user: LoggedUser) =
-    processingTypeDataProvider.all.toList
-      .map { case (processingType, processingTypeData) =>
-        processingType -> definedComponents(processingTypeData, fragments = List.empty)
-      }
-      .toMap
-      .collapseNestedMap
-      .mapValuesNow(_.designerWideId)
+    (for {
+      (processingType, processingTypeData) <- processingTypeDataProvider.all.toList
+      component                            <- definedComponents(processingTypeData, fragments = List.empty)
+    } yield (processingType, component.id) -> component.designerWideId).toMap
 
   private def definedComponents(
       processingTypeData: ComponentServiceProcessingTypeData,
@@ -176,12 +172,11 @@ class DefaultComponentService(
 
   private def createComponentLinks(
       designerWideId: DesignerWideComponentId,
-      id: ComponentId,
       component: ComponentDefinitionWithImplementation
   ): List[ComponentLink] = {
     val componentLinks = componentLinksConfig
-      .filter(_.isAvailable(id.`type`))
-      .map(_.toComponentLink(designerWideId, id.name))
+      .filter(_.isAvailable(component.componentType))
+      .map(_.toComponentLink(designerWideId, component.name))
 
     // If component configuration contains documentation link then we add base link
     component.docsUrl

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
@@ -17,10 +17,10 @@ class AlignedComponentsDefinitionProvider(
   def getAlignedComponentsWithBuiltInComponentsAndFragments(
       forFragment: Boolean,
       fragments: List[CanonicalProcess],
-  ): Map[ComponentId, ComponentDefinitionWithImplementation] = {
+  ): List[ComponentDefinitionWithImplementation] = {
     val filteredModel = if (forFragment) {
       modelDefinition
-        .filterComponents((componentId, _) => componentId.`type` != ComponentType.Source)
+        .filterComponents(_.componentType != ComponentType.Source)
     } else {
       modelDefinition
     }
@@ -34,20 +34,17 @@ class AlignedComponentsDefinitionProvider(
 
     filteredModel
       .withComponents(builtInComponents)
-      .withComponents(fragmentComponents.toList)
+      .withComponents(fragmentComponents)
       .components
   }
 
   private def extractFragmentComponents(
       fragmentsScenarios: List[CanonicalProcess],
-  ): Map[String, ComponentDefinitionWithImplementation] = {
-    (for {
+  ): List[ComponentDefinitionWithImplementation] =
+    for {
       scenario   <- fragmentsScenarios
       definition <- fragmentComponentDefinitionExtractor.extractFragmentComponentDefinition(scenario).toOption
-    } yield {
-      scenario.name.value -> definition
-    }).toMap
-  }
+    } yield definition
 
 }
 

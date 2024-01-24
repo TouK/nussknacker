@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfig) {
 
-  def prepareDefinitions(forFragment: Boolean): List[(String, ComponentDefinitionWithImplementation)] = {
+  def prepareDefinitions(forFragment: Boolean): List[ComponentDefinitionWithImplementation] = {
     val componentIds = if (forFragment) {
       BuiltInComponentId.AllAvailableForFragment
     } else {
@@ -27,7 +27,8 @@ class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfi
         .filterOutDisabledAndComputeFinalUiDefinition(combinedConfig, componentsUiConfig.groupName)
         .map { case (uiDefinition, _) =>
           // Currently built-in components are represented as method-based component, probably we should change it to some dedicated type
-          id.name -> MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+          MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+            id.name,
             BuiltInComponentSpecificData,
             ComponentStaticDefinition(List.empty, None),
             uiDefinition

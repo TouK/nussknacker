@@ -38,16 +38,16 @@ class DefinitionsService(
         alignedComponentsDefinitionProvider
           .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
       val withStaticDefinition = alignedComponentsDefinition.map {
-        case (id, dynamic: DynamicComponentDefinitionWithImplementation) =>
+        case dynamic: DynamicComponentDefinitionWithImplementation =>
           val staticDefinition = staticDefinitionForDynamicComponents.getOrElse(
-            id,
-            throw new IllegalStateException(s"Static definition for dynamic component: $id should be precomputed")
+            dynamic.id,
+            throw new IllegalStateException(s"Static definition for dynamic component: $dynamic should be precomputed")
           )
-          id -> component.ComponentWithStaticDefinition(dynamic, staticDefinition)
-        case (id, methodBased: MethodBasedComponentDefinitionWithImplementation) =>
-          id -> component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
-        case (id, other) =>
-          throw new IllegalStateException(s"Unknown component $id representation: $other")
+          ComponentWithStaticDefinition(dynamic, staticDefinition)
+        case methodBased: MethodBasedComponentDefinitionWithImplementation =>
+          ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
+        case other =>
+          throw new IllegalStateException(s"Unknown component representation: $other")
       }
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
         .finalizeScenarioProperties(scenarioPropertiesConfig)
@@ -60,18 +60,18 @@ class DefinitionsService(
   }
 
   private def prepareUIDefinitions(
-      components: Map[ComponentId, ComponentWithStaticDefinition],
+      components: List[ComponentWithStaticDefinition],
       forFragment: Boolean,
       finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
   ): UIDefinitions = {
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
-      components = components.mapValuesNow(createUIComponentDefinition),
+      components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       scenarioPropertiesConfig =
         (if (forFragment) FragmentPropertiesConfig.properties else finalizedScenarioPropertiesConfig)
           .mapValuesNow(createUIScenarioPropertyConfig),
-      edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.mapValuesNow(_.component)),
+      edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActions.map(UICustomAction(_))
     )
   }

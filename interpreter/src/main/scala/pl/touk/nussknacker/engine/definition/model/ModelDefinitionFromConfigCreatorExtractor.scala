@@ -64,7 +64,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+  ): List[ComponentDefinitionWithImplementation] = {
     collectAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component, componentConfig) =>
       ComponentDefinitionExtractor
         .extract(
@@ -75,7 +75,6 @@ object ModelDefinitionFromConfigCreatorExtractor {
           determineDesignerWideId,
           additionalConfigsFromProvider
         )
-        .map(componentName -> _)
     }
   }
 

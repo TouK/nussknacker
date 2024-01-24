@@ -33,6 +33,7 @@ class FragmentComponentDefinitionExtractor(
       val componentId = determineDesignerWideId(ComponentId(ComponentType.Fragment, fragment.name.value))
 
       FragmentComponentDefinition(
+        name = fragment.name.value,
         implementationInvoker = ComponentImplementationInvoker.nullImplementationInvoker,
         parameters = parameters,
         outputNames = outputNames,

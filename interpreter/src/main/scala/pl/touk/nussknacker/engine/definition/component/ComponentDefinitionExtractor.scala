@@ -31,7 +31,7 @@ object ComponentDefinitionExtractor {
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): Option[(String, ComponentDefinitionWithImplementation)] = {
+  ): Option[ComponentDefinitionWithImplementation] = {
     val configBasedOnDefinition = SingleComponentConfig.zero
       .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
     ComponentDefinitionExtractor
@@ -43,7 +43,6 @@ object ComponentDefinitionExtractor {
         determineDesignerWideId,
         additionalConfigsFromProvider
       )
-      .map(inputComponentDefinition.name -> _)
   }
 
   def extract(
@@ -101,6 +100,7 @@ object ComponentDefinitionExtractor {
           withUiDefinitionForNotDisabledComponent(DynamicComponentStaticDefinitionDeterminer.staticReturnType(e)) {
             (uiDefinition, parametersConfig) =>
               DynamicComponentDefinitionWithImplementation(
+                componentName,
                 implementationInvoker,
                 e,
                 componentTypeSpecificData,
@@ -132,6 +132,7 @@ object ComponentDefinitionExtractor {
               val staticDefinition      = ComponentStaticDefinition(methodDef.definedParameters, returnType)
               val implementationInvoker = extractImplementationInvoker(component, methodDef)
               MethodBasedComponentDefinitionWithImplementation(
+                componentName,
                 implementationInvoker,
                 component,
                 componentTypeSpecificData,

@@ -1230,8 +1230,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should be able to derive type from ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      "returningTypeService",
-      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceReturningTypeSample)
+      ComponentDefinitionWithImplementation.withEmptyConfig("returningTypeService", ServiceReturningTypeSample)
     )
 
     val process =
@@ -1259,8 +1258,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should override parameter definition from WithExplicitMethodToInvoke by definition from ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      "returningTypeService",
-      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceReturningTypeWithExplicitMethodSample)
+      ComponentDefinitionWithImplementation.withEmptyConfig(
+        "returningTypeService",
+        ServiceReturningTypeWithExplicitMethodSample
+      )
     )
 
     val process =
@@ -1287,8 +1288,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should be able to run custom validation using ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      "withCustomValidation",
-      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceWithCustomValidation)
+      ComponentDefinitionWithImplementation.withEmptyConfig("withCustomValidation", ServiceWithCustomValidation)
     )
 
     val process =

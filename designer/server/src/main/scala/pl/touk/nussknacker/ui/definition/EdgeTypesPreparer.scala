@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.definition
 
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentId}
+import pl.touk.nussknacker.engine.api.component.BuiltInComponentId
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   CustomComponentSpecificData,
@@ -13,10 +13,10 @@ import pl.touk.nussknacker.restmodel.definition.UINodeEdges
 
 object EdgeTypesPreparer {
 
-  def prepareEdgeTypes(components: Map[ComponentId, ComponentDefinitionWithImplementation]): List[UINodeEdges] = {
-    val fromComponents = components.toList
-      .map { case (id, component) =>
-        (id, component.componentTypeSpecificData)
+  def prepareEdgeTypes(components: List[ComponentDefinitionWithImplementation]): List[UINodeEdges] = {
+    val fromComponents = components
+      .map { component =>
+        (component.id, component.componentTypeSpecificData)
       }
       .collect {
         case (
