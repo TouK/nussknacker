@@ -112,11 +112,10 @@ class UIProcessValidator(
           case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
           case _                                                           => false
         }
-
         if (containsDisabledNodes) {
           val resolvedScenarioWithoutDisabledNodes =
             fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType)
-          resolvedScenarioWithoutDisabledNodes match {
+          val validationResultWithMergedNodeTypingData = resolvedScenarioWithoutDisabledNodes match {
             case Invalid(fragmentResolutionErrors)   => formatErrors(fragmentResolutionErrors)
             case Valid(scenarioWithoutDisabledNodes) =>
               // FIXME: Validation errors for fragment nodes are not properly handled by FE
@@ -124,6 +123,7 @@ class UIProcessValidator(
               val resultWithoutDisabledNodes = validateAndFormatResult(scenarioWithoutDisabledNodes)
               resultWithoutDisabledNodes.copy(nodeResults = validationResult.nodeResults)
           }
+          validationResultWithMergedNodeTypingData
         } else {
           validationResult
         }

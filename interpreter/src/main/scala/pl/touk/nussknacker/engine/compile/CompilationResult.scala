@@ -98,7 +98,7 @@ object CompilationResult extends Applicative[CompilationResult] {
           NonEmptyList(create(nonEmpty.flatMap(_.nodeIds).toSet + error.nodeId), nonMatching)
       }
     }
-    errors.foldLeft(NonEmptyList.one(mapOne(errors.head)))((acc, error) =>
+    errors.tail.foldLeft(NonEmptyList.one(mapOne(errors.head)))((acc, error) =>
       error match {
         case canonize.EmptyProcess => EmptyProcess :: acc
         case invalidRoot: canonize.InvalidRootNode =>
