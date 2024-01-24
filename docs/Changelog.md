@@ -22,7 +22,7 @@
   * Fixed highlighting of fragment nodes causing errors
   * Display fragment level validation errors when editing fragment
   * Improved error messages
-* [#5364](https://github.com/TouK/nussknacker/pull/5364) Fixed suggestions and validation in disabled nodes
+* [#5364](https://github.com/TouK/nussknacker/pull/5364) Fixed wrong expression suggestions and validation errors in disabled nodes
 
 1.13.0 (12 Jan 2024)
 -------------------------
