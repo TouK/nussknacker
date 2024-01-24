@@ -9,16 +9,14 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 object ScenarioWithDetailsConversions {
 
   def fromEntity(details: ScenarioWithDetailsEntity[ValidatedDisplayableProcess]): ScenarioWithDetails =
-    fromEntityIgnoringGraphAndValidationResult(details).withScenarioGraphAndValidationResult(
-      details.json
-    )
+    fromEntityIgnoringGraphAndValidationResult(details)
+      .withScenarioGraph(details.json.scenarioGraph)
+      .withValidationResult(details.json.validationResult)
 
   def fromEntityWithScenarioGraph(
       details: ScenarioWithDetailsEntity[DisplayableProcess]
   ): ScenarioWithDetails =
-    fromEntityIgnoringGraphAndValidationResult(details).withScenarioGraphAndValidationResult(
-      ValidatedDisplayableProcess.withEmptyValidationResult(details.json)
-    )
+    fromEntityIgnoringGraphAndValidationResult(details).withScenarioGraph(details.json)
 
   def fromEntityIgnoringGraphAndValidationResult(
       details: ScenarioWithDetailsEntity[_]
@@ -42,7 +40,8 @@ object ScenarioWithDetailsConversions {
       lastDeployedAction = details.lastDeployedAction,
       lastStateAction = details.lastStateAction,
       lastAction = details.lastAction,
-      json = None,
+      scenarioGraph = None,
+      validationResult = None,
       history = details.history,
       modelVersion = details.modelVersion,
       state = None
@@ -54,10 +53,6 @@ object ScenarioWithDetailsConversions {
     // TODO: Instead of doing these conversions below, wee should pass around ScenarioWithDetails
     def toEntity: ScenarioWithDetailsEntity[Unit] = {
       toEntity(())
-    }
-
-    def toEntityWithScenarioGraphUnsafe: ScenarioWithDetailsEntity[DisplayableProcess] = {
-      toEntity(scenarioWithDetails.scenarioGraphAndValidationResultUnsafe.toDisplayable(scenarioWithDetails.name))
     }
 
     private def toEntity[T](prepareJson: => T): ScenarioWithDetailsEntity[T] = {

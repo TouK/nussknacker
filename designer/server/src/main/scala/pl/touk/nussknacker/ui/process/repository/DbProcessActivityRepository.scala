@@ -31,7 +31,7 @@ trait ProcessActivityRepository {
   def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]]
 }
 
-final case class DbProcessActivityRepository(dbRef: DbRef)
+final case class DbProcessActivityRepository(protected val dbRef: DbRef)
     extends ProcessActivityRepository
     with LazyLogging
     with BasicRepository

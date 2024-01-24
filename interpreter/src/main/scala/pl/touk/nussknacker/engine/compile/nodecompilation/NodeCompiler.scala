@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.definition.component.dynamic.{
   FinalStateValue
 }
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -75,7 +75,7 @@ object NodeCompiler {
 
 class NodeCompiler(
     definitions: ModelDefinition[ComponentDefinitionWithImplementation],
-    fragmentDefinitionExtractor: FragmentCompleteDefinitionExtractor,
+    fragmentDefinitionExtractor: FragmentParametersCompleteDefinitionExtractor,
     expressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
     resultCollector: ResultCollector,

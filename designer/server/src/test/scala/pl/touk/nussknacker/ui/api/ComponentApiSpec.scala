@@ -278,7 +278,7 @@ class ComponentApiSpec
           .source("source", sourceComponentName)
           .emptySink("sink", "kafka")
 
-        createSavedScenario(scenario, Category1, Streaming)
+        createSavedScenario(scenario)
         val componentId = ComponentId.default(Streaming, ComponentInfo(ComponentType.Source, sourceComponentName))
 
         given()

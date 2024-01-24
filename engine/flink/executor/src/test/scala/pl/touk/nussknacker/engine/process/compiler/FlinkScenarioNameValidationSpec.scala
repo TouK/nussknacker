@@ -24,8 +24,7 @@ class FlinkScenarioNameValidationSpec extends AnyFunSuite with Matchers with Pro
     val modelData        = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
     val processValidator = ProcessValidator.default(modelData)
 
-    val validationResult = processValidator
-      .validate(processWithInvalidName)
+    val validationResult = processValidator.validate(processWithInvalidName, isFragment = false)
 
     validationResult.result should matchPattern { case Invalid(NonEmptyList(ScenarioNameValidationError(_, _), _)) =>
     }

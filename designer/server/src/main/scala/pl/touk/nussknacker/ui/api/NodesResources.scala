@@ -85,14 +85,13 @@ class NodesResources(
           entity(as[PropertiesValidationRequest]) { request =>
             complete {
               val scenario = DisplayableProcess(
-                request.name,
                 ProcessProperties(request.additionalFields),
                 Nil,
-                Nil,
-                process.processingType,
-                process.processCategory
+                Nil
               )
-              val result = typeToProcessValidator.forTypeUnsafe(process.processingType).validate(scenario)
+              val result = typeToProcessValidator
+                .forTypeUnsafe(process.processingType)
+                .validate(scenario, request.name, process.isFragment)
               NodeValidationResult(
                 parameters = None,
                 expressionType = None,
@@ -185,7 +184,7 @@ object NodesResources {
 
 @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
     sourceParameters: TestSourceParameters,
-    displayableProcess: DisplayableProcess
+    scenarioGraph: DisplayableProcess
 )
 
 @JsonCodec(encodeOnly = true) final case class ParametersValidationResult(

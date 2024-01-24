@@ -3,24 +3,14 @@ package pl.touk.nussknacker.ui.process
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
-import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
 
-  // TODO: tests for user privileges
-  private implicit val user: LoggedUser = AdminUser("admin", "admin")
-
   it should "create new empty process" in {
-    val processingType = "testProcessingType"
+    val preparer = new NewProcessPreparer(ProcessTestData.streamingTypeSpecificInitialData, Map.empty)
 
-    val preparer = new NewProcessPreparer(
-      mapProcessingTypeDataProvider(processingType -> ProcessTestData.streamingTypeSpecificInitialData),
-      mapProcessingTypeDataProvider(processingType -> Map.empty)
-    )
-
-    val emptyProcess = preparer.prepareEmptyProcess(ProcessName("processId1"), processingType, isFragment = false)
+    val emptyProcess = preparer.prepareEmptyProcess(ProcessName("processId1"), isFragment = false)
 
     emptyProcess.name shouldBe ProcessName("processId1")
     emptyProcess.nodes shouldBe List.empty

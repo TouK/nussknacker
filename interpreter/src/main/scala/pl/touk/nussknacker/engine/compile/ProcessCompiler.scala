@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
-import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.graph.node.{Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
@@ -58,11 +58,11 @@ class ProcessCompiler(
 
 trait ProcessValidator extends LazyLogging {
 
-  def validate(process: CanonicalProcess): CompilationResult[Unit] = {
+  def validate(process: CanonicalProcess, isFragment: Boolean): CompilationResult[Unit] = {
 
     try {
       CompilationResult.map3(
-        CompilationResult(IdValidator.validate(process)),
+        CompilationResult(IdValidator.validate(process, isFragment)),
         CompilationResult(validateWithCustomProcessValidators(process)),
         compile(process).map(_ => ()): CompilationResult[Unit]
       )((_, _, compiled) => {
@@ -338,14 +338,14 @@ object ProcessValidator {
       modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions
     )
-    val fragmentDefinitionExtractor = FragmentCompleteDefinitionExtractor(
+    val fragmentParametersDefinitionExtractor = FragmentParametersCompleteDefinitionExtractor(
       classLoader,
       expressionCompiler
     )
 
     val nodeCompiler = new NodeCompiler(
       modelDefinition,
-      fragmentDefinitionExtractor,
+      fragmentParametersDefinitionExtractor,
       expressionCompiler,
       classLoader,
       PreventInvocationCollector,

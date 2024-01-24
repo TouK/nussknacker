@@ -28,7 +28,7 @@ export default function Tips(): JSX.Element {
 
     const { isToolTipsHighlighted: isHighlighted } = useSelector(getUi);
     const testResults = useSelector(getTestResults);
-    const { errors, warnings } = ProcessUtils.getValidationResult(scenario.json);
+    const { errors, warnings } = ProcessUtils.getValidationResult(scenario);
 
     return (
         <ToolbarWrapper title={i18next.t("panels.tips.title", "Tips")} id="TIPS-PANEL">
@@ -44,7 +44,7 @@ export default function Tips(): JSX.Element {
                         <Warnings
                             warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
                             showDetails={showDetails}
-                            scenarioGraph={scenario.json}
+                            scenarioGraph={scenario.scenarioGraph}
                         />
                     )}
                 </Scrollbars>

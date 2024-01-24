@@ -41,7 +41,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     List(
       ComponentDefinition(
         "kafka",
-        new UniversalKafkaSourceFactory[Any, Any](
+        new UniversalKafkaSourceFactory(
           schemaRegistryClientFactory,
           universalSerdeProvider,
           overriddenDependencies,

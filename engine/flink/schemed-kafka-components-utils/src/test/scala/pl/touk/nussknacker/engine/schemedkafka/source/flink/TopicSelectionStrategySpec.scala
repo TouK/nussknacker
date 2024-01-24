@@ -42,7 +42,7 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   test("show how to override topic selection strategy") {
-    new UniversalKafkaSourceFactory[Any, Any](
+    new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
       testModelDependencies,

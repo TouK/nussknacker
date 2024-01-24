@@ -8,7 +8,7 @@ export function importFiles(processName: ProcessName, files: File[]): ThunkActio
             try {
                 dispatch({ type: "PROCESS_LOADING" });
                 const process = await HttpService.importProcess(processName, file);
-                dispatch({ type: "UPDATE_IMPORTED_PROCESS", processJson: process.data });
+                dispatch({ type: "UPDATE_IMPORTED_PROCESS", ...process.data });
             } catch (error) {
                 dispatch({ type: "LOADING_FAILED" });
             }

@@ -49,7 +49,7 @@ class DBFetchingProcessRepositorySpec
   private var currentTime: Instant = Instant.now()
 
   private val actions =
-    DbProcessActionRepository.create(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+    new DbProcessActionRepository(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
   private val fetching = DBFetchingProcessRepository.createFutureRepository(testDbRef, actions)
 
@@ -319,10 +319,9 @@ class DBFetchingProcessRepositorySpec
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
       fetching
-        .fetchLatestProcessesDetails[DisplayableProcess](ScenarioQuery.unarchived)
+        .fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchived)
         .futureValue
         .filter(_.processId.value == processId.value)
-        .map(_.json)
         .map(_.name)
     }
   }

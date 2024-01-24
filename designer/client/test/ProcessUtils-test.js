@@ -125,63 +125,64 @@ const components = {
 };
 
 const process = {
-    id: "transactionStart",
-    properties: { parallelism: 2 },
-    nodes: [
-        {
-            type: "Source",
-            id: "start",
-            ref: { typ: "kafka-transaction", parameters: [{ name: "Topic", Value: "transaction.topic" }] },
-        },
-        {
-            type: "VariableBuilder",
-            id: "processVariables",
-            varName: "processVariables",
-            fields: [{ name: "processingStartTime", expression: { language: "spel", expression: "#now()" } }],
-        },
-        {
-            type: "Variable",
-            id: "variableNode",
-            varName: "someVariableName",
-            value: { language: "spel", expression: "'value'" },
-        },
-        {
-            type: "Filter",
-            id: "anonymousUserFilter",
-            expression: { language: "spel", expression: "#input.PATH != 'Anonymous'" },
-        },
-        {
-            type: "Enricher",
-            id: "decodeHtml",
-            service: {
-                id: "transactionParser",
-                parameters: [{ name: "transaction", expression: { language: "spel", expression: "#input" } }],
+    scenarioGraph: {
+        properties: { parallelism: 2 },
+        nodes: [
+            {
+                type: "Source",
+                id: "start",
+                ref: { typ: "kafka-transaction", parameters: [{ name: "Topic", Value: "transaction.topic" }] },
             },
-            output: "parsedTransaction",
-        },
-        { type: "Filter", id: "someFilterNode", expression: { language: "spel", expression: "true" } },
-        {
-            type: "CustomNode",
-            id: "aggregateId",
-            outputVar: "aggregateResult",
-            nodeType: "transactionAggregator",
-            parameters: [{ name: "withAdditional", value: "''" }],
-        },
-        {
-            type: "Sink",
-            id: "endEnriched",
-            ref: { typ: "transactionSink", parameters: [{ name: "Topic", Value: "transaction.errors" }] },
-        },
-    ],
-    edges: [
-        { from: "start", to: "processVariables" },
-        { from: "processVariables", to: "variableNode" },
-        { from: "variableNode", to: "anonymousUserFilter" },
-        { from: "anonymousUserFilter", to: "decodeHtml" },
-        { from: "decodeHtml", to: "someFilterNode" },
-        { from: "someFilterNode", to: "aggregateId" },
-        { from: "aggregateId", to: "endEnriched" },
-    ],
+            {
+                type: "VariableBuilder",
+                id: "processVariables",
+                varName: "processVariables",
+                fields: [{ name: "processingStartTime", expression: { language: "spel", expression: "#now()" } }],
+            },
+            {
+                type: "Variable",
+                id: "variableNode",
+                varName: "someVariableName",
+                value: { language: "spel", expression: "'value'" },
+            },
+            {
+                type: "Filter",
+                id: "anonymousUserFilter",
+                expression: { language: "spel", expression: "#input.PATH != 'Anonymous'" },
+            },
+            {
+                type: "Enricher",
+                id: "decodeHtml",
+                service: {
+                    id: "transactionParser",
+                    parameters: [{ name: "transaction", expression: { language: "spel", expression: "#input" } }],
+                },
+                output: "parsedTransaction",
+            },
+            { type: "Filter", id: "someFilterNode", expression: { language: "spel", expression: "true" } },
+            {
+                type: "CustomNode",
+                id: "aggregateId",
+                outputVar: "aggregateResult",
+                nodeType: "transactionAggregator",
+                parameters: [{ name: "withAdditional", value: "''" }],
+            },
+            {
+                type: "Sink",
+                id: "endEnriched",
+                ref: { typ: "transactionSink", parameters: [{ name: "Topic", Value: "transaction.errors" }] },
+            },
+        ],
+        edges: [
+            { from: "start", to: "processVariables" },
+            { from: "processVariables", to: "variableNode" },
+            { from: "variableNode", to: "anonymousUserFilter" },
+            { from: "anonymousUserFilter", to: "decodeHtml" },
+            { from: "decodeHtml", to: "someFilterNode" },
+            { from: "someFilterNode", to: "aggregateId" },
+            { from: "aggregateId", to: "endEnriched" },
+        ],
+    },
     validationResult: { errors: { invalidNodes: {} } },
 };
 
@@ -203,25 +204,30 @@ const processWithVariableTypes = {
 };
 
 const fragment = {
-    id: "fragment1",
-    properties: { parallelism: 2 },
-    nodes: [
-        {
-            type: "FragmentInputDefinition",
-            id: "start",
-            parameters: [{ name: "fragmentParam", typ: { refClazzName: "java.lang.String" } }],
-        },
-        { type: "Filter", id: "filter1", expression: { language: "spel", expression: "#input.PATH != 'Anonymous'" } },
-        {
-            type: "Sink",
-            id: "endEnriched",
-            ref: { typ: "transactionSink", parameters: [{ name: "Topic", Value: "transaction.errors" }] },
-        },
-    ],
-    edges: [
-        { from: "start", to: "filter1" },
-        { from: "filter1", to: "endEnriched" },
-    ],
+    scenarioGraph: {
+        properties: { parallelism: 2 },
+        nodes: [
+            {
+                type: "FragmentInputDefinition",
+                id: "start",
+                parameters: [{ name: "fragmentParam", typ: { refClazzName: "java.lang.String" } }],
+            },
+            {
+                type: "Filter",
+                id: "filter1",
+                expression: { language: "spel", expression: "#input.PATH != 'Anonymous'" },
+            },
+            {
+                type: "Sink",
+                id: "endEnriched",
+                ref: { typ: "transactionSink", parameters: [{ name: "Topic", Value: "transaction.errors" }] },
+            },
+        ],
+        edges: [
+            { from: "start", to: "filter1" },
+            { from: "filter1", to: "endEnriched" },
+        ],
+    },
     validationResult: { errors: { invalidNodes: {} } },
 };
 

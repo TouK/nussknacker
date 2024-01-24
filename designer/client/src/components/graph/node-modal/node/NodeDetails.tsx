@@ -36,7 +36,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
 
     const { node, scenario = scenarioFromGlobalStore } = props.data.meta;
     const [editedNode, setEditedNode] = useState<NodeType>(node);
-    const [outputEdges, setOutputEdges] = useState(() => scenario.json.edges.filter(({ from }) => from === node.id));
+    const [outputEdges, setOutputEdges] = useState(() => scenario.scenarioGraph.edges.filter(({ from }) => from === node.id));
 
     const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
         setEditedNode(node);
@@ -118,7 +118,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }, [node.id]);
 
     //no process? no nodes? no window contents! no errors for whole tree!
-    if (!scenarioFromGlobalStore?.json.nodes) {
+    if (!scenarioFromGlobalStore?.scenarioGraph.nodes) {
         return null;
     }
 

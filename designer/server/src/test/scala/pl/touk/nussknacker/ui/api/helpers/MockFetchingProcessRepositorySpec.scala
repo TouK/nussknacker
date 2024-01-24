@@ -27,23 +27,23 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val categorySecret      = "secret"
 
   private val json    = ProcessTestData.sampleDisplayableProcess
-  private val subJson = ProcessConverter.toDisplayable(ProcessTestData.sampleFragment, Streaming, categoryMarketing)
+  private val subJson = ProcessConverter.toDisplayable(ProcessTestData.sampleFragment)
 
   private val someVersion = VersionId(666L)
 
   private val marketingProcess =
-    createBasicProcess("marketingProcess", category = categoryMarketing, lastAction = Some(Deploy), json = Some(json))
+    createScenarioEntity("marketingProcess", category = categoryMarketing, lastAction = Some(Deploy), json = Some(json))
   private val marketingFragment =
-    createFragment("marketingFragment", category = categoryMarketing, json = Some(subJson))
+    createFragmentEntity("marketingFragment", category = categoryMarketing, json = Some(subJson))
 
-  private val marketingArchivedFragment = createFragment(
+  private val marketingArchivedFragment = createFragmentEntity(
     "marketingArchivedFragment",
     isArchived = true,
     category = categoryMarketing,
     lastAction = Some(Archive)
   )
 
-  private val marketingArchivedProcess = createBasicProcess(
+  private val marketingArchivedProcess = createScenarioEntity(
     "marketingArchivedProcess",
     isArchived = true,
     category = categoryMarketing,
@@ -51,9 +51,9 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   )
 
   private val fraudProcess =
-    createBasicProcess("fraudProcess", category = categoryFraud, processingType = Fraud, lastAction = Some(Deploy))
+    createScenarioEntity("fraudProcess", category = categoryFraud, processingType = Fraud, lastAction = Some(Deploy))
 
-  private val fraudArchivedProcess = createBasicProcess(
+  private val fraudArchivedProcess = createScenarioEntity(
     "fraudArchivedProcess",
     isArchived = true,
     category = categoryFraudSecond,
@@ -63,9 +63,9 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   )
 
   private val fraudFragment =
-    createFragment("fraudFragment", category = categoryFraud, processingType = Fraud, json = Some(json))
+    createFragmentEntity("fraudFragment", category = categoryFraud, processingType = Fraud, json = Some(json))
 
-  private val fraudArchivedFragment = createFragment(
+  private val fraudArchivedFragment = createFragmentEntity(
     "fraudArchivedFragment",
     isArchived = true,
     category = categoryFraud,
@@ -73,7 +73,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     json = Some(subJson)
   )
 
-  private val fraudSecondProcess = createBasicProcess(
+  private val fraudSecondProcess = createScenarioEntity(
     "fraudSecondProcess",
     category = categoryFraudSecond,
     processingType = Fraud,
@@ -82,14 +82,20 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   )
 
   private val fraudSecondFragment =
-    createFragment("fraudSecondFragment", category = categoryFraudSecond, processingType = Fraud)
+    createFragmentEntity("fraudSecondFragment", category = categoryFraudSecond, processingType = Fraud)
 
-  private val secretProcess  = createBasicProcess("secretProcess", category = categorySecret)
-  private val secretFragment = createFragment("secretFragment", category = categorySecret)
+  private val secretProcess  = createScenarioEntity("secretProcess", category = categorySecret)
+  private val secretFragment = createFragmentEntity("secretFragment", category = categorySecret)
+
   private val secretArchivedFragment =
-    createFragment("secretArchivedFragment", isArchived = true, category = categorySecret, lastAction = Some(Archive))
+    createFragmentEntity(
+      "secretArchivedFragment",
+      isArchived = true,
+      category = categorySecret,
+      lastAction = Some(Archive)
+    )
 
-  private val secretArchivedProcess = createBasicProcess(
+  private val secretArchivedProcess = createScenarioEntity(
     "secretArchivedProcess",
     isArchived = true,
     category = categorySecret,
@@ -198,8 +204,9 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     val mockRepository = MockFetchingProcessRepository.withProcessesDetails(fragments)
 
     val displayableFragments = List(marketingFragment, fraudFragment, fraudSecondFragment, secretFragment)
-    val canonicalFragments   = displayableFragments.map(p => p.copy(json = ProcessConverter.fromDisplayable(p.json)))
-    val noneFragments        = displayableFragments.map(p => p.copy(json = ()))
+    val canonicalFragments =
+      displayableFragments.map(p => p.copy(json = ProcessConverter.fromDisplayable(p.json, p.name)))
+    val noneFragments = displayableFragments.map(p => p.copy(json = ()))
 
     mockRepository
       .fetchLatestProcessesDetails(ScenarioQuery.unarchivedFragments)(DisplayableShape, admin, global)
@@ -338,7 +345,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
 
     forAll(testingData) { (user: LoggedUser, userProcesses: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
       processes.foreach(process => {
-        val result         = mockRepository.fetchProcessingType(process.processId)(user, global)
+        val result         = mockRepository.fetchProcessingType(process.idWithName)(user, global)
         val processingType = Try(result.futureValue).toOption
         val expected       = if (userProcesses.contains(process)) Some(process.processingType) else None
         processingType shouldBe expected

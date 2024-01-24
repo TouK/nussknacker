@@ -35,9 +35,9 @@ import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
 class NotificationServiceTest
@@ -58,7 +58,7 @@ class NotificationServiceTest
   private val processRepository       = TestFactory.newFetchingProcessRepository(testDbRef)
   private val writeProcessRepository  = TestFactory.newWriteProcessRepository(testDbRef)
   private val actionRepository =
-    DbProcessActionRepository.create(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+    new DbProcessActionRepository(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
   private val expectedRefreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
   private val expectedRefreshAfterFail    = List(DataToRefresh.state)
@@ -160,7 +160,7 @@ class NotificationServiceTest
       actionRepository,
       dbioRunner,
       mock[ProcessingTypeDataProvider[UIProcessValidator, _]],
-      mock[ScenarioResolver],
+      mock[ProcessingTypeDataProvider[ScenarioResolver, _]],
       mock[ProcessChangeListener],
       None,
       clock
