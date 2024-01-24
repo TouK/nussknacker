@@ -8,7 +8,7 @@ import { Expression, NodeValidationError, UIParameter, VariableTypes } from "../
 import { WindowContent } from "../../windowManager";
 import { WindowKind } from "../../windowManager";
 import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
-import { NodeTable, NodeTableBody } from "../graph/node-modal/NodeDetailsContent/NodeTable";
+import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
 import { validateGenericActionParameters } from "../../actions/nk/genericAction";
@@ -16,8 +16,8 @@ import { getGenericActionValidation } from "../../reducers/selectors/genericActi
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { spelFormatters } from "../graph/node-modal/editors/expression/Formatter";
 import { isEmpty } from "lodash";
-import { NodeRow } from "../graph/node-modal/NodeDetailsContent/NodeStyled";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
+import { FormControl } from "@mui/material";
 
 export type GenericActionLayout = {
     name: string;
@@ -77,33 +77,31 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
         <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
             <ContentSize>
                 <NodeTable>
-                    <NodeTableBody>
-                        {(action?.parameters || []).map((param) => {
-                            const Editor: SimpleEditor | ExtendedEditor = editors[param.editor.type];
-                            const fieldName = param.name;
-                            const formatter =
-                                param.defaultValue.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null;
-                            return (
-                                <NodeRow key={param.name}>
-                                    <FieldLabel parameterDefinitions={action.parameters} paramName={param.name} />
-                                    <Editor
-                                        editorConfig={param?.editor}
-                                        className={"node-value"}
-                                        fieldErrors={getValidationErrorsForField(errors, fieldName)}
-                                        formatter={formatter}
-                                        expressionInfo={null}
-                                        onValueChange={setParam(fieldName)}
-                                        expressionObj={value[fieldName]}
-                                        readOnly={false}
-                                        key={fieldName}
-                                        showSwitch={true}
-                                        showValidation={true}
-                                        variableTypes={action.variableTypes}
-                                    />
-                                </NodeRow>
-                            );
-                        })}
-                    </NodeTableBody>
+                    {(action?.parameters || []).map((param) => {
+                        const Editor: SimpleEditor | ExtendedEditor = editors[param.editor.type];
+                        const fieldName = param.name;
+                        const formatter =
+                            param.defaultValue.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null;
+                        return (
+                            <FormControl key={param.name}>
+                                <FieldLabel parameterDefinitions={action.parameters} paramName={param.name} />
+                                <Editor
+                                    editorConfig={param?.editor}
+                                    className={"node-value"}
+                                    fieldErrors={getValidationErrorsForField(errors, fieldName)}
+                                    formatter={formatter}
+                                    expressionInfo={null}
+                                    onValueChange={setParam(fieldName)}
+                                    expressionObj={value[fieldName]}
+                                    readOnly={false}
+                                    key={fieldName}
+                                    showSwitch={true}
+                                    showValidation={true}
+                                    variableTypes={action.variableTypes}
+                                />
+                            </FormControl>
+                        );
+                    })}
                 </NodeTable>
             </ContentSize>
         </div>

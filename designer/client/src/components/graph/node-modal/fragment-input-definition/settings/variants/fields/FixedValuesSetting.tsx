@@ -1,11 +1,12 @@
 import React from "react";
-import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 import { useTranslation } from "react-i18next";
 import { FixedValuesType, onChangeType, FixedValuesOption, FixedListParameterVariant } from "../../../item";
 import { ListItems } from "./ListItems";
 import { Option, TypeSelect } from "../../../TypeSelect";
 import { FixedValuesPresets, NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import { UserDefinedListInput } from "./UserDefinedListInput";
+import { FieldsControl } from "../../../../node-row-fields-provider/FieldsControl";
 
 interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSelection"> {
     onChange: (path: string, value: onChangeType) => void;
@@ -47,7 +48,7 @@ export function FixedValuesSetting({
     return (
         <>
             {fixedValuesType === FixedValuesType.ValueInputWithFixedValuesPreset && (
-                <SettingRow>
+                <FieldsControl>
                     <SettingLabelStyled required>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect
                         readOnly={readOnly}
@@ -66,7 +67,7 @@ export function FixedValuesSetting({
                             fieldName={`$param.${name}.$fixedValuesPresets`}
                         />
                     )}
-                </SettingRow>
+                </FieldsControl>
             )}
             {fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided && (
                 <UserDefinedListInput

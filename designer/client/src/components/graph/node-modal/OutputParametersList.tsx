@@ -5,9 +5,8 @@ import { ComponentDefinition, NodeType, NodeValidationError, ProcessDefinitionDa
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useDiffMark } from "./PathsToMark";
 import { useTranslation } from "react-i18next";
-import { NodeRow } from "./NodeDetailsContent/NodeStyled";
-import { NodeLabelStyled } from "./node";
 import { isEmpty } from "lodash";
+import { FormControl, FormLabel } from "@mui/material";
 
 type OutputFieldProps = {
     autoFocus?: boolean;
@@ -119,10 +118,10 @@ export default function OutputParametersList({
     }
 
     return (
-        <NodeRow key="outputVariableNames">
-            <NodeLabelStyled title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
+        <FormControl key="outputVariableNames">
+            <FormLabel title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
                 {t("parameterOutputs.outputsText", "Outputs names:")}
-            </NodeLabelStyled>
+            </FormLabel>
             <div className="node-value">
                 <div className="fieldsControl">
                     {entries.map(([name, value]) => (
@@ -145,6 +144,6 @@ export default function OutputParametersList({
                     ))}
                 </div>
             </div>
-        </NodeRow>
+        </FormControl>
     );
 }

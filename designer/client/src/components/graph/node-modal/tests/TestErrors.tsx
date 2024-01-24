@@ -2,8 +2,7 @@ import React from "react";
 import WarningIcon from "@mui/icons-material/Warning";
 import NodeTip from "../NodeTip";
 import { useTestResults } from "../TestResultsWrapper";
-import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
-import { NodeRow } from "../NodeDetailsContent/NodeStyled";
+import { FormControl, FormHelperText, FormLabel } from "@mui/material";
 
 export default function TestErrors(): JSX.Element {
     const results = useTestResults();
@@ -13,17 +12,15 @@ export default function TestErrors(): JSX.Element {
     }
 
     return (
-        <NodeTableBody>
-            <NodeRow>
-                <div className="node-label">
-                    <NodeTip title={"Test case error"} icon={<WarningIcon sx={(theme) => ({ color: theme.custom.colors.warning })} />} />
-                </div>
-                <div className="node-value">
-                    <div className="node-error">
-                        <>{results.testResultsToShow.error}</>
-                    </div>
-                </div>
-            </NodeRow>
-        </NodeTableBody>
+        <FormControl>
+            <FormLabel>
+                <NodeTip title={"Test case error"} icon={<WarningIcon sx={(theme) => ({ color: theme.custom.colors.warning })} />} />
+            </FormLabel>
+            <div className="node-value">
+                <FormHelperText variant={"largeMessage"} error>
+                    {results.testResultsToShow.error}
+                </FormHelperText>
+            </div>
+        </FormControl>
     );
 }

@@ -1,7 +1,6 @@
 import { Edge, EdgeKind, NodeType, NodeValidationError, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useDiffMark } from "./PathsToMark";
-import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import { StaticExpressionField } from "./StaticExpressionField";
 import { DisableField } from "./DisableField";
@@ -36,7 +35,7 @@ export function Filter({
 }): JSX.Element {
     const [, isCompareView] = useDiffMark();
     return (
-        <NodeTableBody>
+        <>
             <IdField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
@@ -87,6 +86,6 @@ export function Filter({
                 setProperty={setProperty}
                 errors={errors}
             />
-        </NodeTableBody>
+        </>
     );
 }

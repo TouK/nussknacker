@@ -3,7 +3,6 @@ import React, { PropsWithChildren } from "react";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import { IdField } from "./IdField";
 import { DescriptionField } from "./DescriptionField";
-import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 
@@ -32,7 +31,7 @@ export const SourceSinkCommon = ({
     showValidation,
 }: PropsWithChildren<SourceSinkCommonProps>): JSX.Element => {
     return (
-        <NodeTableBody>
+        <>
             <IdField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
@@ -67,6 +66,6 @@ export const SourceSinkCommon = ({
                 setProperty={setProperty}
                 errors={errors}
             />
-        </NodeTableBody>
+        </>
     );
 };

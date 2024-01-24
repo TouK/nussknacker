@@ -1,11 +1,12 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../item";
-import { SettingRow, fieldLabel } from "./StyledSettingsComponnets";
+import { fieldLabel } from "./StyledSettingsComponnets";
 import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import EditableEditor from "../../../../editors/EditableEditor";
 import { NodeInput } from "../../../../../../withFocus";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
+import { FormControl } from "@mui/material";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../../../reducers/selectors/settings";
 
@@ -57,7 +58,7 @@ export default function ValidationFields({
                 fieldErrors={getValidationErrorsForField(errors, validationExpressionFieldName)}
                 showValidation
             />
-            <SettingRow>
+            <FormControl>
                 {fieldLabel({
                     label: t("fragment.validation.validationErrorMessage", "Validation error message:"),
                     hintText: t(
@@ -77,7 +78,7 @@ export default function ValidationFields({
                     readOnly={readOnly}
                     placeholder={t("fragment.validation.validationErrorMessagePlaceholder", "eg. Parameter value is not valid.")}
                 />
-            </SettingRow>
+            </FormControl>
         </>
     );
 }

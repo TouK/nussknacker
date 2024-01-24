@@ -1,6 +1,15 @@
 import { tintPrimary } from "./helpers";
 import { createTheme } from "@mui/material";
 
+declare module "@mui/material/FormHelperText" {
+    interface FormHelperTextPropsVariantOverrides {
+        largeMessage: true;
+    }
+    interface FormHelperTextOwnProps {
+        "data-testid"?: string;
+    }
+}
+
 declare module "@mui/material/styles" {
     // eslint-disable-next-line @typescript-eslint/no-empty-interface
     interface Theme {
@@ -264,6 +273,13 @@ export const nuTheme = createTheme({
             default: colors.canvasBackground,
         },
     },
+    typography: {
+        subtitle2: {
+            fontSize: "12px",
+            lineHeight: "inherit",
+            color: custom.colors.baseColor,
+        },
+    },
     components: {
         MuiSwitch: {
             styleOverrides: {
@@ -301,6 +317,44 @@ export const nuTheme = createTheme({
         },
         MuiCssBaseline: {
             styleOverrides: globalStyles,
+        },
+        MuiFormControl: {
+            styleOverrides: {
+                root: {
+                    display: "flex",
+                    flexDirection: "row",
+                    margin: "16px 0",
+                },
+            },
+        },
+        MuiFormLabel: {
+            styleOverrides: {
+                root: {
+                    display: "flex",
+                    marginTop: "9px",
+                    color: custom.colors.canvasBackground,
+                    flexBasis: "20%",
+                    maxWidth: "20em",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    overflowWrap: "anywhere",
+                },
+            },
+            defaultProps: {
+                focused: false,
+            },
+        },
+        MuiFormHelperText: {
+            styleOverrides: {
+                root: {
+                    marginLeft: 0,
+                    color: custom.colors.success,
+                },
+            },
+            variants: [{ props: { variant: "largeMessage" }, style: { fontSize: ".875rem" } }],
+            defaultProps: {
+                "data-testid": "form-helper-text",
+            },
         },
     },
     custom,
