@@ -27,8 +27,8 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentPar
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 
 /*
- * This class doesn't validate the parameters' initialValue and valueEditor (e.g. values can be of incorrect type).
- * If they are not validated it is not a breaking issue anyway as a process using these incorrect values will fail validation.
+ * This class doesn't validate the parameters' initialValue and valueEditor (e.g. values can be of incorrect type), as it would require ExpressionCompiler and ValidationContext.
+ * They are validated separately when creating fragment in NodeCompiler.compileSource, but if they are not validated it is not a breaking issue anyway as a process using these incorrect values will fail validation.
  */
 class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
 

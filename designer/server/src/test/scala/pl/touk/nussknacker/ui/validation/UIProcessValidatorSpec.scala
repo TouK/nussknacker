@@ -53,7 +53,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.possibleValues
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -507,9 +506,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
 
     val displayableFragment =
-      ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, Category1)
+      ProcessConverter.toDisplayable(fragmentWithInvalidParam)
 
-    val validationResult = configuredValidator.validate(displayableFragment)
+    val validationResult = validateWithConfiguredProperties(displayableFragment)
 
     validationResult.errors should not be empty
     validationResult.errors.invalidNodes("in") should matchPattern {
@@ -848,6 +847,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val process = processWithOptionalParameterService("")
 
     val validator = new UIProcessValidator(
+      TestProcessingTypes.Streaming,
       ProcessValidator.default(
         LocalModelData(
           ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
@@ -866,7 +866,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       new FragmentResolver(new StubFragmentRepository(Map.empty))
     )
 
-    val result = validator.validate(process)
+    val result = validator.validate(process, sampleProcessName, isFragment = false)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -935,6 +935,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("validate service parameter based on input config - MandatoryParameterValidator") {
     val validator = new UIProcessValidator(
+      TestProcessingTypes.Streaming,
       ProcessValidator.default(
         LocalModelData(
           ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
@@ -975,6 +976,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("validate service parameter based on input config - ValidationExpressionParameterValidator") {
     val validator = new UIProcessValidator(
+      TestProcessingTypes.Streaming,
       ProcessValidator.default(
         LocalModelData(
           ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
@@ -1284,7 +1286,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       .source("start", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
 
-    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
+    val displayable = ProcessConverter.toDisplayable(process)
     val result =
       mockedProcessValidator(Some(process)).validate(
         displayable,
@@ -1564,11 +1566,11 @@ private object UIProcessValidatorSpec {
       execConfig: Config = ConfigFactory.empty()
   ): UIProcessValidator = {
     mockedProcessValidator(
-      fragmentInDefaultProcessingType match {
-        case Some(frag) => Map(TestProcessingTypes.Streaming -> List(frag))
+      fragmentsByProcessingType = fragmentInDefaultProcessingType match {
+        case Some(frag) => Map(TestProcessingTypes.Streaming -> frag)
         case None       => Map.empty
       },
-      execConfig
+      execConfig = execConfig
     )
   }
 
