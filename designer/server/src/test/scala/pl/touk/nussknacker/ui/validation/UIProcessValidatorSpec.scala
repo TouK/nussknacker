@@ -1398,7 +1398,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val displayable = ProcessConverter.toDisplayable(scenario)
 
-    val processValidator = mockedProcessValidator(fragment, defaultConfig)
+    val processValidator = mockedProcessValidator(Some(fragment), defaultConfig)
     val result           = processValidator.validate(displayable, ProcessName(" "), isFragment = true)
 
     result.errors.invalidNodes shouldBe Map(
@@ -1489,7 +1489,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       )
 
-    val processValidator = mockedProcessValidator(fragment, defaultConfig)
+    val processValidator = mockedProcessValidator(Some(fragment), defaultConfig)
     val result           = processValidator.validate(processWithFragment, ProcessName("name"), isFragment = false)
 
     val nodeVariableTypes = result.nodeResults.mapValuesNow(_.variableTypes)
