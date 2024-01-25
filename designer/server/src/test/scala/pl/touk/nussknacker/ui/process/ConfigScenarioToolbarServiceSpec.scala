@@ -6,19 +6,20 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
-import pl.touk.nussknacker.ui.config.processtoolbar._
+import pl.touk.nussknacker.ui.config.scenariotoolbar._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
-class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
+class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
 
   import ToolbarButtonConfigType._
   import ToolbarButtonsConfigVariant._
   import ToolbarPanelTypeConfig._
   import org.scalatest.prop.TableDrivenPropertyChecks._
 
-  private lazy val config: Config = ConfigFactory.parseString(
-    """
+  private lazy val parsedConfig = CategoriesScenarioToolbarsConfigParser.parse(
+    ConfigFactory.parseString(
+      """
       |{
       |  processToolbarConfig {
       |    defaultConfig {
@@ -76,10 +77,10 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
       |  }
       |}
       |""".stripMargin
+    )
   )
 
-  private val categories = List("Category1", "Category2", "Category3")
-  private val service    = new ConfigProcessToolbarService(config, () => categories)
+  private val service = new ConfigScenarioToolbarService(parsedConfig)
 
   it should "verify all toolbar condition cases" in {
     val process          = createProcess("process", "Category1", isFragment = false, isArchived = false)
@@ -170,16 +171,6 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "raise exception when try get get settings for not existing category" in {
-    val process = createProcess("process", "not-existing", isFragment = false, isArchived = false)
-
-    intercept[IllegalArgumentException] {
-      service.getProcessToolbarSettings(process)
-    }.getMessage should include(
-      s"Try to get scenario toolbar settings for not existing category: ${process.processCategory}."
-    )
-  }
-
   it should "properly create process toolbar configuration" in {
     val process          = createProcess("process with space", "Category1", isFragment = false, isArchived = false)
     val archivedProcess  = createProcess("archived-process", "Category1", isFragment = false, isArchived = true)
@@ -199,21 +190,21 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
     )
 
     forAll(testingData) { (process: ScenarioWithDetailsEntity[_]) =>
-      val result   = service.getProcessToolbarSettings(process)
+      val result   = service.getScenarioToolbarSettings(process)
       val expected = createProcessToolbarSettings(process)
       result shouldBe expected
     }
   }
 
-  private def createProcessToolbarSettings(process: ScenarioWithDetailsEntity[_]): ProcessToolbarSettings = {
-    val processToolbarConfig = ProcessToolbarsConfigProvider.create(config, Some(process.processCategory))
-    val id                   = ToolbarHelper.createProcessToolbarId(processToolbarConfig, process)
+  private def createProcessToolbarSettings(process: ScenarioWithDetailsEntity[_]): ScenarioToolbarSettings = {
+    val processToolbarConfig = parsedConfig.getConfig(process.processCategory)
+    val id                   = ToolbarHelper.createScenarioToolbarId(processToolbarConfig, process)
 
     def processName(process: ScenarioWithDetailsEntity[_]) = UriUtils.encodeURIComponent(process.name.value)
 
     (process.isFragment, process.isArchived, process.processCategory) match {
       case (false, false, "Category1") =>
-        ProcessToolbarSettings(
+        ScenarioToolbarSettings(
           id,
           List(
             ToolbarPanel(CreatorPanel, None, None, None),
@@ -269,7 +260,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(ToolbarPanel(VersionsPanel, None, None, None))
         )
       case (false, true, "Category1") =>
-        ProcessToolbarSettings(
+        ScenarioToolbarSettings(
           id,
           List(
             ToolbarPanel(CreatorPanel, None, None, None),
@@ -314,7 +305,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(ToolbarPanel(VersionsPanel, None, None, None))
         )
       case (true, false, "Category1") =>
-        ProcessToolbarSettings(
+        ScenarioToolbarSettings(
           id,
           List(
             ToolbarPanel(AttachmentsPanel, None, None, None),
@@ -380,7 +371,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(ToolbarPanel(VersionsPanel, None, None, None))
         )
       case (true, true, "Category1") =>
-        ProcessToolbarSettings(
+        ScenarioToolbarSettings(
           id,
           List(
             ToolbarPanel(CreatorPanel, None, None, None),
@@ -435,7 +426,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(ToolbarPanel(VersionsPanel, None, None, None))
         )
       case (false, false, "Category2") =>
-        ProcessToolbarSettings(
+        ScenarioToolbarSettings(
           id,
           List(
             ToolbarPanel(TipsPanel, None, None, None)
@@ -489,7 +480,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil
         )
       case (false, false, "Category3") =>
-        ProcessToolbarSettings(
+        ScenarioToolbarSettings(
           id,
           List(
             ToolbarPanel(AttachmentsPanel, None, None, None)
@@ -543,7 +534,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(ToolbarPanel(VersionsPanel, None, None, None))
         )
       case (_, _, _) =>
-        ProcessToolbarSettings("not-exist", Nil, Nil, Nil, Nil)
+        ScenarioToolbarSettings("not-exist", Nil, Nil, Nil, Nil)
     }
   }
 

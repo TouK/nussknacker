@@ -25,12 +25,12 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.api.helpers.spel._
-import pl.touk.nussknacker.ui.config.processtoolbar.ProcessToolbarsConfigProvider
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
+import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.process.{ProcessToolbarSettings, ScenarioQuery, ToolbarButton, ToolbarPanel}
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
@@ -925,11 +925,11 @@ class ProcessesResourcesSpec
   }
 
   test("fetching scenario toolbar definitions") {
-    val toolbarConfig = ProcessToolbarsConfigProvider.create(testConfig, Some(Category1))
+    val toolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(testConfig).getConfig(Category1)
     val id            = createEmptyProcess(processName)
 
     withProcessToolbars(processName) { toolbar =>
-      toolbar shouldBe ProcessToolbarSettings(
+      toolbar shouldBe ScenarioToolbarSettings(
         id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
         List(
           ToolbarPanel(TipsPanel, None, None, None),
@@ -1013,11 +1013,11 @@ class ProcessesResourcesSpec
     }
 
   protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(
-      callback: ProcessToolbarSettings => Unit
+      callback: ScenarioToolbarSettings => Unit
   ): Unit =
     getProcessToolbars(processName, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
-      val toolbar = decode[ProcessToolbarSettings](responseAs[String]).toOption.get
+      val toolbar = decode[ScenarioToolbarSettings](responseAs[String]).toOption.get
       callback(toolbar)
     }
 

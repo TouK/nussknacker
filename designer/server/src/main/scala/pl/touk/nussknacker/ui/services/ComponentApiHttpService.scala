@@ -5,7 +5,6 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentApiEndpoints
 import pl.touk.nussknacker.ui.definition.component.ComponentService
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
 import scala.concurrent.ExecutionContext
@@ -13,10 +12,9 @@ import scala.concurrent.ExecutionContext
 class ComponentApiHttpService(
     config: Config,
     authenticator: AuthenticationResources,
-    getProcessCategoryService: () => ProcessCategoryService,
     componentService: ComponentService
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, getProcessCategoryService, authenticator)
+    extends BaseHttpService(config, authenticator)
     with LazyLogging {
 
   private val componentApiEndpoints = new ComponentApiEndpoints(authenticator.authenticationMethod())

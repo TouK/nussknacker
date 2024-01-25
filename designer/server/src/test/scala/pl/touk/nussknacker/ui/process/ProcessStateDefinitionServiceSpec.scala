@@ -15,14 +15,10 @@ import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ValueWithPermission}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
-
-  private val categoryService = ConfigProcessCategoryService(
-    Map(Streaming -> Category1, Fraud -> Category2)
-  )
 
   test("should fetch state definitions when definitions with the same name are unique") {
     val streamingProcessStateDefinitionManager =
@@ -146,7 +142,13 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       createProcessingTypeDataMap(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
     val stateDefinitions = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
     val service = new ProcessStateDefinitionService(
-      ProcessingTypeDataProvider(Map.empty, (stateDefinitions, categoryService))
+      ProcessingTypeDataProvider(
+        Map(
+          Streaming -> ValueWithPermission.userWithAccessRightsToCategory(Category1, Category1),
+          Fraud     -> ValueWithPermission.userWithAccessRightsToCategory(Category2, Category2)
+        ),
+        stateDefinitions
+      )
     )
     service.fetchStateDefinitions(user)
   }
