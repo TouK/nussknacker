@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentId}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyMandatoryParameter,
   ExpressionParserCompilationError,
@@ -50,7 +50,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   private val modelDefinition = ModelDefinition(
     ComponentDefinitionWithImplementation
-      .forList(components, ComponentsUiConfig.Empty, info => ComponentId(info.toString), Map.empty),
+      .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default
   )

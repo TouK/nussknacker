@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers._
@@ -83,9 +82,9 @@ class ComponentGroupsPreparerSpec
 
     val baseComponents = baseComponentsGroups.flatMap(_.components)
     baseComponents
-      .filter(n => n.`type` == ComponentType.BuiltIn)
-      .map(_.label) should contain allElementsOf BuiltInComponentInfo.AllAvailableForScenario.map(_.name)
-    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 5
+      .filter(n => n.componentId.`type` == ComponentType.BuiltIn)
+      .map(_.label) should contain allElementsOf BuiltInComponentId.AllAvailableForScenario.map(_.name)
+    baseComponents.filter(n => n.componentId.`type` == ComponentType.CustomComponent) should have size 5
   }
 
   test("return custom component with correct group") {
@@ -96,7 +95,7 @@ class ComponentGroupsPreparerSpec
           returnType = Some(Unknown),
           componentSpecificData = CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
           componentGroupName = Some(ComponentGroupName("group1")),
-          componentId = None
+          designerWideComponentId = None
         )
         .build
         .components
@@ -140,8 +139,8 @@ class ComponentGroupsPreparerSpec
     val fragmentDefinitionComponentLabels =
       groups.find(_.name == DefaultsComponentGroupName.FragmentsDefinitionGroupName).value.components.map(_.label)
     fragmentDefinitionComponentLabels shouldEqual List(
-      BuiltInComponentInfo.FragmentInputDefinition.name,
-      BuiltInComponentInfo.FragmentOutputDefinition.name
+      BuiltInComponentId.FragmentInputDefinition.name,
+      BuiltInComponentId.FragmentOutputDefinition.name
     )
   }
 
@@ -190,7 +189,7 @@ class ComponentGroupsPreparerSpec
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         Some(_),
-        ComponentId.default(TestProcessingTypes.Streaming, _)
+        DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
       ),
       modelDefinition,
     )
@@ -206,10 +205,10 @@ class ComponentGroupsPreparerSpec
   }
 
   private def withStaticDefinition(
-      components: Map[ComponentInfo, ComponentDefinitionWithImplementation]
-  ): Map[ComponentInfo, ComponentWithStaticDefinition] = {
+      components: List[ComponentDefinitionWithImplementation]
+  ): List[ComponentWithStaticDefinition] = {
     components
-      .mapValuesNow {
+      .map {
         case methodBased: MethodBasedComponentDefinitionWithImplementation =>
           component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
         case other => throw new IllegalStateException(s"Unexpected component class: ${other.getClass.getName}")

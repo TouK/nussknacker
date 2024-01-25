@@ -3,12 +3,13 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{
   ContextInitializer,
   ContextInitializingFunction,
+  ProcessName,
   Source,
   TestWithParametersSupport
 }
@@ -30,9 +31,10 @@ class StubbedFragmentSourceDefinitionPreparer(
     fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor
 ) {
 
-  def createSourceDefinition(frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
+  def createSourceDefinition(name: String, frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
     FragmentComponentDefinition(
+      name = name,
       implementationInvoker = (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
       // We don't want to pass input parameters definition as parameters to definition of factory creating stubbed source because
       // use them only for testParametersDefinition which are used in the runtime not in compile-time.
@@ -40,7 +42,7 @@ class StubbedFragmentSourceDefinitionPreparer(
       outputNames = List.empty,
       docsUrl = None,
       translateGroupName = Some(_),
-      componentId = ComponentId("dumpId"),
+      designerWideId = DesignerWideComponentId("dumpId"),
     )
   }
 

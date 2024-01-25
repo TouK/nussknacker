@@ -40,6 +40,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `ScenarioWithDetails` field `json` was renamed into `scenarioGraph` and changed the type into `DisplayableProcess`
     * `ValidatedDisplayableProcess` all scenario graph fields were replaced by one `scenarioGraph: DisplayableProcess` field
   * Migration mechanisms (`RemoteEnvironment` and `TestModelMigrations`) use `ScenarioWithDetailsForMigrations` instead of `ScenarioWithDetails`
+* [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
+  * `ComponentInfo` was renamed to `ComponentId`
+  * `ComponentId` was renamed to `DesignerWideComponentId`
+  * new `ComponentId` is serialized in json to string in format `$componentType-$componentName` instead of separate fields (`name` and `type`)
+  * `NodeComponentInfo.componentInfo` was renamed to `componentId`
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
@@ -72,6 +77,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * GET `/processes/*` and `/processesDetails/*` changed response type
   * PUT `/processes/$scenarioName` was changed request field from `process` to `scenarioGraph`
   * `/adminProcessManagement/testWithParameters/$scenarioName` was changed request field from `displayableProcess` to `scenarioGraph`
+* [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
+  * Endpoints returning test results (`/processManagement/test*`) return `nodeId` instead of `nodeComponentInfo` now
+  * `/processDefinitionData/*` response: field `type` was replaced by `componentId` inside the  path `.componentGroups[].components[]`
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:

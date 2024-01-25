@@ -37,7 +37,7 @@ object ProcessCompilerData {
       customProcessValidator: CustomProcessValidator
   ): ProcessCompilerData = {
     val servicesDefs = definitionWithTypes.modelDefinition.components
-      .filter(_._1.`type` == ComponentType.Service)
+      .filter(_.componentType == ComponentType.Service)
 
     val expressionCompiler = ExpressionCompiler.withOptimization(
       userCodeClassLoader,
@@ -75,7 +75,7 @@ object ProcessCompilerData {
       LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
       interpreter,
       listeners,
-      servicesDefs.map { case (info, servicesDef) => info.name -> servicesDef.implementation.asInstanceOf[Lifecycle] }
+      servicesDefs.map(service => service.name -> service.implementation.asInstanceOf[Lifecycle]).toMap
     )
 
   }

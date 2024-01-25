@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.definition.component
 
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData._
 import pl.touk.nussknacker.restmodel.component.{NodeId, NodeUsageData, ScenarioComponentsUsages}
@@ -12,27 +12,27 @@ object ComponentsUsageHelper {
 
   def computeComponentsUsageCount(
       processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]],
-      processingTypeAndInfoToNonFragmentComponentId: Map[(ProcessingType, ComponentInfo), ComponentId]
-  ): Map[ComponentId, Long] = {
-    computeComponentsUsage(processesDetails, processingTypeAndInfoToNonFragmentComponentId)
+      processingTypeAndInfoToNonFragmentDesignerWideId: Map[(ProcessingType, ComponentId), DesignerWideComponentId]
+  ): Map[DesignerWideComponentId, Long] = {
+    computeComponentsUsage(processesDetails, processingTypeAndInfoToNonFragmentDesignerWideId)
       .mapValuesNow(usages => usages.map { case (_, nodeIds) => nodeIds.size }.sum)
   }
 
   def computeComponentsUsage(
       processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]],
-      processingTypeAndInfoToNonFragmentComponentId: Map[(ProcessingType, ComponentInfo), ComponentId]
-  ): Map[ComponentId, List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]] = {
+      processingTypeAndInfoToNonFragmentDesignerWideId: Map[(ProcessingType, ComponentId), DesignerWideComponentId]
+  ): Map[DesignerWideComponentId, List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]] = {
     def flattenUsages(processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]]) = for {
-      processDetails    <- processesDetails
-      componentInfoNode <- processDetails.json.value.toList
-      (componentInfo, nodeIds) = componentInfoNode
-      componentId = processingTypeAndInfoToNonFragmentComponentId
-        .get(processDetails.processingType, componentInfo)
+      processDetails  <- processesDetails
+      componentIdNode <- processDetails.json.value.toList
+      (componentId, nodeIds) = componentIdNode
+      designerWideComponentId = processingTypeAndInfoToNonFragmentDesignerWideId
+        .get(processDetails.processingType, componentId)
         .getOrElse(
-          ComponentId.default(processDetails.processingType, componentInfo)
+          DesignerWideComponentId.default(processDetails.processingType, componentId)
         ) // the orElse case is for fragments - fragment ids won't be present in the map but must be equal to default
       nodeId <- nodeIds
-    } yield ScenarioComponentsUsage[NodeId](componentId, componentInfo, processDetails, nodeId)
+    } yield ScenarioComponentsUsage[NodeId](designerWideComponentId, componentId, processDetails, nodeId)
 
     val scenariosComponentUsages        = flattenUsages(processesDetails.filter(_.isFragment == false))
     val fragmentsComponentUsages        = flattenUsages(processesDetails.filter(_.isFragment == true))
@@ -42,7 +42,7 @@ object ComponentsUsageHelper {
       scenariosComponentUsages.flatMap {
         case fragmentUsage @ ScenarioComponentsUsage(
               _,
-              ComponentInfo(ComponentType.Fragment, fragmentName),
+              ComponentId(ComponentType.Fragment, fragmentName),
               processDetails,
               fragmentNodeId
             ) =>
@@ -70,7 +70,7 @@ object ComponentsUsageHelper {
     }
 
     (scenarioUsagesWithResolvedFragments ++ fragmentUsages)
-      .groupBy(_.componentId)
+      .groupBy(_.designerWideComponentId)
       .mapValuesNow(
         _.groupBy(_.processDetails)
           .mapValuesNow { usages =>
@@ -81,8 +81,8 @@ object ComponentsUsageHelper {
   }
 
   private final case class ScenarioComponentsUsage[NodeUsageDataShape](
+      designerWideComponentId: DesignerWideComponentId,
       componentId: ComponentId,
-      componentInfo: ComponentInfo,
       processDetails: ScenarioWithDetailsEntity[_],
       nodeUsageData: NodeUsageDataShape
   )

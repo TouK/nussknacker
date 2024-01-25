@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.restmodel.component
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -37,7 +37,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                 summary = Some("List of available components"),
                 value = List(
                   ComponentListElement(
-                    id = ComponentId("request-response-embedded-customnode-collect"),
+                    id = DesignerWideComponentId("request-response-embedded-customnode-collect"),
                     name = "collect",
                     icon = "/assets/components/CustomNode.svg",
                     componentType = ComponentType.CustomComponent,
@@ -61,12 +61,12 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
         )
       )
 
-  val componentUsageEndpoint: SecuredEndpoint[ComponentId, String, List[ComponentUsagesInScenario], Any] =
+  val componentUsageEndpoint: SecuredEndpoint[DesignerWideComponentId, String, List[ComponentUsagesInScenario], Any] =
     baseNuApiEndpoint
       .summary("Show component usage")
       .tag("Components")
       .get
-      .in("components" / path[ComponentId]("id") / "usages")
+      .in("components" / path[DesignerWideComponentId]("id") / "usages")
       .out(
         statusCode(Ok).and(
           jsonBody[List[ComponentUsagesInScenario]]
@@ -140,14 +140,14 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
   object ComponentApiEndpoints {
 
     object ComponentCodec {
-      def encode(componentId: ComponentId): String = componentId.value
+      def encode(determineDesignerWideId: DesignerWideComponentId): String = determineDesignerWideId.value
 
-      def decode(s: String): DecodeResult[ComponentId] = {
-        val componentId = ComponentId.apply(s)
+      def decode(s: String): DecodeResult[DesignerWideComponentId] = {
+        val componentId = DesignerWideComponentId.apply(s)
         DecodeResult.Value(componentId)
       }
 
-      implicit val componentIdCodec: PlainCodec[ComponentId] = Codec.string.mapDecode(decode)(encode)
+      implicit val componentIdCodec: PlainCodec[DesignerWideComponentId] = Codec.string.mapDecode(decode)(encode)
     }
 
   }

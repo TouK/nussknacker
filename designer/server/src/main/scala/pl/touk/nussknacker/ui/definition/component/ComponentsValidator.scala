@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.component
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import WrongConfigurationAttribute.{
   ComponentGroupNameAttribute,
@@ -13,7 +13,7 @@ import WrongConfigurationAttribute.{
 
 private[component] object ComponentsValidator {
 
-  // TODO: We should rather take List[(ComponentInfo, ComponentDefinitionWithImplementation)] instead of ComponentListElement
+  // TODO: We should rather take ComponentDefinitionWithImplementation instead of ComponentListElement
   //       ComponentListElement is for a presentation purpose, we loose some information that we can check
   //       e.g. if class of Component is the same. We could even define identity mechanisms in Components.
   def validateComponents(
@@ -34,7 +34,7 @@ private[component] object ComponentsValidator {
   }
 
   private def computeWrongConfigurations(
-      componentId: ComponentId,
+      designerWideComponentId: DesignerWideComponentId,
       components: Iterable[ComponentListElement]
   ): List[ComponentWrongConfiguration[_]] = {
     def checkUniqueAttributeValue[T](
@@ -43,7 +43,7 @@ private[component] object ComponentsValidator {
     ): Option[ComponentWrongConfiguration[T]] =
       values.toList.distinct match {
         case _ :: Nil => None
-        case elements => Some(ComponentWrongConfiguration(componentId, attribute, elements))
+        case elements => Some(ComponentWrongConfiguration(designerWideComponentId, attribute, elements))
       }
 
     val wrongConfiguredNames = checkUniqueAttributeValue(NameAttribute, components.map(_.name))
@@ -61,7 +61,7 @@ private[component] object ComponentsValidator {
 }
 
 private final case class ComponentWrongConfiguration[T](
-    id: ComponentId,
+    designerWideComponentId: DesignerWideComponentId,
     attribute: WrongConfigurationAttribute,
     duplications: List[T]
 )
@@ -78,4 +78,6 @@ private object WrongConfigurationAttribute extends Enumeration {
 private final case class ComponentConfigurationException(
     message: String,
     wrongConfigurations: NonEmptyList[ComponentWrongConfiguration[_]]
-) extends RuntimeException(s"$message Wrong configurations: ${wrongConfigurations.groupBy(_.id.value)}.")
+) extends RuntimeException(
+      s"$message Wrong configurations: ${wrongConfigurations.groupBy(_.designerWideComponentId.value)}."
+    )

@@ -7,13 +7,13 @@ import pl.touk.nussknacker.engine.graph.{node => scenarionode}
 object NodeComponentInfoExtractor {
 
   def fromCompiledNode(node: compilednode.Node): NodeComponentInfo = {
-    val componentInfo = ComponentInfoExtractor.fromCompiledNode(node)
-    NodeComponentInfo(node.id, componentInfo)
+    val componentId = ComponentIdExtractor.fromCompiledNode(node)
+    NodeComponentInfo(node.id, componentId)
   }
 
   def fromScenarioNode(nodeData: scenarionode.NodeData): NodeComponentInfo = {
-    val componentInfo = ComponentInfoExtractor.fromScenarioNode(nodeData)
-    NodeComponentInfo(nodeData.id, componentInfo)
+    val componentId = ComponentIdExtractor.fromScenarioNode(nodeData)
+    NodeComponentInfo(nodeData.id, componentId)
   }
 
 }

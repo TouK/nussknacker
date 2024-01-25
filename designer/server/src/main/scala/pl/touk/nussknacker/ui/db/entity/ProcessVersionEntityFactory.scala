@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.component.ComponentInfo
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -173,7 +173,7 @@ final case class ProcessVersionEntityData(
     componentsUsages: Option[ScenarioComponentsUsages],
 )
 
-// TODO: Remove this codec and just serialize Map[ComponentInfo, List[NodeId]]
+// TODO: Remove this codec and just serialize Map[ComponentId, List[NodeId]]
 @JsonCodec
 private[entity] final case class ComponentUsages(
     componentName: String,
@@ -186,15 +186,15 @@ object ScenarioComponentsUsagesJsonCodec {
   implicit val decoder: Decoder[ScenarioComponentsUsages] = implicitly[Decoder[List[ComponentUsages]]].map {
     componentUsagesList =>
       val componentUsagesMap = componentUsagesList.map { componentUsages =>
-        val componentInfo = ComponentInfo(componentUsages.componentType, componentUsages.componentName)
-        componentInfo -> componentUsages.nodeIds
+        val componentId = ComponentId(componentUsages.componentType, componentUsages.componentName)
+        componentId -> componentUsages.nodeIds
       }.toMap
       ScenarioComponentsUsages(componentUsagesMap)
   }
 
   implicit val encoder: Encoder[ScenarioComponentsUsages] =
     implicitly[Encoder[List[ComponentUsages]]].contramap[ScenarioComponentsUsages](_.value.toList.map {
-      case (ComponentInfo(componentType, componentName), nodeIds) =>
+      case (ComponentId(componentType, componentName), nodeIds) =>
         ComponentUsages(componentName, componentType, nodeIds)
     })
 

@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component._
 
 final case class MethodBasedComponentDefinitionWithImplementation(
+    override val name: String,
     override val implementationInvoker: ComponentImplementationInvoker,
     override val implementation: Component,
     override val componentTypeSpecificData: ComponentTypeSpecificData,
@@ -35,11 +36,13 @@ final case class MethodBasedComponentDefinitionWithImplementation(
 object MethodBasedComponentDefinitionWithImplementation {
 
   def withNullImplementation(
+      name: String,
       componentTypeSpecificData: ComponentTypeSpecificData,
       staticDefinition: ComponentStaticDefinition,
       uiDefinition: ComponentUiDefinition
   ): MethodBasedComponentDefinitionWithImplementation = {
     MethodBasedComponentDefinitionWithImplementation(
+      name,
       ComponentImplementationInvoker.nullImplementationInvoker,
       null,
       componentTypeSpecificData,

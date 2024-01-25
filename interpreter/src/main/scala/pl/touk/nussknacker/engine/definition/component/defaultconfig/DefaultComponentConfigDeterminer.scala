@@ -40,19 +40,19 @@ object DefaultComponentConfigDeterminer {
     )
   }
 
-  def forBuiltInComponent(info: ComponentInfo): SingleComponentConfig = {
-    val componentGroup = if (BuiltInComponentInfo.FragmentDefinitionComponents.contains(info)) {
+  def forBuiltInComponent(id: ComponentId): SingleComponentConfig = {
+    val componentGroup = if (BuiltInComponentId.FragmentDefinitionComponents.contains(id)) {
       DefaultsComponentGroupName.FragmentsDefinitionGroupName
     } else {
       DefaultsComponentGroupName.BaseGroupName
     }
     SingleComponentConfig(
       params = None,
-      icon = Some(DefaultsComponentIcon.forBuiltInComponent(info)),
+      icon = Some(DefaultsComponentIcon.forBuiltInComponent(id)),
       // TODO: move from defaultModelConfig.conf to here + convention instead of code
       docsUrl = None,
       componentGroup = Some(componentGroup),
-      componentId = Some(ComponentId.forBuiltInComponent(info))
+      componentId = Some(DesignerWideComponentId.forBuiltInComponent(id))
     )
   }
 
@@ -61,7 +61,7 @@ object DefaultComponentConfigDeterminer {
   def forFragment(
       docsUrl: Option[String],
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
-      componentId: ComponentId,
+      designerWideId: DesignerWideComponentId,
   ): ComponentUiDefinition = {
     val originalGroupName = DefaultsComponentGroupName.FragmentsGroupName
     ComponentUiDefinition(
@@ -70,7 +70,7 @@ object DefaultComponentConfigDeterminer {
         .getOrElse(throw new IllegalStateException("Fragments can't be assigned to the null component group")),
       icon = DefaultsComponentIcon.FragmentIcon,
       docsUrl = docsUrl,
-      componentId = componentId
+      designerWideId = designerWideId
     )
   }
 

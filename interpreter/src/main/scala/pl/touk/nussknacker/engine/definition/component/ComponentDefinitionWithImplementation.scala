@@ -24,11 +24,18 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   def componentTypeSpecificData: ComponentTypeSpecificData
 
+  // This field is used as a part of identifier so it is important that it should be stable.
+  // Currently it is used also for a label presented at the toolbox palette but we should probably extract another
+  // field (e.g. label) that will be in a more human friendly format`- see Parameter.name vs Parameter.label
+  def name: String
+
   final def componentType: ComponentType = componentTypeSpecificData.componentType
+
+  final def id: ComponentId = ComponentId(componentType, name)
 
   protected def uiDefinition: ComponentUiDefinition
 
-  final def componentId: ComponentId = uiDefinition.componentId
+  final def designerWideId: DesignerWideComponentId = uiDefinition.designerWideId
 
   final def componentGroup: ComponentGroupName = uiDefinition.componentGroup
 
@@ -61,7 +68,7 @@ final case class ComponentUiDefinition(
     componentGroup: ComponentGroupName,
     icon: String,
     docsUrl: Option[String],
-    componentId: ComponentId
+    designerWideId: DesignerWideComponentId
 )
 
 object ComponentDefinitionWithImplementation {
@@ -69,11 +76,11 @@ object ComponentDefinitionWithImplementation {
   def forList(
       components: List[ComponentDefinition],
       additionalConfigs: ComponentsUiConfig,
-      componentInfoToId: ComponentInfo => ComponentId,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): List[ComponentDefinitionWithImplementation] = {
     components.flatMap(
-      ComponentDefinitionExtractor.extract(_, additionalConfigs, componentInfoToId, additionalConfigsFromProvider)
+      ComponentDefinitionExtractor.extract(_, additionalConfigs, determineDesignerWideId, additionalConfigsFromProvider)
     )
   }
 
@@ -81,14 +88,14 @@ object ComponentDefinitionWithImplementation {
    *    - additionalConfigs from the model configuration
    *    - additionalConfigsFromProvider provided by AdditionalUIConfigProvider
    */
-  def withEmptyConfig(component: Component): ComponentDefinitionWithImplementation = {
+  def withEmptyConfig(name: String, component: Component): ComponentDefinitionWithImplementation = {
     ComponentDefinitionExtractor
       .extract(
-        "dumbName",
+        name,
         component,
         SingleComponentConfig.zero,
         ComponentsUiConfig.Empty,
-        info => ComponentId(info.toString),
+        id => DesignerWideComponentId(id.toString),
         Map.empty
       )
       .getOrElse(

@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 // enters the scenario view. The core domain logic should be done during Model definition extraction
 class DefinitionsService(
     modelData: ModelData,
-    staticDefinitionForDynamicComponents: Map[ComponentInfo, ComponentStaticDefinition],
+    staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
@@ -38,16 +38,16 @@ class DefinitionsService(
         alignedComponentsDefinitionProvider
           .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
       val withStaticDefinition = alignedComponentsDefinition.map {
-        case (info, dynamic: DynamicComponentDefinitionWithImplementation) =>
+        case dynamic: DynamicComponentDefinitionWithImplementation =>
           val staticDefinition = staticDefinitionForDynamicComponents.getOrElse(
-            info,
-            throw new IllegalStateException(s"Static definition for dynamic component: $info should be precomputed")
+            dynamic.id,
+            throw new IllegalStateException(s"Static definition for dynamic component: $dynamic should be precomputed")
           )
-          info -> component.ComponentWithStaticDefinition(dynamic, staticDefinition)
-        case (info, methodBased: MethodBasedComponentDefinitionWithImplementation) =>
-          info -> component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
-        case (info, other) =>
-          throw new IllegalStateException(s"Unknown component $info representation: $other")
+          ComponentWithStaticDefinition(dynamic, staticDefinition)
+        case methodBased: MethodBasedComponentDefinitionWithImplementation =>
+          ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
+        case other =>
+          throw new IllegalStateException(s"Unknown component representation: $other")
       }
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
         .finalizeScenarioProperties(scenarioPropertiesConfig)
@@ -60,18 +60,18 @@ class DefinitionsService(
   }
 
   private def prepareUIDefinitions(
-      components: Map[ComponentInfo, ComponentWithStaticDefinition],
+      components: List[ComponentWithStaticDefinition],
       forFragment: Boolean,
       finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
   ): UIDefinitions = {
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
-      components = components.mapValuesNow(createUIComponentDefinition),
+      components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       scenarioPropertiesConfig =
         (if (forFragment) FragmentPropertiesConfig.properties else finalizedScenarioPropertiesConfig)
           .mapValuesNow(createUIScenarioPropertyConfig),
-      edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.mapValuesNow(_.component)),
+      edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActions.map(UICustomAction(_))
     )
   }
