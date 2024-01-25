@@ -1474,7 +1474,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val fragmentId         = "fragmentId"
     val fragmentParameters = List.empty
 
-    val fragmentDefinition: CanonicalProcess =
+    val fragment: CanonicalProcess =
       createFragmentDefinition(fragmentId, fragmentParameters)
     val processWithFragment =
       createProcess(
@@ -1489,10 +1489,19 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       )
 
-    val result = validate(processWithFragment)
+    val processValidator = mockedProcessValidator(fragment, defaultConfig)
+    val result           = processValidator.validate(processWithFragment, ProcessName("name"), isFragment = false)
 
     val nodeVariableTypes = result.nodeResults.mapValuesNow(_.variableTypes)
     nodeVariableTypes.get("sink").value shouldEqual Map("input" -> Unknown)
+  }
+
+  test("return empty process error for empty scenario") {
+    val emptyScenario = createProcess(List.empty, List.empty)
+    val result        = processValidator.validate(emptyScenario, ProcessName("name"), isFragment = false)
+    result.errors.globalErrors shouldBe List(
+      UIGlobalError(PrettyValidationErrors.formatErrorMessage(EmptyProcess), List.empty)
+    )
   }
 
   def validate(displayable: DisplayableProcess): ValidationResult = {

@@ -112,7 +112,6 @@ class UIProcessValidator(
           case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
           case _                                                           => false
         }
-
         if (containsDisabledNodes) {
           val resolvedScenarioWithoutDisabledNodes =
             fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, processingType)
