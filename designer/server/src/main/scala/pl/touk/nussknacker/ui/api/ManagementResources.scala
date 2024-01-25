@@ -69,9 +69,6 @@ object ManagementResources {
         "variables" -> a.variables.asJson
       )
 
-    implicit val componentInfoEncoder: Encoder[ComponentId]           = deriveConfiguredEncoder
-    implicit val nodeComponentInfoEncoder: Encoder[NodeComponentInfo] = deriveConfiguredEncoder
-
     val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
 
     // It has to be done manually, deriveConfiguredEncoder doesn't work properly with value: Any

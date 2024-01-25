@@ -23,9 +23,9 @@ object ComponentsUsageHelper {
       processingTypeAndInfoToNonFragmentDesignerWideId: Map[(ProcessingType, ComponentId), DesignerWideComponentId]
   ): Map[DesignerWideComponentId, List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]] = {
     def flattenUsages(processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]]) = for {
-      processDetails    <- processesDetails
-      componentInfoNode <- processDetails.json.value.toList
-      (componentId, nodeIds) = componentInfoNode
+      processDetails  <- processesDetails
+      componentIdNode <- processDetails.json.value.toList
+      (componentId, nodeIds) = componentIdNode
       designerWideComponentId = processingTypeAndInfoToNonFragmentDesignerWideId
         .get(processDetails.processingType, componentId)
         .getOrElse(
