@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
-  FragmentParametersWithoutValidatorsDefinitionExtractor
+  FragmentParametersDefinitionExtractor
 }
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 // Needed to build source based on FragmentInputDefinition. It allows fragment to be treated as scenario (when it comes to testing)
 // This source adds input parameters to context and allows testing with ad-hoc testing.
 class StubbedFragmentSourceDefinitionPreparer(
-    fragmentDefinitionExtractor: FragmentParametersWithoutValidatorsDefinitionExtractor
+    fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor
 ) {
 
   def createSourceDefinition(frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
