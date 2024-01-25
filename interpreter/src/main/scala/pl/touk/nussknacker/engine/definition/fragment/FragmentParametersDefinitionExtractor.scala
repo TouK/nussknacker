@@ -18,18 +18,22 @@ import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerParameters
 }
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.EditorExtractor
+import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
+  ValidatorExtractorParameters,
+  ValidatorsExtractor
+}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 
 /*
- * This class exists as a more lightweight alternative to FragmentParametersCompleteDefinitionExtractor - it doesn't rely on ExpressionCompiler and ValidationContext
- * However, it doesn't validate the parameters' initialValue and valueEditor and doesn't extract (and validate the correctness of) the parameters' validators - use in cases where it's not needed
+ * This class doesn't validate the parameters' initialValue and valueEditor (e.g. values can be of incorrect type), as it would require ExpressionCompiler and ValidationContext.
+ * They are validated separately when creating fragment in NodeCompiler.compileSource, but if they are not validated it is not a breaking issue anyway as a process using these incorrect values will fail validation.
  */
-class FragmentParametersWithoutValidatorsDefinitionExtractor(classLoader: ClassLoader) {
+class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
 
   def extractParametersDefinition(
-      fragmentInput: FragmentInput,
+      fragmentInput: FragmentInput
   )(implicit nodeId: NodeId): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
     val parameters = fragmentInput.fragmentParams.getOrElse(Nil)
     extractFragmentParametersDefinition(parameters)
@@ -80,11 +84,25 @@ class FragmentParametersWithoutValidatorsDefinitionExtractor(classLoader: ClassL
       )
       .getOrElse((EditorExtractor.extract(parameterData, ParameterConfig.empty), List.empty))
 
+    val validationExpressionValidator = fragmentParameter.valueCompileTimeValidation.map(validation =>
+      ValidationExpressionParameterValidatorToCompile(validation)
+    )
+
+    val validators = validationExpressionValidator ++ ValidatorsExtractor
+      .extract(
+        ValidatorExtractorParameters(
+          ParameterData(typ, Nil),
+          !fragmentParameter.required,
+          ParameterConfig.empty,
+          extractedEditor
+        )
+      )
+
     val param = Parameter
       .optional(fragmentParameter.name, typ)
       .copy(
         editor = extractedEditor,
-        validators = List.empty,
+        validators = validators.toList,
         defaultValue = fragmentParameter.initialValue
           .map(i => Expression.spel(i.expression))
           .orElse(

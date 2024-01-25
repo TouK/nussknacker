@@ -499,7 +499,8 @@ export class Graph extends React.Component<Props> {
             this.unhighlightCell(cell, "node-focused-with-validation-error");
         });
 
-        const invalidNodeIds = keys(ProcessUtils.getValidationErrors(process)?.invalidNodes);
+        const validationErrors = ProcessUtils.getValidationErrors(process);
+        const invalidNodeIds = [...keys(validationErrors?.invalidNodes), ...validationErrors.globalErrors.flatMap((e) => e.nodeIds)];
 
         // fast indicator for loose nodes, faster than async validation
         elements.forEach((el) => {

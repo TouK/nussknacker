@@ -150,7 +150,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       )
 
     validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(InvalidTailOfBranch("custom1"), _)) =>
+      case Invalid(NonEmptyList(InvalidTailOfBranch(nodeIds), _)) if nodeIds == Set("custom1") =>
     }
   }
 
@@ -159,7 +159,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       .endingCustomNode("custom1", Some("outputVar"), "nonEndingCustomNodeReturningUnit", "stringVal" -> "'someValue'")
 
     validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(InvalidTailOfBranch("custom1"), _)) =>
+      case Invalid(NonEmptyList(InvalidTailOfBranch(nodeIds), _)) if nodeIds == Set("custom1") =>
     }
   }
 

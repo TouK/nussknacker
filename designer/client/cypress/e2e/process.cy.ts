@@ -368,16 +368,16 @@ describe("Process", () => {
             cy.contains("svg", /filter/i).click();
             cy.contains("button", "copy").click();
             cy.contains("button", "paste").click();
-            cy.contains("Loose nodes: filter (copy 1)").should("be.visible");
+            cy.contains("Loose node: filter (copy 1)").should("be.visible");
         };
 
         const copyAndPasteWholeScenario = () => {
             cy.get("#nk-graph-main").type("{ctrl}a");
             cy.contains("button", "copy").click();
             cy.contains("button", "delete").click();
-            cy.contains("Loose nodes: filter (copy 1)").should("not.exist");
+            cy.contains("Loose node: filter (copy 1)").should("not.exist");
             cy.contains("button", "paste").click();
-            cy.contains("Loose nodes: filter (copy 1)").should("be.visible");
+            cy.contains("Loose node: filter (copy 1)").should("be.visible");
         };
 
         pasteNewNodeToScenario();

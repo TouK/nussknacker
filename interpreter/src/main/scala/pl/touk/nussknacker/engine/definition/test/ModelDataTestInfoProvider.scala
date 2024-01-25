@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
-import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersCompleteDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -27,15 +27,9 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     case spel: SpelExpressionParser => spel.typingDictLabels
   }
 
-  private lazy val fragmentComponentDefinitionExtractor =
-    FragmentParametersCompleteDefinitionExtractor(
-      modelData.modelClassLoader.classLoader,
-      expressionCompiler
-    )
-
   private lazy val nodeCompiler = new NodeCompiler(
     modelData.modelDefinition,
-    fragmentComponentDefinitionExtractor,
+    new FragmentParametersDefinitionExtractor(modelData.modelClassLoader.classLoader),
     expressionCompiler,
     modelData.modelClassLoader.classLoader,
     ProductionServiceInvocationCollector,

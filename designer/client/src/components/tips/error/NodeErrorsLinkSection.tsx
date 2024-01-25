@@ -13,17 +13,16 @@ interface NodeErrorsLinkSectionProps {
     message: string;
     showDetails: (event: SyntheticEvent, details: NodeType) => void;
     scenario: Scenario;
-    errorsOnTop?: boolean;
 }
 
 export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps): JSX.Element {
-    const { nodeIds, message, showDetails, scenario, errorsOnTop } = props;
+    const { nodeIds, message, showDetails, scenario } = props;
     const unsavedName = useSelector(getProcessUnsavedNewName);
     const separator = ", ";
 
     return (
         !isEmpty(nodeIds) && (
-            <div style={{ marginTop: errorsOnTop && 5 }}>
+            <div>
                 <ErrorHeader message={message} />
                 {nodeIds.map((nodeId, index) => {
                     const details =

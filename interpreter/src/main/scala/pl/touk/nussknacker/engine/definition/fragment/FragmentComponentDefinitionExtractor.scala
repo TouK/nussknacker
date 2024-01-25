@@ -20,7 +20,7 @@ class FragmentComponentDefinitionExtractor(
     determineDesignerWideId: ComponentId => DesignerWideComponentId
 ) {
 
-  val parametersExtractor = new FragmentParametersWithoutValidatorsDefinitionExtractor(classLoader)
+  val parametersExtractor = new FragmentParametersDefinitionExtractor(classLoader)
 
   def extractFragmentComponentDefinition(
       fragment: CanonicalProcess,
