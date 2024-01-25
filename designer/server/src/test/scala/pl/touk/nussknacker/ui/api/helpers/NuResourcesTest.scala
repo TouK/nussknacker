@@ -35,6 +35,7 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -177,7 +178,7 @@ trait NuResourcesTest
     )
 
   protected val configProcessToolbarService =
-    new ConfigProcessToolbarService(testConfig, () => scenarioCategoryService.getAllCategories)
+    new ConfigScenarioToolbarService(CategoriesScenarioToolbarsConfigParser.parse(testConfig))
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
@@ -200,7 +201,7 @@ trait NuResourcesTest
     new DBProcessService(
       deploymentService,
       newProcessPreparerByProcessingType,
-      () => scenarioCategoryService,
+      ProcessingTypeDataProvider(Map.empty, scenarioCategoryService),
       processResolverByProcessingType,
       dbioRunner,
       futureFetchingScenarioRepository,

@@ -4,7 +4,6 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.restmodel.SecurityError
 import SecurityError.{AuthenticationError, AuthorizationError}
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.services.BaseHttpService.NoRequirementServerEndpoint
 import sttp.tapir.server.ServerEndpoint
@@ -14,7 +13,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 abstract class BaseHttpService(
     config: Config,
-    getProcessCategoryService: () => ProcessCategoryService,
     authenticator: AuthenticationResources
 )(implicit executionContext: ExecutionContext) {
 
@@ -58,8 +56,7 @@ abstract class BaseHttpService(
           success(
             LoggedUser(
               authenticatedUser = user,
-              rules = AuthenticationConfiguration.getRules(config),
-              processCategories = getProcessCategoryService().getAllCategories
+              rules = AuthenticationConfiguration.getRules(config)
             )
           )
         case Some(_) =>

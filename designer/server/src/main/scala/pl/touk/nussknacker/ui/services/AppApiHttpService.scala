@@ -9,9 +9,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.ui.api.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,11 +23,11 @@ class AppApiHttpService(
     authenticator: AuthenticationResources,
     processingTypeDataReloader: ProcessingTypeDataReload,
     modelBuildInfos: ProcessingTypeDataProvider[Map[String, String], _],
+    categories: ProcessingTypeDataProvider[Category, _],
     processService: ProcessService,
-    getProcessCategoryService: () => ProcessCategoryService,
     shouldExposeConfig: Boolean
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, getProcessCategoryService, authenticator)
+    extends BaseHttpService(config, authenticator)
     with LazyLogging {
 
   private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
@@ -132,8 +133,15 @@ class AppApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogicSuccess { loggedUser => _ =>
         Future {
-          val userCategoryService = new UserCategoryService(getProcessCategoryService())
-          UserCategoriesWithProcessingTypesDto(userCategoryService.getUserCategoriesWithType(loggedUser))
+          // TODO: We have to swap this map or remove this endpoint at all
+          val processingTypeByCategory = categories
+            .all(loggedUser)
+            .toList
+            .map { case (processingType, category) =>
+              category -> processingType
+            }
+            .toMap
+          UserCategoriesWithProcessingTypesDto(processingTypeByCategory)
         }
       }
   }

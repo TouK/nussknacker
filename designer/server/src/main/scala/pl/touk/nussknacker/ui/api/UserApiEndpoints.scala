@@ -69,13 +69,14 @@ final case class DisplayableUser private (
 object DisplayableUser {
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def apply(user: LoggedUser, allUserAccessibleCategories: List[String]): DisplayableUser = user match {
+  def apply(user: LoggedUser, allUserAccessibleCategories: Iterable[String]): DisplayableUser = user match {
     case CommonUser(id, username, categoryPermissions, globalPermissions) =>
       new DisplayableUser(
         id = id,
         isAdmin = false,
         username = username,
-        categories = allUserAccessibleCategories,
+        // Sorting for stable tests results
+        categories = allUserAccessibleCategories.toList.sorted,
         categoryPermissions = categoryPermissions.mapValuesNow(_.map(_.toString).toList.sorted),
         globalPermissions = globalPermissions
       )
@@ -84,7 +85,8 @@ object DisplayableUser {
         id = id,
         isAdmin = true,
         username = username,
-        categories = allUserAccessibleCategories,
+        // Sorting for stable tests results
+        categories = allUserAccessibleCategories.toList.sorted,
         categoryPermissions = Map.empty,
         globalPermissions = Nil
       )

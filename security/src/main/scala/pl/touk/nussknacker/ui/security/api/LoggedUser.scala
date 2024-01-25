@@ -15,10 +15,9 @@ object LoggedUser {
 
   def apply(
       authenticatedUser: AuthenticatedUser,
-      rules: List[ConfigRule],
-      processCategories: List[String]
+      rules: List[ConfigRule]
   ): LoggedUser = {
-    val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles.toList, rules, processCategories)
+    val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles.toList, rules)
     apply(id = authenticatedUser.id, username = authenticatedUser.username, rulesSet = rulesSet)
   }
 

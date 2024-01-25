@@ -26,36 +26,7 @@ class RulesSetSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChe
     )
 
     forAll(table) { (roles: List[String], rules: List[ConfigRule], permission: Map[String, Set[Permission]]) =>
-      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules, List.empty)
-      rulesSet.permissions shouldBe permission
-    }
-  }
-
-  test("mapCategory - normalize category name") {
-    val allCategories = List("Default", "FraudDetection")
-    val readRule = emptyRule.copy(
-      role = "ReAdeR",
-      categories = List("DeFaulT", "frauddetection", "Recommendations"),
-      permissions = List(Permission.Read)
-    )
-    val rules = List(readRule)
-
-    val table = Table[List[String], List[ConfigRule], Map[String, Set[Permission]]](
-      ("roles", "rules", "permissions"),
-      (List("unknown role"), rules, Map.empty),
-      (
-        List(readRule.role),
-        rules,
-        Map(
-          "FraudDetection"  -> Set(Permission.Read),
-          "Default"         -> Set(Permission.Read),
-          "Recommendations" -> Set(Permission.Read)
-        )
-      )
-    )
-
-    forAll(table) { (roles: List[String], rules: List[ConfigRule], permission: Map[String, Set[Permission]]) =>
-      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules, allCategories)
+      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules)
       rulesSet.permissions shouldBe permission
     }
   }
@@ -112,7 +83,7 @@ class RulesSetSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChe
     )
 
     forAll(table) { (roles: List[String], rules: List[ConfigRule], permission: Map[String, Set[Permission]]) =>
-      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules, List.empty)
+      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules)
       rulesSet.permissions shouldBe permission
     }
   }
@@ -135,7 +106,7 @@ class RulesSetSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChe
       (List(userRule.role, adminRule.role, userRuleWithAdminTab.role), rules, adminTab :: Nil)
     )
     forAll(table) { (roles: List[String], rules: List[ConfigRule], permissions: List[GlobalPermission]) =>
-      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules, List.empty)
+      val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules)
       rulesSet.globalPermissions shouldBe permissions
     }
   }

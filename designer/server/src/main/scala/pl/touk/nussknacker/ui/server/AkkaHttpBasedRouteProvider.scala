@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeDa
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.{
   AnalyticsConfig,
   AttachmentsConfig,
@@ -199,16 +200,17 @@ class AkkaHttpBasedRouteProvider(
         dmDispatcher,
         deploymentService
       )
-      def getProcessCategoryService() = typeToConfig.combined.categoryService
 
       val stateDefinitionService = new ProcessStateDefinitionService(
-        typeToConfig.mapCombined(combined => (combined.statusNameToStateDefinitionsMapping, combined.categoryService)),
+        typeToConfig
+          .mapValues(_.category)
+          .mapCombined(_.statusNameToStateDefinitionsMapping)
       )
 
       val processService = new DBProcessService(
         deploymentService,
         newProcessPreparer,
-        getProcessCategoryService,
+        typeToConfig.mapCombined(_.categoryService),
         processResolver,
         dbioRunner,
         futureProcessRepository,
@@ -216,9 +218,8 @@ class AkkaHttpBasedRouteProvider(
         writeProcessRepository
       )
 
-      val configProcessToolbarService = new ConfigProcessToolbarService(
-        resolvedConfig,
-        () => getProcessCategoryService().getAllCategories
+      val configProcessToolbarService = new ConfigScenarioToolbarService(
+        CategoriesScenarioToolbarsConfigParser.parse(resolvedConfig)
       )
 
       def prepareAlignedComponentsDefinitionProvider(
@@ -243,25 +244,23 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         processingTypeDataReloader = typeToConfig,
         modelBuildInfos = modelBuildInfo,
+        categories = typeToConfig.mapValues(_.category),
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
-        getProcessCategoryService = getProcessCategoryService
       )
       val componentsApiHttpService = new ComponentApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
-        getProcessCategoryService = getProcessCategoryService,
         componentService = componentService
       )
       val userApiHttpService = new UserApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
-        getProcessCategoryService = getProcessCategoryService
+        categories = typeToConfig.mapValues(_.category)
       )
       val notificationApiHttpService = new NotificationApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
-        getProcessCategoryService = getProcessCategoryService,
         notificationService = notificationService
       )
 
@@ -383,7 +382,6 @@ class AkkaHttpBasedRouteProvider(
         tapirRelatedRoutes = akkaHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
         apiResourcesWithAuthentication = apiResourcesWithAuthentication,
         apiResourcesWithoutAuthentication = apiResourcesWithoutAuthentication,
-        getProcessCategoryService = getProcessCategoryService,
         developmentMode = featureTogglesConfig.development
       )
     }
@@ -413,9 +411,8 @@ class AkkaHttpBasedRouteProvider(
       tapirRelatedRoutes: List[Route],
       apiResourcesWithAuthentication: List[RouteWithUser],
       apiResourcesWithoutAuthentication: List[Route],
-      getProcessCategoryService: () => ProcessCategoryService,
       developmentMode: Boolean
-  )(implicit executionContext: ExecutionContext): Route = {
+  ): Route = {
     // TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(resolvedConfig.getString("http.publicPath"))
     WithDirectives(CorsSupport.cors(developmentMode), SecurityHeadersSupport(), OptionsMethodSupport()) {
@@ -429,8 +426,7 @@ class AkkaHttpBasedRouteProvider(
             authorize(authenticatedUser.roles.nonEmpty) {
               val loggedUser = LoggedUser(
                 authenticatedUser = authenticatedUser,
-                rules = AuthenticationConfiguration.getRules(resolvedConfig),
-                processCategories = getProcessCategoryService().getAllCategories
+                rules = AuthenticationConfiguration.getRules(resolvedConfig)
               )
               apiResourcesWithAuthentication.map(_.securedRouteWithErrorHandling(loggedUser)).reduce(_ ~ _)
             }
