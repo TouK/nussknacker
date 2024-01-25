@@ -13,7 +13,7 @@ export function TabElement({ tab, className }: { tab: DynamicTabData; className?
             );
         case "Url":
             return (
-                <a className={className} href={url}>
+                <a className={className} href={url} target={"_blank"} rel="noreferrer">
                     {title}
                 </a>
             );
