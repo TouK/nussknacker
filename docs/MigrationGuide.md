@@ -92,6 +92,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
+* [#5432](https://github.com/TouK/nussknacker/pull/5432) Kafka client, Confluent schema registry client and Avro bump
 
 ## In version 1.13.0 
 
