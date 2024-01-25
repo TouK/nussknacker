@@ -77,8 +77,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * GET `/processes/*` and `/processesDetails/*` changed response type
   * PUT `/processes/$scenarioName` was changed request field from `process` to `scenarioGraph`
   * `/adminProcessManagement/testWithParameters/$scenarioName` was changed request field from `displayableProcess` to `scenarioGraph`
-* [#5424](https://github.com/TouK/nussknacker/pull/5424) Endpoints returning test results (`/processManagement/test*`) 
-  return `nodeId` instead of `nodeComponentInfo` now
+* [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
+  * Endpoints returning test results (`/processManagement/test*`) return `nodeId` instead of `nodeComponentInfo` now
+  * `/processDefinitionData/*` response: field `type` was replaced by `componentId` inside the  path `.componentGroups[].components[]`
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
