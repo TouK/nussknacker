@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.api
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 
-// TODO: split it, rename it, currently it is meaningless bunch of data, sometimes some fields like user is duplicated
-//       in DeploymentData which is passed next to it
+// This class holds all necessary for scenario running, scenario metadata. It is passed next to the scenario graph
+// into DeploymentManager during deploy
+// TODO: It should be called ScenarioRuntimeMetadata (See TODO in MetaData)
 @JsonCodec case class ProcessVersion(
     versionId: VersionId,
     processName: ProcessName,

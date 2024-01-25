@@ -548,9 +548,9 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
   }
 
   private def createProcess(name: String, category: Category, isFragment: Boolean, isArchived: Boolean) =
-    TestProcessUtil.toScenarioWithDetailsEntity(
+    TestProcessUtil.wrapWithScenarioDetailsEntity(
       ProcessName(name),
-      category,
+      category = category,
       isFragment = isFragment,
       isArchived = isArchived
     )

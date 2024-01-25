@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
@@ -14,7 +14,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
@@ -48,7 +48,7 @@ class TestModelMigrations(
       val validationResult =
         validator
           .forTypeUnsafe(migrationDetails.processingType)
-          .validate(migrationDetails.newProcess, migrationDetails.processName, migrationDetails.isFragment)
+          .validate(migrationDetails.newScenarioGraph, migrationDetails.processName, migrationDetails.isFragment)
       val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
         migrationDetails.processName,
@@ -70,13 +70,13 @@ class TestModelMigrations(
         scenarioWithDetails.processCategory,
         skipEmptyMigrations = false
       )
-      displayable = ProcessConverter.toDisplayable(newProcess)
+      scenarioGraph = CanonicalProcessConverter.toScenarioGraph(newProcess)
     } yield {
       MigratedProcessDetails(
         scenarioWithDetails.name,
         scenarioWithDetails.processingType,
         scenarioWithDetails.isFragment,
-        displayable,
+        scenarioGraph,
         scenarioWithDetails.validationResultUnsafe
       )
     }
@@ -84,7 +84,8 @@ class TestModelMigrations(
 
   private def prepareFragmentRepository(fragments: List[MigratedProcessDetails]) = {
     val fragmentsByProcessingType = fragments.map { fragmentDetails =>
-      val canonical = ProcessConverter.fromDisplayable(fragmentDetails.newProcess, fragmentDetails.processName)
+      val canonical =
+        CanonicalProcessConverter.fromScenarioGraph(fragmentDetails.newScenarioGraph, fragmentDetails.processName)
       fragmentDetails.processingType -> canonical
     }.toGroupedMap
     new FragmentRepository {
@@ -152,6 +153,6 @@ private final case class MigratedProcessDetails(
     processName: ProcessName,
     processingType: ProcessingType,
     isFragment: Boolean,
-    newProcess: DisplayableProcess,
+    newScenarioGraph: ScenarioGraph,
     oldProcessErrors: ValidationResult
 )

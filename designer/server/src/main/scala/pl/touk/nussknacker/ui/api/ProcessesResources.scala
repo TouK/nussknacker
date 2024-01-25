@@ -259,7 +259,7 @@ class ProcessesResources(
                   otherVersion,
                   GetScenarioWithDetailsOptions.withsScenarioGraph
                 )
-              } yield ProcessComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
+              } yield ScenarioGraphComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
           }
       }

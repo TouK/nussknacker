@@ -2,17 +2,16 @@ package pl.touk.nussknacker.ui.util
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterTrue, NextSwitch}
 import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.util.ProcessComparator._
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.util.ScenarioGraphComparator._
 
-class ProcessComparatorSpec extends AnyFunSuite with Matchers {
+class ScenarioGraphComparatorSpec extends AnyFunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -20,7 +19,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
     val current = toDisplayable(_.filter("filter1", "#input == 4").emptySink("end", "testSink"))
     val other   = toDisplayable(_.emptySink("end", "testSink"))
 
-    ProcessComparator.compare(current, other) shouldBe Map(
+    ScenarioGraphComparator.compare(current, other) shouldBe Map(
       "Node 'filter1'" -> NodeNotPresentInOther("filter1", Filter("filter1", "#input == 4")),
       "Edge from 'start' to 'filter1'" -> EdgeNotPresentInOther(
         "start",
@@ -44,7 +43,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
     val current = toDisplayable(_.emptySink("end", "testSink"))
     val other   = toDisplayable(_.filter("filter1", "#input == 4").emptySink("end", "testSink"))
 
-    ProcessComparator.compare(current, other) shouldBe Map(
+    ScenarioGraphComparator.compare(current, other) shouldBe Map(
       "Node 'filter1'" -> NodeNotPresentInCurrent("filter1", Filter("filter1", "#input == 4")),
       "Edge from 'start' to 'filter1'" -> EdgeNotPresentInCurrent(
         "start",
@@ -68,7 +67,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
     val current = toDisplayable(_.filter("filter1", "#input == 4").emptySink("end", "testSink"))
     val other   = toDisplayable(_.filter("filter1", "#input == 8").emptySink("end", "testSink"))
 
-    ProcessComparator.compare(current, other) shouldBe Map(
+    ScenarioGraphComparator.compare(current, other) shouldBe Map(
       "Node 'filter1'" -> NodeDifferent("filter1", Filter("filter1", "#input == 4"), Filter("filter1", "#input == 8"))
     )
   }
@@ -77,7 +76,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
     val current = toDisplayable(_.switch("switch1", "#input", "var", caseWithExpression("current")))
     val other   = toDisplayable(_.switch("switch1", "#input", "var", caseWithExpression("other")))
 
-    ProcessComparator.compare(current, other) shouldBe Map(
+    ScenarioGraphComparator.compare(current, other) shouldBe Map(
       "Edge from 'switch1' to 'end1'" -> EdgeDifferent(
         "switch1",
         "end1",
@@ -91,7 +90,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
     val current = toDisplayable(_.emptySink("end", "testSink"), description = Some("current"))
     val other   = toDisplayable(_.emptySink("end", "testSink"), description = Some("other"))
 
-    ProcessComparator.compare(current, other) shouldBe Map(
+    ScenarioGraphComparator.compare(current, other) shouldBe Map(
       "Properties" -> PropertiesDifferent(
         processProperties(description = Some("current")),
         processProperties(description = Some("other"))
@@ -103,7 +102,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
     val current = toDisplayable(_.emptySink("end", "testSink"), properties = Map("key" -> "current"))
     val other   = toDisplayable(_.emptySink("end", "testSink"), properties = Map("key" -> "other"))
 
-    ProcessComparator.compare(current, other) shouldBe Map(
+    ScenarioGraphComparator.compare(current, other) shouldBe Map(
       "Properties" -> PropertiesDifferent(
         processProperties(properties = Map("key" -> "current")),
         processProperties(properties = Map("key" -> "other"))
@@ -115,8 +114,8 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
       sceanrio: GraphBuilder[CanonicalProcess] => CanonicalProcess,
       description: Option[String] = None,
       properties: Map[String, String] = Map.empty
-  ): DisplayableProcess =
-    ProcessConverter.toDisplayable(
+  ): ScenarioGraph =
+    CanonicalProcessConverter.toScenarioGraph(
       sceanrio(
         ScenarioBuilder
           .streaming("test")

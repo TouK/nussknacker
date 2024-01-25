@@ -9,7 +9,7 @@ import org.apache.commons.lang3.StringUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{
@@ -31,7 +31,7 @@ class TestInfoResourcesSpec
     with PatientScalaFutures
     with EitherValuesDetailedMessage {
 
-  private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess
+  private val scenarioGraph: ScenarioGraph = ProcessTestData.sampleScenarioGraph
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 
@@ -70,10 +70,10 @@ class TestInfoResourcesSpec
   )
 
   test("generates data") {
-    saveProcess(process) {
+    saveProcess(scenarioGraph) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/generate/5",
-        posting.toRequestEntity(process)
+        posting.toRequestEntity(scenarioGraph)
       ) ~> withPermissions(
         route(),
         testPermissionAll
@@ -87,10 +87,10 @@ class TestInfoResourcesSpec
   }
 
   test("refuses to generate too much data") {
-    saveProcess(process) {
+    saveProcess(scenarioGraph) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/generate/100",
-        posting.toRequestEntity(process)
+        posting.toRequestEntity(scenarioGraph)
       ) ~> withPermissions(
         route(),
         testPermissionAll
@@ -99,7 +99,7 @@ class TestInfoResourcesSpec
       }
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/generate/1",
-        posting.toRequestEntity(process)
+        posting.toRequestEntity(scenarioGraph)
       ) ~> withPermissions(
         route(additionalDataSize = 20000),
         testPermissionAll
@@ -110,10 +110,10 @@ class TestInfoResourcesSpec
   }
 
   test("get full capabilities when user has deploy role") {
-    saveProcess(process) {
+    saveProcess(scenarioGraph) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/capabilities",
-        posting.toRequestEntity(process)
+        posting.toRequestEntity(scenarioGraph)
       ) ~> withPermissions(
         route(),
         testPermissionAll
@@ -127,10 +127,10 @@ class TestInfoResourcesSpec
   }
 
   test("get empty capabilities when user hasn't got deploy role") {
-    saveProcess(process) {
+    saveProcess(scenarioGraph) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/capabilities",
-        posting.toRequestEntity(process)
+        posting.toRequestEntity(scenarioGraph)
       ) ~> withPermissions(
         route(),
         testPermissionRead

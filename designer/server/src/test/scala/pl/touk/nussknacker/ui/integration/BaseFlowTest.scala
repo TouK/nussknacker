@@ -11,8 +11,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -36,7 +35,7 @@ import pl.touk.nussknacker.ui.api.{NodeValidationRequest, ScenarioValidationRequ
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, SecurityHeadersSupport}
 import sttp.client3.circe.asJson
@@ -281,7 +280,7 @@ class BaseFlowTest
   }
 
   test("validate process scenario properties") {
-    val scenario = ProcessTestData.processWithInvalidScenarioProperties
+    val scenario = ProcessTestData.scenarioGraphWithInvalidScenarioProperties
     val response1 = httpClient.send(
       quickRequest
         .post(
@@ -311,7 +310,7 @@ class BaseFlowTest
   test("be able to work with fragment with custom class inputs") {
     val processId = UUID.randomUUID().toString
 
-    val process = DisplayableProcess(
+    val scenarioGraph = ScenarioGraph(
       properties = ProcessProperties(FragmentSpecificData()),
       nodes = List(
         FragmentInputDefinition("input1", List(FragmentParameter("badParam", FragmentClazzRef("i.do.not.exist")))),
@@ -332,7 +331,7 @@ class BaseFlowTest
       quickRequest
         .put(uri"$nuDesignerHttpAddress/api/processes/$processId")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJsonAsProcessToSave(process).spaces2)
+        .body(TestFactory.posting.toJsonAsProcessToSave(scenarioGraph).spaces2)
         .auth
         .basic("admin", "admin")
         .response(asJson[ValidationResult])
@@ -535,8 +534,8 @@ class BaseFlowTest
   }
 
   private def testProcess(process: CanonicalProcess, data: String): Json = {
-    val displayableProcess =
-      ProcessConverter.toDisplayable(process)
+    val scenarioGraph =
+      CanonicalProcessConverter.toScenarioGraph(process)
 
     val response = httpClient.send(
       quickRequest
@@ -545,7 +544,7 @@ class BaseFlowTest
         .multipartBody(
           sttpPrepareMultiParts(
             "testData"      -> data,
-            "scenarioGraph" -> displayableProcess.asJson.noSpaces
+            "scenarioGraph" -> scenarioGraph.asJson.noSpaces
           )()
         )
         .auth

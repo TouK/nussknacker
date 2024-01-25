@@ -3,8 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -17,19 +16,19 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.Implicits._
 
-class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
+class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   private val metaData = StreamMetaData(Some(2), Some(false))
 
   def canonicalDisplayableRoundTrip(canonicalProcess: CanonicalProcess): CanonicalProcess = {
-    val displayable =
-      ProcessConverter.toDisplayable(canonicalProcess)
-    ProcessConverter.fromDisplayable(displayable, canonicalProcess.name)
+    val scenarioGraph =
+      CanonicalProcessConverter.toScenarioGraph(canonicalProcess)
+    CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, canonicalProcess.name)
   }
 
-  def displayableCanonicalRoundTrip(process: DisplayableProcess): DisplayableProcess = {
-    val canonical = ProcessConverter.fromDisplayable(process, ProcessName("not-used-name"))
-    ProcessConverter.toDisplayable(canonical)
+  def scenarioGraphCanonicalRoundTrip(scenarioGraph: ScenarioGraph): ScenarioGraph = {
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessName("not-used-name"))
+    CanonicalProcessConverter.toScenarioGraph(canonical)
   }
 
   test("be able to convert empty process") {
@@ -39,7 +38,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   }
 
   test("be able to handle different node order") {
-    val process = DisplayableProcess(
+    val scenarioGraph = ScenarioGraph(
       ProcessProperties(metaData),
       List(
         Processor("e", ServiceRef("ref", List())),
@@ -48,11 +47,11 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       List(Edge("s", "e", None)),
     )
 
-    displayableCanonicalRoundTrip(process).nodes.toSet shouldBe process.nodes.toSet
+    scenarioGraphCanonicalRoundTrip(scenarioGraph).nodes.toSet shouldBe scenarioGraph.nodes.toSet
   }
 
   test("convert process with branches") {
-    val process = DisplayableProcess(
+    val scenarioGraph = ScenarioGraph(
       ProcessProperties(metaData),
       List(
         Processor("e", ServiceRef("ref", List.empty)),
@@ -78,15 +77,15 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         GraphBuilder.source("s1", "sourceRef").branchEnd("s1", "j1")
       )
 
-    displayableCanonicalRoundTrip(process).nodes.sortBy(_.id) shouldBe process.nodes.sortBy(_.id)
-    displayableCanonicalRoundTrip(process).edges.toSet shouldBe process.edges.toSet
+    scenarioGraphCanonicalRoundTrip(scenarioGraph).nodes.sortBy(_.id) shouldBe scenarioGraph.nodes.sortBy(_.id)
+    scenarioGraphCanonicalRoundTrip(scenarioGraph).edges.toSet shouldBe scenarioGraph.edges.toSet
 
-    val canonical = ProcessConverter.fromDisplayable(process, name)
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, name)
 
     canonical shouldBe processViaBuilder
   }
 
-  test("Convert branches to displayable") {
+  test("Convert branches to scenarioGraph") {
     import pl.touk.nussknacker.engine.spel.Implicits._
 
     val process = ScenarioBuilder
@@ -104,9 +103,9 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
           .emptySink("end", "outType1")
       )
 
-    val displayableProcess = ProcessConverter.toDisplayable(process)
+    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(process)
 
-    displayableProcess.edges.toSet shouldBe Set(
+    scenarioGraph.edges.toSet shouldBe Set(
       Edge("sourceId1", "join1", None),
       Edge("sourceId2", "filter2", None),
       Edge("filter2", "join1", Some(FilterTrue)),
@@ -126,7 +125,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
           .emptySink("end", "outType1")
       )
 
-    val foundNodes = ProcessConverter.findNodes(process)
+    val foundNodes = CanonicalProcessConverter.findNodes(process)
 
     foundNodes.map(_.id).toSet shouldBe Set("sourceId1", "split1", "join1", "end")
   }
@@ -151,7 +150,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
             .join("join1", "union", Some("outPutVar"), List("branch1" -> Nil, "branch2" -> Nil))
             .emptySink("end", "outType1")
         )
-      val edges = ProcessConverter.toDisplayable(process).edges
+      val edges = CanonicalProcessConverter.toScenarioGraph(process).edges
       edges.toSet shouldBe Set(
         Edge("source1", nodeId, None),
         Edge(nodeId, "join1", typ),

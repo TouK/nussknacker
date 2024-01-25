@@ -8,11 +8,11 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.processCounts._
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -49,7 +49,7 @@ class ProcessReportResources(
         val request = prepareRequest(dateFrom, dateTo)
         complete {
           processRepository
-            .fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id)
+            .fetchLatestProcessDetailsForProcessId[ScenarioGraph](processId.id)
             .flatMap[ToResponseMarshallable] {
               case Some(process) => computeCounts(processName, process.json, process.isFragment, request)
               case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
@@ -73,13 +73,13 @@ class ProcessReportResources(
 
   private def computeCounts(
       processName: ProcessName,
-      process: DisplayableProcess,
+      scenarioGraph: ScenarioGraph,
       isFragment: Boolean,
       countsRequest: CountsRequest
   )(implicit loggedUser: LoggedUser): Future[ToResponseMarshallable] = {
     countsReporter
       .prepareRawCounts(processName, countsRequest)
-      .map(computeFinalCounts(processName, process, isFragment, _))
+      .map(computeFinalCounts(processName, scenarioGraph, isFragment, _))
       .recover { case CannotFetchCountsError(msg) =>
         HttpResponse(status = StatusCodes.BadRequest, entity = msg)
       }
@@ -87,12 +87,12 @@ class ProcessReportResources(
 
   private def computeFinalCounts(
       processName: ProcessName,
-      displayable: DisplayableProcess,
+      scenarioGraph: ScenarioGraph,
       isFragment: Boolean,
       nodeCountFunction: String => Option[Long]
   )(implicit loggedUser: LoggedUser): ToResponseMarshallable = {
     val computedCounts = processCounter.computeCounts(
-      ProcessConverter.fromDisplayable(displayable, processName),
+      CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName),
       isFragment,
       nodeId => nodeCountFunction(nodeId).map(count => RawCount(count, 0))
     )

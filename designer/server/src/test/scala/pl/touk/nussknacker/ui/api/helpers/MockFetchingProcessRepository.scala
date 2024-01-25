@@ -2,20 +2,20 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import cats.instances.future._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
   FetchCanonical,
   FetchComponentsUsages,
-  FetchDisplayable,
+  FetchScenarioGraph,
   NotFetch
 }
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{
   BasicRepository,
   FetchingProcessRepository,
@@ -31,9 +31,9 @@ import scala.language.higherKinds
 object MockFetchingProcessRepository {
 
   def withProcessesDetails(
-      processes: List[ScenarioWithDetailsEntity[DisplayableProcess]]
+      processes: List[ScenarioWithDetailsEntity[ScenarioGraph]]
   )(implicit ec: ExecutionContext): MockFetchingProcessRepository = {
-    val canonicals = processes.map { p => p.mapScenario(ProcessConverter.fromDisplayable(_, p.name)) }
+    val canonicals = processes.map { p => p.mapScenario(CanonicalProcessConverter.fromScenarioGraph(_, p.name)) }
 
     new MockFetchingProcessRepository(
       TestFactory.dummyDbRef, // It's only for BasicRepository implementation, we don't use it
@@ -100,9 +100,9 @@ class MockFetchingProcessRepository private (
     shapeStrategy match {
       case NotFetch       => process.copy(json = ().asInstanceOf[PS])
       case FetchCanonical => process.asInstanceOf[ScenarioWithDetailsEntity[PS]]
-      case FetchDisplayable =>
+      case FetchScenarioGraph =>
         process
-          .mapScenario(canonical => ProcessConverter.toDisplayable(canonical))
+          .mapScenario(canonical => CanonicalProcessConverter.toScenarioGraph(canonical))
           .asInstanceOf[ScenarioWithDetailsEntity[PS]]
       case FetchComponentsUsages =>
         process

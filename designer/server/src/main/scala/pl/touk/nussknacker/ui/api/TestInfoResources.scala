@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.util.Timeout
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.definition.test.TestingCapabilities
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -31,21 +31,21 @@ class TestInfoResources(
     // TODO: is Write enough here?
     pathPrefix("testInfo" / ProcessNameSegment) { processName =>
       (post & processDetailsForName(processName)) { processDetails =>
-        entity(as[DisplayableProcess]) { displayableProcess =>
+        entity(as[ScenarioGraph]) { scenarioGraph =>
           canDeploy(processDetails.idWithNameUnsafe) {
             val scenarioTestService = scenarioTestServices.forTypeUnsafe(processDetails.processingType)
             path("capabilities") {
               complete {
-                scenarioTestService.getTestingCapabilities(displayableProcess, processName, processDetails.isFragment)
+                scenarioTestService.getTestingCapabilities(scenarioGraph, processName, processDetails.isFragment)
               }
             } ~ path("testParameters") {
               complete {
-                scenarioTestService.testParametersDefinition(displayableProcess, processName, processDetails.isFragment)
+                scenarioTestService.testParametersDefinition(scenarioGraph, processName, processDetails.isFragment)
               }
             } ~ path("generate" / IntNumber) { testSampleSize =>
               complete {
                 scenarioTestService.generateData(
-                  displayableProcess,
+                  scenarioGraph,
                   processName,
                   processDetails.isFragment,
                   testSampleSize

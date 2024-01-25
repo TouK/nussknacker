@@ -5,11 +5,11 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.{
@@ -42,12 +42,12 @@ class ProcessesExportResources(
     path("processesExport" / ProcessNameSegment) { processName =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).map {
+          processRepository.fetchLatestProcessDetailsForProcessId[ScenarioGraph](processId.id).map {
             exportProcess
           }
         }
       } ~ (post & processDetailsForName(processName)) { processDetails =>
-        entity(as[DisplayableProcess]) { process =>
+        entity(as[ScenarioGraph]) { process =>
           complete {
             exportResolvedProcess(
               process,
@@ -61,7 +61,7 @@ class ProcessesExportResources(
     } ~ path("processesExport" / ProcessNameSegment / VersionIdSegment) { (processName, versionId) =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).map {
+          processRepository.fetchProcessDetailsForId[ScenarioGraph](processId.id, versionId).map {
             exportProcess
           }
         }
@@ -70,7 +70,7 @@ class ProcessesExportResources(
       (post & processId(processName)) { processId =>
         entity(as[String]) { svg =>
           complete {
-            processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).flatMap { process =>
+            processRepository.fetchProcessDetailsForId[ScenarioGraph](processId.id, versionId).flatMap { process =>
               processActivityRepository.findActivity(processId.id).map(exportProcessToPdf(svg, process, _))
             }
           }
@@ -79,17 +79,17 @@ class ProcessesExportResources(
     }
   }
 
-  private def exportProcess(processDetails: Option[ScenarioWithDetailsEntity[DisplayableProcess]]): HttpResponse =
+  private def exportProcess(processDetails: Option[ScenarioWithDetailsEntity[ScenarioGraph]]): HttpResponse =
     processDetails.map(details => exportProcess(details.json, details.name)).getOrElse {
       HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
     }
 
-  private def exportProcess(processDetails: DisplayableProcess, name: ProcessName): HttpResponse = {
-    fileResponse(ProcessConverter.fromDisplayable(processDetails, name))
+  private def exportProcess(processDetails: ScenarioGraph, name: ProcessName): HttpResponse = {
+    fileResponse(CanonicalProcessConverter.fromScenarioGraph(processDetails, name))
   }
 
   private def exportResolvedProcess(
-      processWithDictLabels: DisplayableProcess,
+      processWithDictLabels: ScenarioGraph,
       processingType: ProcessingType,
       processName: ProcessName,
       isFragment: Boolean
@@ -107,7 +107,7 @@ class ProcessesExportResources(
 
   private def exportProcessToPdf(
       svg: String,
-      processDetails: Option[ScenarioWithDetailsEntity[DisplayableProcess]],
+      processDetails: Option[ScenarioWithDetailsEntity[ScenarioGraph]],
       processActivity: ProcessActivity
   ) = processDetails match {
     case Some(process) =>

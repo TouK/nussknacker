@@ -32,13 +32,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5361](https://github.com/TouK/nussknacker/pull/5361) `Parameter` has new, optional `labelOpt` field which allows
   to specify label presented to the user without changing identifier used in scenario graph json (`Parameteter.name`)
 * [#5356](https://github.com/TouK/nussknacker/pull/5356) Changes in AdditionalUIConfigProvider.getAllForProcessingType now require model reload to take effect.
-* [#5393](https://github.com/TouK/nussknacker/pull/5393) 
+* [#5393](https://github.com/TouK/nussknacker/pull/5393) [#5444](https://github.com/TouK/nussknacker/pull/5444)
   * Changes around metadata removal from the REST API requests and responses:
-    * `DisplayableProcess` fields that were removed: `name`,  `processingType`, `category` - all these fields already were in `ScenarioWithDetails`
+    * `DisplayableProcess` was renamed to `ScenarioGraph`
+    * `ScenarioGraph` fields that were removed: `name`,  `processingType`, `category` - all these fields already were in `ScenarioWithDetails`
     * `ProcessProperties` field removed: `isFragment` - this field already was in `ScenarioWithDetails`
     * `ScenarioWithDetails` field `json.validationResult` was moved into the top level of `ScenarioWithDetails`
-    * `ScenarioWithDetails` field `json` was renamed into `scenarioGraph` and changed the type into `DisplayableProcess`
-    * `ValidatedDisplayableProcess` all scenario graph fields were replaced by one `scenarioGraph: DisplayableProcess` field
+    * `ScenarioWithDetails` field `json` was renamed into `scenarioGraph` and changed the type into `ScenarioGraph`
+    * `ValidatedDisplayableProcess` was renamed to `ScenarioGraphWithValidationResult`
+    * `ScenarioGraphWithValidationResult` all scenario graph fields were replaced by one `scenarioGraph: DisplayableProcess` field
   * Migration mechanisms (`RemoteEnvironment` and `TestModelMigrations`) use `ScenarioWithDetailsForMigrations` instead of `ScenarioWithDetails`
 * [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
   * `ComponentInfo` was renamed to `ComponentId`
