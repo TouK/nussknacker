@@ -905,7 +905,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
           List(ComponentDefinition("optionalParameterService", OptionalParameterService)),
           additionalConfigsFromProvider = Map(
-            ComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
+            DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
               parameterConfigs = Map(
                 "optionalParam" -> ParameterAdditionalUIConfig(
                   required = false,
