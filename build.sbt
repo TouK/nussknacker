@@ -102,42 +102,23 @@ lazy val publishSettings = Seq(
   homepage                      := Some(url(s"https://github.com/touk/nussknacker")),
 )
 
-def modelMergeStrategy: String => MergeStrategy = {
-  case PathList(ps @ _*) if ps.last == "module-info.class"              =>
-    MergeStrategy.discard // TODO: we don't handle JDK9 modules well
-  case PathList(ps @ _*) if ps.last == "NumberUtils.class"              => MergeStrategy.first // TODO: shade Spring EL?
-  case PathList("org", "apache", "commons", "logging", _ @_*)           => MergeStrategy.first // TODO: shade Spring EL?
-  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties"   =>
-    MergeStrategy.first // Netty has buildTime here, which is different for different modules :/
-  case PathList(ps @ _*) if ps.head == "draftv4" && ps.last == "schema" =>
-    MergeStrategy.first // Due to swagger-parser dependencies having different schema definitions
-  case x                                                                => MergeStrategy.defaultMergeStrategy(x)
+def defaultMergeStrategy: String => MergeStrategy = {
+  // remove JPMS module descriptors (a proper soultion would be to merge them)
+  case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
+  // we override Spring's class and we want to keep only our implementation
+  case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
+  // merge Netty version information files
+  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.concat
+  // due to swagger-parser dependencies having different schema definitions (json-schema-validator and json-schema-core)
+  case PathList("draftv4", "schema")                                  => MergeStrategy.first
+  case x                                                              => MergeStrategy.defaultMergeStrategy(x)
 }
 
 def designerMergeStrategy: String => MergeStrategy = {
+  // https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
   case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
-    MergeStrategy.singleOrError // https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
-  case PathList(ps @ _*) if ps.last == "module-info.class"                          => MergeStrategy.discard
-  case PathList(ps @ _*) if ps.last == "NumberUtils.class"                          => MergeStrategy.first // TODO: shade Spring EL?
-  case PathList("org", "apache", "commons", "logging", _ @_*)                       => MergeStrategy.first // TODO: shade Spring EL?
-  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties"               =>
-    MergeStrategy.first // Netty has buildTime here, which is different for different modules :/
-  case PathList("com", "sun", "el", _ @_*)                                          => MergeStrategy.first // Some legacy batik stuff
-  case PathList("org", "w3c", "dom", "events", _ @_*)                               => MergeStrategy.first // Some legacy batik stuff
-  case PathList(ps @ _*) if ps.head == "draftv4" && ps.last == "schema"             =>
-    MergeStrategy.first // Due to swagger-parser dependencies having different schema definitions
-  case x                                                                            => MergeStrategy.defaultMergeStrategy(x)
-}
-
-def requestResponseMergeStrategy: String => MergeStrategy = {
-  case PathList(ps @ _*) if ps.last == "module-info.class"              => MergeStrategy.discard
-  case PathList(ps @ _*) if ps.last == "NumberUtils.class"              => MergeStrategy.first // TODO: shade Spring EL?
-  case PathList("org", "apache", "commons", "logging", _ @_*)           => MergeStrategy.first // TODO: shade Spring EL?
-  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties"   =>
-    MergeStrategy.first // Netty has buildTime here, which is different for different modules :/
-  case PathList(ps @ _*) if ps.head == "draftv4" && ps.last == "schema" =>
-    MergeStrategy.first // Due to swagger-parser dependencies having different schema definitions
-  case x                                                                => MergeStrategy.defaultMergeStrategy(x)
+    MergeStrategy.singleOrError
+  case x                                                                            => defaultMergeStrategy(x)
 }
 
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
@@ -180,7 +161,6 @@ def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*):
 lazy val commonSettings =
   publishSettings ++
     Seq(
-      assembly / test            := {},
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
       crossScalaVersions         := supportedScalaVersions,
       scalaVersion               := defaultScalaV,
@@ -471,8 +451,7 @@ def assemblySettings(
   List(
     assembly / assemblyJarName       := assemblyName,
     assembly / assemblyOption        := (assembly / assemblyOption).value.withIncludeScala(includeScala).withLevel(Level.Info),
-    assembly / assemblyMergeStrategy := modelMergeStrategy,
-    assembly / test                  := {}
+    assembly / assemblyMergeStrategy := defaultMergeStrategy
   ) ++ filterProvidedDepsSettingOpt
 }
 
@@ -883,10 +862,12 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
     libraryDependencies ++= {
       Seq(
         "io.confluent"                  % "kafka-json-schema-provider"      % confluentV excludeAll (
+          ExclusionRule("commons-logging", "commons-logging"),
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12"),
         ),
         "io.confluent"                  % "kafka-avro-serializer"           % confluentV excludeAll (
+          ExclusionRule("commons-logging", "commons-logging"),
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
@@ -1085,6 +1066,7 @@ lazy val testUtils = (project in utils("test-utils"))
         "com.typesafe"                   % "config"                  % configV,
         "org.typelevel"                 %% "cats-core"               % catsV,
         "ch.qos.logback"                 % "logback-classic"         % logbackV,
+        "org.springframework"            % "spring-jcl"              % springV,
         "commons-io"                     % "commons-io"              % flinkCommonsIOV,
         "org.scala-lang.modules"        %% "scala-collection-compat" % scalaCollectionsCompatV,
         "com.softwaremill.sttp.client3" %% "slf4j-backend"           % sttpV,
@@ -1096,8 +1078,8 @@ lazy val testUtils = (project in utils("test-utils"))
         scalaVersion.value,
         Seq(),
         // rest-assured is not cross compiled, so we have to use different versions
-        (2, 12) -> Seq("io.rest-assured" % "scala-support" % "4.0.0"),
-        (2, 13) -> Seq("io.rest-assured" % "scala-support" % "5.3.1")
+        (2, 12) -> Seq("io.rest-assured" % "scala-support" % "4.0.0" exclude ("commons-logging", "commons-logging")),
+        (2, 13) -> Seq("io.rest-assured" % "scala-support" % "5.3.1" exclude ("commons-logging", "commons-logging"))
       )
     }
   )
@@ -1108,12 +1090,13 @@ lazy val jsonUtils = (project in utils("json-utils"))
     name := "nussknacker-json-utils",
     libraryDependencies ++= Seq(
       "io.swagger.parser.v3" % "swagger-parser"     % swaggerParserV excludeAll (
+        ExclusionRule(organization = "commons-logging"),
         ExclusionRule(organization = "javax.mail"),
         ExclusionRule(organization = "javax.validation"),
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation")
       ),
-      "com.github.erosb"     % "everit-json-schema" % everitSchemaV
+      "com.github.erosb"     % "everit-json-schema" % everitSchemaV exclude ("commons-logging", "commons-logging"),
     )
   )
   .dependsOn(componentsUtils, testUtils % "test")
@@ -1425,7 +1408,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
     name                            := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
       Seq(
-        "io.github.hagay3"           %% "skuber"        % "3.0.6",
+        "io.github.hagay3"           %% "skuber"        % "3.0.6" exclude ("commons-logging", "commons-logging"),
         "com.github.julien-truffaut" %% "monocle-core"  % monocleV,
         "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
         "com.typesafe.akka"          %% "akka-slf4j"    % akkaV     % "test",
@@ -1550,6 +1533,7 @@ lazy val security = (project in file("security"))
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe"               % tapirV,
       "com.dimafeng"                %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
       "com.github.dasniko"           % "testcontainers-keycloak"        % "2.5.0"              % "it,test" excludeAll (
+        ExclusionRule("commons-logging", "commons-logging"),
         // we're using testcontainers-scala which requires a proper junit4 dependency
         ExclusionRule("io.quarkus", "quarkus-junit4-mock")
       )
@@ -1827,7 +1811,7 @@ lazy val designer = (project in file("designer/server"))
         "org.hsqldb"                     % "hsqldb"                          % hsqldbV,
         "org.postgresql"                 % "postgresql"                      % postgresV,
         "org.flywaydb"                   % "flyway-core"                     % flywayV,
-        "org.apache.xmlgraphics"         % "fop"                             % "2.8",
+        "org.apache.xmlgraphics"         % "fop"                             % "2.8" exclude ("commons-logging", "commons-logging"),
         "com.beachape"                  %% "enumeratum-circe"                % "1.7.3",
         "tf.tofu"                       %% "derevo-circe"                    % "0.13.0",
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"              % "0.6.0",
