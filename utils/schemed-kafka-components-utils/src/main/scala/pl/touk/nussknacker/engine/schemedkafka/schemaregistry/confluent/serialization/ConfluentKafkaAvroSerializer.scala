@@ -20,13 +20,13 @@ class ConfluentKafkaAvroSerializer(
     confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
     schemaEvolutionHandler: AvroSchemaEvolution,
     avroSchemaOpt: Option[AvroSchema],
-    var isKey: Boolean
+    _isKey: Boolean
 ) extends AbstractConfluentKafkaAvroSerializer(schemaEvolutionHandler)
     with Serializer[Any] {
 
   schemaRegistry = confluentSchemaRegistryClient.client
 
-  configure(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava, isKey)
+  configure(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava, _isKey)
 
   override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
     val avroConfig = new KafkaAvroSerializerConfig(configs)
@@ -59,7 +59,7 @@ object ConfluentKafkaAvroSerializer {
       schemaRegistryClient,
       new DefaultAvroSchemaEvolution,
       avroSchemaOpt,
-      isKey = isKey
+      _isKey = isKey
     )
   }
 
