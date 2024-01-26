@@ -219,7 +219,7 @@ object NodesApiEndpoints {
               List.empty
             )
             val trueValue = SimpleObjectEncoder.decode(underlying, typedObjectWithValue.waitValue.hcursor) match {
-              case Left(value)  => ???
+              case Left(_)      => None
               case Right(value) => value
             }
             typing.TypedObjectWithValue(underlying, trueValue)
@@ -428,7 +428,7 @@ object NodesApiEndpoints {
 
   @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
       sourceParameters: TestSourceParameters,
-      displayableProcess: ScenarioGraph
+      scenarioGraph: ScenarioGraph
   )
 
   @JsonCodec(encodeOnly = true) final case class ParametersValidationResult(
