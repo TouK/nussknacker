@@ -74,6 +74,8 @@
 * [#5197](https://github.com/TouK/nussknacker/pull/5197) Improved accessing fields in records in expressions - fields can now be statically accessed using indexing
 * [#5312](https://github.com/TouK/nussknacker/pull/5312) Collect component clears context variables
 * [#5313](https://github.com/TouK/nussknacker/pull/5313) Added CountWhen and Average aggregations
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Sometimes `Bad expression type, expected: X found X` error was reported when comparing matching Records.
+  It happened for records that had fields with mixed different types of fields e.g. simple classes with nested records 
 
 1.12.5 (1 Dec 2023)
 ------------------------

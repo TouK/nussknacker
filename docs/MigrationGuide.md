@@ -47,6 +47,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ComponentId` was renamed to `DesignerWideComponentId`
   * new `ComponentId` is serialized in json to string in format `$componentType-$componentName` instead of separate fields (`name` and `type`)
   * `NodeComponentInfo.componentInfo` was renamed to `componentId`
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Typed related changes
+  * `CommonSupertypeFinder` shouldn't be created directly anymore - `CommonSupertypeFinder.*` predefined variables should be used instead 
+  * `TypedObjectTypingResult.apply` removed legacy factory method taking `List[(String, TypingResult)]` - should be used variant with `Map` 
+  * `TypedObjectTypingResult.apply` removed legacy factory method taking `TypedObjectDefinition` - should be used variant with `Map` 
+  * `TypedObjectDefinition` was removed 
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
@@ -96,6 +101,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
 * [#5432](https://github.com/TouK/nussknacker/pull/5432) Kafka client, Confluent Schema Registry Client and Avro bump
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13 
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Removed support for lax tagged types with non-tagged types comparing via `strictTypeChecking` 
 
 ## In version 1.13.0 
 

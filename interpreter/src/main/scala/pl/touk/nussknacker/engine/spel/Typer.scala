@@ -15,11 +15,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.supertype.{
-  CommonSupertypeFinder,
-  NumberTypesPromotionStrategy,
-  SupertypeClassResolutionStrategy
-}
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
@@ -289,9 +285,8 @@ private[spel] class Typer(
 
       case e: InlineList =>
         withTypedChildren { children =>
-          val localSupertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
           def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
-            localSupertypeFinder.commonSupertype(a, b)(NumberTypesPromotionStrategy.ToSupertype)
+            CommonSupertypeFinder.FallbackToObjectType.commonSupertype(a, b)
 
           // We don't want Typed.empty here, as currently it means it won't validate for any signature
           val elementType = if (children.isEmpty) Unknown else children.reduce(getSupertype)
@@ -730,9 +725,8 @@ object Typer {
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
 
     val strictTypeChecking = expressionConfig.strictTypeChecking
-    val classResolutionStrategy =
-      if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union
-    val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
+    val commonSupertypeFinder =
+      if (strictTypeChecking) CommonSupertypeFinder.Intersection else CommonSupertypeFinder.Union
     new Typer(
       commonSupertypeFinder,
       spelDictTyper,

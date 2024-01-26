@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.variables
 
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypedObjectDefinition}
 import pl.touk.nussknacker.engine.api.{Hidden, MetaData}
 import pl.touk.nussknacker.engine.definition.globalvariables.ObjectWithType
 
@@ -34,10 +34,7 @@ object MetaVariables {
   }
 
   private def propertiesType(scenarioPropertiesNames: Iterable[String]): TypedObjectTypingResult = {
-    val propertiesTyping = TypedObjectDefinition(
-      scenarioPropertiesNames.map(_ -> Typed[String]).toMap
-    )
-    TypedObjectTypingResult(propertiesTyping)
+    TypedObjectTypingResult(scenarioPropertiesNames.map(_ -> Typed[String]).toMap)
   }
 
 }

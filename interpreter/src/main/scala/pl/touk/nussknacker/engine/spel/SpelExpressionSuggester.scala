@@ -258,9 +258,9 @@ class SpelExpressionSuggester(
         tc.objType.params.headOption.getOrElse(Unknown)
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
         TypedObjectTypingResult(
-          List(
-            ("key", tc.objType.params.headOption.getOrElse(Unknown)),
-            ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown))
+          Map(
+            "key"   -> tc.objType.params.headOption.getOrElse(Unknown),
+            "value" -> tc.objType.params.drop(1).headOption.getOrElse(Unknown)
           )
         )
       case tc: SingleTypingResult if tc.objType.klass.isArray =>

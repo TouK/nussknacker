@@ -14,11 +14,7 @@ import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrate
   ReplaceGetterWithProperty
 }
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.supertype.{
-  CommonSupertypeFinder,
-  NumberTypesPromotionStrategy,
-  SupertypeClassResolutionStrategy
-}
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
@@ -594,8 +590,9 @@ private class MaxHelper extends TypingFunction {
     if (arguments.isEmpty)
       return GenericFunctionTypingError.OtherError("Max must have at least one argument").invalidNel
 
-    val supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
-    arguments.reduce(supertypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).validNel
+    arguments
+      .reduce(CommonSupertypeFinder.Union.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))
+      .validNel
   }
 
 }

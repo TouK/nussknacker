@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.definition.clazz;
 
 import cats.data.NonEmptyList;
 import cats.data.Validated;
-import cats.data.Validated$;
 import cats.data.Validated.Invalid;
 import cats.data.Validated.Valid;
 import pl.touk.nussknacker.engine.api.Documentation;
@@ -92,10 +91,9 @@ public class JavaSampleDocumentedClass {
                 return Validated.invalidNel(new GenericFunctionTypingError.OtherError("Max must have at least one argument"));
             }
 
-            CommonSupertypeFinder supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union$.MODULE$, true);
             TypingResult res = arguments.head();
             for (int i = 1; i != arguments.length(); ++i) {
-                res = supertypeFinder.commonSupertype(res, arguments.apply(i), NumberTypesPromotionStrategy.ToSupertype$.MODULE$);
+                res = CommonSupertypeFinder$.MODULE$.Union().commonSupertype(res, arguments.apply(i), NumberTypesPromotionStrategy.ToSupertype$.MODULE$);
             }
             return Validated.validNel(res);
         }

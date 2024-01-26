@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.SupertypeClassResolutionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -10,17 +11,12 @@ import pl.touk.nussknacker.engine.api.typed.typing._
   * This class, like CanBeSubclassDeterminer is in spirit of "Be type safety as much as possible, but also provide some helpful
   * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
   * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
-  *
-  * TODO: strictTaggedTypesChecking was added as quickFix for compare Type with TaggedType. We should remove it after we will support creating model with TaggedType field
   */
-class CommonSupertypeFinder(
-    classResolutionStrategy: SupertypeClassResolutionStrategy,
-    strictTaggedTypesChecking: Boolean
-) {
+class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassResolutionStrategy) {
 
   def commonSupertype(left: TypingResult, right: TypingResult)(
       implicit numberPromotionStrategy: NumberTypesPromotionStrategy
-  ): TypingResult =
+  ): TypingResult = {
     (left, right) match {
       case (Unknown, _)   => Unknown // can't be sure intention of user - union is more secure than intersection
       case (_, Unknown)   => Unknown
@@ -31,6 +27,7 @@ class CommonSupertypeFinder(
       case (l: SingleTypingResult, r: SingleTypingResult) => singleCommonSupertype(l, r)
       case (l: TypedUnion, r: TypedUnion)                 => Typed(commonSupertype(l.possibleTypes, r.possibleTypes))
     }
+  }
 
   private def commonSupertypeWithNull(typ: TypingResult): TypingResult = typ match {
     // TODO: Handle maps with known value.
@@ -46,7 +43,11 @@ class CommonSupertypeFinder(
 
   private def singleCommonSupertype(left: SingleTypingResult, right: SingleTypingResult)(
       implicit numberPromotionStrategy: NumberTypesPromotionStrategy
-  ): TypingResult =
+  ): TypingResult = {
+    def fallback = classResolutionStrategy match {
+      case SupertypeClassResolutionStrategy.WithFallbackToObjType => klassCommonSupertype(left.objType, right.objType)
+      case _                                                      => Typed.empty
+    }
     (left, right) match {
       case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
         checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
@@ -56,20 +57,20 @@ class CommonSupertypeFinder(
               val fields = unionOfFields(l, r)
               TypedObjectTypingResult(fields, commonSupertype)
             }
-            .getOrElse(Typed.empty)
+            .getOrElse(fallback)
         }
-      case (_: TypedObjectTypingResult, _) => Typed.empty
-      case (_, _: TypedObjectTypingResult) => Typed.empty
+      case (_: TypedObjectTypingResult, _) => fallback
+      case (_, _: TypedObjectTypingResult) => fallback
       case (l: TypedDict, r: TypedDict) if l.dictId == r.dictId =>
         checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
           klassCommonSupertypeReturningTypedClass(l.objType, r.objType)
             .map { _ =>
               l // should we recognize static vs dynamic and compute some union?
             }
-            .getOrElse(Typed.empty)
+            .getOrElse(fallback)
         }
-      case (_: TypedDict, _) => Typed.empty
-      case (_, _: TypedDict) => Typed.empty
+      case (_: TypedDict, _) => fallback
+      case (_, _: TypedDict) => fallback
 
       case (l @ TypedTaggedValue(leftType, leftTag), r @ TypedTaggedValue(rightType, rightTag))
           if leftTag == rightTag =>
@@ -78,7 +79,7 @@ class CommonSupertypeFinder(
             .collect { case single: SingleTypingResult =>
               TypedTaggedValue(single, leftTag)
             }
-            .getOrElse(Typed.empty)
+            .getOrElse(fallback)
         }
       case (TypedObjectWithValue(leftType, leftValue), TypedObjectWithValue(rightType, rightValue))
           if leftValue == rightValue =>
@@ -86,13 +87,14 @@ class CommonSupertypeFinder(
           case typedClass: TypedClass => TypedObjectWithValue(typedClass, leftValue)
           case other                  => other
         }
-      case (_: TypedTaggedValue, _) if strictTaggedTypesChecking => Typed.empty
-      case (l: TypedObjectWithData, r)                           => singleCommonSupertype(l.underlying, r)
-      case (_, _: TypedTaggedValue) if strictTaggedTypesChecking => Typed.empty
-      case (l, r: TypedObjectWithData)                           => singleCommonSupertype(l, r.underlying)
+      case (_: TypedTaggedValue, _)    => fallback
+      case (l: TypedObjectWithData, r) => singleCommonSupertype(l.underlying, r)
+      case (_, _: TypedTaggedValue)    => fallback
+      case (l, r: TypedObjectWithData) => singleCommonSupertype(l, r.underlying)
 
       case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
     }
+  }
 
   private def checkDirectEqualityOrMorePreciseCommonSupertype[T <: SingleTypingResult](left: T, right: T)(
       preciseCommonSupertype: => TypingResult
@@ -167,10 +169,7 @@ class CommonSupertypeFinder(
     else if (left == right)
       Typed(left)
     else
-      classResolutionStrategy match {
-        case SupertypeClassResolutionStrategy.AnySuperclass => Unknown
-        case _                                              => Typed.empty
-      }
+      Typed.empty
   }
 
   private def commonSuperTypeForComplexTypes(
@@ -178,7 +177,7 @@ class CommonSupertypeFinder(
       leftParams: List[TypingResult],
       right: Class[_],
       rightParams: List[TypingResult]
-  )(implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {
+  ) = {
     if (left.isAssignableFrom(right)) {
       genericClassWithSuperTypeParams(left, leftParams, rightParams)
     } else if (right.isAssignableFrom(left)) {
@@ -193,16 +192,14 @@ class CommonSupertypeFinder(
       superType: Class[_],
       superTypeParams: List[TypingResult],
       subTypeParams: List[TypingResult]
-  )(implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {
+  ) = {
     // Here is a little bit heuristics. We are not sure what generic types we are comparing, for List[T] with Collection[U]
     // it is ok to look for common super type of T and U but for Comparable[T] and Integer it won't be ok.
     // Maybe we should do this common super type checking only for well known cases?
     val commonSuperTypesForGenericParams = if (superTypeParams.size == subTypeParams.size) {
-      // for generic params it is always better to return Union generic param than Typed.empty
-      val anyFinder =
-        new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, strictTaggedTypesChecking)
+      // for generic params it is always better to return Any than Typed.empty
       superTypeParams.zip(subTypeParams).map { case (l, p) =>
-        anyFinder.commonSupertype(l, p)
+        CommonSupertypeFinder.FallbackToObjectType.commonSupertype(l, p)
       }
     } else {
       superTypeParams
@@ -212,11 +209,8 @@ class CommonSupertypeFinder(
 
   private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): Set[TypingResult] = {
     classResolutionStrategy match {
-      case SupertypeClassResolutionStrategy.Intersection =>
+      case SupertypeClassResolutionStrategy.Intersection | SupertypeClassResolutionStrategy.WithFallbackToObjType =>
         ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_))
-      case SupertypeClassResolutionStrategy.AnySuperclass =>
-        val res = ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_))
-        if (res.isEmpty) Set(Unknown) else res
       case SupertypeClassResolutionStrategy.Union =>
         Set(left, right).map(Typed(_))
     }
@@ -227,14 +221,38 @@ class CommonSupertypeFinder(
 
 }
 
-sealed trait SupertypeClassResolutionStrategy
+object CommonSupertypeFinder {
 
-object SupertypeClassResolutionStrategy {
+  // It is default, it always looks for an intersection of classes. If doesn't find it, returns Typed.empty
+  val Intersection = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection)
 
-  case object Intersection extends SupertypeClassResolutionStrategy
+  // This finder in general shouldn't be used. It returns union of types when no matching classes find
+  // For other cases it behave like Intersection
+  val Union = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union)
 
-  case object Union extends SupertypeClassResolutionStrategy
+  // This finder has fallback to object type (SingleTypingResult.objType). When no matching super type class found,
+  // it returns Any (which currently is expressed as Unknown). It is useful when you are looking for some object type's
+  // class e.g. for generic parameters and precise super type is only nice-to-have not a blocker
+  object FallbackToObjectType {
+    private val delegate = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.WithFallbackToObjType)
 
-  case object AnySuperclass extends SupertypeClassResolutionStrategy
+    def commonSupertype(left: TypingResult, right: TypingResult): TypingResult = {
+      val result = delegate.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
+      if (result == Typed.empty) Unknown else result
+    }
+
+  }
+
+  private sealed trait SupertypeClassResolutionStrategy
+
+  private object SupertypeClassResolutionStrategy {
+
+    case object Intersection extends SupertypeClassResolutionStrategy
+
+    case object Union extends SupertypeClassResolutionStrategy
+
+    case object WithFallbackToObjType extends SupertypeClassResolutionStrategy
+
+  }
 
 }

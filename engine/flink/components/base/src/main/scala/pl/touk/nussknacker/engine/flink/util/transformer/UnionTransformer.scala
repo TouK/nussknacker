@@ -15,11 +15,7 @@ import pl.touk.nussknacker.engine.api.context.{
   ProcessCompilationError,
   ValidationContext
 }
-import pl.touk.nussknacker.engine.api.typed.supertype.{
-  CommonSupertypeFinder,
-  NumberTypesPromotionStrategy,
-  SupertypeClassResolutionStrategy
-}
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.process.{
@@ -29,12 +25,8 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
-import pl.touk.nussknacker.engine.api.NodeId
 
 object UnionTransformer extends UnionTransformer(None) {
-
-  @transient
-  private lazy val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)
 
   def transformContextsDefinition(outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)(
       contexts: Map[String, ValidationContext]
@@ -54,7 +46,8 @@ object UnionTransformer extends UnionTransformer(None) {
       left: TypingResult,
       right: TypingResult
   ): TypingResult = {
-    val result = superTypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
+    val result =
+      CommonSupertypeFinder.Intersection.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
     (left, right, result) match {
       // normally (e.g. in ternary operator and equals) we are more lax in comparison of objects, but here we want to strictly check
       // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
