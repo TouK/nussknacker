@@ -172,14 +172,6 @@ const globalStyles = {
         border: 0,
         borderTop: `1px solid ${custom.colors.gallery}`,
     },
-    "h1, h1, h3, h4, h5, h6": {
-        fontFamily: "inherit",
-        fontWeight: 500,
-        lineHeight: 1.1,
-        color: "inherit",
-        marginTop: "20px",
-        marginBottom: "10px",
-    },
 
     a: {
         textDecoration: "none",
@@ -252,6 +244,13 @@ const globalStyles = {
     },
 };
 
+const headerCommonStyle = {
+    fontWeight: 500,
+    lineHeight: 1.1,
+    marginTop: "20px",
+    marginBottom: "10px",
+};
+
 export const nuTheme = createTheme({
     palette: {
         mode: "dark",
@@ -274,6 +273,12 @@ export const nuTheme = createTheme({
         },
     },
     typography: {
+        h1: { ...headerCommonStyle },
+        h2: { ...headerCommonStyle },
+        h3: { ...headerCommonStyle },
+        h4: { ...headerCommonStyle },
+        h5: { ...headerCommonStyle },
+        h6: { ...headerCommonStyle },
         subtitle2: {
             fontSize: "12px",
             lineHeight: "inherit",
