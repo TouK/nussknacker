@@ -4,7 +4,7 @@ export type Component = {
     branchParametersTemplate: BranchParametersTemplate;
     node: NodeType;
     label: string;
-    type: string;
+    componentId: string;
 };
 export type ComponentGroup = {
     components: Component[];

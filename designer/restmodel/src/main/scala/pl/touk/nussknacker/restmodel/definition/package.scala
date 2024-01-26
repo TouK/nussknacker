@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -23,7 +23,7 @@ package object definition {
   @JsonCodec(encodeOnly = true) final case class UIDefinitions(
       // This is dedicated view for the components toolbox panel
       componentGroups: List[UIComponentGroup],
-      components: Map[ComponentInfo, UIComponentDefinition],
+      components: Map[ComponentId, UIComponentDefinition],
       classes: List[TypingResult],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[UINodeEdges],
@@ -78,14 +78,14 @@ package object definition {
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
   final case class UINodeEdges(
-      componentId: ComponentInfo,
+      componentId: ComponentId,
       edges: List[EdgeType],
       canChooseNodes: Boolean,
       isForInputDefinition: Boolean
   )
 
   object UINodeEdges {
-    implicit val componentIdEncoder: Encoder[ComponentInfo] = Encoder.encodeString.contramap(_.toString)
+    implicit val componentIdEncoder: Encoder[ComponentId] = Encoder.encodeString.contramap(_.toString)
 
     implicit val encoder: Encoder[UINodeEdges] = deriveConfiguredEncoder
   }
@@ -93,13 +93,13 @@ package object definition {
   object UIComponentNodeTemplate {
 
     def create(
-        componentInfo: ComponentInfo,
+        componentId: ComponentId,
         nodeTemplate: NodeData,
         branchParametersTemplate: List[NodeParameter]
     ): UIComponentNodeTemplate =
       UIComponentNodeTemplate(
-        componentInfo.`type`,
-        componentInfo.name,
+        componentId,
+        componentId.name,
         nodeTemplate,
         branchParametersTemplate
       )
@@ -107,15 +107,12 @@ package object definition {
   }
 
   @JsonCodec(encodeOnly = true) final case class UIComponentNodeTemplate(
-      // This field is used to generate unique key in DOM model on FE side (the label isn't unique)
-      `type`: ComponentType,
+      // componentId is used as a key in a DOM model - see ToolboxComponentGroup
+      componentId: ComponentId,
       label: String,
       node: NodeData,
       branchParametersTemplate: List[NodeParameter] = List.empty
-  ) {
-    // TODO: This is temporary - we shouldn't use ComponentNodeTemplate class for other purposes than encoding to json
-    def componentInfo: ComponentInfo = ComponentInfo(`type`, label)
-  }
+  )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentGroup(
       name: ComponentGroupName,

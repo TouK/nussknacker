@@ -2,9 +2,14 @@ package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.ComponentInfo
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, SingleInputGenericNodeTransformation, WithStaticParameters}
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  GenericNodeTransformation,
+  JoinGenericNodeTransformation,
+  SingleInputGenericNodeTransformation,
+  WithStaticParameters
+}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
@@ -24,7 +29,9 @@ class DynamicComponentStaticDefinitionDeterminer(
     createMetaData: ProcessName => MetaData
 ) extends LazyLogging {
 
-  private def determineStaticDefinition(dynamic: DynamicComponentDefinitionWithImplementation): ComponentStaticDefinition = {
+  private def determineStaticDefinition(
+      dynamic: DynamicComponentDefinitionWithImplementation
+  ): ComponentStaticDefinition = {
     val parameters = determineInitialParameters(dynamic)
     ComponentStaticDefinition(
       parameters,
@@ -76,16 +83,16 @@ object DynamicComponentStaticDefinitionDeterminer {
   def collectStaticDefinitionsForDynamicComponents(
       modelDataForType: ModelData,
       createMetaData: ProcessName => MetaData
-  ): Map[ComponentInfo, ComponentStaticDefinition] = {
+  ): Map[ComponentId, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
     val toStaticComponentDefinitionTransformer =
       new DynamicComponentStaticDefinitionDeterminer(nodeValidator, createMetaData)
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {
-      modelDataForType.modelDefinition.components.toList.collect {
-        case (info, dynamic: DynamicComponentDefinitionWithImplementation) =>
-          info -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
+      modelDataForType.modelDefinition.components.collect {
+        case dynamic: DynamicComponentDefinitionWithImplementation =>
+          dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
       }.toMap
     }
   }

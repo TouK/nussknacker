@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
@@ -18,14 +18,16 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.emptyExpression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 final case class ModelDefinitionBuilder(
-    componentInfoToId: ComponentInfo => ComponentId,
-    components: List[(String, ComponentDefinitionWithImplementation)],
+    determineDesignerWideId: ComponentId => DesignerWideComponentId,
+    components: List[ComponentDefinitionWithImplementation],
     globalVariables: Map[String, AnyRef],
     private val groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
 ) {
 
-  def withComponentInfoToId(componentInfoToId: ComponentInfo => ComponentId): ModelDefinitionBuilder =
-    copy(componentInfoToId = componentInfoToId)
+  def withDesignerWideComponentIdDeterminingStrategy(
+      determineDesignerWideId: ComponentId => DesignerWideComponentId
+  ): ModelDefinitionBuilder =
+    copy(determineDesignerWideId = determineDesignerWideId)
 
   def withService(name: String, params: Parameter*): ModelDefinitionBuilder =
     withService(name, Some(Unknown), params: _*)
@@ -52,14 +54,21 @@ final case class ModelDefinitionBuilder(
       componentSpecificData: CustomComponentSpecificData,
       params: Parameter*
   ): ModelDefinitionBuilder =
-    withCustom(name, returnType, componentSpecificData, componentGroupName = None, componentId = None, params: _*)
+    withCustom(
+      name,
+      returnType,
+      componentSpecificData,
+      componentGroupName = None,
+      designerWideComponentId = None,
+      params: _*
+    )
 
   def withCustom(
       name: String,
       returnType: Option[TypingResult],
       componentSpecificData: CustomComponentSpecificData,
       componentGroupName: Option[ComponentGroupName],
-      componentId: Option[ComponentId],
+      designerWideComponentId: Option[DesignerWideComponentId],
       params: Parameter*
   ): ModelDefinitionBuilder =
     wrapCustom(
@@ -67,7 +76,7 @@ final case class ModelDefinitionBuilder(
       ComponentStaticDefinition(params.toList, returnType),
       componentSpecificData,
       componentGroupName,
-      componentId
+      designerWideComponentId
     )
 
   def withGlobalVariable(name: String, variable: AnyRef): ModelDefinitionBuilder = {
@@ -78,35 +87,41 @@ final case class ModelDefinitionBuilder(
       name: String,
       staticDefinition: ComponentStaticDefinition
   ): ModelDefinitionBuilder =
-    withComponent(name, staticDefinition, SourceSpecificData, componentGroupName = None, componentId = None)
+    withComponent(name, staticDefinition, SourceSpecificData, componentGroupName = None, designerWideComponentId = None)
 
   private def withSink(
       name: String,
       staticDefinition: ComponentStaticDefinition,
   ): ModelDefinitionBuilder =
-    withComponent(name, staticDefinition, SinkSpecificData, componentGroupName = None, componentId = None)
+    withComponent(name, staticDefinition, SinkSpecificData, componentGroupName = None, designerWideComponentId = None)
 
   private def wrapService(
       name: String,
       staticDefinition: ComponentStaticDefinition,
   ): ModelDefinitionBuilder =
-    withComponent(name, staticDefinition, ServiceSpecificData, componentGroupName = None, componentId = None)
+    withComponent(
+      name,
+      staticDefinition,
+      ServiceSpecificData,
+      componentGroupName = None,
+      designerWideComponentId = None
+    )
 
   private def wrapCustom(
       name: String,
       staticDefinition: ComponentStaticDefinition,
       componentSpecificData: CustomComponentSpecificData,
       componentGroupName: Option[ComponentGroupName],
-      componentId: Option[ComponentId]
+      designerWideComponentId: Option[DesignerWideComponentId]
   ): ModelDefinitionBuilder =
-    withComponent(name, staticDefinition, componentSpecificData, componentGroupName, componentId)
+    withComponent(name, staticDefinition, componentSpecificData, componentGroupName, designerWideComponentId)
 
   private def withComponent(
       name: String,
       staticDefinition: ComponentStaticDefinition,
       componentTypeSpecificData: ComponentTypeSpecificData,
       componentGroupName: Option[ComponentGroupName],
-      componentId: Option[ComponentId]
+      designerWideComponentId: Option[DesignerWideComponentId]
   ): ModelDefinitionBuilder = {
     val defaultConfig =
       DefaultComponentConfigDeterminer.forNotBuiltInComponentType(
@@ -115,23 +130,26 @@ final case class ModelDefinitionBuilder(
       )
     val configWithOverridenGroupName =
       componentGroupName.map(group => defaultConfig.copy(componentGroup = Some(group))).getOrElse(defaultConfig)
-    val info = ComponentInfo(componentTypeSpecificData.componentType, name)
-    val configWithComponentId =
-      configWithOverridenGroupName.copy(componentId = Some(componentId.getOrElse(componentInfoToId(info))))
+    val id = ComponentId(componentTypeSpecificData.componentType, name)
+    val configWithDesignerWideComponentId =
+      configWithOverridenGroupName.copy(componentId =
+        Some(designerWideComponentId.getOrElse(determineDesignerWideId(id)))
+      )
     ComponentDefinitionExtractor
       .filterOutDisabledAndComputeFinalUiDefinition(
-        configWithComponentId,
+        configWithDesignerWideComponentId,
         groupName => groupNameMapping.getOrElse(groupName, Some(groupName))
       )
       .map { case (uiDefinition, _) =>
         MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+          name,
           componentTypeSpecificData,
           staticDefinition,
           uiDefinition
         )
       }
       .map { component =>
-        copy(components = (name -> component) :: components)
+        copy(components = component :: components)
       }
       .getOrElse(this)
   }
@@ -154,7 +172,7 @@ object ModelDefinitionBuilder {
 
   def empty(groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]): ModelDefinitionBuilder = {
     new ModelDefinitionBuilder(
-      componentInfoToId = info => ComponentId(info.toString),
+      determineDesignerWideId = id => DesignerWideComponentId(id.toString),
       components = List.empty,
       globalVariables = Map.empty,
       groupNameMapping

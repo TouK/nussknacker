@@ -18,18 +18,8 @@ export interface InvocationResult {
     value: unknown;
 }
 
-interface NodeComponentInfo {
-    nodeId: NodeId;
-    componentInfo: ComponentInfo;
-}
-
-interface ComponentInfo {
-    type: string;
-    name: string;
-}
-
 export interface Error {
-    nodeComponentInfo: NodeComponentInfo;
+    nodeId: NodeId;
     context: Context;
     throwable;
 }
@@ -123,7 +113,7 @@ class TestResultUtils {
     }
 
     private _errors(results: TestResults, nodeId: NodeId): Error[] {
-        return results?.exceptions?.filter((ex) => ex.nodeComponentInfo.nodeId === nodeId);
+        return results?.exceptions?.filter((ex) => ex.nodeId === nodeId);
     }
 
     private _contextDisplay = (context: Context): string => {

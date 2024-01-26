@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentId}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidFragment
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -172,7 +172,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val definitions = ModelDefinition(
       ComponentDefinitionWithImplementation
-        .forList(components, ComponentsUiConfig.Empty, info => ComponentId(info.toString), Map.empty),
+        .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
       ModelDefinitionBuilder.emptyExpressionConfig.copy(
         languages = LanguageConfiguration(List(LiteralExpressionParser))
       ),

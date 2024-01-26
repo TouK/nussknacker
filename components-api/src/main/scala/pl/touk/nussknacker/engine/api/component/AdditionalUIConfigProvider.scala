@@ -5,12 +5,10 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValida
 
 /**
  * Trait allowing the provision of UI configuration for components and scenario properties, without requiring a model reload.
- *
- * TODO: Currently the value of 'valueCompileTimeValidation' has no effect, it'll be supported in the future but is included now to keep the API stable.
  */
 trait AdditionalUIConfigProvider extends Serializable {
 
-  def getAllForProcessingType(processingType: String): Map[ComponentId, ComponentAdditionalConfig]
+  def getAllForProcessingType(processingType: String): Map[DesignerWideComponentId, ComponentAdditionalConfig]
 
   // `ScenarioPropertyConfig.validators` does nothing (only usage goes to createUIScenarioPropertyConfig)
   def getScenarioPropertiesUIConfigs(processingType: String): Map[String, ScenarioPropertyConfig]
@@ -34,7 +32,5 @@ case class ParameterAdditionalUIConfig(
     initialValue: Option[FixedExpressionValue],
     hintText: Option[String],
     valueEditor: Option[ValueInputWithFixedValues],
-    valueCompileTimeValidation: Option[
-      ParameterValueCompileTimeValidation
-    ], // not supported yet, see AdditionalUIConfigProvider TODOs
+    valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation]
 )

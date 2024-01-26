@@ -4,7 +4,7 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -256,8 +256,8 @@ class DBFetchingProcessRepositorySpec
     val latestDetails = fetchLatestProcessDetails[ScenarioComponentsUsages](processName)
     latestDetails.json shouldBe ScenarioComponentsUsages(
       Map(
-        ComponentInfo(ComponentType.Source, "source") -> List("source1"),
-        ComponentInfo(ComponentType.Sink, "sink")     -> List("sink1"),
+        ComponentId(ComponentType.Source, "source") -> List("source1"),
+        ComponentId(ComponentType.Sink, "sink")     -> List("sink1"),
       )
     )
 
@@ -270,8 +270,8 @@ class DBFetchingProcessRepositorySpec
 
     fetchLatestProcessDetails[ScenarioComponentsUsages](processName).json shouldBe ScenarioComponentsUsages(
       Map(
-        ComponentInfo(ComponentType.Source, "source")  -> List("source1"),
-        ComponentInfo(ComponentType.Sink, "otherSink") -> List("sink1"),
+        ComponentId(ComponentType.Source, "source")  -> List("source1"),
+        ComponentId(ComponentType.Sink, "otherSink") -> List("sink1"),
       )
     )
   }

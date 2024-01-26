@@ -67,7 +67,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val definitions = prepareDefinitions(model, List.empty)
 
     definitions
-      .components(ComponentInfo(ComponentType.Service, "enricher"))
+      .components(ComponentId(ComponentType.Service, "enricher"))
       .parameters
       .map(p => (p.name, p.editor))
       .toMap shouldBe Map(
@@ -99,7 +99,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val definitions = prepareDefinitions(model, List.empty)
 
     definitions
-      .components(ComponentInfo(ComponentType.Service, "enricher"))
+      .components(ComponentId(ComponentType.Service, "enricher"))
       .parameters
       .map(p => (p.name, p.label))
       .toMap shouldBe Map(
@@ -173,7 +173,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     val definitions = prepareDefinitions(model, List(fragmentWithDocsUrl))
 
-    definitions.components(ComponentInfo(ComponentType.Fragment, fragment.name.value)).docsUrl shouldBe Some(docsUrl)
+    definitions.components(ComponentId(ComponentType.Fragment, fragment.name.value)).docsUrl shouldBe Some(docsUrl)
   }
 
   test("should skip empty fragments in definitions") {
@@ -183,7 +183,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val fragment    = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val definitions = prepareDefinitions(model, List(fragment))
 
-    definitions.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)) shouldBe empty
+    definitions.components.get(ComponentId(ComponentType.Fragment, fragment.name.value)) shouldBe empty
   }
 
   test("should return outputParameters in fragment's definition") {
@@ -194,7 +194,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val definitions = prepareDefinitions(model, List(ProcessTestData.sampleFragmentOneOut))
 
     val fragmentDefinition =
-      definitions.components.get(ComponentInfo(ComponentType.Fragment, fragment.name.value)).value
+      definitions.components.get(ComponentId(ComponentType.Fragment, fragment.name.value)).value
     val outputParameters = fragmentDefinition.outputParameters.value
     outputParameters shouldEqual List("output")
   }
@@ -204,7 +204,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
       List(ComponentDefinition("enricher", TestService)),
       additionalConfigsFromProvider = Map(
-        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+        DesignerWideComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
             "paramStringEditor" -> ParameterAdditionalUIConfig(
               required = false,
@@ -229,7 +229,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val expectedOverridenParamDefaultValue =
       "paramStringEditor" -> Expression.spel("'default-from-additional-ui-config-provider'")
     val returnedParamDefaultValues =
-      definitions.components(ComponentInfo(ComponentType.Service, "enricher")).parameters.map { param =>
+      definitions.components(ComponentId(ComponentType.Service, "enricher")).parameters.map { param =>
         param.name -> param.defaultValue
       }
     returnedParamDefaultValues should contain(expectedOverridenParamDefaultValue)
@@ -240,7 +240,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
       List(ComponentDefinition("enricher", TestService)),
       additionalConfigsFromProvider = Map(
-        ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+        DesignerWideComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
           parameterConfigs = Map.empty,
           componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName)
         )
@@ -273,7 +273,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         Some(_),
-        ComponentId.default(processingType, _)
+        DesignerWideComponentId.default(processingType, _)
       ),
       model.modelDefinition
     )

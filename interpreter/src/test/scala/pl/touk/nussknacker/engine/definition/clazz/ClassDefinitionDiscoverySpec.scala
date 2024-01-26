@@ -323,9 +323,9 @@ class ClassDefinitionDiscoverySpec
   }
 
   test("should extract description and params from method") {
-    val scalaClazzInfo = singleClassDefinition[ScalaSampleDocumentedClass]().value
+    val scalaClazzDefinition = singleClassDefinition[ScalaSampleDocumentedClass]().value
 
-    val javaClazzInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
+    val javaClazzDefinition = singleClassDefinition[JavaSampleDocumentedClass]().value
 
     def checkMethodInfo(
         name: String,
@@ -334,12 +334,12 @@ class ClassDefinitionDiscoverySpec
         desc: Option[String],
         varArgs: Boolean
     ): Unit = {
-      val scalaInfo :: Nil = scalaClazzInfo.methods(name)
-      val javaInfo :: Nil  = javaClazzInfo.methods(name)
-      List(scalaInfo, javaInfo).foreach(info => {
-        info.signatures.head shouldBe MethodTypeInfo.fromList(params, varArgs, result)
-        info.description shouldBe desc
-        info.signatures.head.varArg.isDefined shouldBe varArgs
+      val scalaMethod :: Nil = scalaClazzDefinition.methods(name)
+      val javaMethod :: Nil  = javaClazzDefinition.methods(name)
+      List(scalaMethod, javaMethod).foreach(method => {
+        method.signatures.head shouldBe MethodTypeInfo.fromList(params, varArgs, result)
+        method.description shouldBe desc
+        method.signatures.head.varArg.isDefined shouldBe varArgs
       })
     }
 
@@ -437,8 +437,8 @@ class ClassDefinitionDiscoverySpec
       expected: ValidatedNel[String, TypingResult]
   ): Unit =
     classes.map(clazz => {
-      val info :: Nil = clazz.methods(name)
-      info.computeResultType(Unknown, arguments).leftMap(_.map(_.message)) shouldBe expected
+      val method :: Nil = clazz.methods(name)
+      method.computeResultType(Unknown, arguments).leftMap(_.map(_.message)) shouldBe expected
     })
 
   test("should correctly calculate result types on correct inputs") {

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
-import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersCompleteDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
@@ -48,10 +48,7 @@ class NodeDataValidator(modelData: ModelData) {
 
   private val compiler = new NodeCompiler(
     modelData.modelDefinition,
-    FragmentParametersCompleteDefinitionExtractor(
-      modelData.modelClassLoader.classLoader,
-      expressionCompiler
-    ),
+    new FragmentParametersDefinitionExtractor(modelData.modelClassLoader.classLoader),
     expressionCompiler,
     modelData.modelClassLoader.classLoader,
     PreventInvocationCollector,

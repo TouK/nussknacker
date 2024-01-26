@@ -77,7 +77,7 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
     // error to display.
     val infosWithValidationResults =
       methodInfos.map(x => (x, x.computeResultType(reference.invocationTarget, reference.params)))
-    val returnTypes = infosWithValidationResults.map { case (info, typ) => typ.leftMap(_.map((info, _))) }
+    val returnTypes = infosWithValidationResults.map { case (id, typ) => typ.leftMap(_.map((id, _))) }
     val combinedReturnTypes = returnTypes
       .map(x => x.map(List(_)))
       .reduce((x, y) =>

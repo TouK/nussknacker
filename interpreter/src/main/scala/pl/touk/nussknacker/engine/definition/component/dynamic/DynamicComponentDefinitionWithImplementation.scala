@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 
 final case class DynamicComponentDefinitionWithImplementation(
+    override val name: String,
     override val implementationInvoker: ComponentImplementationInvoker,
     override val implementation: GenericNodeTransformation[_],
     override val componentTypeSpecificData: ComponentTypeSpecificData,

@@ -6,7 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
@@ -187,13 +187,15 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   }
 
   test("extract components that are only in specified category") {
-    val customTransformers = modelDefinitionWithTypes(Some(SomeCategory)).modelDefinition.components
+    val customTransformersIds = modelDefinitionWithTypes(Some(SomeCategory)).modelDefinition.components.map(_.id)
 
-    customTransformers should contain key ComponentInfo(ComponentType.CustomComponent, "transformer1")
-    customTransformers should contain key ComponentInfo(ComponentType.CustomComponent, "transformedInSomeCategory")
-    customTransformers should not contain key(
-      ComponentInfo(ComponentType.CustomComponent, "transformedInSomeOtherCategory")
+    customTransformersIds should contain(ComponentId(ComponentType.CustomComponent, "transformer1"))
+    customTransformersIds should contain(ComponentId(ComponentType.CustomComponent, "transformedInSomeCategory"))
+    customTransformersIds should not contain ComponentId(
+      ComponentType.CustomComponent,
+      "transformedInSomeOtherCategory"
     )
+
   }
 
   private def modelDefinitionWithTypes(category: Option[String]) = {
@@ -204,7 +206,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       category,
       ProcessObjectDependencies.withConfig(modelConfig),
       ComponentsUiConfigParser.parse(modelConfig),
-      info => ComponentId(info.toString),
+      id => DesignerWideComponentId(id.toString),
       Map.empty
     )
     ModelDefinitionWithClasses(modelDefinition)

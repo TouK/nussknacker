@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -63,7 +63,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
           ComponentDefinitionWithImplementation.forList(
             components = testExtensionsHolder.components,
             additionalConfigs = ComponentsUiConfig.Empty,
-            componentInfoToId = info => ComponentId(info.toString),
+            determineDesignerWideId = id => DesignerWideComponentId(id.toString),
             additionalConfigsFromProvider = Map.empty
           )
 

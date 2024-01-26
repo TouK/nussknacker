@@ -17,8 +17,8 @@ case class ClassDefinition(
       )
   }
 
-  private def asProperty(info: MethodDefinition, invocationTarget: TypingResult): Option[TypingResult] =
-    info.computeResultType(invocationTarget, List.empty).toOption
+  private def asProperty(methodDefinition: MethodDefinition, invocationTarget: TypingResult): Option[TypingResult] =
+    methodDefinition.computeResultType(invocationTarget, List.empty).toOption
 
   private val AnyClass: Class[Any] = classOf[Any]
 

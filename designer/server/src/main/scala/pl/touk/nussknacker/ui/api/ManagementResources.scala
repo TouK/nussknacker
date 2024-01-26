@@ -12,7 +12,7 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -69,9 +69,6 @@ object ManagementResources {
         "variables" -> a.variables.asJson
       )
 
-    implicit val componentInfoEncoder: Encoder[ComponentInfo]         = deriveConfiguredEncoder
-    implicit val nodeComponentInfoEncoder: Encoder[NodeComponentInfo] = deriveConfiguredEncoder
-
     val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
 
     // It has to be done manually, deriveConfiguredEncoder doesn't work properly with value: Any
@@ -95,9 +92,10 @@ object ManagementResources {
     implicit val exceptionsEncoder: Encoder[NuExceptionInfo[_ <: Throwable]] =
       (value: NuExceptionInfo[_ <: Throwable]) =>
         Json.obj(
-          "nodeComponentInfo" -> value.nodeComponentInfo.asJson,
-          "throwable"         -> throwableEncoder(value.throwable),
-          "context"           -> value.context.asJson
+          // We don't need componentId on the FE here
+          "nodeId"    -> value.nodeComponentInfo.map(_.nodeId).asJson,
+          "throwable" -> throwableEncoder(value.throwable),
+          "context"   -> value.context.asJson
         )
 
     override def apply(a: TestResults): Json = a match {

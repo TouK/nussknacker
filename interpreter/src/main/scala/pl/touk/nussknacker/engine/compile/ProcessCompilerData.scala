@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyInterpreterDependencies, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
-import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersCompleteDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
@@ -37,7 +37,7 @@ object ProcessCompilerData {
       customProcessValidator: CustomProcessValidator
   ): ProcessCompilerData = {
     val servicesDefs = definitionWithTypes.modelDefinition.components
-      .filter(_._1.`type` == ComponentType.Service)
+      .filter(_.componentType == ComponentType.Service)
 
     val expressionCompiler = ExpressionCompiler.withOptimization(
       userCodeClassLoader,
@@ -45,15 +45,11 @@ object ProcessCompilerData {
       definitionWithTypes.modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions
     )
-    val fragmentParametersDefinitionExtractor = FragmentParametersCompleteDefinitionExtractor(
-      userCodeClassLoader,
-      expressionCompiler
-    )
 
     // for testing environment it's important to take classloader from user jar
     val nodeCompiler = new NodeCompiler(
       definitionWithTypes.modelDefinition,
-      fragmentParametersDefinitionExtractor,
+      new FragmentParametersDefinitionExtractor(userCodeClassLoader),
       expressionCompiler,
       userCodeClassLoader,
       resultsCollector,
@@ -79,7 +75,7 @@ object ProcessCompilerData {
       LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
       interpreter,
       listeners,
-      servicesDefs.map { case (info, servicesDef) => info.name -> servicesDef.implementation.asInstanceOf[Lifecycle] }
+      servicesDefs.map(service => service.name -> service.implementation.asInstanceOf[Lifecycle]).toMap
     )
 
   }
