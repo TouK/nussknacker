@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.ui.config.processtoolbar
+package pl.touk.nussknacker.ui.config.scenariotoolbar
 
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonsConfigVariant.ToolbarButtonVariant
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonsConfigVariant.ToolbarButtonVariant
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
 
 object ToolbarButtonsConfigVariant extends Enumeration {
   implicit val variantEncoder: Encoder[ToolbarButtonVariant] = Encoder.encodeEnumeration(ToolbarButtonsConfigVariant)

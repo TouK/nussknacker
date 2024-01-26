@@ -33,7 +33,7 @@ import ScenarioWithDetailsConversions._
 class ProcessesResources(
     protected val processService: ProcessService,
     deploymentService: DeploymentService,
-    processToolbarService: ProcessToolbarService,
+    processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
     processChangeListener: ProcessChangeListener
 )(implicit val ec: ExecutionContext, mat: Materializer)
@@ -229,7 +229,7 @@ class ProcessesResources(
             processService
               .getLatestProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
               .map(_.toEntity)
-              .map(processToolbarService.getProcessToolbarSettings)
+              .map(processToolbarService.getScenarioToolbarSettings)
           }
         }
       } ~ path("processes" / "category" / ProcessNameSegment / Segment) { (processName, category) =>

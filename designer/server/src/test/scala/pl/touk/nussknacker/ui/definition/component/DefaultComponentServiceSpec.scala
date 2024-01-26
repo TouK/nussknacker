@@ -44,7 +44,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
+import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.net.URI
@@ -764,7 +764,7 @@ class DefaultComponentServiceSpec
         ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
       }
 
-    val processService = createDbProcessService(categoryService, scenarios)
+    val processService = createDbProcessService(scenarios)
     new DefaultComponentService(
       componentLinksConfig,
       processingTypeDataProvider,
@@ -774,13 +774,12 @@ class DefaultComponentServiceSpec
   }
 
   private def createDbProcessService(
-      processCategoryService: ProcessCategoryService,
       processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = Nil
   ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
-      getProcessCategoryService = () => processCategoryService,
+      processCategoryServiceProvider = ProcessingTypeDataProvider(Map.empty, categoryService),
       processResolverByProcessingType = TestFactory.processResolverByProcessingType,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),

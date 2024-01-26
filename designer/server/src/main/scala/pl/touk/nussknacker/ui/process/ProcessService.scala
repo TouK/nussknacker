@@ -147,7 +147,7 @@ trait ProcessService {
 class DBProcessService(
     deploymentService: DeploymentService,
     newProcessPreparers: ProcessingTypeDataProvider[NewProcessPreparer, _],
-    getProcessCategoryService: () => ProcessCategoryService,
+    processCategoryServiceProvider: ProcessingTypeDataProvider[_, ProcessCategoryService],
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
@@ -507,7 +507,7 @@ class DBProcessService(
   private def withProcessingType[T](
       category: String
   )(callback: ProcessingType => Future[T]): Future[T] =
-    getProcessCategoryService().getTypeForCategory(category) match {
+    processCategoryServiceProvider.combined.getTypeForCategory(category) match {
       case Some(processingType) =>
         callback(processingType)
       case None =>
