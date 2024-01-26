@@ -6,7 +6,12 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{ExpressionSuggestionDto, NodeValidationResultDto, ParameterDto, ParametersValidationResultDto}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
+  ExpressionSuggestionDto,
+  NodeValidationResultDto,
+  ParameterDto,
+  ParametersValidationResultDto
+}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDtoHelpers.{toDto, toTypingResult}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.{NodeValidationRequest, ParametersValidationRequest}
@@ -145,7 +150,7 @@ class NodesApiHttpService(
                 val result =
                   typeToProcessValidator
                     .forTypeUnsafe(scenarioWithDetails.processingType)
-                    .validate(scenario, scenarioName, isFragment = false)
+                    .validate(scenario, request.name, isFragment = false)
                 Future(
                   success(
                     NodeValidationResultDto(
