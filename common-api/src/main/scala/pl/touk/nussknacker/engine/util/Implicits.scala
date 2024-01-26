@@ -23,6 +23,15 @@ object Implicits {
     def toGroupedMapSafe: Map[K, NonEmptyList[V]] =
       seq.groupBy(_._1).mapValuesNow(groupedValue => NonEmptyList.fromListUnsafe(groupedValue.map(_._2)))
 
+    def toMapCheckingDuplicates: Map[K, V] = {
+      val moreThanOneValueForKey = seq.toGroupedMap.filter(_._2.size > 1)
+      if (moreThanOneValueForKey.nonEmpty)
+        throw new IllegalStateException(
+          s"Found keys with more than one values: ${moreThanOneValueForKey.keys.mkString(", ")} during translating $seq to Map"
+        )
+      seq.toMap
+    }
+
   }
 
   implicit class RichStringList(seq: List[String]) {

@@ -6,6 +6,7 @@ import io.circe.parser
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.ui.api.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
@@ -129,18 +130,19 @@ class AppApiHttpService(
   }
 
   expose {
+    // This endpoint is used only by external project
+    // TODO: We should remove this endpoint after we fully switch to processing modes - see ConfigProcessCategoryService.checkCategoryToProcessingTypeMappingAmbiguity
     appApiEndpoints.userCategoriesWithProcessingTypesEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogicSuccess { loggedUser => _ =>
         Future {
-          // TODO: We have to swap this map or remove this endpoint at all
           val processingTypeByCategory = categories
             .all(loggedUser)
             .toList
             .map { case (processingType, category) =>
               category -> processingType
             }
-            .toMap
+            .toMapCheckingDuplicates
           UserCategoriesWithProcessingTypesDto(processingTypeByCategory)
         }
       }

@@ -122,10 +122,6 @@ trait ProcessService {
       implicit user: LoggedUser
   ): Future[UpdateProcessNameResponse]
 
-  def updateCategory(processIdWithName: ProcessIdWithName, category: String)(
-      implicit user: LoggedUser
-  ): Future[UpdateProcessCategoryResponse]
-
   def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[ProcessResponse]
 
   def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(
@@ -323,19 +319,6 @@ class DBProcessService(
     withArchivedProcess(processIdWithName, "Can't delete not archived scenario.") {
       dbioRunner
         .runInTransaction(processRepository.deleteProcess(processIdWithName))
-    }
-
-  override def updateCategory(processIdWithName: ProcessIdWithName, category: String)(
-      implicit user: LoggedUser
-  ): Future[UpdateProcessCategoryResponse] =
-    withNotArchivedProcess(processIdWithName, "Can't update category archived scenario.") { process =>
-      withProcessingType(category) { _ =>
-        dbioRunner.runInTransaction(
-          processRepository
-            .updateCategory(processIdWithName, category)
-            .map(_ => UpdateProcessCategoryResponse(process.processCategory, category))
-        )
-      }
     }
 
   // FIXME: Create process should create two inserts (process, processVersion) in transactional way, but right we do all in process repository..

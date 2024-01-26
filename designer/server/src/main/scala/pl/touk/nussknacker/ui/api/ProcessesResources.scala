@@ -232,18 +232,6 @@ class ProcessesResources(
               .map(processToolbarService.getScenarioToolbarSettings)
           }
         }
-      } ~ path("processes" / "category" / ProcessNameSegment / Segment) { (processName, category) =>
-        (post & processId(processName)) { processId =>
-          hasAdminPermission(user) {
-            complete {
-              processService
-                .updateCategory(processId, category)
-                .withListenerNotifySideEffect(response =>
-                  OnCategoryChanged(processId.id, response.oldCategory, response.newCategory)
-                )
-            }
-          }
-        }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
         (processName, thisVersion, otherVersion) =>
           (get & processId(processName)) { processId =>

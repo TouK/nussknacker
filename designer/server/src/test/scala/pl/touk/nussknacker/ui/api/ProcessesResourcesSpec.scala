@@ -314,48 +314,8 @@ class ProcessesResourcesSpec
     verifyListOfProcesses(ScenarioQuery.empty.process().archived(), List(archivedProcessName))
   }
 
-  test("allow update category for existing process") {
-    val processId = createEmptyProcess(processName)
-
-    changeProcessCategory(processName, Category2, isAdmin = true) { status =>
-      status shouldEqual StatusCodes.OK
-
-      val process = getProcessDetails(processId)
-      process.processCategory shouldBe Category2
-    }
-  }
-
-  test("not allow update to not existed category") {
-    createEmptyProcess(processName)
-
-    changeProcessCategory(processName, "not-exists-category", isAdmin = true) { status =>
-      status shouldEqual StatusCodes.BadRequest
-    }
-  }
-
-  test("not allow update category archived process") {
-    createArchivedProcess(processName)
-
-    changeProcessCategory(processName, Category2, isAdmin = true) { status =>
-      status shouldEqual StatusCodes.Conflict
-    }
-  }
-
-  test("return 404 on update process category for non existing process") {
-    changeProcessCategory(ProcessName("not-exists-process"), Category2, isAdmin = true) { status =>
-      status shouldBe StatusCodes.NotFound
-    }
-  }
-
-  test("return 403 on update process category for normal user") {
-    createArchivedProcess(processName)
-    // Verification of rejection is done on changeProcessCategory
-    changeProcessCategory(processName, Category2) { _ => }
-  }
-
   test("return process if user has category") {
     val processId = createEmptyProcess(processName)
-    updateCategory(processId, Category1)
 
     forScenarioReturned(processName) { process =>
       process.processCategory shouldBe Category1
@@ -363,9 +323,7 @@ class ProcessesResourcesSpec
   }
 
   test("not return processes not in user categories") {
-    val processId = createEmptyProcess(processName)
-
-    updateCategory(processId, Category2)
+    createEmptyProcess(processName, category = Category2)
 
     tryForScenarioReturned(processName) { (status, _) =>
       status shouldEqual StatusCodes.NotFound
@@ -1024,20 +982,6 @@ class ProcessesResourcesSpec
   private def getProcessToolbars(processName: ProcessName, isAdmin: Boolean = false): RouteTestResult =
     Get(s"/processes/$processName/toolbars") ~> routeWithPermissions(processesRoute, isAdmin)
 
-  private def changeProcessCategory(processName: ProcessName, category: String, isAdmin: Boolean = false)(
-      callback: StatusCode => Any
-  ): Any =
-    Post(s"/processes/category/$processName/$category") ~> routeWithPermissions(
-      processesRoute,
-      isAdmin
-    ) ~> check {
-      if (isAdmin) {
-        callback(status)
-      } else {
-        rejection shouldBe server.AuthorizationFailedRejection
-      }
-    }
-
   private def archiveProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
     Post(s"/archive/$processName") ~> withPermissions(
       processesRoute,
@@ -1061,11 +1005,6 @@ class ProcessesResourcesSpec
     ) ~> check {
       callback(status)
     }
-
-  private def updateCategory(processId: ProcessId, category: String): Unit =
-    dbioRunner
-      .runInTransaction(writeProcessRepository.updateCategory(ProcessIdWithName(processId, processName), category))
-      .futureValue
 
   private def forScenarioStatus(processName: ProcessName, isAdmin: Boolean = false)(
       callback: (StatusCode, StateJson) => Unit
