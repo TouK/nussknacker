@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptio
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.{NuPathMatchers, ProcessComparator}
+import pl.touk.nussknacker.ui.util.{NuPathMatchers, ScenarioGraphComparator}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -136,7 +136,7 @@ class RemoteEnvironmentResources(
 @JsonCodec final case class ProcessDifference(
     name: ProcessName,
     presentOnOther: Boolean,
-    differences: Map[String, ProcessComparator.Difference]
+    differences: Map[String, ScenarioGraphComparator.Difference]
 ) {
 
   def areSame: Boolean = presentOnOther && differences.isEmpty

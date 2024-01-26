@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
@@ -738,8 +738,8 @@ class DefaultComponentServiceSpec
 
   private def prepareService(
       modelDataMap: Map[ProcessingType, (LocalModelData, Category)],
-      scenarios: List[ScenarioWithDetailsEntity[DisplayableProcess]],
-      fragments: List[ScenarioWithDetailsEntity[DisplayableProcess]]
+      scenarios: List[ScenarioWithDetailsEntity[ScenarioGraph]],
+      fragments: List[ScenarioWithDetailsEntity[ScenarioGraph]]
   ): ComponentService = {
     val processingTypeDataMap: Map[ProcessingType, ProcessingTypeData] = modelDataMap.transform {
       case (processingType, (modelData, category)) =>
@@ -775,7 +775,7 @@ class DefaultComponentServiceSpec
 
   private def createDbProcessService(
       processCategoryService: ProcessCategoryService,
-      processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = Nil
+      processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = Nil
   ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),

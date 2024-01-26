@@ -5,8 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
@@ -22,7 +21,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class UIProcessValidator(
@@ -53,15 +52,15 @@ class UIProcessValidator(
   def withScenarioPropertiesConfig(scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]) =
     new UIProcessValidator(processingType, validator, scenarioPropertiesConfig, additionalValidators, fragmentResolver)
 
-  def validate(displayable: DisplayableProcess, processName: ProcessName, isFragment: Boolean)(
+  def validate(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean)(
       implicit loggedUser: LoggedUser
   ): ValidationResult = {
-    val uiValidationResult = uiValidation(displayable, processName, isFragment)
+    val uiValidationResult = uiValidation(scenarioGraph, processName, isFragment)
 
     // there is no point in further validations if ui process structure is invalid
-    // displayable to canonical conversion for invalid ui process structure can have unexpected results
+    // scenarioGraph to canonical conversion for invalid ui process structure can have unexpected results
     if (uiValidationResult.saveAllowed) {
-      val canonical = ProcessConverter.fromDisplayable(displayable, processName)
+      val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName)
       // The deduplication is needed for errors that are validated on both uiValidation for DisplayableProcess and
       // CanonicalProcess validation.
       deduplicateErrors(uiValidationResult.add(validateCanonicalProcess(canonical, isFragment)))
@@ -74,14 +73,14 @@ class UIProcessValidator(
   // is an error preventing graph canonization. For example we want to display node and scenario id errors for scenarios
   // that have loose nodes. If you want to achieve this result, you need to add these validations here and deduplicate
   // resulting errors later.
-  def uiValidation(displayable: DisplayableProcess, processName: ProcessName, isFragment: Boolean): ValidationResult = {
+  def uiValidation(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean): ValidationResult = {
     validateScenarioName(processName, isFragment)
-      .add(validateNodesId(displayable))
-      .add(validateDuplicates(displayable))
-      .add(validateLooseNodes(displayable))
-      .add(validateEdgeUniqueness(displayable))
-      .add(validateScenarioProperties(displayable.properties.additionalFields.properties, isFragment))
-      .add(warningValidation(displayable))
+      .add(validateNodesId(scenarioGraph))
+      .add(validateDuplicates(scenarioGraph))
+      .add(validateLooseNodes(scenarioGraph))
+      .add(validateEdgeUniqueness(scenarioGraph))
+      .add(validateScenarioProperties(scenarioGraph.properties.additionalFields.properties, isFragment))
+      .add(warningValidation(scenarioGraph))
   }
 
   def validateCanonicalProcess(
@@ -136,7 +135,7 @@ class UIProcessValidator(
     typingInfo.expressionsTypingInfo
   )
 
-  private def warningValidation(process: DisplayableProcess): ValidationResult = {
+  private def warningValidation(process: ScenarioGraph): ValidationResult = {
     val disabledNodes = process.nodes.collect {
       case d: NodeData with Disableable if d.isDisabled.getOrElse(false) => d
     }
@@ -152,8 +151,8 @@ class UIProcessValidator(
     }
   }
 
-  private def validateNodesId(displayable: DisplayableProcess): ValidationResult = {
-    val nodeIdErrors = displayable.nodes
+  private def validateNodesId(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val nodeIdErrors = scenarioGraph.nodes
       .map(n => IdValidator.validateNodeId(n.id))
       .collect { case Invalid(e) =>
         e
@@ -177,8 +176,8 @@ class UIProcessValidator(
     }
   }
 
-  private def validateEdgeUniqueness(displayableProcess: DisplayableProcess): ValidationResult = {
-    val edgesByFrom = displayableProcess.edges.groupBy(_.from)
+  private def validateEdgeUniqueness(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val edgesByFrom = scenarioGraph.edges.groupBy(_.from)
 
     def findNonUniqueEdge(nodeId: String, edgesFromNode: List[Edge]) = {
       val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect {
@@ -197,11 +196,11 @@ class UIProcessValidator(
     ValidationResult.errors(edgeUniquenessErrors, List(), List())
   }
 
-  private def validateLooseNodes(displayableProcess: DisplayableProcess): ValidationResult = {
-    val looseNodesIds = displayableProcess.nodes
+  private def validateLooseNodes(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val looseNodesIds = scenarioGraph.nodes
       // source & fragment inputs don't have inputs
       .filterNot(n => n.isInstanceOf[FragmentInputDefinition] || n.isInstanceOf[Source])
-      .filterNot(n => displayableProcess.edges.exists(_.to == n.id))
+      .filterNot(n => scenarioGraph.edges.exists(_.to == n.id))
       .map(_.id)
 
     if (looseNodesIds.isEmpty) {
@@ -211,8 +210,8 @@ class UIProcessValidator(
     }
   }
 
-  private def validateDuplicates(displayable: DisplayableProcess): ValidationResult = {
-    val nodeIds    = displayable.nodes.map(_.id)
+  private def validateDuplicates(scenarioGraph: ScenarioGraph): ValidationResult = {
+    val nodeIds    = scenarioGraph.nodes.map(_.id)
     val duplicates = nodeIds.groupBy(identity).filter(_._2.size > 1).keys.toList
 
     if (duplicates.isEmpty) {

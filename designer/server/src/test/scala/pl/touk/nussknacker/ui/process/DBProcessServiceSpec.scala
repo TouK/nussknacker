@@ -5,10 +5,10 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -45,7 +45,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   private val category2ArchivedProcess =
     createScenarioEntity("category2ArchivedProcess", isArchived = true, category = Category2)
 
-  private val processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = List(
+  private val processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = List(
     category1Process,
     category1Fragment,
     category1ArchivedFragment,
@@ -72,11 +72,11 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (category1User, List(category1Process, category1Fragment)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
-        .getLatestRawProcessesWithDetails[DisplayableProcess](ScenarioQuery(isArchived = Some(false)))
+        .getLatestRawProcessesWithDetails[ScenarioGraph](ScenarioQuery(isArchived = Some(false)))
         .futureValue
       result shouldBe expected
     }
@@ -92,11 +92,11 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (category1User, List(category1ArchivedFragment)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
-        .getLatestRawProcessesWithDetails[DisplayableProcess](ScenarioQuery(isArchived = Some(true)))
+        .getLatestRawProcessesWithDetails[ScenarioGraph](ScenarioQuery(isArchived = Some(true)))
         .futureValue
       result shouldBe expected
     }
@@ -112,10 +112,10 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (category1User, List(fragmentCategory1)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
       implicit val implicitUser: LoggedUser = user
       val result = dBProcessService
-        .getLatestRawProcessesWithDetails[DisplayableProcess](
+        .getLatestRawProcessesWithDetails[ScenarioGraph](
           ScenarioQuery(isFragment = Some(true), isArchived = Some(false))
         )
         .futureValue
@@ -127,9 +127,12 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     val dBProcessService = createDbProcessService(processes)
 
     val categoryStringData =
-      ProcessConverter.fromDisplayable(ProcessTestData.sampleDisplayableProcess, category1Process.name).asJson.spaces2
-    val baseProcessData = ProcessConverter
-      .fromDisplayable(ProcessTestData.sampleDisplayableProcess, ProcessTestData.sampleProcessName)
+      CanonicalProcessConverter
+        .fromScenarioGraph(ProcessTestData.sampleScenarioGraph, category1Process.name)
+        .asJson
+        .spaces2
+    val baseProcessData = CanonicalProcessConverter
+      .fromScenarioGraph(ProcessTestData.sampleScenarioGraph, ProcessTestData.sampleProcessName)
       .asJson
       .spaces2
 
@@ -138,12 +141,12 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (
         category1Process.idWithName,
         categoryStringData,
-        importSuccess(ProcessTestData.sampleDisplayableProcess)
+        importSuccess(ProcessTestData.sampleScenarioGraph)
       ), // importing data with the same id
       (
         category1Process.idWithName,
         baseProcessData,
-        importSuccess(ProcessTestData.sampleDisplayableProcess)
+        importSuccess(ProcessTestData.sampleScenarioGraph)
       ), // importing data with different id
       (
         category1ArchivedFragment.idWithName,
@@ -158,7 +161,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     )
 
     forAll(testingData) {
-      (idWithName: ProcessIdWithName, data: String, expected: XError[ValidatedDisplayableProcess]) =>
+      (idWithName: ProcessIdWithName, data: String, expected: XError[ScenarioGraphWithValidationResult]) =>
         def doImport() = dBProcessService.importProcess(idWithName, data)(adminUser).futureValue
 
         expected match {
@@ -172,23 +175,23 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   }
 
   private def importSuccess(
-      displayableProcess: DisplayableProcess
-  ): Right[NuDesignerError, ValidatedDisplayableProcess] = {
+      scenarioGraph: ScenarioGraph
+  ): Right[NuDesignerError, ScenarioGraphWithValidationResult] = {
     val nodeResults = Map(
       "sinkId"   -> NodeTypingData(Map("input" -> Unknown), Some(List.empty), Map.empty),
       "sourceId" -> NodeTypingData(Map.empty, Some(List.empty), Map.empty)
     )
 
     Right(
-      ValidatedDisplayableProcess(
-        displayableProcess,
+      ScenarioGraphWithValidationResult(
+        scenarioGraph,
         ValidationResult.success.copy(nodeResults = nodeResults)
       )
     )
   }
 
   private def createDbProcessService(
-      processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = Nil
+      processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = Nil
   ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),

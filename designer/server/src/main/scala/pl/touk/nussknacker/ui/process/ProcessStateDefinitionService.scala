@@ -53,7 +53,7 @@ object ProcessStateDefinitionService {
 
   /**
     * Each processing type define its own state definitions. Technically it is possible that two processing types provide
-    * states with the same StatusName and different UI configurations (displayable name and icon). Here is an assertion
+    * states with the same StatusName and different UI configurations (name and icon). Here is an assertion
     * that this does not happen and each state has the same definition across all processingTypes.
     */
   def createDefinitionsMappingUnsafe(

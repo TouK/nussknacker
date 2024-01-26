@@ -14,8 +14,7 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -59,7 +58,7 @@ import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, Validat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.possibleValues
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
@@ -75,7 +74,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   private val validationExpression = s"#${ValidationExpressionParameterValidator.variableName}.length() < 7"
 
   test("check for not unique edge types") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         FragmentInput("subIn", FragmentRef("fragment1", List())),
@@ -107,7 +106,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("switch edges do not have to be unique") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         Switch("switch"),
@@ -126,7 +125,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("check for not unique edges") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         FragmentInput("subIn", FragmentRef("fragment1", List())),
@@ -155,7 +154,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("check for loose nodes") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         Sink("out", SinkRef(existingSinkFactory, List())),
@@ -180,7 +179,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("filter with only 'false' edge") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         Sink("out", SinkRef(existingSinkFactory, List())),
@@ -200,7 +199,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("check for disabled nodes") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         Sink("out", SinkRef(existingSinkFactory, List())),
@@ -227,7 +226,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("check for duplicated ids") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
         Filter("inID", Expression.spel("''")),
@@ -252,7 +251,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("check for duplicated ids when duplicated id is switch id") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         Switch("switchID"),
@@ -302,17 +301,17 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
 
-    def validate(scenario: DisplayableProcess) =
-      processValidator.validate(scenario, sampleProcessName, isFragment = false)
+    def validate(scenarioGraph: ScenarioGraph) =
+      processValidator.validate(scenarioGraph, sampleProcessName, isFragment = false)
 
     validate(
-      validProcessWithFields(Map("field1" -> "a", "field2" -> "b"))
+      validScenarioGraphWithFields(Map("field1" -> "a", "field2" -> "b"))
     ) shouldBe withoutErrorsAndWarnings
 
-    validate(validProcessWithFields(Map("field1" -> "a"))) shouldBe withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field1" -> "a"))) shouldBe withoutErrorsAndWarnings
 
     validate(
-      validProcessWithFields(Map("field1" -> "", "field2" -> "b"))
+      validScenarioGraphWithFields(Map("field1" -> "", "field2" -> "b"))
     ).errors.processPropertiesErrors should matchPattern {
       case List(
             NodeValidationError(
@@ -324,7 +323,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             )
           ) =>
     }
-    validate(validProcessWithFields(Map("field2" -> "b"))).errors.processPropertiesErrors should matchPattern {
+    validate(validScenarioGraphWithFields(Map("field2" -> "b"))).errors.processPropertiesErrors should matchPattern {
       case List(
             NodeValidationError(
               "MissingRequiredProperty",
@@ -356,7 +355,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
 
     processValidator.validate(
-      validProcessWithFields(Map.empty),
+      validScenarioGraphWithFields(Map.empty),
       sampleFragmentName,
       isFragment = true
     ) shouldBe withoutErrorsAndWarnings
@@ -381,16 +380,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
-    def validate(scenario: DisplayableProcess) =
-      processValidator.validate(scenario, sampleProcessName, isFragment = false)
+    def validate(scenarioGraph: ScenarioGraph) =
+      processValidator.validate(scenarioGraph, sampleProcessName, isFragment = false)
 
-    validate(validProcessWithFields(Map("field1" -> "true"))) shouldBe withoutErrorsAndWarnings
-    validate(validProcessWithFields(Map("field1" -> "false"))) shouldBe withoutErrorsAndWarnings
-    validate(validProcessWithFields(Map("field1" -> "1"))) should not be withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field1" -> "true"))) shouldBe withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field1" -> "false"))) shouldBe withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field1" -> "1"))) should not be withoutErrorsAndWarnings
 
-    validate(validProcessWithFields(Map("field2" -> "1"))) shouldBe withoutErrorsAndWarnings
-    validate(validProcessWithFields(Map("field2" -> "1.1"))) should not be withoutErrorsAndWarnings
-    validate(validProcessWithFields(Map("field2" -> "true"))) should not be withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field2" -> "1"))) shouldBe withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field2" -> "1.1"))) should not be withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field2" -> "true"))) should not be withoutErrorsAndWarnings
   }
 
   test("handle unknown properties validation") {
@@ -406,7 +405,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
 
     val result =
-      processValidator.validate(validProcessWithFields(Map("field1" -> "true")), sampleProcessName, isFragment = false)
+      processValidator.validate(
+        validScenarioGraphWithFields(Map("field1" -> "true")),
+        sampleProcessName,
+        isFragment = false
+      )
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(NodeValidationError("UnknownProperty", _, _, Some("field1"), NodeValidationErrorType.SaveAllowed)) =>
@@ -414,7 +417,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("not allows save with incorrect characters in ids") {
-    def process(nodeId: String) = createProcess(
+    def process(nodeId: String) = createGraph(
       List(Source(nodeId, SourceRef(existingSourceFactory, List()))),
       List()
     )
@@ -452,9 +455,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         List.empty
       )
 
-    val displayableFragment = ProcessConverter.toDisplayable(fragmentWithInvalidParam)
+    val fragmentGraph = CanonicalProcessConverter.toScenarioGraph(fragmentWithInvalidParam)
 
-    val validationResult = validateWithConfiguredProperties(displayableFragment)
+    val validationResult = validateWithConfiguredProperties(fragmentGraph)
 
     validationResult.errors should not be empty
     validationResult.errors.invalidNodes("in") should matchPattern {
@@ -515,10 +518,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         List.empty
       )
 
-    val displayableFragment =
-      ProcessConverter.toDisplayable(fragmentWithInvalidParam)
+    val fragmentGraph =
+      CanonicalProcessConverter.toScenarioGraph(fragmentWithInvalidParam)
 
-    val validationResult = validateWithConfiguredProperties(displayableFragment)
+    val validationResult = validateWithConfiguredProperties(fragmentGraph)
 
     validationResult.errors should not be empty
     validationResult.errors.invalidNodes("in") should matchPattern {
@@ -582,10 +585,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         List.empty
       )
 
-    val displayableFragment =
-      ProcessConverter.toDisplayable(fragmentWithInvalidParam)
+    val fragmentGraph =
+      CanonicalProcessConverter.toScenarioGraph(fragmentWithInvalidParam)
 
-    val validationResult = validateWithConfiguredProperties(displayableFragment, isFragment = true)
+    val validationResult = validateWithConfiguredProperties(fragmentGraph, isFragment = true)
 
     validationResult.errors should not be empty
     validationResult.errors.invalidNodes("in") should matchPattern {
@@ -619,7 +622,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       additionalBranches = List.empty
     )
 
-    val process = createProcess(
+    val process = createGraph(
       nodes = List(
         Source("in", SourceRef(sourceTypeName, List())),
         FragmentInput(
@@ -674,7 +677,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       additionalBranches = List.empty
     )
 
-    val process = createProcess(
+    val process = createGraph(
       nodes = List(
         Source("source", SourceRef(sourceTypeName, Nil)),
         FragmentInput(
@@ -745,7 +748,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       additionalBranches = List.empty
     )
 
-    val process = createProcess(
+    val process = createGraph(
       nodes = List(
         Source("in", SourceRef(sourceTypeName, List())),
         FragmentInput(
@@ -785,7 +788,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       additionalBranches = List.empty
     )
 
-    val process = createProcess(
+    val process = createGraph(
       nodes = List(
         Source("source", SourceRef(sourceTypeName, Nil)),
         FragmentInput(
@@ -821,7 +824,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("check for no expression found in mandatory parameter") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
         Enricher(
@@ -1039,12 +1042,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("check for wrong fixed expression value in node parameter") {
-    val process: DisplayableProcess = createProcessWithParams(
+    val scenarioGraph: ScenarioGraph = createScenarioGraphWithParams(
       List(NodeParameter("expression", Expression.spel("wrong fixed value"))),
       Map.empty
     )
 
-    val result = validateWithConfiguredProperties(process)
+    val result = validateWithConfiguredProperties(scenarioGraph)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1064,7 +1067,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("check for wrong fixed expression value in scenario property") {
-    val process = createProcessWithParams(
+    val process = createScenarioGraphWithParams(
       List.empty,
       Map(
         "numberOfThreads"        -> "wrong fixed value",
@@ -1099,7 +1102,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       additionalBranches = List.empty
     )
 
-    val process = createProcess(
+    val process = createGraph(
       nodes = List(
         Source("source", SourceRef(sourceTypeName, Nil)),
         FragmentInput(
@@ -1143,7 +1146,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val fragmentDefinition: CanonicalProcess =
       createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short])))
-    val processWithFragment = createProcessWithFragmentParams(fragmentId, List(NodeParameter("P1", "123")))
+    val processWithFragment = createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter("P1", "123")))
 
     val processValidator = mockedProcessValidator(Some(fragmentDefinition), configWithValidators)
     val result           = processValidator.validate(processWithFragment, sampleProcessName, isFragment = false)
@@ -1158,7 +1161,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val fragmentDefinition: CanonicalProcess =
       createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true)))
-    val processWithFragment = createProcessWithFragmentParams(fragmentId, List(NodeParameter("P1", "")))
+    val processWithFragment = createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter("P1", "")))
 
     val processValidator = mockedProcessValidator(Some(fragmentDefinition), defaultConfig)
     val result           = processValidator.validate(processWithFragment, sampleProcessName, isFragment = false)
@@ -1185,7 +1188,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val processWithFragment = createProcessWithFragmentParams(
+    val processWithFragment = createScenarioGraphWithFragmentParams(
       fragmentId,
       List(
         NodeParameter("P1", ""),
@@ -1232,7 +1235,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       )
     val processWithFragment =
-      createProcessWithFragmentParams(fragmentId, List(NodeParameter(paramName, "\"Tomasz\"")))
+      createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(paramName, "\"Tomasz\"")))
 
     val processValidation = mockedProcessValidator(Some(fragmentDefinition), defaultConfig)
     val result            = processValidation.validate(processWithFragment, sampleProcessName, isFragment = false)
@@ -1269,7 +1272,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       )
     val processWithFragment =
-      createProcessWithFragmentParams(fragmentId, List(NodeParameter(paramName, "\"Barabasz\"")))
+      createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(paramName, "\"Barabasz\"")))
 
     val processValidation = mockedProcessValidator(Some(fragmentDefinition), configWithValidators)
     val result            = processValidation.validate(processWithFragment, sampleProcessName, isFragment = false)
@@ -1296,10 +1299,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       .source("start", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
 
-    val displayable = ProcessConverter.toDisplayable(process)
+    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(process)
     val result =
       mockedProcessValidator(Some(process)).validate(
-        displayable,
+        scenarioGraph,
         SampleCustomProcessValidator.badName,
         isFragment = false
       )
@@ -1312,7 +1315,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   test("should validate invalid scenario id") {
     val blankValue = ProcessName(" ")
     val result = TestFactory.flinkProcessValidator
-      .validate(UIProcessValidatorSpec.validFlinkProcess, blankValue, isFragment = false)
+      .validate(UIProcessValidatorSpec.validFlinkScenarioGraph, blankValue, isFragment = false)
       .errors
       .processPropertiesErrors
     result shouldBe List(
@@ -1322,7 +1325,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("should validate invalid node id") {
     val blankValue = " "
-    val testedScenario = createProcess(
+    val testedScenario = createGraph(
       List(
         Source(blankValue, SourceRef(existingSourceFactory, List())),
         Sink("out", SinkRef(existingSinkFactory, List()))
@@ -1339,7 +1342,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("should validate scenario id with error preventing canonized form") {
-    val incompleteScenarioWithBlankIds = createProcess(
+    val incompleteScenarioWithBlankIds = createGraph(
       List(
         Variable(id = " ", varName = "var", value = "")
       ),
@@ -1369,8 +1372,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         fragmentOutput("outNode1", duplicatedOutputName),
         fragmentOutput("outNode2", duplicatedOutputName),
       )
-    val displayable = ProcessConverter.toDisplayable(fragment)
-    val result      = TestFactory.flinkProcessValidator.validate(displayable, ProcessName(" "), isFragment = true)
+    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(fragment)
+    val result        = TestFactory.flinkProcessValidator.validate(scenarioGraph, ProcessName(" "), isFragment = true)
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         PrettyValidationErrors.formatErrorMessage(
@@ -1396,10 +1399,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       .fragmentOneOut("fragment", "fragment1", "output1", "outVar1")
       .emptySink("id1", "sink")
 
-    val displayable = ProcessConverter.toDisplayable(scenario)
+    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
 
     val processValidator = mockedProcessValidator(Some(fragment), defaultConfig)
-    val result           = processValidator.validate(displayable, ProcessName(" "), isFragment = true)
+    val result           = processValidator.validate(scenarioGraph, ProcessName(" "), isFragment = true)
 
     result.errors.invalidNodes shouldBe Map(
       "fragment" -> List(
@@ -1418,12 +1421,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         Split("e")
       )
     ) { unexpectedEnd =>
-      val displayable = createProcess(
+      val scenarioGraph = createGraph(
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
         List(Edge("s", "e", None)),
       )
 
-      val result = validate(displayable)
+      val result = validate(scenarioGraph)
 
       result.errors.globalErrors should matchPattern {
         case List(
@@ -1437,7 +1440,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("return variable type information for process that cannot be canonized") {
-    val displayable = createProcess(
+    val scenarioGraph = createGraph(
       List(
         Source("s", SourceRef("sourceRef", List())),
         Variable("v", "test", Expression.spel("''")),
@@ -1446,7 +1449,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       List(Edge("s", "v", None), Edge("v", "e", None)),
     )
 
-    val result = validate(displayable)
+    val result = validate(scenarioGraph)
     result.hasErrors shouldBe true
 
     val nodeVariableTypes = result.nodeResults.mapValuesNow(_.variableTypes)
@@ -1463,8 +1466,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       .filter("filter", "false", disabled = Some(true))
       .emptySink("sink", existingSinkFactory)
 
-    val displayable = ProcessConverter.toDisplayable(disabledFilterScenario)
-    val result      = validate(displayable)
+    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(disabledFilterScenario)
+    val result        = validate(scenarioGraph)
 
     val nodeVariableTypes = result.nodeResults.mapValuesNow(_.variableTypes)
     nodeVariableTypes.get("filter").value shouldEqual Map("input" -> Unknown, "varName" -> Typed.fromInstance("string"))
@@ -1477,7 +1480,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val fragment: CanonicalProcess =
       createFragmentDefinition(fragmentId, fragmentParameters)
     val processWithFragment =
-      createProcess(
+      createGraph(
         nodes = List(
           Source("source", SourceRef(sourceTypeName, Nil)),
           FragmentInput("subIn", FragmentRef(fragmentId, fragmentParameters), isDisabled = Some(true)),
@@ -1497,15 +1500,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("return empty process error for empty scenario") {
-    val emptyScenario = createProcess(List.empty, List.empty)
+    val emptyScenario = createGraph(List.empty, List.empty)
     val result        = processValidator.validate(emptyScenario, ProcessName("name"), isFragment = false)
     result.errors.globalErrors shouldBe List(
       UIGlobalError(PrettyValidationErrors.formatErrorMessage(EmptyProcess), List.empty)
     )
   }
 
-  def validate(displayable: DisplayableProcess): ValidationResult = {
-    TestFactory.processValidator.validate(displayable, sampleProcessName, isFragment = false)
+  def validate(scenarioGraph: ScenarioGraph): ValidationResult = {
+    TestFactory.processValidator.validate(scenarioGraph, sampleProcessName, isFragment = false)
   }
 
 }
@@ -1547,13 +1550,13 @@ private object UIProcessValidatorSpec {
   )
 
   def validateWithConfiguredProperties(
-      scenario: DisplayableProcess,
+      scenario: ScenarioGraph,
       processName: ProcessName = sampleProcessName,
       isFragment: Boolean = false
   ): ValidationResult =
     configuredValidator.validate(scenario, processName, isFragment)
 
-  val validFlinkProcess: DisplayableProcess = createProcess(
+  val validFlinkScenarioGraph: ScenarioGraph = createGraph(
     List(
       Source("in", SourceRef(existingSourceFactory, List())),
       Sink("out", SinkRef(existingSinkFactory, List()))
@@ -1561,7 +1564,7 @@ private object UIProcessValidatorSpec {
     List(Edge("in", "out", None))
   )
 
-  val validFlinkFragment: DisplayableProcess = DisplayableProcess(
+  val validFlinkFragmentGraph: ScenarioGraph = ScenarioGraph(
     ProcessProperties.combineTypeSpecificProperties(
       StreamMetaData(),
       additionalFields = ProcessAdditionalFields(None, FragmentSpecificData().toMap, FragmentSpecificData.typeName)
@@ -1573,8 +1576,8 @@ private object UIProcessValidatorSpec {
     edges = List(Edge("in", "out", None))
   )
 
-  def validProcessWithFields(fields: Map[String, String]): DisplayableProcess = {
-    createProcess(
+  def validScenarioGraphWithFields(fields: Map[String, String]): ScenarioGraph = {
+    createGraph(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         Sink("out", SinkRef(existingSinkFactory, List()))
@@ -1584,11 +1587,11 @@ private object UIProcessValidatorSpec {
     )
   }
 
-  private def createProcessWithParams(
+  private def createScenarioGraphWithParams(
       nodeParams: List[NodeParameter],
       scenarioProperties: Map[String, String],
-  ): DisplayableProcess = {
-    createProcess(
+  ): ScenarioGraph = {
+    createGraph(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
         Enricher("custom", ServiceRef(otherExistingServiceId4, nodeParams), "out"),
@@ -1599,11 +1602,11 @@ private object UIProcessValidatorSpec {
     )
   }
 
-  private def createProcessWithFragmentParams(
+  private def createScenarioGraphWithFragmentParams(
       fragmentDefinitionId: String,
       nodeParams: List[NodeParameter]
-  ): DisplayableProcess = {
-    createProcess(
+  ): ScenarioGraph = {
+    createGraph(
       nodes = List(
         Source("source", SourceRef(sourceTypeName, Nil)),
         FragmentInput("subIn", FragmentRef(fragmentDefinitionId, nodeParams), isDisabled = Some(false)),
@@ -1626,7 +1629,7 @@ private object UIProcessValidatorSpec {
 
   }
 
-  private def processWithOptionalParameterService(optionalParamValue: String) = createProcess(
+  private def processWithOptionalParameterService(optionalParamValue: String) = createGraph(
     List(
       Source("inID", SourceRef(existingSourceFactory, List())),
       Enricher(
@@ -1642,12 +1645,12 @@ private object UIProcessValidatorSpec {
     List(Edge("inID", "custom", None), Edge("custom", "out", None))
   )
 
-  private def createProcess(
+  private def createGraph(
       nodes: List[NodeData],
       edges: List[Edge],
       additionalFields: Map[String, String] = Map.empty
-  ): DisplayableProcess = {
-    DisplayableProcess(
+  ): ScenarioGraph = {
+    ScenarioGraph(
       ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(),
         additionalFields = ProcessAdditionalFields(None, additionalFields, StreamMetaData.typeName)
