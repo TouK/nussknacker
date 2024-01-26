@@ -11,8 +11,8 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
   Comment => DbComment,
   ProcessActivity => DbProcessActivity
 }
-import pl.touk.nussknacker.ui.util.HeadersSupport.FileName
-import pl.touk.nussknacker.ui.util.{AkkaToTapirStreamExtension, TapirCodecs}
+import pl.touk.nussknacker.ui.server.{AkkaToTapirStreamExtension, TapirCodecs}
+import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.model.{HeaderNames, MediaType}
 import sttp.tapir.EndpointIO.Example

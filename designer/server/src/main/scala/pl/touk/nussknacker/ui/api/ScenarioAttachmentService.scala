@@ -8,7 +8,6 @@ import pl.touk.nussknacker.ui.api.ScenarioAttachmentService.{AttachmentDataWithN
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.CatsSyntax
 
 import java.io.InputStream
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,10 +43,9 @@ class ScenarioAttachmentService(config: AttachmentsConfig, scenarioActivityRepos
   def readAttachment(
       attachmentId: Long
   )(implicit ec: ExecutionContext): Future[Option[AttachmentDataWithName]] = {
-    val attachmentFutureOpt = scenarioActivityRepository.findAttachment(attachmentId)
-    CatsSyntax.futureOpt.map(attachmentFutureOpt) { attachment =>
-      (attachment.fileName, attachment.data)
-    }
+    scenarioActivityRepository
+      .findAttachment(attachmentId)
+      .map(_.map(attachment => (attachment.fileName, attachment.data)))
   }
 
 }
