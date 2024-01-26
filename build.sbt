@@ -384,14 +384,10 @@ def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = Non
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage       := forScalaVersion(
-      scalaVersion.value,
-      "eclipse-temurin:17-jre-jammy",
-      (
-        2,
-        12
-      ) -> "eclipse-temurin:11-jre-jammy" // jre11, cause for jdk17 minimum scala version is 2.12.15, we use 2.12.10
-    ),
+    // designer should run on java11 since it may run Flink in-memory-cluster, which does not support newer java and we want to have same jre in both designer and lite-runner
+    // to make analysis of problems with jre compatibility easier using testing mechanism and embedded server
+    // todo: we want to support jre17+ but before that flink must be compatible with jre17+ and we should handle opening of modules for spel reflectional access to java modules classes
+    dockerBaseImage       := "eclipse-temurin:11-jre-jammy",
     dockerUsername        := dockerUserName,
     dockerUpdateLatest    := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerBuildxPlatforms := Seq("linux/amd64", "linux/arm64"), // not used in case of Docker/publishLocal
@@ -427,7 +423,6 @@ lazy val distDockerSettings = {
   val nussknackerDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerBaseImage                      := "eclipse-temurin:11-jre-jammy", // designer should run on java11 since it may run Flink in-memory-cluster, which does not support newer java
     dockerEntrypoint                     := Seq(s"$nussknackerDir/bin/nussknacker-entrypoint.sh"),
     dockerExposedPorts                   := Seq(dockerPort),
     dockerEnvVars                        := Map(
