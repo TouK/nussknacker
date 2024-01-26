@@ -42,13 +42,13 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext:
   }
 
   private lazy val customExceptionHandler = ExceptionHandler.pure[Future] { ctx: ExceptionContext =>
-    val statusAndMessage = NuDesignerErrorToHttp.errorToStatusAndMessage(ctx.e)
+    val httpError = NuDesignerErrorToHttp.nuDesignerErrorToHttpError(ctx.e)
     Some(
       ValuedEndpointOutput(
         statusCode.and(stringBody),
         (
-          StatusCode.apply(statusAndMessage._1.intValue()),
-          statusAndMessage._2
+          StatusCode.apply(httpError.statusCode),
+          httpError.errorMessage
         )
       )
     )

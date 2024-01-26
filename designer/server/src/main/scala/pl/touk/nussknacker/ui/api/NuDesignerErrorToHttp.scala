@@ -12,25 +12,27 @@ import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
 object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
+  private type HttpStatus   = Int
   private type ErrorMessage = String
+  final case class HttpError(statusCode: HttpStatus, errorMessage: ErrorMessage)
 
   def nuDesignerErrorHandler: ExceptionHandler = {
     import akka.http.scaladsl.server.Directives._
     ExceptionHandler { case NonFatal(e) =>
-      complete(toHttpResponse(errorToStatusAndMessage(e)))
+      complete(toHttpResponse(nuDesignerErrorToHttpError(e)))
     }
   }
 
-  def errorToStatusAndMessage: Throwable => (StatusCode, ErrorMessage) = {
+  def nuDesignerErrorToHttpError: Throwable => HttpError = {
     case error: NuDesignerError =>
       logError(error)
       toStatusAndMessage(error)
     case ex: IllegalArgumentException =>
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
-      (StatusCodes.BadRequest, ex.getMessage)
+      HttpError(StatusCodes.BadRequest.intValue, ex.getMessage)
     case ex =>
       logger.error(s"Unknown error: ${ex.getMessage}", ex)
-      (StatusCodes.InternalServerError, ex.getMessage)
+      HttpError(StatusCodes.InternalServerError.intValue, ex.getMessage)
   }
 
   def toResponseEither[T: Encoder](either: Either[NuDesignerError, T]): ToResponseMarshallable = either match {
@@ -42,16 +44,16 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
     toHttpResponse(toStatusAndMessage(error))
   }
 
-  private def toStatusAndMessage(error: NuDesignerError): (StatusCode, ErrorMessage) =
-    (
-      httpStatusCodeFrom(error),
+  private def toStatusAndMessage(error: NuDesignerError): HttpError =
+    HttpError(
+      httpStatusCodeFrom(error).intValue(),
       error.getMessage
     )
 
-  private def toHttpResponse(statusAndMessage: (StatusCode, ErrorMessage)): HttpResponse = {
+  private def toHttpResponse(httpError: HttpError): HttpResponse = {
     HttpResponse(
-      status = statusAndMessage._1,
-      entity = statusAndMessage._2
+      status = StatusCode.int2StatusCode(httpError.statusCode),
+      entity = httpError.errorMessage
     )
   }
 

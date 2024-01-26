@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.util
+package pl.touk.nussknacker.ui.server
 
 object HeadersSupport {
   final case class FileName(value: String)
