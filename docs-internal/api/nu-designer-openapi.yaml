@@ -1576,8 +1576,6 @@ components:
       properties:
         nodeData:
           type: object
-        processProperties:
-          $ref: '#/components/schemas/ProcessProperties'
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultDto'
         branchVariableTypes:
@@ -1984,7 +1982,7 @@ components:
         display:
           type: string
         type:
-          type: string
+          $ref: '#/components/schemas/TypingType'
         refClazzName:
           type: string
         params:
@@ -2002,7 +2000,7 @@ components:
         display:
           type: string
         type:
-          type: string
+          $ref: '#/components/schemas/TypingType'
         dict:
           $ref: '#/components/schemas/Dict'
     TypedNullDto:
@@ -2020,8 +2018,9 @@ components:
         display:
           type: string
         type:
-          type: string
-        fields: {}
+          $ref: '#/components/schemas/TypingType'
+        fields:
+          $ref: '#/components/schemas/Map_TypingResultDto'
         refClazzName:
           type: string
         params:
@@ -2041,7 +2040,7 @@ components:
         display:
           type: string
         type:
-          type: string
+          $ref: '#/components/schemas/TypingType'
         refClazzName:
           type: string
         params:
@@ -2062,7 +2061,7 @@ components:
         display:
           type: string
         type:
-          type: string
+          $ref: '#/components/schemas/TypingType'
         refClazzName:
           type: string
         params:
@@ -2071,6 +2070,19 @@ components:
             $ref: '#/components/schemas/TypingResultDto'
     TypedUnionDto:
       title: TypedUnionDto
+      required:
+      - display
+      - type
+      type: object
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypingType'
+        union:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResultDto'
     TypingResultDto:
       oneOf:
       - $ref: '#/components/schemas/TypedClassDto'
@@ -2081,6 +2093,17 @@ components:
       - $ref: '#/components/schemas/TypedTaggedValueDto'
       - $ref: '#/components/schemas/TypedUnionDto'
       - $ref: '#/components/schemas/UnknownDto'
+    TypingType:
+      type: string
+      enum:
+      - TypedUnion
+      - TypedDict
+      - TypedObjectTypingResult
+      - TypedTaggedValue
+      - TypedClass
+      - TypedObjectWithValue
+      - TypedNull
+      - Unknown
     UIParameterDto:
       required:
       - name

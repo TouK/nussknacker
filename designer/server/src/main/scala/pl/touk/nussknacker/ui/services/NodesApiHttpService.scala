@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
   ExpressionSuggestionDto,
@@ -18,11 +18,13 @@ import pl.touk.nussknacker.ui.api.NodesApiEndpoints.{NodeValidationRequest, Para
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.security.api.AuthenticationResources
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class NodesApiHttpService(
     config: Config,
@@ -44,150 +46,118 @@ class NodesApiHttpService(
   expose {
     nodesApiEndpoints.nodesAdditionalInfoEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { implicit loggedUser => pair =>
-        val (scenarioName, nodeData) = pair
-
-        scenarioService
-          .getProcessId(scenarioName)
-          .flatMap { scenarioId =>
-            scenarioService
-              .getLatestProcessWithDetails(
-                ProcessIdWithName(scenarioId, scenarioName),
-                GetScenarioWithDetailsOptions.detailsOnly
-              )
-              .flatMap { scenario =>
-                additionalInfoProviders
-                  .prepareAdditionalInfoForNode(nodeData, scenario.processingType)
-                  .map { additionalInfo =>
-                    success(additionalInfo)
-                  }
-              }
-          }
-          .recover { case _ =>
+      .serverLogic { implicit loggedUser =>
+        { case (scenarioName, nodeData) =>
+          val result = for {
+            scenarioId <- scenarioService.getProcessId(scenarioName)
+            scenario <- scenarioService.getLatestProcessWithDetails(
+              ProcessIdWithName(scenarioId, scenarioName),
+              GetScenarioWithDetailsOptions.detailsOnly
+            )
+            additionalInfo <- additionalInfoProviders.prepareAdditionalInfoForNode(nodeData, scenario.processingType)
+          } yield success(additionalInfo)
+          result.recover { case _: ProcessNotFoundError =>
             businessError(s"No scenario $scenarioName found")
           }
+        }
       }
   }
 
   expose {
     nodesApiEndpoints.nodesValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { implicit loggedUser => pair =>
-        val (scenarioName, nodeValidationRequestDto) = pair
-
-        scenarioService
-          .getProcessId(scenarioName)
-          .flatMap { scenarioId =>
-            scenarioService
-              .getLatestProcessWithDetails(
-                ProcessIdWithName(scenarioId, scenarioName),
-                GetScenarioWithDetailsOptions.detailsOnly
-              )
-              .flatMap { scenario =>
-                implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(scenario.processingType)
-                val nodeValidator                 = typeToNodeValidator.forTypeUnsafe(scenario.processingType)
-                val nodeData                      = NodeValidationRequest.apply(nodeValidationRequestDto)
-                Future(success(NodeValidationResultDto.apply(nodeValidator.validate(scenarioName, nodeData))))
-              }
-          }
-          .recover { case e: Throwable =>
+      .serverLogic { implicit loggedUser =>
+        { case (scenarioName, nodeValidationRequestDto) =>
+          val result = for {
+            scenarioId <- scenarioService.getProcessId(scenarioName)
+            scenario <- scenarioService.getLatestProcessWithDetails(
+              ProcessIdWithName(scenarioId, scenarioName),
+              GetScenarioWithDetailsOptions.detailsOnly
+            )
+            modelData: ModelData = typeToConfig.forTypeUnsafe(scenario.processingType)
+            nodeValidator        = typeToNodeValidator.forTypeUnsafe(scenario.processingType)
+            nodeData             = NodeValidationRequest.apply(nodeValidationRequestDto)(modelData)
+            validation = NodeValidationResultDto.apply(nodeValidator.validate(scenarioName, nodeData))(modelData)
+          } yield success(validation)
+          result.recover { case e: ProcessNotFoundError =>
             businessError(e.getMessage)
           }
+        }
       }
   }
 
   expose {
     nodesApiEndpoints.propertiesAdditionalInfoEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { implicit loggedUser => pair =>
-        val (scenarioName, scenarioProperties) = pair
-
-        scenarioService
-          .getProcessId(scenarioName)
-          .flatMap { scenarioId =>
-            scenarioService
-              .getLatestProcessWithDetails(
-                ProcessIdWithName(scenarioId, scenarioName),
-                GetScenarioWithDetailsOptions.detailsOnly
-              )
-              .flatMap { scenario =>
-                additionalInfoProviders
-                  .prepareAdditionalInfoForProperties(
-                    scenarioProperties.toMetaData(scenarioName),
-                    scenario.processingType
-                  )
-                  .map { additionalInfo =>
-                    success(additionalInfo)
-                  }
-              }
-          }
-          .recover { case _ =>
+      .serverLogic { implicit loggedUser =>
+        { case (scenarioName, scenarioProperties) =>
+          val result = for {
+            scenarioId <- scenarioService.getProcessId(scenarioName)
+            scenario <- scenarioService.getLatestProcessWithDetails(
+              ProcessIdWithName(scenarioId, scenarioName),
+              GetScenarioWithDetailsOptions.detailsOnly
+            )
+            additionalInfo <- additionalInfoProviders.prepareAdditionalInfoForProperties(
+              scenarioProperties.toMetaData(scenarioName),
+              scenario.processingType
+            )
+          } yield success(additionalInfo)
+          result.recover { case _: ProcessNotFoundError =>
             businessError(s"No scenario $scenarioName found")
           }
+        }
       }
   }
 
   expose {
     nodesApiEndpoints.propertiesValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { implicit loggedUser => pair =>
-        val (scenarioName, request) = pair
-
-        scenarioService
-          .getProcessId(scenarioName)
-          .flatMap { scenarioId =>
-            scenarioService
-              .getLatestProcessWithDetails(
-                ProcessIdWithName(scenarioId, scenarioName),
-                GetScenarioWithDetailsOptions.detailsOnly
-              )
-              .flatMap { scenarioWithDetails =>
-                val scenario = ScenarioGraph(
-                  ProcessProperties(request.additionalFields),
-                  Nil,
-                  Nil
-                )
-                val result =
-                  typeToProcessValidator
-                    .forTypeUnsafe(scenarioWithDetails.processingType)
-                    .validate(scenario, request.name, isFragment = false)
-                Future(
-                  success(
-                    NodeValidationResultDto(
-                      parameters = None,
-                      expressionType = None,
-                      validationErrors = result.errors.processPropertiesErrors,
-                      validationPerformed = true
-                    )
-                  )
-                )
-              }
-          }
-          .recover { case _ =>
+      .serverLogic { implicit loggedUser =>
+        { case (scenarioName, request) =>
+          val result = for {
+            scenarioId <- scenarioService.getProcessId(scenarioName)
+            scenarioWithDetails <- scenarioService.getLatestProcessWithDetails(
+              ProcessIdWithName(scenarioId, scenarioName),
+              GetScenarioWithDetailsOptions.detailsOnly
+            )
+            scenario = ScenarioGraph(ProcessProperties(request.additionalFields), Nil, Nil)
+            result = typeToProcessValidator
+              .forTypeUnsafe(scenarioWithDetails.processingType)
+              .validate(scenario, request.name, scenarioWithDetails.isFragment)
+            validation = NodeValidationResultDto(
+              parameters = None,
+              expressionType = None,
+              validationErrors = result.errors.processPropertiesErrors,
+              validationPerformed = true
+            )
+          } yield success(validation)
+          result.recover { case _: ProcessNotFoundError =>
             businessError(s"No scenario $scenarioName found")
           }
+        }
       }
   }
 
   expose {
     nodesApiEndpoints.parametersValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { implicit loggedUser => pair =>
-        val (processingType, request) = pair
-
-        try {
-          implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)
-          val validator                     = typeToParametersValidator.forTypeUnsafe(processingType)
-          val requestWithTypingResult       = ParametersValidationRequest.apply(request)
-          val validationResults             = validator.validate(requestWithTypingResult)
-          Future(
-            success(
-              ParametersValidationResultDto(validationResults, validationPerformed = true)
-            )
-          )
-        } catch {
-          case _: IllegalArgumentException =>
-            Future(businessError(s"ProcessingType type: $processingType not found"))
+      .serverLogic { implicit loggedUser =>
+        { case (processingType, request) =>
+          tryGetModelData(typeToConfig, processingType) match {
+            case Success(value) =>
+              implicit val modelData: ModelData = value
+              val validator                     = typeToParametersValidator.forTypeUnsafe(processingType)
+              val requestWithTypingResult       = ParametersValidationRequest.apply(request)
+              val validationResults             = validator.validate(requestWithTypingResult)
+              Future(
+                success(
+                  ParametersValidationResultDto(validationResults, validationPerformed = true)
+                )
+              )
+            case Failure(_: IllegalArgumentException) =>
+              Future(businessError(s"ProcessingType type: $processingType not found"))
+            case Failure(exception) => Future(businessError(exception.getMessage))
+          }
         }
       }
   }
@@ -195,37 +165,43 @@ class NodesApiHttpService(
   expose {
     nodesApiEndpoints.parametersSuggestionsEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { implicit loggedUser => pair =>
-        val (processingType, request) = pair
-
-        try {
-          implicit val modelData: ModelData = typeToConfig.forTypeUnsafe(processingType)
-          val expressionSuggester           = typeToExpressionSuggester.forTypeUnsafe(processingType)
-          expressionSuggester
-            .expressionSuggestions(
-              request.expression,
-              request.caretPosition2d,
-              request.variableTypes.map { case (key, result) => (key, toTypingResult(result)) }
-            )
-            .map { suggestion =>
-              success(
-                suggestion.map { suggest =>
-                  ExpressionSuggestionDto(
-                    suggest.methodName,
-                    toDto(suggest.refClazz),
-                    suggest.fromClass,
-                    suggest.description,
-                    suggest.parameters.map { param => ParameterDto(param.name, toDto(param.refClazz)) }
+      .serverLogic { implicit loggedUser =>
+        { case (processingType, request) =>
+          tryGetModelData(typeToConfig, processingType) match {
+            case Success(value) =>
+              implicit val modelData: ModelData = value
+              val expressionSuggester           = typeToExpressionSuggester.forTypeUnsafe(processingType)
+              expressionSuggester
+                .expressionSuggestions(
+                  request.expression,
+                  request.caretPosition2d,
+                  request.variableTypes.map { case (key, result) => (key, toTypingResult(result)) }
+                )
+                .map { suggestion =>
+                  success(
+                    suggestion.map { suggest =>
+                      ExpressionSuggestionDto(
+                        suggest.methodName,
+                        toDto(suggest.refClazz),
+                        suggest.fromClass,
+                        suggest.description,
+                        suggest.parameters.map { param => ParameterDto(param.name, toDto(param.refClazz)) }
+                      )
+                    }
                   )
                 }
-              )
-            }
-        } catch {
-          case _: IllegalArgumentException =>
-            Future(businessError(s"ProcessingType type: $processingType not found"))
+            case Failure(_: IllegalArgumentException) =>
+              Future(businessError(s"ProcessingType type: $processingType not found"))
+            case Failure(exception) => Future(businessError(exception.getMessage))
+          }
         }
-
       }
+  }
+
+  private def tryGetModelData(typeToConfig: ProcessingTypeDataProvider[ModelData, _], processingType: ProcessingType)(
+      implicit loggedUser: LoggedUser
+  ): Try[ModelData] = {
+    Try(typeToConfig.forTypeUnsafe(processingType))
   }
 
 }

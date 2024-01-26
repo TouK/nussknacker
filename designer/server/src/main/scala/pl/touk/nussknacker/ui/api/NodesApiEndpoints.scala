@@ -15,19 +15,7 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.{SimpleObjectEncoder, TypingResultDecoder, typing}
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  SingleTypingResult,
-  Typed,
-  TypedClass,
-  TypedDict,
-  TypedNull,
-  TypedObjectTypingResult,
-  TypedObjectWithValue,
-  TypedTaggedValue,
-  TypedUnion,
-  TypingResult,
-  Unknown
-}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
@@ -36,9 +24,9 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodeValidationRequestDto
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDtoHelpers.toTypingResult
-import pl.touk.nussknacker.ui.api.typingDto._
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{NodeValidationRequestDto, TypingResultDtoHelpers}
+import pl.touk.nussknacker.ui.api.typingDtoSchemas._
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.Codec.PlainCodec
@@ -50,7 +38,7 @@ import sttp.tapir.json.circe.jsonBody
 class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import NodesApiEndpoints.Dtos._
-  import NodesApiEndpoints.Dtos.ProcessNameCodec._
+  import NodesApiEndpoints.Dtos.ScenarioNameCodec._
 
   lazy val nodesAdditionalInfoEndpoint
       : SecuredEndpoint[(ProcessName, NodeData), String, Option[AdditionalInfo], Any] = {
@@ -192,12 +180,12 @@ object NodesApiEndpoints {
 
   object Dtos {
 
+    private val typingDtoDecoder                                           = new TypingResultDtoDecoder()
     implicit val typeDtoEncoderAsObject: Encoder.AsObject[TypingResultDto] = TypeDtoEncoders.typingResultEncoder
-    implicit val typeDtoEncoders: Encoder[TypingResultDto] = TypeDtoEncoders.typingResultEncoder.mapJson(json => json)
-    private val typingDtoDecoder                           = new TypingResultDtoDecoder()
+    implicit val typeDtoEncoders: Encoder[TypingResultDto] = TypeDtoEncoders.typingResultEncoder.mapJson(identity)
     implicit val typingResultDtoDecoder: Decoder[TypingResultDto] = typingDtoDecoder.decodeTypingResultDto
 
-    object ProcessNameCodec {
+    object ScenarioNameCodec {
       def encode(scenarioName: ProcessName): String = scenarioName.value
 
       def decode(s: String): DecodeResult[ProcessName] = {
@@ -225,7 +213,7 @@ object NodesApiEndpoints {
             )
           case typedObjectWithValue: TypedObjectWithValueDto =>
             val underlying = Typed.genericTypeClass(
-              modelData.modelClassLoader.classLoader.loadClass(typedObjectWithValue.waitRefClazzName),
+              modelData.modelClassLoader.classLoader.loadClass(typedObjectWithValue.waitRefClazzName.get),
               List.empty
             )
             val trueValue = SimpleObjectEncoder.decode(underlying, typedObjectWithValue.waitValue.hcursor) match {
@@ -287,7 +275,7 @@ object NodesApiEndpoints {
 
     object NodeValidationRequestDto {
       implicit lazy val nodeDataSchema: Schema[NodeData]                    = Schema.anyObject
-      implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.derived
+      implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.derived.hidden(true)
     }
 
     @derive(encoder, decoder, schema)
@@ -502,12 +490,12 @@ object NodesApiEndpoints {
         nodeData = node.nodeData,
         processProperties = node.processProperties,
         variableTypes = node.variableTypes.map { case (key, typingResultDto) =>
-          (key, toTypingResult(typingResultDto))
+          (key, TypingResultDtoHelpers.toTypingResult(typingResultDto))
         },
         branchVariableTypes = node.branchVariableTypes.map { outerMap =>
           outerMap.map { case (name, innerMap) =>
             val changedMap = innerMap.map { case (key, typing) =>
-              (key, toTypingResult(typing))
+              (key, TypingResultDtoHelpers.toTypingResult(typing))
             }
             (name, changedMap)
           }
