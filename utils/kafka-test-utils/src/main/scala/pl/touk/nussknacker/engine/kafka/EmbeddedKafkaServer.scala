@@ -25,7 +25,7 @@ object EmbeddedKafkaServer {
 
   // In Kafka 3.2.0 doesn't work create topic and describe topic instantly after it - it doesn't return newly created topic
   // Also there is erro "maybeBalancePartitionLeaders: unable to start processing because of TimeoutException" in log
-  val kRaftEnabled: Boolean = false
+  val kRaftEnabled: Boolean = true
 
   val localhost: String = "127.0.0.1"
 
