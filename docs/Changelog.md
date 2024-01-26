@@ -2,8 +2,12 @@
 
 1.14.0 (Not released yet)
 -------------------------
-* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.2
-* [#5257](https://github.com/TouK/nussknacker/pull/5257) Updated Flink 1.16.2 -> 1.16.3
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) Libraries bump:
+  * Flink: 1.16.2 -> 1.16.3
+  * Cats Effect: 2.5.5 -> 3.5.2
+  * Kafka client: 3.3.2 -> 3.6.1
+  * Confluent Schema Registry client: 7.3.2 -> 7.5.1
+  * Avro: 1.11.1 -> 1.11.3
 * [#5253](https://github.com/TouK/nussknacker/pull/5253) Removed the option to configure fragments via config. Due to the recent expansion of FragmentParameter, the option has become largely redundant. Removed to decrease unnecessary complexity.
 * [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
 * [#5278](https://github.com/TouK/nussknacker/pull/5278) Recreate assembled model JAR for Flink if it got removed (e.g. by systemd-tmpfiles)
