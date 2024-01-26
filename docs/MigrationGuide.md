@@ -3,6 +3,11 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.13.1 (Not released yet)
+
+### Code API changes
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13
+
 ## In version 1.13.0 
 
 ### Code API changes
