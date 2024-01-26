@@ -15,7 +15,19 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.{SimpleObjectEncoder, TypingResultDecoder, typing}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypedDict, TypedNull, TypedObjectTypingResult, TypedObjectWithValue, TypedTaggedValue, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{
+  SingleTypingResult,
+  Typed,
+  TypedClass,
+  TypedDict,
+  TypedNull,
+  TypedObjectTypingResult,
+  TypedObjectWithValue,
+  TypedTaggedValue,
+  TypedUnion,
+  TypingResult,
+  Unknown
+}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
@@ -217,7 +229,7 @@ object NodesApiEndpoints {
               List.empty
             )
             val trueValue = SimpleObjectEncoder.decode(underlying, typedObjectWithValue.waitValue.hcursor) match {
-              case Left(value)  => ???
+              case Left(_)      => None
               case Right(value) => value
             }
             typing.TypedObjectWithValue(underlying, trueValue)
@@ -426,7 +438,7 @@ object NodesApiEndpoints {
 
   @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
       sourceParameters: TestSourceParameters,
-      displayableProcess: ScenarioGraph
+      scenarioGraph: ScenarioGraph
   )
 
   @JsonCodec(encodeOnly = true) final case class ParametersValidationResult(

@@ -522,7 +522,7 @@ class NodesApiSpec
 
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(exampleNodeValidationRequestForFragment(fragmentName))
