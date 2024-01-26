@@ -1,22 +1,14 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api.typed.supertype.{
   CommonSupertypeFinder,
   NumberTypesPromotionStrategy,
   SupertypeClassResolutionStrategy
 }
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  Typed,
-  TypedClass,
-  TypedNull,
-  TypedObjectTypingResult,
-  TypedUnion,
-  TypingResult,
-  Unknown
-}
+import pl.touk.nussknacker.engine.api.typed.typing._
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util
@@ -109,11 +101,11 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     commonSuperTypeFinder.commonSupertype(
       Typed[Float],
       Typed.tagged(Typed.typedClass[Float], "example")
-    ) shouldEqual Typed(Set.empty)
+    ) shouldEqual Typed.typedNull
     commonSuperTypeFinder.commonSupertype(
       Typed.tagged(Typed.typedClass[Float], "example"),
       Typed[Float]
-    ) shouldEqual Typed(Set.empty)
+    ) shouldEqual Typed.typedNull
   }
 
   test("find common supertype for simple types disabled strictTypeChecking") {
@@ -166,7 +158,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     import ClassHierarchy._
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
-    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.typedNull
 
     commonSuperTypeFinder.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
   }
@@ -176,7 +168,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     import InterfaceHierarchy._
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
-    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.typedNull
 
     commonSuperTypeFinder.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
   }
@@ -186,7 +178,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     import HierarchyInMixins._
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
-    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
+    commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.typedNull
 
     commonSuperTypeFinder.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
   }
@@ -225,8 +217,8 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     import ClassHierarchy._
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
     unionFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed(Typed[Dog], Typed[Cactus])
-    unionFinder.commonSupertype(Typed.tagged(Typed.typedClass[Dog], "dog"), Typed[Cactus]) shouldEqual Typed(Set.empty)
-    unionFinder.commonSupertype(Typed[Cactus], Typed.tagged(Typed.typedClass[Dog], "dog")) shouldEqual Typed(Set.empty)
+    unionFinder.commonSupertype(Typed.tagged(Typed.typedClass[Dog], "dog"), Typed[Cactus]) shouldEqual Typed.typedNull
+    unionFinder.commonSupertype(Typed[Cactus], Typed.tagged(Typed.typedClass[Dog], "dog")) shouldEqual Typed.typedNull
   }
 
   test("common supertype with union of not matching classes strategy with disabled strictTypeChecking") {
@@ -302,7 +294,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, false)
     unionFinder.commonSupertype(Typed.fromInstance(65), Typed.fromInstance(65)) shouldBe Typed.fromInstance(65)
     unionFinder.commonSupertype(Typed.fromInstance(91), Typed.fromInstance(35)) shouldBe Typed.typedClass[Int]
-    unionFinder.commonSupertype(Typed.fromInstance("t"), Typed.fromInstance(32)) shouldBe Typed(Set.empty)
+    unionFinder.commonSupertype(Typed.fromInstance("t"), Typed.fromInstance(32)) shouldBe Typed.typedNull
   }
 
   test("should calculate supertype for objects with value when strict type checking is on") {
@@ -310,7 +302,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
     unionFinder.commonSupertype(Typed.fromInstance(65), Typed.fromInstance(65)) shouldBe Typed.fromInstance(65)
     unionFinder.commonSupertype(Typed.fromInstance(91), Typed.fromInstance(35)) shouldBe Typed.typedClass[Int]
-    unionFinder.commonSupertype(Typed.fromInstance("t"), Typed.fromInstance(32)) shouldBe Typed(Set.empty)
+    unionFinder.commonSupertype(Typed.fromInstance("t"), Typed.fromInstance(32)) shouldBe Typed.typedNull
   }
 
   test("should calculate supertype for null") {
@@ -339,13 +331,13 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
   }
 
   test("should correctly calculate union of types") {
-    Typed(Set(Typed[Int], Typed[String])) shouldBe
-      TypedUnion(Set(Typed.typedClass[Int], Typed.typedClass[String]))
-    Typed(Set(Typed[Long], Typed(Set(Typed[Int], Typed[Long], Typed[String])))) shouldBe
-      TypedUnion(Set(Typed.typedClass[Int], Typed.typedClass[Long], Typed.typedClass[String]))
-    Typed(Set(Typed[Double], Unknown)) shouldBe Unknown
-    Typed(Set(Typed[String])) shouldBe Typed[String]
-    Typed(Set(Typed[Int], TypedNull)) shouldBe Typed[Int]
+    Typed(Typed[Int], Typed[String]) shouldBe
+      Typed(Typed.typedClass[Int], Typed.typedClass[String])
+    Typed(Typed[Long], Typed(Typed[Int], Typed[Long], Typed[String])) shouldBe
+      Typed(Typed.typedClass[Int], Typed.typedClass[Long], Typed.typedClass[String])
+    Typed(Typed[Double], Unknown) shouldBe Unknown
+    Typed.fromIterableOrNullType(Set(Typed[String])) shouldBe Typed[String]
+    Typed(Typed[Int], TypedNull) shouldBe Typed[Int]
   }
 
   test("should correctly create typed arrays from classes") {

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
+import cats.data.NonEmptyList
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 
@@ -26,8 +27,8 @@ class CommonSupertypeFinder(
       case (_, Unknown)   => Unknown
       case (TypedNull, r) => commonSupertypeWithNull(r)
       case (r, TypedNull) => commonSupertypeWithNull(r)
-      case (l: SingleTypingResult, r: TypedUnion)         => Typed(commonSupertype(Set(l), r.possibleTypes))
-      case (l: TypedUnion, r: SingleTypingResult)         => Typed(commonSupertype(l.possibleTypes, Set(r)))
+      case (l: SingleTypingResult, r: TypedUnion) => Typed(commonSupertype(NonEmptyList(l, Nil), r.possibleTypes))
+      case (l: TypedUnion, r: SingleTypingResult) => Typed(commonSupertype(l.possibleTypes, NonEmptyList(r, Nil)))
       case (l: SingleTypingResult, r: SingleTypingResult) => singleCommonSupertype(l, r)
       case (l: TypedUnion, r: TypedUnion)                 => Typed(commonSupertype(l.possibleTypes, r.possibleTypes))
     }
@@ -39,9 +40,9 @@ class CommonSupertypeFinder(
     case r                          => r
   }
 
-  private def commonSupertype(leftSet: Set[SingleTypingResult], rightSet: Set[SingleTypingResult])(
+  private def commonSupertype(leftSet: NonEmptyList[SingleTypingResult], rightSet: NonEmptyList[SingleTypingResult])(
       implicit numberPromotionStrategy: NumberTypesPromotionStrategy
-  ): Set[TypingResult] =
+  ): NonEmptyList[TypingResult] =
     leftSet.flatMap(l => rightSet.map(singleCommonSupertype(l, _)))
 
   private def singleCommonSupertype(left: SingleTypingResult, right: SingleTypingResult)(
@@ -56,20 +57,20 @@ class CommonSupertypeFinder(
               val fields = unionOfFields(l, r)
               TypedObjectTypingResult(fields, commonSupertype)
             }
-            .getOrElse(Typed.empty)
+            .getOrElse(Typed.typedNull)
         }
-      case (_: TypedObjectTypingResult, _) => Typed.empty
-      case (_, _: TypedObjectTypingResult) => Typed.empty
+      case (_: TypedObjectTypingResult, _) => Typed.typedNull
+      case (_, _: TypedObjectTypingResult) => Typed.typedNull
       case (l: TypedDict, r: TypedDict) if l.dictId == r.dictId =>
         checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
           klassCommonSupertypeReturningTypedClass(l.objType, r.objType)
             .map { _ =>
               l // should we recognize static vs dynamic and compute some union?
             }
-            .getOrElse(Typed.empty)
+            .getOrElse(Typed.typedNull)
         }
-      case (_: TypedDict, _) => Typed.empty
-      case (_, _: TypedDict) => Typed.empty
+      case (_: TypedDict, _) => Typed.typedNull
+      case (_, _: TypedDict) => Typed.typedNull
 
       case (l @ TypedTaggedValue(leftType, leftTag), r @ TypedTaggedValue(rightType, rightTag))
           if leftTag == rightTag =>
@@ -78,7 +79,7 @@ class CommonSupertypeFinder(
             .collect { case single: SingleTypingResult =>
               TypedTaggedValue(single, leftTag)
             }
-            .getOrElse(Typed.empty)
+            .getOrElse(Typed.typedNull)
         }
       case (TypedObjectWithValue(leftType, leftValue), TypedObjectWithValue(rightType, rightValue))
           if leftValue == rightValue =>
@@ -86,9 +87,9 @@ class CommonSupertypeFinder(
           case typedClass: TypedClass => TypedObjectWithValue(typedClass, leftValue)
           case other                  => other
         }
-      case (_: TypedTaggedValue, _) if strictTaggedTypesChecking => Typed.empty
+      case (_: TypedTaggedValue, _) if strictTaggedTypesChecking => Typed.typedNull
       case (l: TypedObjectWithData, r)                           => singleCommonSupertype(l.underlying, r)
-      case (_, _: TypedTaggedValue) if strictTaggedTypesChecking => Typed.empty
+      case (_, _: TypedTaggedValue) if strictTaggedTypesChecking => Typed.typedNull
       case (l, r: TypedObjectWithData)                           => singleCommonSupertype(l, r.underlying)
 
       case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
@@ -113,7 +114,7 @@ class CommonSupertypeFinder(
       .flatMap {
         case (fieldName, leftType :: rightType :: Nil) =>
           val common = commonSupertype(leftType, rightType)
-          if (common == Typed.empty)
+          if (common == Typed.typedNull)
             None // fields type collision - skipping this field
           else
             Some(fieldName -> common)
@@ -134,7 +135,7 @@ class CommonSupertypeFinder(
     if (List(boxedLeftClass, boxedRightClass).forall(isSimpleType)) {
       commonSuperTypeForSimpleTypes(boxedLeftClass, boxedRightClass) match {
         case tc: TypedClass => Some(tc)
-        case TypedUnion(types) if types.nonEmpty && types.forall(_.canBeSubclassOf(Typed[Number])) =>
+        case union: TypedUnion if union.possibleTypes.forall(_.canBeSubclassOf(Typed[Number])) =>
           Some(Typed.typedClass[Number])
         case _ => None // empty e.g. conflicting simple types
       }
@@ -169,7 +170,7 @@ class CommonSupertypeFinder(
     else
       classResolutionStrategy match {
         case SupertypeClassResolutionStrategy.AnySuperclass => Unknown
-        case _                                              => Typed.empty
+        case _                                              => Typed.typedNull
       }
   }
 
@@ -185,7 +186,7 @@ class CommonSupertypeFinder(
       genericClassWithSuperTypeParams(right, rightParams, leftParams)
     } else {
       // until here things are rather simple
-      Typed(commonSuperTypeForClassesNotInSameInheritanceLine(left, right))
+      commonSuperTypeForClassesNotInSameInheritanceLine(left, right)
     }
   }
 
@@ -210,15 +211,22 @@ class CommonSupertypeFinder(
     Typed.genericTypeClass(superType, commonSuperTypesForGenericParams)
   }
 
-  private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): Set[TypingResult] = {
+  private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): TypingResult = {
     classResolutionStrategy match {
+      // TODO: Should we split null case from nothing? Currently null == null is not valid spell expression
       case SupertypeClassResolutionStrategy.Intersection =>
-        ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_))
+        Typed.fromIterableOrNullType(
+          ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_)).toList
+        )
       case SupertypeClassResolutionStrategy.AnySuperclass =>
-        val res = ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_))
-        if (res.isEmpty) Set(Unknown) else res
+        Typed.fromIterableOrNullType(
+          ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_)).toList
+        ) match {
+          case TypedNull => Unknown
+          case other     => other
+        }
       case SupertypeClassResolutionStrategy.Union =>
-        Set(left, right).map(Typed(_))
+        Typed(NonEmptyList(left, right :: Nil).map(Typed(_)))
     }
   }
 

@@ -44,7 +44,7 @@ object UnionTransformer extends UnionTransformer(None) {
       .reduceOption[TypingResult] { case (left, right) =>
         findSuperTypeCheckingAllFieldsMatchingForObjects(left, right)
       }
-      .filterNot(_ == Typed.empty)
+      .filterNot(_ == Typed.typedNull)
     unifiedReturnType
       .map(unionValidationContext(variableName, contexts, _))
       .getOrElse(Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId.id)))
@@ -60,7 +60,7 @@ object UnionTransformer extends UnionTransformer(None) {
       // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
       case (leftObj: TypedObjectTypingResult, rightObj: TypedObjectTypingResult, resultObj: TypedObjectTypingResult)
           if resultObj.fields.keySet != leftObj.fields.keySet || resultObj.fields.keySet != rightObj.fields.keySet =>
-        Typed.empty
+        Typed.typedNull
       case _ =>
         result
     }

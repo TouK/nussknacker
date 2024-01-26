@@ -177,12 +177,12 @@ private[spel] class Typer(
         throw new SpelCompilationException(node, e)
     }
 
-    def typeUnion(e: Indexer, possibleTypes: Set[SingleTypingResult]): NodeTypingResult = {
-      val typedPossibleTypes = possibleTypes.map(possibleType => typeIndexer(e, possibleType)).toList
+    def typeUnion(e: Indexer, union: TypedUnion): NodeTypingResult = {
+      val typedPossibleTypes = union.possibleTypes.map(possibleType => typeIndexer(e, possibleType))
 
       val typingResult = typedPossibleTypes.sequence
-        .map(_.map(_.finalResult.typingResult).toSet)
-        .map(typingResults => Typed.apply(typingResults))
+        .map(_.map(_.finalResult.typingResult))
+        .map(typingResults => Typed(typingResults))
       typingResult.map(toNodeResult)
     }
 
@@ -223,7 +223,7 @@ private[spel] class Typer(
         case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
           validNodeResult(valueParam)
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
-        case TypedUnion(possibleTypes)       => typeUnion(e, possibleTypes)
+        case u: TypedUnion                   => typeUnion(e, u)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
         case r: TypedObjectTypingResult      => typeIndexerOnRecord(e, r)
         // TODO: add indexing on strings
@@ -272,7 +272,14 @@ private[spel] class Typer(
           }
         }
 
-      case e: Elvis => withTypedChildren(l => valid(Typed(l.toSet)))
+      case e: Elvis =>
+        withTypedChildren {
+          case first :: second :: Nil => valid(Typed(first, second))
+          case other =>
+            throw new IllegalStateException(
+              s"Illegal construction of elvis. Found ${other.size} children, but 2 children expected"
+            )
+        }
       // TODO: what should be here?
       case e: FunctionReference => validNodeResult(Unknown)
 
@@ -451,7 +458,7 @@ private[spel] class Typer(
                 .map(valid)
                 .getOrElse(invalid(TernaryOperatorNotBooleanError(condition)))
               result <-
-                if (superType == Typed.empty) invalid(TernaryOperatorMismatchTypesError(onTrue, onFalse))
+                if (superType == Typed.typedNull) invalid(TernaryOperatorMismatchTypesError(onTrue, onFalse))
                 else valid(superType)
             } yield result
           case _ =>
@@ -530,7 +537,9 @@ private[spel] class Typer(
       node: Operator
   ): TypingR[TypingResult] = {
     val w = valid(Typed[Boolean])
-    if (commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype) != Typed.empty) {
+    if (commonSupertypeFinder.commonSupertype(left, right)(
+        NumberTypesPromotionStrategy.ToSupertype
+      ) != Typed.typedNull) {
       w
     } else
       w.tell(List(OperatorNotComparableError(node.getOperatorName, left, right)))
@@ -584,15 +593,15 @@ private[spel] class Typer(
       invalid(IllegalPropertyAccessError(TypedNull), fallbackType = TypedNull)
     case s: SingleTypingResult =>
       extractSingleProperty(e)(s)
-    case TypedUnion(possible) =>
-      val l = possible.toList
+    case union: TypedUnion =>
+      val list = union.possibleTypes
         .map(single => extractSingleProperty(e)(single))
         .filter(_.written.isEmpty)
         .map(_.value)
-      if (l.isEmpty) {
-        invalid(NoPropertyError(t, e.getName))
-      } else
-        valid(Typed(l.toSet))
+      NonEmptyList
+        .fromList(list)
+        .map(nel => valid(Typed(nel)))
+        .getOrElse(invalid(NoPropertyError(t, e.getName)))
   }
 
   private def extractMethodReference(

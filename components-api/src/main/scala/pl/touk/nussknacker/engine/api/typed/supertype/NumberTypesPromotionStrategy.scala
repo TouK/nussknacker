@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
+import cats.data.NonEmptyList
+
 import java.lang
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
@@ -22,8 +24,10 @@ trait NumberTypesPromotionStrategy extends Serializable {
 
   def promote(left: TypingResult, right: TypingResult): TypingResult = {
     (toSingleTypesSet(left), toSingleTypesSet(right)) match {
-      case (Left(Unknown), _) => Unknown
-      case (_, Left(Unknown)) => Unknown
+      case (Left(Unknown), _)   => Unknown
+      case (_, Left(Unknown))   => Unknown
+      case (Left(TypedNull), _) => TypedNull
+      case (_, Left(TypedNull)) => TypedNull
       case (Right(lSet), Right(rSet)) =>
         val allCombinations = for {
           l <- lSet
@@ -33,11 +37,11 @@ trait NumberTypesPromotionStrategy extends Serializable {
     }
   }
 
-  private def toSingleTypesSet(typ: TypingResult): Either[Unknown.type, Set[SingleTypingResult]] =
+  private def toSingleTypesSet(typ: TypingResult): Either[WildcardType, NonEmptyList[SingleTypingResult]] =
     typ match {
-      case s: SingleTypingResult => Right(Set(s))
+      case s: SingleTypingResult => Right(NonEmptyList(s, Nil))
       case u: TypedUnion         => Right(u.possibleTypes)
-      case TypedNull             => Left(Unknown)
+      case TypedNull             => Left(TypedNull)
       case Unknown               => Left(Unknown)
     }
 

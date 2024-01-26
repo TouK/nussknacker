@@ -39,7 +39,7 @@ object Union extends CustomStreamTransformer {
           .reduceOption[TypingResult] { case (left, right) =>
             findSuperTypeCheckingAllFieldsMatchingForObjects(left, right)
           }
-          .filterNot(_ == Typed.empty)
+          .filterNot(_ == Typed.typedNull)
         unifiedReturnType
           .map(unionValidationContext(variableName, contexts, _))
           .getOrElse(
@@ -76,7 +76,7 @@ object Union extends CustomStreamTransformer {
       // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
       case (leftObj: TypedObjectTypingResult, rightObj: TypedObjectTypingResult, resultObj: TypedObjectTypingResult)
           if resultObj.fields.keySet != leftObj.fields.keySet || resultObj.fields.keySet != rightObj.fields.keySet =>
-        Typed.empty
+        Typed.typedNull
       case _ =>
         result
     }

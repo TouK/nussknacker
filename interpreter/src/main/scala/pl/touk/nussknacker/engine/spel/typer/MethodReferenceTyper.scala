@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel.typer
 
-import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet, MethodDefinition}
@@ -15,9 +15,9 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
     implicit val implicitReference: MethodReference = reference
     reference.invocationTarget match {
       case tc: SingleTypingResult =>
-        typeFromClazzDefinitions(extractClazzDefinitions(Set(tc)))
-      case TypedUnion(nestedTypes) =>
-        typeFromClazzDefinitions(extractClazzDefinitions(nestedTypes))
+        typeFromClazzDefinitions(extractClazzDefinitions(NonEmptyList(tc, Nil)))
+      case union: TypedUnion =>
+        typeFromClazzDefinitions(extractClazzDefinitions(union.possibleTypes))
       case TypedNull =>
         Left(IllegalInvocationError(TypedNull))
       case Unknown =>
@@ -25,8 +25,8 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
     }
   }
 
-  private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult]): List[ClassDefinition] = {
-    typedClasses.flatMap(tc => classDefinitionSet.get(tc.objType.klass)).toList
+  private def extractClazzDefinitions(typedClasses: NonEmptyList[SingleTypingResult]): List[ClassDefinition] = {
+    typedClasses.toList.flatMap(tc => classDefinitionSet.get(tc.objType.klass))
   }
 
   private def typeFromClazzDefinitions(
@@ -36,7 +36,7 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
       nonEmptyClassDefinitions     <- validateClassDefinitionsNonEmpty(clazzDefinitions)
       nonEmptyMethods              <- validateMethodsNonEmpty(nonEmptyClassDefinitions)
       returnTypesForMatchingParams <- validateMethodParameterTypes(nonEmptyMethods)
-    } yield Typed(returnTypesForMatchingParams.toSet)
+    } yield Typed(returnTypesForMatchingParams)
 
     validatedType match {
       case Left(None) =>
@@ -50,46 +50,51 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
 
   private def validateClassDefinitionsNonEmpty(
       clazzDefinitions: List[ClassDefinition]
-  ): Either[Option[ExpressionParseError], List[ClassDefinition]] =
-    if (clazzDefinitions.isEmpty) Left(None) else Right(clazzDefinitions)
+  ): Either[Option[ExpressionParseError], NonEmptyList[ClassDefinition]] =
+    NonEmptyList.fromList(clazzDefinitions).map(Right(_)).getOrElse(Left(None))
 
   private def validateMethodsNonEmpty(
-      clazzDefinitions: List[ClassDefinition]
-  )(implicit reference: MethodReference): Either[Option[ExpressionParseError], List[MethodDefinition]] = {
-    def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).mkString(", ")
+      clazzDefinitions: NonEmptyList[ClassDefinition]
+  )(implicit reference: MethodReference): Either[Option[ExpressionParseError], NonEmptyList[MethodDefinition]] = {
+    def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).toList.mkString(", ")
     def isClass         = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
 
     val clazzMethods =
-      if (reference.isStatic) clazzDefinitions.flatMap(_.staticMethods.get(reference.methodName).toList.flatten)
-      else clazzDefinitions.flatMap(_.methods.get(reference.methodName).toList.flatten)
+      if (reference.isStatic) clazzDefinitions.toList.flatMap(_.staticMethods.get(reference.methodName).toList.flatten)
+      else clazzDefinitions.toList.flatMap(_.methods.get(reference.methodName).toList.flatten)
     clazzMethods match {
       // Static method can be invoked - we cannot find them ATM
       case Nil if isClass => Left(None)
       case Nil            => Left(Some(UnknownMethodError(reference.methodName, displayableType)))
-      case methodInfos    => Right(methodInfos)
+      case first :: rest  => Right(NonEmptyList(first, rest))
     }
   }
 
   private def validateMethodParameterTypes(
-      methodInfos: List[MethodDefinition]
-  )(implicit reference: MethodReference): Either[Option[ExpressionParseError], List[TypingResult]] = {
-    // We combine MethodInfo with errors so we can use it to decide which
+      methodInfos: NonEmptyList[MethodDefinition]
+  )(implicit reference: MethodReference): Either[Option[ExpressionParseError], NonEmptyList[TypingResult]] = {
+    // We combine MethodDefinition with errors so we can use it to decide which
     // error to display.
-    val infosWithValidationResults =
+    val methodDefsWithValidationResults =
       methodInfos.map(x => (x, x.computeResultType(reference.invocationTarget, reference.params)))
-    val returnTypes = infosWithValidationResults.map { case (id, typ) => typ.leftMap(_.map((id, _))) }
+    val returnTypes = methodDefsWithValidationResults.map { case (methodDef, validType) =>
+      validType.leftMap(_.map((methodDef, _)))
+    }
     val combinedReturnTypes = returnTypes
-      .map(x => x.map(List(_)))
-      .reduce((x, y) =>
-        (x, y) match {
-          case (Valid(xs), Valid(ys))     => Valid(xs ::: ys)
-          case (Valid(xs), Invalid(_))    => Valid(xs)
-          case (Invalid(_), Valid(ys))    => Valid(ys)
-          case (Invalid(xs), Invalid(ys)) => Invalid(xs ::: ys)
-        }
+      .map(x => x.map(NonEmptyList(_, Nil)))
+      .reduce(
+        (
+            x: ValidatedNel[(MethodDefinition, ExpressionParseError), NonEmptyList[TypingResult]],
+            y: ValidatedNel[(MethodDefinition, ExpressionParseError), NonEmptyList[TypingResult]]
+        ) =>
+          (x, y) match {
+            case (Valid(xs), Valid(ys))     => Valid(xs ::: ys)
+            case (Valid(xs), Invalid(_))    => Valid(xs)
+            case (Invalid(_), Valid(ys))    => Valid(ys)
+            case (Invalid(xs), Invalid(ys)) => Invalid(xs ::: ys)
+          }
       )
     combinedReturnTypes match {
-      case Valid(Nil)  => Left(None)
       case Valid(xs)   => Right(xs)
       case Invalid(xs) => Left(Some(combineErrors(xs)))
     }

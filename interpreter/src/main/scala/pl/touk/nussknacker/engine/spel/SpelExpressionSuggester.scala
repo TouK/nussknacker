@@ -112,7 +112,7 @@ class SpelExpressionSuggester(
             Future.successful(applicableSuggestions)
           case TypingResultWithContext(tu: TypedUnion, staticContext) =>
             Future.successful(
-              tu.possibleTypes
+              tu.possibleTypes.toList
                 .map(_.objType.klass)
                 .flatMap(klass =>
                   clssDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)

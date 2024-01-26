@@ -2,15 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  AdditionalDataValue,
-  Typed,
-  TypedNull,
-  TypedObjectTypingResult,
-  TypedObjectWithValue,
-  TypedUnion,
-  Unknown
-}
+import pl.touk.nussknacker.engine.api.typed.typing._
 
 class TypingResultDecoderSpec extends AnyFunSuite with Matchers {
 
@@ -30,7 +22,7 @@ class TypingResultDecoderSpec extends AnyFunSuite with Matchers {
       TypedObjectWithValue(Typed.typedClass[Boolean], false),
       Typed.fromInstance(Float.NaN),
       Typed.taggedDictValue(Typed.typedClass[String], "alamakota"),
-      TypedUnion(Set(Typed.typedClass[String], Typed.typedClass[java.lang.Long])),
+      Typed(Typed.typedClass[String], Typed.typedClass[java.lang.Long]),
       // this wont' work, handling primitives should be done with more sophisticated classloading
       // Typed[Long]
       TypedObjectTypingResult(Map("field1" -> Typed[String], "field2" -> Unknown)),

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Encoder
@@ -125,7 +126,10 @@ object typing {
 
   }
 
-  case object TypedNull extends TypingResult {
+  sealed trait WildcardType extends TypingResult
+
+  // The same as in scala's Null type case, only null can be subclass of Null, but on the other hand Null can be subclass of anything
+  case object TypedNull extends WildcardType {
     override def withoutValue: TypedNull.type = TypedNull
 
     // this value is intentionally `Some(null)` (and not `None`), as TypedNull represents null value
@@ -135,7 +139,7 @@ object typing {
   }
 
   // Unknown is representation of TypedUnion of all possible types
-  case object Unknown extends TypingResult {
+  case object Unknown extends WildcardType {
     override def withoutValue: Unknown.type = Unknown
 
     override val valueOpt: None.type = None
@@ -143,22 +147,32 @@ object typing {
     override val display = "Unknown"
   }
 
-  // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
-  case class TypedUnion private[typing] (possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
-
-    assert(
-      possibleTypes.size != 1,
-      "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass"
-    )
+  // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size >= 2
+  class TypedUnion private[typing] (
+      private val firstType: SingleTypingResult,
+      private val secondType: SingleTypingResult,
+      private val restOfTypes: List[SingleTypingResult]
+  ) extends KnownTypingResult
+      with Serializable {
 
     override def valueOpt: None.type = None
 
-    override def withoutValue: TypingResult = Typed(possibleTypes.map(_.withoutValue))
+    override def withoutValue: TypingResult = Typed.fromIterableOrNullType(possibleTypes.map(_.withoutValue).toList)
 
-    override val display: String = possibleTypes.toList match {
-      case Nil  => "EmptyUnion"
-      case many => many.map(_.display).mkString(" | ")
+    override val display: String = possibleTypes.map(_.display).toList.sorted.mkString(" | ")
+
+    def possibleTypes: NonEmptyList[SingleTypingResult] = NonEmptyList(firstType, secondType :: restOfTypes)
+
+    // We implement hashcode / equals because order is not important
+    override def hashCode(): Int =
+      possibleTypes.toList.toSet.hashCode()
+
+    override def equals(another: Any): Boolean = another match {
+      case anotherUnion: TypedUnion => anotherUnion.possibleTypes.toList.toSet == possibleTypes.toList.toSet
+      case _                        => false
     }
+
+    override def toString = s"TypedUnion(${possibleTypes.toList.sortBy(_.display).mkString(", ")})"
 
   }
 
@@ -291,7 +305,7 @@ object typing {
           TypedClass(klass, params)
       }
 
-    def empty: TypedUnion = TypedUnion(Set.empty)
+    def typedNull: TypingResult = TypedNull
 
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
 
@@ -329,26 +343,37 @@ object typing {
       k -> fromInstance(v)
     }
 
-    def apply(possibleTypes: TypingResult*): TypingResult = {
-      apply(possibleTypes.toSet)
+    // This is a factory method allowing to create TypedUnion, but also ensuring that none of type will be duplicated,
+    // TypedNull will be omitted etc. If you want to create "empty" type, use typedNull.
+    def apply(firstType: TypingResult, secondType: TypingResult, restOfTypes: TypingResult*): TypingResult = {
+      apply(NonEmptyList(firstType, secondType :: restOfTypes.toList))
     }
 
-    // creates Typed representation of sum of possible types
-    def apply[T <: TypingResult](possibleTypes: Set[T]): TypingResult = {
+    // This method returns TypeNull for empty possibleTypes - it should be used carefully as TypedNull is in most
+    // cases not usable (only literal null value can satisfy this type)
+    def fromIterableOrNullType(possibleTypes: Iterable[TypingResult]): TypingResult = {
+      NonEmptyList.fromList(possibleTypes.toList).map(Typed(_)).getOrElse(TypedNull)
+    }
+
+    // Creates Typed representation of sum of possible types. We don't want to allow to pass a normal List because
+    // We want to consciously decide how to handle this corner case - sometimes someone want to have a TypedNull in this case,
+    // and sometimes just to skip this element
+    def apply(possibleTypes: NonEmptyList[TypingResult]): TypingResult = {
       // We use local function instead of lambda to get compilation error
       // when some type is not handled.
-      def flattenType(t: TypingResult): Option[List[SingleTypingResult]] = t match {
+      def flattenType(t: TypingResult): Option[Set[SingleTypingResult]] = t match {
         case Unknown                    => None
-        case TypedNull                  => Some(Nil)
-        case TypedUnion(s)              => Some(s.toList)
-        case single: SingleTypingResult => Some(List(single))
+        case TypedNull                  => Some(Set.empty)
+        case single: SingleTypingResult => Some(Set(single))
+        case union: TypedUnion          => Some(union.possibleTypes.toList.toSet)
       }
 
-      val flattenedTypes = possibleTypes.map(flattenType).toList.sequence.map(_.flatten)
+      val flattenedTypes = possibleTypes.toList.map(flattenType).sequence.map(_.flatten.distinct)
       flattenedTypes match {
-        case None                => Unknown
-        case Some(single :: Nil) => single
-        case Some(list)          => TypedUnion(list.toSet)
+        case None                          => Unknown
+        case Some(Nil)                     => TypedNull
+        case Some(single :: Nil)           => single
+        case Some(first :: second :: rest) => new TypedUnion(first, second, rest)
       }
     }
 
