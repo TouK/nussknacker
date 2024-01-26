@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.StateDefinitionDeduplicationResult
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -15,20 +16,18 @@ import java.net.URI
 
 class ProcessStateDefinitionService(
     processingTypeDataProvider: ProcessingTypeDataProvider[
-      _,
-      (Map[StatusName, StateDefinitionDeduplicationResult], ProcessCategoryService)
+      Category,
+      Map[StatusName, StateDefinitionDeduplicationResult]
     ],
 ) {
 
   def fetchStateDefinitions(implicit user: LoggedUser): List[UIStateDefinition] = {
-    val (stateDefinitionsMapping, categoryService) = processingTypeDataProvider.combined
-    val userCategoryService                        = new UserCategoryService(categoryService)
-    val userAccessibleCategories                   = userCategoryService.getUserCategories(user)
+    val processingTypeToCategoryMap = processingTypeDataProvider.all
+    val stateDefinitionsMapping     = processingTypeDataProvider.combined
     stateDefinitionsMapping.toList
       .map { case (statusName, StateDefinitionDeduplicationResult(stateDefinition, processingTypes)) =>
-        val categoriesWhereStateAppears = processingTypes
-          .map(categoryService.getProcessingTypeCategoryUnsafe)
-          .intersect(userAccessibleCategories.toSet)
+        // processingTypeDataProvider already check read permission
+        val userCategoriesWhereStateAppears = processingTypes.flatMap(processingTypeToCategoryMap.get)
         // TODO: Here we switch icon to non-animated version, in rather not sophisticated manner. We should be able to handle
         //  both animated (in scenario list, scenario details) and non-animated (filter options) versions.
         UIStateDefinition(
@@ -36,7 +35,7 @@ class ProcessStateDefinitionService(
           stateDefinition.displayableName,
           URI.create(stateDefinition.icon.toString.replace("-animated", "")),
           stateDefinition.tooltip,
-          categoriesWhereStateAppears.toList
+          userCategoriesWhereStateAppears.toList
         )
       }
       .filter(_.categories.nonEmpty)
@@ -53,7 +52,7 @@ object ProcessStateDefinitionService {
 
   /**
     * Each processing type define its own state definitions. Technically it is possible that two processing types provide
-    * states with the same StatusName and different UI configurations (displayable name and icon). Here is an assertion
+    * states with the same StatusName and different UI configurations (name and icon). Here is an assertion
     * that this does not happen and each state has the same definition across all processingTypes.
     */
   def createDefinitionsMappingUnsafe(

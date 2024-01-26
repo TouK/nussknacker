@@ -7,19 +7,19 @@ import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType}
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{
   ProcessNotFoundError,
@@ -50,7 +50,7 @@ object ProcessService {
   )
 
   @JsonCodec final case class UpdateProcessCommand(
-      scenarioGraph: DisplayableProcess,
+      scenarioGraph: ScenarioGraph,
       comment: UpdateProcessComment,
       forwardedUserName: Option[RemoteUserName]
   )
@@ -134,7 +134,7 @@ trait ProcessService {
 
   def importProcess(processId: ProcessIdWithName, processData: String)(
       implicit user: LoggedUser
-  ): Future[ValidatedDisplayableProcess]
+  ): Future[ScenarioGraphWithValidationResult]
 
   def getProcessActions(id: ProcessId): Future[List[ProcessAction]]
 
@@ -147,7 +147,7 @@ trait ProcessService {
 class DBProcessService(
     deploymentService: DeploymentService,
     newProcessPreparers: ProcessingTypeDataProvider[NewProcessPreparer, _],
-    getProcessCategoryService: () => ProcessCategoryService,
+    processCategoryServiceProvider: ProcessingTypeDataProvider[_, ProcessCategoryService],
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
@@ -266,7 +266,7 @@ class DBProcessService(
       entity: ScenarioWithDetailsEntity[CanonicalProcess]
   ): ScenarioWithDetails = {
     ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(entity.mapScenario { canonical =>
-      ProcessConverter.toDisplayable(canonical)
+      CanonicalProcessConverter.toScenarioGraph(canonical)
     })
   }
 
@@ -403,18 +403,18 @@ class DBProcessService(
 
   def importProcess(processId: ProcessIdWithName, jsonString: String)(
       implicit user: LoggedUser
-  ): Future[ValidatedDisplayableProcess] = {
+  ): Future[ScenarioGraphWithValidationResult] = {
     withNotArchivedProcess(processId, "Import is not allowed for archived process.") { process =>
       val jsonCanonicalProcess = ProcessMarshaller
         .fromJson(jsonString)
         .valueOr(msg => throw ProcessUnmarshallingError(msg))
 
-      val canonical   = jsonCanonicalProcess.withProcessName(processId.name)
-      val displayable = ProcessConverter.toDisplayable(canonical)
+      val canonical     = jsonCanonicalProcess.withProcessName(processId.name)
+      val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(canonical)
       val validationResult = processResolverByProcessingType
         .forTypeUnsafe(process.processingType)
         .validateBeforeUiReverseResolving(canonical, process.isFragment)
-      Future.successful(ValidatedDisplayableProcess(displayable, validationResult))
+      Future.successful(ScenarioGraphWithValidationResult(scenarioGraph, validationResult))
     }
   }
 
@@ -507,7 +507,7 @@ class DBProcessService(
   private def withProcessingType[T](
       category: String
   )(callback: ProcessingType => Future[T]): Future[T] =
-    getProcessCategoryService().getTypeForCategory(category) match {
+    processCategoryServiceProvider.combined.getTypeForCategory(category) match {
       case Some(processingType) =>
         callback(processingType)
       case None =>

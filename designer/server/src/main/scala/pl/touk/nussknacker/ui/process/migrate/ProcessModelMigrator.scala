@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{MigrationComment, ScenarioWithDetailsEntity}
 
@@ -24,7 +24,7 @@ final case class MigrationResult(process: CanonicalProcess, migrationsApplied: L
 class ProcessModelMigrator(migrations: ProcessMigrations) {
 
   def migrateProcess(
-      processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
+      processDetails: ScenarioWithDetailsEntity[ScenarioGraph],
       skipEmptyMigrations: Boolean
   ): Option[MigrationResult] = {
     migrateProcess(
@@ -38,7 +38,7 @@ class ProcessModelMigrator(migrations: ProcessMigrations) {
 
   def migrateProcess(
       scenarioName: ProcessName,
-      scenarioGraph: DisplayableProcess,
+      scenarioGraph: ScenarioGraph,
       modelVersion: Option[Int],
       category: String,
       skipEmptyMigrations: Boolean
@@ -47,7 +47,7 @@ class ProcessModelMigrator(migrations: ProcessMigrations) {
     if (migrationsToApply.nonEmpty || !skipEmptyMigrations) {
       Some(
         migrateWithMigrations(
-          ProcessConverter.fromDisplayable(scenarioGraph, scenarioName),
+          CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, scenarioName),
           category,
           migrationsToApply
         )

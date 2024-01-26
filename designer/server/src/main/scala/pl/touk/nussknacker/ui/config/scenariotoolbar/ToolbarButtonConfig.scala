@@ -1,7 +1,7 @@
-package pl.touk.nussknacker.ui.config.processtoolbar
+package pl.touk.nussknacker.ui.config.scenariotoolbar
 
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.ToolbarButtonType
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.ToolbarButtonType
 
 final case class ToolbarButtonConfig(
     `type`: ToolbarButtonType,

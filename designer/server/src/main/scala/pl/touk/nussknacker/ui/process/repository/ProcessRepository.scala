@@ -199,7 +199,7 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
       maybeProcess <- processTableFilteredByUser.filter(_.id === processId.id).result.headOption
       process = maybeProcess.getOrElse(throw ProcessNotFoundError(processId.name))
       latestProcessVersion <- fetchProcessLatestVersionsQuery(processId.id)(
-        ScenarioShapeFetchStrategy.FetchDisplayable
+        ScenarioShapeFetchStrategy.FetchScenarioGraph
       ).result.headOption
       newProcessVersionOpt = versionToInsert(latestProcessVersion, process.processingType)
       _ <- newProcessVersionOpt.map(processVersionsTable += _).getOrElse(dbMonad.pure(0))

@@ -27,6 +27,7 @@
   * Display fragment level validation errors when editing fragment
   * Improved error messages
 * [#5364](https://github.com/TouK/nussknacker/pull/5364) Fixed wrong expression suggestions and validation errors in disabled nodes
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
 
 1.13.0 (12 Jan 2024)
 -------------------------

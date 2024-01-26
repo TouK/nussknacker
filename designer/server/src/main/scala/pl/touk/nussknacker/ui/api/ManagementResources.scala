@@ -14,7 +14,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ComponentId, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
@@ -47,13 +47,13 @@ object ManagementResources {
   implicit val testResultsEncoder: Encoder[TestResults] = new Encoder[TestResults]() {
 
     implicit val anyEncoder: Encoder[Any] = {
-      case displayable: DisplayJson =>
+      case scenarioGraph: DisplayJson =>
         def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
 
-        val displayableJson = displayable.asJson
-        displayable.originalDisplay match {
-          case None           => Json.obj("pretty" -> displayableJson)
-          case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> displayableJson)
+        val scenarioGraphJson = scenarioGraph.asJson
+        scenarioGraph.originalDisplay match {
+          case None           => Json.obj("pretty" -> scenarioGraphJson)
+          case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> scenarioGraphJson)
         }
       case null => Json.Null
       case a =>
@@ -224,16 +224,16 @@ class ManagementResources(
           path("test" / ProcessNameSegment) { processName =>
             (post & processDetailsForName(processName)) { details =>
               canDeploy(details.idWithNameUnsafe) {
-                formFields(Symbol("testData"), Symbol("scenarioGraph")) { (testDataContent, displayableProcessJson) =>
+                formFields(Symbol("testData"), Symbol("scenarioGraph")) { (testDataContent, scenarioGraphJson) =>
                   complete {
                     measureTime("test", metricRegistry) {
-                      parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
-                        case Right(displayableProcess) =>
+                      parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson) match {
+                        case Right(scenarioGraph) =>
                           scenarioTestServices
                             .forTypeUnsafe(details.processingType)
                             .performTest(
                               details.idWithNameUnsafe,
-                              displayableProcess,
+                              scenarioGraph,
                               details.isFragment,
                               RawScenarioTestData(testDataContent)
                             )
@@ -251,7 +251,7 @@ class ManagementResources(
           } ~
           path("generateAndTest" / ProcessNameSegment / IntNumber) { (processName, testSampleSize) =>
             {
-              (post & entity(as[DisplayableProcess])) { displayableProcess =>
+              (post & entity(as[ScenarioGraph])) { scenarioGraph =>
                 {
                   processDetailsForName(processName)(user) { details =>
                     canDeploy(details.idWithNameUnsafe) {
@@ -259,7 +259,7 @@ class ManagementResources(
                         measureTime("generateAndTest", metricRegistry) {
                           val scenarioTestService = scenarioTestServices.forTypeUnsafe(details.processingType)
                           scenarioTestService.generateData(
-                            displayableProcess,
+                            scenarioGraph,
                             processName,
                             details.isFragment,
                             testSampleSize
@@ -269,7 +269,7 @@ class ManagementResources(
                               scenarioTestService
                                 .performTest(
                                   details.idWithNameUnsafe,
-                                  displayableProcess,
+                                  scenarioGraph,
                                   details.isFragment,
                                   rawScenarioTestData
                                 )

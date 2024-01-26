@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
@@ -44,7 +44,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
+import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.net.URI
@@ -738,8 +738,8 @@ class DefaultComponentServiceSpec
 
   private def prepareService(
       modelDataMap: Map[ProcessingType, (LocalModelData, Category)],
-      scenarios: List[ScenarioWithDetailsEntity[DisplayableProcess]],
-      fragments: List[ScenarioWithDetailsEntity[DisplayableProcess]]
+      scenarios: List[ScenarioWithDetailsEntity[ScenarioGraph]],
+      fragments: List[ScenarioWithDetailsEntity[ScenarioGraph]]
   ): ComponentService = {
     val processingTypeDataMap: Map[ProcessingType, ProcessingTypeData] = modelDataMap.transform {
       case (processingType, (modelData, category)) =>
@@ -764,7 +764,7 @@ class DefaultComponentServiceSpec
         ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
       }
 
-    val processService = createDbProcessService(categoryService, scenarios)
+    val processService = createDbProcessService(scenarios)
     new DefaultComponentService(
       componentLinksConfig,
       processingTypeDataProvider,
@@ -774,13 +774,12 @@ class DefaultComponentServiceSpec
   }
 
   private def createDbProcessService(
-      processCategoryService: ProcessCategoryService,
-      processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = Nil
+      processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = Nil
   ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
-      getProcessCategoryService = () => processCategoryService,
+      processCategoryServiceProvider = ProcessingTypeDataProvider(Map.empty, categoryService),
       processResolverByProcessingType = TestFactory.processResolverByProcessingType,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
