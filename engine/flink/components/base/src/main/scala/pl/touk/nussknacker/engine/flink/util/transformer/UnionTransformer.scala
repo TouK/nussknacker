@@ -47,7 +47,7 @@ object UnionTransformer extends UnionTransformer(None) {
       right: TypingResult
   ): TypingResult = {
     val result =
-      CommonSupertypeFinder.Intersection.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
+      CommonSupertypeFinder.Default.commonSupertype(left, right)
     (left, right, result) match {
       // normally (e.g. in ternary operator and equals) we are more lax in comparison of objects, but here we want to strictly check
       // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal

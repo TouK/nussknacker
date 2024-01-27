@@ -26,8 +26,6 @@ public class ExpressionConfig implements Serializable {
 
     private final boolean optimizeCompilation;
 
-    private final boolean strictTypeChecking;
-
     private final Map<String, DictDefinition> dictionaries;
 
     private final boolean hideMetaVariable;
@@ -37,11 +35,11 @@ public class ExpressionConfig implements Serializable {
     private final boolean dynamicPropertyAccessAllowed;
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<String> globalImports) {
-        this(globalProcessVariables, globalImports, JavaConverters.seqAsJavaList(ExpressionConfig$.MODULE$.defaultAdditionalClasses()), new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false, false, false);
+        this(globalProcessVariables, globalImports, JavaConverters.seqAsJavaList(ExpressionConfig$.MODULE$.defaultAdditionalClasses()), new LanguageConfiguration(List$.MODULE$.empty()), true, Collections.emptyMap(), false, false, false);
     }
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<String> globalImports,
-                            List<Class<?>> additionalClasses, LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
+                            List<Class<?>> additionalClasses, LanguageConfiguration languages, boolean optimizeCompilation,
                             Map<String, DictDefinition> dictionaries, boolean hideMetaVariable, boolean methodExecutionForUnknownAllowed,
                             boolean dynamicPropertyAccessAllowed) {
         this.globalProcessVariables = globalProcessVariables;
@@ -49,7 +47,6 @@ public class ExpressionConfig implements Serializable {
         this.additionalClasses = additionalClasses;
         this.languages = languages;
         this.optimizeCompilation = optimizeCompilation;
-        this.strictTypeChecking = strictTypeChecking;
         this.dictionaries = dictionaries;
         this.hideMetaVariable = hideMetaVariable;
         this.methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed;
@@ -76,10 +73,6 @@ public class ExpressionConfig implements Serializable {
         return optimizeCompilation;
     }
 
-    public boolean isStrictTypeChecking() {
-        return strictTypeChecking;
-    }
-
     public Map<String, DictDefinition> getDictionaries() {
         return dictionaries;
     }
@@ -102,7 +95,6 @@ public class ExpressionConfig implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         ExpressionConfig that = (ExpressionConfig) o;
         return optimizeCompilation == that.optimizeCompilation &&
-                strictTypeChecking == that.strictTypeChecking &&
                 Objects.equals(globalProcessVariables, that.globalProcessVariables) &&
                 Objects.equals(globalImports, that.globalImports) &&
                 Objects.equals(additionalClasses, that.additionalClasses) &&
@@ -116,7 +108,7 @@ public class ExpressionConfig implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(globalProcessVariables, globalImports, additionalClasses, languages, optimizeCompilation,
-                strictTypeChecking, dictionaries, hideMetaVariable, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed);
+                dictionaries, hideMetaVariable, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed);
     }
 
 }

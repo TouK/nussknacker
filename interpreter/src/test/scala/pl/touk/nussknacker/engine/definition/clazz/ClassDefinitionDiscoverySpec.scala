@@ -591,7 +591,7 @@ private class MaxHelper extends TypingFunction {
       return GenericFunctionTypingError.OtherError("Max must have at least one argument").invalidNel
 
     arguments
-      .reduce(CommonSupertypeFinder.Union.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))
+      .reduce(CommonSupertypeFinder.Default.commonSupertype)
       .validNel
   }
 

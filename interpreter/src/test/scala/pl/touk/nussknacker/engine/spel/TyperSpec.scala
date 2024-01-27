@@ -8,7 +8,6 @@ import org.springframework.expression.common.TemplateParserContext
 import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
@@ -143,7 +142,6 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   }
 
   private def buildTyper(dynamicPropertyAccessAllowed: Boolean = false) = new Typer(
-    commonSupertypeFinder = CommonSupertypeFinder.Intersection,
     dictTyper = new KeysDictTyper(new SimpleDictRegistry(Map.empty)),
     strictMethodsChecking = false,
     staticMethodInvocationsChecking = false,

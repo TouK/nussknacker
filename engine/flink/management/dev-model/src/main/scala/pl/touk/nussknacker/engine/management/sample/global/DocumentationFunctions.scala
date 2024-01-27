@@ -129,7 +129,7 @@ object DocumentationFunctions {
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
       val commonSupertype = arguments
-        .reduceOption(CommonSupertypeFinder.FallbackToObjectType.commonSupertype)
+        .reduceOption(CommonSupertypeFinder.Default.commonSupertype)
         .getOrElse(Unknown)
       Typed.genericTypeClass[java.util.List[_]](commonSupertype :: Nil).validNel
     }

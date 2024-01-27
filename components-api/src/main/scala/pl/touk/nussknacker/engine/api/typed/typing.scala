@@ -354,7 +354,7 @@ object typing {
 
   private def superTypeOfTypes(list: Iterable[TypingResult]) = {
     list
-      .reduceOption(CommonSupertypeFinder.FallbackToObjectType.commonSupertype)
+      .reduceOption(CommonSupertypeFinder.Default.commonSupertype)
       .getOrElse(Unknown)
   }
 

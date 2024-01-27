@@ -93,7 +93,7 @@ public class JavaSampleDocumentedClass {
 
             TypingResult res = arguments.head();
             for (int i = 1; i != arguments.length(); ++i) {
-                res = CommonSupertypeFinder$.MODULE$.Union().commonSupertype(res, arguments.apply(i), NumberTypesPromotionStrategy.ToSupertype$.MODULE$);
+                res = CommonSupertypeFinder.Default$.MODULE$.commonSupertype(res, arguments.apply(i));
             }
             return Validated.validNel(res);
         }

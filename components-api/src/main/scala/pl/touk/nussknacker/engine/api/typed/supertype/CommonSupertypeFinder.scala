@@ -45,8 +45,8 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       implicit numberPromotionStrategy: NumberTypesPromotionStrategy
   ): TypingResult = {
     def fallback = classResolutionStrategy match {
-      case SupertypeClassResolutionStrategy.WithFallbackToObjType => klassCommonSupertype(left.objType, right.objType)
-      case _                                                      => Typed.empty
+      case SupertypeClassResolutionStrategy.FallbackToObjectType => klassCommonSupertype(left.objType, right.objType)
+      case SupertypeClassResolutionStrategy.Intersection         => Typed.empty
     }
     (left, right) match {
       case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
@@ -187,7 +187,7 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       // For generic params, in case of not matching classes, it is better to return Unknown than Typed.empty,
       // but we still want to return the precise type - e.g. available fields in records
       superTypeParams.zip(subTypeParams).map { case (l, p) =>
-        CommonSupertypeFinder.FallbackToObjectType.commonSupertype(l, p)
+        CommonSupertypeFinder.Default.commonSupertype(l, p)
       }
     } else {
       superTypeParams
@@ -196,14 +196,12 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
   }
 
   private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): TypingResult = {
+    val result = Typed(ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_)))
     classResolutionStrategy match {
       case SupertypeClassResolutionStrategy.Intersection =>
-        Typed(ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_)))
-      case SupertypeClassResolutionStrategy.WithFallbackToObjType =>
-        val result = Typed(ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_)))
+        result
+      case SupertypeClassResolutionStrategy.FallbackToObjectType =>
         if (result == Typed.empty) Unknown else result
-      case SupertypeClassResolutionStrategy.Union =>
-        Typed(Set(left, right).map(Typed(_)))
     }
   }
 
@@ -211,18 +209,11 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
 
 object CommonSupertypeFinder {
 
-  // It is default, it always looks for an intersection of classes. If doesn't find it, returns Typed.empty
-  val Intersection = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection)
-
-  // This finder in general shouldn't be used. It returns union of types when no matching classes find
-  // For other cases it behave like Intersection
-  val Union = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union)
-
   // This finder has fallback to object type (SingleTypingResult.objType). When no matching super type class found,
-  // it returns Any (which currently is expressed as Unknown). It is useful when you are looking for some object type's
-  // class e.g. for generic parameters and precise super type is only nice-to-have not a blocker
-  object FallbackToObjectType {
-    private val delegate = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.WithFallbackToObjType)
+  // it returns Any (which currently is expressed as Unknown). It is useful in most cases when you want to determine
+  // the supertype of objects
+  object Default {
+    private val delegate = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.FallbackToObjectType)
 
     def commonSupertype(left: TypingResult, right: TypingResult): TypingResult = {
       delegate.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
@@ -230,15 +221,17 @@ object CommonSupertypeFinder {
 
   }
 
+  // It is the strategy that is looking for the intersection of common super types. If it doesn't find it, returns Typed.empty
+  // It is useful only when you want to check that types matches e.g. during comparison
+  val Intersection = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection)
+
   private sealed trait SupertypeClassResolutionStrategy
 
   private object SupertypeClassResolutionStrategy {
 
+    case object FallbackToObjectType extends SupertypeClassResolutionStrategy
+
     case object Intersection extends SupertypeClassResolutionStrategy
-
-    case object Union extends SupertypeClassResolutionStrategy
-
-    case object WithFallbackToObjType extends SupertypeClassResolutionStrategy
 
   }
 
