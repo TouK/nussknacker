@@ -212,7 +212,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
-    val enumType = Typed(Set(Typed.fromInstance("one"), Typed.fromInstance("two"), Typed.fromInstance("three")))
+    val enumType = Typed(Typed.fromInstance("one"), Typed.fromInstance("two"), Typed.fromInstance("three"))
     val results = Map(
       "profession" -> Typed.genericTypeClass(classOf[java.util.List[String]], List(enumType)),
     )
@@ -229,15 +229,12 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     import scala.jdk.CollectionConverters._
 
     val expected = Typed(
-      Set(
-        Typed.fromInstance("one"),
-        Typed.fromInstance(2),
-        Typed.fromInstance(3.3),
-        Typed.fromInstance(Map("four" -> Map("four" -> 4).asJava, "arr" -> List(4).asJava).asJava),
-        Typed.fromInstance(List("five", 5, Map("five" -> 5).asJava).asJava),
-        Typed.fromInstance(true),
-        TypedNull
-      )
+      Typed.fromInstance("one"),
+      Typed.fromInstance(2),
+      Typed.fromInstance(3.3),
+      Typed.fromInstance(Map("four" -> Map("four" -> 4).asJava, "arr" -> List(4).asJava).asJava),
+      Typed.fromInstance(List("five", 5, Map("five" -> 5).asJava).asJava),
+      Typed.fromInstance(true),
     )
 
     SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult shouldBe expected
@@ -333,7 +330,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
-    val results = Map("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+    val results = Map("id" -> Typed(Typed[String], Typed[Long]))
 
     result shouldBe TypedObjectTypingResult(results)
   }
@@ -353,7 +350,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
-    val results = Map("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+    val results = Map("id" -> Typed(Typed[String], Typed[Long]))
 
     result shouldBe TypedObjectTypingResult(results)
   }
@@ -373,7 +370,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
-    val results = Map("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+    val results = Map("id" -> Typed(Typed[String], Typed[Long]))
 
     result shouldBe TypedObjectTypingResult(results)
   }

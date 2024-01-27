@@ -555,14 +555,14 @@ class ClassDefinitionDiscoverySpec
   ): Option[ClassDefinition] = {
     val ref = Typed.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
-    discoverClassesFromTypes(List(Typed(ref)))(settings).find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
+    discoverClassesFromTypes(List(ref))(settings).find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
   }
 
   private def singleClassAndItsChildrenDefinition[T: TypeTag](
       settings: ClassExtractionSettings = ClassExtractionSettings.Default
   ) = {
     val ref = Typed.fromDetailedType[T]
-    discoverClassesFromTypes(List(Typed(ref)))(settings)
+    discoverClassesFromTypes(List(ref))(settings)
   }
 
 }

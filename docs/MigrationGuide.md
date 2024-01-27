@@ -47,12 +47,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ComponentId` was renamed to `DesignerWideComponentId`
   * new `ComponentId` is serialized in json to string in format `$componentType-$componentName` instead of separate fields (`name` and `type`)
   * `NodeComponentInfo.componentInfo` was renamed to `componentId`
-* [#5465](https://github.com/TouK/nussknacker/pull/5465) Typed related changes
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) [#5457](https://github.com/TouK/nussknacker/pull/5457) Typed related changes
   * `CommonSupertypeFinder` shouldn't be created directly anymore - `CommonSupertypeFinder.*` predefined variables should be used instead,
     in most cases just (`CommonSupertypeFinder.Default`)
   * `TypedObjectTypingResult.apply` removed legacy factory method taking `List[(String, TypingResult)]` - should be used variant with `Map` 
   * `TypedObjectTypingResult.apply` removed legacy factory method taking `TypedObjectDefinition` - should be used variant with `Map` 
   * `TypedObjectDefinition` was removed 
+  * `Typed.empty` was removed, `TypedUnion` now handles only >= 2 types
+    * `Typed.apply(vararg...)` was replaced by `Typed.apply(NonEmptyList)` and `Typed.apply(firstType, secondType, restOfTypesVaraarg...)`
+      If you have a list of types and you are not sure how to translate it to `TypingResult` you can try to use `Typed.fromIterableOrUnknownIfEmpty`
+      but it is not recommended - see docs next to it.
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:

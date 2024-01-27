@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
+import cats.data.NonEmptyList
+
 import java.lang
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
@@ -33,9 +35,9 @@ trait NumberTypesPromotionStrategy extends Serializable {
     }
   }
 
-  private def toSingleTypesSet(typ: TypingResult): Either[Unknown.type, Set[SingleTypingResult]] =
+  private def toSingleTypesSet(typ: TypingResult): Either[Unknown.type, NonEmptyList[SingleTypingResult]] =
     typ match {
-      case s: SingleTypingResult => Right(Set(s))
+      case s: SingleTypingResult => Right(NonEmptyList(s, Nil))
       case u: TypedUnion         => Right(u.possibleTypes)
       case TypedNull             => Left(Unknown)
       case Unknown               => Left(Unknown)

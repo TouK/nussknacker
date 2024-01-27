@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Encoder
@@ -128,22 +129,34 @@ object typing {
     override val display = "Unknown"
   }
 
-  // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
-  case class TypedUnion private[typing] (possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
-
-    assert(
-      possibleTypes.size != 1,
-      "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass"
-    )
+  // It is not a case class because we want to ignore the order of elements but still ensure that it has >= 2 elements
+  // Because of that, we have our own equals and hashCode
+  class TypedUnion private[typing] (
+      private val firstType: SingleTypingResult,
+      private val secondType: SingleTypingResult,
+      private val restOfTypes: List[SingleTypingResult]
+  ) extends KnownTypingResult
+      with Serializable {
 
     override def valueOpt: None.type = None
 
     override def withoutValue: TypingResult = Typed(possibleTypes.map(_.withoutValue))
 
-    override val display: String = possibleTypes.toList match {
-      case Nil  => "EmptyUnion"
-      case many => many.map(_.display).mkString(" | ")
+    def possibleTypes: NonEmptyList[SingleTypingResult] = NonEmptyList(firstType, secondType :: restOfTypes)
+
+    override val display: String = possibleTypes.map(_.display).toList.sorted.mkString(" | ")
+
+    // We implement hashcode / equals because order is not important
+    override def hashCode(): Int = {
+      possibleTypes.toList.toSet.hashCode()
     }
+
+    override def equals(another: Any): Boolean = another match {
+      case anotherUnion: TypedUnion => anotherUnion.possibleTypes.toList.toSet == possibleTypes.toList.toSet
+      case _                        => false
+    }
+
+    override def toString = s"TypedUnion(${possibleTypes.toList.sortBy(_.display).mkString(", ")})"
 
   }
 
@@ -164,7 +177,7 @@ object typing {
         if (klass.isArray) "Array"
         else ReflectUtils.simpleNameWithoutSuffix(klass)
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
-      else s"$className"
+      else className
     }
 
     override def objType: TypedClass = this
@@ -276,8 +289,6 @@ object typing {
           TypedClass(klass, params)
       }
 
-    def empty: TypedUnion = TypedUnion(Set.empty)
-
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
 
     def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
@@ -314,26 +325,42 @@ object typing {
       k -> fromInstance(v)
     }
 
-    def apply(possibleTypes: TypingResult*): TypingResult = {
-      apply(possibleTypes.toSet)
+    // This is a factory method allowing to create TypedUnion, but also ensuring that none of type will be duplicated,
+    // TypedNull will be omitted if some other type exists etc.
+    def apply(firstType: TypingResult, secondType: TypingResult, restOfTypes: TypingResult*): TypingResult = {
+      apply(NonEmptyList(firstType, secondType :: restOfTypes.toList))
     }
 
-    // creates Typed representation of sum of possible types
-    def apply[T <: TypingResult](possibleTypes: Set[T]): TypingResult = {
+    // This method returns Unknown for empty possibleTypes - it should be used carefully as Unknown user can't invoke
+    // any method on Unknown and in some cases Unknown can generate runtime error (it can be passed as any parameter)
+    def fromIterableOrUnknownIfEmpty(possibleTypes: Iterable[TypingResult]): TypingResult = {
+      NonEmptyList.fromList(possibleTypes.toList).map(Typed(_)).getOrElse(Unknown)
+    }
+
+    // Creates Typed representation of sum of possible types. We don't want to allow to pass a normal List because
+    // We want to consciously decide how to handle corner case when this list is empty. In most cases it is situation
+    // that won't happen, sometimes given element should be skipped.
+    // We don't use NonEmptySet as we usually deal with lists and NonEmptySet need Order of elements but at the
+    // end for our TypedUnion implementation, order of elements is not important
+    def apply(possibleTypes: NonEmptyList[TypingResult]): TypingResult = {
       // We use local function instead of lambda to get compilation error
       // when some type is not handled.
-      def flattenType(t: TypingResult): Option[List[SingleTypingResult]] = t match {
+      def flattenType(t: TypingResult): Option[Set[SingleTypingResult]] = t match {
         case Unknown                    => None
-        case TypedNull                  => Some(Nil)
-        case TypedUnion(s)              => Some(s.toList)
-        case single: SingleTypingResult => Some(List(single))
+        case TypedNull                  => Some(Set.empty)
+        case single: SingleTypingResult => Some(Set(single))
+        case union: TypedUnion          => Some(union.possibleTypes.toList.toSet)
       }
 
-      val flattenedTypes = possibleTypes.map(flattenType).toList.sequence.map(_.flatten)
+      val flattenedTypes = possibleTypes.toList.map(flattenType).sequence.map(_.flatten.distinct)
       flattenedTypes match {
-        case None                => Unknown
-        case Some(single :: Nil) => single
-        case Some(list)          => TypedUnion(list.toSet)
+        case None                                                  => Unknown
+        case Some(Nil) if possibleTypes.toList.contains(TypedNull) => TypedNull
+        case Some(Nil)                                             =>
+          // It shouldn't happen because only TypedNull can be translated into Set.empty
+          throw new IllegalStateException(s"Typed(${possibleTypes.toList.mkString(", ")}) flatten to empty list")
+        case Some(single :: Nil)           => single
+        case Some(first :: second :: rest) => new TypedUnion(first, second, rest)
       }
     }
 

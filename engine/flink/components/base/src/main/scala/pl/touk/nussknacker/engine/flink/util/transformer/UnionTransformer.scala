@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import cats.data.{Validated, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -16,8 +16,7 @@ import pl.touk.nussknacker.engine.api.context.{
   ValidationContext
 }
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
   FlinkCustomJoinTransformation,
@@ -31,12 +30,12 @@ object UnionTransformer extends UnionTransformer(None) {
   def transformContextsDefinition(outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)(
       contexts: Map[String, ValidationContext]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val branchReturnTypes: List[typing.TypingResult] = outputExpressionByBranchId.values.map(_.returnType).toList
-    val unifiedReturnType = branchReturnTypes
-      .reduceOption[TypingResult] { case (left, right) =>
-        findSuperTypeCheckingAllFieldsMatchingForObjects(left, right)
+    val branchReturnTypes = outputExpressionByBranchId.values.map(_.returnType)
+    val unifiedReturnType = NonEmptyList.fromList(branchReturnTypes.toList).flatMap { case NonEmptyList(head, tail) =>
+      tail.foldLeft(Option(head)) { (acc, el) =>
+        acc.flatMap(findSuperTypeCheckingAllFieldsMatchingForObjects(_, el))
       }
-      .filterNot(_ == Typed.empty)
+    }
     unifiedReturnType
       .map(unionValidationContext(variableName, contexts, _))
       .getOrElse(Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId.id)))
@@ -45,18 +44,20 @@ object UnionTransformer extends UnionTransformer(None) {
   private def findSuperTypeCheckingAllFieldsMatchingForObjects(
       left: TypingResult,
       right: TypingResult
-  ): TypingResult = {
-    val result =
-      CommonSupertypeFinder.Intersection.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
-    (left, right, result) match {
-      // normally (e.g. in equals) we are more lax in comparison of objects, but here we want to strictly check
-      // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
-      case (leftObj: TypedObjectTypingResult, rightObj: TypedObjectTypingResult, resultObj: TypedObjectTypingResult)
-          if resultObj.fields.keySet != leftObj.fields.keySet || resultObj.fields.keySet != rightObj.fields.keySet =>
-        Typed.empty
-      case _ =>
-        result
-    }
+  ): Option[TypingResult] = {
+    CommonSupertypeFinder.Intersection
+      .commonSupertypeOpt(left, right)(NumberTypesPromotionStrategy.ToSupertype)
+      .flatMap { result =>
+        (left, right, result) match {
+          // normally (e.g. in equals) we are more lax in comparison of objects, but here we want to strictly check
+          // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
+          case (leftObj: TypedObjectTypingResult, rightObj: TypedObjectTypingResult, resultObj: TypedObjectTypingResult)
+              if resultObj.fields.keySet != leftObj.fields.keySet || resultObj.fields.keySet != rightObj.fields.keySet =>
+            None
+          case _ =>
+            Some(result)
+        }
+      }
   }
 
   private def unionValidationContext(

@@ -95,9 +95,9 @@ object ClassDefinitionExtractor extends LazyLogging {
     def typeResultVisible(t: TypingResult): Boolean = t match {
       case str: SingleTypingResult =>
         !settings.isHidden(str.objType.klass) && str.objType.params.forall(typeResultVisible)
-      case TypedUnion(ts) => ts.forall(typeResultVisible)
-      case TypedNull      => true
-      case Unknown        => true
+      case union: TypedUnion => union.possibleTypes.forall(typeResultVisible)
+      case TypedNull         => true
+      case Unknown           => true
     }
     def filterOneMethod(methodInfo: MethodDefinition): Boolean = {
       val noVarArgTypes = methodInfo.signatures.toList.flatMap(_.noVarArgs).map(_.refClazz)

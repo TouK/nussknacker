@@ -30,7 +30,7 @@ class TypingResultDecoderSpec extends AnyFunSuite with Matchers {
       TypedObjectWithValue(Typed.typedClass[Boolean], false),
       Typed.fromInstance(Float.NaN),
       Typed.taggedDictValue(Typed.typedClass[String], "alamakota"),
-      TypedUnion(Set(Typed.typedClass[String], Typed.typedClass[java.lang.Long])),
+      Typed(Typed.typedClass[String], Typed.typedClass[java.lang.Long]),
       // this wont' work, handling primitives should be done with more sophisticated classloading
       // Typed[Long]
       TypedObjectTypingResult(Map("field1" -> Typed[String], "field2" -> Unknown)),

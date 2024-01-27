@@ -186,8 +186,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   private def classDefinitionSetWithCustomClasses(globalVariableTypes: Seq[TypingResult]): ClassDefinitionSet = {
     val typesFromGlobalVariables = globalVariableTypes
       .flatMap(_.asInstanceOf[KnownTypingResult] match {
-        case single: SingleTypingResult => Set(single)
-        case TypedUnion(types)          => types
+        case single: SingleTypingResult => Seq(single)
+        case union: TypedUnion          => union.possibleTypes.toList
       })
       .map(_.objType.klass)
     val customClasses = Seq(

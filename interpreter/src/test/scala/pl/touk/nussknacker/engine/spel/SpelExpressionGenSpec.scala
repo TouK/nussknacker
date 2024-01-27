@@ -100,9 +100,9 @@ class SpelExpressionGenSpec
               typedClass shouldEqual evaluatedValue.getClass
             case Valid(TypedExpression(_, TypedClass(typedClass, Nil), _)) =>
               typedClass shouldEqual evaluatedValue.getClass
-            case Valid(TypedExpression(_, TypedUnion(possibleTypes), _)) =>
-              val typedClasses = possibleTypes.map(_.asInstanceOf[TypedClass].klass)
-              typedClasses should contain(evaluatedValue.getClass)
+            case Valid(TypedExpression(_, union: TypedUnion, _)) =>
+              val typedClasses = union.possibleTypes.map(_.asInstanceOf[TypedClass].klass)
+              typedClasses.toList should contain(evaluatedValue.getClass)
           }
       }
     }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import cats.data.NonEmptyList
 import io.circe.Json._
 import io.circe._
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
@@ -31,8 +32,10 @@ object TypeEncoders {
       case single: SingleTypingResult => encodeSingleTypingResult(single)
       case typing.Unknown             => encodeUnknown
       case typing.TypedNull           => encodeNull
-      case TypedUnion(classes) =>
-        JsonObject("union" -> fromValues(classes.map(typ => fromJsonObject(encodeTypingResult(typ))).toList))
+      case union: TypedUnion =>
+        JsonObject(
+          "union" -> fromValues(union.possibleTypes.map(typ => fromJsonObject(encodeTypingResult(typ))).toList)
+        )
     })
       .+:(typeField -> fromString(TypingType.forType(result).toString))
       .+:("display" -> fromString(result.display))
@@ -145,7 +148,14 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   }
 
   private def typedUnion(obj: HCursor): Decoder.Result[TypingResult] = {
-    obj.downField("union").as[Set[SingleTypingResult]].map(TypedUnion)
+    obj.downField("union").as[List[SingleTypingResult]].flatMap { list =>
+      NonEmptyList
+        .fromList(list)
+        .map(nel => Right(Typed(nel)))
+        .getOrElse(
+          Left(DecodingFailure(s"Union should has at least 2 elements but it has ${list.size} elements", obj.history))
+        )
+    }
   }
 
   private def typedClass(obj: HCursor): Decoder.Result[TypedClass] = {

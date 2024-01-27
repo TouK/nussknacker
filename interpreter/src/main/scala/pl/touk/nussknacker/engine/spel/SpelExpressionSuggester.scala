@@ -114,9 +114,11 @@ class SpelExpressionSuggester(
             Future.successful(
               tu.possibleTypes
                 .map(_.objType.klass)
+                .toList
                 .flatMap(klass =>
                   clssDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
                 )
+                .distinct
             )
           case TypingResultWithContext(td: TypedDict, _) =>
             dictQueryService

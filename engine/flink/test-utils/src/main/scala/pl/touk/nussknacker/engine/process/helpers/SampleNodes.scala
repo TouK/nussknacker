@@ -381,8 +381,10 @@ object SampleNodes {
     ): JoinContextTransformation =
       ContextTransformation.join
         .definedBy { contexts =>
-          val newType = Typed(contexts.keys.toList.map(branchId => valueByBranchId(branchId).returnType): _*)
-          val parent  = contexts.values.flatMap(_.parent).headOption
+          val newType = Typed.fromIterableOrUnknownIfEmpty(
+            contexts.keys.toList.map(branchId => valueByBranchId(branchId).returnType)
+          )
+          val parent = contexts.values.flatMap(_.parent).headOption
           Valid(ValidationContext(Map(variableName -> newType), Map.empty, parent))
         }
         .implementedBy(new FlinkCustomJoinTransformation {
