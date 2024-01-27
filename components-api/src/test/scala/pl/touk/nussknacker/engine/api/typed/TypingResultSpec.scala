@@ -128,7 +128,14 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
       TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))
     ) shouldEqual
       TypedObjectTypingResult(
-        Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long], "baz" -> Typed[String], "baz2" -> Typed[String])
+        Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long])
+      )
+    CommonSupertypeFinder.Default.commonSupertype(
+      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
+      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))
+    ) shouldEqual
+      TypedObjectTypingResult(
+        Map("foo" -> Typed[String], "bar" -> Typed[Number], "baz" -> Typed[String], "baz2" -> Typed[String])
       )
 
     intersectionSuperTypeFinder.commonSupertype(
@@ -350,6 +357,14 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
       TypedObjectWithValue(Typed.typedClass[String], "bar")
     ) shouldEqual Typed[String]
     CommonSupertypeFinder.Default.commonSupertype(Typed[Int], Typed[Long]) shouldEqual Typed[Number]
+    CommonSupertypeFinder.Default.commonSupertype(
+      TypedObjectTypingResult(Map("foo" -> Typed[String])),
+      TypedObjectTypingResult(Map("foo" -> Typed[Boolean])),
+    ) shouldEqual TypedObjectTypingResult(Map("foo" -> Unknown))
+    CommonSupertypeFinder.Intersection.commonSupertype(
+      TypedObjectTypingResult(Map("foo" -> Typed[String])),
+      TypedObjectTypingResult(Map("foo" -> Typed[Boolean])),
+    )(NumberTypesPromotionStrategy.ToSupertype) shouldEqual TypedObjectTypingResult(Map.empty)
   }
 
   type StringKeyMap[V] = java.util.Map[String, V]

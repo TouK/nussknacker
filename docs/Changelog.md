@@ -76,7 +76,8 @@
 * [#5313](https://github.com/TouK/nussknacker/pull/5313) Added CountWhen and Average aggregations
 * [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Sometimes `Bad expression type, expected: X found X` error was reported when comparing matching Records.
   It happened for records that had fields with mixed different types of fields e.g. simple classes with nested records
-* [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Ternary operator (`expression ? x : y`) returned sometimes `EmptyUnion` type which couldn't be passed anywhere.  
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Ternary operator (`expression ? x : y`) returned sometimes `EmptyUnion` type which couldn't be passed anywhere.
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Wasn't possible to compare a Record with a Map.
 
 1.12.5 (1 Dec 2023)
 ------------------------

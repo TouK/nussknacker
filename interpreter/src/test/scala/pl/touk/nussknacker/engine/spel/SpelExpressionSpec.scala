@@ -968,6 +968,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Boolean]("123 == 123123123123L", ctx) shouldBe Symbol("valid")
   }
 
+  test("compare records with different fields in equality") {
+    parse[Boolean]("{foo: null} == {:}", ctx) shouldBe Symbol("valid")
+    parse[Boolean](
+      "{key1: 'value1', key2: 'value2'} == #processHelper.stringOnStringMap",
+      ctxWithGlobal
+    ).validExpression.evaluateSync[Boolean](ctxWithGlobal) shouldBe true
+  }
+
   test("precise type parsing in two operand operators") {
     val floatAddExpr = "12.1 + 23.4"
     parse[Int](floatAddExpr, ctx) shouldBe Symbol("invalid")

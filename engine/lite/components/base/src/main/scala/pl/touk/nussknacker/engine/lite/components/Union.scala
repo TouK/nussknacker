@@ -66,7 +66,7 @@ object Union extends CustomStreamTransformer {
     val result =
       CommonSupertypeFinder.Intersection.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
     (left, right, result) match {
-      // normally (e.g. in ternary operator and equals) we are more lax in comparison of objects, but here we want to strictly check
+      // normally (e.g. in equals) we are more lax in comparison of objects, but here we want to strictly check
       // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
       case (leftObj: TypedObjectTypingResult, rightObj: TypedObjectTypingResult, resultObj: TypedObjectTypingResult)
           if resultObj.fields.keySet != leftObj.fields.keySet || resultObj.fields.keySet != rightObj.fields.keySet =>

@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.SupertypeClassResolutionStrategy
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.{
+  Intersection,
+  SupertypeClassResolutionStrategy
+}
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -48,22 +51,23 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       case SupertypeClassResolutionStrategy.FallbackToObjectType => klassCommonSupertype(left.objType, right.objType)
       case SupertypeClassResolutionStrategy.Intersection         => Typed.empty
     }
+    // We can't do if (left == right) left because spel promote byte and short classes to integer always so returned type for math operation will be different
     (left, right) match {
-      case (l, r) if l == r                                         => l
       case (f: TypedClass, s: TypedClass)                           => klassCommonSupertype(f, s)
       case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
         // In most cases we compare java.util.Map or GenericRecord, the only difference can be on generic params, but
         // still we'll got a class here, so this getOrElse should occur in the rare situations
         klassCommonSupertypeReturningTypedClass(l.objType, r.objType)
           .map { commonSupertype =>
-            // We can't be sure of intention of user - union of fields is more secure than intersection
-            // e.g. someone can pass map with field with null value and compare it with record that doesn't have this field
-            val fields = unionOfFields(l, r)
+            val fields = prepareFields(l, r)
+            // We don't return TypeEmpty in case when fields are empty, because we can't be sure the intention of the user
+            // e.g. someone can pass json object with missing field declared as optional in schema
+            // and want to compare it with literal record that doesn't have this field
             TypedObjectTypingResult(fields, commonSupertype)
           }
           .getOrElse(fallback)
-      case (_: TypedObjectTypingResult, _) => fallback
-      case (_, _: TypedObjectTypingResult) => fallback
+      case (l: TypedObjectTypingResult, r) => singleCommonSupertype(l.objType, r)
+      case (l, r: TypedObjectTypingResult) => singleCommonSupertype(l, r.objType)
       case (TypedTaggedValue(leftType, leftTag), TypedTaggedValue(rightType, rightTag)) if leftTag == rightTag =>
         singleCommonSupertype(leftType, rightType) match {
           case single: SingleTypingResult => TypedTaggedValue(single, leftTag)
@@ -84,21 +88,23 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
     }
   }
 
-  private def unionOfFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult)(
+  private def prepareFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult)(
       implicit numberPromotionStrategy: NumberTypesPromotionStrategy
   ): Map[String, TypingResult] =
     (l.fields.toList ++ r.fields.toList)
       .groupBy(_._1)
       .map { case (key, value) => key -> value.map(_._2) }
       .flatMap {
+        case (_, _ :: Nil) if classResolutionStrategy == SupertypeClassResolutionStrategy.Intersection =>
+          None
+        case (fieldName, singleType :: Nil) =>
+          Some(fieldName -> singleType)
         case (fieldName, leftType :: rightType :: Nil) =>
           val common = commonSupertype(leftType, rightType)
           if (common == Typed.empty)
             None // fields type collision - skipping this field
           else
             Some(fieldName -> common)
-        case (fieldName, singleType :: Nil) =>
-          Some(fieldName -> singleType)
         case (_, longerList) =>
           throw new IllegalArgumentException(
             "Computing union of more than two fields: " + longerList
