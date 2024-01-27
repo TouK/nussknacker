@@ -439,7 +439,7 @@ private[spel] class Typer(
         withTypedChildren {
           case condition :: onTrue :: onFalse :: Nil =>
             val superType =
-              commonSupertypeFinder.commonSupertype(onTrue, onFalse)(NumberTypesPromotionStrategy.ToSupertype)
+              CommonSupertypeFinder.FallbackToObjectType.commonSupertype(onTrue, onFalse)
             for {
               _ <- Option(condition)
                 .filter(_.canBeSubclassOf(Typed[Boolean]))

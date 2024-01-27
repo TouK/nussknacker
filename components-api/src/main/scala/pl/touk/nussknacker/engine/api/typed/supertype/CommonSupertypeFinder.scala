@@ -133,12 +133,10 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
   ): Option[TypedClass] = {
     val boxedLeftClass  = ClassUtils.primitiveToWrapper(left.klass)
     val boxedRightClass = ClassUtils.primitiveToWrapper(right.klass)
-    if (List(boxedLeftClass, boxedRightClass).forall(isSimpleType)) {
-      commonSuperTypeForSimpleTypes(boxedLeftClass, boxedRightClass) match {
+    if (List(boxedLeftClass, boxedRightClass).forall(classOf[Number].isAssignableFrom)) {
+      numberPromotionStrategy.promoteClasses(boxedLeftClass, boxedRightClass) match {
         case tc: TypedClass => Some(tc)
-        case TypedUnion(types) if types.nonEmpty && types.forall(_.canBeSubclassOf(Typed[Number])) =>
-          Some(Typed.typedClass[Number])
-        case _ => None // empty e.g. conflicting simple types
+        case _              => Some(Typed.typedClass[Number])
       }
     } else {
       val forComplexTypes = commonSuperTypeForComplexTypes(boxedLeftClass, left.params, boxedRightClass, right.params)
@@ -154,22 +152,11 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
   ): TypingResult = {
     val boxedLeftClass  = ClassUtils.primitiveToWrapper(left.klass)
     val boxedRightClass = ClassUtils.primitiveToWrapper(right.klass)
-    if (List(boxedLeftClass, boxedRightClass).forall(isSimpleType)) {
-      commonSuperTypeForSimpleTypes(boxedLeftClass, boxedRightClass)
+    if (List(boxedLeftClass, boxedRightClass).forall(classOf[Number].isAssignableFrom)) {
+      numberPromotionStrategy.promoteClasses(boxedLeftClass, boxedRightClass)
     } else {
       commonSuperTypeForComplexTypes(boxedLeftClass, left.params, boxedRightClass, right.params)
     }
-  }
-
-  private def commonSuperTypeForSimpleTypes(left: Class[_], right: Class[_])(
-      implicit numberPromotionStrategy: NumberTypesPromotionStrategy
-  ): TypingResult = {
-    if (classOf[Number].isAssignableFrom(left) && classOf[Number].isAssignableFrom(right))
-      numberPromotionStrategy.promoteClasses(left, right)
-    else if (left == right)
-      Typed(left)
-    else
-      Typed.empty
   }
 
   private def commonSuperTypeForComplexTypes(
@@ -184,7 +171,7 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       genericClassWithSuperTypeParams(right, rightParams, leftParams)
     } else {
       // until here things are rather simple
-      Typed(commonSuperTypeForClassesNotInSameInheritanceLine(left, right))
+      commonSuperTypeForClassesNotInSameInheritanceLine(left, right)
     }
   }
 
@@ -197,7 +184,8 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
     // it is ok to look for common super type of T and U but for Comparable[T] and Integer it won't be ok.
     // Maybe we should do this common super type checking only for well known cases?
     val commonSuperTypesForGenericParams = if (superTypeParams.size == subTypeParams.size) {
-      // for generic params it is always better to return Any than Typed.empty
+      // For generic params, in case of not matching classes, it is better to return Unknown than Typed.empty,
+      // but we still want to return the precise type - e.g. available fields in records
       superTypeParams.zip(subTypeParams).map { case (l, p) =>
         CommonSupertypeFinder.FallbackToObjectType.commonSupertype(l, p)
       }
@@ -207,17 +195,17 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
     Typed.genericTypeClass(superType, commonSuperTypesForGenericParams)
   }
 
-  private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): Set[TypingResult] = {
+  private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): TypingResult = {
     classResolutionStrategy match {
-      case SupertypeClassResolutionStrategy.Intersection | SupertypeClassResolutionStrategy.WithFallbackToObjType =>
-        ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_))
+      case SupertypeClassResolutionStrategy.Intersection =>
+        Typed(ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_)))
+      case SupertypeClassResolutionStrategy.WithFallbackToObjType =>
+        val result = Typed(ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_)))
+        if (result == Typed.empty) Unknown else result
       case SupertypeClassResolutionStrategy.Union =>
-        Set(left, right).map(Typed(_))
+        Typed(Set(left, right).map(Typed(_)))
     }
   }
-
-  private def isSimpleType(clazz: Class[_]) =
-    clazz == classOf[java.lang.Boolean] || clazz == classOf[String] || classOf[Number].isAssignableFrom(clazz)
 
 }
 
@@ -237,8 +225,7 @@ object CommonSupertypeFinder {
     private val delegate = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.WithFallbackToObjType)
 
     def commonSupertype(left: TypingResult, right: TypingResult): TypingResult = {
-      val result = delegate.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
-      if (result == Typed.empty) Unknown else result
+      delegate.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
     }
 
   }

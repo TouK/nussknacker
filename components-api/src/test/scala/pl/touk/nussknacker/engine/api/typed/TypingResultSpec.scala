@@ -98,6 +98,8 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
   test("find common supertype for simple types") {
     implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
       NumberTypesPromotionStrategy.ForMathOperation
+    commonSuperTypeFinder.commonSupertype(Typed[String], Typed[Boolean]) shouldEqual Typed.empty
+    commonSuperTypeFinder.commonSupertype(Typed[String], Typed[Int]) shouldEqual Typed.empty
     commonSuperTypeFinder.commonSupertype(Typed[String], Typed[String]) shouldEqual Typed[String]
     commonSuperTypeFinder
       .commonSupertype(Typed[java.lang.Integer], Typed[java.lang.Double]) shouldEqual Typed[java.lang.Double]
@@ -193,6 +195,16 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
       Typed.fromDetailedType[util.List[String]],
       Typed.fromDetailedType[util.Collection[Integer]]
     ) shouldEqual Typed.genericTypeClass[util.Collection[_]](List(Unknown))
+    val tupleIterable = Typed.fromDetailedType[Iterable[(String, Integer)]]
+    val map           = Typed.fromDetailedType[Map[String, Integer]]
+    commonSuperTypeFinder.commonSupertype(
+      map,
+      tupleIterable
+    ) shouldEqual tupleIterable
+    commonSuperTypeFinder.commonSupertype(
+      tupleIterable,
+      map,
+    ) shouldEqual tupleIterable
   }
 
   test("common supertype with union of not matching classes strategy with enabled strictTypeChecking") {
@@ -275,7 +287,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     CommonSupertypeFinder.Union.commonSupertype(Typed.fromInstance(91), Typed.fromInstance(35)) shouldBe Typed
       .typedClass[Int]
     CommonSupertypeFinder.Union.commonSupertype(Typed.fromInstance("t"), Typed.fromInstance(32)) shouldBe Typed(
-      Set.empty
+      Typed(Typed[String], Typed[Integer])
     )
   }
 
@@ -286,7 +298,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     CommonSupertypeFinder.Union.commonSupertype(Typed.fromInstance(91), Typed.fromInstance(35)) shouldBe Typed
       .typedClass[Int]
     CommonSupertypeFinder.Union.commonSupertype(Typed.fromInstance("t"), Typed.fromInstance(32)) shouldBe Typed(
-      Set.empty
+      Typed(Typed[String], Typed[Integer])
     )
   }
 
