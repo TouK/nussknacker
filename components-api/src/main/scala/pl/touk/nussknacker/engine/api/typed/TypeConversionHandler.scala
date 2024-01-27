@@ -1,14 +1,16 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.apache.commons.lang3.{ClassUtils, LocaleUtils}
+import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
 
 import java.nio.charset.Charset
 import java.time._
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
-import java.util.{Currency, Locale, UUID}
-import org.springframework.util.StringUtils
+import java.util.{Currency, UUID}
+import scala.reflect.{ClassTag, classTag}
+import scala.util.Try
 
 /**
   * This class handle conversion logic which is done in SpEL's org.springframework.expression.TypeConverter.
@@ -26,44 +28,35 @@ object TypeConversionHandler {
   private val ConversionFromClassesForDecimals =
     NumberTypesPromotionStrategy.DecimalNumbers.toSet + classOf[java.math.BigDecimal]
 
-  case class StringConversion[T](klass: Class[T], conversion: String => T)
+  case class StringConversion[T: ClassTag](convert: String => T) {
 
-  val stringConversions: Seq[StringConversion[_]] = List(
-    StringConversion(classOf[ZoneId], (source: String) => ZoneId.of(source)),
-    StringConversion(classOf[ZoneOffset], (source: String) => ZoneOffset.of(source)),
-    StringConversion(
-      classOf[Locale],
-      (source: String) => {
-        val locale = StringUtils.parseLocale(source)
-        assert(LocaleUtils.isAvailableLocale(locale)) // without this check even "qwerty" is considered a Locale
-        locale
-      }
-    ),
-    StringConversion(classOf[Charset], (source: String) => Charset.forName(source)),
-    StringConversion(classOf[Currency], (source: String) => Currency.getInstance(source)),
-    StringConversion(
-      classOf[UUID],
-      (source: String) => if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null
-    ),
-    StringConversion(classOf[LocalTime], (source: String) => LocalTime.parse(source)),
-    StringConversion(classOf[LocalDate], (source: String) => LocalDate.parse(source)),
-    StringConversion(classOf[LocalDateTime], (source: String) => LocalDateTime.parse(source)),
-    StringConversion(classOf[ChronoLocalDate], (source: String) => LocalDate.parse(source)),
-    StringConversion(classOf[ChronoLocalDateTime[_]], (source: String) => LocalDateTime.parse(source))
-  )
+    def klass: Class[T] = classTag[T].runtimeClass.asInstanceOf[Class[T]]
 
-  private def valueClassCanBeConvertedFromString(
-      typed: TypedObjectWithValue,
-      superclassCandidate: TypedClass
-  ): Boolean =
-    stringConversions.exists { case StringConversion(klass, conversion) =>
-      try {
-        conversion(typed.value.asInstanceOf[String])
-        ClassUtils.isAssignable(superclassCandidate.klass, klass, true)
-      } catch {
-        case _: Throwable => false
-      }
+    def canConvert(value: String, superclassCandidate: TypedClass): Boolean = {
+      ClassUtils.isAssignable(superclassCandidate.klass, klass, true) && Try(
+        convert(value)
+      ).isSuccess
     }
+
+  }
+
+  val stringConversions: List[StringConversion[_]] = List(
+    StringConversion(ZoneOffset.of),
+    StringConversion(ZoneId.of),
+    StringConversion((source: String) => {
+      val locale = StringUtils.parseLocale(source)
+      assert(LocaleUtils.isAvailableLocale(locale)) // without this check even "qwerty" is considered a Locale
+      locale
+    }),
+    StringConversion(Charset.forName),
+    StringConversion(Currency.getInstance),
+    StringConversion((source: String) => if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null),
+    StringConversion(LocalTime.parse),
+    StringConversion(LocalDate.parse),
+    StringConversion(LocalDateTime.parse),
+    StringConversion[ChronoLocalDate](LocalDate.parse),
+    StringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse)
+  )
 
   def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean = {
     handleNumberConversions(givenType.objType, superclassCandidate) ||
@@ -91,8 +84,8 @@ object TypeConversionHandler {
       superclassCandidate: TypedClass
   ): Boolean =
     givenType match {
-      case objectWithValue: TypedObjectWithValue =>
-        valueClassCanBeConvertedFromString(objectWithValue, superclassCandidate)
+      case TypedObjectWithValue(_, str: String) =>
+        stringConversions.exists(_.canConvert(str, superclassCandidate))
       case _ => false
     }
 
