@@ -77,16 +77,14 @@ object typing {
 
   }
 
+  // TODO: rename to SingleTypingResultWrapper
   sealed trait TypedObjectWithData extends SingleTypingResult {
     def underlying: SingleTypingResult
-    def data: Any
 
     override def objType: TypedClass = underlying.objType
   }
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
-    override def data: String = tag
-
     override def valueOpt: Option[Any] = underlying.valueOpt
 
     override def withoutValue: TypedTaggedValue = TypedTaggedValue(underlying.withoutValue, tag)
@@ -95,17 +93,15 @@ object typing {
   }
 
   case class TypedObjectWithValue private[typing] (underlying: TypedClass, value: Any) extends TypedObjectWithData {
-    val maxDataDisplaySize: Int         = 15
-    val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
-
-    override def data: Any = value
+    private val maxDataDisplaySize: Int         = 15
+    private val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
 
     override def valueOpt: Option[Any] = Some(value)
 
     override def withoutValue: SingleTypingResult = underlying.withoutValue
 
     override def display: String = {
-      val dataString = data.toString
+      val dataString = value.toString
       val shortenedDataString =
         if (dataString.length <= maxDataDisplaySize) dataString
         else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
@@ -354,7 +350,7 @@ object typing {
 
   private def superTypeOfTypes(list: Iterable[TypingResult]) = {
     list
-      .reduceOption(CommonSupertypeFinder.FallbackToObjectType.commonSupertype)
+      .reduceOption(CommonSupertypeFinder.Default.commonSupertype)
       .getOrElse(Unknown)
   }
 

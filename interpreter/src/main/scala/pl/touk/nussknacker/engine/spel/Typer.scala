@@ -57,7 +57,6 @@ import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
 
 private[spel] class Typer(
-    commonSupertypeFinder: CommonSupertypeFinder,
     dictTyper: SpelDictTyper,
     strictMethodsChecking: Boolean,
     staticMethodInvocationsChecking: Boolean,
@@ -286,7 +285,7 @@ private[spel] class Typer(
       case e: InlineList =>
         withTypedChildren { children =>
           def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
-            CommonSupertypeFinder.FallbackToObjectType.commonSupertype(a, b)
+            CommonSupertypeFinder.Default.commonSupertype(a, b)
 
           // We don't want Typed.empty here, as currently it means it won't validate for any signature
           val elementType = if (children.isEmpty) Unknown else children.reduce(getSupertype)
@@ -337,7 +336,7 @@ private[spel] class Typer(
       case e: OpMinus =>
         withTypedChildren {
           case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-            val supertype = commonSupertypeFinder
+            val supertype = CommonSupertypeFinder.Intersection
               .commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation)
               .withoutValue
             operationOnTypesValue[Number, Number, Number](left, right, supertype)((n1, n2) =>
@@ -382,7 +381,7 @@ private[spel] class Typer(
               Valid(l.toString + r.toString)
             )
           case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-            val supertype = commonSupertypeFinder
+            val supertype = CommonSupertypeFinder.Intersection
               .commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation)
               .withoutValue
             operationOnTypesValue[Number, Number, Number](left, right, supertype)((n1, n2) =>
@@ -439,7 +438,7 @@ private[spel] class Typer(
         withTypedChildren {
           case condition :: onTrue :: onFalse :: Nil =>
             val superType =
-              CommonSupertypeFinder.FallbackToObjectType.commonSupertype(onTrue, onFalse)
+              CommonSupertypeFinder.Default.commonSupertype(onTrue, onFalse)
             for {
               _ <- Option(condition)
                 .filter(_.canBeSubclassOf(Typed[Boolean]))
@@ -525,7 +524,9 @@ private[spel] class Typer(
       node: Operator
   ): TypingR[TypingResult] = {
     val w = valid(Typed[Boolean])
-    if (commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype) != Typed.empty) {
+    if (CommonSupertypeFinder.Intersection.commonSupertype(left, right)(
+        NumberTypesPromotionStrategy.ToSupertype
+      ) != Typed.empty) {
       w
     } else
       w.tell(List(OperatorNotComparableError(node.getOperatorName, left, right)))
@@ -540,12 +541,12 @@ private[spel] class Typer(
   )(implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingR[CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-        val supertype = commonSupertypeFinder.commonSupertype(left, right).withoutValue
+        val supertype = CommonSupertypeFinder.Intersection.commonSupertype(left, right).withoutValue
         op
           .map(operationOnTypesValue[Number, Number, Any](left, right, supertype)(_))
           .getOrElse(valid(supertype))
       case left :: right :: Nil =>
-        val supertype = commonSupertypeFinder.commonSupertype(left, right).withoutValue
+        val supertype = CommonSupertypeFinder.Intersection.commonSupertype(left, right).withoutValue
         invalid(OperatorMismatchTypeError(node.getOperatorName, left, right), fallbackType = supertype)
       case _ =>
         invalid(BadOperatorConstructionError(node.getOperatorName)) // shouldn't happen
@@ -702,7 +703,6 @@ private[spel] class Typer(
 
   def withDictTyper(dictTyper: SpelDictTyper) =
     new Typer(
-      commonSupertypeFinder,
       dictTyper,
       strictMethodsChecking = strictMethodsChecking,
       staticMethodInvocationsChecking,
@@ -724,11 +724,7 @@ object Typer {
   ): Typer = {
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
 
-    val strictTypeChecking = expressionConfig.strictTypeChecking
-    val commonSupertypeFinder =
-      if (strictTypeChecking) CommonSupertypeFinder.Intersection else CommonSupertypeFinder.Union
     new Typer(
-      commonSupertypeFinder,
       spelDictTyper,
       expressionConfig.strictMethodsChecking,
       expressionConfig.staticMethodInvocationsChecking,

@@ -22,7 +22,7 @@ object TypeConversionHandler {
     * So we have two options: enforce user to convert to some type without floating point (e.g. BigInteger) or be loose in this point.
     * Be default we will be loose.
     */
-  // TODO: Add feature flag: strictBigDecimalChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
+  // TODO: Add feature flag: strictBigDecimalChecking (default false?)
   private val ConversionFromClassesForDecimals =
     NumberTypesPromotionStrategy.DecimalNumbers.toSet + classOf[java.math.BigDecimal]
 
@@ -75,7 +75,7 @@ object TypeConversionHandler {
     val boxedGivenClass          = ClassUtils.primitiveToWrapper(givenClass.klass)
     val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
     // We can't check precision here so we need to be loose here
-    // TODO: Add feature flag: strictNumberPrecisionChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
+    // TODO: Add feature flag: strictNumberPrecisionChecking (default false?)
     if (NumberTypesPromotionStrategy
         .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
       ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
