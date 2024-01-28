@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.context.{
   ProcessCompilationError,
   ValidationContext
 }
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
@@ -46,7 +46,7 @@ object UnionTransformer extends UnionTransformer(None) {
       right: TypingResult
   ): Option[TypingResult] = {
     CommonSupertypeFinder.Intersection
-      .commonSupertypeOpt(left, right)(NumberTypesPromotionStrategy.ToSupertype)
+      .commonSupertypeOpt(left, right)
       .flatMap { result =>
         (left, right, result) match {
           // normally (e.g. in equals) we are more lax in comparison of objects, but here we want to strictly check

@@ -341,10 +341,7 @@ private[spel] class Typer(
       case e: OpMinus =>
         withTypedChildren {
           case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-            val fallback = CommonSupertypeFinder.Intersection
-              .commonSupertypeOpt(left, right)(NumberTypesPromotionStrategy.ForMathOperation)
-              .map(_.withoutValue)
-              .getOrElse(Unknown)
+            val fallback = NumberTypesPromotionStrategy.ForMathOperation.promote(left, right)
             operationOnTypesValue[Number, Number, Number](left, right, fallback)((n1, n2) =>
               Valid(MathUtils.minus(n1, n2))
             )
@@ -387,10 +384,7 @@ private[spel] class Typer(
               Valid(l.toString + r.toString)
             )
           case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-            val fallback = CommonSupertypeFinder.Intersection
-              .commonSupertypeOpt(left, right)(NumberTypesPromotionStrategy.ForMathOperation)
-              .map(_.withoutValue)
-              .getOrElse(Unknown)
+            val fallback = NumberTypesPromotionStrategy.ForMathOperation.promote(left, right)
             operationOnTypesValue[Number, Number, Number](left, right, fallback)((n1, n2) =>
               Valid(MathUtils.plus(n1, n2))
             )
@@ -527,7 +521,7 @@ private[spel] class Typer(
   ): TypingR[TypingResult] = {
     val w = valid(Typed[Boolean])
     CommonSupertypeFinder.Intersection
-      .commonSupertypeOpt(left, right)(NumberTypesPromotionStrategy.ToSupertype)
+      .commonSupertypeOpt(left, right)
       .map(_ => w)
       .getOrElse(w.tell(List(OperatorNotComparableError(node.getOperatorName, left, right))))
   }
@@ -541,16 +535,12 @@ private[spel] class Typer(
   )(implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingR[CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-        val fallback = CommonSupertypeFinder.Intersection
-          .commonSupertypeOpt(left, right)
-          .map(_.withoutValue)
-          .getOrElse(Unknown)
+        val fallback = numberPromotionStrategy.promote(left, right)
         op
           .map(operationOnTypesValue[Number, Number, Any](left, right, fallback)(_))
           .getOrElse(valid(fallback))
       case left :: right :: Nil =>
-        val fallback =
-          CommonSupertypeFinder.Intersection.commonSupertypeOpt(left, right).map(_.withoutValue).getOrElse(Unknown)
+        val fallback = CommonSupertypeFinder.Default.commonSupertype(left, right).withoutValue
         invalid(OperatorMismatchTypeError(node.getOperatorName, left, right), fallbackType = fallback)
       case _ =>
         invalid(BadOperatorConstructionError(node.getOperatorName)) // shouldn't happen

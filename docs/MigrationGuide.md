@@ -58,6 +58,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `Typed.apply(vararg...)` was replaced by `Typed.apply(NonEmptyList)` and `Typed.apply(firstType, secondType, restOfTypesVaraarg...)`
       If you have a list of types and you are not sure how to translate it to `TypingResult` you can try to use `Typed.fromIterableOrUnknownIfEmpty`
       but it is not recommended - see docs next to it.
+    * `TypedUnion`is not a case class anymore, but is still serializable - If it was used in a Flink state, state will be probably not compatible
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:

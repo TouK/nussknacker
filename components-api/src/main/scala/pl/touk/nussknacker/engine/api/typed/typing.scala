@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrate
   ReplaceGetterWithProperty
 }
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}

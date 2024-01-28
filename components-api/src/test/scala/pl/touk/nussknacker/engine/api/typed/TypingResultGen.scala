@@ -1,20 +1,11 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.scalacheck.{Arbitrary, Gen}
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  SingleTypingResult,
-  Typed,
-  TypedDict,
-  TypedNull,
-  TypedObjectTypingResult,
-  TypingResult,
-  Unknown
-}
+import pl.touk.nussknacker.engine.api.typed.TypingResultGen._
+import pl.touk.nussknacker.engine.api.typed.typing._
 
 import java.util.Collections
-import scala.jdk.CollectionConverters.MapHasAsJava
-import TypingResultGen._
-import cats.data.NonEmptyList
+import scala.jdk.CollectionConverters._
 
 class TypingResultGen private (features: EnabledTypedFeatures) {
 

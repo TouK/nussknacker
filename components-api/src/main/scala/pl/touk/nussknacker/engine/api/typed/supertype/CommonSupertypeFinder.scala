@@ -1,25 +1,18 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
 import cats.data.NonEmptyList
-import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.SupertypeClassResolutionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
   * This class finding common supertype of two types. It basically based on fact that TypingResults are
   * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).
-  *
-  * This class, like CanBeSubclassDeterminer is in spirit of "Be type safety as much as possible, but also provide some helpful
-  * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
-  * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
 class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassResolutionStrategy) {
 
   // It returns None if none supertype found (it is possible only for SupertypeClassResolutionStrategy.Intersection)
   // see commonSuperTypeForClassesNotInSameInheritanceLine and fallback in singleCommonSupertype
-  def commonSupertypeOpt(left: TypingResult, right: TypingResult)(
-      implicit numberPromotionStrategy: NumberTypesPromotionStrategy
-  ): Option[TypingResult] = {
+  def commonSupertypeOpt(left: TypingResult, right: TypingResult): Option[TypingResult] = {
     (left, right) match {
       case (Unknown, _)   => Some(Unknown) // can't be sure intention of user - union is more secure than intersection
       case (_, Unknown)   => Some(Unknown)
@@ -42,33 +35,35 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
   }
 
   // Below method is a heuristics. We don't know which types match with each another.
-  // It can generate a lot of combinations for unions, some of then will be reduced inside Typed.apply(nel)
+  // It can generate a lot of combinations for unions, some of them will be reduced inside Typed.apply(nel)
   // TODO: Do this smarter - a little step towards this would be smarter folding of types inside Typed.apply(nel) - see comment there
-  //       Another thing that we can consider is not computing supertype at all (use it only for equals) and always return Union
-  //       This approach will generate long types e.g. for union of records and we treat Unions lax in typing - see CanBeSubclassDeterminer.canBeSubclassOf
+  //       Another thing that we can consider is not computing supertype at all (use it only for equals) and always return Union for LooseWithFallbackToObjectType
+  //       This approach will generate a long types e.g. for union of records and we treat Unions loose in typing - see CanBeSubclassDeterminer.canBeSubclassOf
   //       but maybe it is not so bad
-  private def commonSupertype(leftList: NonEmptyList[SingleTypingResult], rightList: NonEmptyList[SingleTypingResult])(
-      implicit numberPromotionStrategy: NumberTypesPromotionStrategy
+  private def commonSupertype(
+      leftList: NonEmptyList[SingleTypingResult],
+      rightList: NonEmptyList[SingleTypingResult]
   ): Option[NonEmptyList[TypingResult]] = {
     // .sequence won't do the work because it returns None if any element of list returned None
-    val permutations = leftList.flatMap(l => rightList.map(singleCommonSupertype(l, _))).toList.flatten
-    NonEmptyList.fromList(permutations)
+    val combinations = leftList.flatMap(l => rightList.map(singleCommonSupertype(l, _))).toList.flatten
+    NonEmptyList.fromList(combinations)
   }
 
-  private def singleCommonSupertype(left: SingleTypingResult, right: SingleTypingResult)(
-      implicit numberPromotionStrategy: NumberTypesPromotionStrategy
-  ): Option[TypingResult] = {
+  private def singleCommonSupertype(left: SingleTypingResult, right: SingleTypingResult): Option[TypingResult] = {
     def fallback = classResolutionStrategy match {
-      case SupertypeClassResolutionStrategy.FallbackToObjectType => klassCommonSupertype(left.objType, right.objType)
-      case SupertypeClassResolutionStrategy.Intersection         => None
+      case SupertypeClassResolutionStrategy.LooseWithFallbackToObjectType =>
+        classCommonSupertype(left.objType, right.objType)
+      case SupertypeClassResolutionStrategy.Intersection => None
     }
-    // We can't do if (left == right) left because spel promote byte and short classes to integer always so returned type for math operation will be different
     (left, right) match {
-      case (f: TypedClass, s: TypedClass)                           => klassCommonSupertype(f, s)
+      case (l, r) if l == r => Some(l)
+      // TODO We can't do at the beginning if (l.canBeSubclassOf(r) => Some(l) and the same in opposite direction
+      //      because canBeSubclassOf handles conversions and many more - see comment next to it
+      case (f: TypedClass, s: TypedClass)                           => classCommonSupertype(f, s)
       case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
         // In most cases we compare java.util.Map or GenericRecord, the only difference can be on generic params, but
         // still we'll got a class here, so this getOrElse should occur in the rare situations
-        klassCommonSupertypeReturningTypedClass(l.objType, r.objType)
+        classCommonSupertypeReturningTypedClass(l.objType, r.objType)
           .map { commonSupertype =>
             val fields = prepareFields(l, r)
             // We don't return TypeEmpty in case when fields are empty, because we can't be sure the intention of the user
@@ -88,29 +83,27 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       case (_, _: TypedTaggedValue) => fallback
       case (TypedObjectWithValue(leftType, leftValue), TypedObjectWithValue(rightType, rightValue))
           if leftValue == rightValue =>
-        klassCommonSupertype(leftType, rightType).map {
+        classCommonSupertype(leftType, rightType).map {
           case typedClass: TypedClass => TypedObjectWithValue(typedClass, leftValue)
           case other                  => other
         }
-      case (l: TypedObjectWithValue, r)           => singleCommonSupertype(l.underlying, r)
-      case (l, r: TypedObjectWithValue)           => singleCommonSupertype(l, r.underlying)
-      case (l: TypedDict, r: TypedDict) if l == r => Some(l)
-      case (_: TypedDict, _)                      => fallback
-      case (_, _: TypedDict)                      => fallback
+      case (l: TypedObjectWithValue, r) => singleCommonSupertype(l.underlying, r)
+      case (l, r: TypedObjectWithValue) => singleCommonSupertype(l, r.underlying)
+      case (_: TypedDict, _)            => fallback
+      case (_, _: TypedDict)            => fallback
     }
   }
 
-  private def prepareFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult)(
-      implicit numberPromotionStrategy: NumberTypesPromotionStrategy
-  ): Map[String, TypingResult] =
+  private def prepareFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult): Map[String, TypingResult] =
     (l.fields.toList ++ r.fields.toList)
       .groupBy(_._1)
       .map { case (key, value) => key -> value.map(_._2) }
       .flatMap {
-        case (_, _ :: Nil) if classResolutionStrategy == SupertypeClassResolutionStrategy.Intersection =>
-          None
         case (fieldName, singleType :: Nil) =>
-          Some(fieldName -> singleType)
+          classResolutionStrategy match {
+            case SupertypeClassResolutionStrategy.Intersection                  => None
+            case SupertypeClassResolutionStrategy.LooseWithFallbackToObjectType => Some(fieldName -> singleType)
+          }
         case (fieldName, leftType :: rightType :: Nil) =>
           commonSupertypeOpt(leftType, rightType).map { common =>
             fieldName -> common
@@ -122,49 +115,22 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       }
 
   // This implementation is because TypedObjectTypingResult has underlying TypedClass instead of TypingResult
-  private def klassCommonSupertypeReturningTypedClass(left: TypedClass, right: TypedClass)(
-      implicit numberPromotionStrategy: NumberTypesPromotionStrategy
-  ): Option[TypedClass] = {
-    val boxedLeftClass  = ClassUtils.primitiveToWrapper(left.klass)
-    val boxedRightClass = ClassUtils.primitiveToWrapper(right.klass)
-    if (List(boxedLeftClass, boxedRightClass).forall(classOf[Number].isAssignableFrom)) {
-      numberPromotionStrategy.promoteClasses(boxedLeftClass, boxedRightClass) match {
-        case tc: TypedClass => Some(tc)
-        case _              => Some(Typed.typedClass[Number])
-      }
-    } else {
-      commonSuperTypeForComplexTypes(boxedLeftClass, left.params, boxedRightClass, right.params).flatMap {
-        case tc: TypedClass => Some(tc)
-        case _              => None // empty, union and so on
-      }
+  private def classCommonSupertypeReturningTypedClass(left: TypedClass, right: TypedClass): Option[TypedClass] = {
+    classCommonSupertype(left, right).flatMap {
+      case tc: TypedClass => Some(tc)
+      case _              => None // empty, union and so on
     }
   }
 
-  private def klassCommonSupertype(left: TypedClass, right: TypedClass)(
-      implicit numberPromotionStrategy: NumberTypesPromotionStrategy
-  ): Option[TypingResult] = {
-    val boxedLeftClass  = ClassUtils.primitiveToWrapper(left.klass)
-    val boxedRightClass = ClassUtils.primitiveToWrapper(right.klass)
-    if (List(boxedLeftClass, boxedRightClass).forall(classOf[Number].isAssignableFrom)) {
-      Some(numberPromotionStrategy.promoteClasses(boxedLeftClass, boxedRightClass))
-    } else {
-      commonSuperTypeForComplexTypes(boxedLeftClass, left.params, boxedRightClass, right.params)
-    }
-  }
-
-  private def commonSuperTypeForComplexTypes(
-      left: Class[_],
-      leftParams: List[TypingResult],
-      right: Class[_],
-      rightParams: List[TypingResult]
-  ): Option[TypingResult] = {
-    if (left.isAssignableFrom(right)) {
-      Some(genericClassWithSuperTypeParams(left, leftParams, rightParams))
-    } else if (right.isAssignableFrom(left)) {
-      Some(genericClassWithSuperTypeParams(right, rightParams, leftParams))
+  private def classCommonSupertype(left: TypedClass, right: TypedClass): Option[TypingResult] = {
+    // TypedClass.klass are already boxed
+    if (left.klass.isAssignableFrom(right.klass)) {
+      Some(genericClassWithSuperTypeParams(left.klass, left.params, right.params))
+    } else if (right.klass.isAssignableFrom(left.klass)) {
+      Some(genericClassWithSuperTypeParams(right.klass, right.params, left.params))
     } else {
       // until here things are rather simple
-      commonSuperTypeForClassesNotInSameInheritanceLine(left, right)
+      commonSuperTypeForClassesNotInSameInheritanceLine(left.klass, right.klass)
     }
   }
 
@@ -192,12 +158,12 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       left: Class[_],
       right: Class[_]
   ): Option[TypingResult] = {
-    // None is possible here
     val foundTypes = ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_))
-    val result     = NonEmptyList.fromList(foundTypes.toList).map(Typed(_))
+    // None is possible here
+    val result = NonEmptyList.fromList(foundTypes.toList).map(Typed(_))
     classResolutionStrategy match {
-      case SupertypeClassResolutionStrategy.Intersection         => result
-      case SupertypeClassResolutionStrategy.FallbackToObjectType => result.orElse(Some(Unknown))
+      case SupertypeClassResolutionStrategy.Intersection                  => result
+      case SupertypeClassResolutionStrategy.LooseWithFallbackToObjectType => result.orElse(Some(Unknown))
     }
   }
 
@@ -209,11 +175,11 @@ object CommonSupertypeFinder {
   // it returns Any (which currently is expressed as Unknown). It is useful in most cases when you want to determine
   // the supertype of objects
   object Default {
-    private val delegate = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.FallbackToObjectType)
+    private val delegate = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.LooseWithFallbackToObjectType)
 
     def commonSupertype(left: TypingResult, right: TypingResult): TypingResult = {
       delegate
-        .commonSupertypeOpt(left, right)(NumberTypesPromotionStrategy.ToSupertype)
+        .commonSupertypeOpt(left, right)
         .getOrElse(
           // We don't return Unknown as a sanity check, that our fallback strategy works correctly and supertypes for object types are used
           throw new IllegalStateException(s"Common super type not found: for $left and $right")
@@ -230,7 +196,7 @@ object CommonSupertypeFinder {
 
   private object SupertypeClassResolutionStrategy {
 
-    case object FallbackToObjectType extends SupertypeClassResolutionStrategy
+    case object LooseWithFallbackToObjectType extends SupertypeClassResolutionStrategy
 
     case object Intersection extends SupertypeClassResolutionStrategy
 

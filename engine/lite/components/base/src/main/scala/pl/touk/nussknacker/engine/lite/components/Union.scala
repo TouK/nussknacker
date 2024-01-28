@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, Validated}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{
@@ -65,7 +65,7 @@ object Union extends CustomStreamTransformer {
       right: TypingResult
   ): Option[TypingResult] = {
     CommonSupertypeFinder.Intersection
-      .commonSupertypeOpt(left, right)(NumberTypesPromotionStrategy.ToSupertype)
+      .commonSupertypeOpt(left, right)
       .flatMap { result =>
         (left, right, result) match {
           // normally (e.g. in equals) we are more lax in comparison of objects, but here we want to strictly check

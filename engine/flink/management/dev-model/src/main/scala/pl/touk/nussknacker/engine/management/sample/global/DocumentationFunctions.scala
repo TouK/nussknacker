@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.{ArgumentTypeError, OtherError}
 import pl.touk.nussknacker.engine.api.generics._
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 import scala.annotation.varargs
