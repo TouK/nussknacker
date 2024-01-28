@@ -816,7 +816,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
     validationResult.nodeResults("sink2").variableTypes("var2") shouldBe Typed.fromInstance("42")
-    validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(
+    validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe Typed.record(
       Map(
         "bar" -> Typed.fromInstance("42")
       )

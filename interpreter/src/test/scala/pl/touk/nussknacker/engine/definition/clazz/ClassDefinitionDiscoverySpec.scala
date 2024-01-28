@@ -445,7 +445,7 @@ class ClassDefinitionDiscoverySpec
       checkApplyFunction(List(scalaClassInfo, javaClassInfo), name, arguments, result.validNel)
 
     val typedList = Typed.genericTypeClass[java.util.List[_]](List(Typed[String]))
-    val typedMap  = TypedObjectTypingResult(Map("a" -> Typed[Int], "b" -> Typed[String]))
+    val typedMap  = Typed.record(Map("a" -> Typed[Int], "b" -> Typed[String]))
 
     val table = Table(
       ("name", "arguments", "result"),

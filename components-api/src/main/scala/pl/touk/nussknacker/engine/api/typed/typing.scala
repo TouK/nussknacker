@@ -15,6 +15,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
+// TODO: remove this object because it causes typing.TypingResult in IDE
 object typing {
 
   object TypingResult {
@@ -24,6 +25,13 @@ object typing {
   // TODO: Rename to Typed
   sealed trait TypingResult {
 
+    // TODO: We should split this method into two or three methods:
+    //       - Simple, strictly checking subclassing similar to isAssignable, where we don't do heuristics like
+    //         Any can be subclass of Int, or for Union of Int and String can be subclass of Int
+    //       - The one with heuristics considering limitations of our tool like poor support for generics, lack
+    //         of casting allowing things described above
+    //       - The one that allow things above + SPeL conversions like any Number to any Number conversion,
+    //         String to LocalDate etc. This one should be accessible only for context where SPeL is used
     final def canBeSubclassOf(typingResult: TypingResult): Boolean =
       CanBeSubclassDeterminer.canBeSubclassOf(this, typingResult).isValid
 
@@ -43,14 +51,16 @@ object typing {
     def objType: TypedClass
   }
 
-  // TODO: Rename to TypedRecord
   object TypedObjectTypingResult {
 
+    // TODO: deprecated, will be removed - we should also make the default apply private protected
     def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
-      TypedObjectTypingResult(fields, mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
+      Typed.record(fields)
 
   }
 
+  // TODO: Rename to TypedRecord
+  // TODO: Make the constructor package-protected - inheritance is only use in the InputMeta to override display
   case class TypedObjectTypingResult(
       fields: Map[String, TypingResult],
       objType: TypedClass,
@@ -111,6 +121,12 @@ object typing {
 
   }
 
+  // It is used in two context:
+  // - As a TypedObjectWithValue(Any, null) - probably because of the fact that Any is represented as Unknown
+  //   which can be subclass of anything, it was extracted a dedicated case object for this case
+  // - As a something between SingleTypingResult and EmptyTypingResult, see folding in the Typed.apply(nel)
+  //   Thanks to that we avoid nasty types like String | null (String type is nullable as well)
+  //   We can avoid this case by changing this folding logic - see the comment there
   case object TypedNull extends TypingResult {
     override def withoutValue: TypedNull.type = TypedNull
 
@@ -256,7 +272,7 @@ object typing {
       }
 
     // to not have separate class for each array, we pass Array of Objects
-    private val KlassForArrays = classOf[Array[Object]]
+    private[typed] val KlassForArrays = classOf[Array[Object]]
 
     private def determineArrayType(klass: Class[_], parameters: Option[List[TypingResult]]): TypedClass = {
       val determinedComponentType = Typed(klass.getComponentType)
@@ -343,8 +359,10 @@ object typing {
     // We don't use NonEmptySet as we usually deal with lists and NonEmptySet need Order of elements but at the
     // end for our TypedUnion implementation, order of elements is not important
     def apply(possibleTypes: NonEmptyList[TypingResult]): TypingResult = {
-      // We use local function instead of lambda to get compilation error
-      // when some type is not handled.
+      // TODO: We could do this smarter by reducing cases where there are two classes which one is a superclass of another
+      //       e.g. Type(Typed[Number], Typed[Int]) into Typed[Number]. It is crucial because we base on this during
+      //       computing the output type of SPeL's ternary operator - see CommonSupertypeFinder.commonSupertype(nel, nel)
+      //       which can generate a long unions of types
       def flattenType(t: TypingResult): Option[Set[SingleTypingResult]] = t match {
         case Unknown                    => None
         case TypedNull                  => Some(Set.empty)
@@ -363,6 +381,16 @@ object typing {
         case Some(first :: second :: rest) => new TypedUnion(first, second, rest)
       }
     }
+
+    def record(fields: Map[String, TypingResult]): TypedObjectTypingResult =
+      TypedObjectTypingResult(fields, mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
+
+    def record(
+        fields: Map[String, TypingResult],
+        objType: TypedClass,
+        additionalInfo: Map[String, AdditionalDataValue] = Map.empty
+    ): TypedObjectTypingResult =
+      TypedObjectTypingResult(fields, objType, additionalInfo)
 
   }
 

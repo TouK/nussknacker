@@ -1,12 +1,10 @@
 package pl.touk.nussknacker.engine.util.typing
 
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-
-import java.util
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
-import scala.collection.immutable.HashMap
+import java.util
 import scala.jdk.CollectionConverters._
 
 object TypingUtils {
@@ -17,7 +15,7 @@ object TypingUtils {
 
   def typeMapDefinition(definition: Map[String, _]): TypingResult = {
     // we force use of Map and not some implicit variants (MapLike) to avoid serialization problems...
-    TypedObjectTypingResult(Map(definition.mapValuesNow(typedMapDefinitionFromParameters).toList: _*))
+    Typed.record(Map(definition.mapValuesNow(typedMapDefinitionFromParameters).toList: _*))
   }
 
   private def typedMapDefinitionFromParameters(definition: Any): TypingResult = definition match {

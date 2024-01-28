@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Inside, OptionValues}
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 
@@ -10,11 +12,20 @@ import java.time.{LocalDate, LocalDateTime}
 import java.util
 import java.util.Currency
 
-class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
+class TypingResultSpec
+    extends AnyFunSuite
+    with Matchers
+    with OptionValues
+    with Inside
+    with ScalaCheckDrivenPropertyChecks
+    with LazyLogging {
+
+  implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
+    PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0)
 
   private val intersectionSuperTypeFinder = CommonSupertypeFinder.Intersection
 
-  private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toMap)
+  private def typeMap(args: (String, TypingResult)*) = Typed.record(args.toMap)
 
   private def list(arg: TypingResult) = Typed.genericTypeClass[java.util.List[_]](List(arg))
 
@@ -50,14 +61,17 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
   }
 
   test("extract Unknown value type when no super matching supertype found among all fields of Record") {
-    TypedObjectTypingResult(
-      Map(
-        "foo" -> Typed[String],
-        "bar" -> TypedObjectTypingResult(Map.empty[String, TypingResult])
+    Typed
+      .record(
+        Map(
+          "foo" -> Typed[String],
+          "bar" -> Typed.record(Map.empty[String, TypingResult])
+        )
       )
-    ).objType.params(1) shouldEqual Unknown
+      .objType
+      .params(1) shouldEqual Unknown
 
-    TypedObjectTypingResult(Map.empty[String, TypingResult]).objType.params(1) shouldEqual Unknown
+    Typed.record(Map.empty[String, TypingResult]).objType.params(1) shouldEqual Unknown
   }
 
   test("determine if can be subclass for typed unions") {
@@ -126,28 +140,28 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
 
     intersectionSuperTypeFinder
       .commonSupertypeOpt(
-        TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
-        TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))
+        Typed.record(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
+        Typed.record(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))
       )
       .value shouldEqual
-      TypedObjectTypingResult(
+      Typed.record(
         Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long])
       )
     CommonSupertypeFinder.Default.commonSupertype(
-      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
-      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))
+      Typed.record(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
+      Typed.record(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))
     ) shouldEqual
-      TypedObjectTypingResult(
+      Typed.record(
         Map("foo" -> Typed[String], "bar" -> Typed[Number], "baz" -> Typed[String], "baz2" -> Typed[String])
       )
 
     intersectionSuperTypeFinder
       .commonSupertypeOpt(
-        TypedObjectTypingResult(Map("foo" -> Typed[String])),
-        TypedObjectTypingResult(Map("foo" -> Typed[Long]))
+        Typed.record(Map("foo" -> Typed[String])),
+        Typed.record(Map("foo" -> Typed[Long]))
       )
       .value shouldEqual
-      TypedObjectTypingResult(Map.empty[String, TypingResult])
+      Typed.record(Map.empty[String, TypingResult])
   }
 
   test("find common supertype for complex types with inheritance in classes hierarchy") {
@@ -348,6 +362,9 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     Typed(Typed[String], Typed[String]) shouldBe Typed[String]
     Typed(Typed[Int], TypedNull) shouldBe Typed[Int]
     Typed(TypedNull, TypedNull) shouldBe TypedNull
+    // TODO: we could fold it to Typed[Number] - see TODO in Typed.apply
+    Typed(Typed[Number], Typed[Int]) shouldBe Typed(Typed[Number], Typed[Int])
+    Typed(Typed[Int], Typed[Number]) shouldBe Typed(Typed[Int], Typed[Number])
   }
 
   test("should correctly create typed arrays from classes") {
@@ -373,7 +390,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
 
   test("should fallback to object type when looking for object supertype") {
     CommonSupertypeFinder.Default.commonSupertype(
-      TypedObjectTypingResult(Map.empty),
+      Typed.record(Map.empty),
       Typed.fromDetailedType[java.util.Map[String, Any]]
     ) shouldEqual Typed.fromDetailedType[java.util.Map[String, Any]]
     CommonSupertypeFinder.Default.commonSupertype(
@@ -386,15 +403,44 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     ) shouldEqual Typed[String]
     CommonSupertypeFinder.Default.commonSupertype(Typed[Int], Typed[Long]) shouldEqual Typed[Number]
     CommonSupertypeFinder.Default.commonSupertype(
-      TypedObjectTypingResult(Map("foo" -> Typed[String])),
-      TypedObjectTypingResult(Map("foo" -> Typed[Boolean])),
-    ) shouldEqual TypedObjectTypingResult(Map("foo" -> Unknown))
+      Typed.record(Map("foo" -> Typed[String])),
+      Typed.record(Map("foo" -> Typed[Boolean])),
+    ) shouldEqual Typed.record(Map("foo" -> Unknown))
     CommonSupertypeFinder.Intersection
       .commonSupertypeOpt(
-        TypedObjectTypingResult(Map("foo" -> Typed[String])),
-        TypedObjectTypingResult(Map("foo" -> Typed[Boolean])),
+        Typed.record(Map("foo" -> Typed[String])),
+        Typed.record(Map("foo" -> Typed[Boolean])),
       )(NumberTypesPromotionStrategy.ToSupertype)
-      .value shouldEqual TypedObjectTypingResult(Map.empty)
+      .value shouldEqual Typed.record(Map.empty)
+  }
+
+  test("generator based common super type without unions - check type equality") {
+    forAll(TypingResultGen.typingResultGen(EnabledTypedFeatures(unions = false))) { input =>
+      logger.trace(s"Checking: ${input.display}")
+      withClue(s"Input: ${input.display};") {
+
+        input.canBeSubclassOf(input) shouldBe true
+        val superType = CommonSupertypeFinder.Default.commonSupertype(input, input)
+        withClue(s"Supertype: ${superType.display};") {
+          superType shouldEqual input
+        }
+      }
+    }
+  }
+
+  test("generator based common super type with unions - check if class can by subclass of superclass") {
+    forAll(TypingResultGen.typingResultGen(EnabledTypedFeatures.All)) { input =>
+      logger.trace(s"Checking: ${input.display}")
+      withClue(s"Input: ${input.display};") {
+
+        input.canBeSubclassOf(input) shouldBe true
+        val superType = CommonSupertypeFinder.Default.commonSupertype(input, input)
+        withClue(s"Supertype: ${superType.display};") {
+          // We generate permutations of types co we can only check if input type is a subclass of super type
+          input.canBeSubclassOf(superType)
+        }
+      }
+    }
   }
 
   type StringKeyMap[V] = java.util.Map[String, V]

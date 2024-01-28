@@ -436,7 +436,7 @@ object SampleNodes {
         @ParamName("count") count: Int,
         @OutputVariableName outputVar: String
     )(implicit nodeId: NodeId): ContextTransformation = {
-      val listType                        = TypedObjectTypingResult(definition.asScala.map(_ -> Typed[String]).toMap)
+      val listType                        = Typed.record(definition.asScala.map(_ -> Typed[String]).toMap)
       val returnType: typing.TypingResult = Typed.genericTypeClass[java.util.List[_]](List(listType))
 
       EnricherContextTransformation(
@@ -656,7 +656,7 @@ object SampleNodes {
     )(implicit nodeId: NodeId): this.FinalResults = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
-          val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType }.toMap)
+          val result = Typed.record(rest.map { case (k, v) => k -> v.returnType }.toMap)
           FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), result))
         case None =>
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))

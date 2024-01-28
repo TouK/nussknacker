@@ -222,14 +222,14 @@ object SwaggerTyped {
       }
       additionalProperties match {
         case AdditionalPropertiesDisabled if patternPropertiesTypesSet.isEmpty =>
-          TypedObjectTypingResult(Map.empty[String, TypingResult])
+          Typed.record(Map.empty[String, TypingResult])
         case AdditionalPropertiesDisabled =>
           typedStringKeyMap(Typed.fromIterableOrUnknownIfEmpty(patternPropertiesTypesSet))
         case AdditionalPropertiesEnabled(value) =>
           typedStringKeyMap(Typed(NonEmptyList(typingResult(value), patternPropertiesTypesSet)))
       }
     } else {
-      TypedObjectTypingResult(elementType.mapValuesNow(typingResult))
+      Typed.record(elementType.mapValuesNow(typingResult))
     }
   }
 

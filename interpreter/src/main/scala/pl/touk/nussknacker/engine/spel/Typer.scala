@@ -311,7 +311,7 @@ private[spel] class Typer(
           if (literalKeys.size != keys.size) {
             invalid(MapWithExpressionKeysError)
           } else {
-            valid(TypedObjectTypingResult(literalKeys.zip(typedValues).toMap))
+            valid(Typed.record(literalKeys.zip(typedValues).toMap))
           }
         }
       case e: MethodReference =>
@@ -655,7 +655,7 @@ private[spel] class Typer(
       valid(tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
       valid(
-        TypedObjectTypingResult(
+        Typed.record(
           Map(
             "key"   -> tc.objType.params.headOption.getOrElse(Unknown),
             "value" -> tc.objType.params.drop(1).headOption.getOrElse(Unknown)

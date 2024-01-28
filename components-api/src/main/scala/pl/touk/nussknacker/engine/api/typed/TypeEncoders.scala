@@ -167,9 +167,14 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   }
 
   private def tryToLoadClass(name: String, obj: HCursor): Decoder.Result[Class[_]] = {
-    Try(loadClass(name)) match {
-      case Success(value) => Right(value)
-      case Failure(thr)   => Left(DecodingFailure(s"Failed to load class $name with ${thr.getMessage}", obj.history))
+    if (name == Typed.KlassForArrays.getName) {
+      // loading of array class causes Failed to load class [Ljava.lang.Object; with [Ljava.lang.Object;
+      Right(Typed.KlassForArrays)
+    } else {
+      Try(loadClass(name)) match {
+        case Success(value) => Right(value)
+        case Failure(thr)   => Left(DecodingFailure(s"Failed to load class $name with ${thr.getMessage}", obj.history))
+      }
     }
   }
 

@@ -597,10 +597,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val validationCtx = ValidationContext.empty
       .withVariable(
         "map",
-        TypedObjectTypingResult(
+        Typed.record(
           Map(
             "foo"    -> Typed[Int],
-            "nested" -> TypedObjectTypingResult(Map("bar" -> Typed[Int]))
+            "nested" -> Typed.record(Map("bar" -> Typed[Int]))
           )
         ),
         paramName = None
@@ -715,7 +715,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Number]("1 > 2 ? 12 : 23.0", ctx).validValue.returnType shouldBe Typed[Number]
     parse[String]("1 > 2 ? 'ss' : 'dd'", ctx).validValue.returnType shouldBe Typed[String]
     parse[Any]("1 > 2 ? '123' : 123", ctx).validValue.returnType shouldBe Unknown
-    parse[Any]("1 > 2 ? {foo: 1} : {bar: 1}", ctx).validValue.returnType shouldBe TypedObjectTypingResult(
+    parse[Any]("1 > 2 ? {foo: 1} : {bar: 1}", ctx).validValue.returnType shouldBe Typed.record(
       Map(
         "foo" -> Typed.fromInstance(1),
         "bar" -> Typed.fromInstance(1),
@@ -838,7 +838,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val ctxWithMap = ValidationContext.empty
       .withVariable(
         "input",
-        TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long])),
+        Typed.record(Map("str" -> Typed[String], "lon" -> Typed[Long])),
         paramName = None
       )
       .toOption
@@ -853,7 +853,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("be able to convert between primitive types") {
     val ctxWithMap = ValidationContext.empty
-      .withVariable("input", TypedObjectTypingResult(Map("int" -> Typed[Int])), paramName = None)
+      .withVariable("input", Typed.record(Map("int" -> Typed[Int])), paramName = None)
       .toOption
       .get
 
@@ -866,7 +866,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val valCtxWithMap = ValidationContext.empty
       .withVariable(
         "input",
-        TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long])),
+        Typed.record(Map("str" -> Typed[String], "lon" -> Typed[Long])),
         paramName = None
       )
       .toOption
@@ -892,7 +892,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val ctxWithMap = ValidationContext.empty
       .withVariable(
         "input",
-        Typed(TypedObjectTypingResult(Map("str" -> Typed[String])), TypedObjectTypingResult(Map("lon" -> Typed[Long]))),
+        Typed(Typed.record(Map("str" -> Typed[String])), Typed.record(Map("lon" -> Typed[Long]))),
         paramName = None
       )
       .toOption
@@ -1209,7 +1209,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should check map values") {
     val parser = expressionParser()
     val expected = Typed.genericTypeClass[java.util.Map[_, _]](
-      List(Typed[String], TypedObjectTypingResult(Map("additional" -> Typed[String])))
+      List(Typed[String], Typed.record(Map("additional" -> Typed[String])))
     )
     inside(parser.parse("""{"aField": {"additional": 1}}""", ValidationContext.empty, expected)) {
       case Invalid(NonEmptyList(e: ExpressionTypeError, Nil)) =>

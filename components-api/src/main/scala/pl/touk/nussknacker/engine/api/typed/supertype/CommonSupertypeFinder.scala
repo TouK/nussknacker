@@ -41,11 +41,18 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
     case r                          => r
   }
 
+  // Below method is a heuristics. We don't know which types match with each another.
+  // It can generate a lot of combinations for unions, some of then will be reduced inside Typed.apply(nel)
+  // TODO: Do this smarter - a little step towards this would be smarter folding of types inside Typed.apply(nel) - see comment there
+  //       Another thing that we can consider is not computing supertype at all (use it only for equals) and always return Union
+  //       This approach will generate long types e.g. for union of records and we treat Unions lax in typing - see CanBeSubclassDeterminer.canBeSubclassOf
+  //       but maybe it is not so bad
   private def commonSupertype(leftList: NonEmptyList[SingleTypingResult], rightList: NonEmptyList[SingleTypingResult])(
       implicit numberPromotionStrategy: NumberTypesPromotionStrategy
   ): Option[NonEmptyList[TypingResult]] = {
     // .sequence won't do the work because it returns None if any element of list returned None
-    NonEmptyList.fromList(leftList.flatMap(l => rightList.map(singleCommonSupertype(l, _))).toList.flatten)
+    val permutations = leftList.flatMap(l => rightList.map(singleCommonSupertype(l, _))).toList.flatten
+    NonEmptyList.fromList(permutations)
   }
 
   private def singleCommonSupertype(left: SingleTypingResult, right: SingleTypingResult)(

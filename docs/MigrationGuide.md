@@ -52,6 +52,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     in most cases just (`CommonSupertypeFinder.Default`)
   * `TypedObjectTypingResult.apply` removed legacy factory method taking `List[(String, TypingResult)]` - should be used variant with `Map` 
   * `TypedObjectTypingResult.apply` removed legacy factory method taking `TypedObjectDefinition` - should be used variant with `Map` 
+  * `TypedObjectTypingResult.apply` is deprecated - should be used `Typed.record(...)` instead. It will be removed in further releases
   * `TypedObjectDefinition` was removed 
   * `Typed.empty` was removed, `TypedUnion` now handles only >= 2 types
     * `Typed.apply(vararg...)` was replaced by `Typed.apply(NonEmptyList)` and `Typed.apply(firstType, secondType, restOfTypesVaraarg...)`

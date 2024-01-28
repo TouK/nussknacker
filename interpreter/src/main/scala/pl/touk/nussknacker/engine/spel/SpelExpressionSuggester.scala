@@ -259,7 +259,7 @@ class SpelExpressionSuggester(
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
         tc.objType.params.headOption.getOrElse(Unknown)
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
-        TypedObjectTypingResult(
+        Typed.record(
           Map(
             "key"   -> tc.objType.params.headOption.getOrElse(Unknown),
             "value" -> tc.objType.params.drop(1).headOption.getOrElse(Unknown)
