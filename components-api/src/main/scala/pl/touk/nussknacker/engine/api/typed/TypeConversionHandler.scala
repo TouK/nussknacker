@@ -30,7 +30,10 @@ object TypeConversionHandler {
 
   case class StringConversion[T: ClassTag](convert: String => T) {
 
-    def klass: Class[T] = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+    def klass: Class[T] = {
+      val cl = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+      cl
+    }
 
     def canConvert(value: String, superclassCandidate: TypedClass): Boolean = {
       ClassUtils.isAssignable(superclassCandidate.klass, klass, true) && Try(
@@ -50,7 +53,9 @@ object TypeConversionHandler {
     }),
     StringConversion(Charset.forName),
     StringConversion(Currency.getInstance),
-    StringConversion((source: String) => if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null),
+    StringConversion[UUID]((source: String) =>
+      if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null
+    ),
     StringConversion(LocalTime.parse),
     StringConversion(LocalDate.parse),
     StringConversion(LocalDateTime.parse),
