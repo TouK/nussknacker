@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json
-import io.circe.Json.{Null, fromInt, fromString, obj}
+import io.circe.Json.{Null, arr, fromInt, fromString, obj}
 import io.circe.syntax.EncoderOps
 import org.everit.json.schema.{NumberSchema, Schema, StringSchema}
 import org.scalatest.Inside.inside
@@ -389,6 +389,77 @@ class LiteRequestResponseFunctionalTest
 
       result shouldBe expected
     }
+  }
+
+  ignore("validate nested json schema and match to it fitting expression") {
+    val nestedSchema = JsonSchemaBuilder.parseSchema("""{
+            |    "properties": {
+            |        "books": {
+            |            "items": {
+            |                "properties": {
+            |                    "title": {
+            |                        "type": "string"
+            |                    },
+            |                    "additionalInfo": {
+            |                        "properties": {
+            |                            "coverColor": {
+            |                                "type": "string"
+            |                            }
+            |                        },
+            |                        "type": "object"
+            |                    }
+            |                },
+            |                "type": "object"
+            |            },
+            |            "type": "array"
+            |        }
+            |    },
+            |    "type": "object"
+            |}""".stripMargin)
+
+    val sinkFields = Map(
+      "books" ->
+        """
+              |{
+              |   {
+              |       "title": "Low-code with NU",
+              |       "additionalInfo": {
+              |            "coverColor": "Red"
+              |        }
+              |   }
+              |}
+            |""".stripMargin
+    )
+    val expectedResult = Valid(
+      obj(
+        "books" ->
+          arr(
+            obj("title" -> fromString("Low-code with NU"), "additionalInfo" -> obj("coverColor" -> fromString("Red")))
+          )
+      )
+    )
+
+    val cfg = config(sampleObjWithAdds, schemaObjString(true), nestedSchema)
+    val sinkParams = (Map(
+      SinkRawEditorParamName          -> "false",
+      SinkValidationModeParameterName -> s"'${cfg.validationModeName}'",
+    ) ++ sinkFields).mapValuesNow(Expression.spel)
+    val scenario = ScenarioBuilder
+      .requestResponse("test")
+      .additionalFields(properties =
+        Map(
+          "inputSchema"  -> cfg.sourceSchema.toString,
+          "outputSchema" -> cfg.outputSchema.toString
+        )
+      )
+      .source("input", "request")
+      .emptySink(sinkName, "response", sinkParams.toList: _*)
+    val result = runner.runWithRequests(scenario) { invoker =>
+      invoker(HttpRequest(HttpMethods.POST, entity = cfg.input.asJson.spaces2)).rightValue
+    }
+
+    result shouldBe expectedResult
+
   }
 
   private def runWithResults(config: ScenarioConfig): ValidatedNel[ProcessCompilationError, Json] = {

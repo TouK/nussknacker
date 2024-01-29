@@ -88,6 +88,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
   * Endpoints returning test results (`/processManagement/test*`) return `nodeId` instead of `nodeComponentInfo` now
   * `/processDefinitionData/*` response: field `type` was replaced by `componentId` inside the  path `.componentGroups[].components[]`
+* [#5462](https://github.com/TouK/nussknacker/pull/5462) `/processes/category/*` endpoint was removed
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
