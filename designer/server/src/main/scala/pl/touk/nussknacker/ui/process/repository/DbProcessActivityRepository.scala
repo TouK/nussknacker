@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.api.ScenarioAttachmentService.AttachmentToAdd
+import pl.touk.nussknacker.ui.services.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.server
+package pl.touk.nussknacker.ui.api
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Source, StreamConverters}

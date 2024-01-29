@@ -642,6 +642,8 @@ object ProcessesQueryEnrichments {
 
 object TestResource {
 
+  // TODO One test from ManagementResourcesSpec and one test from ProcessesResourcesSpec use this route.
+  //  The tests are still using akka based testing and it is not easy to integrate tapir route with this kind of tests.
   // should be replaced with rest call: GET /api/process/{scenarioName}/activity
   class ProcessActivityResource(
       processActivityRepository: ProcessActivityRepository,

@@ -11,7 +11,6 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
   Comment => DbComment,
   ProcessActivity => DbProcessActivity
 }
-import pl.touk.nussknacker.ui.server.{AkkaToTapirStreamExtension, TapirCodecs}
 import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.model.{HeaderNames, MediaType}
@@ -111,7 +110,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       .withSecurity(auth)
 
   def addAttachmentEndpoint(
-      implicit akkaToTapirStreamExtension: AkkaToTapirStreamExtension
+      implicit streamBodyEndpoint: EndpointInput[InputStream]
   ): SecuredEndpoint[AddAttachmentRequest, String, Unit, Any] = {
     baseNuApiEndpoint
       .summary("Add scenario attachment service")
@@ -120,8 +119,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       .in(
         (
           "processes" / path[ProcessName]("scenarioName") / path[VersionId]("versionId") / "activity"
-            / "attachments" / akkaToTapirStreamExtension.streamBodyEndpointInOut
-            / header[FileName](HeaderNames.ContentDisposition)
+            / "attachments" / streamBodyEndpoint / header[FileName](HeaderNames.ContentDisposition)
         ).mapTo[AddAttachmentRequest]
       )
       .out(statusCode(Ok))
@@ -135,7 +133,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
   }
 
   def downloadAttachmentEndpoint(
-      implicit akkaToTapirStreamExtension: AkkaToTapirStreamExtension
+      implicit streamBodyEndpoint: EndpointOutput[InputStream]
   ): SecuredEndpoint[GetAttachmentRequest, String, GetAttachmentResponse, Any] = {
     baseNuApiEndpoint
       .summary("Download attachment service")
@@ -147,7 +145,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       )
       .out(
         statusCode(Ok)
-          .and(akkaToTapirStreamExtension.streamBodyEndpointInOut)
+          .and(streamBodyEndpoint)
           .and(header(HeaderNames.ContentDisposition)(optionalHeaderCodec))
           .and(header(HeaderNames.ContentType)(requiredHeaderCodec))
           .mapTo[GetAttachmentResponse]

@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.ui.server
+package pl.touk.nussknacker.ui.api
 
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import HeadersSupport.{ContentDisposition, FileName}
+import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}

@@ -1,13 +1,13 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.services
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.IOUtils
 import org.apache.commons.io.input.BoundedInputStream
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.api.ScenarioAttachmentService.{AttachmentDataWithName, AttachmentToAdd}
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.services.ScenarioAttachmentService.{AttachmentDataWithName, AttachmentToAdd}
 
 import java.io.InputStream
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,19 +23,17 @@ class ScenarioAttachmentService(config: AttachmentsConfig, scenarioActivityRepos
       inputStream: InputStream
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
     Future
-      .successful(new BoundedInputStream(inputStream, config.maxSizeInBytes + 1))
-      .flatMap(is => {
-        Using.resource(is) { isResource =>
-          val bytes = IOUtils.toByteArray(isResource)
-          if (bytes.length > config.maxSizeInBytes) {
-            Future.failed(
-              new IllegalArgumentException(s"Maximum (${config.maxSizeInBytes} bytes) attachment size exceeded.")
-            )
-          } else {
-            scenarioActivityRepository.addAttachment(
-              AttachmentToAdd(processId, processVersionId, originalFileName, bytes)
-            )
-          }
+      .apply(new BoundedInputStream(inputStream, config.maxSizeInBytes + 1))
+      .map(Using.resource(_) { isResource => IOUtils.toByteArray(isResource) })
+      .flatMap(bytes => {
+        if (bytes.length > config.maxSizeInBytes) {
+          Future.failed(
+            new IllegalArgumentException(s"Maximum (${config.maxSizeInBytes} bytes) attachment size exceeded.")
+          )
+        } else {
+          scenarioActivityRepository.addAttachment(
+            AttachmentToAdd(processId, processVersionId, originalFileName, bytes)
+          )
         }
       })
   }

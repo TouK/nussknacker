@@ -6,15 +6,15 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.SecurityError.AuthorizationError
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.ScenarioActivityApiEndpoints.Dtos._
-import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioActivityApiEndpoints, ScenarioAttachmentService}
+import pl.touk.nussknacker.ui.api.{AkkaToTapirStreamExtension, AuthorizeProcess, ScenarioActivityApiEndpoints}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
-import pl.touk.nussknacker.ui.server.AkkaToTapirStreamExtension
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
 import sttp.model.MediaType
+import sttp.tapir.EndpointIO.StreamBodyWrapper
 
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, InputStream}
 import java.net.URLConnection
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,12 +25,14 @@ class ScenarioActivityApiHttpService(
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
     attachmentService: ScenarioAttachmentService,
-    implicit val akkaToTapirStreamExtension: AkkaToTapirStreamExtension
+    akkaToTapirStreamExtension: AkkaToTapirStreamExtension
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(config, authenticator)
     with LazyLogging {
 
   private val scenarioActivityApiEndpoints = new ScenarioActivityApiEndpoints(authenticator.authenticationMethod())
+  private implicit val streamBodyWrapper: StreamBodyWrapper[_, InputStream] =
+    akkaToTapirStreamExtension.streamBodyEndpointInOut
 
   expose {
     scenarioActivityApiEndpoints.scenarioActivityEndpoint
