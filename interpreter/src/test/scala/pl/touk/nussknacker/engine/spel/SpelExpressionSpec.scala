@@ -1131,6 +1131,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[LocalDate]("'2007-12-03'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe LocalDate.parse(
       "2007-12-03"
     )
+    parse[ChronoLocalDate]("'2007-12-03'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe LocalDate.parse(
+      "2007-12-03"
+    )
   }
 
   test("shouldn't allow invalid spel type conversions") {
