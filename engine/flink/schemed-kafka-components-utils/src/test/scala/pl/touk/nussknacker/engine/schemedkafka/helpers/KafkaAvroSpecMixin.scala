@@ -347,7 +347,7 @@ trait KafkaAvroSpecMixin
     stepResult match {
       case sourceFactory.FinalResults(_, Nil, state) => Valid(state.get.asInstanceOf[sourceFactory.State])
       case result: sourceFactory.FinalResults        => Invalid(NonEmptyList.fromListUnsafe(result.errors))
-      case _ => Invalid(NonEmptyList(CustomNodeError("Unexpected result of contextTransformation", None), Nil))
+      case _ => Invalid(NonEmptyList.one(CustomNodeError("Unexpected result of contextTransformation", None)))
     }
   }
 

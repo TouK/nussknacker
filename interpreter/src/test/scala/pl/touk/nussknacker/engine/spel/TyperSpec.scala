@@ -101,7 +101,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
 
   test("indexing on records for record values") {
     typeExpression(s"$testRecordExpr['nestedRecord']").validValue.finalResult.typingResult shouldBe
-      TypedObjectTypingResult(Map("nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)))
+      Typed.record(Map("nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)))
   }
 
   test("indexing on records for nested record values") {
@@ -182,13 +182,13 @@ object TyperSpecTestData {
     val testRecordExpr: String =
       "{int: 1, string: 'stringVal', boolean: true, 'null': null, nestedRecord: {nestedRecordKey: 2}}"
 
-    val testRecordTyped: TypedObjectTypingResult = TypedObjectTypingResult(
+    val testRecordTyped: TypedObjectTypingResult = Typed.record(
       Map(
         "string"  -> TypedObjectWithValue(Typed.typedClass[String], "stringVal"),
         "null"    -> TypedNull,
         "boolean" -> TypedObjectWithValue(Typed.typedClass[Boolean], true),
         "int"     -> TypedObjectWithValue(Typed.typedClass[Int], 1),
-        "nestedRecord" -> TypedObjectTypingResult(
+        "nestedRecord" -> Typed.record(
           Map(
             "nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)
           )

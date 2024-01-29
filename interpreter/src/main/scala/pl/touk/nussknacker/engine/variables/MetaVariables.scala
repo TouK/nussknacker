@@ -22,7 +22,7 @@ object MetaVariables {
     typingResult(metaData.additionalFields.properties.keys)
 
   @Hidden
-  def typingResult(scenarioPropertiesNames: Iterable[String]): TypingResult = TypedObjectTypingResult(
+  def typingResult(scenarioPropertiesNames: Iterable[String]): TypingResult = Typed.record(
     Map(
       "processName" -> Typed[String],
       "properties"  -> propertiesType(scenarioPropertiesNames)
@@ -34,7 +34,7 @@ object MetaVariables {
   }
 
   private def propertiesType(scenarioPropertiesNames: Iterable[String]): TypedObjectTypingResult = {
-    TypedObjectTypingResult(scenarioPropertiesNames.map(_ -> Typed[String]).toMap)
+    Typed.record(scenarioPropertiesNames.map(_ -> Typed[String]).toMap)
   }
 
 }

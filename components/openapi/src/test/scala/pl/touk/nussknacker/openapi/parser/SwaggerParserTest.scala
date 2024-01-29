@@ -133,7 +133,7 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
         )
       )
     )
-    recursiveListType.typingResult shouldBe TypedObjectTypingResult(
+    recursiveListType.typingResult shouldBe Typed.record(
       ListMap(
         "value" -> Typed[String],
         "next"  -> Unknown,

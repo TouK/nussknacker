@@ -163,11 +163,6 @@ object SpelExpressionParseError {
         s"Not a boolean expression used in ternary operator (expr ? onTrue : onFalse). Computed expression type: ${computedType.display}"
     }
 
-    case class TernaryOperatorMismatchTypesError(left: TypingResult, right: TypingResult) extends TernaryOperatorError {
-      override def message: String =
-        s"Ternary operator (expr ? onTrue : onFalse) used with mismatch result types: ${left.display} and ${right.display}"
-    }
-
     case object InvalidTernaryOperator extends TernaryOperatorError {
       override def message: String = "Invalid ternary operator"
     }
