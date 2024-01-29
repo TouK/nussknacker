@@ -11,10 +11,11 @@ import sttp.model.headers.WWWAuthenticateChallenge
 import sttp.tapir._
 
 import scala.collection.immutable.ListMap
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class DummyAuthenticationResources(override val name: String, configuration: DummyAuthenticationConfiguration)
-    extends AuthenticationResources
+class DummyAuthenticationResources(override val name: String, configuration: DummyAuthenticationConfiguration)(
+    override implicit val executionContext: ExecutionContext
+) extends AuthenticationResources
     with AnonymousAccess {
 
   val frontendStrategySettings: FrontendStrategySettings = FrontendStrategySettings.Browser
@@ -30,6 +31,6 @@ class DummyAuthenticationResources(override val name: String, configuration: Dum
   override def authenticationMethod(): EndpointInput[AuthCredentials] =
     auth.basic(new WWWAuthenticateChallenge("Dummy", ListMap.empty).realm("Dummy"))
 
-  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] =
+  override def authenticateReally(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] =
     Future.successful(None)
 }

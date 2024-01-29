@@ -4,12 +4,15 @@ import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDi
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api._
 import sttp.model.headers.WWWAuthenticateChallenge
+import sttp.tapir.EndpointInput.{ExtractFromRequest, Pair}
+import sttp.tapir.EndpointOutput.OneOf
 import sttp.tapir._
+import sttp.tapir.internal.CombineParams
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class BasicAuthenticationResources(realm: String, configuration: BasicAuthenticationConfiguration)(
-    implicit executionContext: ExecutionContext
+    override implicit val executionContext: ExecutionContext
 ) extends AuthenticationResources
     with AnonymousAccess {
 
@@ -28,10 +31,28 @@ class BasicAuthenticationResources(realm: String, configuration: BasicAuthentica
     )
 
   override def authenticationMethod(): EndpointInput[AuthCredentials] = {
+    Pair(
+      auth.basic[AuthCredentials](WWWAuthenticateChallenge.basic.realm(realm)),
+      auth..basic[AuthCredentials](WWWAuthenticateChallenge.basic.realm(realm)),
+      (a, _)=> a,
+      a => (a, a)
+    )
     auth.basic[AuthCredentials](WWWAuthenticateChallenge.basic.realm(realm))
+      .mapValidate(
+        Validator.custom(
+          logic =>
+            ValidationResult.Valid,
+          None
+        )
+      )( cr =>
+        cr
+      )(
+        ct =>
+          ct
+      )
   }
 
-  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
+  override def authenticateReally(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
     authenticator.authenticate(authCredentials)
   }
 

@@ -23,7 +23,7 @@ class OAuth2AuthenticationResources(
     realm: String,
     service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData],
     configuration: OAuth2Configuration
-)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
+)(implicit override val executionContext: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
     extends AuthenticationResources
     with Directives
     with LazyLogging
@@ -44,7 +44,7 @@ class OAuth2AuthenticationResources(
       )
       .map(Mapping.from[String, AuthCredentials](AuthCredentials.apply)(_.value))
 
-  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
+  override def authenticateReally(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
     authenticator.authenticate(authCredentials.value)
   }
 

@@ -47,9 +47,14 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
 }
 
 trait AnonymousAccess extends Directives {
+  this: AuthenticationResources =>
+
+  implicit def executionContext: ExecutionContext
   val anonymousUserRole: Option[String]
 
   def authenticateReally(): AuthenticationDirective[AuthenticatedUser]
+
+  def authenticateReally(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]
 
   def authenticateOrPermitAnonymously(anonymousUser: AuthenticatedUser): AuthenticationDirective[AuthenticatedUser] = {
     def handleAuthorizationFailedRejection = handleRejections(
@@ -57,7 +62,9 @@ trait AnonymousAccess extends Directives {
         .newBuilder()
         // If the authorization rejection was caused by anonymous access,
         // we issue the Unauthorized status code with a challenge instead of the Forbidden
-        .handle { case AuthorizationFailedRejection => authenticateReally() { _ => reject } }
+        .handle { case AuthorizationFailedRejection =>
+          authenticateReally() { _ => reject }
+        }
         .result()
     )
 
@@ -68,12 +75,32 @@ trait AnonymousAccess extends Directives {
     )
   }
 
+  def authenticateOrPermitAnonymously2(
+      authCredentials: AuthCredentials,
+      anonymousUser: AuthenticatedUser
+  ): Future[Option[AuthenticatedUser]] = {
+    authenticateReally(authCredentials)
+      .map {
+        case Some(loggedUser) =>
+          Some(loggedUser)
+        case None =>
+          Some(anonymousUser)
+      }
+  }
+
   def authenticate(): Directive1[AuthenticatedUser] = {
     anonymousUserRole
       .map(role => AuthenticatedUser("anonymous", "anonymous", Set(role)))
       .map(authenticateOrPermitAnonymously)
       .getOrElse(authenticateReally())
 
+  }
+
+  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
+    anonymousUserRole
+      .map(role => AuthenticatedUser("anonymous", "anonymous", Set(role)))
+      .map(authenticateOrPermitAnonymously2(authCredentials, _))
+      .getOrElse(authenticateReally(authCredentials))
   }
 
 }
