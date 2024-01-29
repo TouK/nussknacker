@@ -390,10 +390,22 @@ object NodesApiEndpoints {
         refClazz: TypingResultDto
     )
 
+    //    Things copied from NodesResource
+    //    These 2 are used in ManagmentResources for example
+
     def prepareTypingResultDecoder(modelData: ModelData): Decoder[TypingResult] = {
       new TypingResultDecoder(name =>
         ClassUtils.forName(name, modelData.modelClassLoader.classLoader)
       ).decodeTypingResults
+    }
+
+//    These 4 doesn't look as used anywhere
+
+    def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
+      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+      implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
+        deriveConfiguredDecoder[TestSourceParameters]
+      deriveConfiguredDecoder[TestFromParametersRequest]
     }
 
     def prepareNodeRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
@@ -405,13 +417,6 @@ object NodesApiEndpoints {
       implicit val typeDecoder: Decoder[TypingResult]                 = prepareTypingResultDecoder(modelData)
       implicit val uiValueParameterDecoder: Decoder[UIValueParameter] = deriveConfiguredDecoder[UIValueParameter]
       deriveConfiguredDecoder[ParametersValidationRequest]
-    }
-
-    def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
-      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
-      implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
-        deriveConfiguredDecoder[TestSourceParameters]
-      deriveConfiguredDecoder[TestFromParametersRequest]
     }
 
     def preparePropertiesRequestDecoder(modelData: ModelData): Decoder[PropertiesValidationRequest] = {

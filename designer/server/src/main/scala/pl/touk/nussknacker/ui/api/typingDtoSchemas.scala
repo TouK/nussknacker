@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import derevo.derive
-import io.circe._
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -27,8 +27,6 @@ object typingDtoSchemas {
 
     def display: String
   }
-
-  private val typingTypeSchema: Schema[TypingType] = Schema.derivedEnumerationValue
 
   @derive(schema)
   sealed trait KnownTypingResultDto extends TypingResultDto {
@@ -70,13 +68,15 @@ object typingDtoSchemas {
       implicit val typingResultSchema: Schema[TypingResultDto] = Schema.derived[TypingResultDto]
       Schema(
         SchemaType.SProduct(
-          List(
-            SProductField[String, String](FieldName("display"), Schema.string, display => Some(display)),
-            SProductField[String, TypingType](FieldName("type"), typingTypeSchema, _ => Some(TypingType.Unknown)),
-            SProductField[String, Map[String, TypingResultDto]](FieldName("fields"), Schema.schemaForMap[TypingResultDto], _ => None),
-            SProductField[String, String](FieldName("refClazzName"), Schema.string, refClazzName => Some(refClazzName)),
-            SProductField[String, List[TypingResultDto]](FieldName("params"), Schema.schemaForIterable[TypingResultDto, List], _ => Some(List(UnknownDto)))
-          )
+          sProductFieldForDisplayAndType :::
+            List(
+              SProductField[String, Map[String, TypingResultDto]](
+                FieldName("fields"),
+                Schema.schemaForMap[TypingResultDto],
+                _ => None
+              )
+            ) :::
+            sProductFieldForKlassAndParams
         ),
         Some(SName("TypedObjectTypingResultDto"))
       )
@@ -112,15 +112,11 @@ object typingDtoSchemas {
 
     implicit lazy val typedDictDtoSchema: Schema[TypedDictDto] = {
       final case class Dict(id: String, valueType: TypedTaggedValueDto)
-      val dictSchema: Schema[Dict]                             = Schema.derived
-      implicit val typingResultSchema: Schema[TypingResultDto] = Schema.derived[TypingResultDto]
+      val dictSchema: Schema[Dict] = Schema.derived
       Schema(
         SchemaType.SProduct(
-          List(
-            SProductField[String, String](FieldName("display"), Schema.string, display => Some(display)),
-            SProductField[String, TypingType](FieldName("type"), typingTypeSchema, _ => Some(TypingType.Unknown)),
-            SProductField[String, Dict](FieldName("dict"), dictSchema, _ => None)
-          )
+          sProductFieldForDisplayAndType :::
+            List(SProductField[String, Dict](FieldName("dict"), dictSchema, _ => None))
         ),
         Some(SName("TypedDictDto"))
       )
@@ -158,16 +154,11 @@ object typingDtoSchemas {
   object TypedTaggedValueDto {
 
     implicit lazy val typedTaggedSchema: Schema[TypedTaggedValueDto] = {
-      implicit val typingResultSchema: Schema[TypingResultDto] = Schema.derived[TypingResultDto]
       Schema(
         SchemaType.SProduct(
-          List(
-            SProductField[String, String](FieldName("tag"), Schema.string, tag => Some(tag)),
-            SProductField[String, String](FieldName("display"), Schema.string, display => Some(display)),
-            SProductField[String, TypingType](FieldName("type"), typingTypeSchema, _ => Some(TypingType.Unknown)),
-            SProductField[String, String](FieldName("refClazzName"), Schema.string, refClazzName => Some(refClazzName)),
-            SProductField[String, List[TypingResultDto]](FieldName("params"), Schema.schemaForIterable[TypingResultDto, List], _ => Some(List(UnknownDto)))
-          )
+          List(SProductField[String, String](FieldName("tag"), Schema.string, tag => Some(tag))) :::
+            sProductFieldForDisplayAndType :::
+            sProductFieldForKlassAndParams
         ),
         Some(SName("TypedTaggedValueDto"))
       )
@@ -209,16 +200,11 @@ object typingDtoSchemas {
   object TypedObjectWithValueDto {
 
     implicit lazy val typedObjectDtoSchema: Schema[TypedObjectWithValueDto] = {
-      implicit val typingResultSchema: Schema[TypingResultDto] = Schema.derived[TypingResultDto]
       Schema(
         SchemaType.SProduct(
-          List(
-            SProductField[String, Any](FieldName("value"), Schema.any, value => Some(value)),
-            SProductField[String, String](FieldName("display"), Schema.string, display => Some(display)),
-            SProductField[String, TypingType](FieldName("type"), typingTypeSchema, _ => Some(TypingType.Unknown)),
-            SProductField[String, String](FieldName("refClazzName"), Schema.string, refClazzName => Some(refClazzName)),
-            SProductField[String, List[TypingResultDto]](FieldName("params"), Schema.schemaForIterable[TypingResultDto, List], _ => Some(List(UnknownDto)))
-          )
+          List(SProductField[String, Any](FieldName("value"), Schema.any, value => Some(value))) :::
+            sProductFieldForDisplayAndType :::
+            sProductFieldForKlassAndParams
         ),
         Some(SName("TypedObjectWithValueDto"))
       )
@@ -264,7 +250,8 @@ object typingDtoSchemas {
       Schema.derived.name(Schema.SName("UnknownDto")).title("UnknownDto")
   }
 
-  case class TypedUnionDto private[typingDtoSchemas] (possibleTypes: Set[SingleTypingResultDto]) extends KnownTypingResultDto {
+  case class TypedUnionDto private[typingDtoSchemas] (possibleTypes: Set[SingleTypingResultDto])
+      extends KnownTypingResultDto {
 
     assert(
       possibleTypes.size != 1,
@@ -283,15 +270,19 @@ object typingDtoSchemas {
   }
 
   object TypedUnionDto {
+
     implicit lazy val unionSchema: Schema[TypedUnionDto] = {
       implicit val typingResultSchema: Schema[TypingResultDto] = Schema.derived[TypingResultDto]
       Schema(
         SchemaType.SProduct(
-          List(
-            SProductField[String, String](FieldName("display"), Schema.string, display => Some(display)),
-            SProductField[String, TypingType](FieldName("type"), typingTypeSchema, _ => Some(TypingType.Unknown)),
-            SProductField[String, List[TypingResultDto]](FieldName("union"), Schema.schemaForArray[TypingResultDto].as, _ => Some(List(UnknownDto)))
-          )
+          sProductFieldForDisplayAndType :::
+            List(
+              SProductField[String, List[TypingResultDto]](
+                FieldName("union"),
+                Schema.schemaForArray[TypingResultDto].as,
+                _ => Some(List(UnknownDto))
+              )
+            )
         ),
         Some(Schema.SName("TypedUnionDto"))
       )
@@ -308,15 +299,10 @@ object typingDtoSchemas {
   object TypedClassDto {
 
     implicit lazy val typedClassDtoSchema: Schema[TypedClassDto] = {
-      implicit val typingResultSchema: Schema[TypingResultDto] = Schema.derived[TypingResultDto]
       Schema(
         SchemaType.SProduct(
-          List(
-            SProductField[String, String](FieldName("display"), Schema.string, display => Some(display)),
-            SProductField[String, TypingType](FieldName("type"), typingTypeSchema, _ => Some(TypingType.Unknown)),
-            SProductField[String, String](FieldName("refClazzName"), Schema.string, refClazzName => Some(refClazzName)),
-            SProductField[String, List[TypingResultDto]](FieldName("params"), Schema.schemaForIterable[TypingResultDto, List], _ => Some(List(UnknownDto)))
-          )
+          sProductFieldForDisplayAndType :::
+            sProductFieldForKlassAndParams
         ),
         Some(SName("TypedClassDto"))
       )
@@ -324,7 +310,8 @@ object typingDtoSchemas {
         .as
     }
 
-    private[typingDtoSchemas] def apply(klass: Class[_], params: List[TypingResultDto]) = new TypedClassDto(klass, params)
+    private[typingDtoSchemas] def apply(klass: Class[_], params: List[TypingResultDto]) =
+      new TypedClassDto(klass, params)
 
     def apply(typedClass: TypedClass)(implicit modelData: ModelData): TypedClassDto = {
       new TypedClassDto(typedClass.klass, typedClass.params.map(typ => toDto(typ)))
@@ -360,5 +347,24 @@ object typingDtoSchemas {
 
   }
 
+  private val sProductFieldForDisplayAndType: List[SProductField[String]] = {
+    val typingTypeSchema: Schema[TypingType] = Schema.derivedEnumerationValue
+    List(
+      SProductField[String, String](FieldName("display"), Schema.string, display => Some(display)),
+      SProductField[String, TypingType](FieldName("type"), typingTypeSchema, _ => Some(TypingType.Unknown))
+    )
+  }
+
+  private val sProductFieldForKlassAndParams: List[SProductField[String]] = {
+    implicit val typingResultSchema: Schema[TypingResultDto] = Schema.derived[TypingResultDto]
+    List(
+      SProductField[String, String](FieldName("refClazzName"), Schema.string, refClazzName => Some(refClazzName)),
+      SProductField[String, List[TypingResultDto]](
+        FieldName("params"),
+        Schema.schemaForIterable[TypingResultDto, List],
+        _ => Some(List(UnknownDto))
+      )
+    )
+  }
 
 }

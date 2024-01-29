@@ -177,9 +177,9 @@ class NodesApiHttpService(
                   request.caretPosition2d,
                   request.variableTypes.map { case (key, result) => (key, toTypingResult(result)) }
                 )
-                .map { suggestion =>
+                .map { suggestions =>
                   success(
-                    suggestion.map { suggest =>
+                    suggestions.map { suggest =>
                       ExpressionSuggestionDto(
                         suggest.methodName,
                         toDto(suggest.refClazz),
@@ -192,7 +192,7 @@ class NodesApiHttpService(
                 }
             case Failure(_: IllegalArgumentException) =>
               Future(businessError(s"ProcessingType type: $processingType not found"))
-            case Failure(exception) => Future(businessError(exception.getMessage))
+            case Failure(exception) => Future(Left(Left(exception.getMessage)))
           }
         }
       }
