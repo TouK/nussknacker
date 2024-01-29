@@ -1,9 +1,9 @@
 import React, { MouseEventHandler } from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { css, cx } from "@emotion/css";
 import { NodeId } from "../../../types";
 import Color from "color";
-import { useTheme } from "@mui/material";
+import { Typography, useTheme } from "@mui/material";
 
 export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElement>; nodeId: NodeId; disabled?: boolean }) => {
     const { onClick, nodeId, disabled } = props;
@@ -25,7 +25,9 @@ export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElem
     });
 
     return disabled ? (
-        <span
+        <Typography
+            variant={"body2"}
+            component={"span"}
             className={cx(
                 styles,
                 css({
@@ -34,11 +36,11 @@ export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElem
             )}
         >
             {nodeId}
-        </span>
+        </Typography>
     ) : (
-        <Link className={styles} to={`?nodeId=${nodeId}`} onClick={onClick}>
+        <Typography variant={"body2"} component={NavLink} className={styles} to={`?nodeId=${nodeId}`} onClick={onClick}>
             {/* blank values don't render as links so this is a workaround */}
             {nodeId.trim() === "" ? "blank" : nodeId}
-        </Link>
+        </Typography>
     );
 };

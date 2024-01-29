@@ -6,14 +6,17 @@ import { contentGetter } from "./ContentGetter";
 export function WindowManager(props: PropsWithChildren<{ className: string }>) {
     const {
         zIndex,
-        custom: { spacing, colors },
+        spacing,
+        custom: { colors },
     } = useTheme();
+
     return (
         <WindowManagerProvider
             theme={{
-                spacing: {
-                    baseUnit: spacing.baseUnit,
-                },
+                //TODO: Passing spacing breaks whole MUI functionality
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                spacing,
                 colors: {
                     borderColor: colors.borderColor,
                     focusColor: colors.focusColor,

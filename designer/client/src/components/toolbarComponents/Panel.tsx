@@ -7,16 +7,11 @@ const __panelColor = "--panel-Color";
 const __panelText = "--panel-Text";
 
 export const PanelHeader = styled("div")(({ theme }) => ({
-    all: "unset",
     display: "flex",
-    height: "2em",
-    textTransform: "uppercase",
-    fontSize: ".625em",
     background: `var(${__panelBorder})`,
     color: `var(${__panelHeaderText})`,
     justifyContent: "space-between",
-    lineHeight: "2em",
-    padding: "0 .5em",
+    padding: theme.spacing(0, 1),
     flexGrow: 0,
     ":focus": {
         background: theme.palette.action.focus,
