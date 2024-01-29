@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.services
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
