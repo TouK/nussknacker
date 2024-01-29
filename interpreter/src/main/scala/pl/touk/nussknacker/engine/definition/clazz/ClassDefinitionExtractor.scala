@@ -76,16 +76,16 @@ object ClassDefinitionExtractor extends LazyLogging {
     val methodNameAndInfoList = filteredMethods
       .flatMap(extractMethod(clazz, _))
 
-    val staticMethodInfos =
+    val staticMethodDefinitions =
       methodNameAndInfoList
         .filter(_._2.isInstanceOf[StaticMethodDefinition])
         .asInstanceOf[List[(String, StaticMethodDefinition)]]
-    val functionalMethodInfos        = methodNameAndInfoList.filter(_._2.isInstanceOf[FunctionalMethodDefinition])
-    val groupedFunctionalMethodInfos = functionalMethodInfos.groupBy(_._1).mapValuesNow(_.map(_._2)).toMap
+    val functionalMethodDefinitions        = methodNameAndInfoList.filter(_._2.isInstanceOf[FunctionalMethodDefinition])
+    val groupedFunctionalMethodDefinitions = functionalMethodDefinitions.groupBy(_._1).mapValuesNow(_.map(_._2))
 
-    deduplicateMethodsWithGenericReturnType(staticMethodInfos)
+    deduplicateMethodsWithGenericReturnType(staticMethodDefinitions)
       .asInstanceOf[Map[String, List[MethodDefinition]]]
-      .combine(groupedFunctionalMethodInfos)
+      .combine(groupedFunctionalMethodDefinitions)
   }
 
   // We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
@@ -99,10 +99,10 @@ object ClassDefinitionExtractor extends LazyLogging {
       case TypedNull         => true
       case Unknown           => true
     }
-    def filterOneMethod(methodInfo: MethodDefinition): Boolean = {
-      val noVarArgTypes = methodInfo.signatures.toList.flatMap(_.noVarArgs).map(_.refClazz)
-      val varArgTypes   = methodInfo.signatures.toList.flatMap(_.varArg.toList).map(_.refClazz)
-      val resultTypes   = methodInfo.signatures.toList.map(_.result)
+    def filterOneMethod(method: MethodDefinition): Boolean = {
+      val noVarArgTypes = method.signatures.toList.flatMap(_.noVarArgs).map(_.refClazz)
+      val varArgTypes   = method.signatures.toList.flatMap(_.varArg.toList).map(_.refClazz)
+      val resultTypes   = method.signatures.toList.map(_.result)
       (noVarArgTypes ::: varArgTypes ::: resultTypes).forall(typeResultVisible)
     }
     infos.mapValuesNow(methodList => methodList.filter(filterOneMethod)).filter(_._2.nonEmpty)
@@ -130,8 +130,8 @@ object ClassDefinitionExtractor extends LazyLogging {
          */
 
         methodsForParams
-          .find { case (_, methodInfo) =>
-            methodsForParams.forall(mi => methodInfo.signature.result.canBeSubclassOf(mi._2.signature.result))
+          .find { case (_, method) =>
+            methodsForParams.forall(mi => method.signature.result.canBeSubclassOf(mi._2.signature.result))
           }
           .getOrElse(methodsForParams.minBy(_._2.signature.result.display))
       }

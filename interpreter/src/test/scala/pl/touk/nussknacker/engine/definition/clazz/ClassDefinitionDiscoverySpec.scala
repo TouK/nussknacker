@@ -323,7 +323,7 @@ class ClassDefinitionDiscoverySpec
 
     val javaClazzDefinition = singleClassDefinition[JavaSampleDocumentedClass]().value
 
-    def checkMethodInfo(
+    def checkMethod(
         name: String,
         params: List[Parameter],
         result: TypingResult,
@@ -357,7 +357,7 @@ class ClassDefinitionDiscoverySpec
       ("max", List(param[Array[Number]]("args")), Typed[Number], Some(ScalaSampleDocumentedClass.maxDocs), true)
     )
 
-    forAll(table)(checkMethodInfo)
+    forAll(table)(checkMethod)
   }
 
   test("enabled by default classes") {

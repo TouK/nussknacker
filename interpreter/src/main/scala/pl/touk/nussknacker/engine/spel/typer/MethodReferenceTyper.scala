@@ -73,12 +73,12 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
   }
 
   private def validateMethodParameterTypes(
-      methodInfos: NonEmptyList[MethodDefinition]
+      methods: NonEmptyList[MethodDefinition]
   )(implicit reference: MethodReference): Either[Option[ExpressionParseError], NonEmptyList[TypingResult]] = {
     // We combine MethodDefinition with errors so we can use it to decide which
     // error to display.
     val methodDefsWithValidationResults =
-      methodInfos.map(x => (x, x.computeResultType(reference.invocationTarget, reference.params)))
+      methods.map(x => (x, x.computeResultType(reference.invocationTarget, reference.params)))
     val returnTypes = methodDefsWithValidationResults.map { case (methodDef, validType) =>
       validType.leftMap(_.map((methodDef, _)))
     }
