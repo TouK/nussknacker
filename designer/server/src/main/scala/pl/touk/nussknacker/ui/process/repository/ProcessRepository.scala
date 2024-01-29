@@ -75,8 +75,6 @@ trait ProcessRepository[F[_]] {
 
   def updateProcess(action: UpdateProcessAction)(implicit loggedUser: LoggedUser): F[ProcessUpdated]
 
-  def updateCategory(processId: ProcessIdWithName, category: String)(implicit loggedUser: LoggedUser): F[Unit]
-
   def archive(processId: ProcessIdWithName, isArchived: Boolean): F[Unit]
 
   def deleteProcess(processId: ProcessIdWithName): F[Unit]
@@ -218,13 +216,6 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
 
   def archive(processId: ProcessIdWithName, isArchived: Boolean): DB[Unit] =
     processesTable.filter(_.id === processId.id).map(_.isArchived).update(isArchived).map {
-      case 0 => throw ProcessNotFoundError(processId.name)
-      case 1 => ()
-    }
-
-  // accessible only from initializing scripts so far
-  def updateCategory(processId: ProcessIdWithName, category: String)(implicit loggedUser: LoggedUser): DB[Unit] =
-    processesTable.filter(_.id === processId.id).map(_.processCategory).update(category).map {
       case 0 => throw ProcessNotFoundError(processId.name)
       case 1 => ()
     }
