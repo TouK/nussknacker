@@ -280,9 +280,7 @@ export const nuTheme = createTheme({
         h5: { ...headerCommonStyle },
         h6: { ...headerCommonStyle },
         subtitle2: {
-            fontSize: ".75rem",
-            lineHeight: "inherit",
-            color: custom.colors.baseColor,
+            fontWeight: "bold",
         },
         overline: {
             fontSize: ".625",
