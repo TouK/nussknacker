@@ -8,15 +8,8 @@ import org.springframework.expression.common.TemplateParserContext
 import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  Typed,
-  TypedNull,
-  TypedObjectTypingResult,
-  TypedObjectWithValue,
-  Unknown
-}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.DynamicPropertyAccessError
@@ -149,10 +142,6 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   }
 
   private def buildTyper(dynamicPropertyAccessAllowed: Boolean = false) = new Typer(
-    commonSupertypeFinder = new CommonSupertypeFinder(
-      classResolutionStrategy = SupertypeClassResolutionStrategy.Union,
-      strictTaggedTypesChecking = false
-    ),
     dictTyper = new KeysDictTyper(new SimpleDictRegistry(Map.empty)),
     strictMethodsChecking = false,
     staticMethodInvocationsChecking = false,

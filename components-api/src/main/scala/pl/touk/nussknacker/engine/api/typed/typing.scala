@@ -4,11 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.supertype.{
-  CommonSupertypeFinder,
-  NumberTypesPromotionStrategy,
-  SupertypeClassResolutionStrategy
-}
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -49,14 +45,9 @@ object typing {
   // TODO: Rename to TypedRecord
   object TypedObjectTypingResult {
 
-    def apply(definition: TypedObjectDefinition): TypedObjectTypingResult =
-      TypedObjectTypingResult(definition.fields)
-
     def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
       TypedObjectTypingResult(fields, mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
 
-    // For backward compatibility, to be removed once downstream projects switch to apply(fields: Map[String, TypingResult])
-    def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult = TypedObjectTypingResult(fields.toMap)
   }
 
   case class TypedObjectTypingResult(
@@ -76,8 +67,6 @@ object typing {
 
   case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
 
-    type ValueType = SingleTypingResult
-
     override def objType: TypedClass = valueType.objType
 
     override def valueOpt: Option[Any] = valueType.valueOpt
@@ -88,16 +77,14 @@ object typing {
 
   }
 
+  // TODO: rename to SingleTypingResultWrapper
   sealed trait TypedObjectWithData extends SingleTypingResult {
     def underlying: SingleTypingResult
-    def data: Any
 
     override def objType: TypedClass = underlying.objType
   }
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
-    override def data: String = tag
-
     override def valueOpt: Option[Any] = underlying.valueOpt
 
     override def withoutValue: TypedTaggedValue = TypedTaggedValue(underlying.withoutValue, tag)
@@ -106,17 +93,15 @@ object typing {
   }
 
   case class TypedObjectWithValue private[typing] (underlying: TypedClass, value: Any) extends TypedObjectWithData {
-    val maxDataDisplaySize: Int         = 15
-    val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
-
-    override def data: Any = value
+    private val maxDataDisplaySize: Int         = 15
+    private val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
 
     override def valueOpt: Option[Any] = Some(value)
 
     override def withoutValue: SingleTypingResult = underlying.withoutValue
 
     override def display: String = {
-      val dataString = data.toString
+      val dataString = value.toString
       val shortenedDataString =
         if (dataString.length <= maxDataDisplaySize) dataString
         else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
@@ -266,7 +251,7 @@ object typing {
         // it may happen that parameter will be decoded via other means, we have to to sanity check if they match
         case None | Some(`determinedComponentType` :: Nil) =>
           TypedClass(KlassForArrays, List(determinedComponentType))
-        // When type is deserialized, in component type will be always Unknown, because w use Array[Object] so we need to use parameters instead
+        // When type is deserialized, in component type will be always Unknown, because we use Array[Object] so we need to use parameters instead
         case Some(notComponentType :: Nil) if determinedComponentType == Unknown =>
           TypedClass(KlassForArrays, List(notComponentType))
         case Some(others) =>
@@ -364,9 +349,8 @@ object typing {
   }
 
   private def superTypeOfTypes(list: Iterable[TypingResult]) = {
-    val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
     list
-      .reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))
+      .reduceOption(CommonSupertypeFinder.Default.commonSupertype)
       .getOrElse(Unknown)
   }
 

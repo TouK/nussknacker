@@ -3,26 +3,9 @@ package pl.touk.nussknacker.engine.management.sample.global
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.{ArgumentTypeError, OtherError}
-import pl.touk.nussknacker.engine.api.generics.{
-  GenericFunctionTypingError,
-  GenericType,
-  MethodTypeInfo,
-  Parameter,
-  TypingFunction
-}
-import pl.touk.nussknacker.engine.api.typed.supertype.{
-  CommonSupertypeFinder,
-  NumberTypesPromotionStrategy,
-  SupertypeClassResolutionStrategy
-}
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  Typed,
-  TypedClass,
-  TypedObjectTypingResult,
-  TypedObjectWithValue,
-  TypingResult,
-  Unknown
-}
+import pl.touk.nussknacker.engine.api.generics._
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.typing._
 
 import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
@@ -145,9 +128,8 @@ object DocumentationFunctions {
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
-      val supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
       val commonSupertype = arguments
-        .reduceOption(supertypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))
+        .reduceOption(CommonSupertypeFinder.Default.commonSupertype)
         .getOrElse(Unknown)
       Typed.genericTypeClass[java.util.List[_]](commonSupertype :: Nil).validNel
     }

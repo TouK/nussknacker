@@ -92,7 +92,6 @@ object ModelDefinitionFromConfigCreatorExtractor {
       expressionConfig.additionalClasses,
       expressionConfig.languages,
       expressionConfig.optimizeCompilation,
-      expressionConfig.strictTypeChecking,
       expressionConfig.dictionaries,
       expressionConfig.hideMetaVariable,
       expressionConfig.strictMethodsChecking,

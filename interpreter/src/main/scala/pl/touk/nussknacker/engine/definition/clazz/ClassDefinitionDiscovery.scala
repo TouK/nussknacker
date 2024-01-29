@@ -55,20 +55,16 @@ object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring 
   }
 
   private def typesFromTypingResult(typingResult: TypingResult): Set[TypingResult] = typingResult match {
-    case tc: TypedClass =>
-      typesFromTypedClass(tc)
     case TypedUnion(set) =>
       set.flatMap(typesFromTypingResult)
     case TypedObjectTypingResult(fields, clazz, _) =>
       typesFromTypedClass(clazz) ++ fields.values.flatMap(typesFromTypingResult)
-    case dict: TypedDict =>
-      typesFromTypedClass(dict.objType)
-    case typedObjectWithData: TypedObjectWithData =>
-      typesFromTypedClass(typedObjectWithData.underlying.objType)
     case TypedNull =>
       Set.empty
     case Unknown =>
       Set.empty
+    case typedObjectWithData: SingleTypingResult =>
+      typesFromTypedClass(typedObjectWithData.objType)
   }
 
   private def typesFromTypedClass(typedClass: TypedClass): Set[TypingResult] =

@@ -88,7 +88,6 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       List.empty,
       LanguageConfiguration.default,
       optimizeCompilation = false,
-      strictTypeChecking = true,
       Map.empty,
       hideMetaVariable = false,
       strictMethodsChecking = true,
