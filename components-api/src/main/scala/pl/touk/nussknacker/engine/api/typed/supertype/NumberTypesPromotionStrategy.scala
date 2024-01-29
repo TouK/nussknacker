@@ -42,7 +42,7 @@ trait NumberTypesPromotionStrategy extends Serializable {
 
   private def toSingleTypesSet(typ: TypingResult): Either[Unknown.type, NonEmptyList[SingleTypingResult]] =
     typ match {
-      case s: SingleTypingResult => Right(NonEmptyList(s, Nil))
+      case s: SingleTypingResult => Right(NonEmptyList.one(s))
       case u: TypedUnion         => Right(u.possibleTypes)
       case TypedNull             => Left(Unknown)
       case Unknown               => Left(Unknown)

@@ -147,6 +147,10 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
     } yield TypedDict(id, valueType)
   }
 
+  // This implementation is lax. We are not warranting that the result will be a TypedUnion. We use Typed.apply
+  // under the hood which can e.g. produce a single element for a NEL.one. In general, it can produce the other
+  // number of elements than it is passed. We could be strict but we decided that being lax gives more benefits
+  // than risks
   private def typedUnion(obj: HCursor): Decoder.Result[TypingResult] = {
     obj.downField("union").as[List[SingleTypingResult]].flatMap { list =>
       NonEmptyList

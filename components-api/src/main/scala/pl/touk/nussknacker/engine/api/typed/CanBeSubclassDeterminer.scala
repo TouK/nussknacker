@@ -27,9 +27,9 @@ trait CanBeSubclassDeterminer {
       case (TypedNull, other) => canNullBeSubclassOf(other)
       case (_, TypedNull)     => s"No type can be subclass of ${TypedNull.display}".invalidNel
       case (given: SingleTypingResult, superclass: TypedUnion) =>
-        canBeSubclassOf(NonEmptyList(given, Nil), superclass.possibleTypes)
+        canBeSubclassOf(NonEmptyList.one(given), superclass.possibleTypes)
       case (given: TypedUnion, superclass: SingleTypingResult) =>
-        canBeSubclassOf(given.possibleTypes, NonEmptyList(superclass, Nil))
+        canBeSubclassOf(given.possibleTypes, NonEmptyList.one(superclass))
       case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeSubclassOf(given, superclass)
       case (given: TypedUnion, superclass: TypedUnion) => canBeSubclassOf(given.possibleTypes, superclass.possibleTypes)
     }

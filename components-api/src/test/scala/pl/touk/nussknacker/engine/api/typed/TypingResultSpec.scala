@@ -400,7 +400,7 @@ class TypingResultSpec
       .value shouldEqual Typed.record(Map.empty)
   }
 
-  test("generator based common super type without unions - check type equality") {
+  test("generator based common super type for one type without unions - check type equality") {
     forAll(TypingResultGen.typingResultGen(EnabledTypedFeatures(unions = false))) { input =>
       logger.trace(s"Checking: ${input.display}")
       withClue(s"Input: ${input.display};") {
@@ -414,7 +414,7 @@ class TypingResultSpec
     }
   }
 
-  test("generator based common super type with unions - check if class can by subclass of superclass") {
+  test("generator based common super type for one type with unions - check if class can by subclass of superclass") {
     forAll(TypingResultGen.typingResultGen(EnabledTypedFeatures.All)) { input =>
       logger.trace(s"Checking: ${input.display}")
       withClue(s"Input: ${input.display};") {
@@ -424,6 +424,27 @@ class TypingResultSpec
         withClue(s"Supertype: ${superType.display};") {
           // We generate combinations of types co we can only check if input type is a subclass of super type
           input.canBeSubclassOf(superType)
+        }
+      }
+    }
+  }
+
+  test(
+    "generator based common super type for two types with unions - check if both classes can by subclass of superclass"
+  ) {
+    forAll(
+      TypingResultGen.typingResultGen(EnabledTypedFeatures.All),
+      TypingResultGen.typingResultGen(EnabledTypedFeatures.All)
+    ) { (first, second) =>
+      logger.trace(s"Checking supertype of: ${first.display} and ${second.display}")
+      withClue(s"Input: ${first.display}; ${second.display};") {
+
+        first.canBeSubclassOf(first) shouldBe true
+        second.canBeSubclassOf(second) shouldBe true
+        val superType = CommonSupertypeFinder.Default.commonSupertype(first, second)
+        withClue(s"Supertype: ${superType.display};") {
+          first.canBeSubclassOf(superType)
+          second.canBeSubclassOf(superType)
         }
       }
     }

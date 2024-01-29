@@ -19,9 +19,9 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       case (TypedNull, r) => Some(commonSupertypeWithNull(r))
       case (r, TypedNull) => Some(commonSupertypeWithNull(r))
       case (l: SingleTypingResult, r: TypedUnion) =>
-        commonSupertype(NonEmptyList(l, Nil), r.possibleTypes).map(Typed(_))
+        commonSupertype(NonEmptyList.one(l), r.possibleTypes).map(Typed(_))
       case (l: TypedUnion, r: SingleTypingResult) =>
-        commonSupertype(l.possibleTypes, NonEmptyList(r, Nil)).map(Typed(_))
+        commonSupertype(l.possibleTypes, NonEmptyList.one(r)).map(Typed(_))
       case (l: SingleTypingResult, r: SingleTypingResult) => singleCommonSupertype(l, r)
       case (l: TypedUnion, r: TypedUnion) => commonSupertype(l.possibleTypes, r.possibleTypes).map(Typed(_))
     }
@@ -41,11 +41,11 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
   //       This approach will generate a long types e.g. for union of records and we treat Unions loose in typing - see CanBeSubclassDeterminer.canBeSubclassOf
   //       but maybe it is not so bad
   private def commonSupertype(
-      leftList: NonEmptyList[SingleTypingResult],
-      rightList: NonEmptyList[SingleTypingResult]
+      left: NonEmptyList[SingleTypingResult],
+      right: NonEmptyList[SingleTypingResult]
   ): Option[NonEmptyList[TypingResult]] = {
     // .sequence won't do the work because it returns None if any element of list returned None
-    val combinations = leftList.flatMap(l => rightList.map(singleCommonSupertype(l, _))).toList.flatten
+    val combinations = left.flatMap(l => right.map(singleCommonSupertype(l, _))).toList.flatten
     NonEmptyList.fromList(combinations)
   }
 
@@ -59,7 +59,7 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       case (l, r) if l == r => Some(l)
       // TODO We can't do at the beginning if (l.canBeSubclassOf(r) => Some(l) and the same in opposite direction
       //      because canBeSubclassOf handles conversions and many more - see comment next to it
-      case (f: TypedClass, s: TypedClass)                           => classCommonSupertype(f, s)
+      case (l: TypedClass, r: TypedClass)                           => classCommonSupertype(l, r)
       case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
         // In most cases we compare java.util.Map or GenericRecord, the only difference can be on generic params, but
         // still we'll got a class here, so this getOrElse should occur in the rare situations

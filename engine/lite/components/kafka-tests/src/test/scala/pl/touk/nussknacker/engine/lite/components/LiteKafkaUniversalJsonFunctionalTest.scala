@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.{Invalid, Valid, invalidNel}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json
 import io.circe.Json.{Null, fromFields, fromInt, fromJsonObject, fromLong, fromString, obj}
@@ -319,7 +319,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        strict,               invalidTypes("actual: 'Map[String,Long | String]' expected: 'Map[String, String]'")),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
-      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some("Value"), "#input['foo_int']"), Nil))),
+      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  invalidNel(ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some("Value"), "#input['foo_int']"))),
       (inputObjectWithDefinedProp,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaString,                                   SpecialSpELElement("#input.definedProp"),     strict,               valid(inputObjectDefinedPropValue)),
     )
     //@formatter:on

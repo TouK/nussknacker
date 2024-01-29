@@ -15,7 +15,7 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
     implicit val implicitReference: MethodReference = reference
     reference.invocationTarget match {
       case tc: SingleTypingResult =>
-        typeFromClazzDefinitions(extractClazzDefinitions(NonEmptyList(tc, Nil)))
+        typeFromClazzDefinitions(extractClazzDefinitions(NonEmptyList.one(tc)))
       case union: TypedUnion =>
         typeFromClazzDefinitions(extractClazzDefinitions(union.possibleTypes))
       case TypedNull =>
@@ -83,7 +83,7 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
       validType.leftMap(_.map((methodDef, _)))
     }
     val combinedReturnTypes = returnTypes
-      .map(x => x.map(NonEmptyList(_, Nil)))
+      .map(x => x.map(NonEmptyList.one))
       .reduce(
         (
             x: ValidatedNel[(MethodDefinition, ExpressionParseError), NonEmptyList[TypingResult]],
