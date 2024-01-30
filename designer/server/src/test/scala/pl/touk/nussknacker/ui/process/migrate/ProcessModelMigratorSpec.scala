@@ -4,7 +4,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.asProcessor
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -81,9 +81,9 @@ class ProcessModelMigratorSpec
   private def migrateByVersionsOpt(startFrom: Option[Int], migrations: Int*): Option[MigrationResult] =
     migrator(migrations: _*).migrateProcess(
       TestProcessUtil
-        .displayableToScenarioWithDetailsEntity(
-          ProcessTestData.validDisplayableProcess,
-          ProcessTestData.sampleProcessName
+        .wrapGraphWithScenarioDetailsEntity(
+          ProcessTestData.sampleProcessName,
+          ProcessTestData.validScenarioGraph,
         )
         .copy(modelVersion = startFrom),
       skipEmptyMigrations = true

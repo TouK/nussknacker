@@ -90,7 +90,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     result.result shouldBe Symbol("valid")
     val info1 = result.typing("end")
 
-    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(
+    info1.inputValidationContext("out1") shouldBe Typed.record(
       Map(
         "val1" -> Typed.fromInstance("aa"),
         "val2" -> Typed.fromInstance(11),
@@ -119,7 +119,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     result.result shouldBe Symbol("valid")
     val info1 = result.typing("end")
 
-    info1.inputValidationContext("otherNameThanInput") shouldBe TypedObjectTypingResult(
+    info1.inputValidationContext("otherNameThanInput") shouldBe Typed.record(
       Map(
         "val1" -> Typed.fromInstance("aa"),
         "val2" -> Typed.fromInstance(11),
@@ -237,7 +237,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     )
     val info1 = result.typing("end")
 
-    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(Map.empty[String, TypingResult])
+    info1.inputValidationContext("out1") shouldBe Typed.record(Map.empty[String, TypingResult])
 
   }
 
@@ -261,7 +261,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
     val info1 = result.typing("end")
 
-    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(
+    info1.inputValidationContext("out1") shouldBe Typed.record(
       Map(
         "val1" -> Typed.fromInstance(""),
         "val2" -> Unknown
@@ -297,7 +297,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     )
     val info1 = result.typing("end")
 
-    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(Map.empty[String, TypingResult])
+    info1.inputValidationContext("out1") shouldBe Typed.record(Map.empty[String, TypingResult])
   }
 
   test("should compute dynamic parameters in joins") {

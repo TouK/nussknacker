@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.marshall
 
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
+import pl.touk.nussknacker.engine.api.graph
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -10,9 +10,9 @@ import pl.touk.nussknacker.engine.graph.EdgeType.FragmentOutput
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-object ProcessConverter {
+object CanonicalProcessConverter {
 
-  def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
+  def toScenarioGraph(process: CanonicalProcess): ScenarioGraph = {
     val (nodes, edges) = {
       process.allStartNodes
         .map(toGraphInner)
@@ -21,14 +21,14 @@ object ProcessConverter {
         }
     }
     val props = ProcessProperties(process.metaData.additionalFields)
-    DisplayableProcess(props, nodes, edges)
+    ScenarioGraph(props, nodes, edges)
   }
 
   def findNodes(process: CanonicalProcess): List[NodeData] = {
     process.allStartNodes.toList.flatMap(branch => toGraphInner(branch)._1)
   }
 
-  private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[displayablenode.Edge]) =
+  private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[Edge]) =
     nodes match {
       case canonicalnode.FlatNode(BranchEndData(_)) :: _ => (List(), List())
       case canonicalnode.FlatNode(data) :: tail =>
@@ -80,10 +80,10 @@ object ProcessConverter {
       id: String,
       tail: List[CanonicalNode],
       edgeType: Option[EdgeType] = None
-  ): List[displayablenode.Edge] = {
+  ): List[Edge] = {
     tail.headOption.map {
-      case FlatNode(BranchEndData(BranchEndDefinition(_, joinId))) => displayablenode.Edge(id, joinId, edgeType)
-      case n                                                       => displayablenode.Edge(id, n.id, edgeType)
+      case FlatNode(BranchEndData(BranchEndDefinition(_, joinId))) => graph.Edge(id, joinId, edgeType)
+      case n                                                       => graph.Edge(id, n.id, edgeType)
     }.toList
   }
 
@@ -92,24 +92,24 @@ object ProcessConverter {
     (aList.flatten, bList.flatten)
   }
 
-  def fromDisplayable(process: DisplayableProcess, name: ProcessName): CanonicalProcess = {
-    val nodesMap          = process.nodes.groupBy(_.id).mapValuesNow(_.head)
-    val edgesFromMapStart = process.edges.groupBy(_.from)
+  def fromScenarioGraph(graph: ScenarioGraph, name: ProcessName): CanonicalProcess = {
+    val nodesMap          = graph.nodes.groupBy(_.id).mapValuesNow(_.head)
+    val edgesFromMapStart = graph.edges.groupBy(_.from)
     val rootsUnflattened =
-      findRootNodes(process).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
+      findRootNodes(graph).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
     val nodes              = rootsUnflattened.headOption.getOrElse(List.empty)
     val additionalBranches = if (rootsUnflattened.isEmpty) List.empty else rootsUnflattened.tail
-    CanonicalProcess(process.toMetaData(name), nodes, additionalBranches)
+    CanonicalProcess(graph.toMetaData(name), nodes, additionalBranches)
   }
 
-  private def findRootNodes(process: DisplayableProcess): List[NodeData] =
+  private def findRootNodes(process: ScenarioGraph): List[NodeData] =
     process.nodes.filter(n => n.isInstanceOf[StartingNodeData])
 
   private def unFlattenNode(
       nodesMap: Map[String, NodeData],
       stopAtJoin: Option[Edge]
-  )(n: NodeData, edgesFromMap: Map[String, List[displayablenode.Edge]]): List[canonicalnode.CanonicalNode] = {
-    def unflattenEdgeEnd(id: String, e: displayablenode.Edge): List[canonicalnode.CanonicalNode] = {
+  )(n: NodeData, edgesFromMap: Map[String, List[Edge]]): List[canonicalnode.CanonicalNode] = {
+    def unflattenEdgeEnd(id: String, e: Edge): List[canonicalnode.CanonicalNode] = {
       unFlattenNode(nodesMap, Some(e))(nodesMap(e.to), edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e)))
     }
 
@@ -130,7 +130,7 @@ object ProcessConverter {
         canonicalnode.FilterNode(data, nextFalse) :: next
       case (data: Switch, _) =>
         val nexts = getEdges(data.id).collect {
-          case e @ displayablenode.Edge(_, _, Some(EdgeType.NextSwitch(edgeExpr))) =>
+          case e @ Edge(_, _, Some(EdgeType.NextSwitch(edgeExpr))) =>
             canonicalnode.Case(edgeExpr, unflattenEdgeEnd(data.id, e))
         }
         val default = getEdges(data.id)

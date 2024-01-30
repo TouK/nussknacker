@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 object ScenarioWithDetailsConversions {
 
-  def fromEntity(details: ScenarioWithDetailsEntity[ValidatedDisplayableProcess]): ScenarioWithDetails =
+  def fromEntity(details: ScenarioWithDetailsEntity[ScenarioGraphWithValidationResult]): ScenarioWithDetails =
     fromEntityIgnoringGraphAndValidationResult(details)
       .withScenarioGraph(details.json.scenarioGraph)
       .withValidationResult(details.json.validationResult)
 
   def fromEntityWithScenarioGraph(
-      details: ScenarioWithDetailsEntity[DisplayableProcess]
+      details: ScenarioWithDetailsEntity[ScenarioGraph]
   ): ScenarioWithDetails =
     fromEntityIgnoringGraphAndValidationResult(details).withScenarioGraph(details.json)
 

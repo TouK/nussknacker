@@ -78,7 +78,7 @@ object validationHelpers {
     ): ContextTransformation = {
       ContextTransformation
         .definedBy { context =>
-          val newType = TypedObjectTypingResult((1 to numberOfFields).map { i =>
+          val newType = Typed.record((1 to numberOfFields).map { i =>
             s"field$i" -> Typed[String]
           }.toMap)
           context.withVariable(variableName, newType, paramName = None)
@@ -100,7 +100,7 @@ object validationHelpers {
     ): JoinContextTransformation = {
       ContextTransformation.join
         .definedBy { contexts =>
-          val newType = TypedObjectTypingResult(contexts.toSeq.map { case (branchId, _) =>
+          val newType = Typed.record(contexts.toSeq.map { case (branchId, _) =>
             branchId -> valueByBranchId(branchId).returnType
           }.toMap)
           Valid(ValidationContext(Map(variableName -> newType)))
@@ -129,7 +129,7 @@ object validationHelpers {
           } else {
             val mainBranchContext = mainBranches.head._2
 
-            val newType = TypedObjectTypingResult(joinedBranches.map { case (branchId, _) =>
+            val newType = Typed.record(joinedBranches.map { case (branchId, _) =>
               branchId -> valueByBranchId(branchId).returnType
             })
 
@@ -446,7 +446,7 @@ object validationHelpers {
         inputContext: ValidationContext,
         outputVariable: Option[String]
     )(implicit nodeId: NodeId): FinalResults = {
-      val result = TypedObjectTypingResult(
+      val result = Typed.record(
         step.parameters.toMap.filterKeysNow(k => k != "par1" && k != "lazyPar1").map { case (k, v) =>
           k -> v.returnType
         }
@@ -463,7 +463,7 @@ object validationHelpers {
     protected def finalResult(context: ValidationContext, rest: List[(String, BaseDefinedParameter)], name: String)(
         implicit nodeId: NodeId
     ): this.FinalResults = {
-      val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType }.toMap)
+      val result = Typed.record(rest.map { case (k, v) => k -> v.returnType }.toMap)
       prepareFinalResultWithOptionalVariable(context, Some((name, result)), None)
     }
 

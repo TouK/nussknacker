@@ -32,19 +32,33 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5361](https://github.com/TouK/nussknacker/pull/5361) `Parameter` has new, optional `labelOpt` field which allows
   to specify label presented to the user without changing identifier used in scenario graph json (`Parameteter.name`)
 * [#5356](https://github.com/TouK/nussknacker/pull/5356) Changes in AdditionalUIConfigProvider.getAllForProcessingType now require model reload to take effect.
-* [#5393](https://github.com/TouK/nussknacker/pull/5393) 
+* [#5393](https://github.com/TouK/nussknacker/pull/5393) [#5444](https://github.com/TouK/nussknacker/pull/5444)
   * Changes around metadata removal from the REST API requests and responses:
-    * `DisplayableProcess` fields that were removed: `name`,  `processingType`, `category` - all these fields already were in `ScenarioWithDetails`
+    * `DisplayableProcess` was renamed to `ScenarioGraph`
+    * `ScenarioGraph` fields that were removed: `name`,  `processingType`, `category` - all these fields already were in `ScenarioWithDetails`
     * `ProcessProperties` field removed: `isFragment` - this field already was in `ScenarioWithDetails`
     * `ScenarioWithDetails` field `json.validationResult` was moved into the top level of `ScenarioWithDetails`
-    * `ScenarioWithDetails` field `json` was renamed into `scenarioGraph` and changed the type into `DisplayableProcess`
-    * `ValidatedDisplayableProcess` all scenario graph fields were replaced by one `scenarioGraph: DisplayableProcess` field
+    * `ScenarioWithDetails` field `json` was renamed into `scenarioGraph` and changed the type into `ScenarioGraph`
+    * `ValidatedDisplayableProcess` was renamed to `ScenarioGraphWithValidationResult`
+    * `ScenarioGraphWithValidationResult` all scenario graph fields were replaced by one `scenarioGraph: DisplayableProcess` field
   * Migration mechanisms (`RemoteEnvironment` and `TestModelMigrations`) use `ScenarioWithDetailsForMigrations` instead of `ScenarioWithDetails`
 * [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
   * `ComponentInfo` was renamed to `ComponentId`
   * `ComponentId` was renamed to `DesignerWideComponentId`
   * new `ComponentId` is serialized in json to string in format `$componentType-$componentName` instead of separate fields (`name` and `type`)
   * `NodeComponentInfo.componentInfo` was renamed to `componentId`
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) [#5457](https://github.com/TouK/nussknacker/pull/5457) Typed related changes
+  * `CommonSupertypeFinder` shouldn't be created directly anymore - `CommonSupertypeFinder.*` predefined variables should be used instead,
+    in most cases just (`CommonSupertypeFinder.Default`)
+  * `TypedObjectTypingResult.apply` removed legacy factory method taking `List[(String, TypingResult)]` - should be used variant with `Map` 
+  * `TypedObjectTypingResult.apply` removed legacy factory method taking `TypedObjectDefinition` - should be used variant with `Map` 
+  * `TypedObjectTypingResult.apply` is deprecated - should be used `Typed.record(...)` instead. It will be removed in further releases
+  * `TypedObjectDefinition` was removed 
+  * `Typed.empty` was removed, `TypedUnion` now handles only >= 2 types
+    * `Typed.apply(vararg...)` was replaced by `Typed.apply(NonEmptyList)` and `Typed.apply(firstType, secondType, restOfTypesVaraarg...)`
+      If you have a list of types and you are not sure how to translate it to `TypingResult` you can try to use `Typed.fromIterableOrUnknownIfEmpty`
+      but it is not recommended - see docs next to it.
+    * `TypedUnion`is not a case class anymore, but is still serializable - If it was used in a Flink state, state will be probably not compatible
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
@@ -80,6 +94,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
   * Endpoints returning test results (`/processManagement/test*`) return `nodeId` instead of `nodeComponentInfo` now
   * `/processDefinitionData/*` response: field `type` was replaced by `componentId` inside the  path `.componentGroups[].components[]`
+* [#5462](https://github.com/TouK/nussknacker/pull/5462) `/processes/category/*` endpoint was removed
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
@@ -92,6 +107,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
+* [#5432](https://github.com/TouK/nussknacker/pull/5432) Kafka client, Confluent Schema Registry Client and Avro bump
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13 
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Removed `strictTypeChecking` option and `SupertypeClassResolutionStrategy.Union` used behind it
 
 ## In version 1.13.0 
 

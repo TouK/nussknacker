@@ -68,7 +68,7 @@ class UnionWithMemoTransformer(
 
             val mapTypeInfo = context.typeInformationDetection
               .forType(
-                TypedObjectTypingResult(
+                Typed.record(
                   valueByBranchId.mapValuesNow(_.returnType),
                   Typed.typedClass[java.util.Map[_, _]]
                 )
@@ -133,7 +133,7 @@ class UnionWithMemoTransformer(
       .getOrElse(Validated.validNel(()))
 
     val validatedContext = ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
-      val newType = TypedObjectTypingResult(
+      val newType = Typed.record(
         inputContexts.map { case (branchId, _) =>
           ContextTransformation.sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
         } + (KeyField -> Typed[String])

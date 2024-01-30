@@ -13,7 +13,7 @@ import org.apache.commons.io.IOUtils
 import org.apache.fop.apps.FopConfParser
 import org.apache.fop.apps.io.ResourceResolverFactory
 import org.apache.xmlgraphics.util.MimeConstants
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -34,7 +34,7 @@ object PdfExporter extends LazyLogging {
 
   def exportToPdf(
       svg: String,
-      processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
+      processDetails: ScenarioWithDetailsEntity[ScenarioGraph],
       processActivity: ProcessActivity
   ): Array[Byte] = {
 
@@ -89,9 +89,9 @@ object PdfExporter extends LazyLogging {
 
   private def prepareFopXml(
       svg: String,
-      processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
+      processDetails: ScenarioWithDetailsEntity[ScenarioGraph],
       processActivity: ProcessActivity,
-      displayableProcess: DisplayableProcess
+      scenarioGraph: ScenarioGraph
   ) = {
     val diagram        = XML.loadString(svg)
     val currentVersion = processDetails.history.get.find(_.processVersionId == processDetails.processVersionId).get
@@ -140,9 +140,9 @@ object PdfExporter extends LazyLogging {
                 {diagram}
               </instream-foreign-object>
             </block>
-          </block>{nodesSummary(displayableProcess)}<block font-size="15pt" font-weight="bold" text-align="left">
+          </block>{nodesSummary(scenarioGraph)}<block font-size="15pt" font-weight="bold" text-align="left">
           Nodes details
-        </block>{displayableProcess.nodes.map(nodeDetails)}{comments(processActivity)}{attachments(processActivity)}
+        </block>{scenarioGraph.nodes.map(nodeDetails)}{comments(processActivity)}{attachments(processActivity)}
         </flow>
       </page-sequence>
 
@@ -277,7 +277,7 @@ object PdfExporter extends LazyLogging {
   private def addEmptySpace(str: String) = List(")", ".", "(")
     .foldLeft(str) { (acc, el) => acc.replace(el, el + '\u200b') }
 
-  private def nodesSummary(displayableProcess: DisplayableProcess) = {
+  private def nodesSummary(scenarioGraph: ScenarioGraph) = {
     <block page-break-before="always" space-after.minimum="3em">
       <block font-size="15pt" font-weight="bold" text-align="left">
         Nodes summary
@@ -301,12 +301,12 @@ object PdfExporter extends LazyLogging {
         </table-header>
         <table-body>
           {
-      if (displayableProcess.nodes.isEmpty) {
+      if (scenarioGraph.nodes.isEmpty) {
         <table-cell>
             <block/>
           </table-cell>
       } else
-        displayableProcess.nodes.map { node =>
+        scenarioGraph.nodes.map { node =>
           <table-row>
               <table-cell border="1pt solid black" padding-left="1pt" font-weight="bold">
                 <block>

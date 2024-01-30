@@ -1,6 +1,6 @@
-package pl.touk.nussknacker.ui.config.processtoolbar
+package pl.touk.nussknacker.ui.config.scenariotoolbar
 
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarConditionType.ToolbarConditionType
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarConditionType.ToolbarConditionType
 
 object ToolbarConditionType extends Enumeration {
 

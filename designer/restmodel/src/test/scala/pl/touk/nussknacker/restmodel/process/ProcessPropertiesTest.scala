@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.MetaDataTestData.{fullMetaDataCases, nonTypeSpecificProperties}
-import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
+import pl.touk.nussknacker.engine.api.graph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 class ProcessPropertiesTest extends AnyFunSuite with Matchers {

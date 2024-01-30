@@ -8,15 +8,8 @@ import org.springframework.expression.common.TemplateParserContext
 import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  Typed,
-  TypedNull,
-  TypedObjectTypingResult,
-  TypedObjectWithValue,
-  Unknown
-}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.DynamicPropertyAccessError
@@ -108,7 +101,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
 
   test("indexing on records for record values") {
     typeExpression(s"$testRecordExpr['nestedRecord']").validValue.finalResult.typingResult shouldBe
-      TypedObjectTypingResult(Map("nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)))
+      Typed.record(Map("nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)))
   }
 
   test("indexing on records for nested record values") {
@@ -149,10 +142,6 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   }
 
   private def buildTyper(dynamicPropertyAccessAllowed: Boolean = false) = new Typer(
-    commonSupertypeFinder = new CommonSupertypeFinder(
-      classResolutionStrategy = SupertypeClassResolutionStrategy.Union,
-      strictTaggedTypesChecking = false
-    ),
     dictTyper = new KeysDictTyper(new SimpleDictRegistry(Map.empty)),
     strictMethodsChecking = false,
     staticMethodInvocationsChecking = false,
@@ -193,13 +182,13 @@ object TyperSpecTestData {
     val testRecordExpr: String =
       "{int: 1, string: 'stringVal', boolean: true, 'null': null, nestedRecord: {nestedRecordKey: 2}}"
 
-    val testRecordTyped: TypedObjectTypingResult = TypedObjectTypingResult(
+    val testRecordTyped: TypedObjectTypingResult = Typed.record(
       Map(
         "string"  -> TypedObjectWithValue(Typed.typedClass[String], "stringVal"),
         "null"    -> TypedNull,
         "boolean" -> TypedObjectWithValue(Typed.typedClass[Boolean], true),
         "int"     -> TypedObjectWithValue(Typed.typedClass[Int], 1),
-        "nestedRecord" -> TypedObjectTypingResult(
+        "nestedRecord" -> Typed.record(
           Map(
             "nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)
           )

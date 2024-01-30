@@ -14,7 +14,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
+import pl.touk.nussknacker.engine.api.graph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -25,12 +25,12 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.api.helpers.spel._
-import pl.touk.nussknacker.ui.config.processtoolbar.ProcessToolbarsConfigProvider
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.process.{ProcessToolbarSettings, ScenarioQuery, ToolbarButton, ToolbarPanel}
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
@@ -154,9 +154,9 @@ class ProcessesResourcesSpec
   // FIXME: Implement fragment validation
   ignore("not allow to archive still used fragment") {
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
-    val displayableFragment =
-      ProcessConverter.toDisplayable(processWithFragment.fragment)
-    saveFragment(displayableFragment)(succeed)
+    val scenarioGraph =
+      CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
+    saveFragment(scenarioGraph)(succeed)
     saveCanonicalProcess(processWithFragment.process)(succeed)
 
     archiveProcess(processName) { status =>
@@ -176,9 +176,9 @@ class ProcessesResourcesSpec
 
   test("allow to archive fragment used in archived process") {
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
-    val displayableFragment =
-      ProcessConverter.toDisplayable(processWithFragment.fragment)
-    saveFragment(displayableFragment)(succeed)
+    val fragmentGraph =
+      CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
+    saveFragment(fragmentGraph)(succeed)
     saveCanonicalProcess(processWithFragment.process)(succeed)
 
     archiveProcess(processName) { status =>
@@ -314,48 +314,8 @@ class ProcessesResourcesSpec
     verifyListOfProcesses(ScenarioQuery.empty.process().archived(), List(archivedProcessName))
   }
 
-  test("allow update category for existing process") {
-    val processId = createEmptyProcess(processName)
-
-    changeProcessCategory(processName, Category2, isAdmin = true) { status =>
-      status shouldEqual StatusCodes.OK
-
-      val process = getProcessDetails(processId)
-      process.processCategory shouldBe Category2
-    }
-  }
-
-  test("not allow update to not existed category") {
-    createEmptyProcess(processName)
-
-    changeProcessCategory(processName, "not-exists-category", isAdmin = true) { status =>
-      status shouldEqual StatusCodes.BadRequest
-    }
-  }
-
-  test("not allow update category archived process") {
-    createArchivedProcess(processName)
-
-    changeProcessCategory(processName, Category2, isAdmin = true) { status =>
-      status shouldEqual StatusCodes.Conflict
-    }
-  }
-
-  test("return 404 on update process category for non existing process") {
-    changeProcessCategory(ProcessName("not-exists-process"), Category2, isAdmin = true) { status =>
-      status shouldBe StatusCodes.NotFound
-    }
-  }
-
-  test("return 403 on update process category for normal user") {
-    createArchivedProcess(processName)
-    // Verification of rejection is done on changeProcessCategory
-    changeProcessCategory(processName, Category2) { _ => }
-  }
-
   test("return process if user has category") {
     val processId = createEmptyProcess(processName)
-    updateCategory(processId, Category1)
 
     forScenarioReturned(processName) { process =>
       process.processCategory shouldBe Category1
@@ -363,9 +323,7 @@ class ProcessesResourcesSpec
   }
 
   test("not return processes not in user categories") {
-    val processId = createEmptyProcess(processName)
-
-    updateCategory(processId, Category2)
+    createEmptyProcess(processName, category = Category2)
 
     tryForScenarioReturned(processName) { (status, _) =>
       status shouldEqual StatusCodes.NotFound
@@ -787,7 +745,7 @@ class ProcessesResourcesSpec
   }
 
   test("allow to delete process") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val scenarioGraphToSave = ProcessTestData.sampleScenarioGraph
 
     createArchivedProcess(processName)
 
@@ -799,7 +757,7 @@ class ProcessesResourcesSpec
       }
     }
 
-    saveProcess(processToSave) {
+    saveProcess(scenarioGraphToSave) {
       status shouldEqual StatusCodes.OK
     }
   }
@@ -842,8 +800,8 @@ class ProcessesResourcesSpec
   }
 
   test("not allow to save process if already exists") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) {
+    val scenarioGraphToSave = ProcessTestData.sampleScenarioGraph
+    saveProcess(scenarioGraphToSave) {
       status shouldEqual StatusCodes.OK
       Post(s"/processes/${processName}/$Category1?isFragment=false") ~> routeWithWrite ~> check {
         status shouldEqual StatusCodes.BadRequest
@@ -925,11 +883,11 @@ class ProcessesResourcesSpec
   }
 
   test("fetching scenario toolbar definitions") {
-    val toolbarConfig = ProcessToolbarsConfigProvider.create(testConfig, Some(Category1))
+    val toolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(testConfig).getConfig(Category1)
     val id            = createEmptyProcess(processName)
 
     withProcessToolbars(processName) { toolbar =>
-      toolbar shouldBe ProcessToolbarSettings(
+      toolbar shouldBe ScenarioToolbarSettings(
         id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
         List(
           ToolbarPanel(TipsPanel, None, None, None),
@@ -1013,30 +971,16 @@ class ProcessesResourcesSpec
     }
 
   protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(
-      callback: ProcessToolbarSettings => Unit
+      callback: ScenarioToolbarSettings => Unit
   ): Unit =
     getProcessToolbars(processName, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
-      val toolbar = decode[ProcessToolbarSettings](responseAs[String]).toOption.get
+      val toolbar = decode[ScenarioToolbarSettings](responseAs[String]).toOption.get
       callback(toolbar)
     }
 
   private def getProcessToolbars(processName: ProcessName, isAdmin: Boolean = false): RouteTestResult =
     Get(s"/processes/$processName/toolbars") ~> routeWithPermissions(processesRoute, isAdmin)
-
-  private def changeProcessCategory(processName: ProcessName, category: String, isAdmin: Boolean = false)(
-      callback: StatusCode => Any
-  ): Any =
-    Post(s"/processes/category/$processName/$category") ~> routeWithPermissions(
-      processesRoute,
-      isAdmin
-    ) ~> check {
-      if (isAdmin) {
-        callback(status)
-      } else {
-        rejection shouldBe server.AuthorizationFailedRejection
-      }
-    }
 
   private def archiveProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
     Post(s"/archive/$processName") ~> withPermissions(
@@ -1061,11 +1005,6 @@ class ProcessesResourcesSpec
     ) ~> check {
       callback(status)
     }
-
-  private def updateCategory(processId: ProcessId, category: String): Unit =
-    dbioRunner
-      .runInTransaction(writeProcessRepository.updateCategory(ProcessIdWithName(processId, processName), category))
-      .futureValue
 
   private def forScenarioStatus(processName: ProcessName, isAdmin: Boolean = false)(
       callback: (StatusCode, StateJson) => Unit

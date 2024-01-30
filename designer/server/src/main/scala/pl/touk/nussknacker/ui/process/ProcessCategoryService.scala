@@ -3,20 +3,12 @@ package pl.touk.nussknacker.ui.process
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.BadRequestError
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.{
-  Category,
-  CategoryNotFoundError,
-  ProcessingTypeNotFoundError
-}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.{Category, ProcessingTypeNotFoundError}
 
 object ProcessCategoryService {
   // TODO: Replace it by VO
   type Category = String
-
-  class CategoryNotFoundError(category: Category) extends BadRequestError(s"Category: $category not found")
 
   class ProcessingTypeNotFoundError(processingType: ProcessingType)
       extends BadRequestError(
@@ -27,33 +19,9 @@ object ProcessCategoryService {
 
 trait ProcessCategoryService {
   def getTypeForCategory(category: Category): Option[ProcessingType]
-  final def getAllCategories: List[Category] = getAllCategoriesSet.toList.sorted
-  protected[process] def getAllCategoriesSet: Set[Category]
   def getProcessingTypeCategoryUnsafe(processingType: ProcessingType): Category =
     getProcessingTypeCategory(processingType).getOrElse(throw new ProcessingTypeNotFoundError(processingType))
-  def getProcessingTypeCategory(processingType: ProcessingType): Option[Category]
-}
-
-class UserCategoryService(categoriesService: ProcessCategoryService) {
-
-  // We assume that Read is always added when user has access to Write / Deploy / etc..
-  def getUserCategories(user: LoggedUser): List[Category] = {
-    val allCategories = categoriesService.getAllCategories
-    if (user.isAdmin) allCategories else allCategories.filter(user.can(_, Permission.Read))
-  }
-
-  def getUserCategoriesWithType(user: LoggedUser): Map[Category, ProcessingType] = {
-    getUserCategories(user)
-      .map(category =>
-        category -> categoriesService
-          .getTypeForCategory(category)
-          .getOrElse(
-            throw new IllegalStateException(s"Processing type not defined for category: $category, but it should be")
-          )
-      )
-      .toMap
-  }
-
+  protected def getProcessingTypeCategory(processingType: ProcessingType): Option[Category]
 }
 
 object ConfigProcessCategoryService extends LazyLogging {
@@ -92,7 +60,6 @@ object ConfigProcessCategoryService extends LazyLogging {
 }
 
 class ProcessingTypeCategoryService(scenarioTypes: Map[String, Category]) extends ProcessCategoryService {
-  override protected[process] def getAllCategoriesSet: Set[Category] = scenarioTypes.values.toSet
 
   override def getTypeForCategory(category: Category): Option[ProcessingType] =
     scenarioTypes.find(_._2 == category).map(_._1)

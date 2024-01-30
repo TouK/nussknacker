@@ -35,16 +35,6 @@ class ProcessesChangeListenerSpec
 
   private val processName = ProcessTestData.sampleScenario.name
 
-  test("listen to category change") {
-    val processId = createEmptyProcess(processName)
-
-    Post(s"/processes/category/$processName/$Category2") ~> routeWithAdminPermissions ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern {
-        case OnCategoryChanged(`processId`, Category1, Category2) =>
-      }
-    }
-  }
-
   test("listen to process create") {
     Post(
       s"/processes/$processName/$Category1?isFragment=false"

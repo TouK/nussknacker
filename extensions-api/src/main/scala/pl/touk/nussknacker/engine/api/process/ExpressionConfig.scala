@@ -15,7 +15,6 @@ case class ExpressionConfig(
     additionalClasses: List[Class[_]] = defaultAdditionalClasses,
     languages: LanguageConfiguration = LanguageConfiguration.default,
     optimizeCompilation: Boolean = true,
-    strictTypeChecking: Boolean = defaultStrictTypeChecking,
     // TODO After moving categories on root level of all objects, we should consider replacing
     //      this map with list and adding dictId into DictDefinition. Then we will be sure that
     //      DictInstance have the same dictId as DictDefinition
@@ -41,7 +40,6 @@ object ExpressionConfig {
 
   val defaultAdditionalClasses: List[Class[_]] = standardClasses ++ standardEditorClasses
 
-  val defaultStrictTypeChecking               = true
   val defaultStrictMethodsChecking            = true
   val defaultStaticMethodInvocationsChecking  = true
   val defaultMethodExecutionForUnknownAllowed = false

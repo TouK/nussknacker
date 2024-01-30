@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.clazz
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 
 case class ClassDefinition(
@@ -28,10 +29,7 @@ case class ClassDefinition(
     val filteredMethods       = filterMethods(methods)
     val filteredStaticMethods = filterMethods(staticMethods)
     val filtered              = filteredMethods ++ filteredStaticMethods
-    filtered match {
-      case Nil      => None
-      case nonEmpty => Some(Typed(nonEmpty.toSet))
-    }
+    NonEmptyList.fromList(filtered).map(Typed(_))
   }
 
 }

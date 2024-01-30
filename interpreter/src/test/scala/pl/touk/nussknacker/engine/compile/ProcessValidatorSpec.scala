@@ -16,9 +16,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.{
@@ -53,7 +51,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     .withSource("source", Some(Typed[SimpleRecord]))
     .withSource("sourceWithUnknown", Some(Unknown))
     .withSource("sourceWithParam", Some(Typed[SimpleRecord]), Parameter[Any]("param"))
-    .withSource("typedMapSource", Some(Typed[TypedMap]), Parameter[TypedObjectDefinition]("type"))
     .withSink("sink")
     .withSink("sinkWithLazyParam", Parameter[String]("lazyString").copy(isLazyParameter = true))
     .withCustom("customTransformer", Some(Typed[SimpleRecord]), nonEndingOneInputComponent)
@@ -406,7 +403,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val varsType =
       compilationResult.variablesInNodes.get("id2").value.get("vars").value.asInstanceOf[TypedObjectTypingResult]
     varsType.fields.get("v1").value shouldEqual Typed.fromInstance(42)
-    varsType.fields.get("recordVariable").value shouldEqual TypedObjectTypingResult(
+    varsType.fields.get("recordVariable").value shouldEqual Typed.record(
       ListMap(
         "Field1" -> Typed.fromInstance("Field1Value"),
         "Field2" -> Typed.fromInstance("Field2Value"),
@@ -1251,7 +1248,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     result.result should matchPattern { case Valid(_) =>
     }
     result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
-      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer])))
+      List(Typed.record(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer])))
     )
 
   }
@@ -1282,7 +1279,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     result.result should matchPattern { case Valid(_) =>
     }
     result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
-      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer])))
+      List(Typed.record(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer])))
     )
   }
 

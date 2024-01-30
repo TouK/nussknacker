@@ -4,14 +4,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.{TableFor3, TableFor4}
-import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 
 class LoggedUserTest extends AnyFunSuite with Matchers {
   import pl.touk.nussknacker.security.Permission._
 
   test("Admin permission grants other permissions") {
-    def admin(cp: Map[String, Set[Permission]]) = LoggedUser("1", "admin", cp, Nil, true)
+    def admin(cp: Map[String, Set[Permission]]) = LoggedUser("1", "admin", cp, isAdmin = true)
 
     val perms: TableFor3[LoggedUser, Permission, String] = Table(
       ("user", "permission", "category"),
@@ -43,7 +42,6 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
   }
 
   test("should map an AuthenticatedUser to a LoggedUser with permissions matching roles") {
-    val processCategories = List("First", "Second")
     val rules = List(
       ConfigRule("FirstDeployer", categories = List("First"), permissions = List(Read, Deploy)),
       ConfigRule("FirstEditor", categories = List("First"), permissions = List(Read, Write)),
@@ -53,8 +51,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
 
     val authorizedUser = LoggedUser.apply(
       AuthenticatedUser("userId", "userName", Set("FirstDeployer", "SecondEditor")),
-      rules,
-      processCategories
+      rules
     )
 
     authorizedUser.can("First", Read) shouldBe true

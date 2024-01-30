@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.ui.util
 
 import io.circe.generic.extras.ConfiguredJsonCodec
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 
-object ProcessComparator {
+object ScenarioGraphComparator {
 
-  def compare(currentProcess: DisplayableProcess, otherProcess: DisplayableProcess): Map[String, Difference] = {
+  def compare(currentGraph: ScenarioGraph, otherGraph: ScenarioGraph): Map[String, Difference] = {
     val nodes = getDifferences(
-      currentProcess.nodes.map(node => node.id -> node).toMap,
-      otherProcess.nodes.map(node => node.id -> node).toMap
+      currentGraph.nodes.map(node => node.id -> node).toMap,
+      otherGraph.nodes.map(node => node.id -> node).toMap
     )(
       notPresentInOther = current => NodeNotPresentInOther(current.id, current),
       notPresentInCurrent = other => NodeNotPresentInCurrent(other.id, other),
@@ -18,16 +17,16 @@ object ProcessComparator {
     )
 
     val edges = getDifferences(
-      currentProcess.edges.map(edge => (edge.from, edge.to) -> edge).toMap,
-      otherProcess.edges.map(edge => (edge.from, edge.to) -> edge).toMap
+      currentGraph.edges.map(edge => (edge.from, edge.to) -> edge).toMap,
+      otherGraph.edges.map(edge => (edge.from, edge.to) -> edge).toMap
     )(
       notPresentInOther = current => EdgeNotPresentInOther(current.from, current.to, current),
       notPresentInCurrent = other => EdgeNotPresentInCurrent(other.from, other.to, other),
       different = (current, other) => EdgeDifferent(current.from, current.to, current, other)
     )
 
-    val properties = if (currentProcess.properties != otherProcess.properties) {
-      PropertiesDifferent(currentProcess.properties, otherProcess.properties) :: Nil
+    val properties = if (currentGraph.properties != otherGraph.properties) {
+      PropertiesDifferent(currentGraph.properties, otherGraph.properties) :: Nil
     } else {
       Nil
     }
