@@ -292,7 +292,6 @@ private[spel] class Typer(
           def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
-          // We don't want Typed.empty here, as currently it means it won't validate for any signature
           val elementType = if (children.isEmpty) Unknown else children.reduce(getSupertype)
           valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
         }
