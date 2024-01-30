@@ -7,8 +7,8 @@ import { spelFormatters } from "./expression/Formatter";
 import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
 import { FieldError, PossibleValue } from "./Validators";
-import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 import { cx } from "@emotion/css";
+import { FormControl } from "@mui/material";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -64,12 +64,12 @@ function EditableEditorRow({
     renderFieldLabel?: UnknownFunction;
 }): JSX.Element {
     return (
-        <NodeRow className={cx(rowClassName && rowClassName)} style={{ width: "100%", margin: rowClassName && 0 }}>
+        <FormControl className={cx(rowClassName && rowClassName)} style={{ width: "100%", margin: rowClassName && 0 }}>
             <>
                 {fieldLabel && renderFieldLabel?.(fieldLabel)}
                 <EditableEditor {...props} />
             </>
-        </NodeRow>
+        </FormControl>
     );
 }
 

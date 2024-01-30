@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
@@ -117,7 +118,13 @@ class FlinkProcessCompilerDataFactory(
   ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
     val modelDefinitionWithTypes = ModelDefinitionWithClasses(
-      extractModelDefinition(userCodeClassLoader, modelDependencies)
+      // additionalConfigsFromProvider aren't provided, as it's not needed to run the process on flink
+      extractModelDefinition(
+        userCodeClassLoader,
+        modelDependencies,
+        id => DesignerWideComponentId(id.toString),
+        Map.empty
+      )
     )
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(
       modelDefinitionWithTypes.modelDefinition.expressionConfig.dictionaries
@@ -133,9 +140,9 @@ class FlinkProcessCompilerDataFactory(
   }
 
   protected def adjustDefinitions(
-      originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+      originalModelDefinition: ModelDefinition,
       definitionContext: ComponentDefinitionContext
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = originalModelDefinition
+  ): ModelDefinition = originalModelDefinition
 
   private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {
     // we are loading DictServicesFactory on TaskManager side. It may be tricky because of class loaders...
@@ -172,6 +179,6 @@ case class ComponentDefinitionContext(
     userCodeClassLoader: ClassLoader,
     // below are for purpose of TestDataPreparer
     dictRegistry: EngineDictRegistry,
-    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
+    expressionConfig: ExpressionConfigDefinition,
     classDefinitions: ClassDefinitionSet
 )

@@ -1,29 +1,33 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
-  GlobalVariableDefinitionExtractor
+  GlobalVariableDefinitionWithImplementation
 }
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.emptyExpressionConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 final case class ModelDefinitionBuilder(
-    components: List[(String, ComponentStaticDefinition)],
+    determineDesignerWideId: ComponentId => DesignerWideComponentId,
+    components: List[ComponentDefinitionWithImplementation],
     globalVariables: Map[String, AnyRef],
     private val groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
 ) {
+
+  def withDesignerWideComponentIdDeterminingStrategy(
+      determineDesignerWideId: ComponentId => DesignerWideComponentId
+  ): ModelDefinitionBuilder =
+    copy(determineDesignerWideId = determineDesignerWideId)
 
   def withService(name: String, params: Parameter*): ModelDefinitionBuilder =
     withService(name, Some(Unknown), params: _*)
@@ -33,22 +37,16 @@ final case class ModelDefinitionBuilder(
       returnType: Option[TypingResult],
       params: Parameter*
   ): ModelDefinitionBuilder =
-    wrapWithNotDisabledServiceDefinition(params.toList, returnType)
-      .map(withComponent(name, _))
-      .getOrElse(this)
+    wrapService(name, ComponentStaticDefinition(params.toList, returnType))
 
   def withSource(name: String, params: Parameter*): ModelDefinitionBuilder =
     withSource(name, Some(Unknown), params: _*)
 
   def withSource(name: String, returnType: Option[TypingResult], params: Parameter*): ModelDefinitionBuilder =
-    wrapWithNotDisabledSourceDefinition(params.toList, returnType)
-      .map(withComponent(name, _))
-      .getOrElse(this)
+    withSource(name, ComponentStaticDefinition(params.toList, returnType))
 
   def withSink(name: String, params: Parameter*): ModelDefinitionBuilder =
-    wrapWithNotDisabledSinkDefinition(params.toList)
-      .map(withComponent(name, _))
-      .getOrElse(this)
+    withSink(name, ComponentStaticDefinition(params.toList, None))
 
   def withCustom(
       name: String,
@@ -56,85 +54,115 @@ final case class ModelDefinitionBuilder(
       componentSpecificData: CustomComponentSpecificData,
       params: Parameter*
   ): ModelDefinitionBuilder =
-    wrapWithNotDisabledCustomComponentDefinition(
-      params.toList,
+    withCustom(
+      name,
       returnType,
-      componentSpecificData
-    ).map(withComponent(name, _)).getOrElse(this)
+      componentSpecificData,
+      componentGroupName = None,
+      designerWideComponentId = None,
+      params: _*
+    )
 
-  private def withComponent(
+  def withCustom(
       name: String,
-      componentStaticDefinition: ComponentStaticDefinition
-  ): ModelDefinitionBuilder = {
-    copy(components = (name -> componentStaticDefinition) :: components)
-  }
+      returnType: Option[TypingResult],
+      componentSpecificData: CustomComponentSpecificData,
+      componentGroupName: Option[ComponentGroupName],
+      designerWideComponentId: Option[DesignerWideComponentId],
+      params: Parameter*
+  ): ModelDefinitionBuilder =
+    wrapCustom(
+      name,
+      ComponentStaticDefinition(params.toList, returnType),
+      componentSpecificData,
+      componentGroupName,
+      designerWideComponentId
+    )
 
   def withGlobalVariable(name: String, variable: AnyRef): ModelDefinitionBuilder = {
     copy(globalVariables = globalVariables + (name -> variable))
   }
 
-  private def wrapWithNotDisabledSourceDefinition(
-      parameters: List[Parameter],
-      returnType: Option[TypingResult]
-  ): Option[ComponentStaticDefinition] =
-    wrapWithNotDisabledStaticDefinition(parameters, returnType, SourceSpecificData)
+  private def withSource(
+      name: String,
+      staticDefinition: ComponentStaticDefinition
+  ): ModelDefinitionBuilder =
+    withComponent(name, staticDefinition, SourceSpecificData, componentGroupName = None, designerWideComponentId = None)
 
-  private def wrapWithNotDisabledSinkDefinition(
-      parameters: List[Parameter],
-  ): Option[ComponentStaticDefinition] =
-    wrapWithNotDisabledStaticDefinition(parameters, None, SinkSpecificData)
+  private def withSink(
+      name: String,
+      staticDefinition: ComponentStaticDefinition,
+  ): ModelDefinitionBuilder =
+    withComponent(name, staticDefinition, SinkSpecificData, componentGroupName = None, designerWideComponentId = None)
 
-  private def wrapWithNotDisabledServiceDefinition(
-      parameters: List[Parameter],
-      returnType: Option[TypingResult]
-  ): Option[ComponentStaticDefinition] =
-    wrapWithNotDisabledStaticDefinition(parameters, returnType, ServiceSpecificData)
+  private def wrapService(
+      name: String,
+      staticDefinition: ComponentStaticDefinition,
+  ): ModelDefinitionBuilder =
+    withComponent(
+      name,
+      staticDefinition,
+      ServiceSpecificData,
+      componentGroupName = None,
+      designerWideComponentId = None
+    )
 
-  private def wrapWithNotDisabledCustomComponentDefinition(
-      parameters: List[Parameter],
-      returnType: Option[TypingResult],
-      componentSpecificData: CustomComponentSpecificData
-  ): Option[ComponentStaticDefinition] =
-    wrapWithNotDisabledStaticDefinition(parameters, returnType, componentSpecificData)
+  private def wrapCustom(
+      name: String,
+      staticDefinition: ComponentStaticDefinition,
+      componentSpecificData: CustomComponentSpecificData,
+      componentGroupName: Option[ComponentGroupName],
+      designerWideComponentId: Option[DesignerWideComponentId]
+  ): ModelDefinitionBuilder =
+    withComponent(name, staticDefinition, componentSpecificData, componentGroupName, designerWideComponentId)
 
-  private def wrapWithNotDisabledStaticDefinition(
-      parameters: List[Parameter],
-      returnType: Option[TypingResult],
-      componentTypeSpecificData: ComponentTypeSpecificData
-  ): Option[ComponentStaticDefinition] = {
-    val config =
-      DefaultComponentConfigDeterminer.forNotBuiltInComponentType(componentTypeSpecificData, returnType.isDefined)
+  private def withComponent(
+      name: String,
+      staticDefinition: ComponentStaticDefinition,
+      componentTypeSpecificData: ComponentTypeSpecificData,
+      componentGroupName: Option[ComponentGroupName],
+      designerWideComponentId: Option[DesignerWideComponentId]
+  ): ModelDefinitionBuilder = {
+    val defaultConfig =
+      DefaultComponentConfigDeterminer.forNotBuiltInComponentType(
+        componentTypeSpecificData,
+        staticDefinition.returnType.isDefined
+      )
+    val configWithOverridenGroupName =
+      componentGroupName.map(group => defaultConfig.copy(componentGroup = Some(group))).getOrElse(defaultConfig)
+    val id = ComponentId(componentTypeSpecificData.componentType, name)
+    val configWithDesignerWideComponentId =
+      configWithOverridenGroupName.copy(componentId =
+        Some(designerWideComponentId.getOrElse(determineDesignerWideId(id)))
+      )
     ComponentDefinitionExtractor
-      .translateGroupNameAndFilterOutDisabled(config, new ComponentsUiConfig(Map.empty, groupNameMapping))
-      .map { case ConfigWithOriginalGroupName(configWithMappedName, originalGroupName) =>
-        ComponentStaticDefinition(
-          parameters,
-          returnType,
-          configWithMappedName,
-          originalGroupName,
-          componentTypeSpecificData
+      .filterOutDisabledAndComputeFinalUiDefinition(
+        configWithDesignerWideComponentId,
+        groupName => groupNameMapping.getOrElse(groupName, Some(groupName))
+      )
+      .map { case (uiDefinition, _) =>
+        MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+          name,
+          componentTypeSpecificData,
+          staticDefinition,
+          uiDefinition
         )
       }
+      .map { component =>
+        copy(components = component :: components)
+      }
+      .getOrElse(this)
   }
 
-  def build: ModelDefinition[ComponentDefinitionWithImplementation] = {
-    val globalVariablesDefinition: Map[String, ComponentDefinitionWithImplementation] =
-      globalVariables.mapValuesNow(GlobalVariableDefinitionExtractor.extractDefinition)
-    ModelDefinition[ComponentDefinitionWithImplementation](
-      components.map { case (k, v) => k -> withNullImplementation(v) },
+  def build: ModelDefinition = {
+    val globalVariablesDefinition: Map[String, GlobalVariableDefinitionWithImplementation] =
+      globalVariables.mapValuesNow(GlobalVariableDefinitionWithImplementation(_))
+    ModelDefinition(
+      components,
       emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
       ClassExtractionSettings.Default
     )
   }
-
-  private def withNullImplementation(
-      staticDefinition: ComponentStaticDefinition
-  ): ComponentDefinitionWithImplementation =
-    MethodBasedComponentDefinitionWithImplementation(
-      ComponentImplementationInvoker.nullImplementationInvoker,
-      null,
-      staticDefinition
-    )
 
 }
 
@@ -143,12 +171,17 @@ object ModelDefinitionBuilder {
   val empty: ModelDefinitionBuilder = empty(groupNameMapping = Map.empty)
 
   def empty(groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]): ModelDefinitionBuilder = {
-    new ModelDefinitionBuilder(components = List.empty, globalVariables = Map.empty, groupNameMapping)
+    new ModelDefinitionBuilder(
+      determineDesignerWideId = id => DesignerWideComponentId(id.toString),
+      components = List.empty,
+      globalVariables = Map.empty,
+      groupNameMapping
+    )
   }
 
-  val emptyExpressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
+  val emptyExpressionConfig: ExpressionConfigDefinition =
     ExpressionConfigDefinition(
-      Map.empty[String, ComponentDefinitionWithImplementation],
+      Map.empty[String, GlobalVariableDefinitionWithImplementation],
       List.empty,
       defaultAdditionalClasses,
       languages = LanguageConfiguration.default,
@@ -163,17 +196,5 @@ object ModelDefinitionBuilder {
       spelExpressionExcludeList = SpelExpressionExcludeList.default,
       customConversionsProviders = List.empty
     )
-
-  implicit class ToStaticDefinitionConverter(modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation]) {
-
-    def toStaticComponentsDefinition: ModelDefinition[ComponentStaticDefinition] = modelDefinition.transform {
-      case methodBased: MethodBasedComponentDefinitionWithImplementation => methodBased.staticDefinition
-      case dynamic: DynamicComponentDefinitionWithImplementation =>
-        throw new IllegalStateException(
-          s"ModelDefinitionBuilder.toStaticComponentsDefinition used with a dynamic component: $dynamic"
-        )
-    }
-
-  }
 
 }

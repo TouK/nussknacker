@@ -5,24 +5,18 @@ import cats.kernel.Semigroup
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
 
-/**
-  * This contains not only urls or icons but also parameter restrictions, used in e.g. validation
-  * TODO: maybe icon/docs/componentGroup should be somehow separated as they are UI related?
-  * TODO: componentId is work around for components duplication across multiple scenario types
-  */
-@JsonCodec case class SingleComponentConfig(
+case class SingleComponentConfig(
     params: Option[Map[String, ParameterConfig]],
     icon: Option[String],
     docsUrl: Option[String],
     componentGroup: Option[ComponentGroupName],
-    componentId: Option[ComponentId],
+    // TODO We allow to define this id in the configuration as a work around for the problem
+    //      that the components are duplicated across processing types - see notice in DesignerWideComponentId
+    //      It should be probable called designerWideComponentId but we don't want to change it
+    //      to not break the compatibility
+    componentId: Option[DesignerWideComponentId],
     disabled: Boolean = false
-) {
-  def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
-
-  def componentGroupUnsafe: ComponentGroupName =
-    componentGroup.getOrElse(throw new IllegalStateException(s"Component group not defined in $this"))
-}
+)
 
 object SingleComponentConfig {
 
@@ -62,7 +56,7 @@ object SingleComponentConfig {
 
 }
 
-@JsonCodec case class ParameterConfig(
+case class ParameterConfig(
     defaultValue: Option[String],
     editor: Option[ParameterEditor],
     validators: Option[List[ParameterValidator]],

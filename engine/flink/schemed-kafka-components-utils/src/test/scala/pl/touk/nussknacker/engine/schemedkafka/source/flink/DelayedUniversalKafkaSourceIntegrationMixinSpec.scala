@@ -105,7 +105,7 @@ class DelayedKafkaUniversalProcessConfigCreator(
   ): Map[String, WithCategories[SourceFactory]] = {
     Map(
       "kafka-universal-delayed" -> defaultCategory(
-        new DelayedUniversalKafkaSourceFactory[String, GenericRecord](
+        new DelayedUniversalKafkaSourceFactory(
           schemaRegistryClientFactory,
           UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
           modelDependencies,

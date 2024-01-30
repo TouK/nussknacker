@@ -1,4 +1,4 @@
-import { ActionType, ProcessStateType, ProcessType } from "./types";
+import { ActionType, ProcessStateType, Scenario } from "./types";
 import {
     descriptionProcessArchived,
     descriptionFragment,
@@ -18,7 +18,7 @@ class ProcessStateUtils {
 
     public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Archive);
 
-    getStateDescription({ isArchived, isFragment }: ProcessType, processState: ProcessStateType): string {
+    getStateDescription({ isArchived, isFragment }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {
             return isFragment ? descriptionFragmentArchived() : descriptionProcessArchived();
         }
@@ -30,7 +30,7 @@ class ProcessStateUtils {
         return processState?.description || unknownDescription();
     }
 
-    getStatusIcon({ isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
+    getStatusIcon({ isArchived, isFragment, state }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {
             return archivedIcon;
         }
@@ -42,7 +42,7 @@ class ProcessStateUtils {
         return processState?.icon || state?.icon || unknownIcon;
     }
 
-    getStatusTooltip({ isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
+    getStatusTooltip({ isArchived, isFragment, state }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {
             return isFragment ? descriptionFragmentArchived() : descriptionProcessArchived();
         }
@@ -54,7 +54,7 @@ class ProcessStateUtils {
         return processState?.tooltip || state?.tooltip || unknownTooltip();
     }
 
-    getTransitionKey({ name, isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
+    getTransitionKey({ name, isArchived, isFragment, state }: Scenario, processState: ProcessStateType): string {
         if (isArchived || isFragment) {
             return `${name}`;
         }

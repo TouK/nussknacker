@@ -3,19 +3,18 @@ package pl.touk.nussknacker.ui.api.helpers
 import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, ScenarioVersion, VersionId}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.scenariodetails._
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, RequestResponse, Streaming}
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
-import pl.touk.nussknacker.ui.process.{ScenarioWithDetailsConversions, repository}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 import java.time.Instant
@@ -26,100 +25,81 @@ object TestProcessUtil {
 
   private val randomGenerator = new Random()
 
-  def toDisplayable(
-      espProcess: CanonicalProcess,
-      processingType: ProcessingType = TestProcessingTypes.Streaming,
-      category: Category = TestCategories.Category1
-  ): DisplayableProcess =
-    ProcessConverter.toDisplayable(espProcess, processingType, category)
+  def toCanonical(scenarioGraph: ScenarioGraph, processName: ProcessName): CanonicalProcess =
+    CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName)
 
-  def toCanonical(displayable: DisplayableProcess): CanonicalProcess =
-    ProcessConverter.fromDisplayable(displayable)
+  def toJson(espProcess: CanonicalProcess): Json =
+    Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(espProcess))
 
-  def toJson(espProcess: CanonicalProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): Json =
-    Encoder[DisplayableProcess].apply(toDisplayable(espProcess, processingType))
-
-  def createBasicProcess(
+  def createScenarioEntity(
       name: String,
       category: Category,
       isArchived: Boolean = false,
       processingType: String = Streaming,
       lastAction: Option[ProcessActionType] = None,
-      json: Option[DisplayableProcess] = None
-  ): ScenarioWithDetailsEntity[DisplayableProcess] =
-    toDetails(
+      json: Option[ScenarioGraph] = None
+  ): ScenarioWithDetailsEntity[ScenarioGraph] =
+    wrapWithScenarioDetailsEntity(
       ProcessName(name),
+      scenarioGraph = json,
       category,
       isFragment = false,
       isArchived,
       processingType,
-      json = json,
       lastAction = lastAction
     )
 
-  def createFragment(
+  def createFragmentEntity(
       name: String,
       category: Category,
       isArchived: Boolean = false,
       processingType: String = Streaming,
-      json: Option[DisplayableProcess] = None,
+      json: Option[ScenarioGraph] = None,
       lastAction: Option[ProcessActionType] = None
-  ): ScenarioWithDetailsEntity[DisplayableProcess] = {
+  ): ScenarioWithDetailsEntity[ScenarioGraph] = {
     val processName = ProcessName(name)
-    toDetails(
-      processName,
-      category,
+    wrapWithScenarioDetailsEntity(
+      name = processName,
+      category = category,
       isFragment = true,
-      isArchived,
-      processingType,
+      isArchived = isArchived,
+      processingType = processingType,
       lastAction = lastAction,
-      json = Some(json.getOrElse(createDisplayableFragment(processName, processingType, category)))
+      scenarioGraph = Some(json.getOrElse(sampleFragmentGraph))
     )
   }
 
-  def displayableToProcess(
-      displayable: DisplayableProcess,
+  def wrapGraphWithScenarioDetailsEntity(
+      name: ProcessName,
+      scenarioGraph: ScenarioGraph,
+      processingType: ProcessingType = TestProcessingTypes.Streaming,
       category: Category = TestCategories.Category1,
       isArchived: Boolean = false,
       isFragment: Boolean = false
-  ): ScenarioWithDetailsEntity[DisplayableProcess] =
-    toDetails(
-      displayable.name,
-      category,
+  ): ScenarioWithDetailsEntity[ScenarioGraph] =
+    wrapWithScenarioDetailsEntity(
+      name,
+      scenarioGraph = Some(scenarioGraph),
+      processingType = processingType,
+      category = category,
       isArchived = isArchived,
-      processingType = displayable.processingType,
-      json = Some(displayable),
       isFragment = isFragment
     )
 
-  def wrapWithDetails(
-      displayable: DisplayableProcess,
-      validationResult: ValidationResult = ValidationResult.success
-  ): ScenarioWithDetails = {
-    ScenarioWithDetailsConversions.fromEntity(
-      toDetails(
-        displayable.name,
-        processingType = displayable.processingType,
-        category = displayable.category
-      ).copy(json = ValidatedDisplayableProcess.withValidationResult(displayable, validationResult))
-    )
-  }
-
-  def toDetails(
+  def wrapWithScenarioDetailsEntity(
       name: ProcessName,
+      scenarioGraph: Option[ScenarioGraph] = None,
       category: Category = TestCategories.Category1,
       isFragment: Boolean = false,
       isArchived: Boolean = false,
       processingType: ProcessingType = Streaming,
-      json: Option[DisplayableProcess] = None,
       lastAction: Option[ProcessActionType] = None,
       description: Option[String] = None,
       history: Option[List[ScenarioVersion]] = None
-  ): ScenarioWithDetailsEntity[DisplayableProcess] = {
-    val jsonData = json
-      .map(_.copy(name = name, processingType = processingType, category = category))
-      .getOrElse(createEmptyJson(name, processingType, category))
-    repository.ScenarioWithDetailsEntity[DisplayableProcess](
+  ): ScenarioWithDetailsEntity[ScenarioGraph] = {
+    val jsonData = scenarioGraph
+      .getOrElse(createEmptyJson(processingType))
+    repository.ScenarioWithDetailsEntity[ScenarioGraph](
       name = name,
       processId = ProcessId(generateId()),
       processVersionId = VersionId.initialVersionId,
@@ -148,35 +128,43 @@ object TestProcessUtil {
     )
   }
 
-  private def createEmptyJson(name: ProcessName, processingType: ProcessingType, category: Category) = {
+  def wrapWithDetailsForMigration(
+      scenarioGraph: ScenarioGraph,
+      name: ProcessName = ProcessTestData.sampleProcessName,
+      isFragment: Boolean = false,
+      validationResult: ValidationResult = ValidationResult.success
+  ): ScenarioWithDetailsForMigrations = {
+    ScenarioWithDetailsForMigrations(
+      name = name,
+      isArchived = false,
+      isFragment = isFragment,
+      processingType = Streaming,
+      processCategory = TestCategories.Category1,
+      scenarioGraph = Some(scenarioGraph),
+      validationResult = Some(validationResult),
+      history = None,
+      modelVersion = None
+    )
+  }
+
+  private def createEmptyJson(processingType: ProcessingType) = {
     val typeSpecificProperties = processingType match {
-      case RequestResponse   => RequestResponseMetaData(None)
       case Streaming | Fraud => StreamMetaData()
       case _                 => throw new IllegalArgumentException(s"Unknown processing type: $processingType.")
     }
 
-    DisplayableProcess(name, ProcessProperties(typeSpecificProperties), Nil, Nil, processingType, category)
+    ScenarioGraph(ProcessProperties(typeSpecificProperties), Nil, Nil)
   }
 
-  def createDisplayableFragment(
-      name: ProcessName,
-      processingType: ProcessingType,
-      category: Category
-  ): DisplayableProcess =
-    createDisplayableFragment(
-      name,
-      List(FragmentInputDefinition("input", List(FragmentParameter("in", FragmentClazzRef[String])))),
-      processingType,
-      category
+  lazy val sampleFragmentGraph: ScenarioGraph =
+    createFragmentGraph(
+      List(FragmentInputDefinition("input", List(FragmentParameter("in", FragmentClazzRef[String]))))
     )
 
-  def createDisplayableFragment(
-      name: ProcessName,
-      nodes: List[NodeData],
-      processingType: ProcessingType,
-      category: Category
-  ): DisplayableProcess =
-    DisplayableProcess(name, ProcessProperties(FragmentSpecificData()), nodes, Nil, processingType, category)
+  def createFragmentGraph(
+      nodes: List[NodeData]
+  ): ScenarioGraph =
+    ScenarioGraph(ProcessProperties(FragmentSpecificData()), nodes, Nil)
 
   def createProcessAction(action: ProcessActionType): ProcessAction = ProcessAction(
     id = ProcessActionId(UUID.randomUUID()),

@@ -1,6 +1,6 @@
 import React from "react";
-import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
-import { FormControlLabel } from "@mui/material";
+import { CustomSwitch, SettingLabelStyled, SettingsWrapper } from "./fields/StyledSettingsComponnets";
+import { FormControl, FormControlLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { DefaultParameterVariant, onChangeType } from "../../item";
 import { NodeValidationError, VariableTypes } from "../../../../../../types";
@@ -23,13 +23,13 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
 
     return (
         <SettingsWrapper {...props}>
-            <SettingRow>
+            <FormControl>
                 <SettingLabelStyled required>{t("fragment.required", "Required:")}</SettingLabelStyled>
                 <FormControlLabel
                     control={<CustomSwitch checked={item.required} onChange={() => onChange(`${path}.required`, !item.required)} />}
                     label=""
                 />
-            </SettingRow>
+            </FormControl>
             <ValidationsFields
                 path={path}
                 onChange={onChange}
@@ -46,7 +46,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                 variableTypes={variableTypes}
                 fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$initialValue`)}
             />
-            <SettingRow>
+            <FormControl>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus
                     value={item.hintText}
@@ -55,7 +55,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                     disabled={readOnly}
                     className={"node-input"}
                 />
-            </SettingRow>
+            </FormControl>
         </SettingsWrapper>
     );
 };

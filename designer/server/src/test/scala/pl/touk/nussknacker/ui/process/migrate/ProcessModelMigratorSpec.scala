@@ -9,14 +9,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.asProcessor
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.api.helpers.{
-  ProcessTestData,
-  TestFactory,
-  TestPermissions,
-  TestProcessUtil,
-  TestProcessingTypes
-}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessUtil}
 import pl.touk.nussknacker.ui.process.repository.MigrationComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import shapeless.syntax.typeable.typeableOps
@@ -30,9 +23,7 @@ class ProcessModelMigratorSpec
   import shapeless.Typeable._
 
   private def migrator(migrations: Int*) =
-    new ProcessModelMigrator(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(migrations: _*))
-    )
+    new ProcessModelMigrator(new TestMigrations(migrations: _*))
 
   val processId = "fooProcess"
 
@@ -90,7 +81,10 @@ class ProcessModelMigratorSpec
   private def migrateByVersionsOpt(startFrom: Option[Int], migrations: Int*): Option[MigrationResult] =
     migrator(migrations: _*).migrateProcess(
       TestProcessUtil
-        .displayableToProcess(ProcessTestData.validDisplayableProcess)
+        .wrapGraphWithScenarioDetailsEntity(
+          ProcessTestData.sampleProcessName,
+          ProcessTestData.validScenarioGraph,
+        )
         .copy(modelVersion = startFrom),
       skipEmptyMigrations = true
     )

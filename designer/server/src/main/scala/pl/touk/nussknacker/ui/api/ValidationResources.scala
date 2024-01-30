@@ -2,15 +2,17 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class ValidationResources(
     protected val processService: ProcessService,
@@ -22,22 +24,22 @@ class ValidationResources(
     with ProcessDirectives {
 
   def securedRoute(implicit user: LoggedUser): Route =
-    path("processValidation") {
-      post {
-        entity(as[DisplayableProcess]) { displayable =>
+    path("processValidation" / ProcessNameSegment) { processName =>
+      (post & processDetailsForName(processName)) { details: ScenarioWithDetails =>
+        entity(as[ScenarioValidationRequest]) { request =>
           complete {
-            validate(displayable)
+            NuDesignerErrorToHttp.toResponseEither(
+              FatalValidationError.renderNotAllowedAsError(
+                processResolver
+                  .forTypeUnsafe(details.processingType)
+                  .validateBeforeUiResolving(request.scenarioGraph, request.processName, details.isFragment)
+              )
+            )
           }
         }
       }
     }
 
-  private def validate(displayable: DisplayableProcess)(implicit user: LoggedUser) = {
-    NuDesignerErrorToHttp.toResponseEither(
-      FatalValidationError.renderNotAllowedAsError(
-        processResolver.forTypeUnsafe(displayable.processingType).validateBeforeUiResolving(displayable)
-      )
-    )
-  }
-
 }
+
+@JsonCodec case class ScenarioValidationRequest(processName: ProcessName, scenarioGraph: ScenarioGraph)

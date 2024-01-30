@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{
   ProcessId,
   ProcessIdWithName,
@@ -41,6 +41,7 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
     lastAction: Option[
       ProcessAction
     ], // TODO: Consider replacing it by lastStateAction, check were on FE we use lastAction, eg. archive date at the archive list
+    // TODO: Rename into scenarioGraph when we store DisplayableProcess instead of CanonicalProcess in the db
     json: ScenarioShape,
     history: Option[List[ScenarioVersion]],
     modelVersion: Option[Int]
@@ -58,8 +59,8 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
     modelVersion = modelVersion
   )
 
-  override def scenarioGraph: DisplayableProcess = json match {
-    case displayable: DisplayableProcess => displayable
+  override def scenarioGraph: ScenarioGraph = json match {
+    case scenarioGraph: ScenarioGraph => scenarioGraph
     case other =>
       throw new IllegalStateException(
         s"ScenarioWithDetailsEntity doesn't hold DisplayableProcess, instead of this it holds: $other"

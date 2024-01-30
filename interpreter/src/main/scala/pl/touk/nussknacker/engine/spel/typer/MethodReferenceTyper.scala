@@ -75,8 +75,9 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
   )(implicit reference: MethodReference): Either[Option[ExpressionParseError], List[TypingResult]] = {
     // We combine MethodInfo with errors so we can use it to decide which
     // error to display.
-    val infosWithValidationResults = methodInfos.map(x => (x, x.computeResultType(reference.params)))
-    val returnTypes = infosWithValidationResults.map { case (info, typ) => typ.leftMap(_.map((info, _))) }
+    val infosWithValidationResults =
+      methodInfos.map(x => (x, x.computeResultType(reference.invocationTarget, reference.params)))
+    val returnTypes = infosWithValidationResults.map { case (id, typ) => typ.leftMap(_.map((id, _))) }
     val combinedReturnTypes = returnTypes
       .map(x => x.map(List(_)))
       .reduce((x, y) =>

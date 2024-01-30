@@ -50,4 +50,5 @@ export interface UIParameter {
     variablesToHide: Array<string>;
     branchParam: boolean;
     hintText?: string;
+    label: string;
 }

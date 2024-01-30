@@ -44,7 +44,7 @@
             "nextFalse": [
                 {
                     "id": "failureOutput",
-                    "outputName": "output",
+                    "outputName": "output1",
                     "fields": [
                         {
                             "name": "failureOutput1",
@@ -81,7 +81,7 @@
         },
         {
             "id": "output",
-            "outputName": "output",
+            "outputName": "output2",
             "fields": [
                 {
                     "name": "successOutput1",

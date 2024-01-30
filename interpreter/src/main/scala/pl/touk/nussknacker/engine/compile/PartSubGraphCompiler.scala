@@ -16,14 +16,11 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompi
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{FragmentUsageEnd, Node}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
 
 class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler: NodeCompiler) {
-
-  type ParametersProviderT = ComponentDefinitionWithImplementation
 
   import CompilationResult._
 

@@ -1,10 +1,8 @@
 import React, { useCallback, useMemo } from "react";
 import { FixedValuesPresets, NodeValidationError, Parameter, VariableTypes } from "../../../../types";
-import { mandatoryValueValidator, uniqueListValueValidator, extendErrors } from "../editors/Validators";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
 import { Item, onChangeType, FragmentInputParameter } from "./item";
-import { isEmpty } from "lodash";
 
 export interface Option {
     value: string;
@@ -66,25 +64,10 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
 
     const items = useMemo(
         () =>
-            fields.map((item: any, index, list) => {
-                const nameErrors = extendErrors([], item.name, "name", [
-                    mandatoryValueValidator,
-                    uniqueListValueValidator(
-                        list.map((v) => v.name),
-                        index,
-                    ),
-                ]);
-
-                /*
-                 * Display settings errors only when the name is correct, for now, the name is used in the fieldName to recognize the list item,
-                 * but it can be a situation where that name is not unique or is empty in a few parameters, in this case, there is a problem with a correct error display
-                 */
-                const displayableErrors = isEmpty(nameErrors) ? errors : nameErrors;
-                return {
-                    item,
-                    el: <ItemElement key={index} index={index} item={item} errors={displayableErrors} />,
-                };
-            }),
+            fields.map((item, index) => ({
+                item,
+                el: <ItemElement key={index} index={index} item={item as FragmentInputParameter} errors={errors} />,
+            })),
         [ItemElement, errors, fields],
     );
 

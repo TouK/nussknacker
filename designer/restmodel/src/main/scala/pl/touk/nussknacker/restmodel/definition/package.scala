@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.graph.EdgeType
 
 import java.net.URI
 
@@ -23,10 +23,8 @@ package object definition {
   @JsonCodec(encodeOnly = true) final case class UIDefinitions(
       // This is dedicated view for the components toolbox panel
       componentGroups: List[UIComponentGroup],
-      components: Map[ComponentInfo, UIComponentDefinition],
+      components: Map[ComponentId, UIComponentDefinition],
       classes: List[TypingResult],
-      // TODO: remove it, use components field on the FE side instead
-      componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[UINodeEdges],
       customActions: List[UICustomAction]
@@ -42,6 +40,7 @@ package object definition {
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
+      // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
       defaultValue: Expression,
       // additionalVariables and variablesToHide are served to FE because suggestions API requires full set of variables
       // and ScenarioWithDetails.json.validationResult.nodeResults is not enough
@@ -50,7 +49,8 @@ package object definition {
       // FE need this information because branch parameters aren't changed dynamically during node validation so they never
       // should be invalidated
       branchParam: Boolean,
-      hintText: Option[String]
+      hintText: Option[String],
+      label: String
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
@@ -69,6 +69,8 @@ package object definition {
       //    (see. ProcessUtils.findAvailableVariables). This heuristic is used when DisplayableProcess can't be translated
       //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
+      icon: String,
+      docsUrl: Option[String],
       // This field is defined only for fragments
       outputParameters: Option[List[String]]
   )
@@ -76,14 +78,14 @@ package object definition {
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
   final case class UINodeEdges(
-      componentId: ComponentInfo,
+      componentId: ComponentId,
       edges: List[EdgeType],
       canChooseNodes: Boolean,
       isForInputDefinition: Boolean
   )
 
   object UINodeEdges {
-    implicit val componentIdEncoder: Encoder[ComponentInfo] = Encoder.encodeString.contramap(_.toString)
+    implicit val componentIdEncoder: Encoder[ComponentId] = Encoder.encodeString.contramap(_.toString)
 
     implicit val encoder: Encoder[UINodeEdges] = deriveConfiguredEncoder
   }
@@ -91,13 +93,13 @@ package object definition {
   object UIComponentNodeTemplate {
 
     def create(
-        componentInfo: ComponentInfo,
+        componentId: ComponentId,
         nodeTemplate: NodeData,
         branchParametersTemplate: List[NodeParameter]
     ): UIComponentNodeTemplate =
       UIComponentNodeTemplate(
-        componentInfo.`type`,
-        componentInfo.name,
+        componentId,
+        componentId.name,
         nodeTemplate,
         branchParametersTemplate
       )
@@ -105,15 +107,12 @@ package object definition {
   }
 
   @JsonCodec(encodeOnly = true) final case class UIComponentNodeTemplate(
-      // This field is used to generate unique key in DOM model on FE side (the label isn't unique)
-      `type`: ComponentType,
+      // componentId is used as a key in a DOM model - see ToolboxComponentGroup
+      componentId: ComponentId,
       label: String,
       node: NodeData,
       branchParametersTemplate: List[NodeParameter] = List.empty
-  ) {
-    // TODO: This is temporary - we shouldn't use ComponentNodeTemplate class for other purposes than encoding to json
-    def componentInfo: ComponentInfo = ComponentInfo(`type`, label)
-  }
+  )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentGroup(
       name: ComponentGroupName,

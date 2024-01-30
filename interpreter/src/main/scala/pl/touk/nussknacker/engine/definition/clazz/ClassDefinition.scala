@@ -17,13 +17,14 @@ case class ClassDefinition(
       )
   }
 
-  private def asProperty(info: MethodDefinition): Option[TypingResult] = info.computeResultType(List()).toOption
+  private def asProperty(methodDefinition: MethodDefinition, invocationTarget: TypingResult): Option[TypingResult] =
+    methodDefinition.computeResultType(invocationTarget, List.empty).toOption
 
   private val AnyClass: Class[Any] = classOf[Any]
 
-  def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
+  def getPropertyOrFieldType(invocationTarget: TypingResult, methodName: String): Option[TypingResult] = {
     def filterMethods(candidates: Map[String, List[MethodDefinition]]): List[TypingResult] =
-      candidates.get(methodName).toList.flatMap(_.map(asProperty)).collect { case Some(x) => x }
+      candidates.get(methodName).toList.flatMap(_.map(asProperty(_, invocationTarget))).collect { case Some(x) => x }
     val filteredMethods       = filterMethods(methods)
     val filteredStaticMethods = filterMethods(staticMethods)
     val filtered              = filteredMethods ++ filteredStaticMethods

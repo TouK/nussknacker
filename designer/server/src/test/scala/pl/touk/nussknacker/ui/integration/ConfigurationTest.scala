@@ -2,9 +2,12 @@ package pl.touk.nussknacker.ui.integration
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import java.net.URI
@@ -17,7 +20,9 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   private def globalConfig = ConfigWithScalaVersion.TestsConfig
 
   private def modelData: ModelData = ModelData(
-    ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
+    TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
+    DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
   )
 
   private lazy val modelDataConfig = modelData.modelConfig

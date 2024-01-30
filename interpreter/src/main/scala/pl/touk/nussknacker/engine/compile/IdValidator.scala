@@ -13,8 +13,8 @@ object IdValidator {
   private val nodeIdIllegalCharacters         = Set('.', '"', '\'')
   private val nodeIdIllegalCharactersReadable = "Quotation mark (\"), dot (.) and apostrophe (')"
 
-  def validate(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
-    val scenarioIdValidationResult = validateScenarioName(process.name, process.metaData.isFragment)
+  def validate(process: CanonicalProcess, isFragment: Boolean): ValidatedNel[ProcessCompilationError, Unit] = {
+    val scenarioIdValidationResult = validateScenarioName(process.name, isFragment)
     val nodesIdValidationResult = process.nodes
       .map(node => validateNodeId(node.data.id))
       .combineAll

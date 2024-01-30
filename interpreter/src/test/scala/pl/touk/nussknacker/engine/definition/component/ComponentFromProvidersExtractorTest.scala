@@ -36,8 +36,8 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       )
     )
     components should have size 7
-    components.map(_._1) should contain theSameElementsAs (1 to 7).map(i => s"component-v$i")
-    components.map(_._2.implementation) should contain theSameElementsAs (1 to 7).map(i => DynamicService(s"v$i"))
+    components.map(_.name) should contain theSameElementsAs (1 to 7).map(i => s"component-v$i")
+    components.map(_.implementation) should contain theSameElementsAs (1 to 7).map(i => DynamicService(s"v$i"))
   }
 
   test("should handle multiple providers") {
@@ -50,9 +50,9 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     )
     components should have size 5
     val expectedNames = (1 to 2).map(i => s"component-v$i") ++ (1 to 3).map(i => s"t1-component-v$i")
-    components.map(_._1) should contain theSameElementsAs expectedNames
+    components.map(_.name) should contain theSameElementsAs expectedNames
     val expectedServices = (1 to 2).map(i => DynamicService(s"v$i")) ++ (1 to 3).map(i => DynamicService(s"v$i"))
-    components.map(_._2.implementation) should contain theSameElementsAs expectedServices
+    components.map(_.implementation) should contain theSameElementsAs expectedServices
   }
 
   test("should discover components with same name and different component type for same provider") {
@@ -64,8 +64,8 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     )
 
     components.size shouldBe 2
-    components.map(_._1) shouldBe List("component", "component")
-    val implementations = components.map(_._2.implementation)
+    components.map(_.name) shouldBe List("component", "component")
+    val implementations = components.map(_.implementation)
     implementations.head shouldBe a[Service]
     implementations(1) shouldBe a[SinkFactory]
   }
@@ -79,7 +79,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       )
     )
     components should have size 1
-    components.map(_._1).head shouldBe "t1-component-v1"
+    components.map(_.name).head shouldBe "t1-component-v1"
   }
 
   test("should skip incompatible providers") {
@@ -96,8 +96,8 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
   test("should load auto loadable component") {
     val components = extractComponents()
     components should have size 1
-    val (componentName, component) = components.head
-    componentName shouldBe "auto-component"
+    val component = components.head
+    component.name shouldBe "auto-component"
     component.implementation shouldBe AutoService
   }
 
@@ -139,12 +139,12 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
   }
 
   private def extractComponents(
-      map: (String, Any)*
-  ): List[(String, ComponentDefinitionWithImplementation)] =
-    extractComponents(map.toMap, ComponentsFromProvidersExtractor(_))
+      componentsConfig: (String, Any)*
+  ): List[ComponentDefinitionWithImplementation] =
+    extractComponents(componentsConfig.toMap, ComponentsFromProvidersExtractor(_))
 
   private def extractComponents(
-      map: Map[String, Any],
+      componentsConfig: Map[String, Any],
       makeExtractor: ClassLoader => ComponentsFromProvidersExtractor
   ) = {
     ClassLoaderWithServices.withCustomServices(
@@ -157,8 +157,14 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       getClass.getClassLoader
     ) { cl =>
       val extractor = makeExtractor(cl)
-      val resolved  = loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(map.toSeq: _*)), cl)
-      extractor.extractComponents(ProcessObjectDependencies.withConfig(resolved.config), ComponentsUiConfig.Empty)
+      val resolved =
+        loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(componentsConfig.toSeq: _*)), cl)
+      extractor.extractComponents(
+        ProcessObjectDependencies.withConfig(resolved.config),
+        ComponentsUiConfig.Empty,
+        id => DesignerWideComponentId(id.toString),
+        Map.empty
+      )
     }
   }
 
@@ -167,7 +173,12 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       val extractor = ComponentsFromProvidersExtractor(cl)
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
-      extractor.extractComponents(ProcessObjectDependencies.withConfig(resolved.config), ComponentsUiConfig.Empty)
+      extractor.extractComponents(
+        ProcessObjectDependencies.withConfig(resolved.config),
+        ComponentsUiConfig.Empty,
+        id => DesignerWideComponentId(id.toString),
+        Map.empty
+      )
     }
   }
 

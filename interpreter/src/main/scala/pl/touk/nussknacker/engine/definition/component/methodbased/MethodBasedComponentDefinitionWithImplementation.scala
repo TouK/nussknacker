@@ -1,19 +1,17 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  ComponentImplementationInvoker,
-  ComponentStaticDefinition,
-  ComponentTypeSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component._
 
 final case class MethodBasedComponentDefinitionWithImplementation(
-    implementationInvoker: ComponentImplementationInvoker,
-    implementation: Any,
-    staticDefinition: ComponentStaticDefinition
+    override val name: String,
+    override val implementationInvoker: ComponentImplementationInvoker,
+    override val implementation: Component,
+    override val componentTypeSpecificData: ComponentTypeSpecificData,
+    staticDefinition: ComponentStaticDefinition,
+    override protected val uiDefinition: ComponentUiDefinition,
 ) extends ComponentDefinitionWithImplementation {
 
   override def withImplementationInvoker(
@@ -21,12 +19,36 @@ final case class MethodBasedComponentDefinitionWithImplementation(
   ): ComponentDefinitionWithImplementation =
     copy(implementationInvoker = implementationInvoker)
 
-  override def componentType: ComponentType = staticDefinition.componentType
-
   def parameters: List[Parameter] = staticDefinition.parameters
 
   def returnType: Option[TypingResult] = staticDefinition.returnType
 
-  override def componentTypeSpecificData: ComponentTypeSpecificData = staticDefinition.componentTypeSpecificData
+  override protected def typesFromStaticDefinition: List[TypingResult] = {
+    def typesFromParameter(parameter: Parameter): List[TypingResult] = {
+      val fromAdditionalVars = parameter.additionalVariables.values.map(_.typingResult)
+      fromAdditionalVars.toList :+ parameter.typ
+    }
+    parameters.flatMap(typesFromParameter) ++ returnType
+  }
+
+}
+
+object MethodBasedComponentDefinitionWithImplementation {
+
+  def withNullImplementation(
+      name: String,
+      componentTypeSpecificData: ComponentTypeSpecificData,
+      staticDefinition: ComponentStaticDefinition,
+      uiDefinition: ComponentUiDefinition
+  ): MethodBasedComponentDefinitionWithImplementation = {
+    MethodBasedComponentDefinitionWithImplementation(
+      name,
+      ComponentImplementationInvoker.nullImplementationInvoker,
+      null,
+      componentTypeSpecificData,
+      staticDefinition,
+      uiDefinition
+    )
+  }
 
 }

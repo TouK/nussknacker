@@ -6,7 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
@@ -157,17 +157,18 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   test("extract basic global variable") {
     val definition = modelDefinitionWithTypes(None).modelDefinition.expressionConfig.globalVariables
 
-    val helperDef = definition("helper").asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
-    helperDef.implementation shouldBe SampleHelper
-    helperDef.returnType.value shouldBe Typed(SampleHelper.getClass)
+    val helperDef = definition("helper")
+    helperDef.objectWithType(MetaData("dumb", StreamMetaData())).obj shouldBe SampleHelper
+    helperDef.typ shouldBe Typed(SampleHelper.getClass)
   }
 
   test("extract typed global variable") {
     val definition = modelDefinitionWithTypes(None).modelDefinition.expressionConfig.globalVariables
 
-    val typedGlobalDef = definition("typedGlobal").asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
-    typedGlobalDef.implementation shouldBe SampleTypedVariable
-    typedGlobalDef.returnType.value shouldBe Typed(classOf[Int])
+    val typedGlobalDef = definition("typedGlobal")
+    val objectWithType = typedGlobalDef.objectWithType(MetaData("dumb", StreamMetaData()))
+    objectWithType.obj shouldBe SampleTypedVariable.Value
+    objectWithType.typ shouldBe Typed.fromInstance(SampleTypedVariable.Value)
   }
 
   test("extracts validators from config") {
@@ -186,13 +187,15 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   }
 
   test("extract components that are only in specified category") {
-    val customTransformers = modelDefinitionWithTypes(Some(SomeCategory)).modelDefinition.components
+    val customTransformersIds = modelDefinitionWithTypes(Some(SomeCategory)).modelDefinition.components.map(_.id)
 
-    customTransformers should contain key ComponentInfo(ComponentType.CustomComponent, "transformer1")
-    customTransformers should contain key ComponentInfo(ComponentType.CustomComponent, "transformedInSomeCategory")
-    customTransformers should not contain key(
-      ComponentInfo(ComponentType.CustomComponent, "transformedInSomeOtherCategory")
+    customTransformersIds should contain(ComponentId(ComponentType.CustomComponent, "transformer1"))
+    customTransformersIds should contain(ComponentId(ComponentType.CustomComponent, "transformedInSomeCategory"))
+    customTransformersIds should not contain ComponentId(
+      ComponentType.CustomComponent,
+      "transformedInSomeOtherCategory"
     )
+
   }
 
   private def modelDefinitionWithTypes(category: Option[String]) = {
@@ -202,7 +205,9 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       TestCreator,
       category,
       ProcessObjectDependencies.withConfig(modelConfig),
-      ComponentsUiConfigParser.parse(modelConfig)
+      ComponentsUiConfigParser.parse(modelConfig),
+      id => DesignerWideComponentId(id.toString),
+      Map.empty
     )
     ModelDefinitionWithClasses(modelDefinition)
   }
@@ -381,9 +386,12 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   }
 
   object SampleTypedVariable extends TypedGlobalVariable {
-    override def value(metadata: MetaData): Any = ???
 
-    override def returnType(metadata: MetaData): TypingResult = ???
+    val Value = 123
+
+    override def value(metadata: MetaData): Any = Value
+
+    override def returnType(metadata: MetaData): TypingResult = Typed.fromInstance(Value)
 
     override def initialReturnType: TypingResult = Typed(classOf[Int])
   }

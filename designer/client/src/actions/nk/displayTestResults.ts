@@ -1,44 +1,45 @@
 import HttpService, { SourceWithParametersTest, TestProcessResponse } from "../../http/HttpService";
 import { displayProcessCounts } from "./displayProcessCounts";
 import { TestResults } from "../../common/TestResultUtils";
-import { Expression, Process, ProcessName } from "../../types";
 import { ThunkAction } from "../reduxTypes";
-import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
+import { ProcessName, Scenario } from "src/components/Process/types";
+import { ScenarioGraph } from "../../types";
 
-export function testProcessFromFile(processName: ProcessName, testDataFile: File, process: Process): ThunkAction {
+export function testProcessFromFile(processName: ProcessName, testDataFile: File, scenarioGraph: ScenarioGraph): ThunkAction {
     return (dispatch) => {
         dispatch({
             type: "PROCESS_LOADING",
         });
 
-        const processWithCleanEdges = withoutHackOfEmptyEdges(process);
-        HttpService.testProcess(processName, testDataFile, processWithCleanEdges)
+        HttpService.testProcess(processName, testDataFile, scenarioGraph)
             .then((response) => dispatch(displayTestResults(response.data)))
             .catch(() => dispatch({ type: "LOADING_FAILED" }));
     };
 }
 
-export function testProcessWithParameters(processName: ProcessName, testData: SourceWithParametersTest, process: Process): ThunkAction {
+export function testProcessWithParameters(
+    processName: ProcessName,
+    testData: SourceWithParametersTest,
+    scenarioGraph: ScenarioGraph,
+): ThunkAction {
     return (dispatch) => {
         dispatch({
             type: "PROCESS_LOADING",
         });
 
-        const processWithCleanEdges = withoutHackOfEmptyEdges(process);
-        HttpService.testProcessWithParameters(processName, testData, processWithCleanEdges)
+        HttpService.testProcessWithParameters(processName, testData, scenarioGraph)
             .then((response) => dispatch(displayTestResults(response.data)))
             .catch(() => dispatch({ type: "LOADING_FAILED" }));
     };
 }
 
-export function testScenarioWithGeneratedData(processName: ProcessName, testSampleSize: string, process: Process): ThunkAction {
+export function testScenarioWithGeneratedData(testSampleSize: string, processName: ProcessName, scenarioGraph: ScenarioGraph): ThunkAction {
     return (dispatch) => {
         dispatch({
             type: "PROCESS_LOADING",
         });
 
-        const processWithCleanEdges = withoutHackOfEmptyEdges(process);
-        HttpService.testScenarioWithGeneratedData(processName, testSampleSize, processWithCleanEdges)
+        HttpService.testScenarioWithGeneratedData(testSampleSize, processName, scenarioGraph)
             .then((response) => dispatch(displayTestResults(response.data)))
             .catch(() => dispatch({ type: "LOADING_FAILED" }));
     };

@@ -33,7 +33,7 @@ import ScenarioWithDetailsConversions._
 class ProcessesResources(
     protected val processService: ProcessService,
     deploymentService: DeploymentService,
-    processToolbarService: ProcessToolbarService,
+    processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
     processChangeListener: ProcessChangeListener
 )(implicit val ec: ExecutionContext, mat: Materializer)
@@ -229,19 +229,7 @@ class ProcessesResources(
             processService
               .getLatestProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
               .map(_.toEntity)
-              .map(processToolbarService.getProcessToolbarSettings)
-          }
-        }
-      } ~ path("processes" / "category" / ProcessNameSegment / Segment) { (processName, category) =>
-        (post & processId(processName)) { processId =>
-          hasAdminPermission(user) {
-            complete {
-              processService
-                .updateCategory(processId, category)
-                .withListenerNotifySideEffect(response =>
-                  OnCategoryChanged(processId.id, response.oldCategory, response.newCategory)
-                )
-            }
+              .map(processToolbarService.getScenarioToolbarSettings)
           }
         }
       } ~ path("processes" / ProcessNameSegment / VersionIdSegment / "compare" / VersionIdSegment) {
@@ -259,7 +247,7 @@ class ProcessesResources(
                   otherVersion,
                   GetScenarioWithDetailsOptions.withsScenarioGraph
                 )
-              } yield ProcessComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
+              } yield ScenarioGraphComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
           }
       }

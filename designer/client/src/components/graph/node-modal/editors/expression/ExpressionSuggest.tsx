@@ -1,9 +1,9 @@
 import "ace-builds/src-noconflict/ace";
-import { has, isEmpty } from "lodash";
+import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
-import { getProcessToDisplay } from "../../../../../reducers/selectors/graph";
+import { getProcessingType } from "../../../../../reducers/selectors/graph";
 import { BackendExpressionSuggester } from "./ExpressionSuggester";
 import HttpService from "../../../../../http/HttpService";
 import AceEditor from "./AceWithSettings";
@@ -44,7 +44,7 @@ export function ExpressionSuggest(props: Props): JSX.Element {
 
     const definitionData = useSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
-    const { processingType } = useSelector(getProcessToDisplay);
+    const processingType = useSelector(getProcessingType);
 
     const { value, onValueChange, language } = inputProps;
     const [editorFocused, setEditorFocused] = useState(false);

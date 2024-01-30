@@ -308,9 +308,9 @@ val flinkV             = "1.16.3"
 val flinkCommonsLang3V = "3.12.0"
 val flinkCommonsTextV  = "1.10.0"
 val flinkCommonsIOV    = "2.11.0"
-val avroV              = "1.11.1"
+val avroV              = "1.11.3"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV             = "3.3.2"
+val kafkaV             = "3.6.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV            = "5.2.23.RELEASE"
 val scalaTestV         = "3.2.17"
@@ -339,8 +339,8 @@ val configV                 = "1.4.2"
 // rc16+ depend on slf4j 2.x
 val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.10.0"
-val testContainersScalaV    = "0.40.17"
-val testContainersJavaV     = "1.18.3"
+val testContainersScalaV    = "0.41.0"
+val testContainersJavaV     = "1.19.3"
 val nettyV                  = "4.1.93.Final"
 val nettyReactiveStreamsV   = "2.0.8"
 
@@ -354,7 +354,7 @@ val hikariCpV                 = "5.0.1"
 val hsqldbV                   = "2.7.2"
 val postgresV                 = "42.6.0"
 val flywayV                   = "9.19.1"
-val confluentV                = "7.3.2"
+val confluentV                = "7.5.1"
 val azureKafkaSchemaRegistryV = "1.1.0-beta.1"
 val azureSchemaRegistryV      = "1.3.6"
 val azureIdentityV            = "1.9.0"
@@ -384,14 +384,10 @@ def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = Non
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage       := forScalaVersion(
-      scalaVersion.value,
-      "eclipse-temurin:17-jre-jammy",
-      (
-        2,
-        12
-      ) -> "eclipse-temurin:11-jre-jammy" // jre11, cause for jdk17 minimum scala version is 2.12.15, we use 2.12.10
-    ),
+    // designer should run on java11 since it may run Flink in-memory-cluster, which does not support newer java and we want to have same jre in both designer and lite-runner
+    // to make analysis of problems with jre compatibility easier using testing mechanism and embedded server
+    // todo: we want to support jre17+ but before that flink must be compatible with jre17+ and we should handle opening of modules for spel reflectional access to java modules classes
+    dockerBaseImage       := "eclipse-temurin:11-jre-jammy",
     dockerUsername        := dockerUserName,
     dockerUpdateLatest    := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerBuildxPlatforms := Seq("linux/amd64", "linux/arm64"), // not used in case of Docker/publishLocal
@@ -427,7 +423,6 @@ lazy val distDockerSettings = {
   val nussknackerDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerBaseImage                      := "eclipse-temurin:11-jre-jammy", // designer should run on java11 since it may run Flink in-memory-cluster, which does not support newer java
     dockerEntrypoint                     := Seq(s"$nussknackerDir/bin/nussknacker-entrypoint.sh"),
     dockerExposedPorts                   := Seq(dockerPort),
     dockerEnvVars                        := Map(
@@ -1695,10 +1690,9 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
     libraryDependencies ++= Seq(
       "org.apache.flink"          % "flink-streaming-java" % flinkV     % Provided,
       "org.scalatest"            %% "scalatest"            % scalaTestV % Test,
-      "com.clearspring.analytics" % "stream"               % "2.9.8" excludeAll (
-        // It is used only in QDigest which we don't use, while it's >20MB in size...
-        ExclusionRule("it.unimi.dsi", "fastutil"),
-      )
+      "com.clearspring.analytics" % "stream"               % "2.9.8"
+      // It is used only in QDigest which we don't use, while it's >20MB in size...
+        exclude ("it.unimi.dsi", "fastutil"),
     ),
   )
   .dependsOn(
@@ -1872,7 +1866,14 @@ lazy val designer = (project in file("designer/server"))
         "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
         "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
         "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % "test"
-      ) ++ forScalaVersion(scalaVersion.value, Seq(), (2, 13) -> Seq("org.scala-lang.modules" %% "scala-xml" % "2.1.0"))
+      ) ++ forScalaVersion(
+        scalaVersion.value,
+        Seq(),
+        (2, 13) -> Seq(
+          "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
+          "org.scala-lang.modules" %% "scala-xml"                  % "2.1.0"
+        )
+      )
     }
   )
   .dependsOn(
@@ -2010,6 +2011,7 @@ lazy val root = (project in file("."))
   .aggregate(modulesWithBom: _*)
   .settings(commonSettings)
   .settings(
+    name              := "nussknacker",
     // crossScalaVersions must be set to Nil on the aggregating project
     releaseCrossBuild := true,
     publish / skip    := true,

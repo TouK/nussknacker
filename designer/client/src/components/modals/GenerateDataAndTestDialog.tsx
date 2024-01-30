@@ -2,8 +2,8 @@ import { css, cx } from "@emotion/css";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector, useDispatch } from "react-redux";
-import { getProcessName, getProcessToDisplay } from "../../reducers/selectors/graph";
+import { useDispatch, useSelector } from "react-redux";
+import { getScenarioGraph } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { PromptContent } from "../../windowManager";
 import {
@@ -18,12 +18,13 @@ import { NodeInput } from "../withFocus";
 import ValidationLabels from "./ValidationLabels";
 import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
 import { isEmpty } from "lodash";
+import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 
 function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const processName = useSelector(getProcessName);
-    const processToDisplay = useSelector(getProcessToDisplay);
+    const scenarioGraph = useSelector(getScenarioGraph);
     const maxSize = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
     const [{ testSampleSize }, setState] = useState({
@@ -31,9 +32,9 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     });
 
     const confirmAction = useCallback(async () => {
-        await dispatch(testScenarioWithGeneratedData(processName, testSampleSize, processToDisplay));
+        await dispatch(testScenarioWithGeneratedData(testSampleSize, processName, scenarioGraph));
         props.close();
-    }, [dispatch, processName, processToDisplay, props, testSampleSize]);
+    }, [dispatch, processName, scenarioGraph, props, testSampleSize]);
 
     const validators = [literalIntegerValueValidator, minimalNumberValidator(0), maximalNumberValidator(maxSize), mandatoryValueValidator];
     const errors = extendErrors([], testSampleSize, "testData", validators);

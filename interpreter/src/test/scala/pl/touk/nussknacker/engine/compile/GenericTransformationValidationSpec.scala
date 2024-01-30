@@ -2,12 +2,11 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
-import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyMandatoryParameter,
   ExpressionParserCompilationError,
@@ -18,6 +17,7 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
@@ -49,7 +49,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
   private val modelDefinition = ModelDefinition(
-    ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+    ComponentDefinitionWithImplementation
+      .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default
   )
@@ -59,6 +60,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     new SimpleDictRegistry(Map.empty),
     CustomProcessValidatorLoader.emptyCustomProcessValidator
   )
+
+  def validate(process: CanonicalProcess) = validator.validate(process, isFragment = false)
 
   private val expectedGenericParameters = List(
     Parameter[String]("par1")
@@ -70,7 +73,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   )
 
   test("should validate happy path") {
-    val result = validator.validate(
+    val result = validate(
       processBase
         .customNode(
           "generic",
@@ -99,7 +102,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   }
 
   test("should validate sources") {
-    val result = validator.validate(
+    val result = validate(
       ScenarioBuilder
         .streaming("proc1")
         .source(
@@ -128,7 +131,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   }
 
   test("should validate sinks") {
-    val result = validator.validate(
+    val result = validate(
       processBase.emptySink(
         "end",
         "genericParametersSink",
@@ -145,7 +148,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   }
 
   test("should validate services") {
-    val result = validator.validate(
+    val result = validate(
       processBase
         .processor(
           "genericProcessor",
@@ -175,7 +178,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   }
 
   test("should handle exception throws during validation gracefully") {
-    val result = validator.validate(
+    val result = validate(
       processBase
         .processor(
           "genericProcessor",
@@ -193,7 +196,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   }
 
   test("should dependent parameter in sink") {
-    val result = validator.validate(
+    val result = validate(
       processBase.emptySink(
         "end",
         "genericParametersSink",
@@ -217,7 +220,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   test("should find wrong determining parameter") {
 
-    val result = validator.validate(
+    val result = validate(
       processBase
         .customNode("generic", "out1", "genericParameters", "par1" -> "12", "lazyPar1" -> "#input == null ? 1 : 5")
         .emptySink("end", "dummySink")
@@ -240,7 +243,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   test("should find wrong dependent parameters") {
 
-    val result = validator.validate(
+    val result = validate(
       processBase
         .customNode(
           "generic",
@@ -277,7 +280,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   test("should find no output variable") {
 
-    val result = validator.validate(
+    val result = validate(
       processBase
         .customNode("generic", "out1", "genericParameters", "par1" -> "12", "lazyPar1" -> "#input == null ? 1 : 5")
         .emptySink("end", "dummySink")
@@ -323,7 +326,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
           )
           .emptySink("end", "dummySink")
       )
-    val validationResult = validator.validate(process)
+    val validationResult = validate(process)
 
     val varsInEnd = validationResult.variablesInNodes("end")
     varsInEnd("outPutVar") shouldBe Typed.fromInstance("abcdd")
@@ -335,7 +338,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     val process = processBase
       .emptySink("optionalParameters", "optionalParametersSink", "wrongOptionalParameter" -> "'123'")
 
-    val result = validator.validate(process)
+    val result = validate(process)
 
     val parameters = result.parametersInNodes("optionalParameters")
     parameters shouldBe List(
@@ -346,7 +349,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   }
 
   test("should be possible to perform two steps of validation in one step using defaults as node parameters") {
-    val result = validator.validate(
+    val result = validate(
       processBase
         .customNodeNoOutput("generic", "twoStepsInOne")
         .emptySink("end", "dummySink")
@@ -358,7 +361,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   }
 
   test("should omit redundant parameters for generic transformations") {
-    val result = validator.validate(
+    val result = validate(
       processBase
         .customNodeNoOutput("generic", "twoStepsInOne", "redundant" -> "''")
         .emptySink("end", "dummySink")
@@ -370,7 +373,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   }
 
   test("should not fall in endless loop for buggy node implementation") {
-    val result = validator.validate(
+    val result = validate(
       processBase
         .customNodeNoOutput("generic", "paramsLoop")
         .emptySink("end", "dummySink")

@@ -1,6 +1,6 @@
 import NodeUtils from "../NodeUtils";
 import { cloneDeep, isEqual, map, reject } from "lodash";
-import { Edge, NodeId, NodeType, Process, ProcessDefinitionData } from "../../../types";
+import { Edge, NodeId, NodeType, ScenarioGraph, ProcessDefinitionData } from "../../../types";
 import {
     adjustBranchParametersAfterDisconnect,
     enrichNodeWithProcessDependentData,
@@ -9,10 +9,10 @@ import {
 import { dia } from "jointjs";
 import { isTouchEvent } from "../../../helpers/detectDevice";
 
-export function mapProcessWithNewNode(process: Process, before: NodeType, after: NodeType): Process {
+export function mapProcessWithNewNode(scenarioGraph: ScenarioGraph, before: NodeType, after: NodeType): ScenarioGraph {
     return {
-        ...process,
-        edges: map(process.edges, (e) => {
+        ...scenarioGraph,
+        edges: map(scenarioGraph.edges, (e) => {
             if (isEqual(e.from, before.id)) {
                 return { ...e, from: after.id, to: e.to };
             } else if (isEqual(e.to, before.id)) {
@@ -21,10 +21,9 @@ export function mapProcessWithNewNode(process: Process, before: NodeType, after:
                 return e;
             }
         }),
-        nodes: map(process.nodes, (n) => {
+        nodes: map(scenarioGraph.nodes, (n) => {
             return isEqual(n, before) ? after : mapBranchParametersWithNewNode(before.id, after.id, n);
         }),
-        properties: NodeUtils.nodeIsProperties(after) ? after : process.properties,
     };
 }
 
@@ -42,10 +41,10 @@ function mapBranchParametersWithNewNode(beforeId: NodeId, afterId: NodeId, node:
     }
 }
 
-export function mapProcessWithNewEdge(process: Process, before: Edge, after: Edge): Process {
+export function mapProcessWithNewEdge(scenarioGraph: ScenarioGraph, before: Edge, after: Edge): ScenarioGraph {
     return {
-        ...process,
-        edges: map(process.edges, (e) => {
+        ...scenarioGraph,
+        edges: map(scenarioGraph.edges, (e) => {
             if (isEqual(e.from, before.from) && isEqual(e.to, before.to)) {
                 return after;
             } else {
@@ -56,21 +55,21 @@ export function mapProcessWithNewEdge(process: Process, before: Edge, after: Edg
 }
 
 export function replaceNodeOutputEdges(
-    process: Process,
+    scenarioGraph: ScenarioGraph,
     processDefinitionData: ProcessDefinitionData,
     edgesAfter: Edge[],
     nodeId: NodeType["id"],
-): Process {
-    const edgesBefore = process.edges.filter(({ from }) => from === nodeId);
+): ScenarioGraph {
+    const edgesBefore = scenarioGraph.edges.filter(({ from }) => from === nodeId);
 
-    if (isEqual(edgesBefore, edgesAfter)) return process;
+    if (isEqual(edgesBefore, edgesAfter)) return scenarioGraph;
 
     const oldTargets = new Set(edgesBefore.map((e) => e.to));
     const newTargets = new Set(edgesAfter.map((e) => e.to));
     return {
-        ...process,
-        edges: process.edges.filter(({ from }) => !(from === nodeId)).concat(edgesAfter),
-        nodes: process.nodes.map((node) => {
+        ...scenarioGraph,
+        edges: scenarioGraph.edges.filter(({ from }) => !(from === nodeId)).concat(edgesAfter),
+        nodes: scenarioGraph.nodes.map((node) => {
             if (newTargets.has(node.id)) {
                 return enrichNodeWithProcessDependentData(node, processDefinitionData, edgesAfter);
             }
@@ -82,23 +81,23 @@ export function replaceNodeOutputEdges(
     };
 }
 
-export function deleteNode(process: Process, nodeId: NodeId): Process {
-    const edges = process.edges.filter((e) => e.from !== nodeId).map((e) => (e.to === nodeId ? { ...e, to: "" } : e));
-    const nodesAfterRemove = process.nodes.filter((n) => n.id !== nodeId);
-    const removedEdges = process.edges.filter((e) => e.from === nodeId);
+export function deleteNode(scenarioGraph: ScenarioGraph, nodeId: NodeId): ScenarioGraph {
+    const edges = scenarioGraph.edges.filter((e) => e.from !== nodeId).map((e) => (e.to === nodeId ? { ...e, to: "" } : e));
+    const nodesAfterRemove = scenarioGraph.nodes.filter((n) => n.id !== nodeId);
+    const removedEdges = scenarioGraph.edges.filter((e) => e.from === nodeId);
     const nodes = adjustBranchParametersAfterDisconnect(nodesAfterRemove, removedEdges);
 
-    return { ...process, edges, nodes };
+    return { ...scenarioGraph, edges, nodes };
 }
 
 export function canInjectNode(
-    process: Process,
+    scenarioGraph: ScenarioGraph,
     sourceId: NodeId,
     middleManId: NodeId,
     targetId: NodeId,
     processDefinitionData: ProcessDefinitionData,
 ): boolean {
-    const processAfterDisconnection = deleteEdge(process, sourceId, targetId);
+    const processAfterDisconnection = deleteEdge(scenarioGraph, sourceId, targetId);
     const canConnectSourceToMiddleMan = NodeUtils.canMakeLink(sourceId, middleManId, processAfterDisconnection, processDefinitionData);
     const processWithConnectedSourceAndMiddleMan = addEdge(processAfterDisconnection, sourceId, middleManId);
     const canConnectMiddleManToTarget = NodeUtils.canMakeLink(
@@ -110,17 +109,17 @@ export function canInjectNode(
     return canConnectSourceToMiddleMan || canConnectMiddleManToTarget;
 }
 
-function deleteEdge(process: Process, fromId: NodeId, toId: NodeId): Process {
+function deleteEdge(scenarioGraph: ScenarioGraph, fromId: NodeId, toId: NodeId): ScenarioGraph {
     return {
-        ...process,
-        edges: reject(process.edges, (e) => e.from === fromId && e.to === toId),
+        ...scenarioGraph,
+        edges: reject(scenarioGraph.edges, (e) => e.from === fromId && e.to === toId),
     };
 }
 
-function addEdge(process: Process, fromId: NodeId, toId: NodeId): Process {
+function addEdge(scenarioGraph: ScenarioGraph, fromId: NodeId, toId: NodeId): ScenarioGraph {
     return {
-        ...process,
-        edges: process.edges.concat({ from: fromId, to: toId }),
+        ...scenarioGraph,
+        edges: scenarioGraph.edges.concat({ from: fromId, to: toId }),
     };
 }
 

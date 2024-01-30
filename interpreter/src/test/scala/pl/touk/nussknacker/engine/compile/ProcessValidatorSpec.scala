@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.{
@@ -79,7 +80,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
       Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0)))
     )
-    .withCustom("withoutReturnType", None, nonEndingOneInputComponent, Parameter[String]("par1"))
+    .withCustom(
+      "withoutReturnType",
+      None,
+      nonEndingOneInputComponent,
+      Parameter[String]("par1")
+    )
     .withCustom(
       "withMandatoryParams",
       Some(Unknown),
@@ -446,7 +452,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           val fragment = ScenarioBuilder
             .fragmentWithInputNodeId(fragmentId, "sourceId")
             .emptySink("sinkId", "sink")
-          validate(fragment, baseDefinition).result match {
+          validate(fragment, baseDefinition, isFragment = true).result match {
             case Valid(_)   => expectedErrors shouldBe empty
             case Invalid(e) => e.toList shouldBe expectedErrors
 
@@ -1199,7 +1205,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should propagate error from source creation") {
     val base = baseDefinition
     val failingDefinition = base
-      .transform {
+      .mapComponents {
         case component if component.componentType == ComponentType.Source =>
           component.withImplementationInvoker((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
             throw new RuntimeException("You passed incorrect parameter, cannot proceed")
@@ -1225,8 +1231,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should be able to derive type from ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      "returningTypeService",
-      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceReturningTypeSample)
+      ComponentDefinitionWithImplementation.withEmptyConfig("returningTypeService", ServiceReturningTypeSample)
     )
 
     val process =
@@ -1254,8 +1259,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should override parameter definition from WithExplicitMethodToInvoke by definition from ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      "returningTypeService",
-      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceReturningTypeWithExplicitMethodSample)
+      ComponentDefinitionWithImplementation.withEmptyConfig(
+        "returningTypeService",
+        ServiceReturningTypeWithExplicitMethodSample
+      )
     )
 
     val process =
@@ -1282,8 +1289,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should be able to run custom validation using ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      "withCustomValidation",
-      ComponentDefinitionWithImplementation.withEmptyConfig(ServiceWithCustomValidation)
+      ComponentDefinitionWithImplementation.withEmptyConfig("withCustomValidation", ServiceWithCustomValidation)
     )
 
     val process =
@@ -1591,16 +1597,18 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
     withNonUsed shouldBe Symbol("valid")
 
-    val withUsed  = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
-    val outputVar = OutputVar.fragmentOutput("output1", "")
+    val withUsed       = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
+    val errorFieldName = OutputVar.fragmentOutput("output1", "").fieldName
+
     withUsed should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable(usedVarName, "sample-out", Some(outputVar)), Nil)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable(`usedVarName`, "sample-out", Some(`errorFieldName`)), Nil)) =>
     }
   }
 
   private def validate(
       process: CanonicalProcess,
-      definitions: ModelDefinition[ComponentDefinitionWithImplementation]
+      definitions: ModelDefinition,
+      isFragment: Boolean = false
   ): CompilationResult[Unit] = {
     ProcessValidator
       .default(
@@ -1608,7 +1616,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         new SimpleDictRegistry(Map.empty),
         CustomProcessValidatorLoader.emptyCustomProcessValidator
       )
-      .validate(process)
+      .validate(process, isFragment)
   }
 
   case class SimpleRecord(

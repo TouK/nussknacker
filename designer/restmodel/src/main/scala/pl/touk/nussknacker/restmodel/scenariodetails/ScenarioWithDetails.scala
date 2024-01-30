@@ -2,24 +2,26 @@ package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.restmodel.validation.{ValidatedDisplayableProcess, ValidationResults}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 import java.time.Instant
 
 final case class ScenarioWithDetails(
-    name: ProcessName,
+    override val name: ProcessName,
     // TODO: This field is not passed to FE as we always use ProcessName in our API (see the encoder below)
-    //       We should use entity in places where it is used on BE side or extract another class for DTO without this field
+    //       We should extract another DTO class without this one field, and move this class with defined processId
+    //       into our domain model
     processId: Option[ProcessId],
     processVersionId: VersionId,
     isLatestVersion: Boolean,
     description: Option[String],
-    isArchived: Boolean,
-    isFragment: Boolean,
-    processingType: ProcessingType,
-    processCategory: String,
+    override val isArchived: Boolean,
+    override val isFragment: Boolean,
+    override val processingType: ProcessingType,
+    override val processCategory: String,
     modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
     modifiedAt: Instant,
     modifiedBy: String,
@@ -29,32 +31,27 @@ final case class ScenarioWithDetails(
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[ProcessAction],
     lastAction: Option[ProcessAction],
-    // TODO: move things like processingType, category and validationResult on the root level and rename json to scenarioGraph
-    json: Option[ValidatedDisplayableProcess],
-    history: Option[List[ScenarioVersion]],
-    modelVersion: Option[Int],
+    override val scenarioGraph: Option[ScenarioGraph],
+    override val validationResult: Option[ValidationResult],
+    override val history: Option[List[ScenarioVersion]],
+    override val modelVersion: Option[Int],
     state: Option[ProcessState]
-) {
+) extends BaseScenarioWithDetailsForMigrations {
 
-  def withScenarioGraphAndValidationResult(
-      scenarioWithValidationResult: ValidatedDisplayableProcess
-  ): ScenarioWithDetails = {
-    copy(json = Some(scenarioWithValidationResult))
-  }
+  def withScenarioGraph(scenarioGraph: ScenarioGraph): ScenarioWithDetails =
+    copy(scenarioGraph = Some(scenarioGraph))
 
-  def historyUnsafe: List[ScenarioVersion] = history.getOrElse(throw new IllegalStateException("Missing history"))
+  def withValidationResult(validationResult: ValidationResult): ScenarioWithDetails =
+    copy(validationResult = Some(validationResult))
 
-  def scenarioGraphUnsafe: DisplayableProcess = scenarioGraphAndValidationResultUnsafe.toDisplayable(name)
+  def scenarioGraphUnsafe: ScenarioGraph =
+    scenarioGraph.getOrElse(throw new IllegalStateException("Missing scenario graph and validation result"))
 
   def validationResultUnsafe: ValidationResults.ValidationResult =
     validationResult.getOrElse(throw new IllegalStateException("Missing validation result"))
 
-  def validationResult: Option[ValidationResults.ValidationResult] = {
-    scenarioGraphAndValidationResultUnsafe.validationResult
-  }
-
-  def scenarioGraphAndValidationResultUnsafe: ValidatedDisplayableProcess =
-    json.getOrElse(throw new IllegalStateException("Missing scenario graph and validation result"))
+  def idWithNameUnsafe: ProcessIdWithName =
+    ProcessIdWithName(processIdUnsafe, name)
 
   def processIdUnsafe: ProcessId = processId.getOrElse(throw new IllegalStateException("Missing processId"))
 

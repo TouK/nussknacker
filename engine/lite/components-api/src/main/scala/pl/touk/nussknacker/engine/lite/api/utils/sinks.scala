@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.api.utils
 import cats.data.Writer
 import cats.implicits._
 import cats.{Monad, Monoid}
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
@@ -54,7 +54,7 @@ object sinks {
         ctx =>
           implicitly[Monad[F]].pure(
             // FIXME: figure out how to pass componentName here
-            withErrors(context, Some(ComponentInfo(ComponentType.Sink, "unknown")), ctx) {
+            withErrors(context, Some(ComponentId(ComponentType.Sink, "unknown")), ctx) {
               interpreter(ctx)
             }
           )

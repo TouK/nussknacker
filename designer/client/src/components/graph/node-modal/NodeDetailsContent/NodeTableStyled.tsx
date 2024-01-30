@@ -4,34 +4,12 @@ import { customCheckbox } from "./CustomCheckbox";
 export const NodeTableStyled = styled("div")(
     ({ theme }) => css`
         font-size: 11px;
-        margin: 0 25px;
-        .node-table-body {
-            clear: both;
-        }
+        margin: 0 24px;
         .movable-row {
             margin-top: 0;
             flex-wrap: nowrap;
             column-gap: 5px;
             row-gap: 5px;
-        }
-        .node-label {
-            color: ${theme.custom.colors.canvasBackground};
-            flex-basis: 20%;
-            max-width: 20em;
-            display: inline-block;
-            vertical-align: sub;
-            margin-top: 9px;
-            font-size: 12px;
-            font-weight: 700;
-            span {
-                margin-top: 10px;
-                margin-left: 10px;
-                font-size: 15px;
-
-                &:hover {
-                    cursor: pointer;
-                }
-            }
         }
         .node-block {
             &.removed {
@@ -96,12 +74,6 @@ export const NodeTableStyled = styled("div")(
                 background-image: -ms-linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
             }
         }
-        .node-error {
-            width: 100%;
-            color: ${theme.custom.colors.error};
-            font-size: 14px;
-            font-weight: 400;
-        }
         .node-tip {
             width: 24px;
             height: 24px;
@@ -109,12 +81,6 @@ export const NodeTableStyled = styled("div")(
                 // disable svg <title> behavior
                 pointer-events: none;
             }
-            &.node-error-tip {
-            }
-        }
-        .node-test-results {
-            border: 1px solid ${theme.custom.colors.ok};
-            padding: 5px;
         }
         .node-input {
             height: 35px;
@@ -162,9 +128,6 @@ export const NodeTableStyled = styled("div")(
             padding-top: 15px;
             width: 100%;
             padding-left: 50px;
-            .node-label {
-                text-transform: none;
-            }
         }
         textarea.node-input {
             resize: vertical;

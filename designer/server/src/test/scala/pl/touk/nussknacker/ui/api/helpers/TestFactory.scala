@@ -5,15 +5,12 @@ import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
@@ -90,7 +87,9 @@ object TestFactory extends TestPermissions {
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
 
-  def scenarioResolver = new ScenarioResolver(sampleResolver)
+  def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] = mapProcessingTypeDataProvider(
+    TestProcessingTypes.Streaming -> new ScenarioResolver(sampleResolver, TestProcessingTypes.Streaming)
+  )
 
   def deploymentService() = new StubDeploymentService(Map.empty)
 
@@ -119,10 +118,10 @@ object TestFactory extends TestPermissions {
     new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
-    new DbProcessActionRepository[DB](dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
+    new DbProcessActionRepository(dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
       with DbioRepository
 
-  def newDummyActionRepository(): DbProcessActionRepository[DB] =
+  def newDummyActionRepository(): DbProcessActionRepository =
     newActionProcessRepository(dummyDbRef)
 
   def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef)
@@ -130,10 +129,16 @@ object TestFactory extends TestPermissions {
   def asAdmin(route: RouteWithUser): Route =
     route.securedRouteWithErrorHandling(adminUser())
 
-  def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.streamingTypeSpecificInitialData),
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties)
-  )
+  val newProcessPreparer: NewProcessPreparer =
+    new NewProcessPreparer(
+      ProcessTestData.streamingTypeSpecificInitialData,
+      FlinkStreamingPropertiesConfig.properties
+    )
+
+  val newProcessPreparerByProcessingType: ProcessingTypeDataProvider[NewProcessPreparer, _] =
+    mapProcessingTypeDataProvider(
+      TestProcessingTypes.Streaming -> newProcessPreparer
+    )
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
     route.securedRouteWithErrorHandling(user(permissions = permissions))
@@ -161,23 +166,12 @@ object TestFactory extends TestPermissions {
     LoggedUser(id, username, permissions, globalPermissions = List("CustomFixedPermission"))
 
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser =
-    LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
+    LoggedUser(id, username, Map.empty, isAdmin = true)
 
   def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
     ProcessingTypeDataProvider.withEmptyCombinedData(
       Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
-    )
-  }
-
-  def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] =
-    ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
-
-  def createValidator(modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation]): ProcessValidator = {
-    ProcessValidator.default(
-      ModelDefinitionWithClasses(modelDefinition),
-      new SimpleDictRegistry(Map.empty),
-      CustomProcessValidatorLoader.emptyCustomProcessValidator
     )
   }
 

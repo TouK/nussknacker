@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 class TestDataPreparer(
     classloader: ClassLoader,
-    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
+    expressionConfig: ExpressionConfigDefinition,
     dictRegistry: EngineDictRegistry,
     classDefinitionSet: ClassDefinitionSet,
     metaData: MetaData

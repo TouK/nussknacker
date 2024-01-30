@@ -31,7 +31,11 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .emptySink("sink11", "")
 
     val computed =
-      defaultCounter.computeCounts(process, Map("source1" -> RawCount(30L, 5L), "filter1" -> RawCount(20, 10)).get)
+      defaultCounter.computeCounts(
+        process,
+        isFragment = false,
+        Map("source1" -> RawCount(30L, 5L), "filter1" -> RawCount(20, 10)).get
+      )
 
     computed shouldBe Map(
       "source1" -> NodeCount(30, 5),
@@ -64,6 +68,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       )
     val result = defaultCounter.computeCounts(
       process,
+      isFragment = false,
       Map(
         "source1" -> RawCount(1, 0),
         "source2" -> RawCount(2, 0),
@@ -86,7 +91,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
-      .fragmentOneOut("sub1", "fragment1", "out1", "fragmentResult")
+      .fragmentOneOut("fragment1", "fragment1", "out1", "fragmentResult")
       .emptySink("sink11", "")
 
     val counter = new ProcessCounter(
@@ -108,20 +113,21 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
 
     val computed = counter.computeCounts(
       process,
+      isFragment = false,
       Map(
-        "source1"         -> RawCount(70L, 0L),
-        "filter1"         -> RawCount(60, 1),
-        "sub1"            -> RawCount(55, 2),
-        "sub1-subFilter1" -> RawCount(45, 4),
-        "sub1-outId1"     -> RawCount(35, 5),
-        "sink11"          -> RawCount(30, 10)
+        "source1"              -> RawCount(70L, 0L),
+        "filter1"              -> RawCount(60, 1),
+        "fragment1"            -> RawCount(55, 2),
+        "fragment1-subFilter1" -> RawCount(45, 4),
+        "fragment1-outId1"     -> RawCount(35, 5),
+        "sink11"               -> RawCount(30, 10)
       ).get
     )
 
     computed shouldBe Map(
       "source1" -> NodeCount(70, 0),
       "filter1" -> NodeCount(60, 1),
-      "sub1" -> NodeCount(
+      "fragment1" -> NodeCount(
         55,
         2,
         Map(
@@ -145,6 +151,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
 
     val computed = counter.computeCounts(
       fragment,
+      isFragment = true,
       Map(
         "fragment1"   -> RawCount(30, 0),
         "filter"      -> RawCount(20, 5),

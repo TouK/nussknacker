@@ -69,7 +69,7 @@ class CustomActionInvokerServiceImpl(
             actionError(CustomActionNonExisting(actionReq))
         }
       case _ =>
-        Future.failed(ProcessNotFoundError(id.id.value.toString))
+        Future.failed(ProcessNotFoundError(id.name))
     }
   }
 

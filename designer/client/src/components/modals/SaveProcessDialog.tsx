@@ -7,7 +7,7 @@ import { displayCurrentProcessVersion, displayProcessActivity, loadProcessToolba
 import { PromptContent } from "../../windowManager";
 import { CommentInput } from "../comment/CommentInput";
 import { ThunkAction } from "../../actions/reduxTypes";
-import { getProcessToDisplay, getProcessUnsavedNewName, isProcessRenamed } from "../../reducers/selectors/graph";
+import { getScenarioGraph, getProcessName, getProcessUnsavedNewName, isProcessRenamed } from "../../reducers/selectors/graph";
 import HttpService from "../../http/HttpService";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { visualizationUrl } from "../../common/VisualizationUrl";
@@ -20,11 +20,11 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
         (comment: string): ThunkAction => {
             return async (dispatch, getState) => {
                 const state = getState();
-                const processJson = getProcessToDisplay(state);
-                const currentProcessName = processJson.name;
+                const scenarioGraph = getScenarioGraph(state);
+                const currentProcessName = getProcessName(state);
 
                 // save changes before rename and force same processName everywhere
-                await HttpService.saveProcess(currentProcessName, processJson, comment);
+                await HttpService.saveProcess(currentProcessName, scenarioGraph, comment);
 
                 const unsavedNewName = getProcessUnsavedNewName(state);
                 const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));

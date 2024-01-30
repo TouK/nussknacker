@@ -118,7 +118,7 @@ class ExpressionSuggesterSpec
     )
   )
 
-  private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
+  private val expressionConfig: ExpressionConfigDefinition =
     ModelDefinitionBuilder.empty
       .withGlobalVariable("util", new Util)
       .build

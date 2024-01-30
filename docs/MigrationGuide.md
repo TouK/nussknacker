@@ -29,15 +29,34 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `RemoteEnvironment.testMigration` result types changes
     * `shouldFailOnNewErrors` field was removed - it wasn't used anywhere anymore
     * `converted` field was replaced by the `processName` field which was the only information that was used
+* [#5361](https://github.com/TouK/nussknacker/pull/5361) `Parameter` has new, optional `labelOpt` field which allows
+  to specify label presented to the user without changing identifier used in scenario graph json (`Parameteter.name`)
+* [#5356](https://github.com/TouK/nussknacker/pull/5356) Changes in AdditionalUIConfigProvider.getAllForProcessingType now require model reload to take effect.
+* [#5393](https://github.com/TouK/nussknacker/pull/5393) [#5444](https://github.com/TouK/nussknacker/pull/5444)
+  * Changes around metadata removal from the REST API requests and responses:
+    * `DisplayableProcess` was renamed to `ScenarioGraph`
+    * `ScenarioGraph` fields that were removed: `name`,  `processingType`, `category` - all these fields already were in `ScenarioWithDetails`
+    * `ProcessProperties` field removed: `isFragment` - this field already was in `ScenarioWithDetails`
+    * `ScenarioWithDetails` field `json.validationResult` was moved into the top level of `ScenarioWithDetails`
+    * `ScenarioWithDetails` field `json` was renamed into `scenarioGraph` and changed the type into `ScenarioGraph`
+    * `ValidatedDisplayableProcess` was renamed to `ScenarioGraphWithValidationResult`
+    * `ScenarioGraphWithValidationResult` all scenario graph fields were replaced by one `scenarioGraph: DisplayableProcess` field
+  * Migration mechanisms (`RemoteEnvironment` and `TestModelMigrations`) use `ScenarioWithDetailsForMigrations` instead of `ScenarioWithDetails`
+* [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
+  * `ComponentInfo` was renamed to `ComponentId`
+  * `ComponentId` was renamed to `DesignerWideComponentId`
+  * new `ComponentId` is serialized in json to string in format `$componentType-$componentName` instead of separate fields (`name` and `type`)
+  * `NodeComponentInfo.componentInfo` was renamed to `componentId`
 
 ### REST API changes
-* [#5280](https://github.com/TouK/nussknacker/pull/5280) Changes in the definition API:
+* [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
   * `/processDefinitionData/componentIds` endpoint is removed
   * `/processDefinitionData/*` response changes:
-    * `services`, `sourceFactories`, `sinkFactories`, `customStreamTransformers` and `fragmentInputs` maps inside `processDefinition` were replaced by
+    * `services`, `sourceFactories`, `sinkFactories`, `customStreamTransformers` and `fragmentInputs` maps fields were replaced by
       one `components` map with key in format `$componentType-$componentName` and moved into top level of response
-    * `typesInformation` inside `processDefinition` was renamed into `classes`, moved into top level of response 
+    * `typesInformation` field was renamed into `classes`, moved into top level of response 
       and nested `clazzName` inside each element was extracted
+    * `componentsConfig` field was removed - now all information about components are available in the `components` field
     * `nodeId` field inside `edgesForNodes` was renamed into `componentId` in the flat `$componentType-$componentName` format
     * `defaultAsyncInterpretation` field was removed
 * [#5285](https://github.com/TouK/nussknacker/pull/5285) Changes around scenario id/name fields:
@@ -51,18 +70,35 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `processes/**/activity/attachments` - `processId` fields was removed
   * `processes/**/activity/comments` - `processId` fields was removed
   * GET `processes/$name/$version/activity/attachments` - `$version` segment is removed now
+* [#5393](https://github.com/TouK/nussknacker/pull/5393) Changes around metadata removal from the REST API requests and responses:
+  * `/processValidation` was changed to `/processValidation/$scenarioName` and changed request type
+  * `/testInfo/*` was changed to `/testInfo/$scenarioName/*` and changed request type
+  * `/processManagement/generateAndTest/$samples` was changed to `/processManagement/generateAndTest/$scenarioName/$samples`
+  * `/processesExport/*` was changed to `/processesExport/$scenarioName/*` and changed response type
+  * `/processes/import/$scenarioName` was changed response into `{"scenarioGraph": {...}, "validationResult": {...}`
+  * GET `/processes/*` and `/processesDetails/*` changed response type
+  * PUT `/processes/$scenarioName` was changed request field from `process` to `scenarioGraph`
+  * `/adminProcessManagement/testWithParameters/$scenarioName` was changed request field from `displayableProcess` to `scenarioGraph`
+* [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
+  * Endpoints returning test results (`/processManagement/test*`) return `nodeId` instead of `nodeComponentInfo` now
+  * `/processDefinitionData/*` response: field `type` was replaced by `componentId` inside the  path `.componentGroups[].components[]`
+* [#5462](https://github.com/TouK/nussknacker/pull/5462) `/processes/category/*` endpoint was removed
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
   * `$processingType-$componentType-$componentName` format was replaced by `$componentType-$componentName` format
 * [#5323](https://github.com/TouK/nussknacker/pull/5323) Support for [the legacy categories configuration format](https://nussknacker.io/documentation/docs/1.12/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) was removed.
   In the new format, you should specify `category` field inside each scenario type.
+* [#5419](https://github.com/TouK/nussknacker/pull/5419) Support for system properties was removed from model configuration
+  (they aren't resolved and added to merged configuration)
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
+* [#5432](https://github.com/TouK/nussknacker/pull/5432) Kafka client, Confluent Schema Registry Client and Avro bump
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13 
 
-## In version 1.13.x (Not released yet)
+## In version 1.13.0 
 
 ### Code API changes
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Method definition `def authenticationMethod(): Auth[AuthCredentials, _]` was changed to `def authenticationMethod(): EndpointInput[AuthCredentials]`

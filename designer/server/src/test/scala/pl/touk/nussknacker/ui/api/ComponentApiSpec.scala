@@ -6,7 +6,7 @@ import io.restassured.response.ValidatableResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.must.Matchers.contain
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.{
@@ -18,7 +18,6 @@ import pl.touk.nussknacker.test.{
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
-import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider}
 
 class ComponentApiSpec
     extends AnyFreeSpecLike
@@ -29,8 +28,6 @@ class ComponentApiSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
-
-  private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider({ (_, _) => None })
 
   "The endpoint for getting components when" - {
     "authenticated should" - {
@@ -281,11 +278,9 @@ class ComponentApiSpec
           .source("source", sourceComponentName)
           .emptySink("sink", "kafka")
 
-        createSavedScenario(scenario, Category1, Streaming)
-        val componentId = defaultComponentIdProvider.createComponentId(
-          processingType = Streaming,
-          componentInfo = ComponentInfo(ComponentType.Source, sourceComponentName)
-        )
+        createSavedScenario(scenario)
+        val componentId =
+          DesignerWideComponentId.default(Streaming, ComponentId(ComponentType.Source, sourceComponentName))
 
         given()
           .basicAuth("admin", "admin")
@@ -313,16 +308,16 @@ class ComponentApiSpec
       }
 
       "return 404 when component not exist" in {
-        val badComponent: ComponentId = ComponentId("not-exist-component")
+        val badComponentId: DesignerWideComponentId = DesignerWideComponentId("not-exist-component")
 
         given()
-          .pathParam("componentId", badComponent.value)
+          .pathParam("componentId", badComponentId.value)
           .basicAuth("admin", "admin")
           .when()
           .get(s"$nuDesignerHttpAddress/api/components/{componentId}/usages")
           .Then()
           .statusCode(404)
-          .body(equalTo(s"Component ${badComponent.value} not exist."))
+          .body(equalTo(s"Component ${badComponentId.value} not exist."))
       }
       "return 405 when invalid HTTP method is passed" in {
         given()

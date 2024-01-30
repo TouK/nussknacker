@@ -2,8 +2,7 @@ package pl.touk.nussknacker.restmodel.validation
 
 import cats.implicits._
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -50,7 +49,7 @@ object ValidationResults {
       nodeResults.mapValuesNow(_.typingInfo)
 
     private def allErrors: List[NodeValidationError] =
-      (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors).toList
+      (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors.map(_.error)).toList
 
   }
 
@@ -63,20 +62,33 @@ object ValidationResults {
   }
 
   @JsonCodec final case class NodeTypingData(
+      // variableTypes are needed bcause we hold the draft of a scenario on the FE side and we don't want FE
+      // to send to BE the whole scenario graph every time when someone change something in a single node.
+      // Because of that we send variable types that are before each node, and FE send to BE only these types instead of the whole scenario
       variableTypes: Map[String, TypingResult],
+      // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters) in
+      // a chain of information about parameter definition. It will be used only when:
+      // - API of a dynamic component was changed
+      // - FE didn't send node validation request yet
+      // TODO: We should remove this and instead of this, we should do node's parameters adjustment
+      //       before we return the scenario graph on the BE side
       parameters: Option[List[UIParameter]],
-      // currently we not showing typing info in gui but maybe in near future will
-      // be used for enhanced typing in FE
+      // typingInfo is returned to present inferred types of a parameters - it is in the separate map instead of kept with
+      // parameters, because we have a hardcoded parameters for built-in components
+      // We could return just a TypingResult (without intermediateResults) but it would require copying of nested
+      // structures. Because of that, we remove these information on the encoding level
       typingInfo: Map[String, ExpressionTypingInfo]
   )
 
   @JsonCodec final case class ValidationErrors(
       invalidNodes: Map[String, List[NodeValidationError]],
       processPropertiesErrors: List[NodeValidationError],
-      globalErrors: List[NodeValidationError]
+      globalErrors: List[UIGlobalError]
   ) {
     def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
   }
+
+  @JsonCodec final case class UIGlobalError(error: NodeValidationError, nodeIds: List[String])
 
   @JsonCodec final case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
 
@@ -89,7 +101,7 @@ object ValidationResults {
   )
 
   object ValidationErrors {
-    val success: ValidationErrors = ValidationErrors(Map.empty, List(), List())
+    val success: ValidationErrors = ValidationErrors(Map.empty, List.empty, List.empty)
   }
 
   object ValidationWarnings {
@@ -100,13 +112,13 @@ object ValidationResults {
 
     val success: ValidationResult = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
 
-    def globalErrors(globalErrors: List[NodeValidationError]): ValidationResult =
-      ValidationResult.errors(Map(), List(), globalErrors)
+    def globalErrors(globalErrors: List[UIGlobalError]): ValidationResult =
+      ValidationResult.errors(Map.empty, List.empty, globalErrors)
 
     def errors(
         invalidNodes: Map[String, List[NodeValidationError]],
         processPropertiesErrors: List[NodeValidationError],
-        globalErrors: List[NodeValidationError]
+        globalErrors: List[UIGlobalError]
     ): ValidationResult = {
       ValidationResult(
         ValidationErrors(

@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -84,15 +83,14 @@ class NodesResources(
           implicit val requestDecoder: Decoder[PropertiesValidationRequest] = preparePropertiesRequestDecoder(modelData)
           entity(as[PropertiesValidationRequest]) { request =>
             complete {
-              val scenario = DisplayableProcess(
-                request.name,
+              val scenarioGraph = ScenarioGraph(
                 ProcessProperties(request.additionalFields),
                 Nil,
-                Nil,
-                process.processingType,
-                process.processCategory
+                Nil
               )
-              val result = typeToProcessValidator.forTypeUnsafe(process.processingType).validate(scenario)
+              val result = typeToProcessValidator
+                .forTypeUnsafe(process.processingType)
+                .validate(scenarioGraph, request.name, process.isFragment)
               NodeValidationResult(
                 parameters = None,
                 expressionType = None,
@@ -185,7 +183,7 @@ object NodesResources {
 
 @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
     sourceParameters: TestSourceParameters,
-    displayableProcess: DisplayableProcess
+    scenarioGraph: ScenarioGraph
 )
 
 @JsonCodec(encodeOnly = true) final case class ParametersValidationResult(
@@ -199,7 +197,13 @@ object NodesResources {
 )
 
 @JsonCodec(encodeOnly = true) final case class NodeValidationResult(
+    // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
     parameters: Option[List[UIParameter]],
+    // expressionType is returned to present inferred types of a single, hardcoded parameter of the node
+    // We currently support only type inference for an expression in the built-in components: variable and switch
+    // and fields of the record-variable and fragment output (we return TypedObjectTypingResult in this case)
+    // TODO: We should keep this in a map, instead of TypedObjectTypingResult as it is done in ValidationResult.typingInfo
+    //       Thanks to that we could remove some code on the FE side and be closer to support also not built-in components
     expressionType: Option[TypingResult],
     validationErrors: List[NodeValidationError],
     validationPerformed: Boolean

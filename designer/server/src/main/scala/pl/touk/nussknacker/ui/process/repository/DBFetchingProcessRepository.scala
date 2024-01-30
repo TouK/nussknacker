@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionSt
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -19,18 +19,20 @@ import scala.language.higherKinds
 
 object DBFetchingProcessRepository {
 
-  def create(dbRef: DbRef, actionRepository: ProcessActionRepository[DB])(implicit ec: ExecutionContext) =
+  def create(dbRef: DbRef, actionRepository: ProcessActionRepository)(implicit ec: ExecutionContext) =
     new DBFetchingProcessRepository[DB](dbRef, actionRepository) with DbioRepository
 
-  def createFutureRepository(dbRef: DbRef, actionRepository: ProcessActionRepository[DB])(
+  def createFutureRepository(dbRef: DbRef, actionRepository: ProcessActionRepository)(
       implicit ec: ExecutionContext
   ) =
     new DBFetchingProcessRepository[Future](dbRef, actionRepository) with BasicRepository
 
 }
 
-abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, actionRepository: ProcessActionRepository[DB])
-    extends FetchingProcessRepository[F]
+abstract class DBFetchingProcessRepository[F[_]: Monad](
+    protected val dbRef: DbRef,
+    actionRepository: ProcessActionRepository
+) extends FetchingProcessRepository[F]
     with LazyLogging {
 
   import api._
@@ -136,12 +138,12 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
   }
 
   override def fetchProcessingType(
-      processId: ProcessId
+      processId: ProcessIdWithName
   )(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
       implicit val fetchStrategy: ScenarioShapeFetchStrategy[_] = ScenarioShapeFetchStrategy.NotFetch
-      fetchLatestProcessDetailsForProcessIdQuery(processId).flatMap {
-        case None          => DBIO.failed(ProcessNotFoundError(processId.value.toString))
+      fetchLatestProcessDetailsForProcessIdQuery(processId.id).flatMap {
+        case None          => DBIO.failed(ProcessNotFoundError(processId.name))
         case Some(process) => DBIO.successful(process.processingType)
       }
     }
@@ -231,10 +233,10 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
     (processVersion.json, processVersion.componentsUsages, implicitly[ScenarioShapeFetchStrategy[PS]]) match {
       case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchCanonical) =>
         canonical.asInstanceOf[PS]
-      case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchDisplayable) =>
-        val displayableProcess =
-          ProcessConverter.toDisplayableOrDie(canonical, process.processingType, process.processCategory)
-        displayableProcess.asInstanceOf[PS]
+      case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchScenarioGraph) =>
+        val scenarioGraph =
+          CanonicalProcessConverter.toScenarioGraph(canonical)
+        scenarioGraph.asInstanceOf[PS]
       case (_, _, ScenarioShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
       case (_, Some(componentsUsages), ScenarioShapeFetchStrategy.FetchComponentsUsages) =>
         componentsUsages.asInstanceOf[PS]

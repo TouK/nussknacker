@@ -1,6 +1,11 @@
 package pl.touk.nussknacker.engine.definition.model
 
-import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.component.{
+  Component,
+  ComponentAdditionalConfig,
+  ComponentId,
+  DesignerWideComponentId
+}
 import pl.touk.nussknacker.engine.api.process.{
   ExpressionConfig,
   ProcessConfigCreator,
@@ -13,7 +18,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
-  GlobalVariableDefinitionExtractor
+  GlobalVariableDefinitionWithImplementation
 }
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
@@ -23,8 +28,10 @@ object ModelDefinitionFromConfigCreatorExtractor {
       creator: ProcessConfigCreator,
       categoryOpt: Option[String],
       modelDependencies: ProcessObjectDependencies,
-      componentsUiConfig: ComponentsUiConfig
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+      componentsUiConfig: ComponentsUiConfig,
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): ModelDefinition = {
 
     val sourceFactories          = creator.sourceFactories(modelDependencies).toList
     val sinkFactories            = creator.sinkFactories(modelDependencies).toList
@@ -34,11 +41,17 @@ object ModelDefinitionFromConfigCreatorExtractor {
 
     val expressionConfig = creator.expressionConfig(modelDependencies)
 
-    val components = extractFromComponentsList(allComponents, categoryOpt, componentsUiConfig)
+    val components = extractFromComponentsList(
+      allComponents,
+      categoryOpt,
+      componentsUiConfig,
+      determineDesignerWideId,
+      additionalConfigsFromProvider
+    )
 
     val settings = creator.classExtractionSettings(modelDependencies)
 
-    ModelDefinition[ComponentDefinitionWithImplementation](
+    ModelDefinition(
       components,
       toDefinition(expressionConfig, categoryOpt),
       settings
@@ -48,22 +61,30 @@ object ModelDefinitionFromConfigCreatorExtractor {
   private def extractFromComponentsList(
       components: List[(String, WithCategories[Component])],
       categoryOpt: Option[String],
-      componentsUiConfig: ComponentsUiConfig
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+      componentsUiConfig: ComponentsUiConfig,
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): List[ComponentDefinitionWithImplementation] = {
     collectAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component, componentConfig) =>
       ComponentDefinitionExtractor
-        .extract(componentName, component, componentConfig, componentsUiConfig)
-        .map(componentName -> _)
+        .extract(
+          componentName,
+          component,
+          componentConfig,
+          componentsUiConfig,
+          determineDesignerWideId,
+          additionalConfigsFromProvider
+        )
     }
   }
 
   private def toDefinition(
       expressionConfig: ExpressionConfig,
       categoryOpt: Option[String],
-  ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] = {
+  ): ExpressionConfigDefinition = {
     val filteredVariables = collectAvailableForCategory(expressionConfig.globalProcessVariables.toList, categoryOpt)
     val variables = filteredVariables.map { case (name, variable, _) =>
-      name -> GlobalVariableDefinitionExtractor.extractDefinition(variable)
+      name -> GlobalVariableDefinitionWithImplementation(variable)
     }.toMap
     ExpressionConfigDefinition(
       variables,

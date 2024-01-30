@@ -5,7 +5,7 @@ import {
     NodeId,
     NodeResults,
     NodeType,
-    Process,
+    ScenarioGraph,
     ReturnedType,
     TypingResult,
     UIParameter,
@@ -14,34 +14,35 @@ import {
 } from "../types";
 import { RootState } from "../reducers";
 import { isProcessRenamed } from "../reducers/selectors/graph";
+import { Scenario } from "src/components/Process/types";
 
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
-        const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
-        const processToDisplay = state.graphReducer.processToDisplay;
-        //TODO: validationResult should be removed from processToDisplay...
-        const omitValidation = (details: Process) => omit(details, ["validationResult"]);
+        const scenario = state.graphReducer.scenario;
+        const savedProcessState = state.graphReducer.history.past[0]?.scenario || state.graphReducer.history.present.scenario;
+
+        const omitValidation = (details: ScenarioGraph) => omit(details, ["validationResult"]);
         const processRenamed = isProcessRenamed(state);
 
         if (processRenamed) {
             return false;
         }
 
-        if (isEmpty(fetchedProcessDetails)) {
+        if (isEmpty(scenario)) {
             return true;
         }
 
-        return isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay));
+        return !savedProcessState || isEqual(omitValidation(scenario.scenarioGraph), omitValidation(savedProcessState.scenarioGraph));
     };
 
     canExport = (state: RootState): boolean => {
-        const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
-        return isEmpty(fetchedProcessDetails) ? false : !isEmpty(fetchedProcessDetails.json.nodes);
+        const scenario = state.graphReducer.scenario;
+        return isEmpty(scenario) ? false : !isEmpty(scenario.scenarioGraph.nodes);
     };
 
     //fixme maybe return hasErrors flag from backend?
-    hasNeitherErrorsNorWarnings = (process: Process) => {
-        return this.hasNoErrors(process) && this.hasNoWarnings(process);
+    hasNeitherErrorsNorWarnings = (scenario: Scenario) => {
+        return this.hasNoErrors(scenario) && this.hasNoWarnings(scenario);
     };
 
     extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
@@ -54,8 +55,8 @@ class ProcessUtils {
         );
     };
 
-    hasNoErrors = (process: Process) => {
-        const result = this.getValidationErrors(process);
+    hasNoErrors = (scenario: Scenario) => {
+        const result = this.getValidationErrors(scenario);
         return (
             !result ||
             (Object.keys(result.invalidNodes || {}).length == 0 &&
@@ -64,20 +65,20 @@ class ProcessUtils {
         );
     };
 
-    getValidationResult = (process: Process): ValidationResult =>
-        process?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
+    getValidationResult = (scenario: Scenario): ValidationResult =>
+        scenario?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
 
-    hasNoWarnings = (process: Process) => {
-        const warnings = this.getValidationResult(process).warnings;
+    hasNoWarnings = (scenario: Scenario) => {
+        const warnings = this.getValidationResult(scenario).warnings;
         return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
     };
 
-    hasNoPropertiesErrors = (process: Process) => {
-        return isEmpty(this.getValidationErrors(process)?.processPropertiesErrors);
+    hasNoPropertiesErrors = (scenario: Scenario) => {
+        return isEmpty(this.getValidationErrors(scenario)?.processPropertiesErrors);
     };
 
-    getValidationErrors(process: Process) {
-        return this.getValidationResult(process).errors;
+    getValidationErrors(scenario: Scenario) {
+        return this.getValidationResult(scenario).errors;
     }
 
     findContextForBranch = (node: NodeType, branchId: string) => {
@@ -99,17 +100,18 @@ class ProcessUtils {
         );
     };
 
-    getNodeResults = (process: Process): NodeResults => this.getValidationResult(process).nodeResults;
+    getNodeResults = (scenario: Scenario): NodeResults => this.getValidationResult(scenario).nodeResults;
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
     escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
     findAvailableVariables =
-        (components: Record<string, ComponentDefinition>, process: Process) =>
+        (components: Record<string, ComponentDefinition>, scenario: Scenario) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
-            const nodeResults = this.getNodeResults(process);
+            const nodeResults = this.getNodeResults(scenario);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
-            const variablesForNode = variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, process, components);
+            const variablesForNode =
+                variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, scenario.scenarioGraph, components);
             const variablesToHideForParam = parameterDefinition?.variablesToHide || [];
             const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key));
             const additionalVariablesForParam = parameterDefinition?.additionalVariables || {};
@@ -120,12 +122,12 @@ class ProcessUtils {
 
     _findVariablesDeclaredBeforeNode = (
         nodeId: NodeId,
-        process: Process,
+        scenarioGraph: ScenarioGraph,
         components: Record<string, ComponentDefinition>,
     ): VariableTypes => {
-        const previousNodes = this._findPreviousNodes(nodeId, process);
+        const previousNodes = this._findPreviousNodes(nodeId, scenarioGraph);
         const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
-            return this._findVariablesDefinedInProcess(nodeId, process, components);
+            return this._findVariablesDefinedInProcess(nodeId, scenarioGraph, components);
         });
         return this._listOfObjectsToObject(variablesDefinedBeforeNodeList);
     };
@@ -138,10 +140,10 @@ class ProcessUtils {
 
     _findVariablesDefinedInProcess = (
         nodeId: NodeId,
-        process: Process,
+        scenarioGraph: ScenarioGraph,
         components: Record<string, ComponentDefinition>,
     ): Record<string, ReturnedType>[] => {
-        const node = process.nodes.find((node) => node.id === nodeId);
+        const node = scenarioGraph.nodes.find((node) => node.id === nodeId);
         const componentDefinition = this.extractComponentDefinition(node, components);
         const clazzName = componentDefinition?.returnType;
         const unknown: ReturnedType = {
@@ -179,13 +181,8 @@ class ProcessUtils {
         }
     };
 
-    extractComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition => {
-        const definition = components?.[this.determineComponentId(node)];
-        const emptyDefinition = {
-            parameters: null,
-            returnType: null,
-        };
-        return definition || emptyDefinition;
+    extractComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition | null => {
+        return components?.[this.determineComponentId(node)];
     };
 
     determineComponentId = (node?: NodeType): string | null => {
@@ -267,36 +264,17 @@ class ProcessUtils {
         }
     };
 
-    determineNodeConfigName = (node: NodeType): string => {
-        // First we try to find the component's name (configs for components are resolved by component's name).
-        // When we can't determine component's name, it means that the node is a special process properties node,
-        // not a node that uses a component so we use a special, fake $properties node configuration for it
-        return this.determineComponentName(node) || "$properties";
-    };
-
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
-    _findPreviousNodes = (nodeId: NodeId, process: Process): NodeId[] => {
-        const nodeEdge = process.edges.find((edge) => edge.to === nodeId);
+    _findPreviousNodes = (nodeId: NodeId, scenarioGraph: ScenarioGraph): NodeId[] => {
+        const nodeEdge = scenarioGraph.edges.find((edge) => edge.to === nodeId);
         if (isEmpty(nodeEdge)) {
             return [];
         } else {
-            const previousNodes = this._findPreviousNodes(nodeEdge.from, process);
+            const previousNodes = this._findPreviousNodes(nodeEdge.from, scenarioGraph);
             return [nodeEdge.from].concat(previousNodes);
         }
     };
-
-    //Remove if it doesn't use
-    prepareFilterCategories = (categories, loggedUser) =>
-        map(
-            (categories || []).filter((c) => loggedUser.canRead(c)),
-            (e) => {
-                return {
-                    value: e,
-                    label: e,
-                };
-            },
-        );
 }
 
 export default new ProcessUtils();

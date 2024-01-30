@@ -1,24 +1,24 @@
 import { ThunkAction } from "../reduxTypes";
-import { Process, ProcessDefinitionData, ProcessName } from "../../types";
+import { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import HttpService from "./../../http/HttpService";
-import { ProcessType, ProcessVersionId } from "../../components/Process/types";
+import { Scenario, ProcessName, ProcessVersionId } from "../../components/Process/types";
 import { displayProcessActivity } from "./displayProcessActivity";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
-    | { type: "DISPLAY_PROCESS"; fetchedProcessDetails: ProcessType };
+    | { type: "DISPLAY_PROCESS"; scenario: Scenario };
 
-export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<ProcessType>> {
+export function fetchProcessToDisplay(processName: ProcessName, versionId?: ProcessVersionId): ThunkAction<Promise<Scenario>> {
     return (dispatch) => {
         dispatch({ type: "PROCESS_FETCH" });
 
         return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
-            dispatch(displayTestCapabilities(response.data.json));
+            dispatch(displayTestCapabilities(processName, response.data.scenarioGraph));
             dispatch({
                 type: "DISPLAY_PROCESS",
-                fetchedProcessDetails: response.data,
+                scenario: response.data,
             });
             return response.data;
         });
@@ -35,9 +35,9 @@ export function loadProcessState(processName: ProcessName): ThunkAction {
         );
 }
 
-export function fetchTestFormParameters(processDetails: Process) {
+export function fetchTestFormParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
     return (dispatch) =>
-        HttpService.getTestFormParameters(processDetails).then(({ data }) => {
+        HttpService.getTestFormParameters(processName, scenarioGraph).then(({ data }) => {
             dispatch({
                 type: "UPDATE_TEST_FORM_PARAMETERS",
                 testFormParameters: data,
@@ -45,9 +45,9 @@ export function fetchTestFormParameters(processDetails: Process) {
         });
 }
 
-export function displayTestCapabilities(processDetails: Process) {
+export function displayTestCapabilities(processName: ProcessName, scenarioGraph: ScenarioGraph) {
     return (dispatch) =>
-        HttpService.getTestCapabilities(processDetails).then(({ data }) =>
+        HttpService.getTestCapabilities(processName, scenarioGraph).then(({ data }) =>
             dispatch({
                 type: "UPDATE_TEST_CAPABILITIES",
                 capabilities: data,

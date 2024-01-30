@@ -1,49 +1,52 @@
 package pl.touk.nussknacker.engine.definition.model
 
-import pl.touk.nussknacker.engine.api.component.ComponentInfo
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.definition.component.BaseComponentDefinition
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 
-case class ModelDefinition[T <: BaseComponentDefinition] private (
-    components: Map[ComponentInfo, T],
-    expressionConfig: ExpressionConfigDefinition[T],
+case class ModelDefinition private (
+    components: List[ComponentDefinitionWithImplementation],
+    expressionConfig: ExpressionConfigDefinition,
     settings: ClassExtractionSettings
 ) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def withComponent(componentName: String, component: T): ModelDefinition[T] = {
-    withComponents(List(componentName -> component))
+  def withComponent(component: ComponentDefinitionWithImplementation): ModelDefinition = {
+    withComponents(List(component))
   }
 
-  def withComponents(componentsToAdd: List[(String, T)]): ModelDefinition[T] = {
-    val newComponents = components.toList ++ componentsToAdd.map { case (componentName, component) =>
-      ComponentInfo(component.componentType, componentName) -> component
-    }
+  def withComponents(componentsToAdd: List[ComponentDefinitionWithImplementation]): ModelDefinition = {
+    val newComponents = components ++ componentsToAdd
     checkDuplicates(newComponents)
-    copy(components = newComponents.toMap)
+    copy(components = newComponents)
   }
 
-  def getComponent(componentType: ComponentType, componentName: String): Option[T] =
-    getComponent(ComponentInfo(componentType, componentName))
+  def getComponent(componentType: ComponentType, componentName: String): Option[ComponentDefinitionWithImplementation] =
+    getComponent(ComponentId(componentType, componentName))
 
-  def getComponent(info: ComponentInfo): Option[T] = {
-    components.get(info)
+  def getComponent(id: ComponentId): Option[ComponentDefinitionWithImplementation] = {
+    components.find(_.id == id)
   }
 
-  def transform[R <: BaseComponentDefinition](f: T => R): ModelDefinition[R] = copy(
-    components.mapValuesNow(f),
-    expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
-  )
+  def filterComponents(predicate: ComponentDefinitionWithImplementation => Boolean): ModelDefinition =
+    copy(components.filter(predicate))
 
-  private def checkDuplicates(components: List[(ComponentInfo, T)]): Unit = {
-    val duplicates = components.toGroupedMap
+  def mapComponents(
+      f: ComponentDefinitionWithImplementation => ComponentDefinitionWithImplementation
+  ): ModelDefinition =
+    copy(components.map(f))
+
+  private def checkDuplicates(components: List[ComponentDefinitionWithImplementation]): Unit = {
+    val duplicates = components
+      .map(component => component.id -> component)
+      .toGroupedMap
       .filter(_._2.size > 1)
       .keys
       .toList
-      .sortBy(info => (info.`type`, info.name))
+      .sorted
     if (duplicates.nonEmpty) {
       throw new DuplicatedComponentsException(duplicates)
     }
@@ -51,18 +54,18 @@ case class ModelDefinition[T <: BaseComponentDefinition] private (
 
 }
 
-class DuplicatedComponentsException(duplicates: List[ComponentInfo])
+class DuplicatedComponentsException(duplicates: List[ComponentId])
     extends Exception(
       s"Found duplicated components: ${duplicates.mkString(", ")}. Please correct model configuration."
     )
 
 object ModelDefinition {
 
-  def apply[T <: BaseComponentDefinition](
-      components: List[(String, T)],
-      expressionConfig: ExpressionConfigDefinition[T],
+  def apply(
+      components: List[ComponentDefinitionWithImplementation],
+      expressionConfig: ExpressionConfigDefinition,
       settings: ClassExtractionSettings
-  ): ModelDefinition[T] =
-    new ModelDefinition(Map.empty, expressionConfig, settings).withComponents(components)
+  ): ModelDefinition =
+    new ModelDefinition(List.empty, expressionConfig, settings).withComponents(components)
 
 }

@@ -11,8 +11,6 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 
 class NodesApiSpec
@@ -36,7 +34,7 @@ class NodesApiSpec
         "return additional info for node with expression in existing scenario" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -73,7 +71,7 @@ class NodesApiSpec
         "return no additional info for node without expression in existing scenario" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -115,7 +113,7 @@ class NodesApiSpec
         "forbid access" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .noAuth()
             .jsonBody(exampleNodesAdditionalInfoRequestBody)
@@ -134,7 +132,7 @@ class NodesApiSpec
         "validate correct node without errors" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -201,7 +199,7 @@ class NodesApiSpec
         "validate filter node when wrong parameter type is given" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -276,7 +274,7 @@ class NodesApiSpec
         "validate incorrect sink expression" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -367,7 +365,8 @@ class NodesApiSpec
                  |            "additionalVariables": {},
                  |            "variablesToHide": [],
                  |            "branchParam": false,
-                 |            "hintText": null
+                 |            "hintText": null,
+                 |            "label": "Topic"
                  |        },
                  |        {
                  |            "name": "Value",
@@ -387,7 +386,8 @@ class NodesApiSpec
                  |            "additionalVariables": {},
                  |            "variablesToHide": [],
                  |            "branchParam": false,
-                 |            "hintText": null
+                 |            "hintText": null,
+                 |            "label": "Value"
                  |        }
                  |    ],
                  |    "expressionType": null,
@@ -407,7 +407,7 @@ class NodesApiSpec
         "validate node using dictionaries" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -459,7 +459,7 @@ class NodesApiSpec
         "validate node id" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -522,7 +522,7 @@ class NodesApiSpec
         "forbid access" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .noAuth()
             .jsonBody(exampleNodesValidationRequestBody)
@@ -544,7 +544,7 @@ class NodesApiSpec
         "return additional info for scenario properties" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -580,7 +580,7 @@ class NodesApiSpec
         "forbid access" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .jsonBody(examplePropertiesAdditionalInfoRequestBody)
             .noAuth()
@@ -599,7 +599,7 @@ class NodesApiSpec
         "validate properties" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -668,7 +668,7 @@ class NodesApiSpec
         "validate scenario id" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -746,7 +746,7 @@ class NodesApiSpec
         "forbid access" in {
           given
             .applicationState {
-              createSavedScenario(exampleScenario, Category1, Streaming)
+              createSavedScenario(exampleScenario)
             }
             .jsonBody(examplePropertiesValidationRequestBody)
             .noAuth()

@@ -5,11 +5,12 @@ import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService
+import pl.touk.nussknacker.ui.process.deployment.{AllDeployedScenarioService, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.{
   selectedScenarioTypeConfigurationPath,
   toValueWithPermission
@@ -31,18 +32,29 @@ object ProcessingTypeDataReader extends ProcessingTypeDataReader {
 
 trait ProcessingTypeDataReader extends LazyLogging {
 
-  def loadProcessingTypeData(config: ConfigWithUnresolvedVersion)(
+  def loadProcessingTypeData(
+      config: ConfigWithUnresolvedVersion,
+      deploymentService: DeploymentService,
+      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
+      additionalUIConfigProvider: AdditionalUIConfigProvider
+  )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: DeploymentService
+      sttpBackend: SttpBackend[Future, Any]
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
     val processingTypesData = processingTypesConfig
       .filter(selectedScenarioTypeFilter)
       .map { case (name, typeConfig) =>
-        name -> createProcessingTypeData(name, typeConfig)
+        name ->
+          createProcessingTypeData(
+            name,
+            typeConfig,
+            deploymentService,
+            createAllDeployedScenarioService,
+            additionalUIConfigProvider
+          )
       }
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
@@ -67,17 +79,23 @@ trait ProcessingTypeDataReader extends LazyLogging {
     (processingType, _) => selectedScenarioTypeOpt.forall(_ == processingType)
   }
 
-  protected def createProcessingTypeData(name: ProcessingType, typeConfig: ProcessingTypeConfig)(
+  protected def createProcessingTypeData(
+      processingType: ProcessingType,
+      typeConfig: ProcessingTypeConfig,
+      deploymentService: DeploymentService,
+      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
+      additionalUIConfigProvider: AdditionalUIConfigProvider
+  )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: DeploymentService
+      sttpBackend: SttpBackend[Future, Any]
   ): ProcessingTypeData = {
-    logger.debug(s"Creating scenario manager: $name with config: $typeConfig")
-    val managerProvider = ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.engineType)
+    logger.debug(s"Creating scenario manager: $processingType with config: $typeConfig")
+    val managerProvider            = ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.engineType)
+    val allDeployedScenarioService = createAllDeployedScenarioService(processingType)
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService =
-      new DefaultProcessingTypeDeploymentService(name, deploymentService)
-    ProcessingTypeData.createProcessingTypeData(managerProvider, typeConfig)
+      new DefaultProcessingTypeDeploymentService(processingType, deploymentService, allDeployedScenarioService)
+    ProcessingTypeData.createProcessingTypeData(processingType, managerProvider, typeConfig, additionalUIConfigProvider)
   }
 
   protected def createCombinedData(

@@ -9,14 +9,13 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
@@ -26,8 +25,8 @@ import pl.touk.nussknacker.ui.process.migrate.{
   TestMigrationResult
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ProcessComparator
-import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
+import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
+import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -74,7 +73,6 @@ class RemoteEnvironmentResourcesSpec
   }
 
   it should "invoke migration for found scenario" in {
-    val category   = Category1
     val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression.spel("#input == 4"))))
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processName -> difference))
 
@@ -86,9 +84,9 @@ class RemoteEnvironmentResourcesSpec
       ),
       readWritePermissions
     )
-    val expectedDisplayable = ProcessTestData.validDisplayableProcess.copy(category = category)
+    val expectedDisplayable = ProcessTestData.validScenarioGraph
 
-    saveProcess(processName, ProcessTestData.validProcess, category) {
+    saveCanonicalProcess(ProcessTestData.validProcess) {
       Get(s"/remoteEnvironment/$processName/2/compare/1") ~> route ~> check {
         status shouldEqual StatusCodes.OK
 
@@ -125,8 +123,8 @@ class RemoteEnvironmentResourcesSpec
       testPermissionRead
     )
 
-    saveProcess(processId1, ProcessTestData.validProcessWithName(processId1), Category1) {
-      saveProcess(processId2, ProcessTestData.validProcessWithName(processId2), Category1) {
+    saveCanonicalProcess(ProcessTestData.validProcessWithName(processId1)) {
+      saveCanonicalProcess(ProcessTestData.validProcessWithName(processId2)) {
         Get(s"/remoteEnvironment/compare") ~> route ~> check {
           status shouldEqual StatusCodes.OK
           responseAs[EnvironmentComparisonResult] shouldBe EnvironmentComparisonResult(
@@ -158,8 +156,8 @@ class RemoteEnvironmentResourcesSpec
       readWritePermissions
     )
 
-    saveProcess(processId1, ProcessTestData.validProcessWithName(processId1), Category1) {
-      saveProcess(processId2, ProcessTestData.validProcessWithName(processId2), Category1) {
+    saveCanonicalProcess(ProcessTestData.validProcessWithName(processId1)) {
+      saveCanonicalProcess(ProcessTestData.validProcessWithName(processId2)) {
         Get(s"/remoteEnvironment/compare") ~> route ~> check {
           status shouldEqual StatusCodes.OK
           responseAs[EnvironmentComparisonResult] shouldBe EnvironmentComparisonResult(
@@ -175,28 +173,34 @@ class RemoteEnvironmentResourcesSpec
 
   class MockRemoteEnvironment(
       testMigrationResults: List[TestMigrationResult] = List(),
-      val mockDifferences: Map[ProcessName, Map[String, ProcessComparator.Difference]] = Map()
+      val mockDifferences: Map[ProcessName, Map[String, ScenarioGraphComparator.Difference]] = Map()
   ) extends RemoteEnvironment {
 
-    var migrateInvocations = List[DisplayableProcess]()
-    var compareInvocations = List[DisplayableProcess]()
+    var migrateInvocations = List[ScenarioGraph]()
+    var compareInvocations = List[ScenarioGraph]()
 
     override def migrate(
-        localProcess: DisplayableProcess,
-        category: String
+        localScenarioGraph: ScenarioGraph,
+        remoteProcessName: ProcessName,
+        category: String,
+        isFragment: Boolean
     )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-      migrateInvocations = localProcess :: migrateInvocations
+      migrateInvocations = localScenarioGraph :: migrateInvocations
       Future.successful(Right(()))
     }
 
-    override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(
+    override def compare(
+        localScenarioGraph: ScenarioGraph,
+        remoteProcessName: ProcessName,
+        remoteProcessVersion: Option[VersionId]
+    )(
         implicit ec: ExecutionContext
-    ): Future[Either[NuDesignerError, Map[String, ProcessComparator.Difference]]] = {
-      compareInvocations = localProcess :: compareInvocations
+    ): Future[Either[NuDesignerError, Map[String, ScenarioGraphComparator.Difference]]] = {
+      compareInvocations = localScenarioGraph :: compareInvocations
       Future.successful(
         mockDifferences
-          .get(localProcess.name)
-          .fold[Either[NuDesignerError, Map[String, ProcessComparator.Difference]]](
+          .get(remoteProcessName)
+          .fold[Either[NuDesignerError, Map[String, ScenarioGraphComparator.Difference]]](
             Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, ""))
           )(diffs => Right(diffs))
       )
@@ -207,7 +211,8 @@ class RemoteEnvironmentResourcesSpec
     ): Future[List[ScenarioVersion]] = Future.successful(List())
 
     override def testMigration(
-        processToInclude: ScenarioWithDetails => Boolean
+        processToInclude: ScenarioWithDetailsForMigrations => Boolean,
+        batchingExecutionContext: ExecutionContext
     )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }

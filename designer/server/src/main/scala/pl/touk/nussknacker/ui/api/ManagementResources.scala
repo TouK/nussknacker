@@ -12,9 +12,9 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
@@ -47,13 +47,13 @@ object ManagementResources {
   implicit val testResultsEncoder: Encoder[TestResults] = new Encoder[TestResults]() {
 
     implicit val anyEncoder: Encoder[Any] = {
-      case displayable: DisplayJson =>
+      case scenarioGraph: DisplayJson =>
         def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
 
-        val displayableJson = displayable.asJson
-        displayable.originalDisplay match {
-          case None           => Json.obj("pretty" -> displayableJson)
-          case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> displayableJson)
+        val scenarioGraphJson = scenarioGraph.asJson
+        scenarioGraph.originalDisplay match {
+          case None           => Json.obj("pretty" -> scenarioGraphJson)
+          case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> scenarioGraphJson)
         }
       case null => Json.Null
       case a =>
@@ -68,9 +68,6 @@ object ManagementResources {
         "id"        -> Json.fromString(a.id),
         "variables" -> a.variables.asJson
       )
-
-    implicit val componentInfoEncoder: Encoder[ComponentInfo]         = deriveConfiguredEncoder
-    implicit val nodeComponentInfoEncoder: Encoder[NodeComponentInfo] = deriveConfiguredEncoder
 
     val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
 
@@ -95,9 +92,10 @@ object ManagementResources {
     implicit val exceptionsEncoder: Encoder[NuExceptionInfo[_ <: Throwable]] =
       (value: NuExceptionInfo[_ <: Throwable]) =>
         Json.obj(
-          "nodeComponentInfo" -> value.nodeComponentInfo.asJson,
-          "throwable"         -> throwableEncoder(value.throwable),
-          "context"           -> value.context.asJson
+          // We don't need componentId on the FE here
+          "nodeId"    -> value.nodeComponentInfo.map(_.nodeId).asJson,
+          "throwable" -> throwableEncoder(value.throwable),
+          "context"   -> value.context.asJson
         )
 
     override def apply(a: TestResults): Json = a match {
@@ -124,7 +122,7 @@ class ManagementResources(
     dispatcher: DeploymentManagerDispatcher,
     customActionInvokerService: CustomActionInvokerService,
     metricRegistry: MetricRegistry,
-    scenarioTestService: ScenarioTestService,
+    scenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
     typeToConfig: ProcessingTypeDataProvider[ModelData, _]
 )(implicit val ec: ExecutionContext)
     extends Directives
@@ -159,7 +157,7 @@ class ManagementResources(
             complete {
               convertSavepointResultToResponse(
                 dispatcher
-                  .deploymentManagerUnsafe(processId.id)(ec, user)
+                  .deploymentManagerUnsafe(processId)(ec, user)
                   .flatMap(_.savepoint(processId.name, savepointDir))
               )
             }
@@ -172,7 +170,7 @@ class ManagementResources(
               complete {
                 convertSavepointResultToResponse(
                   dispatcher
-                    .deploymentManagerUnsafe(processId.id)(ec, user)
+                    .deploymentManagerUnsafe(processId)(ec, user)
                     .flatMap(_.stop(processId.name, savepointDir, user.toManagerUser))
                 )
               }
@@ -224,17 +222,19 @@ class ManagementResources(
           } ~
           // TODO: maybe Write permission is enough here?
           path("test" / ProcessNameSegment) { processName =>
-            (post & processId(processName)) { idWithName =>
-              canDeploy(idWithName.id) {
-                formFields(Symbol("testData"), Symbol("processJson")) { (testDataContent, displayableProcessJson) =>
+            (post & processDetailsForName(processName)) { details =>
+              canDeploy(details.idWithNameUnsafe) {
+                formFields(Symbol("testData"), Symbol("scenarioGraph")) { (testDataContent, scenarioGraphJson) =>
                   complete {
                     measureTime("test", metricRegistry) {
-                      parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
-                        case Right(displayableProcess) =>
-                          scenarioTestService
+                      parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson) match {
+                        case Right(scenarioGraph) =>
+                          scenarioTestServices
+                            .forTypeUnsafe(details.processingType)
                             .performTest(
-                              idWithName,
-                              displayableProcess,
+                              details.idWithNameUnsafe,
+                              scenarioGraph,
+                              details.isFragment,
                               RawScenarioTestData(testDataContent)
                             )
                             .flatMap { results =>
@@ -249,21 +249,28 @@ class ManagementResources(
               }
             }
           } ~
-          path("generateAndTest" / IntNumber) { testSampleSize =>
+          path("generateAndTest" / ProcessNameSegment / IntNumber) { (processName, testSampleSize) =>
             {
-              (post & entity(as[DisplayableProcess])) { displayableProcess =>
+              (post & entity(as[ScenarioGraph])) { scenarioGraph =>
                 {
-                  processId(displayableProcess.name) { idWithName =>
-                    canDeploy(idWithName) {
+                  processDetailsForName(processName)(user) { details =>
+                    canDeploy(details.idWithNameUnsafe) {
                       complete {
                         measureTime("generateAndTest", metricRegistry) {
-                          scenarioTestService.generateData(displayableProcess, testSampleSize) match {
+                          val scenarioTestService = scenarioTestServices.forTypeUnsafe(details.processingType)
+                          scenarioTestService.generateData(
+                            scenarioGraph,
+                            processName,
+                            details.isFragment,
+                            testSampleSize
+                          ) match {
                             case Left(error) => Future.failed(ProcessUnmarshallingError(error))
                             case Right(rawScenarioTestData) =>
                               scenarioTestService
                                 .performTest(
-                                  idWithName,
-                                  displayableProcess,
+                                  details.idWithNameUnsafe,
+                                  scenarioGraph,
+                                  details.isFragment,
                                   rawScenarioTestData
                                 )
                                 .flatMap { results =>
@@ -286,19 +293,19 @@ class ManagementResources(
                   prepareTestFromParametersDecoder(modelData)
                 (post & entity(as[TestFromParametersRequest])) { testParametersRequest =>
                   {
-                    processId(processName) { idWithName =>
-                      canDeploy(idWithName) {
-                        complete {
-                          scenarioTestService
-                            .performTest(
-                              idWithName,
-                              testParametersRequest.displayableProcess,
-                              testParametersRequest.sourceParameters
-                            )
-                            .flatMap { results =>
-                              Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-                            }
-                        }
+                    canDeploy(process.idWithNameUnsafe) {
+                      complete {
+                        scenarioTestServices
+                          .forTypeUnsafe(process.processingType)
+                          .performTest(
+                            process.idWithNameUnsafe,
+                            testParametersRequest.scenarioGraph,
+                            process.isFragment,
+                            testParametersRequest.sourceParameters
+                          )
+                          .flatMap { results =>
+                            Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                          }
                       }
                     }
                   }

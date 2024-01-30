@@ -14,12 +14,12 @@ import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactor
 
 import scala.reflect.ClassTag
 
-class DelayedUniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](
+class DelayedUniversalKafkaSourceFactory(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
     schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
     modelDependencies: ProcessObjectDependencies,
-    implProvider: KafkaSourceImplFactory[K, V]
-) extends UniversalKafkaSourceFactory[K, V](
+    implProvider: KafkaSourceImplFactory[Any, Any]
+) extends UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       schemaBasedMessagesSerdeProvider,
       modelDependencies,

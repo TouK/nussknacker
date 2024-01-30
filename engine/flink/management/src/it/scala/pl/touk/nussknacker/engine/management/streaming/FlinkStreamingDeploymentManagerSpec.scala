@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -213,9 +213,13 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   def empty(processName: ProcessName): ProcessVersion = ProcessVersion.empty.copy(processName = processName)
 
   test("extract scenario definition") {
-    val modelData  = ModelData(processingTypeConfig)
+    val modelData = ModelData(
+      processingTypeConfig = processingTypeConfig,
+      additionalConfigsFromProvider = Map.empty,
+      determineDesignerWideId = id => DesignerWideComponentId(id.toString)
+    )
     val definition = modelData.modelDefinition
-    definition.components should contain key ComponentInfo(ComponentType.Service, "accountService")
+    definition.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))
   }
 
   private def messagesFromTopic(outTopic: String, count: Int): List[String] =

@@ -17,7 +17,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
     forAll(IdValidationTestData.scenarioIdErrorCases) {
       (scenarioId: String, expectedErrors: List[ProcessCompilationError]) =>
         {
-          IdValidator.validate(validScenario(scenarioId)) match {
+          IdValidator.validate(validScenario(scenarioId), isFragment = false) match {
             case Validated.Invalid(errors) =>
               errors.toList shouldBe expectedErrors
             case Validated.Valid(_) =>
@@ -31,7 +31,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
     forAll(IdValidationTestData.fragmentIdErrorCases) {
       (scenarioId: String, expectedErrors: List[ProcessCompilationError]) =>
         {
-          IdValidator.validate(validFragment(scenarioId)) match {
+          IdValidator.validate(validFragment(scenarioId), isFragment = true) match {
             case Validated.Invalid(errors) =>
               errors.toList shouldBe expectedErrors
             case Validated.Valid(_) =>
@@ -44,7 +44,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
   test("should handle all cases of node id validation") {
     forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
       {
-        IdValidator.validate(validScenario(nodeId = nodeId)) match {
+        IdValidator.validate(validScenario(nodeId = nodeId), isFragment = true) match {
           case Validated.Invalid(errors) =>
             errors.toList shouldBe expectedErrors
           case Validated.Valid(_) =>
@@ -56,7 +56,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
 
   test("should validate both scenario and node id") {
     val scenarioWithEmptyIds = validScenario("", "")
-    IdValidator.validate(scenarioWithEmptyIds) match {
+    IdValidator.validate(scenarioWithEmptyIds, isFragment = false) match {
       case Validated.Invalid(errors) =>
         errors.toList should contain theSameElementsAs List(
           ScenarioNameError(EmptyValue, ProcessName(""), isFragment = false),

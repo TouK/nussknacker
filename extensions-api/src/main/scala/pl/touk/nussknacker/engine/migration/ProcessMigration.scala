@@ -10,7 +10,9 @@ trait ProcessMigration {
 
   def description: String
 
+  // category is used in some of external migrations
   def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess
+
 }
 
 object ProcessMigrations {

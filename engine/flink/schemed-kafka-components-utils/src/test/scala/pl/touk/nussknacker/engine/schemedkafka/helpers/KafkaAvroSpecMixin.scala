@@ -48,7 +48,7 @@ import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactor
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, spel}
-import pl.touk.nussknacker.test.{NuScalaTestAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.test.{NuScalaTestAssertions, VeryPatientScalaFutures}
 
 trait KafkaAvroSpecMixin
     extends AnyFunSuite
@@ -58,7 +58,7 @@ trait KafkaAvroSpecMixin
     with Matchers
     with LazyLogging
     with NuScalaTestAssertions
-    with PatientScalaFutures
+    with VeryPatientScalaFutures
     with Serializable {
 
   type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source]
@@ -95,7 +95,7 @@ trait KafkaAvroSpecMixin
   protected lazy val nodeId: NodeId = NodeId("mock-node-id")
 
   protected def universalSourceFactory(useStringForKey: Boolean): KafkaSource = {
-    new UniversalKafkaSourceFactory[Any, Any](
+    new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
       testModelDependencies,
@@ -175,27 +175,30 @@ trait KafkaAvroSpecMixin
       case ExistingSchemaVersion(version) => s"'$version'"
     }
 
-  protected def runAndVerifyResult(
+  protected def runAndVerifyResultSingleEvent(
       process: CanonicalProcess,
       topic: TopicConfig,
       event: Any,
-      expected: AnyRef
+      expected: AnyRef,
+      additionalVerificationBeforeScenarioCancel: => Unit = {}
   ): Unit =
-    runAndVerifyResult(process, topic, List(event), List(expected))
+    runAndVerifyResult(process, topic, List(event), List(expected), additionalVerificationBeforeScenarioCancel)
 
   protected def runAndVerifyResult(
       process: CanonicalProcess,
       topic: TopicConfig,
       events: List[Any],
-      expected: AnyRef
+      expected: AnyRef,
+      additionalVerificationBeforeScenarioCancel: => Unit = {}
   ): Unit =
-    runAndVerifyResult(process, topic, events, List(expected))
+    runAndVerifyResult(process, topic, events, List(expected), additionalVerificationBeforeScenarioCancel)
 
   private def runAndVerifyResult(
       process: CanonicalProcess,
       topic: TopicConfig,
       events: List[Any],
-      expected: List[AnyRef]
+      expected: List[AnyRef],
+      additionalVerificationBeforeScenarioCancel: => Unit
   ): Unit = {
     kafkaClient.createTopic(topic.input, partitions = 1)
     events.foreach(obj => pushMessage(obj, topic.input))
@@ -203,6 +206,7 @@ trait KafkaAvroSpecMixin
 
     run(process) {
       consumeAndVerifyMessages(topic.output, expected)
+      additionalVerificationBeforeScenarioCancel
     }
   }
 

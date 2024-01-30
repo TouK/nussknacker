@@ -24,5 +24,7 @@ abstract class TypingFunction {
    */
   def signatures: Option[NonEmptyList[MethodTypeInfo]] = None
 
+  // TODO: Add instance invocation target if we decide that this feature is useful not only for global (static) variables
+  //       but also for other classes. Our backend is already ready for this - see FunctionalMethodDefinition
   def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult]
 }

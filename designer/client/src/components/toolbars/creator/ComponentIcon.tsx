@@ -22,11 +22,16 @@ const preloadBeImage = memoize((src: string): string | null => {
 });
 
 function getIconFromDef(nodeOrPath: NodeType, processDefinitionData: ProcessDefinitionData): string | null {
-    const nodeComponentId = ProcessUtils.determineNodeConfigName(nodeOrPath);
-    const componentConfig = processDefinitionData?.componentsConfig?.[nodeComponentId];
-    const iconFromConfig = componentConfig?.icon;
-    const iconBasedOnType = nodeOrPath.type && `/assets/components/${nodeOrPath.type}.svg`;
-    return iconFromConfig || iconBasedOnType || null;
+    // missing type means that node is the fake properties component
+    // TODO we should split properties node logic and normal components logic
+    if (nodeOrPath.type) {
+        return (
+            ProcessUtils.extractComponentDefinition(nodeOrPath, processDefinitionData.components)?.icon ||
+            `/assets/components/${nodeOrPath.type}.svg`
+        );
+    } else {
+        return null;
+    }
 }
 
 export const getComponentIconSrc: {

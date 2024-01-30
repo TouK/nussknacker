@@ -3,21 +3,23 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{
   ContextInitializer,
   ContextInitializingFunction,
+  ProcessName,
   Source,
   TestWithParametersSupport
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
-  FragmentWithoutValidatorsDefinitionExtractor
+  FragmentParametersDefinitionExtractor
 }
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -26,22 +28,21 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 // Needed to build source based on FragmentInputDefinition. It allows fragment to be treated as scenario (when it comes to testing)
 // This source adds input parameters to context and allows testing with ad-hoc testing.
 class StubbedFragmentSourceDefinitionPreparer(
-    fragmentDefinitionExtractor: FragmentWithoutValidatorsDefinitionExtractor
+    fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor
 ) {
 
-  def createSourceDefinition(frag: FragmentInputDefinition): MethodBasedComponentDefinitionWithImplementation = {
+  def createSourceDefinition(name: String, frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
-    val staticDefinition = FragmentComponentDefinition(
-      // We don't want to pass input  parameters definition as parameters to definition of factory creating stubbed source because
+    FragmentComponentDefinition(
+      name = name,
+      implementationInvoker = (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
+      // We don't want to pass input parameters definition as parameters to definition of factory creating stubbed source because
       // use them only for testParametersDefinition which are used in the runtime not in compile-time.
       parameters = List.empty,
       outputNames = List.empty,
-      docsUrl = None
-    )
-    MethodBasedComponentDefinitionWithImplementation(
-      (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
-      null,
-      staticDefinition
+      docsUrl = None,
+      translateGroupName = Some(_),
+      designerWideId = DesignerWideComponentId("dumpId"),
     )
   }
 

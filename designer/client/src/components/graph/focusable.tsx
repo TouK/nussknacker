@@ -2,7 +2,6 @@ import { debounce } from "lodash";
 import React, { forwardRef, MouseEventHandler, useCallback, useMemo } from "react";
 import { useSizeWithRef } from "../../containers/hooks/useSize";
 import { GraphStyled } from "./GraphStyled";
-import { FocusableStyled } from "./focusableStyled";
 
 interface ContainerProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
     onResize?: (current: DOMRectReadOnly) => void;
