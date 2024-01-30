@@ -36,6 +36,7 @@ object EmptyPeriodicCustomActionsProvider extends PeriodicCustomActionsProvider 
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] = ???
+  ): Future[CustomActionResult] =
+    Future.failed(new NotImplementedError())
 
 }

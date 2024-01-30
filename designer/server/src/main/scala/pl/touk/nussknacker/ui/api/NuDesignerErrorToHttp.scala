@@ -16,26 +16,30 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
   def nuDesignerErrorHandler: ExceptionHandler = {
     import akka.http.scaladsl.server.Directives._
     ExceptionHandler { case NonFatal(e) =>
-      complete(errorToHttpResponse(e))
+      complete(errorToHttpResponse(unwrapException(e)))
     }
   }
 
-  private def errorToHttpResponse: PartialFunction[Throwable, HttpResponse] = {
+  def unwrapException(e: Throwable): Throwable =
+    if (Option(e.getCause).nonEmpty) {
+      e.getCause
+    } else {
+      e
+    }
+
+  private def errorToHttpResponse(e: Throwable): HttpResponse = e match {
     case error: NuDesignerError =>
       logError(error)
       httpResponseFrom(error)
     case ex: IllegalArgumentException =>
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
       HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
+    case ex: NotImplementedError =>
+      logger.error(s"Not implemented: ${ex.getMessage}", ex)
+      HttpResponse(status = StatusCodes.NotImplemented, entity = ex.getMessage)
     case ex =>
-      ex.getCause match {
-        case ni: NotImplementedError =>
-          logger.error(s"Not implemented: ${ni.getMessage}", ni)
-          HttpResponse(status = StatusCodes.NotImplemented, entity = ni.getMessage)
-        case _ =>
-          logger.error(s"Unknown error: ${ex.getMessage}", ex)
-          HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)
-      }
+      logger.error(s"Unknown error: ${ex.getMessage}", ex)
+      HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)
   }
 
   def toResponseEither[T: Encoder](either: Either[NuDesignerError, T]): ToResponseMarshallable = either match {
