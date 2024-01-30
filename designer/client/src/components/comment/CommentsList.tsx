@@ -6,7 +6,7 @@ import Date from "../common/Date";
 import { ProcessCommentsList, RemoveButton } from "./StyledComment";
 import { getFeatureSettings, getLoggedUser } from "../../reducers/selectors/settings";
 import { ListSeparator } from "../common/ListSeparator";
-import { Box, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 
 const getComments = (state) => state.processActivity?.comments || [];
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
