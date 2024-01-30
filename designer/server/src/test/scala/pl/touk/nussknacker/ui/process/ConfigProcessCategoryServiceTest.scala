@@ -44,7 +44,6 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers with Op
     )
     val categoryService = TestFactory.createCategoryService(config)
 
-    categoryService.getAllCategories shouldEqual List(oneToOneCategory1, oneToOneCategory2)
     categoryService.getTypeForCategory(oneToOneCategory1).value shouldEqual oneToOneProcessingType1
     categoryService.getTypeForCategory(oneToOneCategory2).value shouldEqual oneToOneProcessingType2
   }

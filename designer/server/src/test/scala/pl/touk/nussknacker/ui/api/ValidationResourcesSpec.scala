@@ -13,8 +13,7 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
@@ -28,7 +27,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 class ValidationResourcesSpec
@@ -106,7 +105,7 @@ class ValidationResourcesSpec
   }
 
   it should "find errors in scenario properties" in {
-    createAndValidateScenario(ProcessTestData.processWithInvalidScenarioProperties) {
+    createAndValidateScenario(ProcessTestData.scenarioGraphWithInvalidScenarioProperties) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("Configured property requiredStringProperty (label) is missing")
@@ -141,7 +140,7 @@ class ValidationResourcesSpec
   }
 
   it should "return fatal error for bad ids" in {
-    val invalidCharacters = newDisplayableProcess(
+    val invalidCharacters = newScenarioGraph(
       List(
         Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
         node.Sink("f1\"'", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
@@ -155,7 +154,7 @@ class ValidationResourcesSpec
       entity should include("Node name contains invalid characters")
     }
 
-    val duplicateIds = newDisplayableProcess(
+    val duplicateIds = newScenarioGraph(
       List(
         Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
         node.Sink("s1", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
@@ -171,7 +170,7 @@ class ValidationResourcesSpec
   }
 
   it should "find errors in scenario of bad shape" in {
-    val invalidShapeProcess = newDisplayableProcess(
+    val invalidShapeProcess = newScenarioGraph(
       List(
         Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
         node.Filter("f1", Expression.spel("false"))
@@ -223,7 +222,7 @@ class ValidationResourcesSpec
       node.Sink("sink1", SinkRef(ProcessTestData.existingSinkFactory, List.empty))
     )
     val edges = List(Edge("source1", "filter1", None), Edge("filter1", "proc1", None), Edge("proc1", "sink1", None))
-    val processWithDisabledFilterAndProcessor = newDisplayableProcess(nodes, edges)
+    val processWithDisabledFilterAndProcessor = newScenarioGraph(nodes, edges)
 
     createAndValidateScenario(processWithDisabledFilterAndProcessor, ProcessName("p1")) {
       status shouldEqual StatusCodes.OK
@@ -233,8 +232,8 @@ class ValidationResourcesSpec
     }
   }
 
-  private def newDisplayableProcess(nodes: List[NodeData], edges: List[Edge]): DisplayableProcess = {
-    DisplayableProcess(
+  private def newScenarioGraph(nodes: List[NodeData], edges: List[Edge]): ScenarioGraph = {
+    ScenarioGraph(
       properties = ProcessProperties(StreamMetaData(Some(2), Some(false))),
       nodes = nodes,
       edges = edges
@@ -242,21 +241,21 @@ class ValidationResourcesSpec
   }
 
   private def createAndValidateScenario(scenario: CanonicalProcess)(testCode: => Assertion): Assertion =
-    createAndValidateScenario(ProcessConverter.toDisplayable(scenario), scenario.name)(testCode)
+    createAndValidateScenario(CanonicalProcessConverter.toScenarioGraph(scenario), scenario.name)(testCode)
 
   private def createAndValidateScenario(
-      displayable: DisplayableProcess,
+      scenarioGraph: ScenarioGraph,
       name: ProcessName = ProcessTestData.sampleProcessName
   )(testCode: => Assertion): Assertion = {
     createEmptyProcess(name)
-    validateScenario(displayable, name)(testCode)
+    validateScenario(scenarioGraph, name)(testCode)
   }
 
-  private def validateScenario(displayable: DisplayableProcess, name: ProcessName = ProcessTestData.sampleProcessName)(
+  private def validateScenario(scenarioGraph: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ) = {
     // TODO: Test for the rename (name in path other then name in request)
-    val request = ScenarioValidationRequest(name, displayable)
+    val request = ScenarioValidationRequest(name, scenarioGraph)
     Post(
       Uri(path = Path.Empty / "processValidation" / name.value),
       posting.toRequestEntity(request)

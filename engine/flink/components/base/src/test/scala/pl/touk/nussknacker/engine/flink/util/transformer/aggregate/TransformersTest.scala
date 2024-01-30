@@ -82,7 +82,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     validateOk(
       "#AGG.map({f1: #AGG.sum, f2: #AGG.set})",
       "{f1: #input.eId, f2: #input.str}",
-      TypedObjectTypingResult(Map("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]]))
+      Typed.record(Map("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]]))
     )
 
     validateError("#AGG.sum", "#input.str", "Invalid aggregate type: String, should be: Number")

@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.sampleFragmentName
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestProcessingTypes}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 import scala.language.higherKinds
 
@@ -22,9 +22,9 @@ class FragmentRepositorySpec
 
   it should "load fragments" in {
     val sampleFragment =
-      ProcessConverter.toDisplayable(ProcessTestData.sampleFragment)
+      CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
     val sampleFragment2 =
-      ProcessConverter.toDisplayable(ProcessTestData.sampleFragment2)
+      CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment2)
     saveFragment(sampleFragment) {
       status shouldEqual StatusCodes.OK
     }

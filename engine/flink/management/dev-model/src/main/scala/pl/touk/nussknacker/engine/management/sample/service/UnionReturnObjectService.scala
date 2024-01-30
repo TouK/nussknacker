@@ -24,6 +24,6 @@ case object UnionReturnObjectService extends EagerServiceWithStaticParametersAnd
   override def parameters: List[Parameter] = List.empty
 
   override def returnType: typing.TypingResult =
-    Typed(TypedObjectTypingResult(Map("foo" -> Typed[Int])), TypedObjectTypingResult(Map("bar" -> Typed[Int])))
+    Typed(Typed.record(Map("foo" -> Typed[Int])), Typed.record(Map("bar" -> Typed[Int])))
 
 }

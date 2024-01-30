@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{UriContext, quickRequest}
@@ -53,7 +53,9 @@ class DictsFlowTest
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processValidation/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(ScenarioValidationRequest(process.name, ProcessConverter.toDisplayable(process)).asJson.spaces2)
+        .body(
+          ScenarioValidationRequest(process.name, CanonicalProcessConverter.toScenarioGraph(process)).asJson.spaces2
+        )
         .auth
         .basic("admin", "admin")
     )
@@ -174,7 +176,9 @@ class DictsFlowTest
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processValidation/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(ScenarioValidationRequest(process.name, ProcessConverter.toDisplayable(process)).asJson.spaces2)
+        .body(
+          ScenarioValidationRequest(process.name, CanonicalProcessConverter.toScenarioGraph(process)).asJson.spaces2
+        )
         .auth
         .basic("admin", "admin")
     )

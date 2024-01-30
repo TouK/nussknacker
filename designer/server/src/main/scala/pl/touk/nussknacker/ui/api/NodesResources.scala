@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -84,14 +83,14 @@ class NodesResources(
           implicit val requestDecoder: Decoder[PropertiesValidationRequest] = preparePropertiesRequestDecoder(modelData)
           entity(as[PropertiesValidationRequest]) { request =>
             complete {
-              val scenario = DisplayableProcess(
+              val scenarioGraph = ScenarioGraph(
                 ProcessProperties(request.additionalFields),
                 Nil,
                 Nil
               )
               val result = typeToProcessValidator
                 .forTypeUnsafe(process.processingType)
-                .validate(scenario, request.name, process.isFragment)
+                .validate(scenarioGraph, request.name, process.isFragment)
               NodeValidationResult(
                 parameters = None,
                 expressionType = None,
@@ -184,7 +183,7 @@ object NodesResources {
 
 @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
     sourceParameters: TestSourceParameters,
-    scenarioGraph: DisplayableProcess
+    scenarioGraph: ScenarioGraph
 )
 
 @JsonCodec(encodeOnly = true) final case class ParametersValidationResult(

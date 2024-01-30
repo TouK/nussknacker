@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -31,20 +31,20 @@ final case class ScenarioWithDetails(
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[ProcessAction],
     lastAction: Option[ProcessAction],
-    override val scenarioGraph: Option[DisplayableProcess],
+    override val scenarioGraph: Option[ScenarioGraph],
     override val validationResult: Option[ValidationResult],
     override val history: Option[List[ScenarioVersion]],
     override val modelVersion: Option[Int],
     state: Option[ProcessState]
 ) extends BaseScenarioWithDetailsForMigrations {
 
-  def withScenarioGraph(scenarioGraph: DisplayableProcess): ScenarioWithDetails =
+  def withScenarioGraph(scenarioGraph: ScenarioGraph): ScenarioWithDetails =
     copy(scenarioGraph = Some(scenarioGraph))
 
   def withValidationResult(validationResult: ValidationResult): ScenarioWithDetails =
     copy(validationResult = Some(validationResult))
 
-  def scenarioGraphUnsafe: DisplayableProcess =
+  def scenarioGraphUnsafe: ScenarioGraph =
     scenarioGraph.getOrElse(throw new IllegalStateException("Missing scenario graph and validation result"))
 
   def validationResultUnsafe: ValidationResults.ValidationResult =

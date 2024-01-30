@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.listener
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, ScenarioVersion, VersionId}
 
 import java.time.Instant
@@ -43,7 +43,7 @@ trait ListenerScenarioWithDetails {
 
   def lastAction: Option[ProcessAction]
 
-  def scenarioGraph: DisplayableProcess
+  def scenarioGraph: ScenarioGraph
 
   def history: Option[List[ScenarioVersion]]
 

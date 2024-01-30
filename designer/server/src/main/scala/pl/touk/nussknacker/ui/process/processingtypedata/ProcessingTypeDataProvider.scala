@@ -172,6 +172,8 @@ final case class ValueWithPermission[+T](value: T, permission: ValueAccessPermis
 
 object ValueWithPermission {
   def anyUser[T](value: T): ValueWithPermission[T] = ValueWithPermission(value, AnyUser)
+  def userWithAccessRightsToCategory[T](value: T, category: String): ValueWithPermission[T] =
+    ValueWithPermission(value, UserWithAccessRightsToCategory(category))
 }
 
 sealed trait ValueAccessPermission

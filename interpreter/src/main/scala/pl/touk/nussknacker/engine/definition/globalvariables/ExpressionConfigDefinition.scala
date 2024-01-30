@@ -12,7 +12,6 @@ final case class ExpressionConfigDefinition(
     additionalClasses: List[Class[_]],
     languages: LanguageConfiguration,
     optimizeCompilation: Boolean,
-    strictTypeChecking: Boolean,
     dictionaries: Map[String, DictDefinition],
     hideMetaVariable: Boolean,
     strictMethodsChecking: Boolean,

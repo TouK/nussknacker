@@ -14,11 +14,7 @@ import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrate
   ReplaceGetterWithProperty
 }
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.supertype.{
-  CommonSupertypeFinder,
-  NumberTypesPromotionStrategy,
-  SupertypeClassResolutionStrategy
-}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
@@ -327,7 +323,7 @@ class ClassDefinitionDiscoverySpec
 
     val javaClazzDefinition = singleClassDefinition[JavaSampleDocumentedClass]().value
 
-    def checkMethodInfo(
+    def checkMethod(
         name: String,
         params: List[Parameter],
         result: TypingResult,
@@ -361,7 +357,7 @@ class ClassDefinitionDiscoverySpec
       ("max", List(param[Array[Number]]("args")), Typed[Number], Some(ScalaSampleDocumentedClass.maxDocs), true)
     )
 
-    forAll(table)(checkMethodInfo)
+    forAll(table)(checkMethod)
   }
 
   test("enabled by default classes") {
@@ -449,7 +445,7 @@ class ClassDefinitionDiscoverySpec
       checkApplyFunction(List(scalaClassInfo, javaClassInfo), name, arguments, result.validNel)
 
     val typedList = Typed.genericTypeClass[java.util.List[_]](List(Typed[String]))
-    val typedMap  = TypedObjectTypingResult(Map("a" -> Typed[Int], "b" -> Typed[String]))
+    val typedMap  = Typed.record(Map("a" -> Typed[Int], "b" -> Typed[String]))
 
     val table = Table(
       ("name", "arguments", "result"),
@@ -559,14 +555,14 @@ class ClassDefinitionDiscoverySpec
   ): Option[ClassDefinition] = {
     val ref = Typed.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
-    discoverClassesFromTypes(List(Typed(ref)))(settings).find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
+    discoverClassesFromTypes(List(ref))(settings).find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
   }
 
   private def singleClassAndItsChildrenDefinition[T: TypeTag](
       settings: ClassExtractionSettings = ClassExtractionSettings.Default
   ) = {
     val ref = Typed.fromDetailedType[T]
-    discoverClassesFromTypes(List(Typed(ref)))(settings)
+    discoverClassesFromTypes(List(ref))(settings)
   }
 
 }
@@ -594,8 +590,9 @@ private class MaxHelper extends TypingFunction {
     if (arguments.isEmpty)
       return GenericFunctionTypingError.OtherError("Max must have at least one argument").invalidNel
 
-    val supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
-    arguments.reduce(supertypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).validNel
+    arguments
+      .reduce(CommonSupertypeFinder.Default.commonSupertype)
+      .validNel
   }
 
 }

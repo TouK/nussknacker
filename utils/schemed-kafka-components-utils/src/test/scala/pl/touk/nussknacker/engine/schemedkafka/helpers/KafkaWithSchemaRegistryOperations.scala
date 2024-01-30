@@ -14,10 +14,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaRecordUtils, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.{
-  AbstractConfluentKafkaAvroDeserializer,
-  AbstractConfluentKafkaAvroSerializer
-}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.AbstractConfluentKafkaAvroSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -178,21 +175,6 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
 
 }
 
-class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient)
-    extends AbstractConfluentKafkaAvroDeserializer
-    with Deserializer[Any] {
-
-  this.schemaRegistry = schemaRegistryClient
-
-  def deserialize(topic: String, record: Array[Byte]): Any = {
-    deserialize(topic, isKey = false, record, None)
-  }
-
-  override protected def genericRecordSchemaIdSerializationSupport: GenericRecordSchemaIdSerializationSupport =
-    new GenericRecordSchemaIdSerializationSupport(true)
-
-}
-
 class SimpleKafkaAvroSerializer(schemaRegistryVal: CSchemaRegistryClient, isKey: Boolean)
     extends AbstractConfluentKafkaAvroSerializer(new DefaultAvroSchemaEvolution)
     with Serializer[Any] {
@@ -203,6 +185,11 @@ class SimpleKafkaAvroSerializer(schemaRegistryVal: CSchemaRegistryClient, isKey:
 
   override def serialize(topic: String, headers: Headers, data: Any): Array[Byte] =
     serialize(None, topic, data, isKey, headers)
+
+  // It is a work-around for two different close() methods (one throws IOException and another not) in AbstractKafkaSchemaSerDe and in Serializer
+  // It is needed only for scala 2.12
+  override def close(): Unit = {}
+
 }
 
 object SimpleKafkaJsonDeserializer extends Deserializer[Any] {

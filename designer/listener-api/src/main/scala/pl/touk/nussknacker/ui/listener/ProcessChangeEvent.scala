@@ -12,9 +12,7 @@ sealed trait ProcessChangeEvent {
 
 object ProcessChangeEvent {
   final case class OnArchived(processId: ProcessId) extends ProcessChangeEvent
-  final case class OnCategoryChanged(processId: ProcessId, oldCategory: String, newCategory: String)
-      extends ProcessChangeEvent
-  final case class OnDeleted(processId: ProcessId) extends ProcessChangeEvent
+  final case class OnDeleted(processId: ProcessId)  extends ProcessChangeEvent
 
   final case class OnDeployActionSuccess(
       processId: ProcessId,

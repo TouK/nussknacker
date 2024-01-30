@@ -4,12 +4,12 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{ScenarioShapeFetchStrategy, ScenarioWithDetailsEntity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -26,15 +26,21 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val categoryFraudSecond = "fraudSecond"
   private val categorySecret      = "secret"
 
-  private val json    = ProcessTestData.sampleDisplayableProcess
-  private val subJson = ProcessConverter.toDisplayable(ProcessTestData.sampleFragment)
+  private val scenarioGraph = ProcessTestData.sampleScenarioGraph
+  private val fragmentGraph = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
 
   private val someVersion = VersionId(666L)
 
   private val marketingProcess =
-    createScenarioEntity("marketingProcess", category = categoryMarketing, lastAction = Some(Deploy), json = Some(json))
+    createScenarioEntity(
+      "marketingProcess",
+      category = categoryMarketing,
+      lastAction = Some(Deploy),
+      json = Some(scenarioGraph)
+    )
+
   private val marketingFragment =
-    createFragmentEntity("marketingFragment", category = categoryMarketing, json = Some(subJson))
+    createFragmentEntity("marketingFragment", category = categoryMarketing, json = Some(fragmentGraph))
 
   private val marketingArchivedFragment = createFragmentEntity(
     "marketingArchivedFragment",
@@ -59,18 +65,18 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     category = categoryFraudSecond,
     processingType = Fraud,
     lastAction = Some(Archive),
-    json = Some(json)
+    json = Some(scenarioGraph)
   )
 
   private val fraudFragment =
-    createFragmentEntity("fraudFragment", category = categoryFraud, processingType = Fraud, json = Some(json))
+    createFragmentEntity("fraudFragment", category = categoryFraud, processingType = Fraud, json = Some(scenarioGraph))
 
   private val fraudArchivedFragment = createFragmentEntity(
     "fraudArchivedFragment",
     isArchived = true,
     category = categoryFraud,
     processingType = Fraud,
-    json = Some(subJson)
+    json = Some(fragmentGraph)
   )
 
   private val fraudSecondProcess = createScenarioEntity(
@@ -78,7 +84,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     category = categoryFraudSecond,
     processingType = Fraud,
     lastAction = Some(Cancel),
-    json = Some(json)
+    json = Some(scenarioGraph)
   )
 
   private val fraudSecondFragment =
@@ -100,10 +106,10 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     isArchived = true,
     category = categorySecret,
     lastAction = Some(Archive),
-    json = Some(json)
+    json = Some(scenarioGraph)
   )
 
-  private val processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = List(
+  private val processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = List(
     marketingProcess,
     marketingArchivedProcess,
     marketingFragment,
@@ -126,7 +132,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val fraudUser: LoggedUser =
     TestFactory.userWithCategoriesReadPermission(categories = List(categoryFraud, categoryFraudSecond))
 
-  private val DisplayableShape = ScenarioShapeFetchStrategy.FetchDisplayable
+  private val DisplayableShape = ScenarioShapeFetchStrategy.FetchScenarioGraph
   private val CanonicalShape   = ScenarioShapeFetchStrategy.FetchCanonical
   private val NoneShape        = ScenarioShapeFetchStrategy.NotFetch
 
@@ -140,7 +146,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       (fraudUser, List(fraudProcess, fraudSecondProcess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
       val result = mockRepository
         .fetchLatestProcessesDetails(ScenarioQuery.unarchivedProcesses)(DisplayableShape, user, global)
         .futureValue
@@ -156,7 +162,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       (fraudUser, List(fraudProcess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
       val result = mockRepository
         .fetchLatestProcessesDetails(ScenarioQuery.deployed)(DisplayableShape, user, global)
         .futureValue
@@ -172,7 +178,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       (fraudUser, List(fraudProcess, fraudSecondProcess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
       val names = processes.map(_.name)
       val result = mockRepository
         .fetchLatestProcessesDetails(
@@ -191,7 +197,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       (fraudUser, List(fraudFragment, fraudSecondFragment)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
       val result = mockRepository
         .fetchLatestProcessesDetails(ScenarioQuery.unarchivedFragments)(DisplayableShape, user, global)
         .futureValue
@@ -203,17 +209,17 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     val fragments      = List(marketingFragment, fraudFragment, fraudSecondFragment, secretFragment)
     val mockRepository = MockFetchingProcessRepository.withProcessesDetails(fragments)
 
-    val displayableFragments = List(marketingFragment, fraudFragment, fraudSecondFragment, secretFragment)
-    val canonicalFragments =
-      displayableFragments.map(p => p.copy(json = ProcessConverter.fromDisplayable(p.json, p.name)))
-    val noneFragments = displayableFragments.map(p => p.copy(json = ()))
+    val fragmentGraphs = List(marketingFragment, fraudFragment, fraudSecondFragment, secretFragment)
+    val fragmentCanonicals =
+      fragmentGraphs.map(p => p.copy(json = CanonicalProcessConverter.fromScenarioGraph(p.json, p.name)))
+    val noneFragments = fragmentGraphs.map(p => p.copy(json = ()))
 
     mockRepository
       .fetchLatestProcessesDetails(ScenarioQuery.unarchivedFragments)(DisplayableShape, admin, global)
-      .futureValue shouldBe displayableFragments
+      .futureValue shouldBe fragmentGraphs
     mockRepository
       .fetchLatestProcessesDetails(ScenarioQuery.unarchivedFragments)(CanonicalShape, admin, global)
-      .futureValue shouldBe canonicalFragments
+      .futureValue shouldBe fragmentCanonicals
     mockRepository
       .fetchLatestProcessesDetails(ScenarioQuery.unarchivedFragments)(NoneShape, admin, global)
       .futureValue shouldBe noneFragments
@@ -239,7 +245,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       (fraudUser, List(fraudProcess, fraudFragment, fraudSecondProcess, fraudSecondFragment)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
       val result = mockRepository
         .fetchLatestProcessesDetails(ScenarioQuery.unarchived)(DisplayableShape, user, global)
         .futureValue
@@ -260,8 +266,8 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     forAll(testingData) {
       (
           user: LoggedUser,
-          process: ScenarioWithDetailsEntity[DisplayableProcess],
-          expected: Option[ScenarioWithDetailsEntity[DisplayableProcess]]
+          process: ScenarioWithDetailsEntity[ScenarioGraph],
+          expected: Option[ScenarioWithDetailsEntity[ScenarioGraph]]
       ) =>
         val result = mockRepository
           .fetchLatestProcessDetailsForProcessId(process.processId)(DisplayableShape, user, global)
@@ -299,7 +305,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
           user: LoggedUser,
           processId: ProcessId,
           versionId: VersionId,
-          expected: Option[ScenarioWithDetailsEntity[DisplayableProcess]]
+          expected: Option[ScenarioWithDetailsEntity[ScenarioGraph]]
       ) =>
         val result =
           mockRepository.fetchProcessDetailsForId(processId, versionId)(DisplayableShape, user, global).futureValue
@@ -343,7 +349,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       ),
     )
 
-    forAll(testingData) { (user: LoggedUser, userProcesses: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+    forAll(testingData) { (user: LoggedUser, userProcesses: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
       processes.foreach(process => {
         val result         = mockRepository.fetchProcessingType(process.idWithName)(user, global)
         val processingType = Try(result.futureValue).toOption
@@ -543,7 +549,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     )
 
     forAll(testingData) {
-      (user: LoggedUser, query: ScenarioQuery, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+      (user: LoggedUser, query: ScenarioQuery, expected: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
         val result = mockRepository.fetchLatestProcessesDetails(query)(DisplayableShape, user, global).futureValue
 
         // then

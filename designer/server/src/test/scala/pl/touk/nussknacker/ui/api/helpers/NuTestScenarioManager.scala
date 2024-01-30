@@ -33,7 +33,7 @@ trait NuTestScenarioManager extends ScalaFutures {
   protected val futureFetchingScenarioRepository: DBFetchingProcessRepository[Future] =
     newFutureFetchingScenarioRepository(testDbRef)
 
-  protected implicit val scenarioCategoryService: ProcessCategoryService =
+  protected val scenarioCategoryService: ProcessCategoryService =
     TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   protected def createSavedScenario(

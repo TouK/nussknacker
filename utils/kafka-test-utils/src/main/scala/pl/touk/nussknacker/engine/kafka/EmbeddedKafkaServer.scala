@@ -36,7 +36,7 @@ object EmbeddedKafkaServer {
       prepareRaftStorage(tempDir, kafkaConfig)
       new EmbeddedKafkaServer(
         None,
-        new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM, None),
+        new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM),
         s"$localhost:$brokerPort",
         tempDir
       )

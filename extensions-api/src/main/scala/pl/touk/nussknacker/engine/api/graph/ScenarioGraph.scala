@@ -1,16 +1,15 @@
-package pl.touk.nussknacker.engine.api.displayedgraph
+package pl.touk.nussknacker.engine.api.graph
 
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.{Decoder, Encoder, HCursor}
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
-// TODO: rename to ScenarioGraph
-@JsonCodec final case class DisplayableProcess(
+@JsonCodec final case class ScenarioGraph(
     properties: ProcessProperties,
     nodes: List[NodeData],
     edges: List[Edge]
@@ -20,6 +19,10 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 
 }
 
+@JsonCodec final case class Edge(from: String, to: String, edgeType: Option[EdgeType])
+
+// We have the same additionalFields name as in NodeData because properties are treated as node on the FE side
+// TODO: remove additionalFields nesting when we stop treating properties as a node on the FE side
 final case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
 
   def toMetaData(scenarioName: ProcessName): MetaData = MetaData(
