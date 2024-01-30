@@ -138,7 +138,6 @@
         "@cypress/browserify-preprocessor": "3.0.2",
         "@cypress/code-coverage": "3.10.0",
         "@emotion/jest": "11.10.5",
-        "@fontsource/open-sans": "4.5.13",
         "@fontsource/roboto-mono": "4.5.8",
         "@frsource/cypress-plugin-visual-regression-diff": "3.2.3",
         "@pmmmwh/react-refresh-webpack-plugin": "0.5.4",
