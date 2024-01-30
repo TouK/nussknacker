@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from "react";
-import { styled } from "@mui/material";
+import { styled, Typography } from "@mui/material";
 import Icon from "../../../../assets/img/documentation.svg";
 import { variables } from "../../../../stylesheets/variables";
 
@@ -20,7 +20,11 @@ export const Docs = (props: PropsWithChildren<{ docsUrl: string; style?: React.C
     return (
         <DocsLinkStyled target="_blank" href={docsUrl} title="Documentation" rel="noreferrer">
             <div style={style}>
-                {children && <span>{children}</span>}
+                {children && (
+                    <Typography mx={0.5} variant={"subtitle2"}>
+                        {children}
+                    </Typography>
+                )}
                 <Icon />
             </div>
         </DocsLinkStyled>

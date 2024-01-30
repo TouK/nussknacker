@@ -1,5 +1,5 @@
 import { tintPrimary } from "./helpers";
-import { createTheme } from "@mui/material";
+import { createTheme, Theme } from "@mui/material";
 
 declare module "@mui/material/FormHelperText" {
     interface FormHelperTextPropsVariantOverrides {
@@ -128,10 +128,7 @@ const custom = {
     },
 };
 
-const globalStyles = {
-    body: {
-        fontFamily: "Open Sans, Helvetica Neue ,Helvetica,Arial,sans-serif",
-    },
+const globalStyles = (theme: Theme) => ({
     "html, body": {
         margin: 0,
         padding: 0,
@@ -162,9 +159,6 @@ const globalStyles = {
             cursor: "pointer",
         },
     },
-    p: {
-        margin: "0 0 10px",
-    },
 
     hr: {
         marginTop: "20px",
@@ -178,9 +172,6 @@ const globalStyles = {
         ":hover": {
             textDecoration: "underline",
         },
-    },
-    "small, .small": {
-        fontSize: "85%",
     },
     ".hide": {
         display: "none",
@@ -242,7 +233,12 @@ const globalStyles = {
     ".notification-dismiss": {
         display: "none",
     },
-};
+
+    // Styles joint-js elements
+    "#nk-graph-main text": {
+        ...theme.typography.body1,
+    },
+});
 
 const headerCommonStyle = {
     fontWeight: 500,
@@ -326,7 +322,7 @@ export const nuTheme = createTheme({
             },
         },
         MuiCssBaseline: {
-            styleOverrides: globalStyles,
+            styleOverrides: (theme) => globalStyles(theme),
         },
         MuiFormControl: {
             styleOverrides: {
