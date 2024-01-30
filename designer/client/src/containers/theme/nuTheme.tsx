@@ -279,7 +279,7 @@ export const nuTheme = createTheme({
             fontWeight: "bold",
         },
         overline: {
-            fontSize: ".625",
+            fontSize: ".6875rem",
             letterSpacing: "inherit",
             lineHeight: "inherit",
             textTransform: "inherit",
