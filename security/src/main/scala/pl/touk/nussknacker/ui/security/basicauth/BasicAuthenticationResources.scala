@@ -31,25 +31,7 @@ class BasicAuthenticationResources(realm: String, configuration: BasicAuthentica
     )
 
   override def authenticationMethod(): EndpointInput[AuthCredentials] = {
-    Pair(
-      auth.basic[AuthCredentials](WWWAuthenticateChallenge.basic.realm(realm)),
-      auth..basic[AuthCredentials](WWWAuthenticateChallenge.basic.realm(realm)),
-      (a, _)=> a,
-      a => (a, a)
-    )
     auth.basic[AuthCredentials](WWWAuthenticateChallenge.basic.realm(realm))
-      .mapValidate(
-        Validator.custom(
-          logic =>
-            ValidationResult.Valid,
-          None
-        )
-      )( cr =>
-        cr
-      )(
-        ct =>
-          ct
-      )
   }
 
   override def authenticateReally(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
