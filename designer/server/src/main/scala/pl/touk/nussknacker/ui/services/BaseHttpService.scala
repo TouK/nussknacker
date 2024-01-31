@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.ui.services
 
+import cats.data.EitherT
 import com.typesafe.config.Config
-import pl.touk.nussknacker.restmodel.SecurityError
-import SecurityError.{AuthenticationError, AuthorizationError}
+import pl.touk.nussknacker.restmodel.BusinessError.ScenarioNotFoundError
+import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError}
+import pl.touk.nussknacker.restmodel.{BusinessError, NuError, NuException, SecurityError}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.services.BaseHttpService.NoRequirementServerEndpoint
@@ -71,6 +73,20 @@ abstract class BaseHttpService(
   protected def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR) = Left(Left(error))
 
   protected def securityError[SE <: SecurityError](error: SE) = Left(Right(error))
+
+  implicit class LogicResultExtension[RESULT](result: Future[RESULT]) {
+
+    def toTapirResponse(): Future[LogicResult[BusinessError, RESULT]] = result
+      .map(success)
+      .recover { case NuException(nuError) =>
+        nuError match {
+          case error: SecurityError => securityError(error)
+          case error: BusinessError => businessError(error)
+        }
+      }
+
+  }
+
 }
 
 object BaseHttpService {

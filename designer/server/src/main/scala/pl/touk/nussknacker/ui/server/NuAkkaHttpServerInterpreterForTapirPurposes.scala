@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.ui.server
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.api.NuDesignerErrorToHttp
 import sttp.model.StatusCode
-import sttp.tapir.{DecodeResult, statusCode, stringBody}
 import sttp.tapir.EndpointIO.Header
 import sttp.tapir.server.akkahttp.{AkkaHttpServerInterpreter, AkkaHttpServerOptions}
 import sttp.tapir.server.interceptor.DecodeFailureContext
 import sttp.tapir.server.interceptor.decodefailure.DefaultDecodeFailureHandler
 import sttp.tapir.server.interceptor.exception.{ExceptionContext, ExceptionHandler}
 import sttp.tapir.server.model.ValuedEndpointOutput
+import sttp.tapir.{DecodeResult, statusCode, stringBody}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,13 +41,12 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext:
   }
 
   private lazy val customExceptionHandler = ExceptionHandler.pure[Future] { ctx: ExceptionContext =>
-    val httpError = NuDesignerErrorToHttp.nuDesignerErrorToHttpError(ctx.e)
     Some(
       ValuedEndpointOutput(
         statusCode.and(stringBody),
         (
-          StatusCode.apply(httpError.statusCode),
-          httpError.errorMessage
+          StatusCode.InternalServerError,
+          ctx.e.getMessage
         )
       )
     )

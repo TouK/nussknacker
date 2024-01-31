@@ -6,33 +6,37 @@ import akka.http.scaladsl.server.ExceptionHandler
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
+import pl.touk.nussknacker.restmodel.BusinessError.ScenarioNotFoundError
+import pl.touk.nussknacker.restmodel.NuException
 import pl.touk.nussknacker.ui._
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
 object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
-  private type HttpStatus   = Int
-  private type ErrorMessage = String
-  final case class HttpError(statusCode: HttpStatus, errorMessage: ErrorMessage)
 
   def nuDesignerErrorHandler: ExceptionHandler = {
     import akka.http.scaladsl.server.Directives._
     ExceptionHandler { case NonFatal(e) =>
-      complete(toHttpResponse(nuDesignerErrorToHttpError(e)))
+      complete(errorToHttpResponse(e))
     }
   }
 
-  def nuDesignerErrorToHttpError: Throwable => HttpError = {
+  private def errorToHttpResponse: PartialFunction[Throwable, HttpResponse] = {
     case error: NuDesignerError =>
       logError(error)
-      toStatusAndMessage(error)
+      httpResponseFrom(error)
+    case NuException(ScenarioNotFoundError(scenarioName)) =>
+      val error = ProcessNotFoundError(scenarioName)
+      logError(error)
+      httpResponseFrom(error)
     case ex: IllegalArgumentException =>
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
-      HttpError(StatusCodes.BadRequest.intValue, ex.getMessage)
+      HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
     case ex =>
       logger.error(s"Unknown error: ${ex.getMessage}", ex)
-      HttpError(StatusCodes.InternalServerError.intValue, ex.getMessage)
+      HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)
   }
 
   def toResponseEither[T: Encoder](either: Either[NuDesignerError, T]): ToResponseMarshallable = either match {
@@ -41,19 +45,9 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
   }
 
   def httpResponseFrom(error: NuDesignerError): HttpResponse = {
-    toHttpResponse(toStatusAndMessage(error))
-  }
-
-  private def toStatusAndMessage(error: NuDesignerError): HttpError =
-    HttpError(
-      httpStatusCodeFrom(error).intValue(),
-      error.getMessage
-    )
-
-  private def toHttpResponse(httpError: HttpError): HttpResponse = {
     HttpResponse(
-      status = StatusCode.int2StatusCode(httpError.statusCode),
-      entity = httpError.errorMessage
+      status = httpStatusCodeFrom(error),
+      entity = error.getMessage
     )
   }
 

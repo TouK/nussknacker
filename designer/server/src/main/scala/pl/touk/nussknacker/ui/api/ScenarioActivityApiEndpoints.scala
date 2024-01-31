@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
+import pl.touk.nussknacker.restmodel.{BaseEndpointDefinitions, BusinessError}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
@@ -29,8 +29,22 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
   import TapirCodecs.HeaderCodec._
   import TapirCodecs.ScenarioNameCodec._
   import TapirCodecs.VersionIdCodec._
+  import TapirCodecs.ErrorsCodecs._
 
-  lazy val scenarioActivityEndpoint: SecuredEndpoint[ProcessName, String, ScenarioActivity, Any] =
+  private val processNotFoundErrorOutput: EndpointOutput.OneOf[BusinessError, BusinessError] = oneOf[BusinessError](
+    oneOfVariantFromMatchType(
+      NotFound,
+      plainBody[BusinessError.ScenarioNotFoundError]
+        .example(
+          Example.of(
+            summary = Some("No scenario {scenarioName} found"),
+            value = BusinessError.ScenarioNotFoundError(ProcessName("some scenario"))
+          )
+        )
+    )
+  )
+
+  lazy val scenarioActivityEndpoint: SecuredEndpoint[ProcessName, BusinessError, ScenarioActivity, Any] =
     baseNuApiEndpoint
       .summary("Scenario activity service")
       .tag("Scenario")
@@ -65,15 +79,10 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
           )
         )
       )
-      .errorOut(
-        statusCode(NotFound).and(
-          stringBody
-            .example("No scenario {scenarioName} found")
-        )
-      )
+      .errorOut(processNotFoundErrorOutput)
       .withSecurity(auth)
 
-  lazy val addCommentEndpoint: SecuredEndpoint[AddCommentRequest, String, Unit, Any] =
+  lazy val addCommentEndpoint: SecuredEndpoint[AddCommentRequest, BusinessError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Add scenario comment service")
       .tag("Scenario")
@@ -83,15 +92,10 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
           / "comments" / stringBody).mapTo[AddCommentRequest]
       )
       .out(statusCode(Ok))
-      .errorOut(
-        statusCode(NotFound).and(
-          stringBody
-            .example("No scenario {scenarioName} found")
-        )
-      )
+      .errorOut(processNotFoundErrorOutput)
       .withSecurity(auth)
 
-  lazy val deleteCommentEndpoint: SecuredEndpoint[DeleteCommentRequest, String, Unit, Any] =
+  lazy val deleteCommentEndpoint: SecuredEndpoint[DeleteCommentRequest, BusinessError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Delete process comment service")
       .tag("Scenario")
@@ -101,17 +105,12 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
           / path[Long]("commentId")).mapTo[DeleteCommentRequest]
       )
       .out(statusCode(Ok))
-      .errorOut(
-        statusCode(NotFound).and(
-          stringBody
-            .example("No scenario {scenarioName} found")
-        )
-      )
+      .errorOut(processNotFoundErrorOutput)
       .withSecurity(auth)
 
   def addAttachmentEndpoint(
       implicit streamBodyEndpoint: EndpointInput[InputStream]
-  ): SecuredEndpoint[AddAttachmentRequest, String, Unit, Any] = {
+  ): SecuredEndpoint[AddAttachmentRequest, BusinessError, Unit, Any] = {
     baseNuApiEndpoint
       .summary("Add scenario attachment service")
       .tag("Scenario")
@@ -123,18 +122,13 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
         ).mapTo[AddAttachmentRequest]
       )
       .out(statusCode(Ok))
-      .errorOut(
-        statusCode(NotFound).and(
-          stringBody
-            .example("No scenario {scenarioName} found")
-        )
-      )
+      .errorOut(processNotFoundErrorOutput)
       .withSecurity(auth)
   }
 
   def downloadAttachmentEndpoint(
       implicit streamBodyEndpoint: EndpointOutput[InputStream]
-  ): SecuredEndpoint[GetAttachmentRequest, String, GetAttachmentResponse, Any] = {
+  ): SecuredEndpoint[GetAttachmentRequest, BusinessError, GetAttachmentResponse, Any] = {
     baseNuApiEndpoint
       .summary("Download attachment service")
       .tag("Scenario")
@@ -150,12 +144,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
           .and(header(HeaderNames.ContentType)(requiredHeaderCodec))
           .mapTo[GetAttachmentResponse]
       )
-      .errorOut(
-        statusCode(NotFound).and(
-          stringBody
-            .example("No scenario {scenarioName} found")
-        )
-      )
+      .errorOut(processNotFoundErrorOutput)
       .withSecurity(auth)
   }
 

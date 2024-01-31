@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.restmodel.SecurityError.AuthorizationError
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.BusinessError
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.ScenarioActivityApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.api.{AkkaToTapirStreamExtension, AuthorizeProcess, ScenarioActivityApiEndpoints}
@@ -16,7 +16,7 @@ import sttp.tapir.EndpointIO.StreamBodyWrapper
 
 import java.io.{ByteArrayInputStream, InputStream}
 import java.net.URLConnection
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class ScenarioActivityApiHttpService(
     config: Config,
@@ -36,84 +36,73 @@ class ScenarioActivityApiHttpService(
 
   expose {
     scenarioActivityApiEndpoints.scenarioActivityEndpoint
-      .serverSecurityLogic(authorizeKnownUser[String])
+      .serverSecurityLogic(authorizeKnownUser[BusinessError])
       .serverLogic { _: LoggedUser => scenarioName: ProcessName =>
-        for {
+        val response = for {
           scenarioId       <- scenarioService.getProcessId(scenarioName)
           scenarioActivity <- scenarioActivityRepository.findActivity(scenarioId)
-        } yield success(ScenarioActivity(scenarioActivity))
+        } yield ScenarioActivity(scenarioActivity)
+        response.toTapirResponse()
       }
   }
 
   expose {
     scenarioActivityApiEndpoints.addCommentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[String])
+      .serverSecurityLogic(authorizeKnownUser[BusinessError])
       .serverLogic { implicit loggedUser => request: AddCommentRequest =>
-        checkWrite(request.scenarioName) { scenarioId =>
-          scenarioActivityRepository
-            .addComment(scenarioId, request.versionId, UserComment(request.commentContent))
-            .map(success)
-        }
+        val result = for {
+          scenarioId <- scenarioAuthorizer.check(request.scenarioName, Permission.Write)
+          _ <- scenarioActivityRepository.addComment(scenarioId, request.versionId, UserComment(request.commentContent))
+        } yield ()
+        result.toTapirResponse()
       }
   }
 
   expose {
     scenarioActivityApiEndpoints.deleteCommentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[String])
+      .serverSecurityLogic(authorizeKnownUser[BusinessError])
       .serverLogic { implicit loggedUser => request: DeleteCommentRequest =>
-        checkWrite(request.scenarioName) { _ =>
-          scenarioActivityRepository
-            .deleteComment(request.commentId)
-            .map(success)
-        }
+        val result = for {
+          _ <- scenarioAuthorizer.check(request.scenarioName, Permission.Write)
+          - <- scenarioActivityRepository.deleteComment(request.commentId)
+        } yield ()
+        result.toTapirResponse()
       }
   }
 
   expose {
     scenarioActivityApiEndpoints.addAttachmentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[String])
+      .serverSecurityLogic(authorizeKnownUser[BusinessError])
       .serverLogic { implicit loggedUser => request: AddAttachmentRequest =>
-        checkWrite(request.scenarioName) { scenarioId: ProcessId =>
-          attachmentService
+        val result = for {
+          scenarioId <- scenarioAuthorizer.check(request.scenarioName, Permission.Write)
+          _ <- attachmentService
             .saveAttachment(scenarioId, request.versionId, request.fileName.value, request.streamBody)
-            .map(success)
-        }
+        } yield ()
+        result.toTapirResponse()
       }
   }
 
   expose {
     scenarioActivityApiEndpoints.downloadAttachmentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[String])
+      .serverSecurityLogic(authorizeKnownUser[BusinessError])
       .serverLogic { _: LoggedUser => request: GetAttachmentRequest =>
-        (
-          for {
-            _               <- scenarioService.getProcessId(request.scenarioName)
-            maybeAttachment <- attachmentService.readAttachment(request.attachmentId)
-          } yield maybeAttachment
-        )
-          .map(maybeAttachment =>
-            maybeAttachment
-              .fold(GetAttachmentResponse.emptyResponse) { case (fileName, content) =>
-                GetAttachmentResponse(
-                  new ByteArrayInputStream(content),
-                  ContentDisposition.fromFileNameString(fileName).headerValue(),
-                  Option(URLConnection.guessContentTypeFromName(fileName))
-                    .getOrElse(MediaType.ApplicationOctetStream.toString())
-                )
-              }
-          )
-          .map(success)
+        val result = for {
+          _               <- scenarioService.getProcessId(request.scenarioName)
+          maybeAttachment <- attachmentService.readAttachment(request.attachmentId)
+          response = maybeAttachment match {
+            case Some((fileName, content)) =>
+              GetAttachmentResponse(
+                inputStream = new ByteArrayInputStream(content),
+                fileName = ContentDisposition.fromFileNameString(fileName).headerValue(),
+                contentType = Option(URLConnection.guessContentTypeFromName(fileName))
+                  .getOrElse(MediaType.ApplicationOctetStream.toString())
+              )
+            case None => GetAttachmentResponse.emptyResponse
+          }
+        } yield response
+        result.toTapirResponse()
       }
-  }
-
-  private def checkWrite[E, R](scenarioName: ProcessName)(
-      businessLogic: ProcessId => Future[LogicResult[E, R]]
-  )(implicit loggedUser: LoggedUser): Future[LogicResult[E, R]] = {
-    for {
-      scenarioId <- scenarioService.getProcessId(scenarioName)
-      canWrite   <- scenarioAuthorizer.check(scenarioId, Permission.Write, loggedUser)
-      result     <- if (canWrite) businessLogic(scenarioId) else Future.successful(securityError(AuthorizationError))
-    } yield result
   }
 
 }

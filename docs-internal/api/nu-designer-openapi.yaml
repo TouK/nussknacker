@@ -537,7 +537,10 @@ paths:
             text/plain:
               schema:
                 type: string
-              example: No scenario {scenarioName} found
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario some scenario found
       security:
       - httpAuth: []
   /api/processes/{scenarioName}/activity/comments/{commentId}:
@@ -594,7 +597,10 @@ paths:
             text/plain:
               schema:
                 type: string
-              example: No scenario {scenarioName} found
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario some scenario found
       security:
       - httpAuth: []
   /api/processes/{scenarioName}/activity:
@@ -659,7 +665,10 @@ paths:
             text/plain:
               schema:
                 type: string
-              example: No scenario {scenarioName} found
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario some scenario found
       security:
       - httpAuth: []
   /api/user:

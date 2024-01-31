@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.restmodel.BusinessError.ScenarioNotFoundError
+import pl.touk.nussknacker.restmodel.NuException
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
@@ -156,7 +158,7 @@ class DBProcessService(
   override def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId] = {
     fetchingProcessRepository
       .fetchProcessId(processName)
-      .map(_.getOrElse(throw ProcessNotFoundError(processName)))
+      .map(_.getOrElse(throw NuException(ScenarioNotFoundError(processName))))
   }
 
   override def getLatestProcessWithDetails(
