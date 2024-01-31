@@ -18,7 +18,7 @@ A Variable component is used to declare a new variable. In its simplest form a v
 ![alt_text](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_variable0.png   "Scenario with variable declaration")
 
 
-As you can see in the `variable` configuration form below, Nussknacker has inferred the data type of the `#input` variable. Nussknacker can do this based on info stored in the previous components.
+As you can see in the `variable` configuration form below, Nussknacker has inferred the data type of the `#input` variable. Nussknacker can do this based on the information available from the previous components.
 
 ![alt_text](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_variable1.png "Variable declaration form")
 
