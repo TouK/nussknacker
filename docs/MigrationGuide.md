@@ -104,6 +104,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Variable values in `MapVariable`, `FragmentOutput` and `Variable` are mandatory
   * Field names in `MapVariable`, `FragmentOutput` are required to be unique
 
+## In version 1.12.6
+
+### Other changes
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13
+
 ## In version 1.12.x
 
 ### Code API changes

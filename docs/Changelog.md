@@ -50,6 +50,10 @@
 * [#5312](https://github.com/TouK/nussknacker/pull/5312) Collect component clears context variables
 * [#5313](https://github.com/TouK/nussknacker/pull/5313) Added CountWhen and Average aggregations
 
+1.12.6 (29 Jan 2024)
+------------------------
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
+
 1.12.5 (1 Dec 2023)
 ------------------------
 * [#5110](https://github.com/TouK/nussknacker/pull/5110) Fix: The compare option doesn't display fragment input properties between the two versions
