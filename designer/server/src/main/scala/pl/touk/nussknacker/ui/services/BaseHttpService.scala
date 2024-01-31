@@ -6,7 +6,7 @@ import pl.touk.nussknacker.restmodel.{BusinessError, NuException, SecurityError}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.services.BaseHttpService.NoRequirementServerEndpoint
-import sttp.tapir.server.ServerEndpoint
+import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
@@ -72,9 +72,17 @@ abstract class BaseHttpService(
 
   protected def securityError[SE <: SecurityError](error: SE) = Left(Right(error))
 
-  implicit class LogicResultExtension[RESULT](result: Future[RESULT]) {
+  private type PartialEndpoint[INPUT, OUTPUT, -R] =
+    PartialServerEndpoint[_, LoggedUser, INPUT, Either[BusinessError, SecurityError], OUTPUT, R, Future]
 
-    def toTapirResponse(): Future[LogicResult[BusinessError, RESULT]] = result
+  implicit class ServerLogicExtension[INPUT, OUTPUT, -R](endpoint: PartialEndpoint[INPUT, OUTPUT, R]) {
+
+    def serverLogicWithNuExceptionHandling(f: LoggedUser => INPUT => Future[OUTPUT]) =
+      endpoint.serverLogic { loggedUser: LoggedUser => input: INPUT =>
+        toTapirResponse(f(loggedUser)(input))
+      }
+
+    private def toTapirResponse(result: Future[OUTPUT]): Future[LogicResult[BusinessError, OUTPUT]] = result
       .map(success)
       .recover { case NuException(nuError) =>
         nuError match {
