@@ -3,8 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import pl.touk.nussknacker.engine.MetaDataInitializer
 import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -29,7 +28,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, Scena
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
@@ -131,13 +130,13 @@ object ProcessTestData {
   val validProcessWithEmptySpelExpr: CanonicalProcess =
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
 
-  val validDisplayableProcess: DisplayableProcess = ProcessConverter.toDisplayable(validProcess)
+  val validScenarioGraph: ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(validProcess)
 
-  val validProcessDetailsForMigrations: ScenarioWithDetailsForMigrations =
-    TestProcessUtil.wrapWithDetailsForMigration(validDisplayableProcess)
+  val validScenarioDetailsForMigrations: ScenarioWithDetailsForMigrations =
+    TestProcessUtil.wrapWithDetailsForMigration(validScenarioGraph)
 
-  val archivedValidProcessDetailsForMigrations: ScenarioWithDetailsForMigrations =
-    TestProcessUtil.wrapWithDetailsForMigration(validDisplayableProcess).copy(isArchived = true)
+  val archivedValidScenarioDetailsForMigrations: ScenarioWithDetailsForMigrations =
+    TestProcessUtil.wrapWithDetailsForMigration(validScenarioGraph).copy(isArchived = true)
 
   // TODO: merge with this below
   val sampleScenario: CanonicalProcess = {
@@ -173,7 +172,7 @@ object ProcessTestData {
     .customNode("custom", "out1", otherExistingServiceId2, param)
     .emptySink("sink", existingSinkFactory)
 
-  val multipleSourcesValidProcess: DisplayableProcess = ProcessConverter.toDisplayable(
+  val multipleSourcesValidScenarioGraph: ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(
     ScenarioBuilder
       .streaming("fooProcess")
       .sources(
@@ -230,7 +229,7 @@ object ProcessTestData {
       .emptySink("sink", existingSinkFactory)
   }
 
-  val processWithInvalidScenarioProperties: DisplayableProcess = DisplayableProcess(
+  val scenarioGraphWithInvalidScenarioProperties: ScenarioGraph = ScenarioGraph(
     properties = ProcessProperties.combineTypeSpecificProperties(
       StreamMetaData(Some(2)),
       ProcessAdditionalFields(
@@ -247,8 +246,8 @@ object ProcessTestData {
     edges = List.empty
   )
 
-  val sampleDisplayableProcess: DisplayableProcess = {
-    DisplayableProcess(
+  val sampleScenarioGraph: ScenarioGraph = {
+    ScenarioGraph(
       properties = ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(Some(2)),
         ProcessAdditionalFields(Some("process description"), Map.empty, StreamMetaData.typeName)
@@ -336,13 +335,13 @@ object ProcessTestData {
   def createEmptyUpdateProcessCommand(
       comment: Option[UpdateProcessComment]
   ): UpdateProcessCommand = {
-    val displayableProcess = DisplayableProcess(
+    val scenarioGraph = ScenarioGraph(
       properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
       nodes = List.empty,
       edges = List.empty
     )
 
-    UpdateProcessCommand(displayableProcess, comment.getOrElse(UpdateProcessComment("")), None)
+    UpdateProcessCommand(scenarioGraph, comment.getOrElse(UpdateProcessComment("")), None)
   }
 
   def validProcessWithFragment(

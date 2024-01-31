@@ -53,6 +53,8 @@ object AuthenticationConfiguration {
       isAdmin: Boolean = false,
       categories: List[String] = List.empty,
       permissions: List[Permission] = List.empty,
+      // Currently we don't use global permissions in our code, but it is possible to configure TopTab.requiredPermission
+      // which can hide a tab on FE side when smb doesn't have some specific global permission. It is used in external project
       globalPermissions: List[GlobalPermission] = List.empty
   )
 

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
     override val isFragment: Boolean,
     override val processingType: ProcessingType,
     override val processCategory: String,
-    override val scenarioGraph: Option[DisplayableProcess],
+    override val scenarioGraph: Option[ScenarioGraph],
     override val validationResult: Option[ValidationResult],
     override val history: Option[List[ScenarioVersion]],
     override val modelVersion: Option[Int],
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
   def historyUnsafe: List[ScenarioVersion] = history.getOrElse(throw new IllegalStateException("Missing history"))
 
-  def scenarioGraphUnsafe: DisplayableProcess =
+  def scenarioGraphUnsafe: ScenarioGraph =
     scenarioGraph.getOrElse(throw new IllegalStateException("Missing scenario graph and validation result"))
 
   def validationResultUnsafe: ValidationResults.ValidationResult =
@@ -36,7 +36,7 @@ trait BaseScenarioWithDetailsForMigrations {
   def isFragment: Boolean
   def processingType: ProcessingType
   def processCategory: String
-  def scenarioGraph: Option[DisplayableProcess]
+  def scenarioGraph: Option[ScenarioGraph]
   def validationResult: Option[ValidationResult]
   def history: Option[List[ScenarioVersion]]
   def modelVersion: Option[Int]

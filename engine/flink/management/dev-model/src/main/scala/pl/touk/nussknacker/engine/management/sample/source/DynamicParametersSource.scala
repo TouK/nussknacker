@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.management.sample.transformer.DynamicParametersMixin
 
@@ -28,7 +28,7 @@ object DynamicParametersSource extends SourceFactory with DynamicParametersMixin
   )(implicit nodeId: NodeId): FinalResults = {
     val paramsTyping = otherParams.map { case (paramName, definedParam) => paramName -> definedParam.returnType }.toMap
     FinalResults.forValidation(validationContext)(
-      _.withVariable("input", TypedObjectTypingResult(paramsTyping), paramName = None)
+      _.withVariable("input", Typed.record(paramsTyping), paramName = None)
     )
   }
 

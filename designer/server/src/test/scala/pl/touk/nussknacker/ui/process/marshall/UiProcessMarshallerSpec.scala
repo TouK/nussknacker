@@ -69,23 +69,23 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
        |}
       """.stripMargin).fold(throw _, identity)
 
-  it should "unmarshall to displayable scenario properly" in {
-    val displayableProcess = ProcessConverter.toDisplayable(
+  it should "unmarshall to scenarioGraph scenario properly" in {
+    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(
       ProcessMarshaller.fromJsonUnsafe(processWithoutScenarioProperties)
     )
 
-    val processDescription = displayableProcess.properties.additionalFields.description
-    val nodeDescription    = displayableProcess.nodes.head.additionalFields.flatMap(_.description)
+    val processDescription = scenarioGraph.properties.additionalFields.description
+    val nodeDescription    = scenarioGraph.nodes.head.additionalFields.flatMap(_.description)
     processDescription shouldBe Some(someProcessDescription)
     nodeDescription shouldBe Some(someNodeDescription)
   }
 
   it should "marshall and unmarshall scenario" in {
     val baseProcess = processWithFullAdditionalFields(ProcessTestData.sampleProcessName)
-    val displayableProcess = ProcessConverter.toDisplayable(
+    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(
       ProcessMarshaller.fromJsonUnsafe(baseProcess)
     )
-    val canonical = ProcessConverter.fromDisplayable(displayableProcess, ProcessTestData.sampleProcessName)
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, ProcessTestData.sampleProcessName)
 
     val processAfterMarshallAndUnmarshall = canonical.asJson.printWith(humanReadablePrinter)
 

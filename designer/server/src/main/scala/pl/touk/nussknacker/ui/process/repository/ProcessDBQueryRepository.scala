@@ -63,7 +63,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
       implicit fetchShape: ScenarioShapeFetchStrategy[_]
   ): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] =
     fetchShape match {
-      case ScenarioShapeFetchStrategy.FetchDisplayable =>
+      case ScenarioShapeFetchStrategy.FetchScenarioGraph =>
         processVersionsTableWithScenarioJson
           .asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
       case ScenarioShapeFetchStrategy.FetchCanonical =>

@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
@@ -35,13 +35,14 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataProvider,
@@ -177,7 +178,7 @@ trait NuResourcesTest
     )
 
   protected val configProcessToolbarService =
-    new ConfigProcessToolbarService(testConfig, () => scenarioCategoryService.getAllCategories)
+    new ConfigScenarioToolbarService(CategoriesScenarioToolbarsConfigParser.parse(testConfig))
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
@@ -200,7 +201,7 @@ trait NuResourcesTest
     new DBProcessService(
       deploymentService,
       newProcessPreparerByProcessingType,
-      () => scenarioCategoryService,
+      ProcessingTypeDataProvider(Map.empty, scenarioCategoryService),
       processResolverByProcessingType,
       dbioRunner,
       futureFetchingScenarioRepository,
@@ -268,12 +269,12 @@ trait NuResourcesTest
     }
 
   protected def saveProcess(
-      process: DisplayableProcess
+      scenarioGraph: ScenarioGraph
   )(testCode: => Assertion): Assertion = {
     val processName = ProcessTestData.sampleProcessName
     createProcessRequest(processName) { code =>
       code shouldBe StatusCodes.Created
-      updateProcess(process, processName)(testCode)
+      updateProcess(scenarioGraph, processName)(testCode)
     }
   }
 
@@ -285,7 +286,7 @@ trait NuResourcesTest
     }
 
   protected def saveFragment(
-      process: DisplayableProcess,
+      scenarioGraph: ScenarioGraph,
       name: ProcessName = ProcessTestData.sampleFragmentName,
       category: Category = TestCategories.Category1
   )(testCode: => Assertion): Assertion = {
@@ -293,11 +294,11 @@ trait NuResourcesTest
       s"/processes/$name/$category?isFragment=true"
     ) ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
-      updateProcess(process, name)(testCode)
+      updateProcess(scenarioGraph, name)(testCode)
     }
   }
 
-  protected def updateProcess(process: DisplayableProcess, name: ProcessName = ProcessTestData.sampleProcessName)(
+  protected def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(UpdateProcessCommand(process, UpdateProcessComment(""), None), name)(testCode)
@@ -311,7 +312,7 @@ trait NuResourcesTest
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateProcessCommand(ProcessConverter.toDisplayable(process), UpdateProcessComment(comment), None),
+      UpdateProcessCommand(CanonicalProcessConverter.toScenarioGraph(process), UpdateProcessComment(comment), None),
       process.name
     )(
       testCode
@@ -366,10 +367,10 @@ trait NuResourcesTest
       withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
 
   protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
-    val displayableProcess = ProcessConverter.toDisplayable(scenario)
+    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
     val multiPart = MultipartUtils.prepareMultiParts(
       "testData"      -> testDataContent,
-      "scenarioGraph" -> displayableProcess.asJson.noSpaces
+      "scenarioGraph" -> scenarioGraph.asJson.noSpaces
     )()
     Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
       deployRoute(),

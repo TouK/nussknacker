@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.migrate
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import scala.concurrent.ExecutionContext
@@ -31,7 +31,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should perform test migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(1, 2))
-    val process       = wrapWithDetailsForMigration(validDisplayableProcess)
+    val process       = wrapWithDetailsForMigration(validScenarioGraph)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -40,16 +40,16 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should perform test migration on multiple source scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(8))
-    val process       = wrapWithDetailsForMigration(multipleSourcesValidProcess)
+    val scenarioGraph = wrapWithDetailsForMigration(multipleSourcesValidScenarioGraph)
 
-    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
+    val results = testMigration.testMigrations(List(scenarioGraph), List(), batchingExecutionContext)
 
     results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
   }
 
   test("should perform migration that should fail on new errors") {
     val testMigration = newTestModelMigrations(new TestMigrations(6))
-    val process       = wrapWithDetailsForMigration(validDisplayableProcess)
+    val process       = wrapWithDetailsForMigration(validScenarioGraph)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -58,7 +58,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should detect failed migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 3))
-    val process       = wrapWithDetailsForMigration(validDisplayableProcess)
+    val process       = wrapWithDetailsForMigration(validScenarioGraph)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -67,9 +67,9 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should detect failed migration on multiple sources scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(9))
-    val process       = wrapWithDetailsForMigration(multipleSourcesValidProcess)
+    val scenarioGraph = wrapWithDetailsForMigration(multipleSourcesValidScenarioGraph)
 
-    val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
+    val results = testMigration.testMigrations(List(scenarioGraph), List(), batchingExecutionContext)
 
     errorTypes(results.head.newErrors) shouldBe Map(
       "source1" -> List(classOf[RedundantParameters].getSimpleName),
@@ -79,7 +79,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should ignore failed migration when it may fail") {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
-    val process       = wrapWithDetailsForMigration(validDisplayableProcess)
+    val process       = wrapWithDetailsForMigration(validScenarioGraph)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -89,8 +89,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
   test("should report only new errors") {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
 
-    val invalidProcess: DisplayableProcess =
-      ProcessConverter.toDisplayable(
+    val invalidGraph: ScenarioGraph =
+      CanonicalProcessConverter.toScenarioGraph(
         ScenarioBuilder
           .streaming(sampleProcessName.value)
           .source("source", existingSourceFactory)
@@ -99,8 +99,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
           .emptySink("sink", existingSinkFactory)
       )
 
-    val validationResult = flinkProcessValidator.validate(invalidProcess, sampleProcessName, isFragment = false)
-    val process          = wrapWithDetailsForMigration(invalidProcess, validationResult = validationResult)
+    val validationResult = flinkProcessValidator.validate(invalidGraph, sampleProcessName, isFragment = false)
+    val process          = wrapWithDetailsForMigration(invalidGraph, validationResult = validationResult)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)
 
@@ -109,9 +109,9 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should migrate fragment and its usage within scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(7))
-    val fragment      = ProcessConverter.toDisplayable(sampleFragmentOneOut)
+    val fragment      = CanonicalProcessConverter.toScenarioGraph(sampleFragmentOneOut)
     val process =
-      ProcessConverter.toDisplayable(
+      CanonicalProcessConverter.toScenarioGraph(
         ScenarioBuilder
           .streaming("fooProcess")
           .source("source", existingSourceFactory)
@@ -129,7 +129,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
   }
 
   test("should migrate scenario with fragment which does not require any migrations") {
-    val fragment = ProcessConverter.toDisplayable(sampleFragmentOneOut)
+    val fragment = CanonicalProcessConverter.toScenarioGraph(sampleFragmentOneOut)
 
     val testMigration = new TestModelMigrations(
       mapProcessingTypeDataProvider(Streaming -> new ProcessModelMigrator(new TestMigrations(8))),
@@ -137,7 +137,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     )
 
     val process =
-      ProcessConverter.toDisplayable(
+      CanonicalProcessConverter.toScenarioGraph(
         ScenarioBuilder
           .streaming("fooProcess")
           .source("source", existingSourceFactory)

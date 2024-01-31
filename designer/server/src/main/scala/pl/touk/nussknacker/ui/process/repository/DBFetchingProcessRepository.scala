@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionSt
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -233,10 +233,10 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
     (processVersion.json, processVersion.componentsUsages, implicitly[ScenarioShapeFetchStrategy[PS]]) match {
       case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchCanonical) =>
         canonical.asInstanceOf[PS]
-      case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchDisplayable) =>
-        val displayableProcess =
-          ProcessConverter.toDisplayable(canonical)
-        displayableProcess.asInstanceOf[PS]
+      case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchScenarioGraph) =>
+        val scenarioGraph =
+          CanonicalProcessConverter.toScenarioGraph(canonical)
+        scenarioGraph.asInstanceOf[PS]
       case (_, _, ScenarioShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
       case (_, Some(componentsUsages), ScenarioShapeFetchStrategy.FetchComponentsUsages) =>
         componentsUsages.asInstanceOf[PS]

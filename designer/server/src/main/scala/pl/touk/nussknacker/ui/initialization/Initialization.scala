@@ -4,7 +4,7 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
@@ -91,7 +91,7 @@ class AutomaticMigration(
 
   def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     val results: DB[List[Unit]] = for {
-      allToMigrate <- fetchingProcessRepository.fetchLatestProcessesDetails[DisplayableProcess](
+      allToMigrate <- fetchingProcessRepository.fetchLatestProcessesDetails[ScenarioGraph](
         ScenarioQuery.unarchived
       )
       migrated <- allToMigrate.map(migrateOne).sequence[DB, Unit]
@@ -100,7 +100,7 @@ class AutomaticMigration(
   }
 
   private def migrateOne(
-      processDetails: ScenarioWithDetailsEntity[DisplayableProcess]
+      processDetails: ScenarioWithDetailsEntity[ScenarioGraph]
   )(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     DBIOAction
       .sequenceOption(for {

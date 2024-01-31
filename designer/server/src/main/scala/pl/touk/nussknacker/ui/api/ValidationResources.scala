@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -42,4 +42,4 @@ class ValidationResources(
 
 }
 
-@JsonCodec case class ScenarioValidationRequest(processName: ProcessName, scenarioGraph: DisplayableProcess)
+@JsonCodec case class ScenarioValidationRequest(processName: ProcessName, scenarioGraph: ScenarioGraph)

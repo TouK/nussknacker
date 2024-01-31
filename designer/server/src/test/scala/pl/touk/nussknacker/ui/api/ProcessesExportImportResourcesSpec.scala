@@ -9,15 +9,15 @@ import io.circe.syntax._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils
 
 import scala.language.higherKinds
@@ -51,19 +51,22 @@ class ProcessesExportImportResourcesSpec
     withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   private val adminRoute = asAdmin(processesExportResources) ~ asAdmin(processesRoute)
 
-  test("export process from displayable") {
-    val processToExport = ProcessTestData.sampleDisplayableProcess
+  test("export process from scenarioGraph") {
+    val scenarioGraphToExport = ProcessTestData.sampleScenarioGraph
     createEmptyProcess(ProcessTestData.sampleProcessName)
 
     Post(
       s"/processesExport/${ProcessTestData.sampleProcessName}",
-      processToExport
+      scenarioGraphToExport
     ) ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       val exported       = responseAs[String]
       val processDetails = ProcessMarshaller.fromJson(exported).toOption.get
 
-      processDetails shouldBe ProcessConverter.fromDisplayable(processToExport, ProcessTestData.sampleProcessName)
+      processDetails shouldBe CanonicalProcessConverter.fromScenarioGraph(
+        scenarioGraphToExport,
+        ProcessTestData.sampleProcessName
+      )
     }
   }
 
@@ -76,8 +79,8 @@ class ProcessesExportImportResourcesSpec
   }
 
   private def runImportExportTest(route: Route): Unit = {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) {
+    val scenarioGraphToSave = ProcessTestData.sampleScenarioGraph
+    saveProcess(scenarioGraphToSave) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -92,25 +95,25 @@ class ProcessesExportImportResourcesSpec
       val multipartForm = MultipartUtils.prepareMultiPart(modified.asJson.spaces2, "process")
       Post(s"/processes/import/${ProcessTestData.sampleProcessName}", multipartForm) ~> route ~> check {
         status shouldEqual StatusCodes.OK
-        val imported = responseAs[ValidatedDisplayableProcess]
+        val imported = responseAs[ScenarioGraphWithValidationResult]
         imported.scenarioGraph.properties.typeSpecificProperties.asInstanceOf[StreamMetaData].parallelism shouldBe Some(
           987
         )
-        imported.scenarioGraph.nodes shouldBe processToSave.nodes
+        imported.scenarioGraph.nodes shouldBe scenarioGraphToSave.nodes
       }
     }
   }
 
   test("export process in new version") {
-    val description   = "alamakota"
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    val processWithDescription = processToSave.copy(properties =
-      processToSave.properties.copy(additionalFields =
+    val description         = "alamakota"
+    val scenarioGraphToSave = ProcessTestData.sampleScenarioGraph
+    val processWithDescription = scenarioGraphToSave.copy(properties =
+      scenarioGraphToSave.properties.copy(additionalFields =
         ProcessAdditionalFields(Some(description), Map.empty, StreamMetaData.typeName)
       )
     )
 
-    saveProcess(processToSave) {
+    saveProcess(scenarioGraphToSave) {
       status shouldEqual StatusCodes.OK
     }
     updateProcess(processWithDescription) {
@@ -120,7 +123,7 @@ class ProcessesExportImportResourcesSpec
     Get(s"/processesExport/${ProcessTestData.sampleProcessName}/2") ~> routeWithAllPermissions ~> check {
       val response = responseAs[String]
       response shouldNot include(description)
-      assertProcessPrettyPrinted(response, processToSave)
+      assertProcessPrettyPrinted(response, scenarioGraphToSave)
     }
 
     Get(s"/processesExport/${ProcessTestData.sampleProcessName}/3") ~> routeWithAllPermissions ~> check {
@@ -136,8 +139,8 @@ class ProcessesExportImportResourcesSpec
   }
 
   test("export pdf") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) {
+    val scenarioGraphToSave = ProcessTestData.sampleScenarioGraph
+    saveProcess(scenarioGraphToSave) {
       status shouldEqual StatusCodes.OK
 
       val testSvg = "<svg viewBox=\"0 0 120 70\" xmlns=\"http://www.w3.org/2000/svg\">\n  " +
@@ -162,8 +165,11 @@ class ProcessesExportImportResourcesSpec
     response shouldBe expectedProcess.asJson.spaces2
   }
 
-  private def assertProcessPrettyPrinted(response: String, process: DisplayableProcess): Unit = {
-    assertProcessPrettyPrinted(response, ProcessConverter.fromDisplayable(process, ProcessTestData.sampleProcessName))
+  private def assertProcessPrettyPrinted(response: String, process: ScenarioGraph): Unit = {
+    assertProcessPrettyPrinted(
+      response,
+      CanonicalProcessConverter.fromScenarioGraph(process, ProcessTestData.sampleProcessName)
+    )
   }
 
 }

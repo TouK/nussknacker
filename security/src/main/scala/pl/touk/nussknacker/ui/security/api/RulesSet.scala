@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.security.api
 
-import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
-import GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
+import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 
-class RulesSet(rules: List[ConfigRule], allCategories: List[String]) {
+class RulesSet(rules: List[ConfigRule]) {
   import cats.instances.all._
   import cats.syntax.semigroup._
 
@@ -13,7 +13,6 @@ class RulesSet(rules: List[ConfigRule], allCategories: List[String]) {
     rules
       .flatMap { rule =>
         rule.categories
-          .flatMap(matchCategory)
           .map(_ -> (if (isAdmin) Permission.ALL_PERMISSIONS else rule.permissions.toSet))
       }
       .map(List(_).toMap)
@@ -26,18 +25,13 @@ class RulesSet(rules: List[ConfigRule], allCategories: List[String]) {
 
   def isAdmin: Boolean = rules.exists(rule => rule.isAdmin)
 
-  private def matchCategory(category: String): Option[String] =
-    allCategories
-      .find(c => c.toLowerCase.equals(category.toLowerCase))
-      .orElse(Option(category)) // If category not exists at systemCategories - allCategories then return base category
-
 }
 
 object RulesSet {
 
-  def getOnlyMatchingRules(roles: List[String], rules: List[ConfigRule], allCategories: List[String]): RulesSet = {
+  def getOnlyMatchingRules(roles: List[String], rules: List[ConfigRule]): RulesSet = {
     val filtered = rules.filter(rule => roles.map(_.toLowerCase).contains(rule.role.toLowerCase))
-    new RulesSet(filtered, allCategories)
+    new RulesSet(filtered)
   }
 
 }

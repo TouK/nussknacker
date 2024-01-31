@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.services
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.{DisplayableUser, UserApiEndpoints}
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, UserCategoryService}
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -11,9 +12,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserApiHttpService(
     config: Config,
     authenticator: AuthenticationResources,
-    getProcessCategoryService: () => ProcessCategoryService,
+    categories: ProcessingTypeDataProvider[Category, _],
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, getProcessCategoryService, authenticator)
+    extends BaseHttpService(config, authenticator)
     with LazyLogging {
 
   private val userApiEndpoints = new UserApiEndpoints(authenticator.authenticationMethod())
@@ -24,7 +25,7 @@ class UserApiHttpService(
       .serverLogic { user: LoggedUser => _ =>
         Future(
           success(
-            DisplayableUser(user, new UserCategoryService(getProcessCategoryService()).getUserCategories(user))
+            DisplayableUser(user, categories.all(user).values)
           )
         )
       }

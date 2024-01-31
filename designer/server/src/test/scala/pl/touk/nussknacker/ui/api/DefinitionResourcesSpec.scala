@@ -26,7 +26,7 @@ import pl.touk.nussknacker.ui.definition.{
   ScenarioPropertiesConfigFinalizer,
   TestAdditionalUIConfigProvider
 }
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 class DefinitionResourcesSpec
     extends AnyFunSpec
@@ -114,8 +114,8 @@ class DefinitionResourcesSpec
 
     val processName         = ProcessTestData.sampleScenario.name
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
-    val displayableFragment = ProcessConverter.toDisplayable(processWithFragment.fragment)
-    saveFragment(displayableFragment)(succeed)
+    val fragmentGraph       = CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
+    saveFragment(fragmentGraph)(succeed)
     saveCanonicalProcess(processWithFragment.process)(succeed)
 
     getProcessDefinitionData() ~> check {

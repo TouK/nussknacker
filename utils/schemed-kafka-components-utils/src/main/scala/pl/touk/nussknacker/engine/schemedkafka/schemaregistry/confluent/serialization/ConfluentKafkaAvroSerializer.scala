@@ -20,13 +20,13 @@ class ConfluentKafkaAvroSerializer(
     confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
     schemaEvolutionHandler: AvroSchemaEvolution,
     avroSchemaOpt: Option[AvroSchema],
-    var isKey: Boolean
+    _isKey: Boolean
 ) extends AbstractConfluentKafkaAvroSerializer(schemaEvolutionHandler)
     with Serializer[Any] {
 
   schemaRegistry = confluentSchemaRegistryClient.client
 
-  configure(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava, isKey)
+  configure(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava, _isKey)
 
   override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
     val avroConfig = new KafkaAvroSerializerConfig(configs)
@@ -43,6 +43,8 @@ class ConfluentKafkaAvroSerializer(
     serialize(avroSchemaOpt, topic, data, isKey, headers)
   }
 
+  // It is a work-around for two different close() methods (one throws IOException and another not) in AbstractKafkaSchemaSerDe and in Serializer
+  // It is needed only for scala 2.12
   override def close(): Unit = {}
 }
 
@@ -59,7 +61,7 @@ object ConfluentKafkaAvroSerializer {
       schemaRegistryClient,
       new DefaultAvroSchemaEvolution,
       avroSchemaOpt,
-      isKey = isKey
+      _isKey = isKey
     )
   }
 

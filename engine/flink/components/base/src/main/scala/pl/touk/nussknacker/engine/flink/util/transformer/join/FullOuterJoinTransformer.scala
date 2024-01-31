@@ -90,7 +90,7 @@ class FullOuterJoinTransformer(
                 .computeOutputType(aggregateByByBranchId(id).returnType)
                 .leftMap(x => {
                   val branchParamId = ParameterNaming.getNameForBranchParameter(AggregateByParam.parameter, id)
-                  NonEmptyList(CustomNodeError(x, Some(branchParamId)), Nil)
+                  NonEmptyList.one(CustomNodeError(x, Some(branchParamId)))
                 })
                 .map(id -> _)
             }
@@ -101,7 +101,7 @@ class FullOuterJoinTransformer(
             val outputTypes = outputTypeByBranchId
               .map { case (k, v) => ContextTransformation.sanitizeBranchName(k) -> v } + (KeyFieldName -> Typed
               .typedClass[String])
-            TypedObjectTypingResult(outputTypes)
+            Typed.record(outputTypes)
           })
 
         case _ => Validated.validNel(Unknown)
@@ -145,7 +145,7 @@ class FullOuterJoinTransformer(
 
       val types       = aggregateByByBranchId.mapValuesNow(_.returnType)
       val optionTypes = types.mapValuesNow(t => Typed.genericTypeClass(classOf[Option[_]], List(t)))
-      val inputType   = TypedObjectTypingResult(optionTypes)
+      val inputType   = Typed.record(optionTypes)
 
       val storedType     = aggregator.computeStoredTypeUnsafe(inputType)
       val storedTypeInfo = context.typeInformationDetection.forType[AnyRef](storedType)

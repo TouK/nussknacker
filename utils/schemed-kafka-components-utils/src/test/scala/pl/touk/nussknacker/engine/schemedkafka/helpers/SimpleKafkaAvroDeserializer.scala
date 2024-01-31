@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization
+package pl.touk.nussknacker.engine.schemedkafka.helpers
 
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.serializers.AbstractKafkaAvroDeserializer
 import org.apache.avro.io.DecoderFactory
 import org.apache.kafka.common.errors.SerializationException
+import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
@@ -14,33 +14,23 @@ import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, RuntimeSchemaData}
 import java.io.IOException
 import java.nio.ByteBuffer
 
-/**
- * This class basically do the same as AbstractKafkaAvroDeserializer but use our createDatumReader implementation with time conversions
- */
-abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroDeserializer {
-
-  protected def genericRecordSchemaIdSerializationSupport: GenericRecordSchemaIdSerializationSupport
+class SimpleKafkaAvroDeserializer(schemaRegistry: SchemaRegistryClient) extends Deserializer[Any] {
 
   protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get()
 
   private lazy val confluentAvroPayloadDeserializer = new AvroPayloadDeserializer(
-    useSchemaReflection,
-    useSpecificAvroReader,
-    genericRecordSchemaIdSerializationSupport,
+    useSchemaReflection = false,
+    useSpecificAvroReader = false,
+    new GenericRecordSchemaIdSerializationSupport(schemaIdSerializationEnabled = true),
     decoderFactory
   )
 
-  protected def deserialize(
-      topic: String,
-      isKey: java.lang.Boolean,
-      payload: Array[Byte],
-      readerSchema: Option[RuntimeSchemaData[AvroSchema]]
-  ): AnyRef = {
+  override def deserialize(topic: String, payload: Array[Byte]): Any = {
     val buffer = ConfluentUtils.parsePayloadToByteBuffer(payload).valueOr(ex => throw ex)
-    read(buffer, readerSchema)
+    read(buffer)
   }
 
-  protected def read(buffer: ByteBuffer, expectedSchemaData: Option[RuntimeSchemaData[AvroSchema]]): AnyRef = {
+  protected def read(buffer: ByteBuffer): AnyRef = {
     var schemaId = -1
 
     try {
@@ -48,7 +38,7 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
       val parsedSchema     = schemaRegistry.getSchemaById(schemaId)
       val writerSchemaData = RuntimeSchemaData(AvroUtils.extractSchema(parsedSchema), Some(SchemaId.fromInt(schemaId)))
       confluentAvroPayloadDeserializer.deserialize(
-        expectedSchemaData.map(_.toParsedSchemaData),
+        None,
         writerSchemaData.toParsedSchemaData,
         buffer
       )

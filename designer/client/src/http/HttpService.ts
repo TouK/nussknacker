@@ -182,6 +182,7 @@ class HttpService {
         return api.get<AppBuildInfo>("/app/buildInfo");
     }
 
+    // This function is used only by external project
     fetchCategoriesWithProcessingType() {
         return api.get<Map<string, string>>("/app/config/categoriesWithProcessingType");
     }

@@ -166,7 +166,7 @@ object TestFactory extends TestPermissions {
     LoggedUser(id, username, permissions, globalPermissions = List("CustomFixedPermission"))
 
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser =
-    LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
+    LoggedUser(id, username, Map.empty, isAdmin = true)
 
   def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
