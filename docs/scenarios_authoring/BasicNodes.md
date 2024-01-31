@@ -53,7 +53,7 @@ Filters let through records that satisfy a filtering condition.
 
 ![filter graph single](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_filter0.png)
 
-You can additionally also define an additional `false sink`. Records from the `source` which meet the filter's conditions are going to be redirected to the `true sink`, while others end up in the `false sink`.
+You can additionally also define an additional `false sink`. Records from the `source` which meet the filter's conditions are going to be directed to the `true sink`, while others end up in the `false sink`.
 
 ![filter graph](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_filter1.png)
 
