@@ -70,7 +70,7 @@ It distributes incoming records among output branches in accordance with the fil
 ![choice graph](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_choice0.png)
 
 After a record leaves`source` it arrives in `choice`, the record's value is tested against each of the defined conditions.  If `#input.color` is `blue`, the record ends up in `blue sink`.  
-If `#input.color` is `green`,the record will be sent to the `green sink`. For every other value, the record is sent to `sink for others` because condition `true` is always true.
+If `#input.color` is `green`,the record is sent to the `green sink`. For every other value, the record is sent to `sink for others` because condition `true` is always true.
 Order of evaluation of conditions is the same as is visible in the configuration form - top to bottom. You can modify the order using the drag & drop functionality.
 Order is also visible on the designer graph in an edge's (arrow's) description as a number. Be aware that the layout button can change displayed order of nodes, but it has no influence on order of evaluation.
 
