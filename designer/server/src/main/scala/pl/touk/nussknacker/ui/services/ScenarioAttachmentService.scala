@@ -17,8 +17,8 @@ class ScenarioAttachmentService(config: AttachmentsConfig, scenarioActivityRepos
     extends LazyLogging {
 
   def saveAttachment(
-      processId: ProcessId,
-      processVersionId: VersionId,
+      scenarioId: ProcessId,
+      scenarioVersionId: VersionId,
       originalFileName: String,
       inputStream: InputStream
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
@@ -32,7 +32,7 @@ class ScenarioAttachmentService(config: AttachmentsConfig, scenarioActivityRepos
           )
         } else {
           scenarioActivityRepository.addAttachment(
-            AttachmentToAdd(processId, processVersionId, originalFileName, bytes)
+            AttachmentToAdd(scenarioId, scenarioVersionId, originalFileName, bytes)
           )
         }
       })
@@ -52,8 +52,8 @@ object ScenarioAttachmentService {
   type AttachmentDataWithName = (String, Array[Byte])
 
   final case class AttachmentToAdd(
-      processId: ProcessId,
-      processVersionId: VersionId,
+      scenarioId: ProcessId,
+      scenarioVersionId: VersionId,
       fileName: String,
       data: Array[Byte]
   )

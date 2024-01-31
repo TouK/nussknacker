@@ -31,7 +31,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
   import TapirCodecs.VersionIdCodec._
   import TapirCodecs.ErrorsCodecs._
 
-  private val processNotFoundErrorOutput: EndpointOutput.OneOf[BusinessError, BusinessError] = oneOf[BusinessError](
+  private val scenarioNotFoundErrorOutput: EndpointOutput.OneOf[BusinessError, BusinessError] = oneOf[BusinessError](
     oneOfVariantFromMatchType(
       NotFound,
       plainBody[BusinessError.ScenarioNotFoundError]
@@ -79,7 +79,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
           )
         )
       )
-      .errorOut(processNotFoundErrorOutput)
+      .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
   lazy val addCommentEndpoint: SecuredEndpoint[AddCommentRequest, BusinessError, Unit, Any] =
@@ -92,7 +92,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
           / "comments" / stringBody).mapTo[AddCommentRequest]
       )
       .out(statusCode(Ok))
-      .errorOut(processNotFoundErrorOutput)
+      .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
   lazy val deleteCommentEndpoint: SecuredEndpoint[DeleteCommentRequest, BusinessError, Unit, Any] =
@@ -105,7 +105,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
           / path[Long]("commentId")).mapTo[DeleteCommentRequest]
       )
       .out(statusCode(Ok))
-      .errorOut(processNotFoundErrorOutput)
+      .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
   def addAttachmentEndpoint(
@@ -122,7 +122,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
         ).mapTo[AddAttachmentRequest]
       )
       .out(statusCode(Ok))
-      .errorOut(processNotFoundErrorOutput)
+      .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
   }
 
@@ -144,7 +144,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
           .and(header(HeaderNames.ContentType)(requiredHeaderCodec))
           .mapTo[GetAttachmentResponse]
       )
-      .errorOut(processNotFoundErrorOutput)
+      .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
   }
 

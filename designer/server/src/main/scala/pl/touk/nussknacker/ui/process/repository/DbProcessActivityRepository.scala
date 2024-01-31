@@ -77,8 +77,8 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef)
     val addAttachmentAction = for {
       _ <- attachmentsTable += AttachmentEntityData(
         id = -1L,
-        processId = attachmentToAdd.processId,
-        processVersionId = attachmentToAdd.processVersionId,
+        processId = attachmentToAdd.scenarioId,
+        processVersionId = attachmentToAdd.scenarioVersionId,
         fileName = attachmentToAdd.fileName,
         data = attachmentToAdd.data,
         user = loggedUser.username,
