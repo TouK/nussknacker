@@ -226,8 +226,12 @@ class TypingResultSpec
       .commonSupertypeOpt(
         Typed.fromDetailedType[util.List[String]],
         Typed.fromDetailedType[util.Collection[Integer]]
-      )
-      .value shouldEqual Typed.genericTypeClass[util.Collection[_]](List(Unknown))
+      ) shouldBe empty
+    CommonSupertypeFinder.Default
+      .commonSupertype(
+        Typed.fromDetailedType[util.List[String]],
+        Typed.fromDetailedType[util.Collection[Integer]]
+      ) shouldEqual Typed.genericTypeClass[util.Collection[_]](List(Unknown))
     val tupleIterable = Typed.fromDetailedType[Iterable[(String, Integer)]]
     val map           = Typed.fromDetailedType[Map[String, Integer]]
     intersectionSuperTypeFinder

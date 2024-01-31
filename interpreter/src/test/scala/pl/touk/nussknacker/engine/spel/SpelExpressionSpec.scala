@@ -966,6 +966,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Boolean]("'123' != null", ctx) shouldBe Symbol("valid")
 
     parse[Boolean]("123 == 123123123123L", ctx) shouldBe Symbol("valid")
+    parse[Boolean]("{1, 2} == {'a', 'b'}", ctx) shouldBe Symbol("invalid")
+    // Number's have common Number supertype
+    parse[Boolean]("{1, 2} == {1.0, 2.0}", ctx) shouldBe Symbol("valid")
   }
 
   test("compare records with different fields in equality") {

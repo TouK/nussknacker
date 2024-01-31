@@ -1,7 +1,12 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.SupertypeClassResolutionStrategy
+import cats.implicits.toTraverseOps
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.{
+  Default,
+  SupertypeClassResolutionStrategy,
+  looseFinder
+}
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -63,10 +68,11 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
         // In most cases we compare java.util.Map or GenericRecord, the only difference can be on generic params, but
         // still we'll got a class here, so this getOrElse should occur in the rare situations
-        classCommonSupertypeReturningTypedClass(l.objType, r.objType)
+        looseFinder
+          .classCommonSupertypeReturningTypedClass(l.objType, r.objType)
           .map { commonSupertype =>
             val fields = prepareFields(l, r)
-            // We don't return TypeEmpty in case when fields are empty, because we can't be sure the intention of the user
+            // We don't return None in case when fields are empty, because we can't be sure the intention of the user
             // e.g. someone can pass json object with missing field declared as optional in schema
             // and want to compare it with literal record that doesn't have this field
             TypedObjectTypingResult(fields, commonSupertype)
@@ -125,9 +131,9 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
   private def classCommonSupertype(left: TypedClass, right: TypedClass): Option[TypingResult] = {
     // TypedClass.klass are already boxed
     if (left.klass.isAssignableFrom(right.klass)) {
-      Some(genericClassWithSuperTypeParams(left.klass, left.params, right.params))
+      genericClassWithSuperTypeParams(left.klass, left.params, right.params)
     } else if (right.klass.isAssignableFrom(left.klass)) {
-      Some(genericClassWithSuperTypeParams(right.klass, right.params, left.params))
+      genericClassWithSuperTypeParams(right.klass, right.params, left.params)
     } else {
       // until here things are rather simple
       commonSuperTypeForClassesNotInSameInheritanceLine(left.klass, right.klass)
@@ -138,20 +144,30 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
       superType: Class[_],
       superTypeParams: List[TypingResult],
       subTypeParams: List[TypingResult]
-  ): TypedClass = {
+  ): Option[TypedClass] = {
     // Here is a little bit heuristics. We are not sure what generic types we are comparing, for List[T] with Collection[U]
     // it is ok to look for common super type of T and U but for Comparable[T] and Integer it won't be ok.
     // Maybe we should do this common super type checking only for well known cases?
-    val commonSuperTypesForGenericParams = if (superTypeParams.size == subTypeParams.size) {
-      // For generic params, in case of not matching classes, it is better to return Unknown than Typed.empty,
-      // but we still want to return the precise type - e.g. available fields in records
-      superTypeParams.zip(subTypeParams).map { case (l, p) =>
-        CommonSupertypeFinder.Default.commonSupertype(l, p)
+    val commonSuperTypesForGenericParamsOpt = if (superTypeParams.size == subTypeParams.size) {
+      classResolutionStrategy match {
+        case SupertypeClassResolutionStrategy.Intersection =>
+          superTypeParams
+            .zip(subTypeParams)
+            .map { case (l, p) =>
+              commonSupertypeOpt(l, p)
+            }
+            .sequence
+        case SupertypeClassResolutionStrategy.LooseWithFallbackToObjectType =>
+          Some(
+            superTypeParams.zip(subTypeParams).map { case (l, p) =>
+              commonSupertypeOpt(l, p).getOrElse(Unknown)
+            }
+          )
       }
     } else {
-      superTypeParams
+      Some(superTypeParams)
     }
-    Typed.genericTypeClass(superType, commonSuperTypesForGenericParams)
+    commonSuperTypesForGenericParamsOpt.map(Typed.genericTypeClass(superType, _))
   }
 
   private def commonSuperTypeForClassesNotInSameInheritanceLine(
@@ -171,14 +187,15 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
 
 object CommonSupertypeFinder {
 
+  private val looseFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.LooseWithFallbackToObjectType)
+
   // This finder has fallback to object type (SingleTypingResult.objType). When no matching super type class found,
   // it returns Any (which currently is expressed as Unknown). It is useful in most cases when you want to determine
   // the supertype of objects
   object Default {
-    private val delegate = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.LooseWithFallbackToObjectType)
 
     def commonSupertype(left: TypingResult, right: TypingResult): TypingResult = {
-      delegate
+      looseFinder
         .commonSupertypeOpt(left, right)
         .getOrElse(
           // We don't return Unknown as a sanity check, that our fallback strategy works correctly and supertypes for object types are used
@@ -188,7 +205,7 @@ object CommonSupertypeFinder {
 
   }
 
-  // It is the strategy that is looking for the intersection of common super types. If it doesn't find it, returns Typed.empty
+  // It is the strategy that is looking for the intersection of common super types. If it doesn't find it, returns None
   // It is useful only when you want to check that types matches e.g. during comparison
   val Intersection = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection)
 
