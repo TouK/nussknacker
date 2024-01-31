@@ -20,17 +20,17 @@ import { FieldError } from "../Validators";
 import { TableEditor } from "./Table/TableEditor";
 
 export type EditorProps = {
-    onValueChange?: (value: string) => void;
+    onValueChange: (value: string) => void;
     type?: EditorType;
     editorConfig?: Record<string, unknown>;
     className?: string;
     fieldErrors: FieldError[];
     formatter?: Formatter;
     expressionInfo?: string;
-    expressionObj?: ExpressionObj;
+    expressionObj: ExpressionObj;
     readOnly?: boolean;
     showSwitch?: boolean;
-    showValidation: boolean;
+    showValidation?: boolean;
     variableTypes?: VariableTypes;
     ref?: React.Ref<unknown>;
 };
