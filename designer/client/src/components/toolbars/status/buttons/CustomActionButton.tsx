@@ -9,6 +9,9 @@ import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import UrlIcon from "../../../UrlIcon";
 import { FallbackProps } from "react-error-boundary";
+import {useSelector} from "react-redux";
+import {getProcessVersionId} from "../../../../reducers/selectors/graph";
+import {resolveCustomActionDisplayability} from "../../../../helpers/customActionDisplayabilityResolver";
 
 type CustomActionProps = {
     action: CustomAction;
@@ -28,7 +31,9 @@ export default function CustomActionButton(props: CustomActionProps) {
     );
 
     const statusName = processStatus?.name;
-    const available = !disabled && action.allowedStateStatusNames.includes(statusName);
+    const available = !disabled &&
+                               action.allowedStateStatusNames.includes(statusName) &&
+                               resolveCustomActionDisplayability(action.displayPolicy);
 
     const toolTip = available
         ? null

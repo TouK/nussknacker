@@ -22,6 +22,7 @@ case class CustomAction(
     name: String,
     // We cannot use "engine.api.deployment.StateStatus" because it can be implemented as a class containing nonconstant attributes
     allowedStateStatusNames: List[String],
+    displayPolicy: Option[CustomActionDisplayPolicy] = None,
     parameters: List[CustomActionParameter] = Nil,
     icon: Option[URI] = None
 )
@@ -56,3 +57,8 @@ case class CustomActionNonExisting(request: CustomActionRequest) extends CustomA
 }
 
 case class CustomActionForbidden(request: CustomActionRequest, msg: String) extends CustomActionError
+
+sealed trait CustomActionDisplayPolicy
+
+// TODO: Add more
+case object CurrentlyViewedProcessVersionIsDeployed extends CustomActionDisplayPolicy

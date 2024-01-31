@@ -6,6 +6,7 @@ import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.EdgeType
@@ -135,6 +136,13 @@ package object definition {
     def apply(action: CustomAction): UICustomAction = UICustomAction(
       name = action.name,
       allowedStateStatusNames = action.allowedStateStatusNames,
+      displayPolicy = action.displayPolicy match {
+        case Some(displayPolicy) =>
+          displayPolicy match {
+            case deployment.CurrentlyViewedProcessVersionIsDeployed => Some(CurrentlyViewedProcessVersionIsDeployed)
+          }
+        case None => None
+      },
       icon = action.icon,
       parameters = action.parameters.map(p => UICustomActionParameter(p.name, p.editor))
     )
@@ -144,10 +152,14 @@ package object definition {
   @JsonCodec final case class UICustomAction(
       name: String,
       allowedStateStatusNames: List[String],
+      displayPolicy: Option[UICustomActionDisplayPolicy],
       icon: Option[URI],
       parameters: List[UICustomActionParameter]
   )
 
   @JsonCodec final case class UICustomActionParameter(name: String, editor: ParameterEditor)
+
+  sealed trait UICustomActionDisplayPolicy
+  @JsonCodec private case object CurrentlyViewedProcessVersionIsDeployed extends UICustomActionDisplayPolicy
 
 }

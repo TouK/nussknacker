@@ -25,9 +25,14 @@ export type ProcessAdditionalFields = {
     metaDataType: string;
 };
 
+export enum CustomActionDisplayPolicy {
+  CurrentlyViewedProcessVersionIsDeployed
+}
+
 export type CustomAction = {
     name: string;
     allowedStateStatusNames: Array<string>;
+    displayPolicy?: CustomActionDisplayPolicy;
     icon?: string;
     parameters?: Array<CustomActionParameter>;
 };
