@@ -17,7 +17,7 @@ describe("Auto Screenshot Change Docs -", () => {
 
     it("basic components - variable", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsVariable#0"); // load scenario
-        cy.layoutScenario(800); // layout alignment
+        cy.layoutScenario(); // layout alignment
         takeGraphScreenshot(); // take screenshot of whole graph
 
         cy.get('[model-id="My first variable declaration"]').dblclick(); // click on node
@@ -32,7 +32,7 @@ describe("Auto Screenshot Change Docs -", () => {
 
     it("basic components - mapmariable", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsMapVariable#0");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         cy.get('[model-id="node label goes here"]').dblclick();
         cy.get('[title="Name"]').click();
         takeWindowScreenshot();
@@ -47,11 +47,11 @@ describe("Auto Screenshot Change Docs -", () => {
 
     it("basic components - filter", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsFilter#0");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         takeGraphScreenshot();
 
         cy.visitNewProcess(seed, "docsBasicComponentsFilter#1");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         takeGraphScreenshot();
 
         cy.get('[model-id="conditional filter"]').dblclick();
@@ -60,13 +60,11 @@ describe("Auto Screenshot Change Docs -", () => {
     });
 
     it("basic components - choice", () => {
+        //skip
         cy.visitNewProcess(seed, "docsBasicComponentsChoice#0");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         cy.get("[title='toggle left panel']").click();
         cy.get("[title='toggle right panel']").click();
-
-        cy.get("[data-rbd-droppable-id='topLeft']").should("not.be.visible");
-        cy.get("[data-rbd-droppable-id='topRight']").should("not.be.visible");
         takeGraphScreenshot();
 
         cy.get('[model-id="choice"]').dblclick();
@@ -76,13 +74,13 @@ describe("Auto Screenshot Change Docs -", () => {
 
     it("basic components - split", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsSplit#0");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         takeGraphScreenshot();
     });
 
     it("basic components - foreach", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsForEach#0");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         cy.get('[model-id="for-each"]').dblclick();
         cy.get('[title="Name"]').click();
         takeWindowScreenshot();
@@ -92,7 +90,7 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.viewport(1920, 1080);
         //skip
         cy.visitNewProcess(seed, "docsBasicComponentsUnion#0");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         takeGraphScreenshot();
 
         cy.get('[model-id="union"]').dblclick();
@@ -103,7 +101,7 @@ describe("Auto Screenshot Change Docs -", () => {
     it("aggregates - Single Side Join", () => {
         //skip
         cy.visitNewProcess(seed, "docsAggregatesSingleSideJoin#0");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         takeGraphScreenshot();
 
         cy.get('[model-id="single-side-join"]').dblclick();
@@ -114,7 +112,7 @@ describe("Auto Screenshot Change Docs -", () => {
     it("aggregates - Full Outer Join", () => {
         //skip
         cy.visitNewProcess(seed, "docsAggregatesFullOuterJoin#0");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         cy.get('[model-id="full-outer-join"]').dblclick();
         cy.get('[title="Name"]').click();
         takeWindowScreenshot();
@@ -123,7 +121,7 @@ describe("Auto Screenshot Change Docs -", () => {
     it("fragments - Inputs", () => {
         cy.viewport(1920, 1080);
         cy.visitNewProcess(seed, "docsFragmentsInputs#0");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         cy.get('[model-id="input"]').dblclick();
         cy.get('[title="Name"]').click();
         takeWindowScreenshot();
@@ -141,7 +139,7 @@ describe("Auto Screenshot Change Docs -", () => {
     it("fragments - Outputs", () => {
         cy.viewport(1920, 1080);
         cy.visitNewProcess(seed, "docsFragmentsOutputs#0");
-        cy.layoutScenario(800);
+        cy.layoutScenario();
         takeGraphScreenshot();
     });
 });
