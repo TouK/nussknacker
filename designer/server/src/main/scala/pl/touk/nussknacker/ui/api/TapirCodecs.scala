@@ -2,12 +2,23 @@ package pl.touk.nussknacker.ui.api
 
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.restmodel.BusinessError
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
-import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
+import sttp.tapir.{Codec, CodecFormat, DecodeResult, Mapping, Schema}
 
 object TapirCodecs {
+
+  object ErrorsCodecs {
+
+    implicit val scenarioNotFoundCodec: Codec[String, BusinessError.ScenarioNotFoundError, CodecFormat.TextPlain] = {
+      Codec.string.map(
+        Mapping.from[String, BusinessError.ScenarioNotFoundError](_ => ???)(_.message)
+      )
+    }
+
+  }
 
   object ScenarioNameCodec {
     def encode(scenarioName: ProcessName): String = scenarioName.value
