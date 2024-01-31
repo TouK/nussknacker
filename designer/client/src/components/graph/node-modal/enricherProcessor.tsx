@@ -2,12 +2,12 @@ import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { IdField } from "./IdField";
 import { serviceParameters } from "./NodeDetailsContent/helpers";
-import { ParameterExpressionField } from "./ParameterExpressionField";
 import { NodeField } from "./NodeField";
 import { FieldType } from "./editors/field/Field";
 import { DisableField } from "./DisableField";
 import { DescriptionField } from "./DescriptionField";
 import React from "react";
+import { ParametersList } from "./parametersList";
 
 export function EnricherProcessor({
     errors,
@@ -40,25 +40,19 @@ export function EnricherProcessor({
                 renderFieldLabel={renderFieldLabel}
                 errors={errors}
             />
-            {serviceParameters(node).map((param, index) => {
-                return (
-                    <div className="node-block" key={node.id + param.name + index}>
-                        <ParameterExpressionField
-                            isEditMode={isEditMode}
-                            showValidation={showValidation}
-                            showSwitch={showSwitch}
-                            node={node}
-                            findAvailableVariables={findAvailableVariables}
-                            parameterDefinitions={parameterDefinitions}
-                            errors={errors}
-                            renderFieldLabel={renderFieldLabel}
-                            setProperty={setProperty}
-                            parameter={param}
-                            listFieldPath={`service.parameters[${index}]`}
-                        />
-                    </div>
-                );
-            })}
+            <ParametersList
+                parameters={serviceParameters(node)}
+                isEditMode={isEditMode}
+                showValidation={showValidation}
+                showSwitch={showSwitch}
+                node={node}
+                findAvailableVariables={findAvailableVariables}
+                parameterDefinitions={parameterDefinitions}
+                errors={errors}
+                renderFieldLabel={renderFieldLabel}
+                setProperty={setProperty}
+                getListFieldPath={(index: number) => `service.parameters[${index}]`}
+            />
             {node.type === "Enricher" ? (
                 <NodeField
                     isEditMode={isEditMode}
