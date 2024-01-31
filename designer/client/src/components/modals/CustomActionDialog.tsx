@@ -13,7 +13,8 @@ import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/edito
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import ErrorBoundary from "../common/ErrorBoundary";
-import { FormControl, FormLabel } from "@mui/material";
+import { FormControl, FormHelperText, FormLabel } from "@mui/material";
+import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;

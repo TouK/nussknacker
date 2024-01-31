@@ -1,4 +1,4 @@
-import { SimpleEditor } from "../Editor";
+import { ExtendedEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import DataEditor, {
     CompactSelection,
@@ -19,7 +19,6 @@ import { longestRow, transpose } from "./tableDataUtils";
 import { css } from "@emotion/css";
 import { useTypeOptions } from "../../../fragment-input-definition/FragmentInputDefinition";
 import { PopoverPosition } from "@mui/material/Popover/Popover";
-import { NuThemeProvider } from "../../../../../../containers/theme/nuThemeProvider";
 import { DataEditorRef } from "@glideapps/glide-data-grid/dist/ts/data-editor/data-editor";
 import { ActionTypes, useTableState } from "./tableState";
 import { TypesMenu } from "./TypesMenu";
@@ -75,7 +74,7 @@ const RightElement = ({ onColumnAppend }: { onColumnAppend: () => void }) => {
     );
 };
 
-export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
+export const TableEditor: ExtendedEditor = ({ expressionObj, onValueChange }) => {
     const tableDateContext = useTableState(expressionObj);
     const [{ rows, columns }, dispatch, rawExpression] = tableDateContext;
 

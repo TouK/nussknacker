@@ -5,15 +5,9 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName } from "../../reducers/selectors/graph";
 import { Expression, NodeValidationError, UIParameter, VariableTypes } from "../../types";
-import { WindowContent } from "../../windowManager";
-import { WindowKind } from "../../windowManager";
+import { WindowContent, WindowKind } from "../../windowManager";
 import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
-import { getProcessId } from "../../reducers/selectors/graph";
-import { Expression, UIParameter, VariableTypes } from "../../types";
-import { WindowContent, WindowKind } from "../../windowManager";
-import { editors, simpleEditorValidators } from "../graph/node-modal/editors/expression/Editor";
-import { NodeTable, NodeTableBody } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
 import { validateGenericActionParameters } from "../../actions/nk/genericAction";
@@ -23,7 +17,6 @@ import { spelFormatters } from "../graph/node-modal/editors/expression/Formatter
 import { isEmpty } from "lodash";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { FormControl } from "@mui/material";
-import { NodeRow } from "../graph/node-modal/NodeDetailsContent/NodeStyled";
 import ErrorBoundary from "../common/ErrorBoundary";
 
 export type GenericActionLayout = {
