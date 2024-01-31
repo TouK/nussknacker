@@ -364,111 +364,110 @@ export const TableEditor: ExtendedEditor = ({ expressionObj, onValueChange }) =>
     const rightElement = useMemo<DataEditorProps["rightElement"]>(() => <RightElement onColumnAppend={onColumnAppend} />, [onColumnAppend]);
 
     return (
-        <NuThemeProvider>
-            <ErrorBoundary>
-                <Sizer
-                    overflowY={overflowY}
-                    data-testid="table-container"
-                    sx={{
-                        border: "1px solid",
-                        borderColor: tableTheme.borderColor,
-                    }}
-                >
-                    <DataEditor
-                        getRowThemeOverride={(row) => ({
-                            bgCell: row >= tableRows.length ? tableTheme.bgCellMedium : tableTheme.bgCell,
-                        })}
-                        ref={ref}
-                        className={overrideGroupRenameInput}
-                        columns={tableColumns}
-                        getCellContent={getCellContent}
-                        getCellsForSelection={true}
-                        onCellsEdited={onCellsEdited}
-                        onGroupHeaderRenamed={onGroupHeaderRenamed}
-                        getGroupDetails={getGroupDetails}
-                        onPaste={pasteWithExpand}
-                        onRowAppended={appendRow}
-                        rightElement={rightElement}
-                        rowMarkers="clickable-number"
-                        columnSelect="multi"
-                        rows={tableRows.length}
-                        smoothScrollX
-                        smoothScrollY
-                        theme={tableTheme}
-                        width="100%"
-                        trailingRowOptions={trailingRowOptions}
-                        gridSelection={selection}
-                        onGridSelectionChange={setSelection}
-                        onHeaderClicked={onDataEditorHeaderClicked}
-                        onHeaderMenuClick={openTypeMenu}
-                        onHeaderContextMenu={onHeaderContextMenu}
-                        onGroupHeaderContextMenu={onHeaderContextMenu}
-                        onCellContextMenu={onDataEditorCellContextMenu}
-                        onColumnResize={onDataEditorColumnResize}
-                    />
-                </Sizer>
-                <TypesMenu
-                    anchorPosition={typesMenuData?.position}
-                    currentValue={columns[typesMenuData?.column]?.[1]}
-                    onChange={onTypesMenuChange}
-                    options={supportedTypes}
+        <ErrorBoundary>
+            <Sizer
+                offsetParent={`[data-testid="window"] section`}
+                overflowY={overflowY}
+                data-testid="table-container"
+                sx={{
+                    border: "1px solid",
+                    borderColor: tableTheme.borderColor,
+                }}
+            >
+                <DataEditor
+                    getRowThemeOverride={(row) => ({
+                        bgCell: row >= tableRows.length ? tableTheme.bgCellMedium : tableTheme.bgCell,
+                    })}
+                    ref={ref}
+                    className={overrideGroupRenameInput}
+                    columns={tableColumns}
+                    getCellContent={getCellContent}
+                    getCellsForSelection={true}
+                    onCellsEdited={onCellsEdited}
+                    onGroupHeaderRenamed={onGroupHeaderRenamed}
+                    getGroupDetails={getGroupDetails}
+                    onPaste={pasteWithExpand}
+                    onRowAppended={appendRow}
+                    rightElement={rightElement}
+                    rowMarkers="clickable-number"
+                    columnSelect="multi"
+                    rows={tableRows.length}
+                    smoothScrollX
+                    smoothScrollY
+                    theme={tableTheme}
+                    width="100%"
+                    trailingRowOptions={trailingRowOptions}
+                    gridSelection={selection}
+                    onGridSelectionChange={setSelection}
+                    onHeaderClicked={onDataEditorHeaderClicked}
+                    onHeaderMenuClick={openTypeMenu}
+                    onHeaderContextMenu={onHeaderContextMenu}
+                    onGroupHeaderContextMenu={onHeaderContextMenu}
+                    onCellContextMenu={onDataEditorCellContextMenu}
+                    onColumnResize={onDataEditorColumnResize}
                 />
-                <CellMenu anchorPosition={cellMenuData?.position} onClose={closeCellMenu}>
-                    {cellMenuData?.column >= 0 && cellMenuData?.row < 0 ? (
-                        <ResetColumnWidthMenuItem
-                            disabled={!columns[cellMenuData.column][2]}
-                            indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
-                            onClick={(indexes) => {
-                                dispatch({
-                                    type: ActionTypes.resetColumnsSize,
-                                    columns: indexes,
-                                });
-                                closeCellMenu();
-                            }}
-                        />
-                    ) : null}
-                    {cellMenuData?.column >= 0 ? (
-                        <DeleteColumnMenuItem
-                            indexes={
-                                selection.columns.toArray().length > 0
-                                    ? selection.columns.toArray()
-                                    : selection.current?.range
-                                    ? Array.from({ length: selection.current.range.width }, (_, i) => selection.current.range.x + i)
-                                    : [cellMenuData?.column]
-                            }
-                            onClick={(indexes) => {
-                                dispatch({
-                                    type: ActionTypes.deleteColumns,
-                                    columns: indexes,
-                                });
-                                clearSelection();
-                                closeCellMenu();
-                            }}
-                        />
-                    ) : null}
-                    {cellMenuData?.row >= 0 ? (
-                        <DeleteRowMenuItem
-                            indexes={
-                                selection.rows.toArray().length > 0
-                                    ? selection.rows.toArray()
-                                    : selection.current?.range
-                                    ? Array.from({ length: selection.current.range.height }, (_, i) => selection.current.range.y + i)
-                                    : [cellMenuData?.row]
-                            }
-                            onClick={(indexes) => {
-                                dispatch({
-                                    type: ActionTypes.deleteRows,
-                                    rows: indexes.map((i) => i - additionalRows.length),
-                                    columnData: indexes.map((i) => i + hiddenAdditionalRows.length),
-                                });
-                                clearSelection();
-                                closeCellMenu();
-                            }}
-                        />
-                    ) : null}
-                </CellMenu>
-            </ErrorBoundary>
-        </NuThemeProvider>
+            </Sizer>
+            <TypesMenu
+                anchorPosition={typesMenuData?.position}
+                currentValue={columns[typesMenuData?.column]?.[1]}
+                onChange={onTypesMenuChange}
+                options={supportedTypes}
+            />
+            <CellMenu anchorPosition={cellMenuData?.position} onClose={closeCellMenu}>
+                {cellMenuData?.column >= 0 && cellMenuData?.row < 0 ? (
+                    <ResetColumnWidthMenuItem
+                        disabled={!columns[cellMenuData.column][2]}
+                        indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
+                        onClick={(indexes) => {
+                            dispatch({
+                                type: ActionTypes.resetColumnsSize,
+                                columns: indexes,
+                            });
+                            closeCellMenu();
+                        }}
+                    />
+                ) : null}
+                {cellMenuData?.column >= 0 ? (
+                    <DeleteColumnMenuItem
+                        indexes={
+                            selection.columns.toArray().length > 0
+                                ? selection.columns.toArray()
+                                : selection.current?.range
+                                ? Array.from({ length: selection.current.range.width }, (_, i) => selection.current.range.x + i)
+                                : [cellMenuData?.column]
+                        }
+                        onClick={(indexes) => {
+                            dispatch({
+                                type: ActionTypes.deleteColumns,
+                                columns: indexes,
+                            });
+                            clearSelection();
+                            closeCellMenu();
+                        }}
+                    />
+                ) : null}
+                {cellMenuData?.row >= 0 ? (
+                    <DeleteRowMenuItem
+                        indexes={
+                            selection.rows.toArray().length > 0
+                                ? selection.rows.toArray()
+                                : selection.current?.range
+                                ? Array.from({ length: selection.current.range.height }, (_, i) => selection.current.range.y + i)
+                                : [cellMenuData?.row]
+                        }
+                        onClick={(indexes) => {
+                            dispatch({
+                                type: ActionTypes.deleteRows,
+                                rows: indexes.map((i) => i - additionalRows.length),
+                                columnData: indexes.map((i) => i + hiddenAdditionalRows.length),
+                            });
+                            clearSelection();
+                            closeCellMenu();
+                        }}
+                    />
+                ) : null}
+            </CellMenu>
+        </ErrorBoundary>
     );
 };
 
