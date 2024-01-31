@@ -20,7 +20,7 @@ Every scenario starts with a source of data. We have to specify what kind of dat
 - data enrichments from external sources (JDBC, OpenAPI)
 - aggregates in different types of time windows (available with Flink engine)
 - custom, tailor-made components, which extend default functionality
-- and additional features
+- and more
 
 The nodes affect the data records as they flow through the scenario. In a typical scenario, you first check if a particular situation (data record) is of interest to you (you [filter](./BasicNodes.md#filter) out the ones that aren't). Then you fetch additional information needed to make the decision ([enrich](./Enrichers.md) the event) and add some conditional logic based on that information ([choice](./BasicNodes.md#choice)). If you want to explore more than one alternative, you can at any point [split](./BasicNodes.md#split) the flow into parallel paths. At the end of every scenario is a sink node (or nodes if there are parallel paths which haven't been [merged](./BasicNodes.md#union)). 
 
