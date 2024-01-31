@@ -46,7 +46,7 @@ export default function Tool(props: OwnProps): JSX.Element {
                     highlightTag={`span`}
                     highlightStyle={{
                         ...theme.typography.body2,
-                        color: theme.custom.colors.secondaryBackground,
+                        color: theme.custom.colors.warning,
                         background: theme.custom.colors.secondaryBackground,
                         fontWeight: "bold",
                     }}

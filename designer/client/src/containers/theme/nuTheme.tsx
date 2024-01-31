@@ -275,6 +275,9 @@ export const nuTheme = createTheme({
         h4: { ...headerCommonStyle },
         h5: { ...headerCommonStyle },
         h6: { ...headerCommonStyle },
+        subtitle1: {
+            fontWeight: "bold",
+        },
         subtitle2: {
             fontWeight: "bold",
         },

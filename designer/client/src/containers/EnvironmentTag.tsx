@@ -42,7 +42,7 @@ export function EnvironmentTag() {
     }
 
     return (
-        <Tag variant={"body1"} px={1} py={0.5} backgroundColor={background} title={content}>
+        <Tag variant={"body2"} px={1} py={0.5} backgroundColor={background} title={content}>
             {content}
         </Tag>
     );
