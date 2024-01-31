@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.ui.services
 
-import cats.data.EitherT
 import com.typesafe.config.Config
-import pl.touk.nussknacker.restmodel.BusinessError.ScenarioNotFoundError
 import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError}
-import pl.touk.nussknacker.restmodel.{BusinessError, NuError, NuException, SecurityError}
+import pl.touk.nussknacker.restmodel.{BusinessError, NuException, SecurityError}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.services.BaseHttpService.NoRequirementServerEndpoint

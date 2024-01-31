@@ -38,7 +38,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
         .example(
           Example.of(
             summary = Some("No scenario {scenarioName} found"),
-            value = BusinessError.ScenarioNotFoundError(ProcessName("some scenario"))
+            value = BusinessError.ScenarioNotFoundError(ProcessName("'example scenario'"))
           )
         )
     )
