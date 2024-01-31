@@ -8,6 +8,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import pl.touk.nussknacker.ui._
 
+import java.util.concurrent.ExecutionException
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
@@ -20,12 +21,10 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
     }
   }
 
-  def unwrapException(e: Throwable): Throwable =
-    if (Option(e.getCause).nonEmpty) {
-      e.getCause
-    } else {
-      e
-    }
+  def unwrapException(e: Throwable): Throwable = e match {
+    case ex: ExecutionException => ex.getCause
+    case other                  => other
+  }
 
   private def errorToHttpResponse(e: Throwable): HttpResponse = e match {
     case error: NuDesignerError =>
