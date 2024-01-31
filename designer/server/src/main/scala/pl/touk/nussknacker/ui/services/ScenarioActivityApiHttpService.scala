@@ -37,57 +37,53 @@ class ScenarioActivityApiHttpService(
   expose {
     scenarioActivityApiEndpoints.scenarioActivityEndpoint
       .serverSecurityLogic(authorizeKnownUser[BusinessError])
-      .serverLogic { _: LoggedUser => scenarioName: ProcessName =>
-        val response = for {
+      .serverLogicWithNuExceptionHandling { _: LoggedUser => scenarioName: ProcessName =>
+        for {
           scenarioId       <- scenarioService.getProcessId(scenarioName)
           scenarioActivity <- scenarioActivityRepository.findActivity(scenarioId)
         } yield ScenarioActivity(scenarioActivity)
-        response.toTapirResponse()
       }
   }
 
   expose {
     scenarioActivityApiEndpoints.addCommentEndpoint
       .serverSecurityLogic(authorizeKnownUser[BusinessError])
-      .serverLogic { implicit loggedUser => request: AddCommentRequest =>
-        val result = for {
+      .serverLogicWithNuExceptionHandling { implicit loggedUser => request: AddCommentRequest =>
+        for {
           scenarioId <- scenarioAuthorizer.check(request.scenarioName, Permission.Write)
           _ <- scenarioActivityRepository.addComment(scenarioId, request.versionId, UserComment(request.commentContent))
         } yield ()
-        result.toTapirResponse()
       }
   }
 
   expose {
     scenarioActivityApiEndpoints.deleteCommentEndpoint
       .serverSecurityLogic(authorizeKnownUser[BusinessError])
-      .serverLogic { implicit loggedUser => request: DeleteCommentRequest =>
-        val result = for {
+      .serverLogicWithNuExceptionHandling { implicit loggedUser => request: DeleteCommentRequest =>
+        for {
           _ <- scenarioAuthorizer.check(request.scenarioName, Permission.Write)
           - <- scenarioActivityRepository.deleteComment(request.commentId)
         } yield ()
-        result.toTapirResponse()
       }
   }
 
   expose {
     scenarioActivityApiEndpoints.addAttachmentEndpoint
       .serverSecurityLogic(authorizeKnownUser[BusinessError])
-      .serverLogic { implicit loggedUser => request: AddAttachmentRequest =>
-        val result = for {
+      .serverLogicWithNuExceptionHandling { implicit loggedUser => request: AddAttachmentRequest =>
+        for {
           scenarioId <- scenarioAuthorizer.check(request.scenarioName, Permission.Write)
           _ <- attachmentService
             .saveAttachment(scenarioId, request.versionId, request.fileName.value, request.streamBody)
         } yield ()
-        result.toTapirResponse()
       }
   }
 
   expose {
     scenarioActivityApiEndpoints.downloadAttachmentEndpoint
       .serverSecurityLogic(authorizeKnownUser[BusinessError])
-      .serverLogic { _: LoggedUser => request: GetAttachmentRequest =>
-        val result = for {
+      .serverLogicWithNuExceptionHandling { _: LoggedUser => request: GetAttachmentRequest =>
+        for {
           _               <- scenarioService.getProcessId(request.scenarioName)
           maybeAttachment <- attachmentService.readAttachment(request.attachmentId)
           response = maybeAttachment match {
@@ -101,7 +97,6 @@ class ScenarioActivityApiHttpService(
             case None => GetAttachmentResponse.emptyResponse
           }
         } yield response
-        result.toTapirResponse()
       }
   }
 
