@@ -38,10 +38,6 @@ export function longestRow<M, I = MatrixElement<M>>(matrix: Matrix<I>): readonly
     return matrix.reduce((longestRow, row) => (longestRow.length < row.length ? row : longestRow), [] as I[]);
 }
 
-export function transpose<M, I = MatrixElement<M>>(matrix: Matrix<I>, defaultValue?: I): Matrix<I> {
-    return Array.from(longestRow(matrix), (_, i) => matrix.map((row) => row[i] ?? defaultValue));
-}
-
 function getLetterColumnName(n = 0) {
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const max = letters.length;
