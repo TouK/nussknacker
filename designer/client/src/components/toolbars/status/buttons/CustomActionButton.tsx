@@ -1,4 +1,4 @@
-import React, { ComponentType } from "react";
+import React, {ComponentType, useEffect, useState} from "react";
 import { useTranslation } from "react-i18next";
 import DefaultIcon from "../../../../assets/img/toolbarButtons/custom_action.svg";
 import { CustomAction } from "../../../../types";
@@ -21,6 +21,7 @@ type CustomActionProps = {
 
 export default function CustomActionButton(props: CustomActionProps) {
     const { action, processStatus, disabled } = props;
+    const [isAvailable, setIsAvailable] = useState<boolean>(false);
 
     const { t } = useTranslation();
 
@@ -30,12 +31,18 @@ export default function CustomActionButton(props: CustomActionProps) {
         <DefaultIcon />
     );
 
-    const statusName = processStatus?.name;
-    const available = !disabled &&
-                               action.allowedStateStatusNames.includes(statusName) &&
-                               resolveCustomActionDisplayability(action.displayPolicy);
+  useEffect(() => {
+    const resolveDisplayability = async () => {
+      const res = await resolveCustomActionDisplayability(action.displayPolicy);
+      setIsAvailable(!disabled &&
+        action.allowedStateStatusNames.includes(statusName) && res);
+    }
+    resolveDisplayability();
+  }, []);
 
-    const toolTip = available
+    const statusName = processStatus?.name;
+
+    const toolTip = isAvailable
         ? null
         : t("panels.actions.custom-action.tooltips.disabled", "Disabled for {{statusName}} status.", { statusName });
 
@@ -44,7 +51,7 @@ export default function CustomActionButton(props: CustomActionProps) {
         <ToolbarButton
             name={action.name}
             title={toolTip}
-            disabled={!available}
+            disabled={!isAvailable}
             icon={icon}
             onClick={() =>
                 open<CustomAction>({

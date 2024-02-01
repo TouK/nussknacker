@@ -1,15 +1,23 @@
 import {CustomActionDisplayPolicy} from "../types";
 import {useSelector} from "react-redux";
-import {getProcessVersionId} from "../reducers/selectors/graph";
+import {getProcessName, getProcessVersionId} from "../reducers/selectors/graph";
+import HttpService from "../http/HttpService";
 
-export function resolveCustomActionDisplayability(displayPolicy: CustomActionDisplayPolicy){
-  const versionId = useSelector(getProcessVersionId);
+export async function resolveCustomActionDisplayability(displayPolicy: CustomActionDisplayPolicy){
+  const processName = useSelector(getProcessName);
+  const processVersionId = useSelector(getProcessVersionId);
 
   switch(displayPolicy) {
     case CustomActionDisplayPolicy.CurrentlyViewedProcessVersionIsDeployed:
-      //TODO
-      return true;
+      try {
+        const response = await HttpService.fetchLastlyDeployedVersionId(processName);
+        const data = response.data;
+        return data.versionId === processVersionId;
+      } catch (error) {
+        console.error("Error fetching lastly deployed version ID:", error);
+        return false;
+      }
     default:
-      break;
+      return false;
   }
 }
