@@ -48,10 +48,6 @@ type Actions = {
             column: number;
             value: string;
         }[];
-        columnDataChanges?: {
-            column: number;
-            value: Partial<DataColumn>;
-        }[];
     };
     [ActionTypes.insertData]: {
         column: number;
@@ -62,7 +58,6 @@ type Actions = {
     };
     [ActionTypes.deleteRows]: {
         rows: number[];
-        columnData?: number[];
     };
     [ActionTypes.deleteColumns]: {
         columns: number[];
@@ -138,15 +133,10 @@ function reducer(state: TableData, action: Action): TableData {
         case ActionTypes.editData:
             return {
                 ...state,
-                rows: action.dataChanges.reduce((rows, { row, column, value }) => {
-                    rows[row] = rows[row] || [];
-                    rows[row][column] = value;
-                    return [...rows];
-                }, state.rows),
-                columns: action.columnDataChanges.reduce((columns, { column, value }) => {
-                    columns[column] = { ...columns[column], ...value };
-                    return [...columns];
-                }, state.columns),
+                rows: action.dataChanges.reduce(
+                    (rows, { row: y, column: x, value }) => rows.map((r, i) => (i === y ? r.map((v, i) => (i === x ? value : v)) : r)),
+                    state.rows,
+                ),
             };
         case ActionTypes.renameColumn:
             // prevent duplicates
