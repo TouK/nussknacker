@@ -11,7 +11,9 @@ object FlinkArgsEncodeHack {
       _.replace("\"", "__FRH_")
         .replace("\n", "__FRH2_")
         .replace("'", "__FRH3_")
-        .replace("#", "__FRH4_")
+        // required for Ververica Cloud (PR 4698), but temporarily removed so that existing batch deployments
+        // will be able to run with old model JARs (i.e. model JARs that don't have updated FlinkArgsDecodeHack)
+        // .replace("#", "__FRH4_")
     )
     .map(s => "\"" + s + "\"")
 
