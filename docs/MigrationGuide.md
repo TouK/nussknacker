@@ -208,6 +208,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Boolean expressions in `Switch` and `Filter` nodes are required not null values
   * Variable values in `MapVariable`, `FragmentOutput` and `Variable` are mandatory
   * Field names in `MapVariable`, `FragmentOutput` are required to be unique
+* [#4698](https://github.com/TouK/nussknacker/pull/4698) Due to change in program argument encoding all scheduled batch
+  scenarios handled by periodic DM must be cancelled before upgrade
 
 ## In version 1.12.x
 
