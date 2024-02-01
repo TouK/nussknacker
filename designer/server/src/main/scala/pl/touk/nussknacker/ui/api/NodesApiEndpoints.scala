@@ -5,7 +5,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, Json}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -26,9 +26,8 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDtoHelpers.toTypingResult
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{NodeValidationRequestDto, TypingResultDtoHelpers}
-import pl.touk.nussknacker.ui.api.typingDtoSchemas._
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodeValidationRequestDto
+import pl.touk.nussknacker.ui.api.typingDtos._
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.Codec.PlainCodec
@@ -36,6 +35,8 @@ import sttp.tapir._
 import sttp.tapir.derevo.schema
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
+
+import scala.language.implicitConversions
 
 class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
@@ -181,11 +182,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
 object NodesApiEndpoints {
 
   object Dtos {
-
-    private val typingDtoDecoder                                           = new TypingResultDtoDecoder()
-    implicit val typeDtoEncoderAsObject: Encoder.AsObject[TypingResultDto] = TypeDtoEncoders.typingResultEncoder
-    implicit val typeDtoEncoders: Encoder[TypingResultDto] = TypeDtoEncoders.typingResultEncoder.mapJson(identity)
-    implicit val typingResultDtoDecoder: Decoder[TypingResultDto] = typingDtoDecoder.decodeTypingResultDto
+    import typingDtoSchemas._
 
     object ScenarioNameCodec {
       def encode(scenarioName: ProcessName): String = scenarioName.value
@@ -202,106 +199,56 @@ object NodesApiEndpoints {
     implicit lazy val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
 
-    object TypingResultDtoHelpers {
-
-      def toTypingResult(typeDto: TypingResultDto)(implicit modelData: ModelData): TypingResult = {
-        typeDto match {
-          case typedClass: TypedClassDto =>
-            Typed.genericTypeClass(
-              modelData.modelClassLoader.classLoader.loadClass(typedClass.classOnWait),
-              decodeJsonUnsafe(typedClass.paramsOnWait)(Decoder.decodeList[TypingResultDto]).map(typ =>
-                toTypingResult(typ)
-              )
-            )
-          case typedObjectWithValue: TypedObjectWithValueDto =>
-            val underlying = Typed.genericTypeClass(
-              modelData.modelClassLoader.classLoader.loadClass(typedObjectWithValue.waitRefClazzName.get),
-              List.empty
-            )
-            val trueValue = SimpleObjectEncoder.decode(underlying, typedObjectWithValue.waitValue.hcursor) match {
-              case Left(_)      => None
-              case Right(value) => value
-            }
-            typing.TypedObjectWithValue(underlying, trueValue)
-          case typedObjectTypingResult: TypedObjectTypingResultDto =>
-            typing.TypedObjectTypingResult(
-              typedObjectTypingResult.fields.map { case (key, typ) => (key, toTypingResult(typ)) }
-            )
-          case typedUnion: TypedUnionDto =>
-            TypedUnion(typedUnion.possibleTypes.map(typ => toTypingResult(typ).asInstanceOf[SingleTypingResult]))
-          case typedDict: TypedDictDto =>
-            typing.TypedDict(typedDict.dictId, toTypingResult(typedDict.valueType).asInstanceOf[SingleTypingResult])
-          case typedTaggedValue: TypedTaggedValueDto =>
-            typing.TypedTaggedValue(
-              toTypingResult(typedTaggedValue.underlying).asInstanceOf[SingleTypingResult],
-              typedTaggedValue.tag
-            )
-          case TypedNullDto =>
-            TypedNull
-          case UnknownDto =>
-            Unknown
-        }
-      }
-
-      def toDto(typingResult: TypingResult)(implicit modelData: ModelData): TypingResultDto = {
-        typingResult match {
-          case typedObjectWithValue: TypedObjectWithValue =>
-            TypedObjectWithValueDto(typedObjectWithValue)
-          case typedClass: TypedClass =>
-            TypedClassDto(typedClass)
-          case typedUnion: TypedUnion =>
-            TypedUnionDto(typedUnion)
-          case typedTaggedValue: TypedTaggedValue =>
-            TypedTaggedValueDto(typedTaggedValue)
-          case typedDict: TypedDict =>
-            TypedDictDto(typedDict)
-          case typedObjectTypingResult: TypedObjectTypingResult =>
-            TypedObjectTypingResultDto(typedObjectTypingResult)
-          case TypedNull =>
-            TypedNullDto
-          case Unknown =>
-            UnknownDto
-        }
-      }
-
-    }
-
-    @derive(encoder, decoder, schema)
+    // wydaje mi się, że do requestu to encoder to nie jest potrzebny
+    @derive(decoder, schema)
     final case class NodeValidationRequestDto(
         nodeData: NodeData,
         processProperties: ProcessProperties,
-        variableTypes: Map[String, TypingResultDto],
-        branchVariableTypes: Option[Map[String, Map[String, TypingResultDto]]],
+//        variableTypes: Map[String, TypingResultDto],
+        variableTypes: Map[String, Json],
+//        variableTypes: Json,
+//        branchVariableTypes: Option[Map[String, Map[String, TypingResultDto]]],
+        branchVariableTypes: Option[Map[String, Map[String, Json]]],
+//        branchVariableTypes: Option[Json],
         outgoingEdges: Option[List[Edge]]
     )
+
+    implicit val nodeValidationRequestDtoEmptyEncoder: Encoder[NodeValidationRequestDto] =
+      Encoder.encodeJson.contramap[NodeValidationRequestDto](_ => Json.Null)
+//    implicit val nodeValidationRequestDtoEmptyEncoder: Encoder[NodeValidationRequestDto] = ???
 
     object NodeValidationRequestDto {
       implicit lazy val nodeDataSchema: Schema[NodeData]                    = Schema.anyObject
       implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.derived.hidden(true)
     }
 
-    @derive(encoder, decoder, schema)
+    // wydaje mi się, że do response decoder nie jest potrzebny
+    @derive(encoder, schema)
     final case class NodeValidationResultDto(
         parameters: Option[List[UIParameterDto]],
-        expressionType: Option[TypingResultDto],
+        expressionType: Option[TypingResult],
         validationErrors: List[NodeValidationError],
         validationPerformed: Boolean
     )
 
-    object NodeValidationResultDto {
-      import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDtoHelpers.toDto
+    implicit val nodeValidationRequestDtoDecoder: Decoder[NodeValidationResultDto] =
+      Decoder.instance[NodeValidationResultDto](_ => ???)
+//    implicit val nodeValidationRequestDtoDecoder: Decoder[NodeValidationResultDto] = ???
 
-      def apply(node: NodeValidationResult)(implicit modelData: ModelData): NodeValidationResultDto = {
+    object NodeValidationResultDto {
+//      import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDtoHelpers.toDto
+
+      def apply(node: NodeValidationResult): NodeValidationResultDto = {
         new NodeValidationResultDto(
           parameters = node.parameters.map { list =>
             list.map { param =>
               UIParameterDto(
                 name = param.name,
-                typ = toDto(param.typ),
+                typ = param.typ,
                 editor = param.editor,
                 defaultValue = param.defaultValue,
                 additionalVariables = param.additionalVariables.map { case (key, typingResult) =>
-                  (key, toDto(typingResult))
+                  (key, typingResult)
                 },
                 variablesToHide = param.variablesToHide,
                 branchParam = param.branchParam,
@@ -311,7 +258,7 @@ object NodesApiEndpoints {
             }
           },
           expressionType = node.expressionType.map { typingResult =>
-            toDto(typingResult)
+            typingResult
           },
           validationErrors = node.validationErrors,
           validationPerformed = node.validationPerformed
@@ -320,13 +267,14 @@ object NodesApiEndpoints {
 
     }
 
-    @derive(encoder, decoder, schema)
+    // to jest chyba tylko response
+    @derive(encoder, schema)
     final case class UIParameterDto(
         name: String,
-        typ: TypingResultDto,
+        typ: TypingResult,
         editor: ParameterEditor,
         defaultValue: Expression,
-        additionalVariables: Map[String, TypingResultDto],
+        additionalVariables: Map[String, TypingResult],
         variablesToHide: Set[String],
         branchParam: Boolean,
         hintText: Option[String],
@@ -346,11 +294,17 @@ object NodesApiEndpoints {
         name: ProcessName
     )
 
-    @derive(schema, encoder, decoder)
+    // to jest request
+    @derive(schema, decoder)
     final case class ParametersValidationRequestDto(
         parameters: List[UIValueParameterDto],
-        variableTypes: Map[String, TypingResultDto]
+//        variableTypes: Map[String, TypingResultDto]
+        variableTypes: Map[String, Json]
+//        variableTypes: Json
     )
+
+    implicit val parametersValidationRequestDtoEncoder: Encoder[ParametersValidationRequestDto] =
+      Encoder.encodeJson.contramap[ParametersValidationRequestDto](_ => Json.Null)
 
     @derive(schema, encoder, decoder)
     final case class ParametersValidationResultDto(
@@ -358,36 +312,55 @@ object NodesApiEndpoints {
         validationPerformed: Boolean
     )
 
+    // tylko do requestu
     @derive(schema, encoder, decoder)
     final case class UIValueParameterDto(
         name: String,
-        typ: TypingResultDto,
+        typ: Json,
         expression: Expression
     )
 
     implicit lazy val expressionSchema: Schema[Expression]           = Schema.derived
     implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 
-    @derive(schema, encoder, decoder)
+    // to jest request
+    @derive(schema, decoder)
     final case class ExpressionSuggestionRequestDto(
         expression: Expression,
         caretPosition2d: CaretPosition2d,
-        variableTypes: Map[String, TypingResultDto]
-    )
+//        variableTypes: Map[String, TypingResultDto]
+        variableTypes: Map[String, Json]
+//        variableTypes: Json
+    ) {
 
-    @derive(schema, encoder, decoder)
+      def decodedVariableTypes(decoder: Decoder[TypingResult]): Map[String, TypingResult] =
+        variableTypes.map { case (key, result) =>
+          (key, decoder.decodeJson(result).getOrElse(Unknown))
+        } // todo unknown for now
+
+    }
+
+    implicit val expressionSuggestionRequestDtoEncoder: Encoder[ExpressionSuggestionRequestDto] =
+      Encoder.encodeJson.contramap[ExpressionSuggestionRequestDto](_ => Json.Null)
+
+    // to jest response
+    @derive(schema, encoder)
     final case class ExpressionSuggestionDto(
         methodName: String,
-        refClazz: TypingResultDto,
+        refClazz: TypingResult,
         fromClass: Boolean,
         description: Option[String],
         parameters: List[ParameterDto]
     )
 
-    @derive(schema, encoder, decoder)
+    implicit val expressionSuggestionDtoDecoder: Decoder[ExpressionSuggestionDto] =
+      Decoder.instance[ExpressionSuggestionDto](_ => ???)
+
+    // to jest response
+    @derive(schema, encoder)
     final case class ParameterDto(
         name: String,
-        refClazz: TypingResultDto
+        refClazz: TypingResult
     )
 
     //    Things copied from NodesResource
@@ -449,17 +422,21 @@ object NodesApiEndpoints {
   object ParametersValidationRequest {
     import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.ParametersValidationRequestDto
 
-    def apply(request: ParametersValidationRequestDto)(implicit modelData: ModelData): ParametersValidationRequest = {
+    def apply(
+        request: ParametersValidationRequestDto
+    )(typingResultDecoder: Decoder[TypingResult]): ParametersValidationRequest = {
       new ParametersValidationRequest(
         request.parameters.map { parameter =>
           UIValueParameter(
             name = parameter.name,
-            typ = toTypingResult(parameter.typ),
+            typ = typingResultDecoder
+              .decodeJson(parameter.typ)
+              .getOrElse(Unknown), // todo for now is Unknown, maybe ex should be rethrown
             expression = parameter.expression
           )
         },
         request.variableTypes.map { case (key, typDto) =>
-          (key, toTypingResult(typDto))
+          (key, typingResultDecoder.decodeJson(typDto).getOrElse(Unknown)) // todo the same as higher todo
         }
       )
     }
@@ -492,17 +469,17 @@ object NodesApiEndpoints {
 
   object NodeValidationRequest {
 
-    def apply(node: NodeValidationRequestDto)(implicit modelData: ModelData): NodeValidationRequest = {
+    def apply(node: NodeValidationRequestDto)(typingResultDecoder: Decoder[TypingResult]): NodeValidationRequest = {
       new NodeValidationRequest(
         nodeData = node.nodeData,
         processProperties = node.processProperties,
-        variableTypes = node.variableTypes.map { case (key, typingResultDto) =>
-          (key, TypingResultDtoHelpers.toTypingResult(typingResultDto))
+        variableTypes = node.variableTypes.map { case (key, typingResult) =>
+          (key, typingResultDecoder.decodeJson(typingResult).getOrElse(Unknown)) // todo else -> unknown for now
         },
         branchVariableTypes = node.branchVariableTypes.map { outerMap =>
           outerMap.map { case (name, innerMap) =>
             val changedMap = innerMap.map { case (key, typing) =>
-              (key, TypingResultDtoHelpers.toTypingResult(typing))
+              (key, typingResultDecoder.decodeJson(typing).getOrElse(Unknown))
             }
             (name, changedMap)
           }
