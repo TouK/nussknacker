@@ -1605,7 +1605,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   }
 
   // This tests an artificial canonical process which cannot be created through conversion from ScenarioGraph because of
-  // skipping loose nodes and empty main branch
+  // skipping loose nodes and empty main branch. We added it to show that the canonical errors folding algorithm works
+  // correctly.
   test("should return merged graph structure errors of different types") {
     val variableName1 = "variable1"
     val variableName2 = "variable2"
