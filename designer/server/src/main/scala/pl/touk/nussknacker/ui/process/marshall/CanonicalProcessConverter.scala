@@ -129,9 +129,8 @@ object CanonicalProcessConverter {
           .flatten
         canonicalnode.FilterNode(data, nextFalse) :: next
       case (data: Switch, _) =>
-        val nexts = getEdges(data.id).collect {
-          case e @ Edge(_, _, Some(EdgeType.NextSwitch(edgeExpr))) =>
-            canonicalnode.Case(edgeExpr, unflattenEdgeEnd(data.id, e))
+        val nexts = getEdges(data.id).collect { case e @ Edge(_, _, Some(EdgeType.NextSwitch(edgeExpr))) =>
+          canonicalnode.Case(edgeExpr, unflattenEdgeEnd(data.id, e))
         }
         val default = getEdges(data.id)
           .find(_.edgeType.contains(EdgeType.SwitchDefault))

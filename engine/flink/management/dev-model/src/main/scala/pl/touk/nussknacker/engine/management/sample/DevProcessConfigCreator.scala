@@ -207,13 +207,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         .withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
       "datesTypesService" -> categories(new DatesTypesService)
         .withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
-      "campaignService"        -> WithCategories(CampaignService, "Category2"),
-      "configuratorService"    -> categories(ConfiguratorService),
-      "meetingService"         -> categories(MeetingService),
-      "dynamicService"         -> categories(new DynamicService),
-      "customValidatedService" -> categories(new CustomValidatedService),
-      "modelConfigReader"      -> categories(new ModelConfigReaderService(modelDependencies.config)),
-      "log"                    -> all(LoggingService)
+      "campaignService"                -> WithCategories(CampaignService, "Category2"),
+      "configuratorService"            -> categories(ConfiguratorService),
+      "meetingService"                 -> categories(MeetingService),
+      "dynamicService"                 -> categories(new DynamicService),
+      "customValidatedService"         -> categories(new CustomValidatedService),
+      "serviceWithDictParameterEditor" -> categories(new ServiceWithDictParameterEditor),
+      "modelConfigReader"              -> categories(new ModelConfigReaderService(modelDependencies.config)),
+      "log"                            -> all(LoggingService)
     )
 
   override def customStreamTransformers(

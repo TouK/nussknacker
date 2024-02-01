@@ -142,7 +142,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
       .flatMap { nodeParam =>
         paramDefMap
           .get(nodeParam.name)
-          .map(paramDef => compileParam(nodeParam, ctx, paramDef, treatEagerParametersAsLazy))
+          .map(paramDef => compileParam(nodeParam, ctx, paramDef, treatEagerParametersAsLazy).map((_, paramDef)))
       }
     val compiledBranchParams = (for {
       branchParams <- nodeBranchParameters
@@ -151,7 +151,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
       case (paramName, branchIdAndExpressions) =>
         paramDefMap
           .get(paramName)
-          .map(paramDef => compileBranchParam(branchIdAndExpressions, branchContexts, paramDef))
+          .map(paramDef => compileBranchParam(branchIdAndExpressions, branchContexts, paramDef).map((_, paramDef)))
     }
     val allCompiledParams = (compiledParams ++ compiledBranchParams).sequence
 

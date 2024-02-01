@@ -4,9 +4,8 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Valid, valid}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, RedundantParameters}
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.definition.{DictParameterEditor, Parameter, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{DictParameterEditor, Parameter, Validator}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
-import pl.touk.nussknacker.engine.api.definition.{Parameter, Validator}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
@@ -97,14 +96,13 @@ object Validations {
       dictRegistry: DictRegistry
   )(
       implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+  ): ValidatedNel[PartSubGraphCompilationError, Unit] =
     parameters
       .flatMap { param =>
         paramDefMap.get(param.name).map(definition => validateDictParameter(definition, param, dictRegistry))
       }
       .sequence
       .map(_ => ())
-  }
 
   private def validateDictParameter(definition: Parameter, parameter: NodeParameter, dictRegistry: DictRegistry)(
       implicit nodeId: NodeId

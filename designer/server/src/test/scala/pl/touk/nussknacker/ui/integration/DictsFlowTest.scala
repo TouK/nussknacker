@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -39,9 +40,11 @@ class DictsFlowTest
   override def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
   test("query dict entries by label pattern") {
+    // TODO replace with full integration test, from process creation to editor usage and scenario execution
+
     val response1 = httpClient.send(
       quickRequest
-        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/$Streaming/dict/$DictId/entry?label=fo")
+        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/$Streaming/dict/$DictId/entry?label=${Label.take(2)}")
         .auth
         .basic("admin", "admin")
     )
@@ -55,7 +58,9 @@ class DictsFlowTest
 
     val response2 = httpClient.send(
       quickRequest
-        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/$Streaming/dict/notExisting/entry?label=fo")
+        .get(
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/$Streaming/dict/notExisting/entry?label=${Label.take(2)}"
+        )
         .auth
         .basic("admin", "admin")
     )

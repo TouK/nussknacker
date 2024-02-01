@@ -9,20 +9,17 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{BeMatcher, MatchResult}
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -1045,7 +1042,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("checks for unknown dictId in DictParameterEditor") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
         Enricher(
@@ -1058,7 +1055,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       List(Edge("inID", "custom", None), Edge("custom", "out", None))
     )
 
-    val result = processValidatorWithDicts(Map.empty).validate(process)
+    val result = processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1078,7 +1075,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("checks for unknown key in DictParameterEditor") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
         Enricher(
@@ -1096,7 +1093,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val result = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map.empty))
-    ).validate(process)
+    ).validate(process, sampleProcessName, isFragment = false)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1116,7 +1113,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("validate DictParameterEditor happy path") {
-    val process = createProcess(
+    val process = createGraph(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
         Enricher(
@@ -1136,7 +1133,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       Map(
         "someDictId" -> EmbeddedDictDefinition(Map("'someKey'" -> "someLabel"))
       )
-    ).validate(process)
+    ).validate(process, sampleProcessName, isFragment = false)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes shouldBe Map.empty

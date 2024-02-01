@@ -4,8 +4,6 @@ import pl.touk.nussknacker.engine.MetaDataInitializer
 import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -14,10 +12,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  CustomComponentSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component.CustomComponentSpecificData
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -27,7 +22,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -125,7 +120,7 @@ object ProcessTestData {
 
   def modelDefinitionWithDicts(
       dictionaries: Map[String, DictDefinition]
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = modelDefinition().copy(
+  ): ModelDefinition = modelDefinition().copy(
     expressionConfig =
       modelDefinition().expressionConfig.copy(dictionaries = dictionaries) // todo dont create multiple times
   )
@@ -139,6 +134,7 @@ object ProcessTestData {
   )
 
   def processValidatorWithDicts(dictionaries: Map[String, DictDefinition]): UIProcessValidator = new UIProcessValidator(
+    TestProcessingTypes.Streaming,
     ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinitionWithDicts(dictionaries))),
     Map.empty,
     List.empty,
