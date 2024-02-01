@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 class SpelExpressionSuggester(
-    expressionConfig: ExpressionConfigDefinition[_],
+    expressionConfig: ExpressionConfigDefinition,
     clssDefinitions: ClassDefinitionSet,
     uiDictServices: UiDictServices,
     classLoader: ClassLoader
@@ -114,9 +114,11 @@ class SpelExpressionSuggester(
             Future.successful(
               tu.possibleTypes
                 .map(_.objType.klass)
+                .toList
                 .flatMap(klass =>
                   clssDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
                 )
+                .distinct
             )
           case TypingResultWithContext(td: TypedDict, _) =>
             dictQueryService
@@ -257,10 +259,10 @@ class SpelExpressionSuggester(
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
         tc.objType.params.headOption.getOrElse(Unknown)
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
-        TypedObjectTypingResult(
-          List(
-            ("key", tc.objType.params.headOption.getOrElse(Unknown)),
-            ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown))
+        Typed.record(
+          Map(
+            "key"   -> tc.objType.params.headOption.getOrElse(Unknown),
+            "value" -> tc.objType.params.drop(1).headOption.getOrElse(Unknown)
           )
         )
       case tc: SingleTypingResult if tc.objType.klass.isArray =>

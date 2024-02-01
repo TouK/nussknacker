@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import akka.actor.ActorSystem
 import com.google.common.collect.LinkedHashMultimap
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -36,7 +36,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
         TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-        ComponentId.default(TestProcessingTypes.Streaming, _)
+        DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
       ),
       shouldVerifyBeforeDeploy = false,
       mainClassName = "UNUSED"
@@ -218,12 +218,10 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful {
-      actionRequest.name match {
-        case "hello" | "invalid-status" => Right(CustomActionResult(actionRequest, "Hi"))
-        case _                          => Left(CustomActionNotImplemented(actionRequest))
-      }
+  ): Future[CustomActionResult] =
+    actionRequest.name match {
+      case "hello" | "invalid-status" => Future.successful(CustomActionResult(actionRequest, "Hi"))
+      case _                          => Future.failed(new NotImplementedError())
     }
 
   override def close(): Unit = {}

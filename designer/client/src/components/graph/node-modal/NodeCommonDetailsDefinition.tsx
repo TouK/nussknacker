@@ -2,7 +2,6 @@ import React, { PropsWithChildren, useCallback } from "react";
 import { Field, NodeType, NodeValidationError } from "../../../types";
 import LabeledInput from "./editors/field/LabeledInput";
 import LabeledTextarea from "./editors/field/LabeledTextarea";
-import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { useDiffMark } from "./PathsToMark";
 import { getValidationErrorsForField } from "./editors/Validators";
 
@@ -33,7 +32,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
     const [isMarked] = useDiffMark();
 
     return (
-        <NodeTableBody className="node-variable-builder-body">
+        <>
             <LabeledInput
                 value={node.id}
                 onChange={(event) => onInputChange("id", event)}
@@ -69,6 +68,6 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
             >
                 {renderFieldLabel("Description")}
             </LabeledTextarea>
-        </NodeTableBody>
+        </>
     );
 }

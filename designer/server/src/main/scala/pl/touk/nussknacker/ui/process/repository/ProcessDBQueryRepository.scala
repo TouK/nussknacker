@@ -63,7 +63,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
       implicit fetchShape: ScenarioShapeFetchStrategy[_]
   ): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] =
     fetchShape match {
-      case ScenarioShapeFetchStrategy.FetchDisplayable =>
+      case ScenarioShapeFetchStrategy.FetchScenarioGraph =>
         processVersionsTableWithScenarioJson
           .asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
       case ScenarioShapeFetchStrategy.FetchCanonical =>
@@ -99,10 +99,10 @@ object ProcessDBQueryRepository {
       actions = actions
     )
 
-  final case class ProcessNotFoundError(id: String) extends NotFoundError(s"No scenario $id found")
+  final case class ProcessNotFoundError(name: ProcessName) extends NotFoundError(s"No scenario $name found")
 
-  final case class ProcessVersionNotFoundError(processId: ProcessId, version: VersionId)
-      extends NotFoundError(s"Scenario $processId in version $version not found")
+  final case class ProcessVersionNotFoundError(processName: ProcessName, version: VersionId)
+      extends NotFoundError(s"Scenario $processName in version $version not found")
 
   final case class ProcessAlreadyExists(id: String) extends BadRequestError(s"Scenario $id already exists")
 

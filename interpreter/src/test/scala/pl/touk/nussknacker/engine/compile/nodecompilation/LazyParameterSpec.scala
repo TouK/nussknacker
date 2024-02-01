@@ -82,13 +82,12 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
   }
 
   private def prepareInterpreter = {
-    val exprDef = ExpressionConfigDefinition[ComponentDefinitionWithImplementation](
+    val exprDef = ExpressionConfigDefinition(
       Map.empty,
       List.empty,
       List.empty,
       LanguageConfiguration.default,
       optimizeCompilation = false,
-      strictTypeChecking = true,
       Map.empty,
       hideMetaVariable = false,
       strictMethodsChecking = true,
@@ -98,7 +97,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       spelExpressionExcludeList = SpelExpressionExcludeList.default,
       customConversionsProviders = List.empty
     )
-    val processDef: ModelDefinition[ComponentDefinitionWithImplementation] =
+    val processDef: ModelDefinition =
       ModelDefinition(List.empty, exprDef, ClassExtractionSettings.Default)
     val definitionWithTypes = ModelDefinitionWithClasses(processDef)
     val lazyInterpreterDeps = prepareLazyInterpreterDeps(definitionWithTypes)

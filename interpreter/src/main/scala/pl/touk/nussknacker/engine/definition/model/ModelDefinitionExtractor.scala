@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.model
 
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
@@ -16,9 +16,9 @@ object ModelDefinitionExtractor {
       modelDependencies: ProcessObjectDependencies,
       // It won't be needed to pass category after we get rid of ProcessConfigCreator API
       category: Option[String],
-      componentInfoToId: ComponentInfo => ComponentId,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): ModelDefinition = {
     val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
     val modelDefinitionBasedOnConfigCreator =
       ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(
@@ -26,14 +26,14 @@ object ModelDefinitionExtractor {
         category,
         modelDependencies,
         componentsUiConfig,
-        componentInfoToId,
+        determineDesignerWideId,
         additionalConfigsFromProvider
       )
     val componentsFromProviders =
       ComponentsFromProvidersExtractor(classLoader).extractComponents(
         modelDependencies,
         componentsUiConfig,
-        componentInfoToId,
+        determineDesignerWideId,
         additionalConfigsFromProvider
       )
     modelDefinitionBasedOnConfigCreator.withComponents(componentsFromProviders)

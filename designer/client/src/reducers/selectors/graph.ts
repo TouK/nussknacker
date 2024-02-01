@@ -11,7 +11,7 @@ import { getProcessState } from "./scenarioState";
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
 export const getScenario = createSelector(getGraph, (g) => g.scenario);
-export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.json || ({} as ScenarioGraph));
+export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph));
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 export const getProcessName = createSelector(getScenario, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);
@@ -19,7 +19,7 @@ export const getProcessVersionId = createSelector(getScenario, (d) => d?.process
 export const getProcessCategory = createSelector(getScenario, (d) => d?.processCategory || "");
 export const getProcessingType = createSelector(getScenario, (d) => d?.processingType);
 export const isLatestProcessVersion = createSelector(getScenario, (d) => d?.isLatestVersion);
-export const isFragment = createSelector(getScenarioGraph, (p) => p.properties?.isFragment);
+export const isFragment = createSelector(getScenario, (p) => p?.isFragment);
 export const isArchived = createSelector(getScenario, (p) => p?.isArchived);
 export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state);
 export const hasError = createSelector(getScenario, (p) => !ProcessUtils.hasNoErrors(p));
@@ -36,11 +36,11 @@ export const isProcessRenamed = createSelector(
     getProcessUnsavedNewName,
     (currentName, unsavedNewName) => unsavedNewName && unsavedNewName !== currentName,
 );
-export const getProcessToDisplayWithUnsavedName = createSelector(
-    [getScenario, getProcessUnsavedNewName, isProcessRenamed],
-    (process, unsavedName, isProcessRenamed) => ({ ...process, name: isProcessRenamed ? unsavedName : process.name }),
+export const getUnsavedOrCurrentName = createSelector(
+    getProcessName,
+    getProcessUnsavedNewName,
+    (currentName, unsavedNewName) => (unsavedNewName && unsavedNewName !== currentName && unsavedNewName) || currentName,
 );
-
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
 export const isDeployPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],

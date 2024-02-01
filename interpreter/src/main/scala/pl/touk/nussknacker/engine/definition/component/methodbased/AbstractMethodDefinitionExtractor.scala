@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
@@ -15,12 +15,12 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
   def extractMethodDefinition(
       obj: T,
       methodToInvoke: Method,
-      componentConfig: SingleComponentConfig
+      parametersConfig: Map[String, ParameterConfig]
   ): Either[String, MethodDefinition] = {
     findMatchingMethod(obj, methodToInvoke).map { method =>
       new MethodDefinition(
         method,
-        extractParameters(obj, method, componentConfig),
+        extractParameters(obj, method, parametersConfig),
         extractReturnTypeFromMethod(method),
         method.getReturnType
       )
@@ -38,7 +38,11 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     }
   }
 
-  private def extractParameters(obj: T, method: Method, componentConfig: SingleComponentConfig): OrderedDependencies = {
+  private def extractParameters(
+      obj: T,
+      method: Method,
+      parametersConfig: Map[String, ParameterConfig]
+  ): OrderedDependencies = {
     val dependencies = method.getParameters.map { p =>
       if (additionalDependencies.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null &&
         p.getAnnotation(classOf[BranchParamName]) == null && p.getAnnotation(classOf[OutputVariableName]) == null) {
@@ -52,7 +56,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           OutputVariableNameDependency
         }
       } else {
-        ParameterExtractor.extractParameter(p, componentConfig)
+        ParameterExtractor.extractParameter(p, parametersConfig)
       }
     }.toList
     new OrderedDependencies(dependencies)

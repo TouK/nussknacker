@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.listener.{ListenerScenarioWithDetails, User}
@@ -19,14 +19,14 @@ class PullProcessRepository(fetchingProcessRepository: FetchingProcessRepository
   override def fetchLatestProcessDetailsForProcessId(
       id: ProcessId
   )(implicit listenerUser: User, ec: ExecutionContext): Future[Option[ListenerScenarioWithDetails]] = {
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](id = id)
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[ScenarioGraph](id = id)
   }
 
   override def fetchProcessDetailsForId(
       processId: ProcessId,
       versionId: VersionId
   )(implicit listenerUser: User, ec: ExecutionContext): Future[Option[ListenerScenarioWithDetails]] = {
-    fetchingProcessRepository.fetchProcessDetailsForId[DisplayableProcess](processId, versionId)
+    fetchingProcessRepository.fetchProcessDetailsForId[ScenarioGraph](processId, versionId)
   }
 
   override def fetchProcessDetailsForName(

@@ -82,7 +82,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     validateOk(
       "#AGG.map({f1: #AGG.sum, f2: #AGG.set})",
       "{f1: #input.eId, f2: #input.str}",
-      TypedObjectTypingResult(Map("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]]))
+      Typed.record(Map("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]]))
     )
 
     validateError("#AGG.sum", "#input.str", "Invalid aggregate type: String, should be: Number")
@@ -195,7 +195,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val testProcess =
       sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
 
-    val result = processValidator.validate(testProcess)
+    val result = processValidator.validate(testProcess, isFragment = false)
 
     inside(result.result) {
       case Invalid(
@@ -617,7 +617,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
-    processValidator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false))
+    processValidator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false), isFragment = false)
   }
 
   private def tumbling(

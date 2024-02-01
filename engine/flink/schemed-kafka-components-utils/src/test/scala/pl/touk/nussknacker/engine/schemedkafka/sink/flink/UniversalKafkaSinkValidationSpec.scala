@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -39,7 +38,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
         paramsList,
         Nil,
         Some(VariableConstants.InputVariableName),
-        SingleComponentConfig.zero
+        Map.empty
       )(ValidationContext())
       .toOption
       .get

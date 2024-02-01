@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, SingleComponentConfig}
 
 // TODO: This is deprecated API, remove it after ConfiCreator API will be removed
 case class WithCategories[+T](value: T, categories: Option[List[String]], componentConfig: SingleComponentConfig) {
@@ -15,7 +15,7 @@ case class WithCategories[+T](value: T, categories: Option[List[String]], compon
 
   def withComponentId(componentId: Option[String]): WithCategories[T] =
     componentId
-      .map(ComponentId.apply)
+      .map(DesignerWideComponentId.apply)
       .map(id => withComponentConfig(componentConfig.copy(componentId = Some(id))))
       .getOrElse(this)
 

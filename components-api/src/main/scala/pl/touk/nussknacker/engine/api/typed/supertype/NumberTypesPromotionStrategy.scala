@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
+import cats.data.NonEmptyList
+
 import java.lang
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
@@ -7,6 +9,11 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 
 import scala.util.Try
 
+/**
+  * Extending classes are in spirit of "Be type safety as much as possible, but also provide some helpful
+  * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
+  * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
+  */
 trait NumberTypesPromotionStrategy extends Serializable {
 
   private val cachedPromotionResults: Map[(Class[_], Class[_]), ReturnedType] =
@@ -33,9 +40,9 @@ trait NumberTypesPromotionStrategy extends Serializable {
     }
   }
 
-  private def toSingleTypesSet(typ: TypingResult): Either[Unknown.type, Set[SingleTypingResult]] =
+  private def toSingleTypesSet(typ: TypingResult): Either[Unknown.type, NonEmptyList[SingleTypingResult]] =
     typ match {
-      case s: SingleTypingResult => Right(Set(s))
+      case s: SingleTypingResult => Right(NonEmptyList.one(s))
       case u: TypedUnion         => Right(u.possibleTypes)
       case TypedNull             => Left(Unknown)
       case Unknown               => Left(Unknown)
@@ -156,27 +163,13 @@ object NumberTypesPromotionStrategy {
         val floating = both.find(FloatingNumbers.contains).get
         handleFloatingType(floating)
       } else { // unknown Number
-        Typed.typedClass[Double]
+        Typed.typedClass[Number]
       }
     }
 
     protected def handleFloatingType(firstFloating: Class[_]): TypedClass = Typed.typedClass(firstFloating)
 
     protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = Typed.typedClass(firstDecimal)
-
-  }
-
-  object ToSupertype extends ReturningSingleClassPromotionStrategy {
-
-    override def promoteClassesInternal(left: Class[_], right: Class[_]): TypedClass = {
-      if (left.isAssignableFrom(right)) {
-        Typed.typedClass(left)
-      } else if (right.isAssignableFrom(left)) {
-        Typed.typedClass(right)
-      } else {
-        Typed.typedClass[Number]
-      }
-    }
 
   }
 
@@ -196,7 +189,9 @@ object NumberTypesPromotionStrategy {
       } else if (left == classOf[java.lang.Long] || right == classOf[java.lang.Long]) {
         Typed[Long]
       } else {
-        Typed(Typed[java.lang.Integer], Typed[Long]) // it depends if there was overflow or not
+        // This is the only place where we return union. The runtime type depends on whether there was overflow or not.
+        // We should consider using just the Number here
+        Typed(Typed[java.lang.Integer], Typed[Long])
       }
     }
 

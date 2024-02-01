@@ -2,8 +2,12 @@
 
 1.14.0 (Not released yet)
 -------------------------
-* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.2
-* [#5257](https://github.com/TouK/nussknacker/pull/5257) Updated Flink 1.16.2 -> 1.16.3
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) Libraries bump:
+  * Flink: 1.16.2 -> 1.16.3
+  * Cats Effect: 2.5.5 -> 3.5.2
+  * Kafka client: 3.3.2 -> 3.6.1
+  * Confluent Schema Registry client: 7.3.2 -> 7.5.1
+  * Avro: 1.11.1 -> 1.11.3
 * [#5253](https://github.com/TouK/nussknacker/pull/5253) Removed the option to configure fragments via config. Due to the recent expansion of FragmentParameter, the option has become largely redundant. Removed to decrease unnecessary complexity.
 * [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
 * [#5278](https://github.com/TouK/nussknacker/pull/5278) Recreate assembled model JAR for Flink if it got removed (e.g. by systemd-tmpfiles)
@@ -14,8 +18,24 @@
 * [#5361](https://github.com/TouK/nussknacker/pull/5361) Parameter's label can be specified not only via configuration, but also inside Component's implementation now
 * [#5368](https://github.com/TouK/nussknacker/pull/5368) A hidden features allowing to change `icon` and `docsUrl` inside properties modal by using `componentsUiConfig.$proprties` configuration option, was turned off
 * [#5356](https://github.com/TouK/nussknacker/pull/5356) Pushed configs provided by AdditionalUIConfigProvider deeper into domain (at the stage of component definition extraction), allowing it to impact validation. However, changes now require model reload.
+* [#5413](https://github.com/TouK/nussknacker/pull/5413) Generic types (Records, Lists and other collections) now uses generic parameters in their method's return type e.g. `{foo: 1, bar: 2}.get('foo')` returns `Integer` instead of `Unknown`
+* [#5413](https://github.com/TouK/nussknacker/pull/5413) Avro Records now has additional `get(String)` method allowing to access fields dynamically
+* [#5419](https://github.com/TouK/nussknacker/pull/5419) Remove system properties from merged model config
+* [#5363](https://github.com/TouK/nussknacker/pull/5363) Improvements and fixes related to scenario level errors:
+  * Fixed bug where scenario level error related to node flashed when opening a node
+  * Fixed highlighting of fragment nodes causing errors
+  * Display fragment level validation errors when editing fragment
+  * Improved error messages
+* [#5364](https://github.com/TouK/nussknacker/pull/5364) Fixed wrong expression suggestions and validation errors in disabled nodes
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Sometimes `Bad expression type, expected: X found X` error was reported when comparing matching Records.
+  It happened for records that had fields with mixed different types of fields e.g. simple classes with nested records
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Ternary operator (`expression ? x : y`) returned sometimes `EmptyUnion` type which couldn't be passed anywhere.
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Wasn't possible to compare a Record with a Map.
+* [#5457](https://github.com/TouK/nussknacker/pull/5457) Fix: Array types wasn't serialized correctly which caused deserialization error during node validation.
+* [#5475](https://github.com/TouK/nussknacker/pull/5475) SpEL expressions checking improvement: The equals operator used with two Lists with different element types is reported as an error
 
-1.13.0 (Not released yet)
+1.13.0 (12 Jan 2024)
 -------------------------
 * [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Refactor: Allow to use custom authentication methods in user-defined Authentication Providers

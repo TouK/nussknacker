@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { SettingLabelStyled, SettingRow, StyledFormControlLabel } from "./StyledSettingsComponnets";
-import { FormControlLabel, Radio, RadioGroup, useTheme } from "@mui/material";
+import { SettingLabelStyled, StyledFormControlLabel } from "./StyledSettingsComponnets";
+import { FormControl, FormControlLabel, Radio, RadioGroup, useTheme } from "@mui/material";
 import { FixedValuesType, onChangeType } from "../../../item";
 
 interface FixedValuesGroup {
@@ -16,7 +16,7 @@ export function FixedValuesGroup({ onChange, path, fixedValuesType, readOnly }: 
     const theme = useTheme();
 
     return (
-        <SettingRow>
+        <FormControl>
             <SettingLabelStyled></SettingLabelStyled>
             <RadioGroup
                 value={fixedValuesType}
@@ -39,6 +39,6 @@ export function FixedValuesGroup({ onChange, path, fixedValuesType, readOnly }: 
                     disabled={readOnly}
                 />
             </RadioGroup>
-        </SettingRow>
+        </FormControl>
     );
 }

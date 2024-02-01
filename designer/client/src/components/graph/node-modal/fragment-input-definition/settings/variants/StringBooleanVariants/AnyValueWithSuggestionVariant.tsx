@@ -1,6 +1,6 @@
 import React from "react";
 import InitialValue from "../fields/InitialValue";
-import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
+import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 import { useTranslation } from "react-i18next";
@@ -8,6 +8,7 @@ import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { ValidationsFields } from "../fields/validation";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
+import { FormControl } from "@mui/material";
 
 interface Props {
     item: AnyValueWithSuggestionsParameterVariant;
@@ -63,7 +64,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 variableTypes={variableTypes}
                 fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$initialValue`)}
             />
-            <SettingRow>
+            <FormControl>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus
                     value={item.hintText}
@@ -72,7 +73,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                     disabled={readOnly}
                     className={"node-input"}
                 />
-            </SettingRow>
+            </FormControl>
         </>
     );
 };

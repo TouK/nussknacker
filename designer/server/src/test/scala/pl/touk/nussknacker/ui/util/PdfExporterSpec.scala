@@ -4,12 +4,12 @@ import org.apache.commons.io.IOUtils
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.util.ResourceLoader
-import pl.touk.nussknacker.ui.api.helpers.{SampleScenario, TestCategories, TestProcessUtil, TestProcessingTypes}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessUtil}
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Comment, ProcessActivity}
 
 import java.io.FileOutputStream
@@ -22,15 +22,15 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
   )
 
   it should "export process to " in {
-    val process: DisplayableProcess =
-      ProcessConverter.toDisplayable(SampleScenario.scenario, TestProcessingTypes.Streaming, TestCategories.Category1)
-    val displayable: DisplayableProcess = process.copy(nodes = process.nodes.map {
+    val scenarioGraph: ScenarioGraph =
+      CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleScenario)
+    val graphWithFilterWithComment: ScenarioGraph = scenarioGraph.copy(nodes = scenarioGraph.nodes.map {
       case a: Filter =>
         a.copy(additionalFields = Some(UserDefinedAdditionalNodeFields(Some("mój wnikliwy komętaż"), None)))
       case a => a
     })
 
-    val details = createDetails(displayable)
+    val details = createDetails(graphWithFilterWithComment)
 
     val comments = (1 to 29)
       .map(commentId =>
@@ -53,16 +53,13 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "export empty process to " in {
-    val displayable: DisplayableProcess = DisplayableProcess(
-      ProcessName("Proc11"),
+    val scenarioGraph: ScenarioGraph = ScenarioGraph(
       ProcessProperties(StreamMetaData()),
       List(),
       List(),
-      TestProcessingTypes.Streaming,
-      TestCategories.Category1
     )
 
-    val details = createDetails(displayable)
+    val details = createDetails(scenarioGraph)
 
     val activities  = ProcessActivity(List(), List())
     val svg: String = ResourceLoader.load("/svg/svgTest.svg")
@@ -72,16 +69,13 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "not allow entities in provided SVG" in {
-    val displayable: DisplayableProcess = DisplayableProcess(
-      ProcessName("Proc11"),
+    val scenarioGraph: ScenarioGraph = ScenarioGraph(
       ProcessProperties(StreamMetaData()),
       List(),
       List(),
-      TestProcessingTypes.Streaming,
-      TestCategories.Category1
     )
 
-    val details = createDetails(displayable)
+    val details = createDetails(scenarioGraph)
 
     val activities  = ProcessActivity(List(), List())
     val svg: String = ResourceLoader.load("/svg/unsafe.svg")
@@ -91,9 +85,9 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
     ex.getMessage should include("DOCTYPE is disallowed")
   }
 
-  private def createDetails(displayable: DisplayableProcess) = TestProcessUtil.toDetails(
+  private def createDetails(scenarioGraph: ScenarioGraph) = TestProcessUtil.wrapWithScenarioDetailsEntity(
     ProcessName("My process"),
-    json = Some(displayable),
+    scenarioGraph = Some(scenarioGraph),
     description = Some(
       "My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."
     ),

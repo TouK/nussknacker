@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.context.transformation
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, WrongParameters}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
      - for sources OutputVariable *has* to be used for Flink sources, it's value is always equal to 'input' ATM, due to source API limitations
  */
 // TODO: rename to DynamicComponent
-sealed trait GenericNodeTransformation[T] {
+sealed trait GenericNodeTransformation[T] extends Component {
 
   // ValidationContext for single input, Map[String, ValidationContext] for joins
   type InputContext

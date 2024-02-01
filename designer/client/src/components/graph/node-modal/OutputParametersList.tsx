@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Field, { FieldType } from "./editors/field/Field";
 import { FieldError, getValidationErrorsForField } from "./editors/Validators";
-import { NodeType, NodeValidationError, ProcessDefinitionData } from "../../../types";
+import { ComponentDefinition, NodeType, NodeValidationError, ProcessDefinitionData } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useDiffMark } from "./PathsToMark";
 import { useTranslation } from "react-i18next";
-import { NodeRow } from "./NodeDetailsContent/NodeStyled";
-import { NodeLabelStyled } from "./node";
 import { isEmpty } from "lodash";
+import { FormControl, FormLabel } from "@mui/material";
 
 type OutputFieldProps = {
     autoFocus?: boolean;
@@ -77,7 +76,7 @@ export default function OutputParametersList({
 }): JSX.Element {
     const currentVariableNames = editedNode.ref?.outputVariableNames;
 
-    const componentDefinition = useMemo(
+    const componentDefinition: ComponentDefinition = useMemo(
         () => ProcessUtils.extractComponentDefinition(editedNode, processDefinitionData.components),
         [editedNode, processDefinitionData.components],
     );
@@ -102,7 +101,7 @@ export default function OutputParametersList({
     }, [variableNames, setProperty, isDefinitionAvailable]);
 
     useEffect(() => {
-        componentDefinition.outputParameters
+        componentDefinition?.outputParameters
             ?.filter((paramName) => variableNames[paramName] === undefined)
             .forEach((paramName) => {
                 setVariableNames((prevState) => ({
@@ -110,7 +109,7 @@ export default function OutputParametersList({
                     [paramName]: paramName,
                 }));
             });
-    }, [componentDefinition.outputParameters, variableNames]);
+    }, [componentDefinition?.outputParameters, variableNames]);
 
     const entries = Object.entries(variableNames);
 
@@ -119,10 +118,10 @@ export default function OutputParametersList({
     }
 
     return (
-        <NodeRow key="outputVariableNames">
-            <NodeLabelStyled title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
+        <FormControl key="outputVariableNames">
+            <FormLabel title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
                 {t("parameterOutputs.outputsText", "Outputs names:")}
-            </NodeLabelStyled>
+            </FormLabel>
             <div className="node-value">
                 <div className="fieldsControl">
                     {entries.map(([name, value]) => (
@@ -145,6 +144,6 @@ export default function OutputParametersList({
                     ))}
                 </div>
             </div>
-        </NodeRow>
+        </FormControl>
     );
 }

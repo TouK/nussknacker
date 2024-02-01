@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   ComponentDefinition,
   ComponentId,
-  ComponentInfo
+  DesignerWideComponentId
 }
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{
@@ -40,8 +40,8 @@ object LocalModelData {
       modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
       objectNaming: ObjectNaming = ObjectNaming.OriginalNames,
-      componentInfoToId: ComponentInfo => ComponentId = ComponentId.default("streaming", _),
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig] = Map.empty
+      determineDesignerWideId: ComponentId => DesignerWideComponentId = DesignerWideComponentId.default("streaming", _),
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty
   ): LocalModelData =
     new LocalModelData(
       InputConfigDuringExecution(inputConfig),
@@ -52,7 +52,7 @@ object LocalModelData {
       modelClassLoader,
       objectNaming,
       components,
-      componentInfoToId,
+      determineDesignerWideId,
       additionalConfigsFromProvider
     )
 
@@ -66,14 +66,14 @@ object LocalModelData {
     override def apply(
         classLoader: ClassLoader,
         modelDependencies: ProcessObjectDependencies,
-        componentInfoToId: ComponentInfo => ComponentId,
-        additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-    ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+        determineDesignerWideId: ComponentId => DesignerWideComponentId,
+        additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    ): ModelDefinition = {
       val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
       val componentsDefWithImpl = ComponentDefinitionWithImplementation.forList(
         components,
         componentsUiConfig,
-        componentInfoToId,
+        determineDesignerWideId,
         additionalConfigsFromProvider
       )
       // To avoid classloading magic, for local model we load components manually and skip ComponentProvider's loading
@@ -83,7 +83,7 @@ object LocalModelData {
           category,
           modelDependencies,
           componentsUiConfig,
-          componentInfoToId,
+          determineDesignerWideId,
           additionalConfigsFromProvider
         )
         .withComponents(componentsDefWithImpl)
@@ -102,8 +102,8 @@ case class LocalModelData(
     modelClassLoader: ModelClassLoader,
     objectNaming: ObjectNaming,
     components: List[ComponentDefinition],
-    componentInfoToId: ComponentInfo => ComponentId,
-    additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+    determineDesignerWideId: ComponentId => DesignerWideComponentId,
+    additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 ) extends ModelData {
 
   override val extractModelDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category, components)

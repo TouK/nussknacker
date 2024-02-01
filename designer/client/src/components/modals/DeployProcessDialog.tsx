@@ -8,8 +8,8 @@ import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { ProcessName } from "../Process/types";
 import { PromptContent, WindowKind } from "../../windowManager";
 import CommentInput from "../comment/CommentInput";
-import { ValidationLabel } from "../common/ValidationLabel";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
+import { FormHelperText } from "@mui/material";
 
 export type ToggleProcessActionModalData = {
     action: (processName: ProcessName, comment: string) => Promise<unknown>;
@@ -64,7 +64,9 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
                     )}
                     autoFocus
                 />
-                <ValidationLabel type="ERROR">{validationError}</ValidationLabel>
+                <FormHelperText title={validationError} error>
+                    {validationError}
+                </FormHelperText>
             </div>
         </PromptContent>
     );

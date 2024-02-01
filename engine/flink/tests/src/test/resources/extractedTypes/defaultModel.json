@@ -11614,12 +11614,14 @@
       "get": [
         {
           "name": "get",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Integer"}}
-            ],
-            "result": {"type": "Unknown"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "indexOf": [
@@ -11742,24 +11744,28 @@
       "get": [
         {
           "name": "get",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"type": "Unknown"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "arg0", "refClazz": {"type": "Unknown"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "getOrDefault": [
         {
           "name": "getOrDefault",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}},
-              {"name": "arg1", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"type": "Unknown"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "arg0", "refClazz": {"type": "Unknown"}},
+                {"name": "arg1", "refClazz": {"type": "Unknown"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "isEmpty": [
@@ -11774,20 +11780,22 @@
       "keySet": [
         {
           "name": "keySet",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "Unknown",
-                  "params": [],
-                  "refClazzName": "java.lang.Object",
-                  "type": "Unknown"
-                }
-              ],
-              "refClazzName": "java.util.Set"
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Set"
+              }
             }
-          }
+          ]
         }
       ],
       "size": [
@@ -11811,20 +11819,22 @@
       "values": [
         {
           "name": "values",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "Unknown",
-                  "params": [],
-                  "refClazzName": "java.lang.Object",
-                  "type": "Unknown"
-                }
-              ],
-              "refClazzName": "java.util.Collection"
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Collection"
+              }
             }
-          }
+          ]
         }
       ]
     },
@@ -12035,6 +12045,56 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "org.apache.avro.generic.GenericRecord"},
+    "methods": {
+      "get": [
+        {
+          "name": "get",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "key", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        },
+        {
+          "name": "get",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "i", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "hasField": [
+        {
+          "name": "hasField",
+          "signature": {
+            "noVarArgs": [
+              {"name": "key", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "org.apache.kafka.common.record.TimestampType"},
     "methods": {
       "compareTo": [
@@ -12179,152 +12239,29 @@
     }
   },
   {
-    "clazzName": {
-      "params": [
-        {
-          "display": "Unknown",
-          "params": [],
-          "refClazzName": "java.lang.Object",
-          "type": "Unknown"
-        },
-        {
-          "display": "Unknown",
-          "params": [],
-          "refClazzName": "java.lang.Object",
-          "type": "Unknown"
-        }
-      ],
-      "refClazzName": "java.util.Map"
-    },
-    "methods": {
-      "containsKey": [
-        {
-          "name": "containsKey",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "containsValue": [
-        {
-          "name": "containsValue",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "empty": [
-        {
-          "name": "empty",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "get": [
-        {
-          "name": "get",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"type": "Unknown"}
-          }
-        }
-      ],
-      "getOrDefault": [
-        {
-          "name": "getOrDefault",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}},
-              {"name": "arg1", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"type": "Unknown"}
-          }
-        }
-      ],
-      "isEmpty": [
-        {
-          "name": "isEmpty",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "keySet": [
-        {
-          "name": "keySet",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "Unknown",
-                  "params": [],
-                  "refClazzName": "java.lang.Object",
-                  "type": "Unknown"
-                }
-              ],
-              "refClazzName": "java.util.Set"
-            }
-          }
-        }
-      ],
-      "size": [
-        {
-          "name": "size",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "values": [
-        {
-          "name": "values",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "Unknown",
-                  "params": [],
-                  "refClazzName": "java.lang.Object",
-                  "type": "Unknown"
-                }
-              ],
-              "refClazzName": "java.util.Collection"
-            }
-          }
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper"},
     "methods": {
       "approxCardinality": [
         {
           "name": "approxCardinality",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
+          }
+        }
+      ],
+      "average": [
+        {
+          "name": "average",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
+          }
+        }
+      ],
+      "countWhen": [
+        {
+          "name": "countWhen",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
@@ -12409,24 +12346,6 @@
       "set": [
         {
           "name": "set",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
-          }
-        }
-      ],
-      "average": [
-        {
-          "name": "average",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
-          }
-        }
-      ],
-      "countWhen": [
-        {
-          "name": "countWhen",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}

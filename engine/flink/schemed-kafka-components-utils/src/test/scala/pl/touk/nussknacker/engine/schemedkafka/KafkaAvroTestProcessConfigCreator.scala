@@ -21,13 +21,13 @@ abstract class KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder: 
   override def sourceFactories(
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = {
-    val universalSourceFactory = new UniversalKafkaSourceFactory[Any, Any](
+    val universalSourceFactory = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
       modelDependencies,
       new FlinkKafkaSourceImplFactory(None)
     )
-    val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory[Any, Any](
+    val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory(
       schemaRegistryClientFactory,
       universalPayload,
       modelDependencies,

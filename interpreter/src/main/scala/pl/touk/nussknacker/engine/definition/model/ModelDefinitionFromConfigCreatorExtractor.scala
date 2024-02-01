@@ -1,6 +1,11 @@
 package pl.touk.nussknacker.engine.definition.model
 
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentAdditionalConfig, ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{
+  Component,
+  ComponentAdditionalConfig,
+  ComponentId,
+  DesignerWideComponentId
+}
 import pl.touk.nussknacker.engine.api.process.{
   ExpressionConfig,
   ProcessConfigCreator,
@@ -13,7 +18,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
-  GlobalVariableDefinitionExtractor
+  GlobalVariableDefinitionWithImplementation
 }
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
@@ -24,9 +29,9 @@ object ModelDefinitionFromConfigCreatorExtractor {
       categoryOpt: Option[String],
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig,
-      componentInfoToId: ComponentInfo => ComponentId,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): ModelDefinition = {
 
     val sourceFactories          = creator.sourceFactories(modelDependencies).toList
     val sinkFactories            = creator.sinkFactories(modelDependencies).toList
@@ -40,13 +45,13 @@ object ModelDefinitionFromConfigCreatorExtractor {
       allComponents,
       categoryOpt,
       componentsUiConfig,
-      componentInfoToId,
+      determineDesignerWideId,
       additionalConfigsFromProvider
     )
 
     val settings = creator.classExtractionSettings(modelDependencies)
 
-    ModelDefinition[ComponentDefinitionWithImplementation](
+    ModelDefinition(
       components,
       toDefinition(expressionConfig, categoryOpt),
       settings
@@ -57,9 +62,9 @@ object ModelDefinitionFromConfigCreatorExtractor {
       components: List[(String, WithCategories[Component])],
       categoryOpt: Option[String],
       componentsUiConfig: ComponentsUiConfig,
-      componentInfoToId: ComponentInfo => ComponentId,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): List[ComponentDefinitionWithImplementation] = {
     collectAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component, componentConfig) =>
       ComponentDefinitionExtractor
         .extract(
@@ -67,21 +72,20 @@ object ModelDefinitionFromConfigCreatorExtractor {
           component,
           componentConfig,
           componentsUiConfig,
-          componentInfoToId,
+          determineDesignerWideId,
           additionalConfigsFromProvider
         )
-        .map(componentName -> _)
     }
   }
 
   private def toDefinition(
       expressionConfig: ExpressionConfig,
       categoryOpt: Option[String],
-  ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] = {
-    // here dictionaries from the config are added to global variables
+  ): ExpressionConfigDefinition = {
+    // TODO here dictionaries from the config are added to global variables
     val filteredVariables = collectAvailableForCategory(expressionConfig.globalProcessVariables.toList, categoryOpt)
     val variables = filteredVariables.map { case (name, variable, _) =>
-      name -> GlobalVariableDefinitionExtractor.extractDefinition(variable)
+      name -> GlobalVariableDefinitionWithImplementation(variable)
     }.toMap
     ExpressionConfigDefinition(
       variables,
@@ -89,7 +93,6 @@ object ModelDefinitionFromConfigCreatorExtractor {
       expressionConfig.additionalClasses,
       expressionConfig.languages,
       expressionConfig.optimizeCompilation,
-      expressionConfig.strictTypeChecking,
       expressionConfig.dictionaries,
       expressionConfig.hideMetaVariable,
       expressionConfig.strictMethodsChecking,

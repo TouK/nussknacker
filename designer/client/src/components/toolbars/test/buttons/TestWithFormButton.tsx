@@ -5,7 +5,7 @@ import Icon from "../../../../assets/img/toolbarButtons/test-with-form.svg";
 import {
     getProcessingType,
     getProcessName,
-    getScenario,
+    getScenarioGraph,
     getTestCapabilities,
     getTestParameters,
     isLatestProcessVersion,
@@ -34,7 +34,7 @@ function TestWithFormButton(props: Props) {
     const isRenamed = useSelector(isProcessRenamed);
     const testFormParameters: TestFormParameters[] = useSelector(getTestParameters);
     const scenarioName = useSelector(getProcessName);
-    const scenario = useSelector(getScenario);
+    const scenarioGraph = useSelector(getScenarioGraph);
     const processingType = useSelector(getProcessingType);
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const dispatch = useDispatch();
@@ -97,19 +97,19 @@ function TestWithFormButton(props: Props) {
                 sourceId: selectedSource as string,
                 parameterExpressions: parameters,
             };
-            dispatch(testProcessWithParameters(scenarioName, request, scenario));
+            dispatch(testProcessWithParameters(scenarioName, request, scenarioGraph));
         },
         [sourceParameters, selectedSource],
     );
 
     useEffect(() => {
         setAvailable(isAvailable());
-        if (isAvailable() && !isRenamed) dispatch(fetchTestFormParameters(scenario));
-    }, [testCapabilities]);
+        if (isAvailable() && !isRenamed) dispatch(fetchTestFormParameters(scenarioName, scenarioGraph));
+    }, [scenarioName, scenarioGraph, testCapabilities]);
 
     useEffect(() => {
-        if (!isRenamed) dispatch(displayTestCapabilities(scenario));
-    }, [scenario, processIsLatestVersion]);
+        if (!isRenamed) dispatch(displayTestCapabilities(scenarioName, scenarioGraph));
+    }, [scenarioName, scenarioGraph, processIsLatestVersion]);
 
     //For now, we select first source and don't provide way to change it
     //Add support for multiple sources in next iteration (?)

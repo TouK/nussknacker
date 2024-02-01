@@ -22,8 +22,8 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
       )
     )
 
-  val componentAdditionalConfigMap: Map[ComponentId, ComponentAdditionalConfig] = Map(
-    ComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
+  val componentAdditionalConfigMap: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map(
+    DesignerWideComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
       parameterConfigs = Map(
         "param" -> ParameterAdditionalUIConfig(
           required = true,
@@ -42,7 +42,9 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
     )
   )
 
-  override def getAllForProcessingType(processingType: String): Map[ComponentId, ComponentAdditionalConfig] =
+  override def getAllForProcessingType(
+      processingType: String
+  ): Map[DesignerWideComponentId, ComponentAdditionalConfig] =
     if (processingType == TestProcessingTypes.Streaming)
       componentAdditionalConfigMap
     else

@@ -11,6 +11,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValuesProvided
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -20,12 +21,12 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.{
+  AlignedComponentsDefinitionProvider,
   DefinitionsService,
-  ModelDefinitionEnricher,
   ScenarioPropertiesConfigFinalizer,
   TestAdditionalUIConfigProvider
 }
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 class DefinitionResourcesSpec
     extends AnyFunSpec
@@ -44,7 +45,7 @@ class DefinitionResourcesSpec
 
   private val definitionResources = new DefinitionResources(
     serviceProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
-      val modelDefinitionEnricher = ModelDefinitionEnricher(
+      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
         processingTypeData.modelData,
         processingTypeData.staticModelDefinition
       )
@@ -62,13 +63,13 @@ class DefinitionResourcesSpec
   )
 
   it("should handle missing scenario type") {
-    getProcessDefinitionData("foo") ~> check {
+    getProcessDefinitionData(processingType = "not-existing-processing-type") ~> check {
       status shouldBe StatusCodes.NotFound
     }
   }
 
   it("should return definition data for existing scenario type") {
-    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+    getProcessDefinitionData() ~> check {
       status shouldBe StatusCodes.OK
 
       val noneReturnType = responseAs[Json].hcursor
@@ -80,7 +81,7 @@ class DefinitionResourcesSpec
   }
 
   it("should return definition data for allowed classes") {
-    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+    getProcessDefinitionData() ~> check {
       status shouldBe StatusCodes.OK
 
       val typesInformation = responseAs[Json].hcursor
@@ -95,7 +96,7 @@ class DefinitionResourcesSpec
   it("should return info about editor based on fragment parameter definition") {
     val fragmentWithFixedValuesEditor = {
       CanonicalProcess(
-        MetaData("sub1", FragmentSpecificData()),
+        MetaData("fragment1", FragmentSpecificData()),
         List(
           FlatNode(
             FragmentInputDefinition(
@@ -118,24 +119,20 @@ class DefinitionResourcesSpec
       )
     }
 
-    val processName         = SampleScenario.scenario.name
+    val processName         = ProcessTestData.sampleScenario.name
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName, fragmentWithFixedValuesEditor)
-    val displayableFragment = ProcessConverter.toDisplayable(
-      processWithFragment.fragment,
-      TestProcessingTypes.Streaming,
-      TestCategories.Category1
-    )
-    saveFragment(displayableFragment)(succeed)
-    saveProcess(processName, processWithFragment.process, TestCategories.Category1)(succeed)
+    val fragmentGraph       = CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
+    saveFragment(fragmentGraph)(succeed)
+    saveCanonicalProcess(processWithFragment.process)(succeed)
 
-    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+    getProcessDefinitionData() ~> check {
       status shouldBe StatusCodes.OK
 
       val response = responseAs[Json].hcursor
 
       val editor = response
         .downField("components")
-        .downField("fragment-sub1")
+        .downField("fragment-fragment1")
         .downField("parameters")
         .downAt(_.hcursor.get[String]("name").rightValue == "param1")
         .downField("editor")
@@ -161,7 +158,7 @@ class DefinitionResourcesSpec
   }
 
   it("return default value based on editor possible values") {
-    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+    getProcessDefinitionData() ~> check {
       status shouldBe StatusCodes.OK
 
       val responseJson = responseAs[Json]
@@ -185,7 +182,7 @@ class DefinitionResourcesSpec
 
   // TODO: currently branch parameters must be determined on node template level - aren't enriched dynamically during node validation
   it("return branch parameters definition with standard parameters enrichments") {
-    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+    getProcessDefinitionData() ~> check {
       status shouldBe StatusCodes.OK
 
       val responseJson = responseAs[Json]
@@ -206,7 +203,7 @@ class DefinitionResourcesSpec
   }
 
   it("return initial parameters for dynamic components") {
-    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+    getProcessDefinitionData() ~> check {
       status shouldBe StatusCodes.OK
 
       val responseJson = responseAs[Json]
@@ -236,7 +233,7 @@ class DefinitionResourcesSpec
   }
 
   it("initial parameters for dynamic components should take into account static component configuration in file") {
-    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+    getProcessDefinitionData() ~> check {
       status shouldBe StatusCodes.OK
 
       val responseJson = responseAs[Json]
@@ -266,7 +263,7 @@ class DefinitionResourcesSpec
   }
 
   it("return edgesForNodes") {
-    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+    getProcessDefinitionData() ~> check {
       status shouldBe StatusCodes.OK
 
       val responseJson = responseAs[Json]
@@ -288,7 +285,9 @@ class DefinitionResourcesSpec
     }
   }
 
-  private def getProcessDefinitionData(processingType: String): RouteTestResult = {
+  private def getProcessDefinitionData(
+      processingType: ProcessingType = TestProcessingTypes.Streaming
+  ): RouteTestResult = {
     Get(s"/processDefinitionData/$processingType?isFragment=false") ~> withPermissions(
       definitionResources,
       testPermissionRead

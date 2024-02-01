@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, ComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
@@ -16,7 +16,13 @@ import pl.touk.nussknacker.engine.definition.model.{
 }
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.modelconfig.{
+  ComponentsUiConfig,
+  ComponentsUiConfigParser,
+  DefaultModelConfigLoader,
+  InputConfigDuringExecution,
+  ModelConfigLoader
+}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -30,20 +36,20 @@ object ModelData extends LazyLogging {
     (
         ClassLoader,
         ProcessObjectDependencies,
-        ComponentInfo => ComponentId,
-        Map[ComponentId, ComponentAdditionalConfig]
-    ) => ModelDefinition[ComponentDefinitionWithImplementation]
+        ComponentId => DesignerWideComponentId,
+        Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    ) => ModelDefinition
 
   def apply(
       processingTypeConfig: ProcessingTypeConfig,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig],
-      componentInfoToId: ComponentInfo => ComponentId
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      determineDesignerWideId: ComponentId => DesignerWideComponentId
   ): ModelData = {
     ModelData(
       processingTypeConfig.modelConfig,
       ModelClassLoader(processingTypeConfig.classPath),
       Some(processingTypeConfig.category),
-      componentInfoToId,
+      determineDesignerWideId,
       additionalConfigsFromProvider
     )
   }
@@ -58,7 +64,7 @@ object ModelData extends LazyLogging {
       inputConfig = ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig),
       modelClassLoader = modelClassLoader,
       category = category,
-      componentInfoToId = info => ComponentId(info.toString),
+      determineDesignerWideId = id => DesignerWideComponentId(id.toString),
       additionalConfigsFromProvider = Map.empty
     )
   }
@@ -67,8 +73,8 @@ object ModelData extends LazyLogging {
       inputConfig: ConfigWithUnresolvedVersion,
       modelClassLoader: ModelClassLoader,
       category: Option[String],
-      componentInfoToId: ComponentInfo => ComponentId,
-      additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): ModelData = {
     logger.debug("Loading model data from: " + modelClassLoader)
     ClassLoaderModelData(
@@ -76,7 +82,7 @@ object ModelData extends LazyLogging {
         modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
       modelClassLoader,
       category,
-      componentInfoToId,
+      determineDesignerWideId,
       additionalConfigsFromProvider
     )
   }
@@ -87,7 +93,7 @@ object ModelData extends LazyLogging {
       _ => InputConfigDuringExecution(inputConfig),
       ModelClassLoader(Nil),
       None,
-      info => ComponentId(info.toString),
+      id => DesignerWideComponentId(id.toString),
       Map.empty
     )
   }
@@ -102,8 +108,8 @@ case class ClassLoaderModelData private (
     private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
     modelClassLoader: ModelClassLoader,
     override val category: Option[String],
-    override val componentInfoToId: ComponentInfo => ComponentId,
-    override val additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+    override val determineDesignerWideId: ComponentId => DesignerWideComponentId,
+    override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 ) extends ModelData {
 
   // this is not lazy, to be able to detect if creator can be created...
@@ -146,15 +152,15 @@ object ClassLoaderModelData {
     override def apply(
         classLoader: ClassLoader,
         modelDependencies: ProcessObjectDependencies,
-        componentInfoToId: ComponentInfo => ComponentId,
-        additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
-    ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+        determineDesignerWideId: ComponentId => DesignerWideComponentId,
+        additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    ): ModelDefinition = {
       ModelDefinitionExtractor.extractModelDefinition(
         configCreator,
         classLoader,
         modelDependencies,
         category,
-        componentInfoToId,
+        determineDesignerWideId,
         additionalConfigsFromProvider
       )
     }
@@ -165,23 +171,28 @@ object ClassLoaderModelData {
 
 trait ModelData extends BaseModelData with AutoCloseable {
 
+  // TODO: We should move model extensions that are used only on designer side into a separate wrapping class e.g. DesignerModelData
+  //       Thanks to that we 1) avoid unnecessary noice on runtime side, but also 2) we still see what kind of model extensions
+  //       do we have. See AdditionalInfoProviders as well
   def migrations: ProcessMigrations
+
+  final def buildInfo: Map[String, String] = configCreator.buildInfo()
 
   def configCreator: ProcessConfigCreator
 
   // It won't be necessary after we get rid of ProcessConfigCreator API
   def category: Option[String]
 
-  def componentInfoToId: ComponentInfo => ComponentId
+  def determineDesignerWideId: ComponentId => DesignerWideComponentId
 
-  def additionalConfigsFromProvider: Map[ComponentId, ComponentAdditionalConfig]
+  def additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 
   final lazy val modelDefinitionWithClasses: ModelDefinitionWithClasses = {
     val modelDefinitions = withThisAsContextClassLoader {
       extractModelDefinitionFun(
         modelClassLoader.classLoader,
         ProcessObjectDependencies(modelConfig, objectNaming),
-        componentInfoToId,
+        determineDesignerWideId,
         additionalConfigsFromProvider
       )
     }
@@ -192,7 +203,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // See parameters of implementing functions
   def extractModelDefinitionFun: ExtractDefinitionFun
 
-  final def modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation] =
+  final def modelDefinition: ModelDefinition =
     modelDefinitionWithClasses.modelDefinition
 
   private lazy val dictServicesFactory: DictServicesFactory =
@@ -204,6 +215,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   final lazy val engineDictRegistry: EngineDictRegistry =
     dictServicesFactory.createEngineDictRegistry(modelDefinition.expressionConfig.dictionaries)
 
+  // TODO: remove it, see notice in CustomProcessValidatorFactory
   final def customProcessValidator: CustomProcessValidator = {
     CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, modelConfig)
   }
@@ -222,6 +234,8 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   final override lazy val modelConfig: Config =
     modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
+
+  final lazy val componentsUiConfig: ComponentsUiConfig = ComponentsUiConfigParser.parse(modelConfig)
 
   final def close(): Unit = {
     designerDictServices.close()

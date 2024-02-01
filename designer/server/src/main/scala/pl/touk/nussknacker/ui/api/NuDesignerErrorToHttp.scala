@@ -8,6 +8,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import pl.touk.nussknacker.ui._
 
+import java.util.concurrent.ExecutionException
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
@@ -16,17 +17,25 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
   def nuDesignerErrorHandler: ExceptionHandler = {
     import akka.http.scaladsl.server.Directives._
     ExceptionHandler { case NonFatal(e) =>
-      complete(errorToHttpResponse(e))
+      complete(errorToHttpResponse(unwrapException(e)))
     }
   }
 
-  private def errorToHttpResponse: PartialFunction[Throwable, HttpResponse] = {
+  def unwrapException(e: Throwable): Throwable = e match {
+    case ex: ExecutionException => ex.getCause
+    case other                  => other
+  }
+
+  private def errorToHttpResponse(e: Throwable): HttpResponse = e match {
     case error: NuDesignerError =>
       logError(error)
       httpResponseFrom(error)
     case ex: IllegalArgumentException =>
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
       HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
+    case ex: NotImplementedError =>
+      logger.error(s"Not implemented: ${ex.getMessage}", ex)
+      HttpResponse(status = StatusCodes.NotImplemented, entity = ex.getMessage)
     case ex =>
       logger.error(s"Unknown error: ${ex.getMessage}", ex)
       HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)

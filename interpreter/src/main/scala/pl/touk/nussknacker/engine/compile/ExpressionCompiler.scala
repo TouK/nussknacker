@@ -1,19 +1,33 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Valid, invalid, valid}
-import cats.data.ValidatedNel
+import cats.data.Validated.{Valid, invalid, invalidNel, valid}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ValidationExpressionParameterValidatorToCompile, Validator}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression, TypedExpressionMap, Expression => CompiledExpression}
+import pl.touk.nussknacker.engine.api.expression.{
+  Expression => CompiledExpression,
+  ExpressionParser,
+  TypedExpression,
+  TypedExpressionMap
+}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.expression.{
+  Expression => CompiledExpression,
+  ExpressionParser,
+  TypedExpression,
+  TypedExpressionMap
+}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
+import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -26,7 +40,7 @@ object ExpressionCompiler {
   def withOptimization(
       loader: ClassLoader,
       dictRegistry: DictRegistry,
-      expressionConfig: ExpressionConfigDefinition[_],
+      expressionConfig: ExpressionConfigDefinition,
       classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler =
     default(loader, dictRegistry, expressionConfig, expressionConfig.optimizeCompilation, classDefinitionSet)
@@ -34,7 +48,7 @@ object ExpressionCompiler {
   def withoutOptimization(
       loader: ClassLoader,
       dictRegistry: DictRegistry,
-      expressionConfig: ExpressionConfigDefinition[_],
+      expressionConfig: ExpressionConfigDefinition,
       classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler =
     default(loader, dictRegistry, expressionConfig, optimizeCompilation = false, classDefinitionSet)
@@ -51,7 +65,7 @@ object ExpressionCompiler {
   private def default(
       classLoader: ClassLoader,
       dictRegistry: DictRegistry,
-      expressionConfig: ExpressionConfigDefinition[_],
+      expressionConfig: ExpressionConfigDefinition,
       optimizeCompilation: Boolean,
       classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler = {
@@ -114,7 +128,8 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
       parameterDefinitions,
       nodeParameters ++ nodeBranchParameters.flatMap(_.parameters)
     )
-    val paramDefMap = parameterDefinitions.map(p => p.name -> p).toMap
+    val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions)
+    val paramDefMap        = parameterDefinitions.map(p => p.name -> p).toMap
 
     // TODO adding validation here covers most (if not all) possible usages of DictParameterEditor, make sure it's enough
     val dictEditorParametersValidation = Validations.validateDictEditorParameters(
@@ -139,12 +154,17 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
           .map(paramDef => compileBranchParam(branchIdAndExpressions, branchContexts, paramDef))
     }
     val allCompiledParams = (compiledParams ++ compiledBranchParams).sequence
-      .map(typed => typed.map(t => (t, paramDefMap(t.name))))
+
     allCompiledParams
-      .andThen(allParams => Validations.validateWithCustomValidators(parameterDefinitions, allParams))
+      .andThen(allParams => Validations.validateWithCustomValidators(allParams, paramValidatorsMap))
       .combine(redundantMissingValidation.map(_ => List()))
       .combine(dictEditorParametersValidation.map(_ => List()))
   }
+
+  private def parameterValidatorsMap(parameterDefinitions: List[Parameter])(implicit nodeId: NodeId) =
+    parameterDefinitions
+      .map(p => p.name -> p.validators.map { v => compileValidator(v, p.name, p.typ) }.sequence)
+      .toMap
 
   def compileParam(
       nodeParam: NodeParameter,
@@ -183,6 +203,66 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
       .sequence
       .map(exprByBranchId => TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
   }
+
+  def compileValidator(
+      validator: Validator,
+      paramName: String,
+      paramType: TypingResult
+  )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Validator] =
+    validator match {
+      case v: ValidationExpressionParameterValidatorToCompile =>
+        compileValidationExpressionParameterValidator(
+          v,
+          paramName,
+          paramType
+        )
+      case v => Valid(v)
+    }
+
+  private def compileValidationExpressionParameterValidator(
+      toCompileValidator: ValidationExpressionParameterValidatorToCompile,
+      paramName: String,
+      paramType: TypingResult
+  )(
+      implicit nodeId: NodeId
+  ): Validated[NonEmptyList[PartSubGraphCompilationError], ValidationExpressionParameterValidator] =
+    compile(
+      toCompileValidator.validationExpression,
+      fieldName = Some(paramName),
+      validationCtx = ValidationContext(
+        // TODO in the future, we'd like to support more references, see ValidationExpressionParameterValidator
+        Map(ValidationExpressionParameterValidator.variableName -> paramType)
+      ),
+      expectedType = Typed[Boolean],
+    ).leftMap(_.map {
+      case e: ExpressionParserCompilationError =>
+        InvalidValidationExpression(
+          e.message,
+          nodeId.id,
+          paramName,
+          e.originalExpr
+        )
+      case e => e
+    }).andThen {
+      _.expression match {
+        case _: NullExpression =>
+          invalidNel(
+            InvalidValidationExpression(
+              "Validation expression cannot be blank",
+              nodeId.id,
+              paramName,
+              toCompileValidator.validationExpression.expression
+            )
+          )
+        case expression =>
+          Valid(
+            ValidationExpressionParameterValidator(
+              expression,
+              toCompileValidator.validationFailedMessage
+            )
+          )
+      }
+    }
 
   def compile(
       n: Expression,

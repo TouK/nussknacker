@@ -189,9 +189,51 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluateType("#COLLECTION.sum({#int, #long})", variables) shouldBe "Number".valid
   }
 
-  test("sum should fall back to Double on unknown Number type") {
+  test("sum should fall back to Number on unknown Number type") {
     val custom = new CustomNumber()
-    evaluateAny("#COLLECTION.sum(#list)", Map("list" -> List(1, custom).asJava)) shouldBe 1 + custom.doubleValue()
+
+    val numericalVariables = Map(
+      "int"    -> 1,
+      "long"   -> 1L,
+      "double" -> 14.23d,
+      "bigDec" -> new java.math.BigDecimal("1"),
+      "bigInt" -> new java.math.BigInteger("1"),
+      "custom" -> custom
+    )
+
+    evaluateType("#COLLECTION.sum({#int, #custom})", numericalVariables) shouldBe "Number".valid
+    evaluateType("#COLLECTION.sum({#long, #custom})", numericalVariables) shouldBe "Number".valid
+    evaluateType("#COLLECTION.sum({#double, #custom})", numericalVariables) shouldBe "Number".valid
+    evaluateType("#COLLECTION.sum({#bigDec, #custom})", numericalVariables) shouldBe "Number".valid
+    evaluateType("#COLLECTION.sum({#bigInt, #custom})", numericalVariables) shouldBe "Number".valid
+  }
+
+  test("plus should fall back to Number on unknown Number type") {
+    val custom = new CustomNumber()
+
+    val numericalVariables = Map(
+      "int"    -> 1,
+      "long"   -> 1L,
+      "double" -> 14.23d,
+      "bigDec" -> new java.math.BigDecimal("1"),
+      "bigInt" -> new java.math.BigInteger("1"),
+      "custom" -> custom
+    )
+
+    evaluateType("#custom + #int", numericalVariables) shouldBe "Number".valid
+    evaluateType("#int + #custom", numericalVariables) shouldBe "Number".valid
+
+    evaluateType("#custom + #long", numericalVariables) shouldBe "Number".valid
+    evaluateType("#long + #custom", numericalVariables) shouldBe "Number".valid
+
+    evaluateType("#custom + #double", numericalVariables) shouldBe "Number".valid
+    evaluateType("#double+ #custom", numericalVariables) shouldBe "Number".valid
+
+    evaluateType("#custom + #bigDec", numericalVariables) shouldBe "Number".valid
+    evaluateType("#bigDec + #custom", numericalVariables) shouldBe "Number".valid
+
+    evaluateType("#custom + #bigInt", numericalVariables) shouldBe "Number".valid
+    evaluateType("#bigInt + #custom", numericalVariables) shouldBe "Number".valid
   }
 
   test("sortedAsc") {

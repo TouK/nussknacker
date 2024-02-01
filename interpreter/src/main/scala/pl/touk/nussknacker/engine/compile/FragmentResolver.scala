@@ -65,7 +65,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
       {
         case canonicalnode.Fragment(FragmentInput(dataId, _, _, Some(true), _), nextNodes)
             if nextNodes.values.size > 1 =>
-          invalidBranches(DisablingManyOutputsFragment(dataId, nextNodes.keySet))
+          invalidBranches(DisablingManyOutputsFragment(dataId))
         case canonicalnode.Fragment(FragmentInput(dataId, _, _, Some(true), _), nextNodes)
             if nextNodes.values.isEmpty =>
           invalidBranches(DisablingNoOutputsFragment(dataId))

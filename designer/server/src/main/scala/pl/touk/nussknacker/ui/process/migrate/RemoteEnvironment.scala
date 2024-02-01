@@ -13,17 +13,17 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ProcessComparator
-import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
+import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
+import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
 import java.net.URLEncoder
@@ -37,20 +37,24 @@ trait RemoteEnvironment {
 
   val passUsernameInMigration: Boolean = true
 
-  def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(
+  def compare(
+      localGraph: ScenarioGraph,
+      remoteProcessName: ProcessName,
+      remoteProcessVersion: Option[VersionId]
+  )(
       implicit ec: ExecutionContext
   ): Future[Either[NuDesignerError, Map[String, Difference]]]
 
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ScenarioVersion]]
 
-  def migrate(localProcess: DisplayableProcess, category: String)(
+  def migrate(localProcess: ScenarioGraph, processName: ProcessName, category: String, isFragment: Boolean)(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
   ): Future[Either[NuDesignerError, Unit]]
 
   // TODO This method is used by an external project. We should move it to some api module
   def testMigration(
-      processToInclude: ScenarioWithDetails => Boolean = _ => true,
+      processToInclude: ScenarioWithDetailsForMigrations => Boolean = _ => true,
       batchingExecutionContext: ExecutionContext
   )(
       implicit ec: ExecutionContext,
@@ -64,7 +68,7 @@ final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, mes
 
 final case class MigrationValidationError(errors: ValidationErrors)
     extends FatalError({
-      val messages = errors.globalErrors.map(_.message) ++
+      val messages = errors.globalErrors.map(_.error.message) ++
         errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) =>
           s"$node - ${nerror.map(_.message).mkString(", ")}"
         }
@@ -144,7 +148,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   implicit def materializer: Materializer
 
   override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ScenarioVersion]] =
-    invokeJson[ScenarioWithDetails](HttpMethods.GET, List("processes", processName.value)).map { result =>
+    invokeJson[ScenarioWithDetailsForMigrations](HttpMethods.GET, List("processes", processName.value)).map { result =>
       result.fold(_ => List(), _.historyUnsafe)
     }
 
@@ -155,30 +159,36 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       headers: Seq[HttpHeader]
   ): Future[HttpResponse]
 
-  override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(
+  override def compare(
+      localGraph: ScenarioGraph,
+      remoteProcessName: ProcessName,
+      remoteProcessVersion: Option[VersionId]
+  )(
       implicit ec: ExecutionContext
   ): Future[Either[NuDesignerError, Map[String, Difference]]] = {
     (for {
-      process <- EitherT(fetchProcessVersion(localProcess.name, remoteProcessVersion))
+      process <- EitherT(fetchProcessVersion(remoteProcessName, remoteProcessVersion))
       compared <- EitherT.rightT[Future, NuDesignerError](
-        ProcessComparator.compare(localProcess, process.scenarioGraphUnsafe)
+        ScenarioGraphComparator.compare(localGraph, process.scenarioGraphUnsafe)
       )
     } yield compared).value
   }
 
   override def migrate(
-      localProcess: DisplayableProcess,
-      category: String
+      localGraph: ScenarioGraph,
+      processName: ProcessName,
+      category: String,
+      isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
     (for {
-      validation <- EitherT(validateProcess(localProcess))
+      validation <- EitherT(validateScenarioGraph(localGraph, processName))
       _ <- EitherT.fromEither[Future](
         if (validation.errors != ValidationErrors.success)
           Left[NuDesignerError, Unit](MigrationValidationError(validation.errors))
         else Right(())
       )
-      processEither <- fetchProcessDetails(localProcess.name)
-      _ <- processEither match {
+      remoteProcessEither <- fetchProcessDetails(processName)
+      _ <- remoteProcessEither match {
         case Right(processDetails) if processDetails.isArchived =>
           EitherT.leftT[Future, NuDesignerError](
             MigrationToArchivedError(processDetails.name, environmentId)
@@ -186,13 +196,14 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         case Right(_) => EitherT.rightT[Future, NuDesignerError](())
         case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) =>
           val userToForward = if (passUsernameInMigration) Some(loggedUser) else None
-          createProcessOnRemote(localProcess, category, userToForward)
+          createProcessOnRemote(processName, category, isFragment, userToForward)
         case Left(other) => EitherT.leftT[Future, NuDesignerError](other)
       }
       usernameToPass = if (passUsernameInMigration) Some(RemoteUserName(loggedUser.username)) else None
       _ <- EitherT {
         saveProcess(
-          localProcess,
+          localGraph,
+          processName,
           UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}"),
           usernameToPass
         )
@@ -200,7 +211,12 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     } yield ()).value
   }
 
-  private def createProcessOnRemote(localProcess: DisplayableProcess, category: String, loggedUser: Option[LoggedUser])(
+  private def createProcessOnRemote(
+      processName: ProcessName,
+      category: String,
+      isFragment: Boolean,
+      loggedUser: Option[LoggedUser]
+  )(
       implicit ec: ExecutionContext
   ): FutureE[Unit] = {
     val remoteUserNameHeader: List[HttpHeader] =
@@ -208,8 +224,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     EitherT {
       invokeForSuccess(
         HttpMethods.POST,
-        List("processes", localProcess.name.value, category),
-        Query(("isFragment", localProcess.metaData.isFragment.toString)),
+        List("processes", processName.value, category),
+        Query(("isFragment", isFragment.toString)),
         HttpEntity.Empty,
         remoteUserNameHeader
       )
@@ -218,7 +234,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   // We need to be cautious when choosing maxParallelism of batchingExecutionContext as validation may call external systems and we don't want to overwhelm them with requests
   override def testMigration(
-      processToInclude: ScenarioWithDetails => Boolean = _ => true,
+      processToInclude: ScenarioWithDetailsForMigrations => Boolean = _ => true,
       batchingExecutionContext: ExecutionContext
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
     (for {
@@ -231,9 +247,9 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchGroupByGroup(
-      basicProcesses: List[ScenarioWithDetails],
+      basicProcesses: List[ScenarioWithDetailsForMigrations],
       batchingExecutionContext: ExecutionContext
-  )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetails]] = {
+  )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetailsForMigrations]] = {
     val groupedBasicProcesses = basicProcesses
       .map(_.name)
       .grouped(config.batchSize)
@@ -255,14 +271,18 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def fetchProcesses(
       implicit ec: ExecutionContext
-  ): Future[Either[NuDesignerError, List[ScenarioWithDetails]]] = {
-    invokeJson[List[ScenarioWithDetails]](HttpMethods.GET, List("processes"), Query(("isArchived", "false")))
+  ): Future[Either[NuDesignerError, List[ScenarioWithDetailsForMigrations]]] = {
+    invokeJson[List[ScenarioWithDetailsForMigrations]](
+      HttpMethods.GET,
+      List("processes"),
+      Query(("isArchived", "false"))
+    )
   }
 
   private def fetchProcessVersion(name: ProcessName, remoteProcessVersion: Option[VersionId])(
       implicit ec: ExecutionContext
-  ): Future[Either[NuDesignerError, ScenarioWithDetails]] = {
-    invokeJson[ScenarioWithDetails](
+  ): Future[Either[NuDesignerError, ScenarioWithDetailsForMigrations]] = {
+    invokeJson[ScenarioWithDetailsForMigrations](
       HttpMethods.GET,
       List("processes", name.value) ++ remoteProcessVersion.map(_.value.toString).toList,
       Query()
@@ -271,12 +291,12 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def fetchProcessDetails(
       name: ProcessName
-  )(implicit ec: ExecutionContext): FutureE[Either[NuDesignerError, ScenarioWithDetails]] = {
-    EitherT(invokeJson[ScenarioWithDetails](HttpMethods.GET, List("processes", name.value)).map(_.asRight))
+  )(implicit ec: ExecutionContext): FutureE[Either[NuDesignerError, ScenarioWithDetailsForMigrations]] = {
+    EitherT(invokeJson[ScenarioWithDetailsForMigrations](HttpMethods.GET, List("processes", name.value)).map(_.asRight))
   }
 
   private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
-    invokeJson[List[ScenarioWithDetails]](
+    invokeJson[List[ScenarioWithDetailsForMigrations]](
       HttpMethods.GET,
       "processesDetails" :: Nil,
       Query(
@@ -287,30 +307,32 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     )
   }
 
-  private def validateProcess(
-      process: DisplayableProcess
+  private def validateScenarioGraph(
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName
   )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, ValidationResult]] = {
     for {
-      processToValidate <- Marshal(process).to[MessageEntity]
+      scenarioGraphToValidate <- Marshal(scenarioGraph).to[MessageEntity]
       validation <- invokeJson[ValidationResult](
         HttpMethods.POST,
-        List("processValidation"),
-        requestEntity = processToValidate
+        List("processValidation", processName.value),
+        requestEntity = scenarioGraphToValidate
       )
     } yield validation
   }
 
   private def saveProcess(
-      process: DisplayableProcess,
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
       comment: UpdateProcessComment,
       forwardedUserName: Option[RemoteUserName]
   )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, ValidationResult]] = {
     for {
-      processToSave <- Marshal(UpdateProcessCommand(process, comment, forwardedUserName))
+      processToSave <- Marshal(UpdateProcessCommand(scenarioGraph, comment, forwardedUserName))
         .to[MessageEntity](marshaller, ec)
       response <- invokeJson[ValidationResult](
         HttpMethods.PUT,
-        List("processes", process.name.value),
+        List("processes", processName.value),
         requestEntity = processToSave
       )
     } yield response

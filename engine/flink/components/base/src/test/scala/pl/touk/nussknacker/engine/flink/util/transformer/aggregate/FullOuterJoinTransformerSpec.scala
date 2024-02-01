@@ -460,7 +460,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)
-    val validationResult = processValidator.validate(process).result
+    val validationResult = processValidator.validate(process, isFragment = false).result
     assert(validationResult.isInvalid)
   }
 
@@ -506,7 +506,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)
-    val validationResult = processValidator.validate(process).result
+    val validationResult = processValidator.validate(process, isFragment = false).result
     assert(validationResult.isInvalid)
   }
 

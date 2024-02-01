@@ -91,7 +91,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .flatMap { case (authorizationData, _) =>
         service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
-      .map { case (user, _) => LoggedUser(user, rules, List.empty) }
+      .map { case (user, _) => LoggedUser(user, rules) }
       .futureValue
 
     user shouldBe a[LoggedUser]
@@ -117,7 +117,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .flatMap { case (authorizationData, _) =>
         service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
-      .map { case (user, _) => LoggedUser(user, rules, List.empty) }
+      .map { case (user, _) => LoggedUser(user, rules) }
       .futureValue
 
     user shouldBe a[LoggedUser]
@@ -147,7 +147,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .flatMap { case (authorizationData, _) =>
         service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
-      .map { case (user, _) => LoggedUser(user, rules, List.empty) }
+      .map { case (user, _) => LoggedUser(user, rules) }
       .futureValue
 
     user shouldBe a[LoggedUser]
@@ -178,7 +178,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .flatMap { case (authorizationData, _) =>
         service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
-      .map { case (user, _) => LoggedUser(user, rules, List.empty) }
+      .map { case (user, _) => LoggedUser(user, rules) }
       .futureValue
 
     user shouldBe a[LoggedUser]

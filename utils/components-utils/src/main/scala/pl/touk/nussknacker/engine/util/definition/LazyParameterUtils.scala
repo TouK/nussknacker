@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.definition
 
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
 import scala.collection.immutable.ListMap
 
@@ -10,7 +10,7 @@ object LazyParameterUtils {
 
   def typedMap(params: ListMap[String, LazyParameter[AnyRef]]): LazyParameter[TypedMap] = {
     def wrapResultType(list: List[TypingResult]): TypingResult = {
-      TypedObjectTypingResult(
+      Typed.record(
         params.keys
           .zip(list)
           .map {

@@ -14,10 +14,6 @@ import scala.language.higherKinds
 
 trait DeploymentService extends ProcessStateService {
 
-  def getDeployedScenarios(processingType: ProcessingType)(
-      implicit ec: ExecutionContext
-  ): Future[List[DeployedScenarioData]]
-
   // Inner Future in result allows to wait for deployment finish, while outer handles validation
   // We split deploy process that way because we want to be able to split FE logic into two phases:
   // - validations - it is quick part, the result will be displayed on deploy modal
@@ -48,6 +44,11 @@ trait DeploymentService extends ProcessStateService {
   def getLastStateAction(processingType: ProcessingType, processId: ProcessId)(
       implicit ec: ExecutionContext
   ): Future[Option[ProcessAction]]
+
+  def invokeCustomAction(actionName: String, processIdWithName: ProcessIdWithName, params: Map[String, String])(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[CustomActionResult]
 
 }
 

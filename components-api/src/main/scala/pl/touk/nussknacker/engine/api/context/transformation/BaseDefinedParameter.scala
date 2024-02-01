@@ -21,7 +21,8 @@ sealed trait DefinedBranchParameter extends BaseDefinedParameter {
 
   def expressionByBranchId: Map[String, TypedExpression]
 
-  final override def returnType: TypingResult = Typed(expressionByBranchId.values.map(_.returnType).toSet)
+  final override def returnType: TypingResult =
+    Typed.fromIterableOrUnknownIfEmpty(expressionByBranchId.values.map(_.returnType))
 
 }
 

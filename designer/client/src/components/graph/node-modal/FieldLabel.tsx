@@ -1,8 +1,7 @@
-import { styled } from "@mui/material";
+import { FormLabel, styled } from "@mui/material";
 import React from "react";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { UIParameter } from "../../../types";
-import { NodeLabelStyled } from "./node";
 import NodeTip from "./NodeTip";
 import InfoIcon from "@mui/icons-material/Info";
 
@@ -21,6 +20,7 @@ const Footer = styled("div")({
 
 export const StyledNodeTip = styled(NodeTip)`
     margin: 0 8px;
+    flex: 1;
     svg {
         width: 16px;
         height: 16px;
@@ -33,13 +33,13 @@ export function FieldLabel({ paramName, parameterDefinitions }: { paramName: str
 
     return (
         <>
-            <NodeLabelStyled title={paramName}>
+            <FormLabel title={paramName}>
                 <div>
                     <div>{label}:</div>
                     {parameter ? <Footer title={readableType}>{readableType}</Footer> : null}
                 </div>
                 {parameter?.hintText && <StyledNodeTip title={parameter?.hintText} icon={<InfoIcon />} />}
-            </NodeLabelStyled>
+            </FormLabel>
         </>
     );
 }

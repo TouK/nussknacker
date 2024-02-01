@@ -12,12 +12,12 @@ function getEdgeValidator(scenarioGraph: ScenarioGraph, processDefinitionData?: 
 
 // TODO: This should be one on the BE side
 export function correctFetchedDetails(data: Scenario, definitionData?: ProcessDefinitionData): Scenario {
-    const { json: scenarioGraph } = data;
+    const { scenarioGraph: scenarioGraph } = data;
     const { edges } = scenarioGraph;
     const isValidEdge = getEdgeValidator(scenarioGraph, definitionData);
     return {
         ...data,
-        json: {
+        scenarioGraph: {
             ...scenarioGraph,
             edges: edges.filter(isValidEdge),
         },

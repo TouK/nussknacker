@@ -5,11 +5,11 @@ import NodeTip from "../NodeTip";
 import TestValue from "./TestValue";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeId } from "../../../../types";
-import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
-import { NodeLabelStyled } from "../node";
-import { NodeRow } from "../NodeDetailsContent/NodeStyled";
+import { Box, FormControl, FormLabel } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {
+    const { t } = useTranslation();
     const results = useTestResults();
 
     if (!results.testResultsToShow || isEmpty(results.testResultsToShow.context.variables)) {
@@ -17,28 +17,29 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
     }
 
     return (
-        <NodeTableBody className="node-test-results">
-            <NodeRow>
-                <NodeLabelStyled>
+        <Box sx={(theme) => ({ border: `1px solid ${theme.custom.colors.ok}`, padding: "5px" })}>
+            <FormControl>
+                <FormLabel>
                     <NodeTip
                         title={"Variables in test case"}
                         icon={<InfoIcon sx={(theme) => ({ color: theme.custom.colors.info, alignSelf: "center" })} />}
                     />
-                </NodeLabelStyled>
-            </NodeRow>
+                </FormLabel>
+            </FormControl>
             {Object.keys(results.testResultsToShow.context.variables)
                 .sort((a, b) => a.localeCompare(b))
                 .map((key, ikey) => (
-                    <NodeRow key={ikey}>
-                        <div className="node-label">{key}:</div>
+                    <FormControl key={ikey}>
+                        <FormLabel>{key}:</FormLabel>
                         <TestValue value={results.testResultsToShow.context.variables[key]} shouldHideTestResults={false} />
-                    </NodeRow>
+                    </FormControl>
                 ))}
             {results.testResultsToShow && !isEmpty(results.testResultsToShow.externalInvocationResultsForCurrentContext)
                 ? results.testResultsToShow.externalInvocationResultsForCurrentContext.map((mockedValue, index) => (
                       <span key={index} className="testResultDownload">
                           <a download={`${nodeId}-single-input.log`} href={downloadableHref(stringifyMockedValue(mockedValue))}>
-                              <span className="glyphicon glyphicon-download" /> Results for this input
+                              <span className="glyphicon glyphicon-download" />
+                              {t("testResults.resultsForThisInput", "Results for this input")}
                           </a>
                       </span>
                   ))
@@ -49,11 +50,12 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
                         download={`${nodeId}-all-inputs.log`}
                         href={downloadableHref(mergedMockedResults(results.testResultsToShow.externalInvocationResultsForEveryContext))}
                     >
-                        <span className="glyphicon glyphicon-download" /> Results for all inputs
+                        <span className="glyphicon glyphicon-download" />
+                        {t("testResults.resultsForAllInputs", "Results for all inputs")}
                     </a>
                 </span>
             ) : null}
-        </NodeTableBody>
+        </Box>
     );
 
     function mergedMockedResults(mockedResults) {

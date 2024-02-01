@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.ui.uiresolving
 
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
@@ -26,47 +25,52 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
       spel.typingDictLabels
   })
 
-  def validateAndResolve(displayable: DisplayableProcess)(implicit loggedUser: LoggedUser): CanonicalProcess = {
-    val validationResult = validateBeforeUiResolving(displayable)
-    resolveExpressions(displayable, validationResult.typingInfo)
+  def validateAndResolve(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean)(
+      implicit loggedUser: LoggedUser
+  ): CanonicalProcess = {
+    val validationResult = validateBeforeUiResolving(scenarioGraph, processName, isFragment)
+    resolveExpressions(scenarioGraph, processName, validationResult.typingInfo)
   }
 
-  def validateBeforeUiResolving(displayable: DisplayableProcess)(implicit loggedUser: LoggedUser): ValidationResult = {
-    beforeUiResolvingValidator.validate(displayable)
+  def validateBeforeUiResolving(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean)(
+      implicit loggedUser: LoggedUser
+  ): ValidationResult = {
+    beforeUiResolvingValidator.validate(scenarioGraph, processName, isFragment)
   }
 
   def resolveExpressions(
-      displayable: DisplayableProcess,
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
       typingInfo: Map[String, Map[String, ExpressionTypingInfo]]
   ): CanonicalProcess = {
-    val canonical = ProcessConverter.fromDisplayable(displayable)
+    val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName)
     substitutor.substitute(canonical, typingInfo)
   }
 
   def validateAndReverseResolve(
       canonical: CanonicalProcess,
-      processingType: ProcessingType,
-      category: Category
-  )(implicit loggedUser: LoggedUser): ValidatedDisplayableProcess = {
-    val validationResult = validateBeforeUiReverseResolving(canonical, processingType)
-    reverseResolveExpressions(canonical, processingType, category, validationResult)
+      processName: ProcessName,
+      isFragment: Boolean,
+  )(implicit loggedUser: LoggedUser): ScenarioGraphWithValidationResult = {
+    val validationResult = validateBeforeUiReverseResolving(canonical, isFragment)
+    reverseResolveExpressions(canonical, processName, isFragment, validationResult)
   }
 
-  def validateBeforeUiReverseResolving(canonical: CanonicalProcess, processingType: ProcessingType)(
+  def validateBeforeUiReverseResolving(canonical: CanonicalProcess, isFragment: Boolean)(
       implicit loggedUser: LoggedUser
   ): ValidationResult =
-    uiValidator.validateCanonicalProcess(canonical, processingType)
+    uiValidator.validateCanonicalProcess(canonical, isFragment)
 
   private def reverseResolveExpressions(
       canonical: CanonicalProcess,
-      processingType: ProcessingType,
-      category: Category,
+      processName: ProcessName,
+      isFragment: Boolean,
       validationResult: ValidationResult
-  ): ValidatedDisplayableProcess = {
+  ): ScenarioGraphWithValidationResult = {
     val substituted   = substitutor.reversed.substitute(canonical, validationResult.typingInfo)
-    val displayable   = ProcessConverter.toDisplayable(substituted, processingType, category)
-    val uiValidations = uiValidator.uiValidation(displayable)
-    ValidatedDisplayableProcess.withValidationResult(displayable, uiValidations.add(validationResult))
+    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(substituted)
+    val uiValidations = uiValidator.uiValidation(scenarioGraph, processName, isFragment)
+    ScenarioGraphWithValidationResult(scenarioGraph, uiValidations.add(validationResult))
   }
 
 }

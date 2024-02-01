@@ -1,5 +1,5 @@
 import React from "react";
-import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 import { useTranslation } from "react-i18next";
 import { onChangeType, FragmentInputParameter, FixedValuesOption } from "../../../item";
 import { Option, TypeSelect } from "../../../TypeSelect";
@@ -8,6 +8,7 @@ import { EditableEditor } from "../../../../editors/EditableEditor";
 import { VariableTypes } from "../../../../../../../types";
 import { FieldError } from "../../../../editors/Validators";
 import { EditorType } from "../../../../editors/expression/Editor";
+import { FormControl } from "@mui/material";
 
 interface InitialValue {
     item: FragmentInputParameter;
@@ -26,7 +27,7 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
     const optionsToDisplay: Option[] = [emptyOption, ...(options ?? []).map(({ label }) => ({ label, value: label }))];
 
     return (
-        <SettingRow>
+        <FormControl>
             <SettingLabelStyled>{t("fragment.initialValue", "Initial value:")}</SettingLabelStyled>
             {options ? (
                 <TypeSelect
@@ -51,6 +52,6 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
                     fieldErrors={fieldErrors}
                 />
             )}
-        </SettingRow>
+        </FormControl>
     );
 }

@@ -329,7 +329,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
             Input
           ),
           invalidTypes(
-            "path 'field' actual: 'Map[String,Long] | Long' expected: 'Map[String,Null | Integer] | Integer'"
+            "path 'field' actual: 'Long | Map[String,Long]' expected: 'Map[String,Null | Integer] | Integer'"
           )
         ),
         (
@@ -343,7 +343,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleUnionMapOfIntsAndInt, recordUnionMapOfIntsAndIntSchema, recordMapOfIntsSchema, Input),
-          invalidTypes("path 'field' actual: 'Map[String,Integer] | Integer' expected: 'Map[String,Null | Integer]'")
+          invalidTypes("path 'field' actual: 'Integer | Map[String,Integer]' expected: 'Map[String,Null | Integer]'")
         ),
         (
           rConfig(
@@ -369,7 +369,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleBoolean, recordUnionStringAndBooleanSchema, recordUnionStringAndIntegerSchema, Input),
-          invalidTypes("path 'field' actual: 'String | Boolean' expected: 'String | Integer'")
+          invalidTypes("path 'field' actual: 'Boolean | String' expected: 'String | Integer'")
         ),
         (
           rConfig(sampleBoolean, recordMaybeBooleanSchema, recordUnionStringAndIntegerSchema, Input),
@@ -1139,6 +1139,18 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
     error.getMessage shouldBe "Error serializing Avro message"
 
     error.getCause.getMessage shouldBe s"""Not in union ${nestedRecordV2FieldsSchema}: {"sub": {"price": $sampleDouble}, "str": "$sampleString"} (field=$RecordFieldName)"""
+  }
+
+  test("should allow to dynamically get record field by name") {
+    val config = sConfig(
+      AvroUtils.createRecord(recordIntegerSchema, Map(RecordFieldName -> sampleInteger)),
+      recordIntegerSchema,
+      integerSchema,
+      SpecialSpELElement("#input.get('field')")
+    )
+    val results = runWithValueResults(config)
+
+    results.validValue.successes shouldBe List(sampleInteger)
   }
 
   private def runWithValueResults(config: ScenarioConfig) =

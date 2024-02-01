@@ -13,7 +13,7 @@ export const getScenarioPropertiesConfig = createSelector(
     getProcessDefinitionData,
     (s) => (s.scenarioPropertiesConfig || {}) as ScenarioPropertiesConfig,
 );
-const getNodeResults = createSelector(getScenarioGraph, (scenarioGraph) => ProcessUtils.getNodeResults(scenarioGraph));
+const getNodeResults = createSelector(getScenario, (scenario) => ProcessUtils.getNodeResults(scenario));
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>
     ProcessUtils.findVariablesForBranches(nodeResults),
 );
@@ -70,8 +70,8 @@ export const getDynamicParameterDefinitions = createSelector(
     },
 );
 
-export const getFindAvailableVariables = createSelector(getComponentsDefinition, getScenarioGraph, (processDefinition, scenarioGraph) =>
-    ProcessUtils.findAvailableVariables(processDefinition, scenarioGraph),
+export const getFindAvailableVariables = createSelector(getComponentsDefinition, getScenario, (processDefinition, scenario) =>
+    ProcessUtils.findAvailableVariables(processDefinition, scenario),
 );
 export const getVariableTypes = createSelector(
     getNodeResults,

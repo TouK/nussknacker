@@ -5,22 +5,18 @@ import cats.kernel.Semigroup
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
 
-/**
-  * TODO: componentId is work around for components duplication across multiple scenario types
-  */
 case class SingleComponentConfig(
     params: Option[Map[String, ParameterConfig]],
     icon: Option[String],
     docsUrl: Option[String],
     componentGroup: Option[ComponentGroupName],
-    componentId: Option[ComponentId],
+    // TODO We allow to define this id in the configuration as a work around for the problem
+    //      that the components are duplicated across processing types - see notice in DesignerWideComponentId
+    //      It should be probable called designerWideComponentId but we don't want to change it
+    //      to not break the compatibility
+    componentId: Option[DesignerWideComponentId],
     disabled: Boolean = false
-) {
-  def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
-
-  def componentGroupUnsafe: ComponentGroupName =
-    componentGroup.getOrElse(throw new IllegalStateException(s"Component group not defined in $this"))
-}
+)
 
 object SingleComponentConfig {
 

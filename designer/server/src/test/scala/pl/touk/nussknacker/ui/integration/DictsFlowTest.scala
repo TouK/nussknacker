@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.integration
 
 import com.typesafe.config.Config
 import io.circe.Json
+import io.circe.syntax.EncoderOps
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
@@ -10,8 +11,9 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
+import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{UriContext, quickRequest}
@@ -83,9 +85,11 @@ class DictsFlowTest
 
     val response1 = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processValidation")
+        .post(uri"$nuDesignerHttpAddress/api/processValidation/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJson(process).spaces2)
+        .body(
+          ScenarioValidationRequest(process.name, CanonicalProcessConverter.toScenarioGraph(process)).asJson.spaces2
+        )
         .auth
         .basic("admin", "admin")
     )
@@ -117,7 +121,7 @@ class DictsFlowTest
 
     val returnedEndResultExpression = extractVariableExpressionFromGetProcessResponse(response2.bodyAsJson)
     returnedEndResultExpression shouldEqual expressionUsingDictWithInvalidLabel
-    val invalidNodesAfterGet = response2.extractFieldJsonValue("json", "validationResult", "errors", "invalidNodes")
+    val invalidNodesAfterGet = response2.extractFieldJsonValue("validationResult", "errors", "invalidNodes")
     invalidNodesAfterGet.asObject.value should have size 1
     invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual {
       "ExpressionParserCompilationError"
@@ -151,7 +155,7 @@ class DictsFlowTest
 
     val response2 = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processesExport")
+        .post(uri"$nuDesignerHttpAddress/api/processesExport/${process.name}")
         .contentType(MediaType.ApplicationJson)
         .body(TestProcessUtil.toJson(process).noSpaces)
         .auth
@@ -175,8 +179,8 @@ class DictsFlowTest
         .contentType(MediaType.MultipartFormData)
         .multipartBody(
           sttpPrepareMultiParts(
-            "testData"    -> """{"sourceId":"source","record":"field1|field2"}""",
-            "processJson" -> TestProcessUtil.toJson(process).noSpaces
+            "testData"      -> """{"sourceId":"source","record":"field1|field2"}""",
+            "scenarioGraph" -> TestProcessUtil.toJson(process).noSpaces
           )()
         )
         .auth
@@ -204,9 +208,11 @@ class DictsFlowTest
 
     val response1 = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processValidation")
+        .post(uri"$nuDesignerHttpAddress/api/processValidation/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJson(process).spaces2)
+        .body(
+          ScenarioValidationRequest(process.name, CanonicalProcessConverter.toScenarioGraph(process)).asJson.spaces2
+        )
         .auth
         .basic("admin", "admin")
     )
@@ -225,7 +231,7 @@ class DictsFlowTest
     val returnedEndResultExpression = extractVariableExpressionFromGetProcessResponse(response2.bodyAsJson)
     returnedEndResultExpression shouldEqual endResultExpressionToPost
 
-    response2.extractFieldJsonValue("json", "validationResult", "errors", "invalidNodes")
+    response2.extractFieldJsonValue("validationResult", "errors", "invalidNodes")
   }
 
   private def createEmptyScenario(processName: ProcessName) = {
@@ -254,7 +260,7 @@ class DictsFlowTest
   private def extractVariableExpressionFromGetProcessResponse(json: Json) = {
     import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
     json.hcursor
-      .downField("json")
+      .downField("scenarioGraph")
       .downField("nodes")
       .downAt(_.hcursor.get[String]("id").rightValue == VariableNodeId)
       .downField("value")
