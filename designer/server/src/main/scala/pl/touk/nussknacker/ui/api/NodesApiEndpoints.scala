@@ -15,8 +15,7 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.ProcessProperties
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
-import pl.touk.nussknacker.engine.api.typed.TypingType.TypedUnion
-import pl.touk.nussknacker.engine.api.typed.{SimpleObjectEncoder, TypingResultDecoder, typing}
+import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -27,7 +26,7 @@ import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodeValidationRequestDto
-import pl.touk.nussknacker.ui.api.typingDtos._
+import pl.touk.nussknacker.ui.api.typingDtoSchemas._
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.Codec.PlainCodec
@@ -182,7 +181,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
 object NodesApiEndpoints {
 
   object Dtos {
-    import typingDtoSchemas._
 
     object ScenarioNameCodec {
       def encode(scenarioName: ProcessName): String = scenarioName.value
@@ -195,6 +193,17 @@ object NodesApiEndpoints {
       implicit val scenarioNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
     }
 
+    case class TypingResultInJson(value: Json)
+
+    object TypingResultInJson {
+      implicit def apply(typingResultInJson: TypingResultInJson): Json = typingResultInJson.value
+      implicit lazy val typingResultInJsonDecoder: Decoder[TypingResultInJson] =
+        Decoder.decodeJson.map(TypingResultInJson.apply)
+      implicit lazy val typingResultInJsonEncoder: Encoder[TypingResultInJson] =
+        Encoder.instance(typingResultInJson => typingResultInJson.value)
+      implicit lazy val typingResultInJsonSchema: Schema[TypingResultInJson] = typingDtoSchemas.typingResult.as
+    }
+
     implicit lazy val scenarioNameSchema: Schema[ProcessName]                         = Schema.derived
     implicit lazy val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
@@ -204,12 +213,8 @@ object NodesApiEndpoints {
     final case class NodeValidationRequestDto(
         nodeData: NodeData,
         processProperties: ProcessProperties,
-//        variableTypes: Map[String, TypingResultDto],
-        variableTypes: Map[String, Json],
-//        variableTypes: Json,
-//        branchVariableTypes: Option[Map[String, Map[String, TypingResultDto]]],
-        branchVariableTypes: Option[Map[String, Map[String, Json]]],
-//        branchVariableTypes: Option[Json],
+        variableTypes: Map[String, TypingResultInJson],
+        branchVariableTypes: Option[Map[String, Map[String, TypingResultInJson]]],
         outgoingEdges: Option[List[Edge]]
     )
 
@@ -236,30 +241,13 @@ object NodesApiEndpoints {
 //    implicit val nodeValidationRequestDtoDecoder: Decoder[NodeValidationResultDto] = ???
 
     object NodeValidationResultDto {
-//      import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDtoHelpers.toDto
 
       def apply(node: NodeValidationResult): NodeValidationResultDto = {
         new NodeValidationResultDto(
           parameters = node.parameters.map { list =>
-            list.map { param =>
-              UIParameterDto(
-                name = param.name,
-                typ = param.typ,
-                editor = param.editor,
-                defaultValue = param.defaultValue,
-                additionalVariables = param.additionalVariables.map { case (key, typingResult) =>
-                  (key, typingResult)
-                },
-                variablesToHide = param.variablesToHide,
-                branchParam = param.branchParam,
-                hintText = param.hintText,
-                label = param.label
-              )
-            }
+            list.map(param => UIParameterDto(param))
           },
-          expressionType = node.expressionType.map { typingResult =>
-            typingResult
-          },
+          expressionType = node.expressionType,
           validationErrors = node.validationErrors,
           validationPerformed = node.validationPerformed
         )
@@ -286,6 +274,19 @@ object NodesApiEndpoints {
       implicit lazy val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
       implicit lazy val expressionSchema: Schema[Expression]              = Schema.derived
       implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
+
+      def apply(param: UIParameter): UIParameterDto = new UIParameterDto(
+        param.name,
+        param.typ,
+        param.editor,
+        param.defaultValue,
+        param.additionalVariables,
+        param.variablesToHide,
+        param.branchParam,
+        param.hintText,
+        param.label
+      )
+
     }
 
     @derive(schema, encoder, decoder)
@@ -298,9 +299,7 @@ object NodesApiEndpoints {
     @derive(schema, decoder)
     final case class ParametersValidationRequestDto(
         parameters: List[UIValueParameterDto],
-//        variableTypes: Map[String, TypingResultDto]
-        variableTypes: Map[String, Json]
-//        variableTypes: Json
+        variableTypes: Map[String, TypingResultInJson]
     )
 
     implicit val parametersValidationRequestDtoEncoder: Encoder[ParametersValidationRequestDto] =
@@ -316,7 +315,7 @@ object NodesApiEndpoints {
     @derive(schema, encoder, decoder)
     final case class UIValueParameterDto(
         name: String,
-        typ: Json,
+        typ: TypingResultInJson,
         expression: Expression
     )
 
@@ -328,9 +327,7 @@ object NodesApiEndpoints {
     final case class ExpressionSuggestionRequestDto(
         expression: Expression,
         caretPosition2d: CaretPosition2d,
-//        variableTypes: Map[String, TypingResultDto]
-        variableTypes: Map[String, Json]
-//        variableTypes: Json
+        variableTypes: Map[String, TypingResultInJson]
     ) {
 
       def decodedVariableTypes(decoder: Decoder[TypingResult]): Map[String, TypingResult] =
@@ -364,7 +361,7 @@ object NodesApiEndpoints {
     )
 
     //    Things copied from NodesResource
-    //    These 2 are used in ManagmentResources for example
+    //    These 2 are used in ManagementResources for example
 
     def prepareTypingResultDecoder(modelData: ModelData): Decoder[TypingResult] = {
       new TypingResultDecoder(name =>
@@ -372,14 +369,14 @@ object NodesApiEndpoints {
       ).decodeTypingResults
     }
 
-//    These 4 doesn't look as used anywhere
-
     def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
       implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
       implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
         deriveConfiguredDecoder[TestSourceParameters]
       deriveConfiguredDecoder[TestFromParametersRequest]
     }
+
+    //    These 3 doesn't look as used anywhere
 
     def prepareNodeRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
       implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
