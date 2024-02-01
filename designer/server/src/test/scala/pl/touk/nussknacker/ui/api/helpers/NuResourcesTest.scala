@@ -167,9 +167,6 @@ trait NuResourcesTest
       )
     )
 
-  protected val customActionInvokerService =
-    new CustomActionInvokerServiceImpl(futureFetchingScenarioRepository, dmDispatcher, deploymentService)
-
   protected val processService: DBProcessService = createDBProcessService(deploymentService)
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
@@ -234,7 +231,6 @@ trait NuResourcesTest
       deploymentCommentSettings = deploymentCommentSettings,
       deploymentService = deploymentService,
       dispatcher = dmDispatcher,
-      customActionInvokerService = customActionInvokerService,
       metricRegistry = new MetricRegistry,
       scenarioTestServices = scenarioTestServiceByProcessingType,
       typeToConfig = typeToConfig.mapValues(_.modelData)
