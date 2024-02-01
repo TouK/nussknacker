@@ -133,12 +133,6 @@ class ProcessesResources(
             processService.getProcessActions(processId.id)
           }
         }
-      } ~ path("processes" / ProcessNameSegment / "lastDeployedVersionId") { processName =>
-        processId(processName) { processId =>
-          complete {
-            processService.getLastDeployedVersionId(processId.id)
-          }
-        }
       } ~ path("processes" / ProcessNameSegment) { processName =>
         processId(processName) { processId =>
           (delete & canWrite(processId)) {

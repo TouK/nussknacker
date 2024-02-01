@@ -1,20 +1,18 @@
 import {CustomActionDisplayPolicy} from "../types";
 import {useSelector} from "react-redux";
-import {getProcessName, getProcessVersionId} from "../reducers/selectors/graph";
-import HttpService from "../http/HttpService";
+import {getProcessName, getProcessVersionId, getScenario} from "../reducers/selectors/graph";
+import {ActionType} from "../components/Process/types";
 
-export async function resolveCustomActionDisplayability(displayPolicy: CustomActionDisplayPolicy){
-  const processName = useSelector(getProcessName);
+export function resolveCustomActionDisplayability(displayPolicy: CustomActionDisplayPolicy){
   const processVersionId = useSelector(getProcessVersionId);
+  const scenario = useSelector(getScenario);
 
   switch(displayPolicy) {
     case CustomActionDisplayPolicy.CurrentlyViewedProcessVersionIsDeployed:
-      try {
-        const response = await HttpService.fetchLastDeployedVersionId(processName);
-        const data = response.data;
-        return data.versionId === processVersionId;
-      } catch (error) {
-        console.error("Error while fetching last deployed version ID:", error);
+      if (scenario.lastDeployedAction !== null) {
+        return scenario.lastDeployedAction.processVersionId === processVersionId &&
+          scenario.lastDeployedAction.actionType == ActionType.Deploy
+      } else {
         return false;
       }
     default:

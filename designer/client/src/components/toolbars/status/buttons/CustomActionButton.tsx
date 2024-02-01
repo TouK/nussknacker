@@ -21,7 +21,6 @@ type CustomActionProps = {
 
 export default function CustomActionButton(props: CustomActionProps) {
     const { action, processStatus, disabled } = props;
-    const [isAvailable, setIsAvailable] = useState<boolean>(false);
 
     const { t } = useTranslation();
 
@@ -31,18 +30,12 @@ export default function CustomActionButton(props: CustomActionProps) {
         <DefaultIcon />
     );
 
-  useEffect(() => {
-    const resolveDisplayability = async () => {
-      const res = await resolveCustomActionDisplayability(action.displayPolicy);
-      setIsAvailable(!disabled &&
-        action.allowedStateStatusNames.includes(statusName) && res);
-    }
-    resolveDisplayability();
-  }, []);
-
     const statusName = processStatus?.name;
+    const available = !disabled &&
+      action.allowedStateStatusNames.includes(statusName) &&
+      resolveCustomActionDisplayability(action.displayPolicy);
 
-    const toolTip = isAvailable
+    const toolTip = available
         ? null
         : t("panels.actions.custom-action.tooltips.disabled", "Disabled for {{statusName}} status.", { statusName });
 
@@ -51,7 +44,7 @@ export default function CustomActionButton(props: CustomActionProps) {
         <ToolbarButton
             name={action.name}
             title={toolTip}
-            disabled={!isAvailable}
+            disabled={!available}
             icon={icon}
             onClick={() =>
                 open<CustomAction>({

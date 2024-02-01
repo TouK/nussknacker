@@ -61,10 +61,6 @@ export interface AppBuildInfo {
     processingType: any;
 }
 
-export type LastDeployedVersionId = {
-  versionId: number | null;
-}
-
 export type ComponentActionType = {
     id: string;
     title: string;
@@ -270,10 +266,6 @@ class HttpService {
                 }[]
             >(`/processes/${encodeURIComponent(processName)}/deployments`)
             .then((res) => res.data.filter(({ actionType }) => actionType === "DEPLOY").map(({ performedAt }) => performedAt));
-    }
-
-    fetchLastDeployedVersionId(processName: string) {
-        return api.get<LastDeployedVersionId>(`/processes/${encodeURIComponent(processName)}/lastDeployedVersionId`);
     }
 
     deploy(processName: string, comment?: string): Promise<{ isSuccess: boolean }> {
