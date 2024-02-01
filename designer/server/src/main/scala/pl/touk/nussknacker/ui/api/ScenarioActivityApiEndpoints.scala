@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.{BaseEndpointDefinitions, BusinessError}
+import pl.touk.nussknacker.restmodel.{BaseEndpointDefinitions, CustomAuthorizationError}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
   ProcessActivity => DbProcessActivity
 }
 import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
-import sttp.model.StatusCode.{NotFound, Ok}
+import sttp.model.StatusCode.{InternalServerError, NotFound, Ok}
 import sttp.model.{HeaderNames, MediaType}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -24,27 +24,14 @@ import java.time.Instant
 
 class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
+  import ScenarioActivityApiEndpoints.Dtos.ScenarioActivityErrors._
   import ScenarioActivityApiEndpoints.Dtos._
   import TapirCodecs.ContentDispositionCodec._
   import TapirCodecs.HeaderCodec._
   import TapirCodecs.ScenarioNameCodec._
   import TapirCodecs.VersionIdCodec._
-  import TapirCodecs.ErrorsCodecs._
 
-  private val scenarioNotFoundErrorOutput: EndpointOutput.OneOf[BusinessError, BusinessError] = oneOf[BusinessError](
-    oneOfVariantFromMatchType(
-      NotFound,
-      plainBody[BusinessError.ScenarioNotFoundError]
-        .example(
-          Example.of(
-            summary = Some("No scenario {scenarioName} found"),
-            value = BusinessError.ScenarioNotFoundError(ProcessName("'example scenario'"))
-          )
-        )
-    )
-  )
-
-  lazy val scenarioActivityEndpoint: SecuredEndpoint[ProcessName, BusinessError, ScenarioActivity, Any] =
+  lazy val scenarioActivityEndpoint: SecuredEndpoint[ProcessName, ScenarioActivityErrors, ScenarioActivity, Any] =
     baseNuApiEndpoint
       .summary("Scenario activity service")
       .tag("Scenario")
@@ -82,7 +69,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
-  lazy val addCommentEndpoint: SecuredEndpoint[AddCommentRequest, BusinessError, Unit, Any] =
+  lazy val addCommentEndpoint: SecuredEndpoint[AddCommentRequest, ScenarioActivityErrors, Unit, Any] =
     baseNuApiEndpoint
       .summary("Add scenario comment service")
       .tag("Scenario")
@@ -95,7 +82,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
-  lazy val deleteCommentEndpoint: SecuredEndpoint[DeleteCommentRequest, BusinessError, Unit, Any] =
+  lazy val deleteCommentEndpoint: SecuredEndpoint[DeleteCommentRequest, ScenarioActivityErrors, Unit, Any] =
     baseNuApiEndpoint
       .summary("Delete process comment service")
       .tag("Scenario")
@@ -105,12 +92,35 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
           / path[Long]("commentId")).mapTo[DeleteCommentRequest]
       )
       .out(statusCode(Ok))
-      .errorOut(scenarioNotFoundErrorOutput)
+      .errorOut(
+        oneOf[ScenarioActivityErrors](
+          oneOfVariantFromMatchType(
+            NotFound,
+            plainBody[NoScenario]
+              .example(
+                Example.of(
+                  summary = Some("No scenario {scenarioName} found"),
+                  value = NoScenario(ProcessName("'example scenario'"))
+                )
+              )
+          ),
+          oneOfVariantFromMatchType(
+            InternalServerError,
+            plainBody[NoComment]
+              .example(
+                Example.of(
+                  summary = Some("Unable to delete comment with id: {commentId}"),
+                  value = NoComment(1L)
+                )
+              )
+          )
+        )
+      )
       .withSecurity(auth)
 
   def addAttachmentEndpoint(
       implicit streamBodyEndpoint: EndpointInput[InputStream]
-  ): SecuredEndpoint[AddAttachmentRequest, BusinessError, Unit, Any] = {
+  ): SecuredEndpoint[AddAttachmentRequest, ScenarioActivityErrors, Unit, Any] = {
     baseNuApiEndpoint
       .summary("Add scenario attachment service")
       .tag("Scenario")
@@ -128,7 +138,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
 
   def downloadAttachmentEndpoint(
       implicit streamBodyEndpoint: EndpointOutput[InputStream]
-  ): SecuredEndpoint[GetAttachmentRequest, BusinessError, GetAttachmentResponse, Any] = {
+  ): SecuredEndpoint[GetAttachmentRequest, ScenarioActivityErrors, GetAttachmentResponse, Any] = {
     baseNuApiEndpoint
       .summary("Download attachment service")
       .tag("Scenario")
@@ -147,6 +157,20 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
   }
+
+  private lazy val scenarioNotFoundErrorOutput: EndpointOutput.OneOf[ScenarioActivityErrors, ScenarioActivityErrors] =
+    oneOf[ScenarioActivityErrors](
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[NoScenario]
+          .example(
+            Example.of(
+              summary = Some("No scenario {scenarioName} found"),
+              value = NoScenario(ProcessName("'example scenario'"))
+            )
+          )
+      )
+    )
 
 }
 
@@ -217,7 +241,7 @@ object ScenarioActivityApiEndpoints {
     final case class AddAttachmentRequest(
         scenarioName: ProcessName,
         versionId: VersionId,
-        streamBody: InputStream,
+        body: InputStream,
         fileName: FileName
     )
 
@@ -228,6 +252,27 @@ object ScenarioActivityApiEndpoints {
     object GetAttachmentResponse {
       val emptyResponse: GetAttachmentResponse =
         GetAttachmentResponse(InputStream.nullInputStream(), None, MediaType.TextPlainUtf8.toString())
+    }
+
+    sealed trait ScenarioActivityErrors
+
+    object ScenarioActivityErrors {
+      case class NoScenario(scenarioName: ProcessName) extends ScenarioActivityErrors
+      case object NoPermission                         extends ScenarioActivityErrors with CustomAuthorizationError
+      case class NoComment(commentId: Long)            extends ScenarioActivityErrors
+
+      implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
+        Codec.string.map(
+          Mapping.from[String, NoScenario](_ => ???)(e => s"No scenario ${e.scenarioName} found")
+        )
+      }
+
+      implicit val noCommentCodec: Codec[String, NoComment, CodecFormat.TextPlain] = {
+        Codec.string.map(
+          Mapping.from[String, NoComment](_ => ???)(e => s"Unable to delete comment with id: ${e.commentId}")
+        )
+      }
+
     }
 
   }

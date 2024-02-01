@@ -11,8 +11,6 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.restmodel.BusinessError.ScenarioNotFoundError
-import pl.touk.nussknacker.restmodel.NuException
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
@@ -96,7 +94,9 @@ object ProcessService {
 }
 
 trait ProcessService {
-  def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId]
+  def getProcessIdUnsafe(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId]
+
+  def getProcessId(scenarioName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]]
 
   def getLatestProcessWithDetails(processId: ProcessIdWithName, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
@@ -155,10 +155,13 @@ class DBProcessService(
     extends ProcessService
     with LazyLogging {
 
-  override def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId] = {
-    fetchingProcessRepository
-      .fetchProcessId(processName)
-      .map(_.getOrElse(throw NuException(ScenarioNotFoundError(processName))))
+  override def getProcessIdUnsafe(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId] = {
+    getProcessId(processName)
+      .map(_.getOrElse(throw ProcessNotFoundError(processName)))
+  }
+
+  override def getProcessId(scenarioName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]] = {
+    fetchingProcessRepository.fetchProcessId(scenarioName)
   }
 
   override def getLatestProcessWithDetails(

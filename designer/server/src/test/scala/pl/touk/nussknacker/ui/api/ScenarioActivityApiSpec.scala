@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, With
 
 import java.util.UUID
 
-class ScenarioActivitySpec
+class ScenarioActivityApiSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager

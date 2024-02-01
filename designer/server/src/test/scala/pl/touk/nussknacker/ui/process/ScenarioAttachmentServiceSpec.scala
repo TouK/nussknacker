@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.process
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
@@ -48,7 +48,7 @@ private object TestProcessActivityRepository extends ProcessActivityRepository {
       loggedUser: LoggedUser
   ): Future[Unit] = ???
 
-  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = ???
+  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Either[Exception, Unit]] = ???
 
   override def findActivity(processId: ProcessId)(
       implicit ec: ExecutionContext

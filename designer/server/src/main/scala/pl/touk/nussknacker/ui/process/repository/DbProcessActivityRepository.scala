@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.services.ScenarioAttachmentService.AttachmentToAdd
+import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
@@ -21,7 +21,7 @@ trait ProcessActivityRepository {
       loggedUser: LoggedUser
   ): Future[Unit]
 
-  def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit]
+  def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Either[Exception, Unit]]
   def findActivity(processId: ProcessId)(implicit ec: ExecutionContext): Future[ProcessActivity]
 
   def addAttachment(
@@ -47,15 +47,15 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef)
     run(newCommentAction(processId, processVersionId, Option(comment))).map(_ => ())
   }
 
-  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = {
+  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Either[Exception, Unit]] = {
     val commentToDelete = commentsTable.filter(_.id === commentId)
     val deleteAction    = commentToDelete.delete
-    run(deleteAction).flatMap { deletedRowsCount =>
+    run(deleteAction).map { deletedRowsCount =>
       logger.info(s"Tried to delete comment with id: $commentId. Deleted rows count: $deletedRowsCount")
       if (deletedRowsCount == 0) {
-        Future.failed(new RuntimeException(s"Unable to delete comment with id: $commentId"))
+        Left(new RuntimeException(s"Unable to delete comment with id: $commentId"))
       } else {
-        Future.successful(())
+        Right(())
       }
     }
   }

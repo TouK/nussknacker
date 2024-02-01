@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.services
 
+import cats.data.EitherT
 import com.typesafe.config.Config
+import pl.touk.nussknacker.restmodel.{CustomAuthorizationError, SecurityError}
 import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError}
-import pl.touk.nussknacker.restmodel.{BusinessError, NuException, SecurityError}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.services.BaseHttpService.NoRequirementServerEndpoint
@@ -72,23 +73,26 @@ abstract class BaseHttpService(
 
   protected def securityError[SE <: SecurityError](error: SE) = Left(Right(error))
 
-  private type PartialEndpoint[INPUT, OUTPUT, -R] =
-    PartialServerEndpoint[_, LoggedUser, INPUT, Either[BusinessError, SecurityError], OUTPUT, R, Future]
+  private type PartialEndpoint[INPUT, OUTPUT, BUSINESS_ERROR, -R] =
+    PartialServerEndpoint[_, LoggedUser, INPUT, Either[BUSINESS_ERROR, SecurityError], OUTPUT, R, Future]
 
-  implicit class ServerLogicExtension[INPUT, OUTPUT, -R](endpoint: PartialEndpoint[INPUT, OUTPUT, R]) {
+  implicit class ServerLogicExtension[INPUT, OUTPUT, BUSINESS_ERROR, -R](
+      endpoint: PartialEndpoint[INPUT, OUTPUT, BUSINESS_ERROR, R]
+  ) {
 
-    def serverLogicWithNuExceptionHandling(f: LoggedUser => INPUT => Future[OUTPUT]) =
+    def serverLogicEitherT(f: LoggedUser => INPUT => EitherT[Future, BUSINESS_ERROR, OUTPUT]) =
       endpoint.serverLogic { loggedUser: LoggedUser => input: INPUT =>
-        toTapirResponse(f(loggedUser)(input))
+        f(loggedUser)(input).value.map(toTapirResponse)
       }
 
-    private def toTapirResponse(result: Future[OUTPUT]): Future[LogicResult[BusinessError, OUTPUT]] = result
-      .map(success)
-      .recover { case NuException(nuError) =>
-        nuError match {
-          case error: SecurityError => securityError(error)
-          case error: BusinessError => businessError(error)
-        }
+    private def toTapirResponse(result: Either[BUSINESS_ERROR, OUTPUT]): LogicResult[BUSINESS_ERROR, OUTPUT] =
+      result match {
+        case Left(error) =>
+          error match {
+            case _: CustomAuthorizationError => securityError(AuthorizationError)
+            case e                           => businessError(e)
+          }
+        case Right(value) => success(value)
       }
 
   }

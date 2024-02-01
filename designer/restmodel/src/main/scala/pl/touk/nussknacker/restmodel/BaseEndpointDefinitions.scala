@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.restmodel
 
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.ToSecure
 import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.{Forbidden, Unauthorized}
@@ -87,24 +86,11 @@ object BaseEndpointDefinitions {
 
 }
 
-sealed trait NuError
-case class NuException(nuError: NuError) extends Exception
-
-sealed trait SecurityError extends NuError
+sealed trait SecurityError
 
 object SecurityError {
   case object AuthenticationError extends SecurityError
   case object AuthorizationError  extends SecurityError
 }
 
-sealed trait BusinessError extends NuError {
-  def message: String
-}
-
-object BusinessError {
-
-  case class ScenarioNotFoundError(scenarioName: ProcessName) extends BusinessError {
-    override def message: String = s"No scenario ${scenarioName.value} found"
-  }
-
-}
+trait CustomAuthorizationError

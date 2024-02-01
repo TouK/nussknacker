@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.server
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Source, StreamConverters}
@@ -13,12 +13,13 @@ import java.io.InputStream
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
-class AkkaToTapirStreamExtension(implicit val mat: Materializer) {
+trait TapirStreamEndpointProvider {
+  def mat: Materializer
 
-  val streamBodyEndpointInOut: StreamBodyWrapper[Source[ByteString, Any], InputStream] = StreamBodyWrapper(
+  lazy val streamBodyEndpointInOut: StreamBodyWrapper[Source[ByteString, Any], InputStream] = StreamBodyWrapper(
     StreamBodyIO(
       InputStreamStreams,
-      BinaryStreamCodec.codec,
+      BinaryStreamCodec.codec(mat),
       EndpointIO.Info.empty,
       None,
       Nil
