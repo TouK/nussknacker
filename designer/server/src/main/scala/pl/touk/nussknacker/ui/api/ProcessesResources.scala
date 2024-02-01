@@ -133,10 +133,10 @@ class ProcessesResources(
             processService.getProcessActions(processId.id)
           }
         }
-      } ~ path("processes" / ProcessNameSegment / "lastlyDeployedVersionId") { processName =>
+      } ~ path("processes" / ProcessNameSegment / "lastDeployedVersionId") { processName =>
         processId(processName) { processId =>
           complete {
-            processService.getLastlyDeployedVersionId(processId.id)
+            processService.getLastDeployedVersionId(processId.id)
           }
         }
       } ~ path("processes" / ProcessNameSegment) { processName =>

@@ -10,11 +10,11 @@ export async function resolveCustomActionDisplayability(displayPolicy: CustomAct
   switch(displayPolicy) {
     case CustomActionDisplayPolicy.CurrentlyViewedProcessVersionIsDeployed:
       try {
-        const response = await HttpService.fetchLastlyDeployedVersionId(processName);
+        const response = await HttpService.fetchLastDeployedVersionId(processName);
         const data = response.data;
         return data.versionId === processVersionId;
       } catch (error) {
-        console.error("Error while fetching lastly deployed version ID:", error);
+        console.error("Error while fetching last deployed version ID:", error);
         return false;
       }
     default:

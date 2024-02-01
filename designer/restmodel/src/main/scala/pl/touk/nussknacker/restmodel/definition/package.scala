@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment
-import pl.touk.nussknacker.engine.api.deployment.CustomAction
+import pl.touk.nussknacker.engine.api.deployment.{CurrentlyViewedProcessVersionIsDeployed, CustomAction}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -141,13 +141,8 @@ package object definition {
     def apply(action: CustomAction): UICustomAction = UICustomAction(
       name = action.name,
       allowedStateStatusNames = action.allowedStateStatusNames,
-      displayPolicy = action.displayPolicy match {
-        case Some(displayPolicy) =>
-          displayPolicy match {
-            case deployment.CurrentlyViewedProcessVersionIsDeployed =>
-              Some(UICustomActionDisplayPolicy.CurrentlyViewedProcessVersionIsDeployed)
-          }
-        case None => None
+      displayPolicy = action.displayPolicy.map { case CurrentlyViewedProcessVersionIsDeployed =>
+        UICustomActionDisplayPolicy.CurrentlyViewedProcessVersionIsDeployed
       },
       icon = action.icon,
       parameters = action.parameters.map(p => UICustomActionParameter(p.name, p.editor))
