@@ -3,12 +3,7 @@ import i18next from "i18next";
 import { SwitchTransition } from "react-transition-group";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
-import {
-  getScenario,
-  getProcessUnsavedNewName,
-  isProcessRenamed,
-  getProcessVersionId
-} from "../../../reducers/selectors/graph";
+import { getScenario, getProcessUnsavedNewName, isProcessRenamed, getProcessVersionId } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { getCustomActions } from "../../../reducers/selectors/settings";
 import { CssFade } from "../../CssFade";
@@ -34,8 +29,6 @@ const ProcessInfo = memo(({ id, buttonsVariant, children }: ToolbarPanelProps) =
     const processState = useSelector((state: RootState) => getProcessState(state));
     const customActions = useSelector((state: RootState) => getCustomActions(state));
     const versionId = useSelector(getProcessVersionId);
-
-    console.log(versionId);
 
     const description = ProcessStateUtils.getStateDescription(scenario, processState);
     const transitionKey = ProcessStateUtils.getTransitionKey(scenario, processState);
