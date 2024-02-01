@@ -15,7 +15,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { GridColumn } from "@glideapps/glide-data-grid/dist/ts/data-grid/data-grid-types";
 import ErrorBoundary from "../../../../../common/ErrorBoundary";
 import { Sizer } from "./Sizer";
-import { longestRow, transpose } from "./tableDataUtils";
+import { longestRow } from "./tableDataUtils";
 import { css } from "@emotion/css";
 import { useTypeOptions } from "../../../fragment-input-definition/FragmentInputDefinition";
 import { PopoverPosition } from "@mui/material/Popover/Popover";
@@ -98,21 +98,6 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
         });
     }, [defaultTypeOption.value, dispatch, columns.length, rows.length]);
 
-    const [additionalRows, hiddenAdditionalRows] = useMemo(() => {
-        const HEADER_FIELDS_COUNT = 3; // name, type, size
-        const columnsAsRows = columns.length
-            ? transpose(
-                  columns.map((e) => [e.name, e.type, e.size]),
-                  "",
-              )
-            : [];
-        const usedInHeaders = columnsAsRows.slice(0, HEADER_FIELDS_COUNT);
-        const visible = columnsAsRows.slice(HEADER_FIELDS_COUNT);
-        return [visible, usedInHeaders];
-    }, [columns]);
-
-    const tableRows = useMemo(() => [...additionalRows, ...rows], [additionalRows, rows]);
-
     const tableColumns = useMemo<GridColumn[]>(() => {
         return columns.map<GridColumn>(({ name, type = "", size }, i) => {
             const sizeValue = parseInt(size) || undefined;
@@ -131,44 +116,30 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
 
     const getCellContent = useCallback(
         ([col, row]: Item): GridCell => {
-            const value = tableRows[row]?.[col];
+            const value = rows[row]?.[col];
             return {
                 kind: GridCellKind.Text,
                 displayData: value ?? "",
                 data: value ?? "",
                 allowOverlay: true,
                 readonly: false,
-                themeOverride:
-                    row < additionalRows.length
-                        ? {
-                              textDark: tableTheme.accentColor,
-                          }
-                        : null,
             };
         },
-        [additionalRows.length, tableRows, tableTheme.accentColor],
+        [rows],
     );
 
     const onCellsEdited: DataEditorProps["onCellsEdited"] = useCallback(
         (newValues) => {
             dispatch({
                 type: ActionTypes.editData,
-                dataChanges: newValues
-                    .filter(({ location }) => location[1] >= additionalRows.length)
-                    .map(({ location, value }) => ({
-                        column: location[0],
-                        row: location[1] - additionalRows.length,
-                        value: value.data.toString(),
-                    })),
-                columnDataChanges: newValues
-                    .filter(({ location }) => location[1] < additionalRows.length)
-                    .map(({ location, value }) => ({
-                        column: location[0],
-                        value: { [location[1] + hiddenAdditionalRows.length]: value.data.toString() },
-                    })),
+                dataChanges: newValues.map(({ location, value }) => ({
+                    column: location[0],
+                    row: location[1],
+                    value: value.data.toString(),
+                })),
             });
         },
-        [additionalRows.length, dispatch, hiddenAdditionalRows.length],
+        [dispatch],
     );
 
     const onGroupHeaderRenamed: DataEditorProps["onGroupHeaderRenamed"] = useCallback(
@@ -209,12 +180,11 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
                 column,
                 input,
                 dataType: defaultTypeOption.value,
-                extraRowsCount: additionalRows.length,
             });
 
             return false;
         },
-        [defaultTypeOption.value, additionalRows.length, dispatch],
+        [dispatch, defaultTypeOption.value],
     );
 
     const appendRow = useCallback(() => {
@@ -393,7 +363,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
             >
                 <DataEditor
                     getRowThemeOverride={(row) => ({
-                        bgCell: row >= tableRows.length ? tableTheme.bgCellMedium : tableTheme.bgCell,
+                        bgCell: row >= rows.length ? tableTheme.bgCellMedium : tableTheme.bgCell,
                     })}
                     ref={ref}
                     className={overrideGroupRenameInput}
@@ -408,7 +378,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
                     rightElement={rightElement}
                     rowMarkers="clickable-number"
                     columnSelect="multi"
-                    rows={tableRows.length}
+                    rows={rows.length}
                     smoothScrollX
                     smoothScrollY
                     theme={tableTheme}
@@ -475,8 +445,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
                         onClick={(indexes) => {
                             dispatch({
                                 type: ActionTypes.deleteRows,
-                                rows: indexes.map((i) => i - additionalRows.length),
-                                columnData: indexes.map((i) => i + hiddenAdditionalRows.length),
+                                rows: indexes,
                             });
                             clearSelection();
                             closeCellMenu();
