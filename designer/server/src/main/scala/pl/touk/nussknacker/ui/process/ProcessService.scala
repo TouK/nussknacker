@@ -133,6 +133,7 @@ trait ProcessService {
   ): Future[ScenarioGraphWithValidationResult]
 
   def getProcessActions(id: ProcessId): Future[List[ProcessAction]]
+
 }
 
 /**
