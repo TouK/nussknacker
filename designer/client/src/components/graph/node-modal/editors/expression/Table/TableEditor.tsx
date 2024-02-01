@@ -1,4 +1,4 @@
-import { ExtendedEditor } from "../Editor";
+import { EditorProps, ExtendedEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import DataEditor, {
     CompactSelection,
@@ -20,6 +20,7 @@ import { css } from "@emotion/css";
 import { useTypeOptions } from "../../../fragment-input-definition/FragmentInputDefinition";
 import { PopoverPosition } from "@mui/material/Popover/Popover";
 import { DataEditorRef } from "@glideapps/glide-data-grid/dist/ts/data-editor/data-editor";
+import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { ActionTypes, useTableState } from "./tableState";
 import { TypesMenu } from "./TypesMenu";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
@@ -56,8 +57,9 @@ const RightElement = ({ onColumnAppend }: { onColumnAppend: () => void }) => {
                     borderBottom: `1px solid ${tableTheme.borderColor}`,
                     transition: "background-color 200ms",
                     cursor: "pointer",
-                    "&:hover": {
+                    "&:hover, &:focus": {
                         backgroundColor: tableTheme.bgHeaderHovered,
+                        color: tableTheme.bgIconHeader,
                     },
                 },
             }}
@@ -68,13 +70,13 @@ const RightElement = ({ onColumnAppend }: { onColumnAppend: () => void }) => {
                     onColumnAppend();
                 }}
             >
-                +
+                <span>+</span>
             </button>
         </Box>
     );
 };
 
-export const TableEditor: ExtendedEditor = ({ expressionObj, onValueChange }) => {
+export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorProps, "fieldErrors" | "showValidation">) => {
     const tableDateContext = useTableState(expressionObj);
     const [{ rows, columns }, dispatch, rawExpression] = tableDateContext;
 
@@ -364,11 +366,12 @@ export const TableEditor: ExtendedEditor = ({ expressionObj, onValueChange }) =>
     const rightElement = useMemo<DataEditorProps["rightElement"]>(() => <RightElement onColumnAppend={onColumnAppend} />, [onColumnAppend]);
 
     return (
-        <ErrorBoundary>
+        <>
             <Sizer
                 offsetParent={`[data-testid="window"] section`}
                 overflowY={overflowY}
                 data-testid="table-container"
+                className={className}
                 sx={{
                     border: "1px solid",
                     borderColor: tableTheme.borderColor,
@@ -467,11 +470,22 @@ export const TableEditor: ExtendedEditor = ({ expressionObj, onValueChange }) =>
                     />
                 ) : null}
             </CellMenu>
-        </ErrorBoundary>
+        </>
     );
 };
 
-TableEditor.isSwitchableTo = (expressionObj, editorConfig) => true;
+export const TableEditor: ExtendedEditor = ({ showValidation, fieldErrors, ...props }: EditorProps) => {
+    return (
+        <>
+            <ErrorBoundary>
+                <Table {...props} />
+            </ErrorBoundary>
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
+        </>
+    );
+};
+
+TableEditor.isSwitchableTo = () => true; // TODO: implement
 TableEditor.switchableToHint = () => i18next.t("editors.table.switchableToHint", "Switch to table mode");
 TableEditor.notSwitchableToHint = () =>
     i18next.t("editors.table.notSwitchableToHint", "Expression must match schema to switch to table mode");

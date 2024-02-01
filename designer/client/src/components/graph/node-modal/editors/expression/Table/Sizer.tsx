@@ -5,26 +5,23 @@ import { BoxProps } from "@mui/material/Box/Box";
 
 type SizerProps = BoxProps & {
     overflowY?: boolean;
-    offsetParent?: string | ((el?: HTMLElement) => HTMLElement);
+    offsetParent?: null | string | ((el?: HTMLElement) => HTMLElement);
 };
 
 const getOffsetParent: (el?: HTMLElement) => HTMLElement = (el?: HTMLElement): HTMLElement => {
     return el?.offsetParent as HTMLElement;
 };
 
-export function Sizer({ overflowY, offsetParent = getOffsetParent, ...props }: SizerProps) {
-    const { observe, height } = useSize();
+export function Sizer({ overflowY, offsetParent, ...props }: SizerProps) {
+    const { observe, height, unobserve } = useSize();
     const refCallback = useCallback(
         (instance?: HTMLElement) => {
-            let el: HTMLElement;
-            if (typeof offsetParent === "string") {
-                el = document.querySelector(offsetParent);
-            } else {
-                el = offsetParent(instance);
-            }
-            observe(el);
+            unobserve();
+            if (!offsetParent) return observe(getOffsetParent(instance));
+            if (typeof offsetParent === "function") return observe(offsetParent(instance));
+            observe(document.querySelector(offsetParent));
         },
-        [observe, offsetParent],
+        [observe, offsetParent, unobserve],
     );
 
     return (
