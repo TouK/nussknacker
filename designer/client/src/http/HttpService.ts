@@ -268,6 +268,12 @@ class HttpService {
             .then((res) => res.data.filter(({ actionType }) => actionType === "DEPLOY").map(({ performedAt }) => performedAt));
     }
 
+    fetchLastlyDeployedVersionId(processName: string) {
+        return api.get<{
+            versionId: number | null;
+        }>(`/processes/${encodeURIComponent(processName)}/lastlyDeployedVersionId`);
+    }
+
     deploy(processName: string, comment?: string): Promise<{ isSuccess: boolean }> {
         return api
             .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)

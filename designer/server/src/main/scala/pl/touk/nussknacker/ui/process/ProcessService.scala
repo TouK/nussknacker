@@ -91,6 +91,7 @@ object ProcessService {
     case class ValidateAndResolve(includeValidationNodeResults: Boolean = true) extends ValidationMode
   }
 
+  @JsonCodec case class GetLastlyDeployedVersionId(versionId: Option[Long])
 }
 
 trait ProcessService {
@@ -134,6 +135,7 @@ trait ProcessService {
 
   def getProcessActions(id: ProcessId): Future[List[ProcessAction]]
 
+  def getLastlyDeployedVersionId(id: ProcessId): Future[GetLastlyDeployedVersionId]
 }
 
 /**
@@ -496,5 +498,20 @@ class DBProcessService(
       case None =>
         throw ProcessValidationError("Scenario category not found.")
     }
+
+  override def getLastlyDeployedVersionId(id: ProcessId): Future[GetLastlyDeployedVersionId] = {
+    // actions are sorted by timestamp in DESC order, thanks to that the optimalization below works
+    val maybeLastProcessActionsDB = processActionRepository.getFinishedProcessActions(id, None).map(_.headOption)
+    val lastlyDeployedVersionIdDB = maybeLastProcessActionsDB
+      .map(_.flatMap {
+        case ProcessAction(_, _, processVersionId, _, _, _, ProcessActionType.Deploy, _, _, _, _, _) =>
+          Some(processVersionId.value)
+        case _ =>
+          None
+      })
+      .map(GetLastlyDeployedVersionId)
+
+    dbioRunner.runInTransaction(lastlyDeployedVersionIdDB)
+  }
 
 }
