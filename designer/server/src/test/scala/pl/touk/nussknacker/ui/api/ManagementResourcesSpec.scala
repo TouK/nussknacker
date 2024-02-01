@@ -96,7 +96,9 @@ class ManagementResourcesSpec
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       deployProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
-        responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy, processName).message
+        responseAs[String] shouldBe ProcessIllegalAction
+          .archived(ProcessActionType.Deploy.toString, processName)
+          .message
       }
     }
   }
@@ -106,7 +108,7 @@ class ManagementResourcesSpec
 
     deployProcess(processName) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processName).message
+      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy.toString, processName).message
     }
   }
 
@@ -115,7 +117,7 @@ class ManagementResourcesSpec
 
     deployProcess(processName) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processName).message
+      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy.toString, processName).message
     }
   }
 
@@ -422,10 +424,7 @@ class ManagementResourcesSpec
     createEmptyProcess(ProcessTestData.sampleProcessName)
     customAction(ProcessTestData.sampleProcessName, CustomActionRequest("non-existing")) ~> check {
       status shouldBe StatusCodes.NotFound
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(
-        isSuccess = false,
-        msg = "non-existing is not existing"
-      )
+      responseAs[String] shouldBe "non-existing is not existing"
     }
   }
 
@@ -433,35 +432,32 @@ class ManagementResourcesSpec
     createEmptyProcess(ProcessTestData.sampleProcessName)
     customAction(ProcessTestData.sampleProcessName, CustomActionRequest("not-implemented")) ~> check {
       status shouldBe StatusCodes.NotImplemented
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(
-        isSuccess = false,
-        msg = "not-implemented is not implemented"
-      )
+      responseAs[String] shouldBe "an implementation is missing"
     }
   }
 
   test("execute custom action with not allowed process status") {
     createEmptyProcess(ProcessTestData.sampleProcessName)
     customAction(ProcessTestData.sampleProcessName, CustomActionRequest("invalid-status")) ~> check {
-      status shouldBe StatusCodes.Forbidden
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(
-        isSuccess = false,
-        msg = s"Scenario status: NOT_DEPLOYED is not allowed for action invalid-status"
-      )
+      // TODO: "conflict" is coherrent with "canceled process can't be canceled again" above, consider changing to Forbidden
+      status shouldBe StatusCodes.Conflict
+      responseAs[String] shouldBe "Action: invalid-status is not allowed in scenario (fooProcess) state: NOT_DEPLOYED, allowed actions: hello,not-implemented."
     }
   }
 
   test("should return 403 when execute custom action on archived process") {
     createArchivedProcess(ProcessTestData.sampleProcessName)
     customAction(ProcessTestData.sampleProcessName, CustomActionRequest("hello")) ~> check {
-      status shouldBe StatusCodes.Forbidden
+      // TODO: "conflict" is coherrent with "can't deploy fragment" above, consider changing to Forbidden
+      status shouldBe StatusCodes.Conflict
     }
   }
 
   test("should return 403 when execute custom action on fragment") {
     createEmptyProcess(ProcessTestData.sampleProcessName, isFragment = true)
     customAction(ProcessTestData.sampleProcessName, CustomActionRequest("hello")) ~> check {
-      status shouldBe StatusCodes.Forbidden
+      // TODO: "conflict" is coherrent with "can't deploy fragment" above, consider changing to Forbidden
+      status shouldBe StatusCodes.Conflict
     }
   }
 

@@ -34,30 +34,6 @@ case class CustomActionRequest(name: String, processVersion: ProcessVersion, use
 
 case class CustomActionResult(req: CustomActionRequest, msg: String)
 
-sealed trait CustomActionError extends Exception {
-  def request: CustomActionRequest
-
-  def msg: String
-
-  override def getMessage: String = msg
-}
-
-case class CustomActionFailure(request: CustomActionRequest, msg: String) extends CustomActionError
-
-case class CustomActionInvalidStatus(request: CustomActionRequest, stateStatusName: String) extends CustomActionError {
-  override val msg: String = s"Scenario status: $stateStatusName is not allowed for action ${request.name}"
-}
-
-case class CustomActionNotImplemented(request: CustomActionRequest) extends CustomActionError {
-  override val msg: String = s"${request.name} is not implemented"
-}
-
-case class CustomActionNonExisting(request: CustomActionRequest) extends CustomActionError {
-  override val msg: String = s"${request.name} is not existing"
-}
-
-case class CustomActionForbidden(request: CustomActionRequest, msg: String) extends CustomActionError
-
 sealed trait CustomActionDisplayPolicy
 
 // TODO: Add more

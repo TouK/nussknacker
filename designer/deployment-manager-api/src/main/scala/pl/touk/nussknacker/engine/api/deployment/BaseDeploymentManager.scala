@@ -34,7 +34,7 @@ trait BaseDeploymentManager extends DeploymentManager with AlwaysFreshProcessSta
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
+  ): Future[CustomActionResult] =
+    Future.failed(new NotImplementedError())
 
 }

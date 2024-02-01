@@ -57,6 +57,10 @@ object typing {
     def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
       Typed.record(fields)
 
+    // For backward compatibility, to be removed once downstream projects switch to apply(fields: Map[String, TypingResult])
+    // TODO: remove this after NU-1432 will be done
+    def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult = Typed.record(fields.toMap)
+
   }
 
   // TODO: Rename to TypedRecord
