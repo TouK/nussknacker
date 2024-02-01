@@ -70,7 +70,7 @@ export enum EditorType {
     JSON_PARAMETER_EDITOR = "JsonParameterEditor",
     SQL_PARAMETER_EDITOR = "SqlParameterEditor",
     SPEL_TEMPLATE_PARAMETER_EDITOR = "SpelTemplateParameterEditor",
-    TABLE_EDITOR = "TableEditor",
+    TABLE_EDITOR = "TabularTypedDataEditor",
 }
 
 export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {

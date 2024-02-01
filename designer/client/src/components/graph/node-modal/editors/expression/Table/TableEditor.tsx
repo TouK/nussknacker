@@ -100,7 +100,12 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
 
     const [additionalRows, hiddenAdditionalRows] = useMemo(() => {
         const HEADER_FIELDS_COUNT = 3; // name, type, size
-        const columnsAsRows = columns.length ? transpose(columns, "") : [];
+        const columnsAsRows = columns.length
+            ? transpose(
+                  columns.map((e) => [e.name, e.type, e.size]),
+                  "",
+              )
+            : [];
         const usedInHeaders = columnsAsRows.slice(0, HEADER_FIELDS_COUNT);
         const visible = columnsAsRows.slice(HEADER_FIELDS_COUNT);
         return [visible, usedInHeaders];
@@ -109,7 +114,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
     const tableRows = useMemo(() => [...additionalRows, ...rows], [additionalRows, rows]);
 
     const tableColumns = useMemo<GridColumn[]>(() => {
-        return columns.map<GridColumn>(([name, type = "", size], i) => {
+        return columns.map<GridColumn>(({ name, type = "", size }, i) => {
             const sizeValue = parseInt(size) || undefined;
             return {
                 id: `${i}`,
@@ -159,8 +164,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
                     .filter(({ location }) => location[1] < additionalRows.length)
                     .map(({ location, value }) => ({
                         column: location[0],
-                        index: location[1] + hiddenAdditionalRows.length,
-                        value: value.data.toString(),
+                        value: { [location[1] + hiddenAdditionalRows.length]: value.data.toString() },
                     })),
             });
         },
@@ -223,7 +227,10 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
 
     const overflowY = false;
 
-    const [typesMenuData, setTypesMenuData] = React.useState<{ position: PopoverPosition | null; column?: number }>({ position: null });
+    const [typesMenuData, setTypesMenuData] = React.useState<{
+        position: PopoverPosition | null;
+        column?: number;
+    }>({ position: null });
     const openTypeMenu = useCallback((colIndex: number, bounds: Rectangle) => {
         const { x, y, width, height } = bounds;
         setTypesMenuData({
@@ -235,7 +242,11 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
         });
     }, []);
 
-    const [cellMenuData, setCellMenuData] = React.useState<{ position: PopoverPosition | null; column?: number; row?: number }>({
+    const [cellMenuData, setCellMenuData] = React.useState<{
+        position: PopoverPosition | null;
+        column?: number;
+        row?: number;
+    }>({
         position: null,
     });
     const onHeaderContextMenu = useCallback((colIndex: number, event: HeaderClickedEventArgs | GroupHeaderClickedEventArgs) => {
@@ -283,7 +294,10 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
     }, [columns.length, defaultTypeOption.value, dispatch]);
 
     const closeCellMenu = () => {
-        setCellMenuData((current) => ({ ...current, position: null }));
+        setCellMenuData((current) => ({
+            ...current,
+            position: null,
+        }));
     };
 
     const overrideGroupRenameInput = css({
@@ -419,7 +433,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
             <CellMenu anchorPosition={cellMenuData?.position} onClose={closeCellMenu}>
                 {cellMenuData?.column >= 0 && cellMenuData?.row < 0 ? (
                     <ResetColumnWidthMenuItem
-                        disabled={!columns[cellMenuData.column][2]}
+                        disabled={!columns[cellMenuData.column]?.size}
                         indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
                         onClick={(indexes) => {
                             dispatch({
