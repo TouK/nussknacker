@@ -57,8 +57,8 @@ class UIProcessValidator(
   ): ValidationResult = {
     val uiValidationResult = uiValidation(scenarioGraph, processName, isFragment)
 
-    // there is no point in further validations if ui process structure is invalid
-    // scenarioGraph to canonical conversion for invalid ui process structure can have unexpected results
+    // TODO: Enable further validation when save is not allowed
+    // The problem preventing further validation is that loose nodes and their children are skipped during conversion
     if (uiValidationResult.saveAllowed) {
       val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName)
       // The deduplication is needed for errors that are validated on both uiValidation for DisplayableProcess and

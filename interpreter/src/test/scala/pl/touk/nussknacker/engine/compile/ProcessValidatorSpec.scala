@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   CustomComponentSpecificData
@@ -29,6 +30,7 @@ import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
@@ -1599,6 +1601,36 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     withUsed should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable(`usedVarName`, "sample-out", Some(`errorFieldName`)), Nil)) =>
+    }
+  }
+
+  // This tests an artificial canonical process which cannot be created through conversion from ScenarioGraph because of
+  // skipping loose nodes and empty main branch
+  test("should return merged graph structure errors of different types") {
+    val variableName1 = "variable1"
+    val variableName2 = "variable2"
+    val sourceName1   = "source1"
+    val sourceName2   = "source2"
+    val metaData      = MetaData("scenario1", StreamMetaData())
+    val scenarioWith =
+      CanonicalProcess(
+        metaData,
+        List(),
+        List(
+          List(FlatNode(Variable(variableName1, "varName", "'str'"))),
+          List(FlatNode(Variable(variableName2, "varName", "'str'"))),
+          List(FlatNode(Source(sourceName1, SourceRef("source", List())))),
+          List(FlatNode(Source(sourceName2, SourceRef("source", List())))),
+        )
+      )
+
+    inside(validate(scenarioWith, baseDefinition).result) { case Invalid(errors) =>
+      errors.toList should contain theSameElementsAs
+        List(
+          InvalidRootNode(Set(variableName1, variableName2)),
+          InvalidTailOfBranch(Set(sourceName1, sourceName2)),
+          EmptyProcess
+        )
     }
   }
 
