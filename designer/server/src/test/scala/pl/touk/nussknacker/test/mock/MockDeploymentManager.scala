@@ -221,9 +221,15 @@ class MockDeploymentManager(
   override def customActions: List[CustomAction] = {
     import SimpleStateStatus._
     List(
-      CustomAction(name = "hello", allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)),
-      CustomAction(name = "not-implemented", allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)),
-      CustomAction(name = "invalid-status", allowedStateStatusNames = Nil)
+      CustomAction(
+        name = ActionName("hello"),
+        allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
+      ),
+      CustomAction(
+        name = ActionName("not-implemented"),
+        allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
+      ),
+      CustomAction(name = ActionName("invalid-status"), allowedStateStatusNames = Nil)
     )
   }
 
@@ -231,7 +237,7 @@ class MockDeploymentManager(
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
   ): Future[CustomActionResult] =
-    actionRequest.name match {
+    actionRequest.name.value match {
       case "hello" | "invalid-status" => Future.successful(CustomActionResult(actionRequest, "Hi"))
       case _                          => Future.failed(new NotImplementedError())
     }

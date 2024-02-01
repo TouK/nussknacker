@@ -312,7 +312,7 @@ class ManagementResources(
               val params = req.params.getOrElse(Map.empty)
               complete {
                 deploymentService
-                  .invokeCustomAction(req.actionName, process, params)
+                  .invokeCustomAction(ActionName(req.actionName), process, params)
                   .flatMap(actionResult => toHttpResponse(CustomActionResponse(actionResult))(StatusCodes.OK))
               }
             }

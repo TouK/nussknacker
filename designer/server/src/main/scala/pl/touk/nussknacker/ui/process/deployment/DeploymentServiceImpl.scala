@@ -164,7 +164,7 @@ class DeploymentServiceImpl(
     for {
       processDetailsOpt <- dbioRunner.run(processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id))
       processDetails    <- dbioRunner.run(existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name)))
-      _                          = checkIfCanPerformActionOnProcess(actionType.toString, processDetails)
+      _                          = checkIfCanPerformActionOnProcess(ActionName(actionType), processDetails)
       versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
       buildInfoProcessIngType    = getBuildInfoProcessingType(processDetails)
       // We wrap only in progress action adding to avoid long transactions and potential deadlocks
@@ -201,7 +201,7 @@ class DeploymentServiceImpl(
   }
 
   private def checkIfCanPerformActionOnProcess[PS: ScenarioShapeFetchStrategy](
-      actionName: String,
+      actionName: ActionName,
       processDetails: ScenarioWithDetailsEntity[PS]
   ): Unit = {
     if (processDetails.isArchived) {
@@ -218,7 +218,7 @@ class DeploymentServiceImpl(
   ): Unit = {
     if (!ps.allowedActions.contains(actionType)) {
       logger.debug(s"Action: $actionType on process: ${processDetails.name} not allowed in ${ps.status} state")
-      throw ProcessIllegalAction(actionType.toString, processDetails.name, ps)
+      throw ProcessIllegalAction(ActionName(actionType), processDetails.name, ps)
     }
   }
 
@@ -538,7 +538,7 @@ class DeploymentServiceImpl(
   //       - see those actions in the actions table
   //       - send notifications about finished/failed custom actions
   override def invokeCustomAction(
-      actionName: String,
+      actionName: ActionName,
       processIdWithName: ProcessIdWithName,
       params: Map[String, String]
   )(
@@ -572,7 +572,7 @@ class DeploymentServiceImpl(
   }
 
   private def checkIfCanPerformCustomActionInState[PS: ScenarioShapeFetchStrategy](
-      actionName: String,
+      actionName: ActionName,
       processDetails: ScenarioWithDetailsEntity[PS],
       ps: ProcessState,
       manager: DeploymentManager
@@ -581,7 +581,7 @@ class DeploymentServiceImpl(
       case a if a.allowedStateStatusNames.contains(ps.status.name) => a.name
     }.distinct
     if (!allowedActionsForStatus.contains(actionName)) {
-      logger.debug(s"Action: $actionName on process: ${processDetails.name} not allowed in ${ps.status} state")
+      logger.debug(s"Action: ${actionName.value} on process: ${processDetails.name} not allowed in ${ps.status} state")
       throw ProcessIllegalAction(actionName, processDetails.name, ps.status.name, allowedActionsForStatus)
     }
   }
@@ -591,4 +591,4 @@ class DeploymentServiceImpl(
 private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")
 
 private case class CustomActionNonExisting(req: CustomActionRequest)
-    extends NotFoundError(s"${req.name} is not existing")
+    extends NotFoundError(s"${req.name.value} is not existing")

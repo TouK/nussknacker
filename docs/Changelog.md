@@ -39,6 +39,8 @@
   * Added authorization check for listing activities and downloading attachments in scenario activity API
   * Fixed the ability to download an unrelated attachment from a given scenario
 * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) Scenario status caching more often
+* [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
+    * Introduced value class that represents name of the action for both primary deploy/cancel and custom actions.
 
 1.13.1 (Not released yet)
 ------------------------

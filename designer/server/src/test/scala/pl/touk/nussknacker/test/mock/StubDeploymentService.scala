@@ -60,7 +60,7 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   ): Future[F[ScenarioWithDetails]] = Future.successful(processTraverse)
 
   override def invokeCustomAction(
-      actionName: String,
+      actionName: ActionName,
       processIdWithName: ProcessIdWithName,
       params: Map[String, String]
   )(

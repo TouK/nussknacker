@@ -18,6 +18,7 @@ import java.util.UUID
     createdAt: Instant,
     // We use process action only for finished/execution finished actions so performedAt is always defined
     performedAt: Instant,
+    // TODO: switch ProcessActionType to ActionName
     actionType: ProcessActionType,
     state: ProcessActionState,
     failureMessage: Option[String],
@@ -67,4 +68,12 @@ object ProcessActionState extends Enumeration {
   val ExecutionFinished: Value = Value("EXECUTION_FINISHED")
 
   val FinishedStates: Set[ProcessActionState] = Set(Finished, ExecutionFinished)
+}
+
+final case class ActionName(value: String) extends AnyVal
+
+object ActionName {
+  // TODO: Temporary action type to name mapping to handle alignment of ProcessAction and CustomAction.
+  //   Probably obsolete when a consistent api is introduced.
+  def apply(actionType: ProcessActionType): ActionName = new ActionName(actionType.toString)
 }

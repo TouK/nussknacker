@@ -133,7 +133,7 @@ package object definition {
   object UICustomAction {
 
     def apply(action: CustomAction): UICustomAction = UICustomAction(
-      name = action.name,
+      name = action.name.value,
       allowedStateStatusNames = action.allowedStateStatusNames,
       icon = action.icon,
       parameters = action.parameters.map(p => UICustomActionParameter(p.name, p.editor))

@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ActionName, ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -98,7 +98,7 @@ class ManagementResourcesSpec
       deployProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
         responseAs[String] shouldBe ProcessIllegalAction
-          .archived(ProcessActionType.Deploy.toString, processName)
+          .archived(ActionName(ProcessActionType.Deploy), processName)
           .message
       }
     }
@@ -109,7 +109,9 @@ class ManagementResourcesSpec
 
     deployProcess(processName) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy.toString, processName).message
+      responseAs[String] shouldBe ProcessIllegalAction
+        .fragment(ActionName(ProcessActionType.Deploy), processName)
+        .message
     }
   }
 
@@ -118,7 +120,9 @@ class ManagementResourcesSpec
 
     deployProcess(processName) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy.toString, processName).message
+      responseAs[String] shouldBe ProcessIllegalAction
+        .fragment(ActionName(ProcessActionType.Deploy), processName)
+        .message
     }
   }
 

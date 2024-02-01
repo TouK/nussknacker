@@ -9,7 +9,7 @@ import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ActionName, DataFreshnessPolicy, ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -457,7 +457,7 @@ class DBProcessService(
         if (state.allowedActions.contains(actionToCheck)) {
           callback
         } else {
-          throw ProcessIllegalAction(actionToCheck.toString, process.name, state)
+          throw ProcessIllegalAction(ActionName(actionToCheck), process.name, state)
         }
       })
   }
@@ -515,7 +515,7 @@ class DBProcessService(
   )(implicit user: LoggedUser): Future[T] =
     getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
-        throw ProcessIllegalAction.archived(action.toString, process.name)
+        throw ProcessIllegalAction.archived(ActionName(action), process.name)
       } else {
         callback(process)
       }
