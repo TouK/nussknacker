@@ -128,6 +128,19 @@ const custom = {
     },
 };
 
+const fontFamily = [
+    "Inter",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    '"Segoe UI"',
+    '"Helvetica Neue"',
+    "Arial",
+    "sans-serif",
+    '"Apple Color Emoji"',
+    '"Segoe UI Emoji"',
+    '"Segoe UI Symbol"',
+].join(",");
+
 const globalStyles = (theme: Theme) => ({
     "html, body": {
         margin: 0,
@@ -140,6 +153,7 @@ const globalStyles = (theme: Theme) => ({
         letterSpacing: "unset",
         WebkitFontSmoothing: "initial",
         lineHeight: 1.428571429,
+        fontFamily,
     },
     "input, button, select, textarea": {
         fontFamily: "inherit",
@@ -269,6 +283,7 @@ export const nuTheme = createTheme({
         },
     },
     typography: {
+        fontFamily,
         h1: { ...headerCommonStyle },
         h2: { ...headerCommonStyle },
         h3: { ...headerCommonStyle },
