@@ -80,12 +80,12 @@ trait AnonymousAccess extends Directives {
       anonymousUser: AuthenticatedUser
   ): Future[Option[AuthenticatedUser]] = {
     authenticateReally(authCredentials)
-      .map {
-        case Some(loggedUser) =>
-          Some(loggedUser)
-        case None =>
-          Some(anonymousUser)
-      }
+//      .map {
+//        case Some(loggedUser) =>
+//          Some(loggedUser)
+//        case None =>
+//          Some(anonymousUser)
+//      }
   }
 
   def authenticate(): Directive1[AuthenticatedUser] = {
