@@ -13,12 +13,22 @@ const parseWithDefault =
         }
     };
 
-export const parsers: Record<string, (expression: string, emptyValue?: TableData) => TableData> = {
-    [ExpressionLang.JSON]: parseWithDefault(JSON.parse),
+export const getParser = (language: ExpressionLang | string): ((expression: string, emptyValue?: TableData) => TableData) => {
+    switch (language) {
+        case ExpressionLang.JSON:
+        case ExpressionLang.TabularDataDefinition:
+            return parseWithDefault(JSON.parse);
+    }
+    throw `No parser for ${language} found!`;
 };
 
-export const stringifiers: Record<string, (data: TableData) => string> = {
-    [ExpressionLang.JSON]: (data) => JSON.stringify(data, null, 2),
+export const getStringifier: (language: ExpressionLang | string) => (data: TableData) => string = (language: ExpressionLang | string) => {
+    switch (language) {
+        case ExpressionLang.JSON:
+        case ExpressionLang.TabularDataDefinition:
+            return (data) => JSON.stringify(data, null, 2);
+    }
+    throw `No stringifier for ${language} found!`;
 };
 
 type MatrixElement<M> = M extends Matrix<infer T> ? T : never;

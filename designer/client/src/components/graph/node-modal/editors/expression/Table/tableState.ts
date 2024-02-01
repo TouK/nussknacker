@@ -1,14 +1,18 @@
 import { Dispatch, useEffect, useMemo, useReducer, useState } from "react";
-import { getNextColumnName, longestRow, parsers, stringifiers } from "./tableDataUtils";
+import { getNextColumnName, getParser, getStringifier, longestRow } from "./tableDataUtils";
 import { TaggedUnion } from "type-fest";
 import { ExpressionObj } from "../types";
 
-export type DataColumn = string[];
+export type DataColumn = {
+    name: string;
+    type: string;
+    size?: string;
+};
 export type DataRow = string[];
 
 export type TableData = {
     columns: DataColumn[];
-    rows: DataColumn[];
+    rows: DataRow[];
 };
 
 const emptyValue: TableData = {
@@ -46,8 +50,7 @@ type Actions = {
         }[];
         columnDataChanges?: {
             column: number;
-            index: number;
-            value: string;
+            value: Partial<DataColumn>;
         }[];
     };
     [ActionTypes.insertData]: {
@@ -83,45 +86,54 @@ type Actions = {
 
 type Action = TaggedUnion<"type", Actions>;
 
-export function expandTable(state: TableData, rowsNum: number, colsNum: number, dataType?: string) {
-    if (colsNum || rowsNum) {
-        const newCols = Array.from({ length: colsNum }, (_, i) => [
-            getNextColumnName(
-                state.columns.map(([c]) => c),
-                state.columns.length + i,
-            ),
-            dataType,
-        ]);
-        const newRows = Array.from({ length: rowsNum }, () => []);
-        return {
-            columns: [...state.columns, ...newCols],
-            rows: [...state.rows, ...newRows],
-        };
+function expandArray<T>(array: T[], length: number, fill?: (i: number) => T): T[] {
+    if (length <= 0) {
+        return array;
     }
-    return state;
+    const newValues = Array.from({ length }, (_, i: number) => fill?.(array.length + i));
+    return [...array, ...newValues];
+}
+
+export function expandTable(state: TableData, rowsNum = 0, colsNum = 0, dataType?: string): TableData {
+    if (rowsNum <= 0 && colsNum <= 0) {
+        return state;
+    }
+
+    const currentNames = state.columns.map(({ name }) => name);
+    const columns = expandArray(state.columns, colsNum, (i) => {
+        return {
+            name: getNextColumnName(currentNames, i),
+            type: dataType,
+        };
+    });
+
+    const rows = expandArray(state.rows, rowsNum).map((r = []) => {
+        return expandArray(r, columns.length - r.length, () => null);
+    });
+
+    return { columns, rows };
 }
 
 function reducer(state: TableData, action: Action): TableData {
     switch (action.type) {
         case ActionTypes.insertData: {
-            const longestColumnLength = longestRow(state.columns).length;
-            const extraRowsCount = action.extraRowsCount || 0;
-            const newRowsNeeded = action.row + action.input.length - (extraRowsCount + state.rows.length);
+            const newRowsNeeded = action.row + action.input.length - state.rows.length;
             const newColsNeeded = action.column + longestRow(action.input).length - state.columns.length;
             const updatedData = expandTable(state, newRowsNeeded, newColsNeeded, action.dataType);
 
+            const rows = updatedData.rows.slice();
             action.input.forEach((columns, y) => {
                 columns.forEach((value, x) => {
-                    const currentRow = action.row + y - extraRowsCount;
+                    const currentRow = action.row + y;
                     if (currentRow >= 0) {
-                        updatedData.rows[currentRow][action.column + x] = value;
-                    } else {
-                        updatedData.columns[action.column + x][longestColumnLength + currentRow] = value;
+                        const row = rows[currentRow].slice();
+                        row[action.column + x] = value;
+                        rows[currentRow] = row;
                     }
                 });
             });
 
-            return updatedData;
+            return { ...updatedData, rows };
         }
         case ActionTypes.editData:
             return {
@@ -131,20 +143,19 @@ function reducer(state: TableData, action: Action): TableData {
                     rows[row][column] = value;
                     return [...rows];
                 }, state.rows),
-                columns: action.columnDataChanges.reduce((columns, { column, index, value }) => {
-                    columns[column] = columns[column] || [];
-                    columns[column][index] = value;
+                columns: action.columnDataChanges.reduce((columns, { column, value }) => {
+                    columns[column] = { ...columns[column], ...value };
                     return [...columns];
                 }, state.columns),
             };
         case ActionTypes.renameColumn:
             // prevent duplicates
-            if (state.columns.find(([name]) => name === action.to)) {
+            if (state.columns.find(({ name }) => name === action.to)) {
                 return state;
             }
             return {
                 ...state,
-                columns: state.columns.map(([name, ...col]) => [name === action.from ? action.to : name, ...col]),
+                columns: state.columns.map(({ name, ...col }) => ({ name: name === action.from ? action.to : name, ...col })),
             };
         case ActionTypes.deleteColumns:
             return {
@@ -156,7 +167,6 @@ function reducer(state: TableData, action: Action): TableData {
             return {
                 ...state,
                 rows: state.rows.filter((_, i) => !action.rows.includes(i)),
-                columns: state.columns.map((r) => r.filter((_, i) => !action.columnData?.includes(i))),
             };
         case ActionTypes.changeColumnType:
             if (!(action.column >= 0 && action.dataType)) {
@@ -164,12 +174,11 @@ function reducer(state: TableData, action: Action): TableData {
             }
             return {
                 ...state,
-                columns: state.columns.map((col, i) => {
+                columns: state.columns.map((column, i) => {
                     if (i !== action.column) {
-                        return col;
+                        return column;
                     }
-                    const [name, _, ...rest] = col;
-                    return [name, action.dataType, ...rest];
+                    return { ...column, type: action.dataType };
                 }),
             };
         case ActionTypes.columnResize:
@@ -179,14 +188,13 @@ function reducer(state: TableData, action: Action): TableData {
                     if (i !== action.column) {
                         return column;
                     }
-                    const [name, type, , ...col] = column;
-                    return [name, type, action.size.toString(), ...col];
+                    return { ...column, size: action.size.toString() };
                 }),
             };
         case ActionTypes.resetColumnsSize:
             return {
                 ...state,
-                columns: state.columns.map((c, i) => (!action.columns.includes(i) ? c : [...c.slice(0, 2), null, ...c.slice(3)])),
+                columns: state.columns.map(({ size, ...c }, i) => (action.columns.includes(i) ? c : { ...c, size })),
             };
         case ActionTypes.expand:
             return expandTable(state, action.rows, action.columns, action.dataType);
@@ -200,8 +208,8 @@ function reducer(state: TableData, action: Action): TableData {
 export function useTableState({ expression, language }: ExpressionObj): [TableData, Dispatch<Action>, string] {
     const [rawExpression, setRawExpression] = useState<string>(expression);
 
-    const fromExpression = useMemo(() => parsers[language], [language]);
-    const toExpression = useMemo(() => stringifiers[language], [language]);
+    const fromExpression = useMemo(() => getParser(language), [language]);
+    const toExpression = useMemo(() => getStringifier(language), [language]);
 
     const [state, dispatch] = useReducer(reducer, emptyValue, (defaultValue) => fromExpression(expression, defaultValue));
 
