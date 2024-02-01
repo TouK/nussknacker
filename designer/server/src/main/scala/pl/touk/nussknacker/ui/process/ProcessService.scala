@@ -509,7 +509,7 @@ class DBProcessService(
         case _ =>
           None
       })
-      .map(GetLastlyDeployedVersionId)
+      .map(GetLastlyDeployedVersionId.apply)
 
     dbioRunner.runInTransaction(lastlyDeployedVersionIdDB)
   }

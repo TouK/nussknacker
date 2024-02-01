@@ -1,7 +1,12 @@
 package pl.touk.nussknacker.restmodel
 
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.generic.extras.semiauto.{
+  deriveConfiguredDecoder,
+  deriveConfiguredEncoder,
+  deriveEnumerationDecoder,
+  deriveEnumerationEncoder
+}
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
@@ -139,7 +144,8 @@ package object definition {
       displayPolicy = action.displayPolicy match {
         case Some(displayPolicy) =>
           displayPolicy match {
-            case deployment.CurrentlyViewedProcessVersionIsDeployed => Some(CurrentlyViewedProcessVersionIsDeployed)
+            case deployment.CurrentlyViewedProcessVersionIsDeployed =>
+              Some(UICustomActionDisplayPolicy.CurrentlyViewedProcessVersionIsDeployed)
           }
         case None => None
       },
@@ -160,6 +166,15 @@ package object definition {
   @JsonCodec final case class UICustomActionParameter(name: String, editor: ParameterEditor)
 
   sealed trait UICustomActionDisplayPolicy
-  @JsonCodec private case object CurrentlyViewedProcessVersionIsDeployed extends UICustomActionDisplayPolicy
+
+  object UICustomActionDisplayPolicy {
+    case object CurrentlyViewedProcessVersionIsDeployed extends UICustomActionDisplayPolicy
+
+    implicit val customActionDisplayPolicyEncoder: Encoder[UICustomActionDisplayPolicy] =
+      deriveEnumerationEncoder[UICustomActionDisplayPolicy]
+
+    implicit val customActionDisplayPolicyDecoder: Decoder[UICustomActionDisplayPolicy] =
+      deriveEnumerationDecoder[UICustomActionDisplayPolicy]
+  }
 
 }

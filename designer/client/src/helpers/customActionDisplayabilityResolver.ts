@@ -14,7 +14,7 @@ export async function resolveCustomActionDisplayability(displayPolicy: CustomAct
         const data = response.data;
         return data.versionId === processVersionId;
       } catch (error) {
-        console.error("Error fetching lastly deployed version ID:", error);
+        console.error("Error while fetching lastly deployed version ID:", error);
         return false;
       }
     default:
