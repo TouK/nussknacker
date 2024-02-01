@@ -10,10 +10,10 @@ import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
   ExpressionSuggestionDto,
   NodeValidationResultDto,
   ParameterDto,
-  ParametersValidationResultDto
+  ParametersValidationResultDto,
+  prepareTypingResultDecoder
 }
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultDtoHelpers.{toDto, toTypingResult}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.{NodeValidationRequest, ParametersValidationRequest}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -76,8 +76,8 @@ class NodesApiHttpService(
             )
             modelData: ModelData = typeToConfig.forTypeUnsafe(scenario.processingType)
             nodeValidator        = typeToNodeValidator.forTypeUnsafe(scenario.processingType)
-            nodeData             = NodeValidationRequest.apply(nodeValidationRequestDto)(modelData)
-            validation = NodeValidationResultDto.apply(nodeValidator.validate(scenarioName, nodeData))(modelData)
+            nodeData   = NodeValidationRequest.apply(nodeValidationRequestDto)(prepareTypingResultDecoder(modelData))
+            validation = NodeValidationResultDto.apply(nodeValidator.validate(scenarioName, nodeData))
           } yield success(validation)
           result.recover { case e: ProcessNotFoundError =>
             businessError(e.getMessage)
@@ -147,8 +147,9 @@ class NodesApiHttpService(
             case Success(value) =>
               implicit val modelData: ModelData = value
               val validator                     = typeToParametersValidator.forTypeUnsafe(processingType)
-              val requestWithTypingResult       = ParametersValidationRequest.apply(request)
-              val validationResults             = validator.validate(requestWithTypingResult)
+              val requestWithTypingResult =
+                ParametersValidationRequest.apply(request)(prepareTypingResultDecoder(modelData))
+              val validationResults = validator.validate(requestWithTypingResult)
               Future(
                 success(
                   ParametersValidationResultDto(validationResults, validationPerformed = true)
@@ -175,17 +176,17 @@ class NodesApiHttpService(
                 .expressionSuggestions(
                   request.expression,
                   request.caretPosition2d,
-                  request.variableTypes.map { case (key, result) => (key, toTypingResult(result)) }
+                  request.decodedVariableTypes(prepareTypingResultDecoder(modelData))
                 )
                 .map { suggestions =>
                   success(
                     suggestions.map { suggest =>
                       ExpressionSuggestionDto(
                         suggest.methodName,
-                        toDto(suggest.refClazz),
+                        suggest.refClazz,
                         suggest.fromClass,
                         suggest.description,
-                        suggest.parameters.map { param => ParameterDto(param.name, toDto(param.refClazz)) }
+                        suggest.parameters.map { param => ParameterDto(param.name, param.refClazz) }
                       )
                     }
                   )
