@@ -6,14 +6,16 @@ import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import sttp.client3.SttpBackend
 import sttp.tapir.EndpointInput
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthenticationResources extends Directives with FailFastCirceSupport {
-  val name: String
-  val frontendStrategySettings: FrontendStrategySettings
+  protected def name: String
+
+  protected def frontendStrategySettings: FrontendStrategySettings
 
   // TODO: deprecated
   // The `authenticationMethod` & `authenticate(authCredentials: AuthCredentials)` are equivalent for the below one.
@@ -46,17 +48,49 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
   protected lazy val additionalRoute: Route = Directives.reject
 }
 
+object AuthenticationResources {
+
+  def apply(config: Config, classLoader: ClassLoader, sttpBackend: SttpBackend[Future, Any])(
+      implicit ec: ExecutionContext
+  ): AuthenticationResources = {
+    implicit val sttpBackendImplicit: SttpBackend[Future, Any] = sttpBackend
+    AuthenticationProvider(config, classLoader)
+      .createAuthenticationResources(config, classLoader)
+  }
+
+}
+
 trait AnonymousAccess extends Directives {
   this: AuthenticationResources =>
 
-  implicit def executionContext: ExecutionContext
-  val anonymousUserRole: Option[String]
+  protected def anonymousUserRole: Option[String]
 
-  def authenticateReally(): AuthenticationDirective[AuthenticatedUser]
+  implicit def executionContext: ExecutionContext // todo: do we need it?
+  protected def authenticateReally(): AuthenticationDirective[AuthenticatedUser]
 
-  def authenticateReally(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]
+  protected def authenticateReally(credentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]]
 
-  def authenticateOrPermitAnonymously(anonymousUser: AuthenticatedUser): AuthenticationDirective[AuthenticatedUser] = {
+  override final def authenticate(): Directive1[AuthenticatedUser] = {
+    anonymousUserRole match {
+      case Some(_) =>
+        authenticateOrPermitAnonymously(AuthenticatedUser.createAnonymousUser(anonymousUserRole.toSet))
+      case None =>
+        authenticateReally()
+    }
+  }
+
+  override final def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
+    authCredentials match {
+      case credentials @ AuthCredentials.PassedAuthCredentials(_) =>
+        authenticateReally(credentials)
+      case AuthCredentials.AnonymousAccess =>
+        Future.successful(Some(AuthenticatedUser.createAnonymousUser(anonymousUserRole.toSet)))
+    }
+  }
+
+  private def authenticateOrPermitAnonymously(
+      anonymousUser: AuthenticatedUser
+  ): AuthenticationDirective[AuthenticatedUser] = {
     def handleAuthorizationFailedRejection = handleRejections(
       RejectionHandler
         .newBuilder()
@@ -73,46 +107,6 @@ trait AnonymousAccess extends Directives {
         handleAuthorizationFailedRejection.tmap(_ => anonymousUser)
       )
     )
-  }
-
-  def authenticateOrPermitAnonymously2(
-      authCredentials: AuthCredentials,
-      anonymousUser: AuthenticatedUser
-  ): Future[Option[AuthenticatedUser]] = {
-    authenticateReally(authCredentials)
-//      .map {
-//        case Some(loggedUser) =>
-//          Some(loggedUser)
-//        case None =>
-//          Some(anonymousUser)
-//      }
-  }
-
-  def authenticate(): Directive1[AuthenticatedUser] = {
-    anonymousUserRole
-      .map(role => AuthenticatedUser("anonymous", "anonymous", Set(role)))
-      .map(authenticateOrPermitAnonymously)
-      .getOrElse(authenticateReally())
-
-  }
-
-  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
-    anonymousUserRole
-      .map(role => AuthenticatedUser("anonymous", "anonymous", Set(role)))
-      .map(authenticateOrPermitAnonymously2(authCredentials, _))
-      .getOrElse(authenticateReally(authCredentials))
-  }
-
-}
-
-object AuthenticationResources {
-
-  def apply(config: Config, classLoader: ClassLoader, sttpBackend: SttpBackend[Future, Any])(
-      implicit ec: ExecutionContext
-  ): AuthenticationResources = {
-    implicit val sttpBackendImplicit: SttpBackend[Future, Any] = sttpBackend
-    AuthenticationProvider(config, classLoader)
-      .createAuthenticationResources(config, classLoader)
   }
 
 }

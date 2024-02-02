@@ -29,8 +29,16 @@ class DummyAuthenticationResources(override val name: String, configuration: Dum
   }
 
   override def authenticationMethod(): EndpointInput[AuthCredentials] =
-    auth.basic(new WWWAuthenticateChallenge("Dummy", ListMap.empty).realm("Dummy"))
+    auth
+      .basic[String](new WWWAuthenticateChallenge("Dummy", ListMap.empty).realm("Dummy"))
+      .map(Mapping.from[String, AuthCredentials](AuthCredentials.fromString)(_.stringify))
 
-  override def authenticateReally(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] =
-    Future.successful(None)
+  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] =
+    authCredentials match {
+      case AuthCredentials.PassedAuthCredentials(_) =>
+        Future.successful(None)
+      case AuthCredentials.AnonymousAccess =>
+        Future.successful(Some(AuthenticatedUser.createAnonymousUser(anonymousUserRole.toSet)))
+    }
+
 }

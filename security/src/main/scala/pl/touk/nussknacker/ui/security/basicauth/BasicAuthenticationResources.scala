@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.security.basicauth
 
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.ui.security.api._
-import sttp.model.HeaderNames
 import sttp.model.headers.WWWAuthenticateChallenge
 import sttp.tapir._
 
@@ -14,26 +14,28 @@ class BasicAuthenticationResources(realm: String, configuration: BasicAuthentica
 ) extends AuthenticationResources
     with AnonymousAccess {
 
-  val name: String = configuration.name
-
-  val frontendStrategySettings: FrontendStrategySettings = FrontendStrategySettings.Browser
-
-  val anonymousUserRole: Option[String] = configuration.anonymousUserRole
-
   private val authenticator = BasicHttpAuthenticator(configuration)
 
-  def authenticateReally(): AuthenticationDirective[AuthenticatedUser] =
+  override protected val name: String = configuration.name
+
+  override protected val frontendStrategySettings: FrontendStrategySettings = FrontendStrategySettings.Browser
+
+  override protected val anonymousUserRole: Option[String] = configuration.anonymousUserRole
+
+  override protected def authenticateReally(): AuthenticationDirective[AuthenticatedUser] =
     SecurityDirectives.authenticateBasicAsync(
       authenticator = authenticator,
       realm = realm
     )
 
   override def authenticationMethod(): EndpointInput[AuthCredentials] = {
-    auth.basic[AuthCredentials](WWWAuthenticateChallenge.basic.realm(realm))
+    // todo: take into consideratoin anonymousUserRole.toSet
+    auth
+      .basic[String](WWWAuthenticateChallenge.basic.realm(realm))
+      .map(Mapping.from[String, AuthCredentials](AuthCredentials.fromString)(_.stringify))
   }
 
-  override def authenticateReally(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
-    authenticator.authenticate(authCredentials)
+  override protected def authenticateReally(credentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = {
+    authenticator.authenticate(credentials)
   }
-
 }

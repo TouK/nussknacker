@@ -42,10 +42,15 @@ class OAuth2AuthenticationResources(
         tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
         challenge = WWWAuthenticateChallenge.bearer(realm)
       )
-      .map(Mapping.from[String, AuthCredentials](AuthCredentials.apply)(_.value))
+      .map(Mapping.from[String, AuthCredentials](AuthCredentials.fromString)(_.stringify))
 
-  override def authenticateReally(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
-    authenticator.authenticate(authCredentials.value)
+  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
+    authCredentials match {
+      case AuthCredentials.PassedAuthCredentials(value) =>
+        authenticator.authenticate(value)
+      case AuthCredentials.AnonymousAccess =>
+        Future.successful(Some(AuthenticatedUser.createAnonymousUser(configuration.anonymousUserRole.toSet)))
+    }
   }
 
   override def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
