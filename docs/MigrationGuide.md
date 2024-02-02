@@ -111,6 +111,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13 
 * [#5465](https://github.com/TouK/nussknacker/pull/5465) Removed `strictTypeChecking` option and `SupertypeClassResolutionStrategy.Union` used behind it
 
+## In version 1.13.1 (Not released yet)
+
+### Code API changes
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13
+
 ## In version 1.13.0 
 
 ### Code API changes
@@ -210,6 +215,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Field names in `MapVariable`, `FragmentOutput` are required to be unique
 * [#4698](https://github.com/TouK/nussknacker/pull/4698) Due to change in program argument encoding all scheduled batch
   scenarios handled by periodic DM must be cancelled before upgrade
+
+## In version 1.12.6
+
+### Other changes
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13
 
 ## In version 1.12.x
 
