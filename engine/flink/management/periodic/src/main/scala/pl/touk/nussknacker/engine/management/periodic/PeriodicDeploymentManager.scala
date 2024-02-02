@@ -67,17 +67,22 @@ object PeriodicDeploymentManager {
       processConfigEnricher,
       clock
     )
-    val deploymentActor = system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
-    val rescheduleFinishedActor =
-      system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
+    val deploymentActor = system.actorOf(
+      DeploymentActor.props(service, periodicBatchConfig.deployInterval),
+      s"periodic-${periodicBatchConfig.processingType}-deployer"
+    )
+    val rescheduleFinishedActor = system.actorOf(
+      RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval),
+      s"periodic-${periodicBatchConfig.processingType}-rescheduler"
+    )
 
     val customActionsProvider = customActionsProviderFactory.create(scheduledProcessesRepository, service)
 
     val toClose = () => {
       runSafely(listener.close())
-      system.stop(deploymentActor)
-      system.stop(rescheduleFinishedActor)
-      db.close()
+      runSafely(system.stop(deploymentActor))
+      runSafely(system.stop(rescheduleFinishedActor))
+      runSafely(db.close())
     }
     new PeriodicDeploymentManager(
       delegate,
@@ -136,7 +141,7 @@ class PeriodicDeploymentManager private[periodic] (
     }
   }
 
-  private def extractScheduleProperty[T](canonicalProcess: CanonicalProcess): Future[ScheduleProperty] = {
+  private def extractScheduleProperty(canonicalProcess: CanonicalProcess): Future[ScheduleProperty] = {
     schedulePropertyExtractor(canonicalProcess) match {
       case Right(scheduleProperty) =>
         Future.successful(scheduleProperty)
