@@ -96,6 +96,8 @@ trait NuResourcesTest
 
   protected val processChangeListener = new TestProcessChangeListener()
 
+  protected val deploymentCommentSettings: Option[DeploymentCommentSettings] = None
+
   protected lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
 
   protected val dmDispatcher = new DeploymentManagerDispatcher(
@@ -112,7 +114,8 @@ trait NuResourcesTest
       processValidatorByProcessingType,
       scenarioResolverByProcessingType,
       processChangeListener,
-      None
+      None,
+      deploymentCommentSettings
     )
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
@@ -224,11 +227,10 @@ trait NuResourcesTest
       )
     )
 
-  protected def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) =
+  protected def deployRoute() =
     new ManagementResources(
       processAuthorizer = processAuthorizer,
       processService = processService,
-      deploymentCommentSettings = deploymentCommentSettings,
       deploymentService = deploymentService,
       dispatcher = dmDispatcher,
       metricRegistry = new MetricRegistry,
@@ -333,7 +335,7 @@ trait NuResourcesTest
       s"/processManagement/deploy/$processName",
       HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
     ) ~>
-      withPermissions(deployRoute(deploymentCommentSettings), testPermissionDeploy |+| testPermissionRead)
+      withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
 
   protected def cancelProcess(
       processName: ProcessName,
@@ -344,7 +346,7 @@ trait NuResourcesTest
       s"/processManagement/cancel/$processName",
       HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
     ) ~>
-      withPermissions(deployRoute(deploymentCommentSettings), testPermissionDeploy |+| testPermissionRead)
+      withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
 
   protected def snapshot(processName: ProcessName): RouteTestResult =
     Post(s"/adminProcessManagement/snapshot/$processName") ~> withPermissions(

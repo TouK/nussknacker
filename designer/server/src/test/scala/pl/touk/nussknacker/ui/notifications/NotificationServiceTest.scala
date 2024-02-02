@@ -163,6 +163,7 @@ class NotificationServiceTest
       mock[ProcessingTypeDataProvider[ScenarioResolver, _]],
       mock[ProcessChangeListener],
       None,
+      None,
       clock
     ) {
       override protected def validateBeforeDeploy(

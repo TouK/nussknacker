@@ -90,6 +90,8 @@ class DeploymentServiceSpec
 
   private val listener = new TestProcessChangeListener
 
+  private val deploymentCommentSettings = None
+
   private val deploymentService = createDeploymentService(None)
 
   deploymentManager = new MockDeploymentManager(SimpleStateStatus.Running)(
@@ -109,7 +111,8 @@ class DeploymentServiceSpec
       processValidatorByProcessingType,
       TestFactory.scenarioResolverByProcessingType,
       listener,
-      scenarioStateTimeout = scenarioStateTimeout
+      scenarioStateTimeout = scenarioStateTimeout,
+      deploymentCommentSettings
     )
   }
 
