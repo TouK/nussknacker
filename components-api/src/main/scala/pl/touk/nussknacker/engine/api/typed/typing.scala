@@ -151,7 +151,7 @@ object typing {
 
   // It is not a case class because we want to ignore the order of elements but still ensure that it has >= 2 elements
   // Because of that, we have our own equals and hashCode
-  class TypedUnion private[typing] (
+  final class TypedUnion private[typing] (
       private val firstType: SingleTypingResult,
       private val secondType: SingleTypingResult,
       private val restOfTypes: List[SingleTypingResult]
