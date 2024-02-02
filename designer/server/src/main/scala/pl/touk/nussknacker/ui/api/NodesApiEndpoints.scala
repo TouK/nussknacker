@@ -29,8 +29,8 @@ import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodeValidationRequestDt
 import pl.touk.nussknacker.ui.api.typingDtoSchemas._
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{NotFound, Ok}
-import sttp.tapir.Codec.PlainCodec
 import sttp.tapir._
+import TapirCodecs.ScenarioNameCodec._
 import sttp.tapir.derevo.schema
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -40,7 +40,6 @@ import scala.language.implicitConversions
 class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import NodesApiEndpoints.Dtos._
-  import NodesApiEndpoints.Dtos.ScenarioNameCodec._
 
   lazy val nodesAdditionalInfoEndpoint
       : SecuredEndpoint[(ProcessName, NodeData), String, Option[AdditionalInfo], Any] = {
@@ -182,17 +181,6 @@ object NodesApiEndpoints {
 
   object Dtos {
 
-    object ScenarioNameCodec {
-      def encode(scenarioName: ProcessName): String = scenarioName.value
-
-      def decode(s: String): DecodeResult[ProcessName] = {
-        val scenarioName = ProcessName.apply(s)
-        DecodeResult.Value(scenarioName)
-      }
-
-      implicit val scenarioNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
-    }
-
     case class TypingResultInJson(value: Json)
 
     object TypingResultInJson {
@@ -208,7 +196,7 @@ object NodesApiEndpoints {
     implicit lazy val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
 
-    // wydaje mi się, że do requestu to encoder to nie jest potrzebny
+    // Request doesn't need valid encoder
     @derive(decoder, schema)
     final case class NodeValidationRequestDto(
         nodeData: NodeData,
@@ -227,7 +215,7 @@ object NodesApiEndpoints {
       implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.derived.hidden(true)
     }
 
-    // wydaje mi się, że do response decoder nie jest potrzebny
+    // Response doesn't need valid decoder
     @derive(encoder, schema)
     final case class NodeValidationResultDto(
         parameters: Option[List[UIParameterDto]],
@@ -255,7 +243,7 @@ object NodesApiEndpoints {
 
     }
 
-    // to jest chyba tylko response
+    // Only used in response, no need for valid decoder
     @derive(encoder, schema)
     final case class UIParameterDto(
         name: String,
@@ -295,7 +283,7 @@ object NodesApiEndpoints {
         name: ProcessName
     )
 
-    // to jest request
+    // Request doesn't need valid encoder
     @derive(schema, decoder)
     final case class ParametersValidationRequestDto(
         parameters: List[UIValueParameterDto],
@@ -311,8 +299,8 @@ object NodesApiEndpoints {
         validationPerformed: Boolean
     )
 
-    // tylko do requestu
-    @derive(schema, encoder, decoder)
+    // Request doesn't need valid encoder
+    @derive(schema, decoder)
     final case class UIValueParameterDto(
         name: String,
         typ: TypingResultInJson,
@@ -322,7 +310,7 @@ object NodesApiEndpoints {
     implicit lazy val expressionSchema: Schema[Expression]           = Schema.derived
     implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 
-    // to jest request
+    // Request doesn't need valid encoder
     @derive(schema, decoder)
     final case class ExpressionSuggestionRequestDto(
         expression: Expression,
@@ -340,7 +328,7 @@ object NodesApiEndpoints {
     implicit val expressionSuggestionRequestDtoEncoder: Encoder[ExpressionSuggestionRequestDto] =
       Encoder.encodeJson.contramap[ExpressionSuggestionRequestDto](_ => Json.Null)
 
-    // to jest response
+    // Response doesn't need valid decoder
     @derive(schema, encoder)
     final case class ExpressionSuggestionDto(
         methodName: String,
@@ -353,7 +341,7 @@ object NodesApiEndpoints {
     implicit val expressionSuggestionDtoDecoder: Decoder[ExpressionSuggestionDto] =
       Decoder.instance[ExpressionSuggestionDto](_ => ???)
 
-    // to jest response
+    // Response doesn't need valid decoder
     @derive(schema, encoder)
     final case class ParameterDto(
         name: String,
