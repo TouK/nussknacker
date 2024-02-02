@@ -72,7 +72,7 @@ object TypingFunctionForClassMember {
     override def resultType(invocationTargetClass: SingleTypingResult): Validated[ProcessingType, TypingResult] = {
       invocationTargetClass match {
         case TypedObjectTypingResult(fields, _, _) =>
-          val params = typing.mapBasedRecordUnderlyingType[Map[_, _]](fields).params
+          val params = typing.mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields).params
           resultTypeBasedOnGenericParam(params, invocationTargetClass)
         case other =>
           Invalid(

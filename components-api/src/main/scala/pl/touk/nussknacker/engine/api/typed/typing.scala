@@ -1,14 +1,11 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.supertype.{
-  CommonSupertypeFinder,
-  NumberTypesPromotionStrategy,
-  SupertypeClassResolutionStrategy
-}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -18,6 +15,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
+// TODO: remove this object because it causes typing.TypingResult in IDE
 object typing {
 
   object TypingResult {
@@ -27,6 +25,13 @@ object typing {
   // TODO: Rename to Typed
   sealed trait TypingResult {
 
+    // TODO: We should split this method into two or three methods:
+    //       - Simple, strictly checking subclassing similar to isAssignable, where we don't do heuristics like
+    //         Any can be subclass of Int, or for Union of Int and String can be subclass of Int
+    //       - The one with heuristics considering limitations of our tool like poor support for generics, lack
+    //         of casting allowing things described above
+    //       - The one that allow things above + SPeL conversions like any Number to any Number conversion,
+    //         String to LocalDate etc. This one should be accessible only for context where SPeL is used
     final def canBeSubclassOf(typingResult: TypingResult): Boolean =
       CanBeSubclassDeterminer.canBeSubclassOf(this, typingResult).isValid
 
@@ -46,19 +51,20 @@ object typing {
     def objType: TypedClass
   }
 
-  // TODO: Rename to TypedRecord
   object TypedObjectTypingResult {
 
-    def apply(definition: TypedObjectDefinition): TypedObjectTypingResult =
-      TypedObjectTypingResult(definition.fields)
-
+    // TODO: deprecated, will be removed - we should also make the default apply private protected
     def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
-      TypedObjectTypingResult(fields, mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
+      Typed.record(fields)
 
     // For backward compatibility, to be removed once downstream projects switch to apply(fields: Map[String, TypingResult])
-    def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult = TypedObjectTypingResult(fields.toMap)
+    // TODO: remove this after NU-1432 will be done
+    def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult = Typed.record(fields.toMap)
+
   }
 
+  // TODO: Rename to TypedRecord
+  // TODO: Make the constructor package-protected - inheritance is only use in the InputMeta to override display
   case class TypedObjectTypingResult(
       fields: Map[String, TypingResult],
       objType: TypedClass,
@@ -76,8 +82,6 @@ object typing {
 
   case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
 
-    type ValueType = SingleTypingResult
-
     override def objType: TypedClass = valueType.objType
 
     override def valueOpt: Option[Any] = valueType.valueOpt
@@ -88,16 +92,14 @@ object typing {
 
   }
 
+  // TODO: rename to SingleTypingResultWrapper
   sealed trait TypedObjectWithData extends SingleTypingResult {
     def underlying: SingleTypingResult
-    def data: Any
 
     override def objType: TypedClass = underlying.objType
   }
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
-    override def data: String = tag
-
     override def valueOpt: Option[Any] = underlying.valueOpt
 
     override def withoutValue: TypedTaggedValue = TypedTaggedValue(underlying.withoutValue, tag)
@@ -106,17 +108,15 @@ object typing {
   }
 
   case class TypedObjectWithValue private[typing] (underlying: TypedClass, value: Any) extends TypedObjectWithData {
-    val maxDataDisplaySize: Int         = 15
-    val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
-
-    override def data: Any = value
+    private val maxDataDisplaySize: Int         = 15
+    private val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
 
     override def valueOpt: Option[Any] = Some(value)
 
     override def withoutValue: SingleTypingResult = underlying.withoutValue
 
     override def display: String = {
-      val dataString = data.toString
+      val dataString = value.toString
       val shortenedDataString =
         if (dataString.length <= maxDataDisplaySize) dataString
         else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
@@ -125,6 +125,12 @@ object typing {
 
   }
 
+  // It is used in two context:
+  // - As a TypedObjectWithValue(Any, null) - probably because of the fact that Any is represented as Unknown
+  //   which can be subclass of anything, it was extracted a dedicated case object for this case
+  // - As a something between SingleTypingResult and EmptyTypingResult, see folding in the Typed.apply(nel)
+  //   Thanks to that we avoid nasty types like String | null (String type is nullable as well)
+  //   We can avoid this case by changing this folding logic - see the comment there
   case object TypedNull extends TypingResult {
     override def withoutValue: TypedNull.type = TypedNull
 
@@ -143,22 +149,34 @@ object typing {
     override val display = "Unknown"
   }
 
-  // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
-  case class TypedUnion private[typing] (possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
-
-    assert(
-      possibleTypes.size != 1,
-      "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass"
-    )
+  // It is not a case class because we want to ignore the order of elements but still ensure that it has >= 2 elements
+  // Because of that, we have our own equals and hashCode
+  class TypedUnion private[typing] (
+      private val firstType: SingleTypingResult,
+      private val secondType: SingleTypingResult,
+      private val restOfTypes: List[SingleTypingResult]
+  ) extends KnownTypingResult
+      with Serializable {
 
     override def valueOpt: None.type = None
 
     override def withoutValue: TypingResult = Typed(possibleTypes.map(_.withoutValue))
 
-    override val display: String = possibleTypes.toList match {
-      case Nil  => "EmptyUnion"
-      case many => many.map(_.display).mkString(" | ")
+    def possibleTypes: NonEmptyList[SingleTypingResult] = NonEmptyList(firstType, secondType :: restOfTypes)
+
+    override val display: String = possibleTypes.map(_.display).toList.sorted.mkString(" | ")
+
+    // We implement hashcode / equals because order is not important
+    override def hashCode(): Int = {
+      possibleTypes.toList.toSet.hashCode()
     }
+
+    override def equals(another: Any): Boolean = another match {
+      case anotherUnion: TypedUnion => anotherUnion.possibleTypes.toList.toSet == possibleTypes.toList.toSet
+      case _                        => false
+    }
+
+    override def toString = s"TypedUnion(${possibleTypes.toList.sortBy(_.display).mkString(", ")})"
 
   }
 
@@ -179,7 +197,7 @@ object typing {
         if (klass.isArray) "Array"
         else ReflectUtils.simpleNameWithoutSuffix(klass)
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
-      else s"$className"
+      else className
     }
 
     override def objType: TypedClass = this
@@ -258,7 +276,7 @@ object typing {
       }
 
     // to not have separate class for each array, we pass Array of Objects
-    private val KlassForArrays = classOf[Array[Object]]
+    private[typed] val KlassForArrays = classOf[Array[Object]]
 
     private def determineArrayType(klass: Class[_], parameters: Option[List[TypingResult]]): TypedClass = {
       val determinedComponentType = Typed(klass.getComponentType)
@@ -266,7 +284,7 @@ object typing {
         // it may happen that parameter will be decoded via other means, we have to to sanity check if they match
         case None | Some(`determinedComponentType` :: Nil) =>
           TypedClass(KlassForArrays, List(determinedComponentType))
-        // When type is deserialized, in component type will be always Unknown, because w use Array[Object] so we need to use parameters instead
+        // When type is deserialized, in component type will be always Unknown, because we use Array[Object] so we need to use parameters instead
         case Some(notComponentType :: Nil) if determinedComponentType == Unknown =>
           TypedClass(KlassForArrays, List(notComponentType))
         case Some(others) =>
@@ -290,8 +308,6 @@ object typing {
         case Some(params) =>
           TypedClass(klass, params)
       }
-
-    def empty: TypedUnion = TypedUnion(Set.empty)
 
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
 
@@ -329,28 +345,56 @@ object typing {
       k -> fromInstance(v)
     }
 
-    def apply(possibleTypes: TypingResult*): TypingResult = {
-      apply(possibleTypes.toSet)
+    // This is a factory method allowing to create TypedUnion, but also ensuring that none of type will be duplicated,
+    // TypedNull will be omitted if some other type exists etc.
+    def apply(firstType: TypingResult, secondType: TypingResult, restOfTypes: TypingResult*): TypingResult = {
+      apply(NonEmptyList(firstType, secondType :: restOfTypes.toList))
     }
 
-    // creates Typed representation of sum of possible types
-    def apply[T <: TypingResult](possibleTypes: Set[T]): TypingResult = {
-      // We use local function instead of lambda to get compilation error
-      // when some type is not handled.
-      def flattenType(t: TypingResult): Option[List[SingleTypingResult]] = t match {
+    // This method returns Unknown for empty possibleTypes - it should be used carefully as Unknown user can't invoke
+    // any method on Unknown and in some cases Unknown can generate runtime error (it can be passed as any parameter)
+    def fromIterableOrUnknownIfEmpty(possibleTypes: Iterable[TypingResult]): TypingResult = {
+      NonEmptyList.fromList(possibleTypes.toList).map(Typed(_)).getOrElse(Unknown)
+    }
+
+    // Creates Typed representation of sum of possible types. We don't want to allow to pass a normal List because
+    // We want to consciously decide how to handle corner case when this list is empty. In most cases it is situation
+    // that won't happen, sometimes given element should be skipped.
+    // We don't use NonEmptySet as we usually deal with lists and NonEmptySet need Order of elements but at the
+    // end for our TypedUnion implementation, order of elements is not important
+    def apply(possibleTypes: NonEmptyList[TypingResult]): TypingResult = {
+      // TODO: We could do this smarter by reducing cases where there are two classes which one is a superclass of another
+      //       e.g. Type(Typed[Number], Typed[Int]) into Typed[Number]. It is crucial because we base on this during
+      //       computing the output type of SPeL's ternary operator - see CommonSupertypeFinder.commonSupertype(nel, nel)
+      //       which can generate a long unions of types
+      def flattenType(t: TypingResult): Option[Set[SingleTypingResult]] = t match {
         case Unknown                    => None
-        case TypedNull                  => Some(Nil)
-        case TypedUnion(s)              => Some(s.toList)
-        case single: SingleTypingResult => Some(List(single))
+        case TypedNull                  => Some(Set.empty)
+        case single: SingleTypingResult => Some(Set(single))
+        case union: TypedUnion          => Some(union.possibleTypes.toList.toSet)
       }
 
-      val flattenedTypes = possibleTypes.map(flattenType).toList.sequence.map(_.flatten)
+      val flattenedTypes = possibleTypes.toList.map(flattenType).sequence.map(_.flatten.distinct)
       flattenedTypes match {
-        case None                => Unknown
-        case Some(single :: Nil) => single
-        case Some(list)          => TypedUnion(list.toSet)
+        case None                                                  => Unknown
+        case Some(Nil) if possibleTypes.toList.contains(TypedNull) => TypedNull
+        case Some(Nil)                                             =>
+          // It shouldn't happen because only TypedNull can be translated into Set.empty
+          throw new IllegalStateException(s"Typed(${possibleTypes.toList.mkString(", ")}) flatten to empty list")
+        case Some(single :: Nil)           => single
+        case Some(first :: second :: rest) => new TypedUnion(first, second, rest)
       }
     }
+
+    def record(fields: Map[String, TypingResult]): TypedObjectTypingResult =
+      TypedObjectTypingResult(fields, mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
+
+    def record(
+        fields: Map[String, TypingResult],
+        objType: TypedClass,
+        additionalInfo: Map[String, AdditionalDataValue] = Map.empty
+    ): TypedObjectTypingResult =
+      TypedObjectTypingResult(fields, objType, additionalInfo)
 
   }
 
@@ -364,9 +408,8 @@ object typing {
   }
 
   private def superTypeOfTypes(list: Iterable[TypingResult]) = {
-    val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
     list
-      .reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))
+      .reduceOption(CommonSupertypeFinder.Default.commonSupertype)
       .getOrElse(Unknown)
   }
 

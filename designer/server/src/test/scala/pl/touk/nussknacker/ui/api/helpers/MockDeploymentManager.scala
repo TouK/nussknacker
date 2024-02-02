@@ -221,7 +221,8 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
   ): Future[CustomActionResult] =
     actionRequest.name match {
       case "hello" | "invalid-status" => Future.successful(CustomActionResult(actionRequest, "Hi"))
-      case _                          => ???
+
+      case _                          => Future.failed(new NotImplementedError())
     }
 
   override def close(): Unit = {}

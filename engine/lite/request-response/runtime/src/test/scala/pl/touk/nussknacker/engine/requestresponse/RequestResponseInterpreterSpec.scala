@@ -257,7 +257,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
     val interpreter2 = prepareInterpreter(process = process2)
     interpreter2.sinkTypes shouldBe Map(
-      NodeId("endNodeIID") -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed.fromInstance(15)))
+      NodeId("endNodeIID") -> Typed.record(ListMap("str" -> Typed[String], "int" -> Typed.fromInstance(15)))
     )
 
   }

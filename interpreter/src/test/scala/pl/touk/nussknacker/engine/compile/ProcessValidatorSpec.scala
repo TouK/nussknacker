@@ -16,11 +16,10 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   CustomComponentSpecificData
@@ -31,6 +30,7 @@ import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
@@ -53,7 +53,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     .withSource("source", Some(Typed[SimpleRecord]))
     .withSource("sourceWithUnknown", Some(Unknown))
     .withSource("sourceWithParam", Some(Typed[SimpleRecord]), Parameter[Any]("param"))
-    .withSource("typedMapSource", Some(Typed[TypedMap]), Parameter[TypedObjectDefinition]("type"))
     .withSink("sink")
     .withSink("sinkWithLazyParam", Parameter[String]("lazyString").copy(isLazyParameter = true))
     .withCustom("customTransformer", Some(Typed[SimpleRecord]), nonEndingOneInputComponent)
@@ -406,7 +405,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val varsType =
       compilationResult.variablesInNodes.get("id2").value.get("vars").value.asInstanceOf[TypedObjectTypingResult]
     varsType.fields.get("v1").value shouldEqual Typed.fromInstance(42)
-    varsType.fields.get("recordVariable").value shouldEqual TypedObjectTypingResult(
+    varsType.fields.get("recordVariable").value shouldEqual Typed.record(
       ListMap(
         "Field1" -> Typed.fromInstance("Field1Value"),
         "Field2" -> Typed.fromInstance("Field2Value"),
@@ -1251,7 +1250,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     result.result should matchPattern { case Valid(_) =>
     }
     result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
-      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer])))
+      List(Typed.record(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer])))
     )
 
   }
@@ -1282,7 +1281,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     result.result should matchPattern { case Valid(_) =>
     }
     result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
-      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer])))
+      List(Typed.record(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer])))
     )
   }
 
@@ -1602,6 +1601,37 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     withUsed should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable(`usedVarName`, "sample-out", Some(`errorFieldName`)), Nil)) =>
+    }
+  }
+
+  // This tests an artificial canonical process which cannot be created through conversion from ScenarioGraph because of
+  // skipping loose nodes and empty main branch. We added it to show that the canonical errors folding algorithm works
+  // correctly.
+  test("should return merged graph structure errors of different types") {
+    val variableName1 = "variable1"
+    val variableName2 = "variable2"
+    val sourceName1   = "source1"
+    val sourceName2   = "source2"
+    val metaData      = MetaData("scenario1", StreamMetaData())
+    val scenarioWith =
+      CanonicalProcess(
+        metaData,
+        List(),
+        List(
+          List(FlatNode(Variable(variableName1, "varName", "'str'"))),
+          List(FlatNode(Variable(variableName2, "varName", "'str'"))),
+          List(FlatNode(Source(sourceName1, SourceRef("source", List())))),
+          List(FlatNode(Source(sourceName2, SourceRef("source", List())))),
+        )
+      )
+
+    inside(validate(scenarioWith, baseDefinition).result) { case Invalid(errors) =>
+      errors.toList should contain theSameElementsAs
+        List(
+          InvalidRootNode(Set(variableName1, variableName2)),
+          InvalidTailOfBranch(Set(sourceName1, sourceName2)),
+          EmptyProcess
+        )
     }
   }
 

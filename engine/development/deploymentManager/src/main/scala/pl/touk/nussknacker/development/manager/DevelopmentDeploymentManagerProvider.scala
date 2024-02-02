@@ -181,7 +181,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
       case Some(newStatus) =>
         asyncChangeState(processName, newStatus)
         Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
-      case _ => ???
+      case _ =>
+        Future.failed(new NotImplementedError())
     }
   }
 

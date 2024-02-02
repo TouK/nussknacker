@@ -28,6 +28,12 @@
   * Improved error messages
 * [#5364](https://github.com/TouK/nussknacker/pull/5364) Fixed wrong expression suggestions and validation errors in disabled nodes
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Sometimes `Bad expression type, expected: X found X` error was reported when comparing matching Records.
+  It happened for records that had fields with mixed different types of fields e.g. simple classes with nested records
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Ternary operator (`expression ? x : y`) returned sometimes `EmptyUnion` type which couldn't be passed anywhere.
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Wasn't possible to compare a Record with a Map.
+* [#5457](https://github.com/TouK/nussknacker/pull/5457) Fix: Array types wasn't serialized correctly which caused deserialization error during node validation.
+* [#5475](https://github.com/TouK/nussknacker/pull/5475) SpEL expressions checking improvement: The equals operator used with two Lists with different element types is reported as an error
 
 1.13.0 (12 Jan 2024)
 -------------------------

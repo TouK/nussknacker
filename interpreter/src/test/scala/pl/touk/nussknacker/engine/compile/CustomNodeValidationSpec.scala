@@ -270,7 +270,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     val validationResult = validate(validProcess)
     validationResult.result should matchPattern { case Valid(_) =>
     }
-    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(
+    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe Typed.record(
       Map("branch2" -> Typed[Int], "branch1" -> Typed[String])
     )
   }
@@ -320,7 +320,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       )
     val validationResult = validate(process)
 
-    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(
+    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe Typed.record(
       Map("branch1" -> Typed[String])
     )
     val errors = validationResult.result.swap.toList.flatMap(_.toList).map(_.nodeIds)

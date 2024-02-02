@@ -286,15 +286,15 @@ class ManagementResources(
                 }
               }
             }
-          }
-        } ~
-        path("customAction" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
-            val params = req.params.getOrElse(Map.empty)
-            complete {
-              deploymentService
-                .invokeCustomAction(req.actionName, process, params)
-                .flatMap(actionResult => toHttpResponse(CustomActionResponse(actionResult))(StatusCodes.OK))
+          } ~
+          path("customAction" / ProcessNameSegment) { processName =>
+            (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
+              val params = req.params.getOrElse(Map.empty)
+              complete {
+                deploymentService
+                  .invokeCustomAction(req.actionName, process, params)
+                  .flatMap(actionResult => toHttpResponse(CustomActionResponse(actionResult))(StatusCodes.OK))
+              }
             }
           }
         }

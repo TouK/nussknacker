@@ -156,11 +156,8 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
   }
 
   it("should not skipp nullable field vat from schema PaymentV1 when skippNullableFields is set") {
-    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(
-      PaymentV1.schema,
-      AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes
-    )
-    val ctx = ValidationContext.empty.withVariable("input", typeResult, paramName = None).toOption.get
+    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema)
+    val ctx        = ValidationContext.empty.withVariable("input", typeResult, paramName = None).toOption.get
 
     parse[Int]("#input.vat", ctx) should be(Symbol("valid"))
   }

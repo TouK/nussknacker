@@ -95,7 +95,8 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] = ???
+  ): Future[CustomActionResult] =
+    Future.failed(new NotImplementedError())https://github.com/TouK/nussknacker/pull/5493
 
   override def close(): Unit = {}
 

@@ -391,7 +391,8 @@ class LiteRequestResponseFunctionalTest
     }
   }
 
-  ignore("validate nested json schema and match to it fitting expression") {
+
+  test("validate nested json schema and match to it fitting expression") {
     val nestedSchema = JsonSchemaBuilder.parseSchema("""{
             |    "properties": {
             |        "books": {
