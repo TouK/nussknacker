@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.ui.server
 
+import akka.http.javadsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.model.HttpHeader
+import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, RawHeader}
 import akka.http.scaladsl.server.{Route, RouteResult}
 import com.typesafe.scalalogging.LazyLogging
 import sttp.capabilities
@@ -22,16 +25,39 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext:
     extends AkkaHttpServerInterpreter
     with LazyLogging {
 
-  override def toRoute(ses: List[ServerEndpoint[AkkaStreams with capabilities.WebSockets, Future]]): Route = { context =>
-    super
-      .toRoute(ses)
-      .apply(context)
-      .map {
-        case complete@RouteResult.Complete(_) =>
-          complete
-        case rejected@RouteResult.Rejected(_) =>
-          rejected
-      }
+  override def toRoute(ses: List[ServerEndpoint[AkkaStreams with capabilities.WebSockets, Future]]): Route = {
+    context =>
+      val route = super.toRoute(ses)
+      route
+        .apply(context)
+        .flatMap {
+          case complete @ RouteResult.Complete(_) =>
+            val headers = complete.response.headers.map(_.name())
+            if (complete.response.status.intValue() == 401 && headers.contains("WWW-Authenticate")) {
+              route
+                .apply {
+                  val newContext = context
+                    .mapRequest(r =>
+                      r.mapHeaders(
+                        _ ++ Seq(
+                          Authorization(akka.http.scaladsl.model.headers.BasicHttpCredentials("anonymous", "anonymous"))
+                        )
+                      )
+                    )
+                  newContext
+                }
+                .map {
+                  case complete @ RouteResult.Complete(_) =>
+                    complete
+                  case rejected @ RouteResult.Rejected(_) =>
+                    rejected
+                }
+            } else {
+              Future.successful(complete)
+            }
+          case rejected @ RouteResult.Rejected(_) =>
+            Future.successful(rejected)
+        }
   }
 
   override def toRoute(se: ServerEndpoint[AkkaStreams with capabilities.WebSockets, Future]): Route = { context =>

@@ -418,8 +418,8 @@ class AkkaHttpBasedRouteProvider(
           webResources.route
         } ~ pathPrefix("api") {
           apiResourcesWithoutAuthentication.reduce(_ ~ _)
-        } ~ authenticationResources.authenticate() { authenticatedUser =>
-          pathPrefix("api") {
+        } ~ pathPrefix("api") {
+          authenticationResources.authenticate() { authenticatedUser =>
             authorize(authenticatedUser.roles.nonEmpty) {
               val loggedUser = LoggedUser(
                 authenticatedUser = authenticatedUser,
