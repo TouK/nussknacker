@@ -179,6 +179,9 @@ package object definition {
     implicit val exprEncoder: Encoder[UICustomActionDisplayPolicyExpr] = deriveEncoder
     implicit val exprDecoder: Decoder[UICustomActionDisplayPolicyExpr] = deriveDecoder
 
+    implicit val policyEncoder: Encoder[UICustomActionDisplayPolicy] = deriveEncoder
+    implicit val policyDecoder: Decoder[UICustomActionDisplayPolicy] = deriveDecoder
+
     def fromCustomActionDisplayPolicy(displayPolicy: CustomActionDisplayPolicy): UICustomActionDisplayPolicy =
       displayPolicy match {
         case CustomActionDisplaySimplePolicy(version, operator, NodeExpr(node)) =>
