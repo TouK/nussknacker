@@ -32,6 +32,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ManagementResources {
 
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+
   implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts] = deriveConfiguredEncoder
 
   implicit val testResultsEncoder: Encoder[TestResults] = new Encoder[TestResults]() {
