@@ -96,7 +96,7 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
   ): Future[CustomActionResult] =
-    Future.failed(new NotImplementedError())https://github.com/TouK/nussknacker/pull/5493
+    Future.failed(new NotImplementedError())
 
   override def close(): Unit = {}
 
