@@ -25,6 +25,8 @@ object EmbeddedKafkaServer {
 
   // In Kafka 3.2.0 doesn't work create topic and describe topic instantly after it - it doesn't return newly created topic
   // Also there is erro "maybeBalancePartitionLeaders: unable to start processing because of TimeoutException" in log
+  // We should consider switching to KafkaClusterTestKit (https://github.com/apache/kafka/blob/3.6/core/src/test/java/kafka/testkit/KafkaClusterTestKit.java),
+  // it's used by spring-kafka (https://github.com/spring-projects/spring-kafka/blob/3.1.x/spring-kafka-test/src/main/java/org/springframework/kafka/test/EmbeddedKafkaKraftBroker.java).
   val kRaftEnabled: Boolean = true
 
   val localhost: String = "127.0.0.1"
@@ -72,6 +74,7 @@ object EmbeddedKafkaServer {
       properties.setProperty("listeners", s"PLAINTEXT://$localhost:$brokerPort")
     }
     properties.setProperty("num.partitions", "1")
+    properties.setProperty("group.initial.rebalance.delay.ms", "0")
     properties.setProperty("offsets.topic.num.partitions", "1")
     properties.setProperty("offsets.topic.replication.factor", "1")
     properties.setProperty(
@@ -94,7 +97,7 @@ object EmbeddedKafkaServer {
       new PrintStream(NullOutputStream.NULL_OUTPUT_STREAM),
       Seq(logDir.getAbsolutePath),
       StorageTool.buildMetadataProperties(uuid.toString, kafkaConfig),
-      MetadataVersion.IBP_3_3_IV3,
+      MetadataVersion.MINIMUM_BOOTSTRAP_VERSION,
       ignoreFormatted = false
     )
   }
