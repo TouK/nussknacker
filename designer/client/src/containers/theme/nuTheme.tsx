@@ -353,16 +353,15 @@ export const nuTheme = createTheme({
         },
         MuiFormLabel: {
             styleOverrides: {
-                root: {
+                root: ({ theme }) => ({
+                    ...theme.typography.body2,
                     display: "flex",
                     marginTop: "9px",
                     color: custom.colors.canvasBackground,
                     flexBasis: "20%",
                     maxWidth: "20em",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
                     overflowWrap: "anywhere",
-                },
+                }),
             },
             defaultProps: {
                 focused: false,
