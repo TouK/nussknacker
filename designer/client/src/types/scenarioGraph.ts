@@ -25,9 +25,35 @@ export type ProcessAdditionalFields = {
     metaDataType: string;
 };
 
-export enum CustomActionDisplayPolicy {
-  CurrentlyViewedProcessVersionIsDeployed
-}
+export type StatusExpr = {
+  type: 'UIStatusExpr';
+  status: string;
+};
+
+export type NodeExpr = {
+  type: 'UINodeExpr';
+  node: string;
+};
+
+type CustomActionDisplayPolicyExpr = StatusExpr | NodeExpr;
+
+// CustomActionDisplayPolicy ADT
+export type CustomActionDisplaySimplePolicy = {
+  type: 'UICustomActionDisplaySimplePolicy';
+  version: number;
+  operator: string;
+  expr: CustomActionDisplayPolicyExpr;
+};
+
+export type CustomActionDisplayConditionalPolicy = {
+  type: 'UICustomActionDisplayConditionalPolicy';
+  condition: string;
+  operands: CustomActionDisplayPolicy[];
+};
+
+export type CustomActionDisplayPolicy =
+  | CustomActionDisplaySimplePolicy
+  | CustomActionDisplayConditionalPolicy;
 
 export type CustomAction = {
     name: string;

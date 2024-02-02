@@ -7,14 +7,11 @@ export function resolveCustomActionDisplayability(displayPolicy: CustomActionDis
   const processVersionId = useSelector(getProcessVersionId);
   const scenario = useSelector(getScenario);
 
-  switch(displayPolicy) {
-    case CustomActionDisplayPolicy.CurrentlyViewedProcessVersionIsDeployed:
-      if (scenario.lastDeployedAction !== null) {
-        return scenario.lastDeployedAction.processVersionId === processVersionId &&
-          scenario.lastDeployedAction.actionType == ActionType.Deploy
-      } else {
-        return false;
-      }
+  switch(displayPolicy.type) {
+    case "UICustomActionDisplaySimplePolicy":
+      return false;
+    case "UICustomActionDisplayConditionalPolicy":
+      return false;
     default:
       return false;
   }
