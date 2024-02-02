@@ -7,6 +7,7 @@ import io.circe.generic.extras.semiauto.{
   deriveEnumerationDecoder,
   deriveEnumerationEncoder
 }
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
@@ -155,14 +156,6 @@ package object definition {
 
   }
 
-  @JsonCodec final case class UICustomAction(
-      name: String,
-      allowedStateStatusNames: List[String],
-      displayPolicy: Option[UICustomActionDisplayPolicy],
-      icon: Option[URI],
-      parameters: List[UICustomActionParameter]
-  )
-
   @JsonCodec final case class UICustomActionParameter(name: String, editor: ParameterEditor)
 
   sealed trait UICustomActionDisplayPolicy
@@ -181,7 +174,10 @@ package object definition {
       operands: List[UICustomActionDisplayPolicy]
   ) extends UICustomActionDisplayPolicy
 
-  private object UICustomActionDisplayPolicy {
+  object UICustomActionDisplayPolicy {
+
+    implicit val exprEncoder: Encoder[UICustomActionDisplayPolicyExpr] = deriveEncoder
+    implicit val exprDecoder: Decoder[UICustomActionDisplayPolicyExpr] = deriveDecoder
 
     def fromCustomActionDisplayPolicy(displayPolicy: CustomActionDisplayPolicy): UICustomActionDisplayPolicy =
       displayPolicy match {
@@ -197,5 +193,13 @@ package object definition {
       }
 
   }
+
+  @JsonCodec final case class UICustomAction(
+      name: String,
+      allowedStateStatusNames: List[String],
+      displayPolicy: Option[UICustomActionDisplayPolicy],
+      icon: Option[URI],
+      parameters: List[UICustomActionParameter]
+  )
 
 }

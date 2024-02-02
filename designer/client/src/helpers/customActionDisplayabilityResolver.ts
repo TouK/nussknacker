@@ -9,6 +9,7 @@ export function resolveCustomActionDisplayability(displayPolicy: CustomActionDis
 
   switch(displayPolicy.type) {
     case "UICustomActionDisplaySimplePolicy":
+      const { version, operator, expr } = displayPolicy;
       return false;
     case "UICustomActionDisplayConditionalPolicy":
       return false;
