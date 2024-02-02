@@ -12,7 +12,14 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment
-import pl.touk.nussknacker.engine.api.deployment.{CurrentlyViewedProcessVersionIsDeployed, CustomAction}
+import pl.touk.nussknacker.engine.api.deployment.{
+  CustomAction,
+  CustomActionDisplayConditionalPolicy,
+  CustomActionDisplayPolicy,
+  CustomActionDisplaySimplePolicy,
+  NodeExpr,
+  StatusExpr
+}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -141,9 +148,7 @@ package object definition {
     def apply(action: CustomAction): UICustomAction = UICustomAction(
       name = action.name,
       allowedStateStatusNames = action.allowedStateStatusNames,
-      displayPolicy = action.displayPolicy.map { case CurrentlyViewedProcessVersionIsDeployed =>
-        UICustomActionDisplayPolicy.CurrentlyViewedProcessVersionIsDeployed
-      },
+      displayPolicy = action.displayPolicy.map(UICustomActionDisplayPolicy.fromCustomActionDisplayPolicy),
       icon = action.icon,
       parameters = action.parameters.map(p => UICustomActionParameter(p.name, p.editor))
     )
@@ -161,15 +166,36 @@ package object definition {
   @JsonCodec final case class UICustomActionParameter(name: String, editor: ParameterEditor)
 
   sealed trait UICustomActionDisplayPolicy
+  sealed trait UICustomActionDisplayPolicyExpr
+  @JsonCodec case class UIStatusExpr(status: String) extends UICustomActionDisplayPolicyExpr
+  @JsonCodec case class UINodeExpr(node: String)     extends UICustomActionDisplayPolicyExpr
 
-  object UICustomActionDisplayPolicy {
-    case object CurrentlyViewedProcessVersionIsDeployed extends UICustomActionDisplayPolicy
+  @JsonCodec case class UICustomActionDisplaySimplePolicy(
+      version: Long,
+      operator: String,
+      expr: UICustomActionDisplayPolicyExpr
+  ) extends UICustomActionDisplayPolicy
 
-    implicit val customActionDisplayPolicyEncoder: Encoder[UICustomActionDisplayPolicy] =
-      deriveEnumerationEncoder[UICustomActionDisplayPolicy]
+  @JsonCodec case class UICustomActionDisplayConditionalPolicy(
+      condition: String,
+      operands: List[UICustomActionDisplayPolicy]
+  ) extends UICustomActionDisplayPolicy
 
-    implicit val customActionDisplayPolicyDecoder: Decoder[UICustomActionDisplayPolicy] =
-      deriveEnumerationDecoder[UICustomActionDisplayPolicy]
+  private object UICustomActionDisplayPolicy {
+
+    def fromCustomActionDisplayPolicy(displayPolicy: CustomActionDisplayPolicy): UICustomActionDisplayPolicy =
+      displayPolicy match {
+        case CustomActionDisplaySimplePolicy(version, operator, NodeExpr(node)) =>
+          UICustomActionDisplaySimplePolicy(version, operator, UINodeExpr(node))
+
+        case CustomActionDisplaySimplePolicy(version, operator, StatusExpr(status)) =>
+          UICustomActionDisplaySimplePolicy(version, operator, UIStatusExpr(status))
+
+        case CustomActionDisplayConditionalPolicy(condition, operands) =>
+          val uiOperands = operands.map(fromCustomActionDisplayPolicy)
+          UICustomActionDisplayConditionalPolicy(condition, uiOperands)
+      }
+
   }
 
 }

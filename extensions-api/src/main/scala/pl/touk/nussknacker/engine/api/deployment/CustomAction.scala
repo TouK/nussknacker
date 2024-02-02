@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.deployment.User
 
+import scala.util.{Failure, Success, Try}
 import java.net.URI
 
 /*
@@ -35,6 +37,60 @@ case class CustomActionRequest(name: String, processVersion: ProcessVersion, use
 case class CustomActionResult(req: CustomActionRequest, msg: String)
 
 sealed trait CustomActionDisplayPolicy
+sealed trait CustomActionDisplayPolicyExpr
+case class StatusExpr(status: String) extends CustomActionDisplayPolicyExpr
+case class NodeExpr(node: String)     extends CustomActionDisplayPolicyExpr
+case class CustomActionDisplaySimplePolicy(version: Long, operator: String, expr: CustomActionDisplayPolicyExpr)
+    extends CustomActionDisplayPolicy
+case class CustomActionDisplayConditionalPolicy(condition: String, operands: List[CustomActionDisplayPolicy])
+    extends CustomActionDisplayPolicy
+class CustomActionDisplayPolicyError(msg: String) extends IllegalArgumentException(msg)
 
-// TODO: Add more
-case object CurrentlyViewedProcessVersionIsDeployed extends CustomActionDisplayPolicy
+object CustomActionDisplayPolicy {
+
+  class CustomActionDisplayPolicyBuilder private (
+      private val version: Option[Long] = None,
+      private val operator: Option[String] = None,
+      private val expr: Option[CustomActionDisplayPolicyExpr] = None,
+      private val condition: Option[String] = None,
+      private val operands: List[CustomActionDisplayPolicy] = List()
+  ) {
+    def withVersion(version: Long): CustomActionDisplayPolicyBuilder =
+      new CustomActionDisplayPolicyBuilder(version = Some(version), operator, expr, condition, operands)
+
+    def withOperator(operator: String): CustomActionDisplayPolicyBuilder =
+      if (operator == "is" || operator == "contains") {
+        new CustomActionDisplayPolicyBuilder(version, operator = Some(operator), expr, condition, operands)
+      } else {
+        throw new CustomActionDisplayPolicyError("Operator must be one of ['is', 'contains']")
+      }
+
+    def withExpr(expr: CustomActionDisplayPolicyExpr): CustomActionDisplayPolicyBuilder =
+      new CustomActionDisplayPolicyBuilder(version, operator, expr = Some(expr), condition, operands)
+
+    def withCondition(condition: String): CustomActionDisplayPolicyBuilder =
+      if (condition == "OR" || condition == "AND") {
+        new CustomActionDisplayPolicyBuilder(version, operator, expr, condition = Some(condition), operands)
+      } else {
+        throw new CustomActionDisplayPolicyError("Operator must be one of ['OR', 'AND']")
+      }
+
+    def withOperands(operands: CustomActionDisplayPolicy*): CustomActionDisplayPolicyBuilder =
+      new CustomActionDisplayPolicyBuilder(version, operator, expr, condition, operands = operands.toList)
+
+    def buildSimplePolicy(): CustomActionDisplaySimplePolicy =
+      CustomActionDisplaySimplePolicy(
+        version.getOrElse(throw new CustomActionDisplayPolicyError("version not set")),
+        operator.getOrElse(throw new CustomActionDisplayPolicyError("operator not set")),
+        expr.getOrElse(throw new CustomActionDisplayPolicyError("expr not set"))
+      )
+
+    def buildConditionalPolicy(): CustomActionDisplayConditionalPolicy =
+      CustomActionDisplayConditionalPolicy(
+        condition.getOrElse(throw new CustomActionDisplayPolicyError("condition not set")),
+        if (operands.nonEmpty) operands else throw new CustomActionDisplayPolicyError("operands list is empty")
+      )
+
+  }
+
+}
