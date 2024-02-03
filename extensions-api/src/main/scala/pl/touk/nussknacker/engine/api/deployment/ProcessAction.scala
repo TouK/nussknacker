@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
@@ -70,9 +71,15 @@ object ProcessActionState extends Enumeration {
   val FinishedStates: Set[ProcessActionState] = Set(Finished, ExecutionFinished)
 }
 
-final case class ActionName(value: String) extends AnyVal
+final case class ActionName(value: String) extends AnyVal {
+  override def toString: String = value
+}
 
 object ActionName {
+
+  implicit val encoder: Encoder[ActionName] = deriveUnwrappedEncoder
+  implicit val decoder: Decoder[ActionName] = deriveUnwrappedDecoder
+
   // TODO: Temporary action type to name mapping to handle alignment of ProcessAction and CustomAction.
   //   Probably obsolete when a consistent api is introduced.
   def apply(actionType: ProcessActionType): ActionName = new ActionName(actionType.toString)

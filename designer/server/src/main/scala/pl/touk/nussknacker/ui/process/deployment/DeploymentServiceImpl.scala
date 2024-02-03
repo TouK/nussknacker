@@ -581,7 +581,7 @@ class DeploymentServiceImpl(
       case a if a.allowedStateStatusNames.contains(ps.status.name) => a.name
     }.distinct
     if (!allowedActionsForStatus.contains(actionName)) {
-      logger.debug(s"Action: ${actionName.value} on process: ${processDetails.name} not allowed in ${ps.status} state")
+      logger.debug(s"Action: $actionName on process: ${processDetails.name} not allowed in ${ps.status} state")
       throw ProcessIllegalAction(actionName, processDetails.name, ps.status.name, allowedActionsForStatus)
     }
   }

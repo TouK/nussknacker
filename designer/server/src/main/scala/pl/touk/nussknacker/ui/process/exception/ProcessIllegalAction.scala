@@ -22,15 +22,15 @@ object ProcessIllegalAction {
       allowedActions: List[ActionName]
   ): ProcessIllegalAction =
     ProcessIllegalAction(
-      s"Action: ${actionName.value} is not allowed in scenario ($processName) state: ${statusName}, allowed actions: ${allowedActions
+      s"Action: $actionName is not allowed in scenario ($processName) state: ${statusName}, allowed actions: ${allowedActions
           .map(_.value)
           .mkString(",")}."
     )
 
   def archived(actionName: ActionName, processName: ProcessName): ProcessIllegalAction =
-    ProcessIllegalAction(s"Forbidden action: ${actionName.value} for archived scenario: $processName.")
+    ProcessIllegalAction(s"Forbidden action: $actionName for archived scenario: $processName.")
 
   def fragment(actionName: ActionName, processName: ProcessName): ProcessIllegalAction =
-    ProcessIllegalAction(s"Forbidden action: ${actionName.value} for fragment: $processName.")
+    ProcessIllegalAction(s"Forbidden action: $actionName for fragment: $processName.")
 
 }
