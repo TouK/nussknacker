@@ -41,7 +41,7 @@ trait DeploymentService extends ProcessStateService {
   ): Future[Option[ProcessAction]]
 
   def invokeCustomAction(
-      actionName: ActionName,
+      actionName: ScenarioActionName,
       processIdWithName: ProcessIdWithName,
       params: Map[String, String]
   )(

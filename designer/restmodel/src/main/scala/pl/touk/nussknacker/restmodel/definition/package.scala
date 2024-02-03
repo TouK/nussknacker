@@ -5,7 +5,7 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
-import pl.touk.nussknacker.engine.api.deployment.{ActionName, CustomAction}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -141,7 +141,7 @@ package object definition {
   }
 
   @JsonCodec final case class UICustomAction(
-      name: ActionName,
+      name: ScenarioActionName,
       allowedStateStatusNames: List[String],
       icon: Option[URI],
       parameters: List[UICustomActionParameter]

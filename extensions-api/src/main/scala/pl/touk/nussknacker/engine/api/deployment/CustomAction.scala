@@ -19,7 +19,7 @@ Things to consider in future changes:
  */
 
 case class CustomAction(
-    name: ActionName,
+    name: ScenarioActionName,
     // We cannot use "engine.api.deployment.StateStatus" because it can be implemented as a class containing nonconstant attributes
     allowedStateStatusNames: List[StateStatus.StatusName],
     parameters: List[CustomActionParameter] = Nil,
@@ -30,7 +30,7 @@ case class CustomAction(
 case class CustomActionParameter(name: String, editor: ParameterEditor)
 
 case class CustomActionRequest(
-    name: ActionName,
+    name: ScenarioActionName,
     processVersion: ProcessVersion,
     user: User,
     params: Map[String, String]

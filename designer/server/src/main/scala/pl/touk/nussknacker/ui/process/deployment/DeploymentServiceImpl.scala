@@ -164,7 +164,7 @@ class DeploymentServiceImpl(
     for {
       processDetailsOpt <- dbioRunner.run(processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id))
       processDetails    <- dbioRunner.run(existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name)))
-      _                          = checkIfCanPerformActionOnProcess(ActionName(actionType), processDetails)
+      _                          = checkIfCanPerformActionOnProcess(ScenarioActionName(actionType), processDetails)
       versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
       buildInfoProcessIngType    = getBuildInfoProcessingType(processDetails)
       // We wrap only in progress action adding to avoid long transactions and potential deadlocks
@@ -201,7 +201,7 @@ class DeploymentServiceImpl(
   }
 
   private def checkIfCanPerformActionOnProcess[PS: ScenarioShapeFetchStrategy](
-      actionName: ActionName,
+      actionName: ScenarioActionName,
       processDetails: ScenarioWithDetailsEntity[PS]
   ): Unit = {
     if (processDetails.isArchived) {
@@ -218,7 +218,7 @@ class DeploymentServiceImpl(
   ): Unit = {
     if (!ps.allowedActions.contains(actionType)) {
       logger.debug(s"Action: $actionType on process: ${processDetails.name} not allowed in ${ps.status} state")
-      throw ProcessIllegalAction(ActionName(actionType), processDetails.name, ps)
+      throw ProcessIllegalAction(ScenarioActionName(actionType), processDetails.name, ps)
     }
   }
 
@@ -538,7 +538,7 @@ class DeploymentServiceImpl(
   //       - see those actions in the actions table
   //       - send notifications about finished/failed custom actions
   override def invokeCustomAction(
-      actionName: ActionName,
+      actionName: ScenarioActionName,
       processIdWithName: ProcessIdWithName,
       params: Map[String, String]
   )(
@@ -572,7 +572,7 @@ class DeploymentServiceImpl(
   }
 
   private def checkIfCanPerformCustomActionInState[PS: ScenarioShapeFetchStrategy](
-      actionName: ActionName,
+      actionName: ScenarioActionName,
       processDetails: ScenarioWithDetailsEntity[PS],
       ps: ProcessState,
       manager: DeploymentManager

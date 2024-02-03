@@ -222,14 +222,14 @@ class MockDeploymentManager(
     import SimpleStateStatus._
     List(
       CustomAction(
-        name = ActionName("hello"),
+        name = ScenarioActionName("hello"),
         allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
       ),
       CustomAction(
-        name = ActionName("not-implemented"),
+        name = ScenarioActionName("not-implemented"),
         allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
       ),
-      CustomAction(name = ActionName("invalid-status"), allowedStateStatusNames = Nil)
+      CustomAction(name = ScenarioActionName("invalid-status"), allowedStateStatusNames = Nil)
     )
   }
 

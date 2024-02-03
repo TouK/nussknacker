@@ -4,10 +4,10 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.{
-  ActionName,
   OverridingProcessStateDefinitionManager,
   ProcessActionType,
   ProcessStateDefinitionManager,
+  ScenarioActionName,
   StateDefinitionDetails,
   StateStatus
 }
@@ -25,9 +25,9 @@ object DevelopmentStateStatus {
   val PreparingResourcesStatus: StateStatus = StateStatus("PREPARING")
   val TestStatus: StateStatus               = StateStatus("TEST")
 
-  val AfterRunningActionName: ActionName       = ActionName("AFTER")
-  val PreparingResourcesActionName: ActionName = ActionName("PREPARING")
-  val TestActionName: ActionName               = ActionName("TEST")
+  val AfterRunningActionName: ScenarioActionName       = ScenarioActionName("AFTER")
+  val PreparingResourcesActionName: ScenarioActionName = ScenarioActionName("PREPARING")
+  val TestActionName: ScenarioActionName               = ScenarioActionName("TEST")
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case DevelopmentStateStatus.AfterRunningStatus       => List(ProcessActionType.Cancel)
