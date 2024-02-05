@@ -54,6 +54,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{
+  AnonymousAccess,
   AuthenticationConfiguration,
   AuthenticationResources,
   LoggedUser,
@@ -82,11 +83,6 @@ class AkkaHttpBasedRouteProvider(
     extends RouteProvider[Route]
     with Directives
     with LazyLogging {
-
-  private val akkaHttpServerInterpreter = {
-    import system.dispatcher
-    new NuAkkaHttpServerInterpreterForTapirPurposes()
-  }
 
   override def createRoute(config: ConfigWithUnresolvedVersion): Resource[IO, Route] = {
     import system.dispatcher
@@ -372,6 +368,11 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService
         )
+
+      val akkaHttpServerInterpreter = {
+        import system.dispatcher
+        new NuAkkaHttpServerInterpreterForTapirPurposes(authenticationResources.isInstanceOf[AnonymousAccess])
+      }
 
       createAppRoute(
         resolvedConfig = resolvedConfig,

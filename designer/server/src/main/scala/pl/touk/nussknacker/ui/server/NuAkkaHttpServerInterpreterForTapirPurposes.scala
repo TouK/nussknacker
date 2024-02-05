@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.server
 
+import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, `WWW-Authenticate`}
-import akka.http.scaladsl.server.{Route, RouteResult}
+import akka.http.scaladsl.server.{RequestContext, Route, RouteResult}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.security.AuthCredentials.AnonymousAccess
 import pl.touk.nussknacker.security.Base64Crypter
@@ -19,63 +20,21 @@ import sttp.tapir.{DecodeResult, statusCode, stringBody}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext: ExecutionContext)
-    extends AkkaHttpServerInterpreter
+class NuAkkaHttpServerInterpreterForTapirPurposes(anonymousAccessEnabled: Boolean)(
+    implicit val executionContext: ExecutionContext
+) extends AkkaHttpServerInterpreter
     with LazyLogging {
 
   override def toRoute(ses: List[ServerEndpoint[AkkaStreams with capabilities.WebSockets, Future]]): Route = {
-    context =>
-      val route = super.toRoute(ses)
-      route
-        .apply(context)
-        .flatMap {
-          case complete @ RouteResult.Complete(_) =>
-            val wwwAuthHeaderOpt = complete.response.headers.find {
-              case `WWW-Authenticate`(_) => true
-              case _                     => false
-            }
-
-            wwwAuthHeaderOpt match {
-              case Some(_) if complete.response.status.intValue() == 401 =>
-                route
-                  .apply {
-                    val newContext = context
-                      .mapRequest(r =>
-                        r.mapHeaders(
-                          _ ++ Seq(
-                            Authorization(BasicHttpCredentials(AnonymousAccess.stringify(Base64Crypter)))
-                          )
-                        )
-                      )
-                    newContext
-                  }
-                  .map {
-                    case c @ RouteResult.Complete(_) if c.response.status.intValue() == 401 =>
-                      complete
-                    case c @ RouteResult.Complete(_) =>
-                      c
-                    case rejected @ RouteResult.Rejected(_) =>
-                      rejected
-                  }
-              case Some(_) | None =>
-                Future.successful(complete)
-            }
-          case rejected @ RouteResult.Rejected(_) =>
-            Future.successful(rejected)
-        }
+    if (anonymousAccessEnabled) {
+      super.toRoute(ses).withAnonymousAccessFallbackOnMissingCredentials()
+    } else {
+      super.toRoute(ses)
+    }
   }
 
-  override def toRoute(se: ServerEndpoint[AkkaStreams with capabilities.WebSockets, Future]): Route = { context =>
-    super
-      .toRoute(se)
-      .apply(context)
-      .map {
-        case complete @ RouteResult.Complete(_) =>
-          complete
-        case rejected @ RouteResult.Rejected(_) =>
-          rejected
-      }
-  }
+  override def toRoute(se: ServerEndpoint[AkkaStreams with capabilities.WebSockets, Future]): Route =
+    toRoute(se :: Nil)
 
   override val akkaHttpServerOptions: AkkaHttpServerOptions =
     AkkaHttpServerOptions.customiseInterceptors
@@ -99,6 +58,58 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext:
       case (Header("Authorization", _, _), DecodeResult.Missing) => true
       case _                                                     => false
     }
+  }
+
+  private implicit class WithAnonymousAccessFallback(val route: Route) {
+
+    def withAnonymousAccessFallbackOnMissingCredentials(): Route = { context: RequestContext =>
+      route
+        .apply(context)
+        .flatMap {
+          case complete @ RouteResult.Complete(_) if isMissingAuthHeader(complete.response) =>
+            tryOnceAgainAsAnonymousUser(route, complete).apply(context)
+          case complete @ RouteResult.Complete(_) =>
+            Future.successful(complete)
+          case rejected @ RouteResult.Rejected(_) =>
+            Future.successful(rejected)
+        }
+    }
+
+    private def isMissingAuthHeader(response: HttpResponse) = {
+      val wwwAuthHeaderOpt = response.headers.find {
+        case `WWW-Authenticate`(_) => true
+        case _                     => false
+      }
+      wwwAuthHeaderOpt match {
+        case Some(_) if response.status.intValue() == 401 => true
+        case Some(_) | None                               => false
+      }
+    }
+
+    private def tryOnceAgainAsAnonymousUser(route: Route, originCompleteResponse: RouteResult.Complete) = {
+      context: RequestContext =>
+        route
+          .apply(withAnonymousCredentialsAuthorization(context))
+          .map {
+            case complete @ RouteResult.Complete(_) if complete.response.status.intValue() == 401 =>
+              originCompleteResponse
+            case complete @ RouteResult.Complete(_) =>
+              complete
+            case rejected @ RouteResult.Rejected(_) =>
+              rejected
+          }
+    }
+
+    private def withAnonymousCredentialsAuthorization(context: RequestContext) = {
+      context.mapRequest(
+        _.mapHeaders(
+          _ ++ Seq(
+            Authorization(BasicHttpCredentials(AnonymousAccess.stringify(Base64Crypter)))
+          )
+        )
+      )
+    }
+
   }
 
   private lazy val customExceptionHandler = ExceptionHandler.pure[Future] { ctx: ExceptionContext =>
