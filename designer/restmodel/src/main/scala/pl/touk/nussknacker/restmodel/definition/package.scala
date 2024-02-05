@@ -159,26 +159,8 @@ package object definition {
   @JsonCodec final case class UICustomActionParameter(name: String, editor: ParameterEditor)
 
   sealed trait UICustomActionDisplayPolicy
-  sealed trait UICustomActionDisplayPolicyExpr
-  @JsonCodec case class UIStatusExpr(status: String) extends UICustomActionDisplayPolicyExpr
-  @JsonCodec case class UINodeExpr(node: String)     extends UICustomActionDisplayPolicyExpr
-
-  @JsonCodec case class UICustomActionDisplaySimplePolicy(
-      version: Long,
-      operator: String,
-      expr: UICustomActionDisplayPolicyExpr
-  ) extends UICustomActionDisplayPolicy
-
-  @JsonCodec case class UICustomActionDisplayConditionalPolicy(
-      condition: String,
-      operands: List[UICustomActionDisplayPolicy]
-  ) extends UICustomActionDisplayPolicy
 
   object UICustomActionDisplayPolicy {
-
-    implicit val exprEncoder: Encoder[UICustomActionDisplayPolicyExpr] = deriveEncoder
-    implicit val exprDecoder: Decoder[UICustomActionDisplayPolicyExpr] = deriveDecoder
-
     implicit val policyEncoder: Encoder[UICustomActionDisplayPolicy] = deriveEncoder
     implicit val policyDecoder: Decoder[UICustomActionDisplayPolicy] = deriveDecoder
 
@@ -196,6 +178,27 @@ package object definition {
       }
 
   }
+
+  sealed trait UICustomActionDisplayPolicyExpr
+
+  object UICustomActionPolicyExpr {
+    implicit val exprEncoder: Encoder[UICustomActionDisplayPolicyExpr] = deriveEncoder
+    implicit val exprDecoder: Decoder[UICustomActionDisplayPolicyExpr] = deriveDecoder
+  }
+
+  @JsonCodec case class UIStatusExpr(status: String) extends UICustomActionDisplayPolicyExpr
+  @JsonCodec case class UINodeExpr(node: String)     extends UICustomActionDisplayPolicyExpr
+
+  @JsonCodec case class UICustomActionDisplaySimplePolicy(
+      version: Long,
+      operator: String,
+      expr: UICustomActionDisplayPolicyExpr
+  ) extends UICustomActionDisplayPolicy
+
+  @JsonCodec case class UICustomActionDisplayConditionalPolicy(
+      condition: String,
+      operands: List[UICustomActionDisplayPolicy]
+  ) extends UICustomActionDisplayPolicy
 
   @JsonCodec final case class UICustomAction(
       name: String,
