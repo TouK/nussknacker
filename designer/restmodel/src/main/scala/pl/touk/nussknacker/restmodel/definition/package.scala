@@ -1,18 +1,10 @@
 package pl.touk.nussknacker.restmodel
 
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{
-  deriveConfiguredDecoder,
-  deriveConfiguredEncoder,
-  deriveEnumerationDecoder,
-  deriveEnumerationEncoder
-}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
-import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.{
   CustomAction,
   CustomActionDisplayConditionalPolicy,
@@ -26,6 +18,7 @@ import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 
 import java.net.URI
 
@@ -156,13 +149,24 @@ package object definition {
 
   }
 
+  implicit val configuration: Configuration = Configuration.default.withDefaults.withDiscriminator("type")
+
   @JsonCodec final case class UICustomActionParameter(name: String, editor: ParameterEditor)
 
-  sealed trait UICustomActionDisplayPolicy
+  @ConfiguredJsonCodec sealed trait UICustomActionDisplayPolicyExpr
+
+  @JsonCodec case class UIStatusExpr(status: String) extends UICustomActionDisplayPolicyExpr
+  @JsonCodec case class UINodeExpr(node: String)     extends UICustomActionDisplayPolicyExpr
+
+  @ConfiguredJsonCodec sealed trait UICustomActionDisplayPolicy
+
+  @JsonCodec case class UICustomActionDisplaySimplePolicy(
+      version: Long,
+      operator: String,
+      expr: UICustomActionDisplayPolicyExpr
+  ) extends UICustomActionDisplayPolicy
 
   object UICustomActionDisplayPolicy {
-    implicit val policyEncoder: Encoder[UICustomActionDisplayPolicy] = deriveEncoder
-    implicit val policyDecoder: Decoder[UICustomActionDisplayPolicy] = deriveDecoder
 
     def fromCustomActionDisplayPolicy(displayPolicy: CustomActionDisplayPolicy): UICustomActionDisplayPolicy =
       displayPolicy match {
@@ -178,22 +182,6 @@ package object definition {
       }
 
   }
-
-  sealed trait UICustomActionDisplayPolicyExpr
-
-  object UICustomActionPolicyExpr {
-    implicit val exprEncoder: Encoder[UICustomActionDisplayPolicyExpr] = deriveEncoder
-    implicit val exprDecoder: Decoder[UICustomActionDisplayPolicyExpr] = deriveDecoder
-  }
-
-  @JsonCodec case class UIStatusExpr(status: String) extends UICustomActionDisplayPolicyExpr
-  @JsonCodec case class UINodeExpr(node: String)     extends UICustomActionDisplayPolicyExpr
-
-  @JsonCodec case class UICustomActionDisplaySimplePolicy(
-      version: Long,
-      operator: String,
-      expr: UICustomActionDisplayPolicyExpr
-  ) extends UICustomActionDisplayPolicy
 
   @JsonCodec case class UICustomActionDisplayConditionalPolicy(
       condition: String,
