@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
-import pl.touk.nussknacker.security.{AuthCredentials, Base64Crypter, Crypter, NoOpCrypter}
+import pl.touk.nussknacker.security.{AesCrypter, AuthCredentials, Crypter, NoOpCrypter}
 import sttp.client3.SttpBackend
 import sttp.tapir.{EndpointInput, Mapping}
 
@@ -18,6 +18,7 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
   protected def frontendStrategySettings: FrontendStrategySettings
 
   protected def rawAuthCredentialsMethod: EndpointInput[String]
+
   protected def authCredentialsCrypter: Crypter = NoOpCrypter
 
   // TODO: deprecated
@@ -79,11 +80,15 @@ trait AnonymousAccess extends Directives {
 
   protected def authenticateReally(credentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]]
 
-  override protected final val authCredentialsCrypter: Crypter = Base64Crypter
+  override protected final val authCredentialsCrypter: Crypter = AesCrypter
 
   override def authenticationMethod(): EndpointInput[AuthCredentials] = {
     anonymousUserRole match {
       case Some(_) =>
+        // In WithAnonymousAccessFallback the encrypted password of the anonymous user is added as an Authorization
+        // header credentials. Here, using the same crypter, is decrypted and AuthCredentials object is created.
+        // The crypter is used to don't allow to use the anonymous credentials to authenticate explicitly (by passing
+        // the credentials with the HTTP request).
         rawAuthCredentialsMethod
           .map(
             Mapping.from[String, AuthCredentials](

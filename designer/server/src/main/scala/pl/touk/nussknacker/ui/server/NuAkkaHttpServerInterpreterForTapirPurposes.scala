@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, `W
 import akka.http.scaladsl.server.{RequestContext, Route, RouteResult}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.security.AuthCredentials.AnonymousAccess
-import pl.touk.nussknacker.security.Base64Crypter
+import pl.touk.nussknacker.security.AesCrypter
 import sttp.capabilities
 import sttp.capabilities.akka.AkkaStreams
 import sttp.model.StatusCode
@@ -104,7 +104,7 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(anonymousAccessEnabled: Boolea
       context.mapRequest(
         _.mapHeaders(
           _ ++ Seq(
-            Authorization(BasicHttpCredentials(AnonymousAccess.stringify(Base64Crypter)))
+            Authorization(BasicHttpCredentials(AnonymousAccess.stringify(AesCrypter)))
           )
         )
       )
