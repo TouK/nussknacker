@@ -23,7 +23,7 @@ trait DeploymentService extends ProcessStateService {
       comment: Option[String]
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]]
 
-  def cancelProcess(id: ProcessIdWithName, deploymentComment: Option[String])(
+  def cancelProcess(id: ProcessIdWithName, comment: Option[String])(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[Unit]
