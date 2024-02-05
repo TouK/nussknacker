@@ -13,7 +13,7 @@ Sinks and filters can be disabled by selecting `Disable` checkbox.
 &nbsp;
 ## Variable
 
-A Variable component is used to declare a new variable. In its simplest form a variable declaration looks like the example  below. As the event has been read from a Kafka topic, the `#input` variable holds event contents. Event value is assigned to a newly declared `myFirstVariable` variable.
+A Variable component is used to declare a new variable. In its simplest form a variable declaration looks like the example  below. As the event has been read from a Kafka topic, the `#input` variable holds event contents. After that, the event's value is assigned to a newly declared `myFirstVariable` variable.
 
 ![alt_text](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_variable0.png   "Scenario with variable declaration")
 
@@ -23,7 +23,7 @@ As you can see in the `variable` configuration form below, Nussknacker has infer
 ![alt_text](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_variable1.png "Variable declaration form")
 
 
-In the next example `#input` variable is used to create an expression returning a boolean value. If the input Kafka topic contains JSON objects and they contain an `operation`, the value can be obtained using the following pattern:
+In the next example `#input` variable is used to create an expression returning a boolean value. If the input Kafka topic contains JSON objects and they contain an `operation` field, the value of the field can be obtained using the following pattern:
 
 
 `#input.operation`
@@ -72,7 +72,7 @@ It distributes incoming records among output branches in accordance with the fil
 After a record leaves`source` it arrives in `choice`, the record's value is tested against each of the defined conditions.  If `#input.color` is `blue`, the record ends up in `blue sink`.  
 If `#input.color` is `green`,the record is sent to the `green sink`. For every other value, the record is sent to `sink for others` because condition `true` is always true.
 Order of evaluation of conditions is the same as is visible in the configuration form - top to bottom. You can modify the order using the drag & drop functionality.
-Order is also visible on the designer graph in an edge's (arrow's) description as a number. Be aware that the layout button can change displayed order of nodes, but it has no influence on order of evaluation.
+Order is also visible on the designer graph in an edge's (the arrow connecting the nodes) description as a number. Be aware that the layout button can change displayed order of nodes, but it has no influence on order of evaluation.
 
 ![choice window](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_choice1.png)
 
