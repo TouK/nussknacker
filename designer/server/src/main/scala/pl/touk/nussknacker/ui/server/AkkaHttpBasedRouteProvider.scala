@@ -267,9 +267,7 @@ class AkkaHttpBasedRouteProvider(
           AttachmentsConfig.create(resolvedConfig),
           processActivityRepository
         ),
-        new TapirStreamEndpointProvider {
-          override def mat: Materializer = materializer
-        }
+        new AkkaHttpBasedTapirStreamEndpointProvider()
       )
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)

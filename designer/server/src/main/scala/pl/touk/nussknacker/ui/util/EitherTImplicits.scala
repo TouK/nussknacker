@@ -21,8 +21,8 @@ object EitherTImplicits {
       EitherT.fromOptionF(value, error)
   }
 
-  implicit class EitherTFromMonad[F[_]: Monad, ERROR, OUTPUT](value: F[OUTPUT]) {
-    def eitherT(): EitherT[F, ERROR, OUTPUT] =
+  implicit class EitherTFromMonad[F[_]: Monad, OUTPUT](value: F[OUTPUT]) {
+    def eitherT[ERROR](): EitherT[F, ERROR, OUTPUT] =
       EitherT.liftF(value)
   }
 

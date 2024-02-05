@@ -24,14 +24,14 @@ import java.time.Instant
 
 class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  import ScenarioActivityApiEndpoints.Dtos.ScenarioActivityErrors._
+  import ScenarioActivityApiEndpoints.Dtos.ScenarioActivityError._
   import ScenarioActivityApiEndpoints.Dtos._
   import TapirCodecs.ContentDispositionCodec._
   import TapirCodecs.HeaderCodec._
   import TapirCodecs.ScenarioNameCodec._
   import TapirCodecs.VersionIdCodec._
 
-  lazy val scenarioActivityEndpoint: SecuredEndpoint[ProcessName, ScenarioActivityErrors, ScenarioActivity, Any] =
+  lazy val scenarioActivityEndpoint: SecuredEndpoint[ProcessName, ScenarioActivityError, ScenarioActivity, Any] =
     baseNuApiEndpoint
       .summary("Scenario activity service")
       .tag("Scenario")
@@ -69,7 +69,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
-  lazy val addCommentEndpoint: SecuredEndpoint[AddCommentRequest, ScenarioActivityErrors, Unit, Any] =
+  lazy val addCommentEndpoint: SecuredEndpoint[AddCommentRequest, ScenarioActivityError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Add scenario comment service")
       .tag("Scenario")
@@ -82,7 +82,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
-  lazy val deleteCommentEndpoint: SecuredEndpoint[DeleteCommentRequest, ScenarioActivityErrors, Unit, Any] =
+  lazy val deleteCommentEndpoint: SecuredEndpoint[DeleteCommentRequest, ScenarioActivityError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Delete process comment service")
       .tag("Scenario")
@@ -93,7 +93,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       )
       .out(statusCode(Ok))
       .errorOut(
-        oneOf[ScenarioActivityErrors](
+        oneOf[ScenarioActivityError](
           oneOfVariantFromMatchType(
             NotFound,
             plainBody[NoScenario]
@@ -120,7 +120,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
 
   def addAttachmentEndpoint(
       implicit streamBodyEndpoint: EndpointInput[InputStream]
-  ): SecuredEndpoint[AddAttachmentRequest, ScenarioActivityErrors, Unit, Any] = {
+  ): SecuredEndpoint[AddAttachmentRequest, ScenarioActivityError, Unit, Any] = {
     baseNuApiEndpoint
       .summary("Add scenario attachment service")
       .tag("Scenario")
@@ -138,7 +138,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
 
   def downloadAttachmentEndpoint(
       implicit streamBodyEndpoint: EndpointOutput[InputStream]
-  ): SecuredEndpoint[GetAttachmentRequest, ScenarioActivityErrors, GetAttachmentResponse, Any] = {
+  ): SecuredEndpoint[GetAttachmentRequest, ScenarioActivityError, GetAttachmentResponse, Any] = {
     baseNuApiEndpoint
       .summary("Download attachment service")
       .tag("Scenario")
@@ -158,8 +158,8 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       .withSecurity(auth)
   }
 
-  private lazy val scenarioNotFoundErrorOutput: EndpointOutput.OneOf[ScenarioActivityErrors, ScenarioActivityErrors] =
-    oneOf[ScenarioActivityErrors](
+  private lazy val scenarioNotFoundErrorOutput: EndpointOutput.OneOf[ScenarioActivityError, ScenarioActivityError] =
+    oneOf[ScenarioActivityError](
       oneOfVariantFromMatchType(
         NotFound,
         plainBody[NoScenario]
@@ -254,22 +254,27 @@ object ScenarioActivityApiEndpoints {
         GetAttachmentResponse(InputStream.nullInputStream(), None, MediaType.TextPlainUtf8.toString())
     }
 
-    sealed trait ScenarioActivityErrors
+    sealed trait ScenarioActivityError
 
-    object ScenarioActivityErrors {
-      case class NoScenario(scenarioName: ProcessName) extends ScenarioActivityErrors
-      case object NoPermission                         extends ScenarioActivityErrors with CustomAuthorizationError
-      case class NoComment(commentId: Long)            extends ScenarioActivityErrors
+    object ScenarioActivityError {
+      final case class NoScenario(scenarioName: ProcessName) extends ScenarioActivityError
+      final case object NoPermission                         extends ScenarioActivityError with CustomAuthorizationError
+      final case class NoComment(commentId: Long)            extends ScenarioActivityError
+
+      private def deserializationException =
+        (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
 
       implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
         Codec.string.map(
-          Mapping.from[String, NoScenario](_ => ???)(e => s"No scenario ${e.scenarioName} found")
+          Mapping.from[String, NoScenario](deserializationException)(e => s"No scenario ${e.scenarioName} found")
         )
       }
 
       implicit val noCommentCodec: Codec[String, NoComment, CodecFormat.TextPlain] = {
         Codec.string.map(
-          Mapping.from[String, NoComment](_ => ???)(e => s"Unable to delete comment with id: ${e.commentId}")
+          Mapping.from[String, NoComment](deserializationException)(e =>
+            s"Unable to delete comment with id: ${e.commentId}"
+          )
         )
       }
 
