@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api._
 import sttp.client3.SttpBackend
@@ -23,7 +23,7 @@ class OAuth2AuthenticationResources(
     realm: String,
     service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData],
     configuration: OAuth2Configuration
-)(implicit override val executionContext: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
+)(implicit executionContext: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
     extends AuthenticationResources
     with Directives
     with LazyLogging
@@ -33,7 +33,20 @@ class OAuth2AuthenticationResources(
 
   private val authenticator = OAuth2Authenticator(service)
 
-  override def authenticationMethod(): EndpointInput[AuthCredentials] =
+  override protected val anonymousUserRole: Option[String] = configuration.anonymousUserRole
+
+  override protected def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
+    SecurityDirectives.authenticateOAuth2Async(
+      authenticator = authenticator,
+      realm = realm
+    )
+  }
+
+  override protected def authenticateReally(credentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = {
+    authenticator.authenticate(credentials.value)
+  }
+
+  override protected def rawAuthCredentialsMethod: EndpointInput[String] = {
     auth.oauth2
       .authorizationCode(
         authorizationUrl = configuration.authorizeUrl.map(_.toString),
@@ -42,25 +55,9 @@ class OAuth2AuthenticationResources(
         tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
         challenge = WWWAuthenticateChallenge.bearer(realm)
       )
-      .map(Mapping.from[String, AuthCredentials](AuthCredentials.fromString)(_.stringify))
-
-  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
-    authCredentials match {
-      case AuthCredentials.PassedAuthCredentials(value) =>
-        authenticator.authenticate(value)
-      case AuthCredentials.AnonymousAccess =>
-        Future.successful(Some(AuthenticatedUser.createAnonymousUser(configuration.anonymousUserRole.toSet)))
-    }
   }
 
-  override def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
-    SecurityDirectives.authenticateOAuth2Async(
-      authenticator = authenticator,
-      realm = realm
-    )
-  }
-
-  override val frontendStrategySettings: FrontendStrategySettings =
+  override protected val frontendStrategySettings: FrontendStrategySettings =
     configuration.overrideFrontendAuthenticationStrategy.getOrElse(
       FrontendStrategySettings.OAuth2(
         configuration.authorizeUrl.map(_.toString),
@@ -71,9 +68,7 @@ class OAuth2AuthenticationResources(
       )
     )
 
-  val anonymousUserRole: Option[String] = configuration.anonymousUserRole
-
-  override lazy val additionalRoute: Route =
+  override protected lazy val additionalRoute: Route =
     pathEnd {
       parameters(Symbol("code"), Symbol("redirect_uri").?) { (authorizationCode, redirectUri) =>
         get {
@@ -136,11 +131,9 @@ class OAuth2AuthenticationResources(
           )
         )
       }
-      .recover {
-        case OAuth2ErrorHandler(ex) => {
-          logger.debug("Retrieving access token error:", ex)
-          toResponseReject(Map("message" -> "Retrieving access token error. Please try authenticate again."))
-        }
+      .recover { case OAuth2ErrorHandler(ex) =>
+        logger.debug("Retrieving access token error:", ex)
+        toResponseReject(Map("message" -> "Retrieving access token error. Please try authenticate again."))
       }
   }
 
