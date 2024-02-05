@@ -6,14 +6,14 @@ sidebar_position: 1
 
 ## Intended audience
 
-Nussknacker provides a drag and drop visual authoring tool (Nussknacker Designer). This tool allows the user to define decision algorithms – we call them scenarios – without the need to write code. This document is intended for those who will use Nussknacker Designer to configure scenario processing. Nussknacker is a low-code platform; prior knowledge of SQL, JSON and familiarity with concepts like variables and data types will help master data processing with Nussknacker. 
+Nussknacker provides a drag and drop visual authoring tool (Nussknacker Designer). This tool allows the user to define decision algorithms – we call them scenarios – without the need to write code. This document is intended for those who will use Nussknacker Designer to configure the logic used to process data using Nussknacker scenarios. Nussknacker is a low-code platform; prior knowledge of SQL, JSON and familiarity with concepts like variables and data types will help master data processing with Nussknacker. 
 
 **Please try the [Demo](/quickstart/demo) to quickly understand how to move around Nussknacker Designer, create a simple scenario and see SpEL in action.**
 
 &nbsp;
 ## Nussknacker scenario diagram
 
-Nussknacker scenario represents a decision algorithm in the form of a graph. The decisions are based on data, which can be anything from clicks on a website, to bank transactions, to readings from sensors. This data is processed by Nussknacker, according to the defined scenario(algorithm). Applying the scenario template to the input the data yields some output from Nussknacker. Either result data or information about decisions to be made.
+Nussknacker scenario represents a decision algorithm in the form of a graph. The decisions are based on data, which can be anything from clicks on a website, to bank transactions, to readings from sensors. This data is processed by Nussknacker, according to the defined scenario(algorithm). Applying the scenario template to the input the data yields output from Nussknacker. The output is either processed data or information about the actions (decisions) made, depending on the scenario.
 
 Every scenario starts with a source of data. We have to specify what kind of data we want to work with. The rest of the scenario is a sequence (Directed Acyclic Graph or DAG to be more precise) of different nodes:
 - flow control functions: filter, switch, split etc.
@@ -87,7 +87,7 @@ If the event originated from a Kafka topic, the metadata associated with this ev
 Consult Kafka [documentation](https://kafka.apache.org/33/javadoc/org/apache/kafka/clients/consumer/ConsumerRecord.html) for the exact meaning of those fields. 
 
 
-The `#meta` variable carries meta information about the scenario in execution. The following meta information elements are available:
+The `#meta` variable carries meta information about the scenario under execution. The following meta information elements are available:
 
 * processName - name of the Nussknacker scenario
 * properties  
