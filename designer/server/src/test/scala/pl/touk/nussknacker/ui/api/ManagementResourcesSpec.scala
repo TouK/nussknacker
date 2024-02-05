@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
@@ -71,7 +72,7 @@ class ManagementResourcesSpec
   }
 
   test("process during deploy cannot be deployed again") {
-    createDeployedExampleScenario(processName)
+    createDeployedExampleScenario(processName, category = Category1)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
       deployProcess(processName) ~> check {
@@ -81,7 +82,7 @@ class ManagementResourcesSpec
   }
 
   test("canceled process can't be canceled again") {
-    createDeployedCanceledExampleScenario(processName)
+    createDeployedCanceledExampleScenario(processName, category = Category1)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       cancelProcess(processName) ~> check {

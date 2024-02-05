@@ -16,6 +16,7 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 class AppApiSpec
@@ -32,7 +33,7 @@ class AppApiSpec
     "return simple designer health check (not checking scenario statuses) without authentication" in {
       given()
         .applicationState {
-          createDeployedExampleScenario(ProcessName("id1"))
+          createDeployedExampleScenario(ProcessName("id1"), category = Category1)
 
           MockableDeploymentManager.configure(
             Map("id1" -> SimpleStateStatus.Running)
@@ -57,9 +58,9 @@ class AppApiSpec
       "return health check also if cannot retrieve statuses" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
-            createDeployedExampleScenario(ProcessName("id2"))
-            createDeployedExampleScenario(ProcessName("id3"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
@@ -85,8 +86,8 @@ class AppApiSpec
       "not return health check when scenario is canceled" in {
         given()
           .applicationState {
-            createDeployedCanceledExampleScenario(ProcessName("id1"))
-            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedCanceledExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map("id2" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"))
@@ -108,8 +109,8 @@ class AppApiSpec
       "return health check ok if statuses are ok" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
-            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
@@ -134,7 +135,7 @@ class AppApiSpec
       "not report deployment in progress as fail" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map("id1" -> SimpleStateStatus.Running)
@@ -158,9 +159,33 @@ class AppApiSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
-            createDeployedExampleScenario(ProcessName("id2"))
-            createDeployedExampleScenario(ProcessName("id3"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
+
+            MockableDeploymentManager.configure(
+              Map(
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+              )
+            )
+          }
+          .when()
+          .basicAuth("unknown-user", "wrong-password")
+          .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
+          .Then()
+          .statusCode(401)
+          .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+    "no credentials pass should" - {
+      "authenticate as anonymous" in {
+        given()
+          .applicationState {
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category2)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
@@ -173,8 +198,14 @@ class AppApiSpec
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
-          .statusCode(401)
-          .body(equalTo("The resource requires authentication, which was not supplied with the request"))
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""{
+               |    "status": "OK",
+               |    "message": null,
+               |    "processes": null
+               |}""".stripMargin
+          )
       }
     }
   }
@@ -184,7 +215,7 @@ class AppApiSpec
       "return ERROR status and list of scenarios with validation errors" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map("id1" -> SimpleStateStatus.Running)
@@ -228,9 +259,9 @@ class AppApiSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
-            createDeployedExampleScenario(ProcessName("id2"))
-            createDeployedExampleScenario(ProcessName("id3"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
@@ -241,10 +272,11 @@ class AppApiSpec
             )
           }
           .when()
+          .basicAuth("unknown-user", "wrong-password")
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
           .statusCode(401)
-          .body(equalTo("The resource requires authentication, which was not supplied with the request"))
+          .body(equalTo("The supplied authentication is invalid"))
       }
     }
   }
@@ -291,8 +323,7 @@ class AppApiSpec
     "return config when" - {
       "user is an admin" in {
         given()
-          .auth()
-          .basic("admin", "admin")
+          .basicAuth("admin", "admin")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/config")
           .Then()
@@ -315,8 +346,8 @@ class AppApiSpec
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/config")
           .Then()
-          .statusCode(401)
-          .body(equalTo("The resource requires authentication, which was not supplied with the request"))
+          .statusCode(403)
+          .body(equalTo("The supplied authentication is not authorized to access this resource"))
       }
     }
   }
@@ -326,9 +357,9 @@ class AppApiSpec
       "return user's categories and processing types" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
-            createDeployedExampleScenario(ProcessName("id2"))
-            createDeployedExampleScenario(ProcessName("id3"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
@@ -357,9 +388,9 @@ class AppApiSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
-            createDeployedExampleScenario(ProcessName("id2"))
-            createDeployedExampleScenario(ProcessName("id3"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
@@ -370,10 +401,11 @@ class AppApiSpec
             )
           }
           .when()
+          .basicAuth("unknown-user", "wrong-password")
           .get(s"$nuDesignerHttpAddress/api/app/config/categoriesWithProcessingType")
           .Then()
           .statusCode(401)
-          .body(equalTo("The resource requires authentication, which was not supplied with the request"))
+          .body(equalTo("The supplied authentication is invalid"))
       }
     }
   }
@@ -383,9 +415,9 @@ class AppApiSpec
       "allow to reload" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
-            createDeployedExampleScenario(ProcessName("id2"))
-            createDeployedExampleScenario(ProcessName("id3"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
@@ -395,8 +427,7 @@ class AppApiSpec
               )
             )
           }
-          .auth()
-          .basic("admin", "admin")
+          .basicAuth("admin", "admin")
           .when()
           .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
           .Then()
@@ -407,9 +438,9 @@ class AppApiSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
-            createDeployedExampleScenario(ProcessName("id2"))
-            createDeployedExampleScenario(ProcessName("id3"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map(
@@ -420,19 +451,20 @@ class AppApiSpec
             )
           }
           .when()
+          .basicAuth("unknown-user", "wrong-password")
           .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
           .Then()
           .statusCode(401)
-          .body(equalTo("The resource requires authentication, which was not supplied with the request"))
+          .body(equalTo("The supplied authentication is invalid"))
       }
     }
     "not authorized as admin should" - {
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"))
-            createDeployedExampleScenario(ProcessName("id2"))
-            createDeployedExampleScenario(ProcessName("id3"))
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
 
             MockableDeploymentManager.configure(
               Map(

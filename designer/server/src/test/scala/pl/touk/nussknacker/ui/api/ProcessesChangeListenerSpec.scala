@@ -112,7 +112,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to deployment cancel") {
-    val processId = createDeployedExampleScenario(processName)
+    val processId = createDeployedExampleScenario(processName, category = Category1)
     val comment   = Some("cancelComment")
 
     cancelProcess(

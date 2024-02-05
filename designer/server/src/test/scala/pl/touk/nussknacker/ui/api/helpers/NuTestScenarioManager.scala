@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import db.util.DBIOActionInstances.DB
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -38,31 +37,33 @@ trait NuTestScenarioManager extends ScalaFutures {
 
   protected def createSavedScenario(
       scenario: CanonicalProcess,
+      category: String,
       isFragment: Boolean = false
   ): ProcessId = {
-    saveAndGetId(scenario, isFragment).futureValue
+    saveAndGetId(scenario, category, isFragment).futureValue
   }
 
-  def createDeployedExampleScenario(scenarioName: ProcessName): ProcessId = {
+  def createDeployedExampleScenario(scenarioName: ProcessName, category: String): ProcessId = {
     (for {
-      id <- prepareValidScenario(scenarioName)
+      id <- prepareValidScenario(scenarioName, category)
       _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
   def createDeployedScenario(
       scenario: CanonicalProcess,
+      category: String,
       isFragment: Boolean = false
   ): ProcessId = {
     (for {
-      id <- Future(createSavedScenario(scenario, isFragment))
+      id <- Future(createSavedScenario(scenario, category, isFragment))
       _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
-  def createDeployedCanceledExampleScenario(scenarioName: ProcessName): ProcessId = {
+  def createDeployedCanceledExampleScenario(scenarioName: ProcessName, category: String): ProcessId = {
     (for {
-      id <- prepareValidScenario(scenarioName)
+      id <- prepareValidScenario(scenarioName, category)
       _  <- prepareDeploy(id)
       _  <- prepareCancel(id)
     } yield id).futureValue
@@ -91,22 +92,24 @@ trait NuTestScenarioManager extends ScalaFutures {
   }
 
   private def prepareValidScenario(
-      scenarioName: ProcessName
+      scenarioName: ProcessName,
+      category: String,
   ): Future[ProcessId] = {
     val validScenario = ProcessTestData.sampleScenario
     val withNameSet   = validScenario.withProcessName(scenarioName)
-    saveAndGetId(withNameSet, isFragment = false)
+    saveAndGetId(withNameSet, category, isFragment = false)
   }
 
   private def saveAndGetId(
       scenario: CanonicalProcess,
+      category: String,
       isFragment: Boolean
   ): Future[ProcessId] = {
     val scenarioName = scenario.name
     val action =
       CreateProcessAction(
         scenarioName,
-        TestCategories.Category1,
+        category,
         scenario,
         TestProcessingTypes.Streaming,
         isFragment,

@@ -33,6 +33,7 @@ trait NuRestAssureExtensions {
     def basicAuth(name: String, password: String): RequestSpecification = {
       requestSpecification
         .auth()
+        .preemptive()
         .basic(name, password)
     }
 

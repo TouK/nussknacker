@@ -11,6 +11,7 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 class NotificationApiSpec
@@ -51,7 +52,7 @@ class NotificationApiSpec
 
         given()
           .applicationState {
-            createDeployedCanceledExampleScenario(scenarioName)
+            createDeployedCanceledExampleScenario(scenarioName, category = Category1)
           }
           .basicAuth("admin", "admin")
           .when()
@@ -79,8 +80,8 @@ class NotificationApiSpec
       }
       "return 405 when invalid HTTP method is passed" in {
         given()
-          .basicAuth("admin", "admin")
           .when()
+          .basicAuth("admin", "admin")
           .put(s"$nuDesignerHttpAddress/api/notifications")
           .Then()
           .statusCode(405)
@@ -95,15 +96,12 @@ class NotificationApiSpec
     "not authenticated should" - {
       "forbid access" in {
         given()
-          .auth()
-          .none()
           .when()
+          .basicAuth("unknown-user", "wrong-password")
           .get(s"$nuDesignerHttpAddress/api/notification")
           .Then()
           .statusCode(401)
-          .body(
-            equalTo("The resource requires authentication, which was not supplied with the request")
-          )
+          .body(equalTo("The supplied authentication is invalid"))
       }
     }
   }

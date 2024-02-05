@@ -15,7 +15,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.graph.ProcessProperties
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -76,7 +76,7 @@ class ProcessesResourcesSpec
   private val archivedFragmentName = ProcessName("archived-fragment")
 
   test("should return list of process with state") {
-    createDeployedExampleScenario(processName)
+    createDeployedExampleScenario(processName, category = Category1)
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running))
   }
 
@@ -102,7 +102,7 @@ class ProcessesResourcesSpec
   }
 
   test("return single process") {
-    val processId = createDeployedExampleScenario(processName)
+    val processId = createDeployedExampleScenario(processName, category = Category1)
 
     deploymentManager.withProcessRunning(processName) {
       forScenarioReturned(processName) { process =>
@@ -122,7 +122,7 @@ class ProcessesResourcesSpec
   }
 
   test("spel template expression is validated properly") {
-    createDeployedScenario(SampleSpelTemplateProcess.process)
+    createDeployedScenario(SampleSpelTemplateProcess.process, category = Category1)
 
     Get(s"/processes/${SampleSpelTemplateProcess.processName}") ~> routeWithRead ~> check {
       val newProcessDetails = responseAs[ScenarioWithDetails]
@@ -165,7 +165,7 @@ class ProcessesResourcesSpec
   }
 
   test("not allow to archive still running process") {
-    createDeployedExampleScenario(processName)
+    createDeployedExampleScenario(processName, category = Category1)
 
     deploymentManager.withProcessRunning(processName) {
       archiveProcess(processName) { status =>
@@ -215,7 +215,7 @@ class ProcessesResourcesSpec
   }
 
   test("should allow to rename canceled process") {
-    val processId = createDeployedCanceledExampleScenario(processName)
+    val processId = createDeployedCanceledExampleScenario(processName, category = Category1)
     val newName   = ProcessName("ProcessChangedName")
 
     renameProcess(processName, newName) { status =>
@@ -225,7 +225,7 @@ class ProcessesResourcesSpec
   }
 
   test("should not allow to rename deployed process") {
-    createDeployedExampleScenario(processName)
+    createDeployedExampleScenario(processName, category = Category1)
     deploymentManager.withProcessRunning(processName) {
       val newName = ProcessName("ProcessChangedName")
 
@@ -477,8 +477,8 @@ class ProcessesResourcesSpec
     val thirdProcessor  = ProcessName("Processor3")
 
     createEmptyProcess(firstProcessor)
-    createDeployedCanceledExampleScenario(secondProcessor)
-    createDeployedExampleScenario(thirdProcessor)
+    createDeployedCanceledExampleScenario(secondProcessor, category = Category1)
+    createDeployedExampleScenario(thirdProcessor, category = Category1)
 
     deploymentManager.withProcessStateStatus(secondProcessor, SimpleStateStatus.Canceled) {
       deploymentManager.withProcessStateStatus(thirdProcessor, SimpleStateStatus.Running) {
@@ -835,8 +835,8 @@ class ProcessesResourcesSpec
   }
 
   test("should return statuses only for not archived scenarios (excluding fragments)") {
-    createDeployedExampleScenario(processName)
-    createArchivedProcess(archivedProcessName)
+    createDeployedExampleScenario(processName, category = Category1)
+    createArchivedProcess(archivedProcessName, category = Category1)
     createEmptyProcess(ProcessName("fragment"), isFragment = true)
 
     Get(s"/processes/status") ~> routeWithAllPermissions ~> check {
@@ -848,7 +848,7 @@ class ProcessesResourcesSpec
   }
 
   test("should return status for single deployed process") {
-    createDeployedExampleScenario(processName)
+    createDeployedExampleScenario(processName, category = Category1)
 
     deploymentManager.withProcessRunning(processName) {
       forScenarioStatus(processName) { (code, state) =>

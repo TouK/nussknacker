@@ -8,6 +8,8 @@ import scala.util.{Failure, Success, Try}
 sealed trait AuthCredentials
 
 object AuthCredentials {
+
+  val anonymousUsername     = "anonymous"
   private val anonymousPass = "anonymous"
 
   final case class PassedAuthCredentials(value: String) extends AuthCredentials
@@ -19,7 +21,7 @@ object AuthCredentials {
 
   def fromStringToAuthCredentials(value: String, crypter: Crypter): AuthCredentials = {
     new String(Base64.getDecoder.decode(value)).split(":").toList match {
-      case "anonymous" :: pass :: Nil =>
+      case `anonymousUsername` :: pass :: Nil =>
         crypter.decrypt(pass) match {
           case Failure(_) =>
             PassedAuthCredentials(value)
@@ -39,7 +41,7 @@ object AuthCredentials {
     def stringify(crypter: Crypter): String = authCredentials match {
       case PassedAuthCredentials(value) => value
       case AnonymousAccess =>
-        new String(Base64.getEncoder.encode(s"anonymous:${crypter.encrypt(anonymousPass)}".getBytes))
+        new String(Base64.getEncoder.encode(s"$anonymousUsername:${crypter.encrypt(anonymousPass)}".getBytes))
     }
 
   }

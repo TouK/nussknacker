@@ -6,6 +6,7 @@ import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 import java.util.UUID
@@ -36,7 +37,7 @@ class ScenarioActivityApiSpec
       "return empty comments and attachment for existing process without them" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .basicAuth("reader", "reader")
           .when()
@@ -46,8 +47,8 @@ class ScenarioActivityApiSpec
           .equalsJsonBody(
             s"""
                |{
-               |    "comments": [],
-               |    "attachments": []
+               |  "comments": [],
+               |  "attachments": []
                |}
                |""".stripMargin
           )
@@ -67,12 +68,12 @@ class ScenarioActivityApiSpec
     "not authenticated should" - {
       "forbid access" in {
         given()
-          .noAuth()
+          .basicAuth("unknown-user", "wrong-password")
           .when()
           .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The resource requires authentication, which was not supplied with the request")
+          .equalsPlainBody("The supplied authentication is invalid")
       }
     }
   }
@@ -82,7 +83,7 @@ class ScenarioActivityApiSpec
       "add comment in existing scenario" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .plainBody(commentContent)
           .basicAuth("writer", "writer")
@@ -96,7 +97,7 @@ class ScenarioActivityApiSpec
       "return 404 for no existing scenario" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .plainBody(commentContent)
           .basicAuth("writer", "writer")
@@ -112,18 +113,18 @@ class ScenarioActivityApiSpec
       "forbid access for no authorization" in {
         given()
           .plainBody(commentContent)
-          .noAuth()
+          .basicAuth("unknown-user", "wrong-password")
           .when()
           .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/comments")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The resource requires authentication, which was not supplied with the request")
+          .equalsPlainBody("The supplied authentication is invalid")
       }
 
       "forbid access for insufficient privileges" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .plainBody(commentContent)
           .basicAuth("reader", "reader")
@@ -141,7 +142,7 @@ class ScenarioActivityApiSpec
       "remove comment in existing scenario" in {
         val commentId = given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
             createComment(scenarioName = exampleScenarioName, commentContent = commentContent)
           }
           .basicAuth("reader", "reader")
@@ -162,7 +163,7 @@ class ScenarioActivityApiSpec
       "return 500 for no existing comment" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .basicAuth("writer", "writer")
           .when()
@@ -186,18 +187,18 @@ class ScenarioActivityApiSpec
     "not authenticated should" - {
       "forbid access for no authorization" in {
         given()
-          .noAuth()
+          .basicAuth("unknown-user", "wrong-password")
           .when()
           .delete(s"$nuDesignerHttpAddress/api/processes/${exampleScenario.name}/activity/comments/1")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The resource requires authentication, which was not supplied with the request")
+          .equalsPlainBody("The supplied authentication is invalid")
       }
 
       "forbid access for insufficient privileges" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .basicAuth("reader", "reader")
           .when()
@@ -214,7 +215,7 @@ class ScenarioActivityApiSpec
       "add attachment to existing scenario" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .streamBody(fileContent = fileContent, fileName = fileName)
           .preemptiveBasicAuth("writer", "writer")
@@ -230,7 +231,7 @@ class ScenarioActivityApiSpec
         val fileContent2 = "very important content2"
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
             createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent1, fileName = fileName)
             createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent2, fileName = fileName)
           }
@@ -242,23 +243,23 @@ class ScenarioActivityApiSpec
             matchJsonWithRegexValues(
               s"""
                  |{
-                 |    "comments": [],
-                 |    "attachments": [
-                 |        {
-                 |            "id": "${regexes.digitsRegex}",
-                 |            "processVersionId": 1,
-                 |            "fileName": "important_file.txt",
-                 |            "user": "writer",
-                 |            "createDate": "${regexes.zuluDateRegex}"
-                 |        },
-                 |        {
-                 |            "id": "${regexes.digitsRegex}",
-                 |            "processVersionId": 1,
-                 |            "fileName": "important_file.txt",
-                 |            "user": "writer",
-                 |            "createDate": "${regexes.zuluDateRegex}"
-                 |        }
-                 |    ]
+                 |  "comments": [],
+                 |  "attachments": [
+                 |    {
+                 |      "id": "${regexes.digitsRegex}",
+                 |      "processVersionId": 1,
+                 |      "fileName": "important_file.txt",
+                 |      "user": "writer",
+                 |      "createDate": "${regexes.zuluDateRegex}"
+                 |    },
+                 |    {
+                 |      "id": "${regexes.digitsRegex}",
+                 |      "processVersionId": 1,
+                 |      "fileName": "important_file.txt",
+                 |      "user": "writer",
+                 |      "createDate": "${regexes.zuluDateRegex}"
+                 |    }
+                 |  ]
                  |}
                  |""".stripMargin
             )
@@ -281,18 +282,18 @@ class ScenarioActivityApiSpec
       "forbid access for no authorization" in {
         given()
           .streamBody(fileContent = "test", fileName = "test.xml")
-          .noAuth()
+          .basicAuth("unknown-user", "wrong-password")
           .when()
           .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The resource requires authentication, which was not supplied with the request")
+          .equalsPlainBody("The supplied authentication is invalid")
       }
 
       "forbid access for insufficient privileges" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .streamBody(fileContent = "test", fileName = "test.xml")
           .preemptiveBasicAuth("reader", "reader")
@@ -310,7 +311,7 @@ class ScenarioActivityApiSpec
       "download existing attachment" in {
         val attachmentId = given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
             createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent)
           }
           .basicAuth("reader", "reader")
@@ -331,7 +332,7 @@ class ScenarioActivityApiSpec
       "return empty body for no existing attachment" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .basicAuth("writer", "writer")
           .when()
@@ -355,12 +356,12 @@ class ScenarioActivityApiSpec
     "not authenticated should" - {
       "forbid access for no authorization" in {
         given()
-          .noAuth()
+          .basicAuth("unknown-user", "wrong-password")
           .when()
           .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/attachments/1")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The resource requires authentication, which was not supplied with the request")
+          .equalsPlainBody("The supplied authentication is invalid")
       }
     }
   }
@@ -400,16 +401,16 @@ class ScenarioActivityApiSpec
             matchJsonWithRegexValues(
               s"""
                  |{
-                 |    "comments": [
-                 |        {
-                 |            "id": "${regexes.digitsRegex}",
-                 |            "processVersionId": 1,
-                 |            "content": "$commentContent",
-                 |            "user": "writer",
-                 |            "createDate": "${regexes.zuluDateRegex}"
-                 |        }
-                 |    ],
-                 |    "attachments": []
+                 |  "comments": [
+                 |    {
+                 |      "id": "${regexes.digitsRegex}",
+                 |      "processVersionId": 1,
+                 |      "content": "$commentContent",
+                 |      "user": "writer",
+                 |      "createDate": "${regexes.zuluDateRegex}"
+                 |    }
+                 |  ],
+                 |  "attachments": []
                  |}
                  |""".stripMargin
             )
@@ -429,8 +430,8 @@ class ScenarioActivityApiSpec
           .equalsJsonBody(
             s"""
                |{
-               |    "comments": [],
-               |    "attachments": []
+               |  "comments": [],
+               |  "attachments": []
                |}
                |""".stripMargin
           )
@@ -450,16 +451,16 @@ class ScenarioActivityApiSpec
             matchJsonWithRegexValues(
               s"""
                  |{
-                 |    "comments": [],
-                 |    "attachments": [
-                 |        {
-                 |            "id": "${regexes.digitsRegex}",
-                 |            "processVersionId": 1,
-                 |            "fileName": "important_file.txt",
-                 |            "user": "writer",
-                 |            "createDate": "${regexes.zuluDateRegex}"
-                 |        }
-                 |    ]
+                 |  "comments": [],
+                 |  "attachments": [
+                 |    {
+                 |      "id": "${regexes.digitsRegex}",
+                 |      "processVersionId": 1,
+                 |      "fileName": "important_file.txt",
+                 |      "user": "writer",
+                 |      "createDate": "${regexes.zuluDateRegex}"
+                 |    }
+                 |  ]
                  |}
                  |""".stripMargin
             )

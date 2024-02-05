@@ -480,9 +480,13 @@ trait NuResourcesTest
   ): ProcessId =
     prepareValidProcess(processName, category, isFragment).futureValue
 
-  protected def createArchivedProcess(processName: ProcessName, isFragment: Boolean = false): ProcessId = {
+  protected def createArchivedProcess(
+      processName: ProcessName,
+      category: String = Category1,
+      isFragment: Boolean = false
+  ): ProcessId = {
     (for {
-      id <- prepareValidProcess(processName, Category1, isFragment)
+      id <- prepareValidProcess(processName, category, isFragment)
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = ProcessIdWithName(id, processName), isArchived = true),

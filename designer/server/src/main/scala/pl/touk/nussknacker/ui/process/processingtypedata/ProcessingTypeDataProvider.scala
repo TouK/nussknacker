@@ -41,7 +41,7 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
   final def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Data] = allAuthorized
     .get(processingType)
-    .map(_.getOrElse(throw new UnauthorizedError()))
+    .map(_.getOrElse(throw new UnauthorizedError(user)))
 
   final def all(implicit user: LoggedUser): Map[ProcessingType, Data] = allAuthorized.collect { case (k, Some(v)) =>
     (k, v)

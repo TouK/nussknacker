@@ -99,7 +99,7 @@ trait AnonymousAccess extends Directives {
         rawAuthCredentialsMethod
           .map(
             Mapping.from[String, AuthCredentials](AuthCredentials.fromStringToPassedAuthCredentials)(
-              _.stringify(authCredentialsCrypter)
+              _.stringify(NoOpCrypter)
             )
           )
     }
