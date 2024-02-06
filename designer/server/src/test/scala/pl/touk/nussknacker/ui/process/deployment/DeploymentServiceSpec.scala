@@ -22,13 +22,10 @@ import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
-import pl.touk.nussknacker.ui.process.processingtype.{
-  ProcessingTypeDataProvider,
-  ProcessingTypeDataState,
-  ValueWithRestriction
-}
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ProcessingTypeDataState, ValueWithRestriction}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
@@ -36,8 +33,9 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
 import java.util.UUID
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
+import scala.util.Success
 
 class DeploymentServiceSpec
     extends AnyFunSuite
@@ -266,6 +264,41 @@ class DeploymentServiceSpec
         deploymentService.getProcessState(processId).futureValue.status shouldBe SimpleStateStatus.NotDeployed
       }
     }
+  }
+
+  test { "should return error when trying to deploy without comment when comment is required" } {
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
+    val processName: ProcessName             = generateProcessName
+    val id                                   = prepareProcess(processName).dbioActionValues
+
+    val result = deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None).failed.futureValue
+
+    result shouldBe a[ValidationError]
+    result.getMessage.trim shouldBe "Comment is required."
+
+  }
+
+  test { "should pass when having an ok comment" } {
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
+    val processName: ProcessName             = generateProcessName
+    val id                                   = prepareProcess(processName).dbioActionValues
+
+    deploymentServiceWithCommentSettings.deployProcessAsync(id, None, Some("samplePattern")).futureValue
+  }
+
+  test { "should return error when trying to cancel without comment when comment is required" } {
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
+    val processName: ProcessName             = generateProcessName
+    val id                                   = prepareProcess(processName).dbioActionValues
+
+    val deployFuture = deploymentServiceWithCommentSettings.deployProcessAsync(id, None, Some("samplePattern"))
+
+    val resultFuture = deployFuture
+      .flatMap { _ => deploymentServiceWithCommentSettings.cancelProcess(id, None).failed }
+
+    val result = resultFuture.futureValue
+    result shouldBe a[ValidationError]
+    result.getMessage.trim shouldBe "Comment is required."
   }
 
   test("Should return properly state when state is canceled and process is canceled") {
@@ -735,6 +768,31 @@ class DeploymentServiceSpec
     assertThrowsWithParent[FragmentStateException] {
       deploymentService.getProcessState(id).futureValue
     }
+  }
+
+  def createDeploymentServiceWithCommentSettings(): DeploymentServiceImpl = {
+    createDeploymentServiceWithCommentSettings("\".+\"", Option("sampleComment"))
+  }
+
+  def createDeploymentServiceWithCommentSettings(
+      commentPattern: String,
+      exampleComment: Option[String]
+  ): DeploymentServiceImpl = {
+    val settings = DeploymentCommentSettings
+      .create("samplePattern", Some("sampleComment"))
+      .getOrElse(throw new ValidationError("invalid commentSettings"))
+
+    new DeploymentServiceImpl(
+      dmDispatcher,
+      fetchingProcessRepository,
+      actionRepository,
+      dbioRunner,
+      processValidatorByProcessingType,
+      TestFactory.scenarioResolverByProcessingType,
+      listener,
+      None,
+      Some(settings)
+    )
   }
 
   override def beforeEach(): Unit = {

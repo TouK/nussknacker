@@ -55,8 +55,6 @@ class DeploymentServiceImpl(
     extends DeploymentService
     with LazyLogging {
 
-  case class ValidationError(message: String) extends BadRequestError(message)
-
   override def cancelProcess(
       processId: ProcessIdWithName,
       comment: Option[String]
@@ -605,3 +603,4 @@ private class FragmentStateException extends BadRequestError("Fragment doesn't h
 
 private case class CustomActionNonExisting(actionName: ScenarioActionName)
     extends NotFoundError(s"$actionName is not existing")
+case class ValidationError(message: String) extends BadRequestError(message)
