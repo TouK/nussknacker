@@ -5,7 +5,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -28,9 +28,10 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodeValidationRequestDto
 import pl.touk.nussknacker.ui.api.typingDtoSchemas._
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
-import sttp.model.StatusCode.{NotFound, Ok}
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import sttp.tapir.derevo.schema
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -75,6 +76,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[NodeValidationResultDto]
         )
       )
+      // Todo: bad request code if wrong typing result sent
       .errorOut(
         statusCode(NotFound).and(
           stringBody
@@ -142,6 +144,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[ParametersValidationResultDto]
         )
       )
+      // Todo: bad request code if wrong typing result sent
       .errorOut(
         statusCode(NotFound).and(
           stringBody
@@ -167,6 +170,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[List[ExpressionSuggestionDto]]
         )
       )
+      // Todo: bad request code if wrong typing result sent
       .errorOut(
         statusCode(NotFound).and(
           stringBody
@@ -206,13 +210,11 @@ object NodesApiEndpoints {
         outgoingEdges: Option[List[Edge]]
     )
 
-    implicit val nodeValidationRequestDtoEmptyEncoder: Encoder[NodeValidationRequestDto] =
-      Encoder.encodeJson.contramap[NodeValidationRequestDto](_ => Json.Null)
-//    implicit val nodeValidationRequestDtoEmptyEncoder: Encoder[NodeValidationRequestDto] = ???
-
     object NodeValidationRequestDto {
       implicit lazy val nodeDataSchema: Schema[NodeData]                    = Schema.anyObject
       implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.derived.hidden(true)
+      implicit val nodeValidationRequestDtoEmptyEncoder: Encoder[NodeValidationRequestDto] =
+        Encoder.encodeJson.contramap[NodeValidationRequestDto](_ => Json.Null)
     }
 
     // Response doesn't need valid decoder
@@ -226,7 +228,6 @@ object NodesApiEndpoints {
 
     implicit val nodeValidationRequestDtoDecoder: Decoder[NodeValidationResultDto] =
       Decoder.instance[NodeValidationResultDto](_ => ???)
-//    implicit val nodeValidationRequestDtoDecoder: Decoder[NodeValidationResultDto] = ???
 
     object NodeValidationResultDto {
 
@@ -316,14 +317,7 @@ object NodesApiEndpoints {
         expression: Expression,
         caretPosition2d: CaretPosition2d,
         variableTypes: Map[String, TypingResultInJson]
-    ) {
-
-      def decodedVariableTypes(decoder: Decoder[TypingResult]): Map[String, TypingResult] =
-        variableTypes.map { case (key, result) =>
-          (key, decoder.decodeJson(result).getOrElse(Unknown))
-        } // todo unknown for now
-
-    }
+    )
 
     implicit val expressionSuggestionRequestDtoEncoder: Encoder[ExpressionSuggestionRequestDto] =
       Encoder.encodeJson.contramap[ExpressionSuggestionRequestDto](_ => Json.Null)
@@ -337,6 +331,20 @@ object NodesApiEndpoints {
         description: Option[String],
         parameters: List[ParameterDto]
     )
+
+    object ExpressionSuggestionDto {
+
+      def apply(expr: ExpressionSuggestion): ExpressionSuggestionDto = {
+        new ExpressionSuggestionDto(
+          expr.methodName,
+          expr.refClazz,
+          expr.fromClass,
+          expr.description,
+          expr.parameters.map(param => ParameterDto(param.name, param.refClazz))
+        )
+      }
+
+    }
 
     implicit val expressionSuggestionDtoDecoder: Decoder[ExpressionSuggestionDto] =
       Decoder.instance[ExpressionSuggestionDto](_ => ???)
@@ -415,14 +423,14 @@ object NodesApiEndpoints {
           UIValueParameter(
             name = parameter.name,
             typ = typingResultDecoder
-              .decodeJson(parameter.typ)
-              .getOrElse(Unknown), // todo for now is Unknown, maybe ex should be rethrown
+              .decodeJson(parameter.typ) match {
+              case Left(failure)       => throw failure
+              case Right(typingResult) => typingResult
+            },
             expression = parameter.expression
           )
         },
-        request.variableTypes.map { case (key, typDto) =>
-          (key, typingResultDecoder.decodeJson(typDto).getOrElse(Unknown)) // todo the same as higher todo
-        }
+        mapVariableTypesOrThrowError(request.variableTypes, typingResultDecoder)
       )
     }
 
@@ -458,14 +466,10 @@ object NodesApiEndpoints {
       new NodeValidationRequest(
         nodeData = node.nodeData,
         processProperties = node.processProperties,
-        variableTypes = node.variableTypes.map { case (key, typingResult) =>
-          (key, typingResultDecoder.decodeJson(typingResult).getOrElse(Unknown)) // todo else -> unknown for now
-        },
+        variableTypes = mapVariableTypesOrThrowError(node.variableTypes, typingResultDecoder),
         branchVariableTypes = node.branchVariableTypes.map { outerMap =>
           outerMap.map { case (name, innerMap) =>
-            val changedMap = innerMap.map { case (key, typing) =>
-              (key, typingResultDecoder.decodeJson(typing).getOrElse(Unknown))
-            }
+            val changedMap = mapVariableTypesOrThrowError(innerMap, typingResultDecoder)
             (name, changedMap)
           }
         },
@@ -474,6 +478,18 @@ object NodesApiEndpoints {
 
     }
 
+  }
+
+  def mapVariableTypesOrThrowError(
+      variableTypes: Map[String, Dtos.TypingResultInJson],
+      typingResultDecoder: Decoder[TypingResult]
+  ): Map[String, TypingResult] = {
+    variableTypes.map { case (key, typingResult) =>
+      typingResultDecoder.decodeJson(typingResult) match {
+        case Left(failure) => throw failure
+        case Right(result) => (key, result)
+      }
+    }
   }
 
   @JsonCodec(encodeOnly = true) final case class PropertiesValidationRequest(
