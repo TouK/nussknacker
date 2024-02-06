@@ -13,7 +13,7 @@ Sinks and filters can be disabled by selecting `Disable` checkbox.
 &nbsp;
 ## Variable
 
-A Variable component is used to declare a new variable. In its simplest form a variable declaration looks like the example  below. As the event has been read from a Kafka topic, the `#input` variable holds event contents. After that, the event's value is assigned to a newly declared `myFirstVariable` variable.
+A Variable component is used to declare a new variable. In its simplest form a variable declaration looks like the example  below. As the data record has been read from a data source, the `#input` variable holds the data record's value. After that, the record's (`#input`) value is assigned to a newly declared `myFirstVariable` variable.
 
 ![alt_text](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_variable0.png   "Scenario with variable declaration")
 
