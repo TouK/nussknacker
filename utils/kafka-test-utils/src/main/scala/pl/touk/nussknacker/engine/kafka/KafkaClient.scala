@@ -11,7 +11,7 @@ import java.time.Duration
 import java.util
 import java.util.{Collections, UUID}
 import scala.concurrent.{Future, Promise}
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
@@ -37,7 +37,7 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
     Try(adminClient.describeTopics(util.Arrays.asList(name)).allTopicNames().get()).toOption.map(_.get(name))
 
   def listConsumerGroups(): List[ConsumerGroupListing] =
-    adminClient.listConsumerGroups().all().get().asScala.toList
+    adminClient.listConsumerGroups().all().get().iterator().asScala.toList
 
   def sendRawMessage(topic: String, content: Array[Byte]): Future[RecordMetadata] =
     sendRawMessage(topic, null, content)
