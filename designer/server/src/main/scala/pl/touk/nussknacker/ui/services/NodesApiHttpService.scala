@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.DecodingFailure
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessingType}
@@ -9,12 +10,15 @@ import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
   ExpressionSuggestionDto,
   NodeValidationResultDto,
-  ParameterDto,
   ParametersValidationResultDto,
   prepareTypingResultDecoder
 }
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.{NodeValidationRequest, ParametersValidationRequest}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.{
+  NodeValidationRequest,
+  ParametersValidationRequest,
+  mapVariableTypesOrThrowError
+}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -79,8 +83,11 @@ class NodesApiHttpService(
             nodeData   = NodeValidationRequest.apply(nodeValidationRequestDto)(prepareTypingResultDecoder(modelData))
             validation = NodeValidationResultDto.apply(nodeValidator.validate(scenarioName, nodeData))
           } yield success(validation)
-          result.recover { case e: ProcessNotFoundError =>
-            businessError(e.getMessage)
+          result.recover {
+            case e: ProcessNotFoundError =>
+              businessError(e.getMessage)
+            case e: DecodingFailure =>
+              businessError("The request content was malformed:\n" + e.getMessage)
           }
         }
       }
@@ -143,21 +150,20 @@ class NodesApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { implicit loggedUser =>
         { case (processingType, request) =>
-          tryGetModelData(typeToConfig, processingType) match {
-            case Success(value) =>
-              implicit val modelData: ModelData = value
-              val validator                     = typeToParametersValidator.forTypeUnsafe(processingType)
-              val requestWithTypingResult =
-                ParametersValidationRequest.apply(request)(prepareTypingResultDecoder(modelData))
-              val validationResults = validator.validate(requestWithTypingResult)
-              Future(
-                success(
-                  ParametersValidationResultDto(validationResults, validationPerformed = true)
-                )
-              )
+          val result = for {
+            modelData: ModelData <- Try(typeToConfig.forTypeUnsafe(processingType))
+            validator = typeToParametersValidator.forTypeUnsafe(processingType)
+            requestWithTypingResult =
+              ParametersValidationRequest.apply(request)(prepareTypingResultDecoder(modelData))
+            validationResults = validator.validate(requestWithTypingResult)
+          } yield success(ParametersValidationResultDto(validationResults, validationPerformed = true))
+          result match {
+            case Success(response) => Future(response)
             case Failure(_: IllegalArgumentException) =>
               Future(businessError(s"ProcessingType type: $processingType not found"))
-            case Failure(exception) => Future(businessError(exception.getMessage))
+            case Failure(e: DecodingFailure) =>
+              Future(businessError("The request content was malformed:\n" + e.getMessage))
+            case Failure(exception) => throw exception
           }
         }
       }
@@ -168,41 +174,26 @@ class NodesApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { implicit loggedUser =>
         { case (processingType, request) =>
-          tryGetModelData(typeToConfig, processingType) match {
-            case Success(value) =>
-              implicit val modelData: ModelData = value
-              val expressionSuggester           = typeToExpressionSuggester.forTypeUnsafe(processingType)
-              expressionSuggester
-                .expressionSuggestions(
-                  request.expression,
-                  request.caretPosition2d,
-                  request.decodedVariableTypes(prepareTypingResultDecoder(modelData))
-                )
-                .map { suggestions =>
-                  success(
-                    suggestions.map { suggest =>
-                      ExpressionSuggestionDto(
-                        suggest.methodName,
-                        suggest.refClazz,
-                        suggest.fromClass,
-                        suggest.description,
-                        suggest.parameters.map { param => ParameterDto(param.name, param.refClazz) }
-                      )
-                    }
-                  )
-                }
+          val result = for {
+            modelData: ModelData <- Try(typeToConfig.forTypeUnsafe(processingType))
+            expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)
+            suggestions = expressionSuggester.expressionSuggestions(
+              request.expression,
+              request.caretPosition2d,
+              mapVariableTypesOrThrowError(request.variableTypes, prepareTypingResultDecoder(modelData))
+            )
+          } yield suggestions
+          result match {
+            case Success(result) =>
+              result.map(value => success(value.map(expression => ExpressionSuggestionDto(expression))))
             case Failure(_: IllegalArgumentException) =>
               Future(businessError(s"ProcessingType type: $processingType not found"))
-            case Failure(exception) => Future(Left(Left(exception.getMessage)))
+            case Failure(e: DecodingFailure) =>
+              Future(businessError("The request content was malformed:\n" + e.getMessage))
+            case Failure(exception) => throw exception
           }
         }
       }
-  }
-
-  private def tryGetModelData(typeToConfig: ProcessingTypeDataProvider[ModelData, _], processingType: ProcessingType)(
-      implicit loggedUser: LoggedUser
-  ): Try[ModelData] = {
-    Try(typeToConfig.forTypeUnsafe(processingType))
   }
 
 }
