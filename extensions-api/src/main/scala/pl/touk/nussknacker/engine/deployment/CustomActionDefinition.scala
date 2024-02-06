@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.deployment
 
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus}
 
 import java.net.URI
@@ -25,7 +25,11 @@ case class CustomActionDefinition(
     icon: Option[URI] = None
 )
 
-//TODO: validators, defaultValue, hint, labelOpt?
-case class CustomActionParameter(name: String, editor: ParameterEditor)
+//TODO: validators?
+case class CustomActionParameter(
+    name: String,
+    editor: Option[ParameterEditor],
+    validators: Option[List[ParameterValidator]]
+)
 
 case class CustomActionResult(msg: String)
