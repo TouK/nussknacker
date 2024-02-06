@@ -125,7 +125,6 @@ class ManagementResourcesSpec
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
     deployProcess(
       ProcessTestData.sampleScenario.name,
-      Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))),
       comment = Some("deployComment")
     ) ~> checkThatEventually {
       getProcess(processName) ~> check {
@@ -134,7 +133,6 @@ class ManagementResourcesSpec
       }
       cancelProcess(
         ProcessTestData.sampleScenario.name,
-        Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))),
         comment = Some("cancelComment")
       ) ~> check {
         status shouldBe StatusCodes.OK
@@ -175,17 +173,6 @@ class ManagementResourcesSpec
           }
         }
       }
-    }
-  }
-
-  test("rejects deploy without comment if comment required") {
-    saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    deployProcess(
-      ProcessTestData.sampleScenario.name,
-      deploymentCommentSettings =
-        Some(DeploymentCommentSettings.unsafe("requiredCommentPattern", Some("exampleRequiredComment")))
-    ) ~> check {
-      status shouldBe StatusCodes.BadRequest
     }
   }
 

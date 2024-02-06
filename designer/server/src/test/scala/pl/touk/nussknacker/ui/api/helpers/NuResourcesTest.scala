@@ -328,7 +328,6 @@ trait NuResourcesTest
 
   protected def deployProcess(
       processName: ProcessName,
-      deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
       comment: Option[String] = None
   ): RouteTestResult =
     Post(
@@ -339,7 +338,6 @@ trait NuResourcesTest
 
   protected def cancelProcess(
       processName: ProcessName,
-      deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
       comment: Option[String] = None
   ): RouteTestResult =
     Post(

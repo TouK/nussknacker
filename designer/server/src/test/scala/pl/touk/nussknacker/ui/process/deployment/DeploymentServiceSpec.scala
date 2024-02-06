@@ -17,6 +17,8 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.ui.BadRequestError
+import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
@@ -35,7 +37,7 @@ import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction
 
 import java.util.UUID
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration._
 
 class DeploymentServiceSpec
@@ -733,6 +735,49 @@ class DeploymentServiceSpec
     assertThrowsWithParent[FragmentStateException] {
       deploymentService.getProcessState(id).futureValue
     }
+  }
+
+  test { "should return error when trying to deploy without comment when comment is required" } {
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings(
+      DeploymentCommentSettings
+        .unsafe("requiredCommentPattern", Some("exampleRequiredComment"))
+    )
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
+
+    assertThrows[BadRequestError](
+      Await.result(deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None), .5 seconds)
+    )
+  }
+
+  test { "should return error when trying to cancel without comment when comment is required" } {
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings(
+      DeploymentCommentSettings
+        .unsafe("requiredCommentPattern", Some("exampleRequiredComment"))
+    )
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
+
+    deploymentServiceWithCommentSettings.deployProcessAsync(id, None, Some("None"))
+    assertThrows[BadRequestError](
+      Await.result(deploymentServiceWithCommentSettings.cancelProcess(id, None), .5 seconds)
+    )
+  }
+
+  def createDeploymentServiceWithCommentSettings(
+      settings: DeploymentCommentSettings
+  ): DeploymentServiceImpl = {
+    new DeploymentServiceImpl(
+      dmDispatcher,
+      fetchingProcessRepository,
+      actionRepository,
+      dbioRunner,
+      processValidatorByProcessingType,
+      TestFactory.scenarioResolverByProcessingType,
+      listener,
+      None,
+      Some(settings)
+    )
   }
 
   override def beforeEach(): Unit = {
