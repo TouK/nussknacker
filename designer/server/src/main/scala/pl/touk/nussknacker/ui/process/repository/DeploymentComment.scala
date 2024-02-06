@@ -61,7 +61,7 @@ object CommentValidationError {
   def apply(comment: String, deploymentCommentSettings: DeploymentCommentSettings): CommentValidationError = {
     val suffix = deploymentCommentSettings.exampleComment match {
       case Some(exampleComment) =>
-        s"Example comment: $exampleComment."
+        s"Example comment: $exampleComment"
       case None =>
         s"Validation pattern: ${deploymentCommentSettings.validationPattern}"
     }

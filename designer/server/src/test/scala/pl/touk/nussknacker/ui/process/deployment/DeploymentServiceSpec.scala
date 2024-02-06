@@ -37,8 +37,9 @@ import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction
 
 import java.util.UUID
-import scala.concurrent.{Await, ExecutionContextExecutor}
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
+import scala.util.Success
 
 class DeploymentServiceSpec
     extends AnyFunSuite
@@ -269,6 +270,41 @@ class DeploymentServiceSpec
         deploymentService.getProcessState(processId).futureValue.status shouldBe SimpleStateStatus.NotDeployed
       }
     }
+  }
+
+  test { "should return error when trying to deploy without comment when comment is required" } {
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
+    val processName: ProcessName             = generateProcessName
+    val id                                   = prepareProcess(processName).dbioActionValues
+
+    val result = deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None).failed.futureValue
+
+    result shouldBe a[ValidationError]
+    result.getMessage.trim shouldBe "Comment is required."
+
+  }
+
+  test { "should pass when having an ok comment" } {
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
+    val processName: ProcessName             = generateProcessName
+    val id                                   = prepareProcess(processName).dbioActionValues
+
+    deploymentServiceWithCommentSettings.deployProcessAsync(id, None, Some("samplePattern")).futureValue
+  }
+
+  test { "should return error when trying to cancel without comment when comment is required" } {
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
+    val processName: ProcessName             = generateProcessName
+    val id                                   = prepareProcess(processName).dbioActionValues
+
+    val deployFuture = deploymentServiceWithCommentSettings.deployProcessAsync(id, None, Some("samplePattern"))
+
+    val resultFuture = deployFuture
+      .flatMap { _ => deploymentServiceWithCommentSettings.cancelProcess(id, None).failed }
+
+    val result = resultFuture.futureValue
+    result shouldBe a[ValidationError]
+    result.getMessage.trim shouldBe "Comment is required."
   }
 
   test("Should return properly state when state is canceled and process is canceled") {
@@ -737,36 +773,18 @@ class DeploymentServiceSpec
     }
   }
 
-  test { "should return error when trying to deploy without comment when comment is required" } {
-    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings(
-      DeploymentCommentSettings
-        .unsafe("requiredCommentPattern", Some("exampleRequiredComment"))
-    )
-    val processName: ProcessName = generateProcessName
-    val id                       = prepareProcess(processName).dbioActionValues
-
-    assertThrows[BadRequestError](
-      Await.result(deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None), .5 seconds)
-    )
-  }
-
-  test { "should return error when trying to cancel without comment when comment is required" } {
-    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings(
-      DeploymentCommentSettings
-        .unsafe("requiredCommentPattern", Some("exampleRequiredComment"))
-    )
-    val processName: ProcessName = generateProcessName
-    val id                       = prepareProcess(processName).dbioActionValues
-
-    deploymentServiceWithCommentSettings.deployProcessAsync(id, None, Some("None"))
-    assertThrows[BadRequestError](
-      Await.result(deploymentServiceWithCommentSettings.cancelProcess(id, None), .5 seconds)
-    )
+  def createDeploymentServiceWithCommentSettings(): DeploymentServiceImpl = {
+    createDeploymentServiceWithCommentSettings("\".+\"", Option("sampleComment"))
   }
 
   def createDeploymentServiceWithCommentSettings(
-      settings: DeploymentCommentSettings
+      commentPattern: String,
+      exampleComment: Option[String]
   ): DeploymentServiceImpl = {
+    val settings = DeploymentCommentSettings
+      .create("samplePattern", Some("sampleComment"))
+      .getOrElse(throw new ValidationError("invalid commentSettings"))
+
     new DeploymentServiceImpl(
       dmDispatcher,
       fetchingProcessRepository,
