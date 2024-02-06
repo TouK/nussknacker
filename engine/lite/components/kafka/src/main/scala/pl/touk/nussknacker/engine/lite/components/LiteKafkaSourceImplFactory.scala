@@ -10,11 +10,14 @@ import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.kafka.{
+  ConsumerGroupDeterminer,
+  ConsumerGroupNamingStrategy,
   KafkaConfig,
   PreparedKafkaTopic,
   RecordFormatter,
   RecordFormatterBaseTestDataGenerator
 }
+import pl.touk.nussknacker.engine.lite.components.LiteKafkaSourceImpl.defaultConsumerGroupNamingStrategy
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
@@ -29,7 +32,8 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: RecordFormatter,
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-      testParametersInfo: KafkaTestParametersInfo
+      testParametersInfo: KafkaTestParametersInfo,
+      processObjectDependencies: ProcessObjectDependencies
   ): Source = {
     new LiteKafkaSourceImpl(
       contextInitializer,
@@ -38,7 +42,8 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
       preparedTopics,
       kafkaConfig,
       formatter,
-      testParametersInfo
+      testParametersInfo,
+      processObjectDependencies
     )
   }
 
@@ -51,7 +56,8 @@ class LiteKafkaSourceImpl[K, V](
     preparedTopics: List[PreparedKafkaTopic],
     val kafkaConfig: KafkaConfig,
     val formatter: RecordFormatter,
-    testParametersInfo: KafkaTestParametersInfo
+    testParametersInfo: KafkaTestParametersInfo,
+    processObjectDependencies: ProcessObjectDependencies
 ) extends LiteKafkaSource
     with SourceTestSupport[ConsumerRecord[Array[Byte], Array[Byte]]]
     with RecordFormatterBaseTestDataGenerator
@@ -85,4 +91,15 @@ class LiteKafkaSourceImpl[K, V](
     formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams))
   }
 
+  override def consumerGroupDeterminer: (ProcessName, NodeId) => String = (scenarioName, nodeId) => {
+    new ConsumerGroupDeterminer(
+      namingStrategy = kafkaConfig.consumerGroupNamingStrategy.getOrElse(defaultConsumerGroupNamingStrategy),
+      dependencies = processObjectDependencies
+    ).consumerGroup(scenarioName, nodeId)
+  }
+
+}
+
+object LiteKafkaSourceImpl {
+  val defaultConsumerGroupNamingStrategy = ConsumerGroupNamingStrategy.ProcessId
 }

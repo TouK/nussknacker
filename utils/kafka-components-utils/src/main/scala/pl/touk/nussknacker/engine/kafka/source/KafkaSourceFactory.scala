@@ -166,7 +166,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
       deserializationSchema,
       formatter,
       contextInitializer,
-      KafkaTestParametersInfo.empty
+      KafkaTestParametersInfo.empty,
+      modelDependencies
     )
   }
 
@@ -217,7 +218,8 @@ object KafkaSourceFactory {
         deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
         formatter: RecordFormatter,
         contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-        testParametersInfo: KafkaTestParametersInfo
+        testParametersInfo: KafkaTestParametersInfo,
+        processObjectDependencies: ProcessObjectDependencies
     ): Source
 
   }

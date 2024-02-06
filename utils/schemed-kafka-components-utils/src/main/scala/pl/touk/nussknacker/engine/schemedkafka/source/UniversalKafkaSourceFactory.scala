@@ -178,7 +178,8 @@ class UniversalKafkaSourceFactory(
       deserializationSchema,
       recordFormatter,
       kafkaContextInitializer,
-      prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original)
+      prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original),
+      modelDependencies
     )
   }
 

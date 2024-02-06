@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
-import org.apache.kafka.clients.admin.{NewTopic, TopicDescription}
+import org.apache.kafka.clients.admin.{ConsumerGroupListing, NewTopic, TopicDescription}
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
@@ -11,6 +11,7 @@ import java.time.Duration
 import java.util
 import java.util.{Collections, UUID}
 import scala.concurrent.{Future, Promise}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
@@ -34,6 +35,9 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
 
   def topic(name: String): Option[TopicDescription] =
     Try(adminClient.describeTopics(util.Arrays.asList(name)).allTopicNames().get()).toOption.map(_.get(name))
+
+  def listConsumerGroups(): List[ConsumerGroupListing] =
+    adminClient.listConsumerGroups().all().get().asScala.toList
 
   def sendRawMessage(topic: String, content: Array[Byte]): Future[RecordMetadata] =
     sendRawMessage(topic, null, content)

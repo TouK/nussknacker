@@ -4,7 +4,7 @@ import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.kafka.source.flink.{
   FlinkKafkaSource,
   FlinkKafkaSourceImplFactory
 }
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
+import pl.touk.nussknacker.engine.kafka.{ConsumerGroupDeterminer, KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
 import java.time.Duration
 
@@ -51,7 +51,8 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: RecordFormatter,
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-      testParametersInfo: KafkaTestParametersInfo
+      testParametersInfo: KafkaTestParametersInfo,
+      processObjectDependencies: ProcessObjectDependencies
   ): Source = {
     extractDelayInMillis(params) match {
       case millis if millis > 0 =>
@@ -68,7 +69,8 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
           formatter,
           contextInitializer,
           testParametersInfo,
-          millis
+          millis,
+          processObjectDependencies
         )
       case _ =>
         super.createSource(
@@ -80,7 +82,8 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
           deserializationSchema,
           formatter,
           contextInitializer,
-          testParametersInfo
+          testParametersInfo,
+          processObjectDependencies
         )
     }
   }
@@ -93,7 +96,8 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       formatter: RecordFormatter,
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
-      delay: Long
+      delay: Long,
+      processObjectDependencies: ProcessObjectDependencies
   ): FlinkKafkaSource[ConsumerRecord[K, V]] = {
     val delayCalculator = new FixedDelayCalculator(delay)
     createDelayedKafkaSource(
@@ -104,7 +108,8 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       formatter,
       contextInitializer,
       testParametersInfo,
-      delayCalculator
+      delayCalculator,
+      processObjectDependencies
     )
   }
 
@@ -116,7 +121,8 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       formatter: RecordFormatter,
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
-      delayCalculator: DelayCalculator
+      delayCalculator: DelayCalculator,
+      processObjectDependencies: ProcessObjectDependencies
   ): FlinkKafkaSource[ConsumerRecord[K, V]] = {
     new FlinkConsumerRecordBasedKafkaSource[K, V](
       preparedTopics,
@@ -125,7 +131,8 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       timestampAssigner,
       formatter,
       contextInitializer,
-      testParametersInfo
+      testParametersInfo,
+      processObjectDependencies
     ) {
 
       override protected def createFlinkSource(

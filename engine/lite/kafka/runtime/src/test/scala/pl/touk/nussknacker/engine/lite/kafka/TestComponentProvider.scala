@@ -4,7 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.Output
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
@@ -42,6 +42,9 @@ object TestComponentProvider {
             .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
             .withVariable(VariableConstants.InputVariableName, value)
         }
+
+        // TODO local: impossible without adding dependencies?
+        override def consumerGroupDeterminer: (ProcessName, NodeId) => String = (_, _) => "stubConsumerGroupId"
 
       }
 

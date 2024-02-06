@@ -20,7 +20,7 @@ import org.apache.kafka.common.errors.{
 }
 import pl.touk.nussknacker.engine.api.exception.WithExceptionExtractor
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
 import pl.touk.nussknacker.engine.kafka.exception.{KafkaErrorTopicInitializer, KafkaJsonExceptionSerializationSchema}
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
@@ -53,7 +53,21 @@ class KafkaSingleScenarioTaskRun(
     extends Task
     with LazyLogging {
 
-  private val groupId = metaData.name.value
+  private val groupId = interpreter.sources
+    .map {
+      case (sourceId, kafkaSource: LiteKafkaSource) =>
+        kafkaSource.consumerGroupDeterminer(metaData.name, NodeId(sourceId.value))
+      case (sourceId, other) => throw new IllegalArgumentException(s"Unexpected source: $other for ${sourceId.value}")
+    }
+    .toSet
+    .toList match {
+    case unique :: Nil => unique
+    case _ =>
+      throw new IllegalArgumentException(
+        "Only single consumer group is supported in Lite engine. This may be because of configuring processId-nodeId " +
+          "naming strategy and scenario with multiple sources"
+      )
+  }
 
   private var consumer: KafkaConsumer[Array[Byte], Array[Byte]] = _
   private var producer: KafkaProducerRecordsHandler             = _

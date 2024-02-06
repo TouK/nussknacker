@@ -83,7 +83,8 @@ class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
       processed.size shouldBe 1
       processed.head shouldBe parseJson(record)
       print(kafkaServer.kafkaAddress)
-      // TODO local: need to wait to commit offsets... find a way to commit offsets
+      // TODO local: need to wait for consumer to commit offsets find a way to commit offsets or live with it?
+      //  could lead to flaky tests - increase sleep time if is flaky
       Thread.sleep(10000)
       kafkaClient.listConsumerGroups().map(_.groupId()).head shouldBe s"${namespaceName}_$scenarioId-$sourceId"
     }

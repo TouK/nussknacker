@@ -11,7 +11,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
@@ -34,7 +34,10 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
   wrapToFlinkDeserializationSchema
 }
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
+import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.{
+  defaultConsumerGroupNamingStrategy,
+  defaultMaxOutOfOrdernessMillis
+}
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.time.Duration
@@ -48,7 +51,8 @@ class FlinkKafkaSource[T](
     passedAssigner: Option[TimestampWatermarkHandler[T]],
     val formatter: RecordFormatter,
     testParametersInfo: KafkaTestParametersInfo,
-    overriddenConsumerGroup: Option[String] = None
+    overriddenConsumerGroup: Option[String] = None,
+    processObjectDependencies: ProcessObjectDependencies
 ) extends FlinkSource
     with FlinkIntermediateRawSource[T]
     with Serializable
@@ -63,8 +67,17 @@ class FlinkKafkaSource[T](
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    val consumerGroupId =
-      overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
+    val consumerGroupId = {
+      overriddenConsumerGroup.getOrElse(
+        new ConsumerGroupDeterminer(
+          namingStrategy = kafkaConfig.consumerGroupNamingStrategy.getOrElse(defaultConsumerGroupNamingStrategy),
+          dependencies = processObjectDependencies
+        ).consumerGroup(
+          processName = flinkNodeContext.metaData.name,
+          nodeId = NodeId(flinkNodeContext.nodeId)
+        )
+      )
+    }
     val sourceFunction = flinkSourceFunction(consumerGroupId, flinkNodeContext)
 
     prepareSourceStream(env, flinkNodeContext, sourceFunction)
@@ -171,14 +184,16 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
     formatter: RecordFormatter,
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-    testParametersInfo: KafkaTestParametersInfo
+    testParametersInfo: KafkaTestParametersInfo,
+    processObjectDependencies: ProcessObjectDependencies
 ) extends FlinkKafkaSource[ConsumerRecord[K, V]](
       preparedTopics,
       kafkaConfig,
       deserializationSchema,
       timestampAssigner,
       formatter,
-      testParametersInfo
+      testParametersInfo,
+      processObjectDependencies = processObjectDependencies
     ) {
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
@@ -198,4 +213,6 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
 
 object FlinkKafkaSource {
   val defaultMaxOutOfOrdernessMillis = 60000
+  val defaultConsumerGroupNamingStrategy: ConsumerGroupNamingStrategy.Value =
+    ConsumerGroupNamingStrategy.ProcessIdNodeId
 }
