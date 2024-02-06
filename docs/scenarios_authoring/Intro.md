@@ -15,7 +15,7 @@ Nussknacker provides a drag and drop visual authoring tool (Nussknacker Designer
 
 Nussknacker scenario represents a decision algorithm in the form of a graph. The decisions are based on data, which can be anything from clicks on a website, to bank transactions, to readings from sensors. This data is processed by Nussknacker, according to the defined scenario(algorithm). Applying the scenario template to the input the data yields output from Nussknacker. The output is either processed data or information about the actions (decisions) made, depending on the scenario.
 
-Every scenario starts with a source of data. We have to specify what kind of data we want to work with. The rest of the scenario is a sequence (Directed Acyclic Graph or DAG to be more precise) of different nodes:
+Every scenario has to start with a datasource - we have to specify what kind of data we want to work with. In Nussknacker we just name it "source". The rest of the scenario is a sequence (Directed Acyclic Graph or DAG to be more precise) of different nodes:
 - flow control functions: filter, switch, split etc.
 - data enrichments from external sources (JDBC, OpenAPI)
 - aggregates in different types of time windows (available with Flink engine)
@@ -72,7 +72,7 @@ Nussknacker uses variables as containers for data. Variables have to be declared
 
 There are three predefined variables: `#input`, `#inputMeta` and `#meta`. 
 
-In **Streaming** processing mode the `#input` variable is associated with an event that is provided by a Kafka topic. In the **Request-Response** processing mode the `#input` variable carries the request data of a REST call which invoked Nussknacker scenario. Both in the Streaming and Request-Response cases some nodes not only terminate input events but also create new ones. As the result, the `#input` data record is no longer available after such a node. The newly created data record (and the variable associated with it) is available "downstream" -in subsequent nodes. 
+In **Streaming** processing mode the `#input` variable is associated with an event that has been read from a Kafka topic. In the **Request-Response** processing mode the `#input` variable carries the request data of a REST call which invoked Nussknacker scenario. Both in the Streaming and Request-Response cases some nodes not only terminate input events but also create new ones. As the result, the `#input` data record is no longer available after such a node. The newly created data record (and the variable associated with it) is available "downstream" -in subsequent nodes. 
 
 
 If the event originated from a Kafka topic, the metadata associated with this event is available in an `#inputMeta` variable. The following meta information fields are available in `#inputMeta`:
@@ -87,7 +87,7 @@ If the event originated from a Kafka topic, the metadata associated with this ev
 Consult Kafka [documentation](https://kafka.apache.org/33/javadoc/org/apache/kafka/clients/consumer/ConsumerRecord.html) for the exact meaning of those fields. 
 
 
-The `#meta` variable carries meta information about the scenario under execution. The following meta information elements are available:
+The `#meta` variable carries meta information about the scenario under execution. This variables' contents can change during scenario execution as it's a dynamically allocated variable. The following meta information elements are available:
 
 * processName - name of the Nussknacker scenario
 * properties  
