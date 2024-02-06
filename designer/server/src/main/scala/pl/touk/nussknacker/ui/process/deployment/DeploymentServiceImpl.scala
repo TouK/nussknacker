@@ -40,6 +40,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
+import scala.language.higherKinds
 
 // Responsibility of this class is to wrap communication with DeploymentManager with persistent, transactional context.
 // It ensures that all actions are done consistently: do validations and ensures that only allowed actions
