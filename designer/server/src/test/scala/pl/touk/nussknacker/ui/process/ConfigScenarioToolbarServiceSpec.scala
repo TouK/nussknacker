@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.ui.process
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.UriUtils
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
 import pl.touk.nussknacker.ui.config.scenariotoolbar._
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
@@ -83,10 +84,10 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
   private val service = new ConfigScenarioToolbarService(parsedConfig)
 
   it should "verify all toolbar condition cases" in {
-    val process          = createProcess("process", "Category1", isFragment = false, isArchived = false)
-    val archivedProcess  = createProcess("archived-process", "Category1", isFragment = false, isArchived = true)
-    val fragment         = createProcess("fragment", "Category1", isFragment = true, isArchived = false)
-    val archivedFragment = createProcess("archived-fragment", "Category1", isFragment = true, isArchived = true)
+    val process          = createProcess("process", Category1, isFragment = false, isArchived = false)
+    val archivedProcess  = createProcess("archived-process", Category1, isFragment = false, isArchived = true)
+    val fragment         = createProcess("fragment", Category1, isFragment = true, isArchived = false)
+    val archivedFragment = createProcess("archived-fragment", Category1, isFragment = true, isArchived = true)
 
     val testingData = Table(
       ("process", "condition", "expected"),
@@ -172,12 +173,11 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "properly create process toolbar configuration" in {
-    val process          = createProcess("process with space", "Category1", isFragment = false, isArchived = false)
-    val archivedProcess  = createProcess("archived-process", "Category1", isFragment = false, isArchived = true)
-    val fragment         = createProcess("fragment", "Category1", isFragment = true, isArchived = false)
-    val archivedFragment = createProcess("archived-fragment", "Category1", isFragment = true, isArchived = true)
-    val processCategory2 = createProcess("process2", "Category2", isFragment = false, isArchived = false)
-    val processCategory3 = createProcess("process3", "Category3", isFragment = false, isArchived = false)
+    val process          = createProcess("process with space", Category1, isFragment = false, isArchived = false)
+    val archivedProcess  = createProcess("archived-process", Category1, isFragment = false, isArchived = true)
+    val fragment         = createProcess("fragment", Category1, isFragment = true, isArchived = false)
+    val archivedFragment = createProcess("archived-fragment", Category1, isFragment = true, isArchived = true)
+    val processCategory2 = createProcess("process2", Category2, isFragment = false, isArchived = false)
 
     val testingData = Table(
       "process",
@@ -185,8 +185,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
       archivedProcess,
       fragment,
       archivedFragment,
-      processCategory2,
-      processCategory3
+      processCategory2
     )
 
     forAll(testingData) { (process: ScenarioWithDetailsEntity[_]) =>
@@ -538,10 +537,10 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  private def createProcess(name: String, category: Category, isFragment: Boolean, isArchived: Boolean) =
+  private def createProcess(name: String, category: TestCategory, isFragment: Boolean, isArchived: Boolean) =
     TestProcessUtil.wrapWithScenarioDetailsEntity(
       ProcessName(name),
-      category = category,
+      category = category.stringify,
       isFragment = isFragment,
       isArchived = isArchived
     )

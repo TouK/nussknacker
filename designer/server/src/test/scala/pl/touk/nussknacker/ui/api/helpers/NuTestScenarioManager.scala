@@ -4,13 +4,14 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.{TestProcessingType, processingTypeBy}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{
   newActionProcessRepository,
   newDBIOActionRunner,
   newFutureFetchingScenarioRepository,
   newWriteProcessRepository
 }
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
@@ -37,39 +38,39 @@ trait NuTestScenarioManager extends ScalaFutures {
 
   protected def createSavedScenario(
       scenario: CanonicalProcess,
-      category: String,
+      category: TestCategory,
       isFragment: Boolean = false
   ): ProcessId = {
     saveAndGetId(scenario, category, isFragment).futureValue
   }
 
-  def createDeployedExampleScenario(scenarioName: ProcessName, category: String): ProcessId = {
+  def createDeployedExampleScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category)
-      _  <- prepareDeploy(id)
+      _  <- prepareDeploy(id, processingTypeBy(category))
     } yield id).futureValue
   }
 
   def createDeployedScenario(
       scenario: CanonicalProcess,
-      category: String,
+      category: TestCategory,
       isFragment: Boolean = false
   ): ProcessId = {
     (for {
       id <- Future(createSavedScenario(scenario, category, isFragment))
-      _  <- prepareDeploy(id)
+      _  <- prepareDeploy(id, processingTypeBy(category))
     } yield id).futureValue
   }
 
-  def createDeployedCanceledExampleScenario(scenarioName: ProcessName, category: String): ProcessId = {
+  def createDeployedCanceledExampleScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category)
-      _  <- prepareDeploy(id)
+      _  <- prepareDeploy(id, processingTypeBy(category))
       _  <- prepareCancel(id)
     } yield id).futureValue
   }
 
-  private def prepareDeploy(scenarioId: ProcessId): Future[_] = {
+  private def prepareDeploy(scenarioId: ProcessId, processingType: TestProcessingType): Future[_] = {
     val actionType = ProcessActionType.Deploy
     val comment    = DeploymentComment.unsafe("Deploy comment").toComment(actionType)
     dbioRunner.run(
@@ -78,7 +79,7 @@ trait NuTestScenarioManager extends ScalaFutures {
         VersionId.initialVersionId,
         actionType,
         Some(comment),
-        Some(Streaming)
+        Some(processingType.stringify)
       )
     )
   }
@@ -93,7 +94,7 @@ trait NuTestScenarioManager extends ScalaFutures {
 
   private def prepareValidScenario(
       scenarioName: ProcessName,
-      category: String,
+      category: TestCategory,
   ): Future[ProcessId] = {
     val validScenario = ProcessTestData.sampleScenario
     val withNameSet   = validScenario.withProcessName(scenarioName)
@@ -102,16 +103,16 @@ trait NuTestScenarioManager extends ScalaFutures {
 
   private def saveAndGetId(
       scenario: CanonicalProcess,
-      category: String,
+      category: TestCategory,
       isFragment: Boolean
   ): Future[ProcessId] = {
     val scenarioName = scenario.name
     val action =
       CreateProcessAction(
         scenarioName,
-        category,
+        category.stringify,
         scenario,
-        TestProcessingTypes.Streaming,
+        processingTypeBy(category).stringify,
         isFragment,
         forwardedUserName = None
       )

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
 import pl.touk.nussknacker.ui.api.helpers._
 
 class NodesApiSpec

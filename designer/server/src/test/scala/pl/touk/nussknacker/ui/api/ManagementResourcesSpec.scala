@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
@@ -152,7 +152,6 @@ class ManagementResourcesSpec
             processesRoute
           ) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
-            val curTime           = Instant.now()
             deploymentHistory.map(a =>
               (a.processVersionId, a.user, a.actionType, a.commentId, a.comment, a.buildInfo)
             ) shouldBe List(

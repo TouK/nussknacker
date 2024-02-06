@@ -28,7 +28,8 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
   import io.circe.syntax._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-  import pl.touk.nussknacker.ui.api.helpers.TestCategories._
+  import pl.touk.nussknacker.ui.api.helpers.TestData.Categories._
+  import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory._
   import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 
   // These users were created based on categories configuration at designer.conf
@@ -39,12 +40,12 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     TestFactory.userWithCategoriesReadPermission(username = "testUser", categories = List(Category1))
 
   private val category1Process =
-    createScenarioEntity("category1Process", category = Category1, lastAction = Some(Deploy))
-  private val category1Fragment = createFragmentEntity("category1Fragment", category = Category1)
+    createScenarioEntity("category1Process", category = Category1.stringify, lastAction = Some(Deploy))
+  private val category1Fragment = createFragmentEntity("category1Fragment", category = Category1.stringify)
   private val category1ArchivedFragment =
-    createScenarioEntity("category1ArchivedFragment", isArchived = true, category = Category1)
+    createScenarioEntity("category1ArchivedFragment", isArchived = true, category = Category1.stringify)
   private val category2ArchivedProcess =
-    createScenarioEntity("category2ArchivedProcess", isArchived = true, category = Category2)
+    createScenarioEntity("category2ArchivedProcess", isArchived = true, category = Category2.stringify)
 
   private val processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = List(
     category1Process,
@@ -53,8 +54,8 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     category2ArchivedProcess,
   )
 
-  private val fragmentCategory1 = createFragmentEntity("fragmentCategory1", category = Category1)
-  private val fragmentCategory2 = createFragmentEntity("fragmentCategory2", category = Category2)
+  private val fragmentCategory1 = createFragmentEntity("fragmentCategory1", category = Category1.stringify)
+  private val fragmentCategory2 = createFragmentEntity("fragmentCategory2", category = Category2.stringify)
 
   private val fragments = List(
     fragmentCategory1,

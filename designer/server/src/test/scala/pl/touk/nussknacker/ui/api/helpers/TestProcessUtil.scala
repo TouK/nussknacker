@@ -11,12 +11,11 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-
+import pl.touk.nussknacker.ui.component.ComponentModelData._
 import java.time.Instant
 import java.util.UUID
 import scala.util.Random
@@ -35,7 +34,7 @@ object TestProcessUtil {
       name: String,
       category: Category,
       isArchived: Boolean = false,
-      processingType: String = Streaming,
+      processingType: String = ProcessingTypeStreaming,
       lastAction: Option[ProcessActionType] = None,
       json: Option[ScenarioGraph] = None
   ): ScenarioWithDetailsEntity[ScenarioGraph] =
@@ -53,7 +52,7 @@ object TestProcessUtil {
       name: String,
       category: Category,
       isArchived: Boolean = false,
-      processingType: String = Streaming,
+      processingType: String = ProcessingTypeStreaming,
       json: Option[ScenarioGraph] = None,
       lastAction: Option[ProcessActionType] = None
   ): ScenarioWithDetailsEntity[ScenarioGraph] = {
@@ -72,8 +71,8 @@ object TestProcessUtil {
   def wrapGraphWithScenarioDetailsEntity(
       name: ProcessName,
       scenarioGraph: ScenarioGraph,
-      processingType: ProcessingType = TestProcessingTypes.Streaming,
-      category: Category = TestCategories.Category1,
+      processingType: ProcessingType = ProcessingTypeStreaming,
+      category: Category = "Category1",
       isArchived: Boolean = false,
       isFragment: Boolean = false
   ): ScenarioWithDetailsEntity[ScenarioGraph] =
@@ -89,10 +88,10 @@ object TestProcessUtil {
   def wrapWithScenarioDetailsEntity(
       name: ProcessName,
       scenarioGraph: Option[ScenarioGraph] = None,
-      category: Category = TestCategories.Category1,
+      category: Category = "Category1",
       isFragment: Boolean = false,
       isArchived: Boolean = false,
-      processingType: ProcessingType = Streaming,
+      processingType: ProcessingType = ProcessingTypeStreaming,
       lastAction: Option[ProcessActionType] = None,
       description: Option[String] = None,
       history: Option[List[ScenarioVersion]] = None
@@ -138,8 +137,8 @@ object TestProcessUtil {
       name = name,
       isArchived = false,
       isFragment = isFragment,
-      processingType = Streaming,
-      processCategory = TestCategories.Category1,
+      processingType = ProcessingTypeStreaming,
+      processCategory = "Category1",
       scenarioGraph = Some(scenarioGraph),
       validationResult = Some(validationResult),
       history = None,
@@ -149,10 +148,9 @@ object TestProcessUtil {
 
   private def createEmptyJson(processingType: ProcessingType) = {
     val typeSpecificProperties = processingType match {
-      case Streaming | Fraud => StreamMetaData()
-      case _                 => throw new IllegalArgumentException(s"Unknown processing type: $processingType.")
+      case `ProcessingTypeStreaming` | `ProcessingTypeFraud` => StreamMetaData()
+      case _ => throw new IllegalArgumentException(s"Unknown processing type: $processingType.")
     }
-
     ScenarioGraph(ProcessProperties(typeSpecificProperties), Nil, Nil)
   }
 

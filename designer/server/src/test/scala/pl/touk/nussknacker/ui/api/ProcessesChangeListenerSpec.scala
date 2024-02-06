@@ -9,6 +9,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
@@ -27,17 +28,15 @@ class ProcessesChangeListenerSpec
     with BeforeAndAfterAll
     with NuResourcesTest {
 
-  import TestCategories._
-
   private val routeWithAllPermissions   = withAllPermissions(processesRoute)
   private val routeWithAdminPermissions = withAdminPermissions(processesRoute)
-  implicit val loggedUser: LoggedUser   = LoggedUser("1", "lu", testCategory)
+  implicit val loggedUser: LoggedUser   = createLoggedUser("1", "lu", testCategory)
 
   private val processName = ProcessTestData.sampleScenario.name
 
   test("listen to process create") {
     Post(
-      s"/processes/$processName/$Category1?isFragment=false"
+      s"/processes/$processName/${Category1.stringify}?isFragment=false"
     ) ~> processesRouteWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
     }

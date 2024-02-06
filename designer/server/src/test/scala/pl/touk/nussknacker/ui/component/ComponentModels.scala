@@ -13,6 +13,9 @@ object ComponentModelData {
 
   val AllCategories: List[String] = List(CategoryMarketing, CategoryFraud).sorted
 
+  val ProcessingTypeStreaming = "Streaming"
+  val ProcessingTypeFraud     = "Fraud"
+
   val HiddenFraudCustomerDataEnricherName     = "hiddenFraudCustomerDataEnricher"
   val HiddenMarketingCustomerDataEnricherName = "hiddenMarketingCustomerDataEnricher"
   val CustomerDataEnricherName                = "customerDataEnricher"

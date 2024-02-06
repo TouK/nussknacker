@@ -16,7 +16,7 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 class AppApiSpec
@@ -179,8 +179,8 @@ class AppApiSpec
           .body(equalTo("The supplied authentication is invalid"))
       }
     }
-    "no credentials pass should" - {
-      "authenticate as anonymous" in {
+    "no credentials were passed should" - {
+      "authenticate as anonymous and show all processes" in {
         given()
           .applicationState {
             createDeployedExampleScenario(ProcessName("id1"), category = Category1)
@@ -189,21 +189,22 @@ class AppApiSpec
 
             MockableDeploymentManager.configure(
               Map(
-                "id1" -> ProblemStateStatus.FailedToGet,
-                "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+                "id1" -> SimpleStateStatus.ProblemStateStatus.Failed,
+                "id2" -> SimpleStateStatus.ProblemStateStatus.Failed,
+                "id3" -> SimpleStateStatus.ProblemStateStatus.Failed
               )
             )
           }
           .when()
+          .basicAuth("reader", "reader")
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
-          .statusCode(200)
+          .statusCode(500)
           .equalsJsonBody(
             s"""{
-               |    "status": "OK",
-               |    "message": null,
-               |    "processes": null
+               |  "status": "ERROR",
+               |  "message": "Scenarios with status PROBLEM",
+               |  "processes": [ "id1", "id2", "id3" ]
                |}""".stripMargin
           )
       }

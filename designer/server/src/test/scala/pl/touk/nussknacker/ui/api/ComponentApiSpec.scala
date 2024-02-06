@@ -15,8 +15,8 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 class ComponentApiSpec
@@ -93,7 +93,7 @@ class ComponentApiSpec
           .emptySink("sink", "kafka")
 
         val componentId = DesignerWideComponentId.default(
-          processingType = Streaming,
+          processingType = Streaming.stringify,
           componentId = ComponentId(ComponentType.Source, sourceComponentName)
         )
 

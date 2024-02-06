@@ -4,7 +4,8 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import pl.touk.nussknacker.ui.api.helpers.TestData
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 
 object ConfigWithScalaVersion {
 
@@ -20,6 +21,6 @@ object ConfigWithScalaVersion {
   )
 
   val StreamingProcessTypeConfig: ConfigWithUnresolvedVersion =
-    ConfigWithUnresolvedVersion(TestsConfig.getConfig(s"scenarioTypes.${TestProcessingTypes.Streaming}"))
+    ConfigWithUnresolvedVersion(TestsConfig.getConfig(s"scenarioTypes.${Streaming.stringify}"))
 
 }

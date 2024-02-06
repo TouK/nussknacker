@@ -5,8 +5,8 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -66,14 +66,14 @@ object ComponentTestProcessData {
   val MarketingProcess: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(
     scenarioGraph = createSimpleDisplayableProcess(SharedSourceConf, SharedSinkConf),
     name = ProcessName("marketingProcess"),
-    processingType = Streaming,
+    processingType = "Streaming",
     category = CategoryMarketing
   )
 
   val FraudProcess: ScenarioWithDetailsEntity[ScenarioGraph] = wrapGraphWithScenarioDetailsEntity(
     scenarioGraph = createSimpleDisplayableProcess(SharedSourceConf, SharedSinkConf),
     name = ProcessName("fraudProcess"),
-    processingType = Fraud,
+    processingType = "Fraud",
     category = CategoryFraud
   )
 
@@ -81,7 +81,7 @@ object ComponentTestProcessData {
     wrapGraphWithScenarioDetailsEntity(
       scenarioGraph = createSimpleDisplayableProcess(NotSharedSourceConf, SharedSinkConf),
       name = ProcessName("fraudProcessWithNotSharedSource"),
-      processingType = Fraud,
+      processingType = "Fraud",
       category = CategoryFraud
     )
 
@@ -97,7 +97,7 @@ object ComponentTestProcessData {
         CanonicalProcessConverter.toScenarioGraph(process)
       },
       name = DeployedFraudProcessName,
-      processingType = Fraud,
+      processingType = "Fraud",
       category = CategoryFraud
     ).copy(lastAction = Some(deployedAction))
 
@@ -113,7 +113,7 @@ object ComponentTestProcessData {
         CanonicalProcessConverter.toScenarioGraph(process)
       },
       name = CanceledFraudProcessName,
-      processingType = Fraud,
+      processingType = "Fraud",
       category = CategoryFraud
     ).copy(lastAction = Some(canceledAction))
 
@@ -121,7 +121,7 @@ object ComponentTestProcessData {
     scenarioGraph = createSimpleDisplayableProcess(SecondSharedSourceConf, SharedSinkConf),
     name = ProcessName("archivedFraudProcess"),
     isArchived = true,
-    processingType = Fraud,
+    processingType = "Fraud",
     category = CategoryFraud
   ).copy(lastAction = Some(archivedAction))
 
@@ -134,7 +134,7 @@ object ComponentTestProcessData {
       CanonicalProcessConverter.toScenarioGraph(scenario)
     },
     name = FraudFragmentName,
-    processingType = Fraud,
+    processingType = "Fraud",
     category = CategoryFraud,
     isFragment = true,
   )
@@ -156,7 +156,7 @@ object ComponentTestProcessData {
           )
         )
     ),
-    processingType = Fraud,
+    processingType = "Fraud",
     category = CategoryFraud
   )
 

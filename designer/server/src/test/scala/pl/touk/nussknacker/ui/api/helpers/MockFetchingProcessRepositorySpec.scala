@@ -6,8 +6,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.api.helpers.ProcessesQueryEnrichments._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{ScenarioShapeFetchStrategy, ScenarioWithDetailsEntity}
@@ -26,21 +27,26 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val categoryFraudSecond = "fraudSecond"
   private val categorySecret      = "secret"
 
+  private val processingTypeStreaming = "Streaming"
+  private val processingTypeFraud     = "Fraud"
+
   private val scenarioGraph = ProcessTestData.sampleScenarioGraph
   private val fragmentGraph = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
 
   private val someVersion = VersionId(666L)
 
-  private val marketingProcess =
-    createScenarioEntity(
-      "marketingProcess",
-      category = categoryMarketing,
-      lastAction = Some(Deploy),
-      json = Some(scenarioGraph)
-    )
+  private val marketingProcess = createScenarioEntity(
+    "marketingProcess",
+    category = categoryMarketing,
+    lastAction = Some(Deploy),
+    json = Some(scenarioGraph)
+  )
 
-  private val marketingFragment =
-    createFragmentEntity("marketingFragment", category = categoryMarketing, json = Some(fragmentGraph))
+  private val marketingFragment = createFragmentEntity(
+    "marketingFragment",
+    category = categoryMarketing,
+    json = Some(fragmentGraph)
+  )
 
   private val marketingArchivedFragment = createFragmentEntity(
     "marketingArchivedFragment",
@@ -56,50 +62,60 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     lastAction = Some(Archive)
   )
 
-  private val fraudProcess =
-    createScenarioEntity("fraudProcess", category = categoryFraud, processingType = Fraud, lastAction = Some(Deploy))
+  private val fraudProcess = createScenarioEntity(
+    "fraudProcess",
+    category = categoryFraud,
+    processingType = processingTypeFraud,
+    lastAction = Some(Deploy)
+  )
 
   private val fraudArchivedProcess = createScenarioEntity(
     "fraudArchivedProcess",
     isArchived = true,
     category = categoryFraudSecond,
-    processingType = Fraud,
+    processingType = processingTypeFraud,
     lastAction = Some(Archive),
     json = Some(scenarioGraph)
   )
 
-  private val fraudFragment =
-    createFragmentEntity("fraudFragment", category = categoryFraud, processingType = Fraud, json = Some(scenarioGraph))
+  private val fraudFragment = createFragmentEntity(
+    "fraudFragment",
+    category = categoryFraud,
+    processingType = processingTypeFraud,
+    json = Some(scenarioGraph)
+  )
 
   private val fraudArchivedFragment = createFragmentEntity(
     "fraudArchivedFragment",
     isArchived = true,
     category = categoryFraud,
-    processingType = Fraud,
+    processingType = processingTypeFraud,
     json = Some(fragmentGraph)
   )
 
   private val fraudSecondProcess = createScenarioEntity(
     "fraudSecondProcess",
     category = categoryFraudSecond,
-    processingType = Fraud,
+    processingType = processingTypeFraud,
     lastAction = Some(Cancel),
     json = Some(scenarioGraph)
   )
 
-  private val fraudSecondFragment =
-    createFragmentEntity("fraudSecondFragment", category = categoryFraudSecond, processingType = Fraud)
+  private val fraudSecondFragment = createFragmentEntity(
+    "fraudSecondFragment",
+    category = categoryFraudSecond,
+    processingType = processingTypeFraud
+  )
 
   private val secretProcess  = createScenarioEntity("secretProcess", category = categorySecret)
   private val secretFragment = createFragmentEntity("secretFragment", category = categorySecret)
 
-  private val secretArchivedFragment =
-    createFragmentEntity(
-      "secretArchivedFragment",
-      isArchived = true,
-      category = categorySecret,
-      lastAction = Some(Archive)
-    )
+  private val secretArchivedFragment = createFragmentEntity(
+    "secretArchivedFragment",
+    isArchived = true,
+    category = categorySecret,
+    lastAction = Some(Archive)
+  )
 
   private val secretArchivedProcess = createScenarioEntity(
     "secretArchivedProcess",
@@ -127,10 +143,18 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   )
 
   private val admin: LoggedUser = TestFactory.adminUser()
-  private val marketingUser: LoggedUser =
-    TestFactory.userWithCategoriesReadPermission(categories = List(categoryMarketing))
-  private val fraudUser: LoggedUser =
-    TestFactory.userWithCategoriesReadPermission(categories = List(categoryFraud, categoryFraudSecond))
+
+  private val marketingUser: LoggedUser = LoggedUser(
+    id = "1",
+    username = "marketingUser",
+    categoryPermissions = Map(categoryMarketing -> Set(Permission.Read))
+  )
+
+  private val fraudUser: LoggedUser = LoggedUser(
+    id = "2",
+    username = "fraudUser",
+    categoryPermissions = Map(categoryFraud -> Set(Permission.Read), categoryFraudSecond -> Set(Permission.Read))
+  )
 
   private val DisplayableShape = ScenarioShapeFetchStrategy.FetchScenarioGraph
   private val CanonicalShape   = ScenarioShapeFetchStrategy.FetchCanonical
@@ -363,40 +387,40 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     // given
     val allProcessesQuery = ScenarioQuery()
     val allProcessesCategoryQuery =
-      allProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
-    val allProcessesCategoryTypesQuery = allProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
+      allProcessesQuery.withRawCategories(List(categoryMarketing, categoryFraud, categoryFraudSecond))
+    val allProcessesCategoryTypesQuery = allProcessesCategoryQuery.withRawProcessingTypes(List(processingTypeStreaming))
 
     val processesQuery         = ScenarioQuery(isFragment = Some(false), isArchived = Some(false))
     val deployedProcessesQuery = processesQuery.copy(isDeployed = Some(true))
     val deployedProcessesCategoryQuery =
-      deployedProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
+      deployedProcessesQuery.withRawCategories(List(categoryMarketing, categoryFraud, categoryFraudSecond))
     val deployedProcessesCategoryProcessingTypesQuery =
-      deployedProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
+      deployedProcessesCategoryQuery.withRawProcessingTypes(List(processingTypeStreaming))
 
     val notDeployedProcessesQuery = processesQuery.copy(isDeployed = Some(false))
     val notDeployedProcessesCategoryQuery =
-      notDeployedProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
+      notDeployedProcessesQuery.withRawCategories(List(categoryMarketing, categoryFraud, categoryFraudSecond))
     val notDeployedProcessesCategoryProcessingTypesQuery =
-      notDeployedProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
+      notDeployedProcessesCategoryQuery.withRawProcessingTypes(List(processingTypeStreaming))
 
     val archivedQuery          = ScenarioQuery(isArchived = Some(true))
     val archivedProcessesQuery = archivedQuery.copy(isFragment = Some(false))
     val archivedProcessesCategoryQuery =
-      archivedProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
+      archivedProcessesQuery.withRawCategories(List(categoryMarketing, categoryFraud, categoryFraudSecond))
     val archivedProcessesCategoryProcessingTypesQuery =
-      archivedProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
+      archivedProcessesCategoryQuery.withRawProcessingTypes(List(processingTypeStreaming))
 
     val allFragmentsQuery = ScenarioQuery(isFragment = Some(true))
     val fragmentsQuery    = allFragmentsQuery.copy(isArchived = Some(false))
     val fragmentsCategoryQuery =
-      fragmentsQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
-    val fragmentsCategoryTypesQuery = fragmentsCategoryQuery.copy(processingTypes = Some(List(Streaming)))
+      fragmentsQuery.withRawCategories(List(categoryMarketing, categoryFraud, categoryFraudSecond))
+    val fragmentsCategoryTypesQuery = fragmentsCategoryQuery.withRawProcessingTypes(List(processingTypeStreaming))
 
     val archivedFragmentsQuery = ScenarioQuery(isFragment = Some(true), isArchived = Some(true))
     val archivedFragmentsCategoryQuery =
-      archivedFragmentsQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
+      archivedFragmentsQuery.withRawCategories(List(categoryMarketing, categoryFraud, categoryFraudSecond))
     val archivedFragmentsCategoryTypesQuery =
-      archivedFragmentsCategoryQuery.copy(processingTypes = Some(List(Streaming)))
+      archivedFragmentsCategoryQuery.withRawProcessingTypes(List(processingTypeStreaming))
 
     // when
     val testingData = Table(

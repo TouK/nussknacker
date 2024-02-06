@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -116,11 +117,11 @@ object ProcessTestData {
       .build
 
   def processValidator: UIProcessValidator = new UIProcessValidator(
-    TestProcessingTypes.Streaming,
-    ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition())),
-    Map.empty,
-    List.empty,
-    new FragmentResolver(new StubFragmentRepository(Map.empty))
+    processingType = Streaming.stringify,
+    validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition())),
+    scenarioProperties = Map.empty,
+    additionalValidators = List.empty,
+    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
 
   val sampleProcessName: ProcessName = ProcessName("fooProcess")

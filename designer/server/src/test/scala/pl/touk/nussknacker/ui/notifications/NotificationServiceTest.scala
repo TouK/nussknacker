@@ -16,8 +16,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
@@ -134,7 +134,9 @@ class NotificationServiceTest
     notificationsAfterDeploy should have length 1
     val deployNotificationId = notificationsAfterDeploy.head.id
 
-    deploymentService.markActionExecutionFinished(Streaming, passedDeploymentId.value.toActionIdOpt.value).futureValue
+    deploymentService
+      .markActionExecutionFinished(Streaming.stringify, passedDeploymentId.value.toActionIdOpt.value)
+      .futureValue
     val notificationAfterExecutionFinished = notificationService.notifications(user, global).futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id
     notificationAfterExecutionFinished should have length 1
@@ -188,10 +190,10 @@ class NotificationServiceTest
       .emptySink("sink", existingSinkFactory)
     val action =
       CreateProcessAction(
-        processName,
-        Category1,
-        sampleScenario,
-        Streaming,
+        processName = processName,
+        category = Category1.stringify,
+        canonicalProcess = sampleScenario,
+        processingType = Streaming.stringify,
         isFragment = false,
         forwardedUserName = None
       )

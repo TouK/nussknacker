@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -45,7 +46,7 @@ class ValidationResourcesSpec
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val processValidatorByProcessingType = mapProcessingTypeDataProvider(
-    TestProcessingTypes.Streaming -> new UIProcessResolver(
+    Streaming -> new UIProcessResolver(
       processValidator.withScenarioPropertiesConfig(
         Map(
           "requiredStringProperty" -> ScenarioPropertyConfig(
