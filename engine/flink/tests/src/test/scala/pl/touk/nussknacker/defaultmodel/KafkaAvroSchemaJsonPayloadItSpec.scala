@@ -78,11 +78,4 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
     }
   }
 
-  private def parseJson(str: String) = io.circe.parser.parse(str).toOption.get
-
-  private def sendAsJson(jsonString: String, topic: String, timestamp: java.lang.Long = null) = {
-    val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
-    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
-  }
-
 }

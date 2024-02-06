@@ -10,6 +10,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, schemaRegistryMockClient}
+import pl.touk.nussknacker.engine.api.namespaces.{ObjectNaming, OriginalNamesObjectNaming}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
@@ -40,6 +41,8 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.test.{KafkaConfigProperties, WithConfig}
 
+import java.nio.charset.StandardCharsets
+
 abstract class FlinkWithKafkaSuite
     extends AnyFunSuite
     with FlinkSpec
@@ -54,14 +57,15 @@ abstract class FlinkWithKafkaSuite
   protected var registrar: FlinkProcessRegistrar = _
   protected lazy val valueSerializer             = new KafkaAvroSerializer(schemaRegistryMockClient)
   protected lazy val valueDeserializer           = new KafkaAvroDeserializer(schemaRegistryMockClient)
+  protected lazy val objectNaming: ObjectNaming  = OriginalNamesObjectNaming
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val components =
       new MockFlinkKafkaComponentProvider()
-        .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
+        .create(kafkaComponentsConfig, ProcessObjectDependencies(config, objectNaming)) :::
         FlinkBaseComponentProvider.Components
-    val modelData = LocalModelData(config, components, configCreator = creator)
+    val modelData = LocalModelData(config, components, configCreator = creator, objectNaming = objectNaming)
     registrar = FlinkProcessRegistrar(
       new FlinkProcessCompilerDataFactory(modelData),
       FlinkJobConfig.parse(modelData.modelConfig),
@@ -133,6 +137,13 @@ abstract class FlinkWithKafkaSuite
     val serializedObj = valueSerializer.serialize(topic, obj)
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
   }
+
+  protected def sendAsJson(jsonString: String, topic: String, timestamp: java.lang.Long = null) = {
+    val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
+    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
+  }
+
+  protected def parseJson(str: String) = io.circe.parser.parse(str).toOption.get
 
   protected def versionOptionParam(versionOption: SchemaVersionOption) =
     versionOption match {
