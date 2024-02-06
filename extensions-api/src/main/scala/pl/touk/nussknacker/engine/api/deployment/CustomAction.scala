@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.deployment.User
 
 import java.net.URI
@@ -27,7 +27,11 @@ case class CustomAction(
 )
 
 //TODO: validators?
-case class CustomActionParameter(name: String, editor: ParameterEditor)
+case class CustomActionParameter(
+    name: String,
+    editor: Option[ParameterEditor],
+    validators: Option[List[ParameterValidator]]
+)
 
 case class CustomActionRequest(name: String, processVersion: ProcessVersion, user: User, params: Map[String, String])
 
