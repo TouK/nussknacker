@@ -5,7 +5,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, DecodingFailure, Encoder, Json}
+import io.circe.{Decoder, Encoder, Json}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -26,7 +26,6 @@ import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodeValidationRequestDto
-import pl.touk.nussknacker.ui.api.typingDtoSchemas._
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
@@ -372,24 +371,6 @@ object NodesApiEndpoints {
       deriveConfiguredDecoder[TestFromParametersRequest]
     }
 
-    //    These 3 doesn't look as used anywhere
-
-    def prepareNodeRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
-      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
-      deriveConfiguredDecoder[NodeValidationRequest]
-    }
-
-    def prepareParametersValidationDecoder(modelData: ModelData): Decoder[ParametersValidationRequest] = {
-      implicit val typeDecoder: Decoder[TypingResult]                 = prepareTypingResultDecoder(modelData)
-      implicit val uiValueParameterDecoder: Decoder[UIValueParameter] = deriveConfiguredDecoder[UIValueParameter]
-      deriveConfiguredDecoder[ParametersValidationRequest]
-    }
-
-    def preparePropertiesRequestDecoder(modelData: ModelData): Decoder[PropertiesValidationRequest] = {
-      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
-      deriveConfiguredDecoder[PropertiesValidationRequest]
-    }
-
   }
 
   @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
@@ -400,11 +381,6 @@ object NodesApiEndpoints {
   @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
       sourceParameters: TestSourceParameters,
       scenarioGraph: ScenarioGraph
-  )
-
-  @JsonCodec(encodeOnly = true) final case class ParametersValidationResult(
-      validationErrors: List[NodeValidationError],
-      validationPerformed: Boolean
   )
 
   @JsonCodec(encodeOnly = true) final case class ParametersValidationRequest(
@@ -490,25 +466,6 @@ object NodesApiEndpoints {
         case Right(result) => (key, result)
       }
     }
-  }
-
-  @JsonCodec(encodeOnly = true) final case class PropertiesValidationRequest(
-      additionalFields: ProcessAdditionalFields,
-      name: ProcessName
-  )
-
-  final case class ExpressionSuggestionRequest(
-      expression: Expression,
-      caretPosition2d: CaretPosition2d,
-      variableTypes: Map[String, TypingResult]
-  )
-
-  object ExpressionSuggestionRequest {
-
-    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[ExpressionSuggestionRequest] = {
-      deriveConfiguredDecoder[ExpressionSuggestionRequest]
-    }
-
   }
 
 }
