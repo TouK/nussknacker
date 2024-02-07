@@ -13,7 +13,11 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
+import pl.touk.nussknacker.restmodel.scenariodetails.{
+  ScenarioParameters,
+  ScenarioWithDetails,
+  ScenarioWithDetailsForMigrations
+}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -182,7 +186,7 @@ class RemoteEnvironmentResourcesSpec
     override def migrate(
         localScenarioGraph: ScenarioGraph,
         remoteProcessName: ProcessName,
-        category: String,
+        parameters: ScenarioParameters,
         isFragment: Boolean
     )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
       migrateInvocations = localScenarioGraph :: migrateInvocations

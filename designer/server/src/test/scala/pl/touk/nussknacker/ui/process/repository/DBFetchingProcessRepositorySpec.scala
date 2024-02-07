@@ -15,7 +15,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{

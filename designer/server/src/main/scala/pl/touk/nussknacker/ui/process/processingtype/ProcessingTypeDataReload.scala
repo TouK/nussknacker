@@ -1,7 +1,6 @@
-package pl.touk.nussknacker.ui.process.processingtypedata
+package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ProcessingTypeData}
 
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
@@ -28,7 +27,7 @@ class ProcessingTypeDataReload(
       new Object
     )
 
-  override private[processingtypedata] def state
+  override private[processingtype] def state
       : ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     synchronized {
       stateValue

@@ -51,7 +51,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val config = ConfigFactory
       .empty()
       .withValue("useTypingResultTypeInformation", fromAnyRef(true))
-    val sourceComponent = SourceFactory.noParam[TestRecord](
+    val sourceComponent = SourceFactory.noParamUnboundedStreamFactory[TestRecord](
       EmitWatermarkAfterEachElementCollectionSource
         .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
     )

@@ -85,7 +85,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       .withValue("useTypingResultTypeInformation", fromAnyRef(true))
     val sourceComponent = ComponentDefinition(
       "start",
-      SourceFactory.noParam[TestRecord](
+      SourceFactory.noParamUnboundedStreamFactory[TestRecord](
         EmitWatermarkAfterEachElementCollectionSource
           .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
       )

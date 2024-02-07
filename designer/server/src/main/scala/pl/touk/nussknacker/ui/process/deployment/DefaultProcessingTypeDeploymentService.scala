@@ -1,14 +1,7 @@
-package pl.touk.nussknacker.ui.process.processingtypedata
+package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.{
-  DeployedScenarioData,
-  ProcessAction,
-  ProcessActionId,
-  ProcessingTypeDeploymentService
-}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.ui.process.deployment.{AllDeployedScenarioService, DeploymentService}
+import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessAction, ProcessActionId, ProcessingTypeDeploymentService}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType}
 
 import scala.concurrent.{ExecutionContext, Future}
 

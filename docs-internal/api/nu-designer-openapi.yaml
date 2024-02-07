@@ -681,6 +681,64 @@ paths:
                   value: No scenario 'example scenario' found
       security:
       - httpAuth: []
+  /api/scenarioParametersCombinations:
+    get:
+      tags:
+      - App
+      summary: Service providing available combinations of scenario's parameters
+      operationId: getApiScenarioparameterscombinations
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScenarioParametersCombination'
+              examples:
+                Example:
+                  summary: List of available parameters combinations
+                  value:
+                  - processingMode: Unbounded-Stream
+                    category: Marketing
+                    engineSetup:
+                      name: Flink
+                      errors: []
+                  - processingMode: Request-Response
+                    category: Fraud
+                    engineSetup:
+                      name: Lite K8s
+                      errors: []
+                  - processingMode: Unbounded-Stream
+                    category: Fraud
+                    engineSetup:
+                      name: Flink Fraud Detection
+                      errors:
+                      - Invalid Flink configuration
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
   /api/user:
     get:
       tags:
@@ -938,6 +996,17 @@ components:
           type: array
           items:
             type: string
+    EngineSetupDetails:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        errors:
+          type: array
+          items:
+            type: string
     FragmentUsageData:
       required:
       - fragmentNodeId
@@ -1122,6 +1191,19 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Attachment'
+    ScenarioParametersCombination:
+      required:
+      - processingMode
+      - category
+      - engineSetup
+      type: object
+      properties:
+        processingMode:
+          type: string
+        category:
+          type: string
+        engineSetup:
+          $ref: '#/components/schemas/EngineSetupDetails'
     ScenarioUsageData:
       required:
       - nodeId

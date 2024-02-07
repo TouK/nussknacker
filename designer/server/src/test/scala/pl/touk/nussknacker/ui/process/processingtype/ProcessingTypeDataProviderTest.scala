@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.processingtypedata
+package pl.touk.nussknacker.ui.process.processingtype
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

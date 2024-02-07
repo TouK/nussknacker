@@ -4,9 +4,14 @@ import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.ui.process.deployment.{AllDeployedScenarioService, DeploymentService}
-import pl.touk.nussknacker.ui.process.processingtypedata.{
+import pl.touk.nussknacker.ui.process.deployment.{
+  AllDeployedScenarioService,
   DefaultProcessingTypeDeploymentService,
+  DeploymentService
+}
+import pl.touk.nussknacker.ui.process.processingtype.{
+  CombinedProcessingTypeData,
+  ProcessingTypeData,
   ProcessingTypeDataState
 }
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel.{category, typeName}
@@ -14,7 +19,7 @@ import _root_.sttp.client3.SttpBackend
 import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.toValueWithPermission
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.toValueWithPermission
 
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,6 +48,7 @@ class LocalProcessingTypeDataStateFactory(
       ProcessingTypeData.createProcessingTypeData(
         typeName,
         deploymentManagerProvider,
+        deploymentManagerProvider.defaultEngineSetupName,
         modelData,
         managerConfig,
         category

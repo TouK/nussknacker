@@ -13,8 +13,9 @@ import java.io.InputStream
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
 
-class ScenarioAttachmentService(config: AttachmentsConfig, scenarioActivityRepository: ProcessActivityRepository)
-                               (implicit ec: ExecutionContext) extends LazyLogging {
+class ScenarioAttachmentService(config: AttachmentsConfig, scenarioActivityRepository: ProcessActivityRepository)(
+    implicit ec: ExecutionContext
+) extends LazyLogging {
 
   def saveAttachment(
       scenarioId: ProcessId,

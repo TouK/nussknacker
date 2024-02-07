@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.ui.process.processingtypedata
+package pl.touk.nussknacker.ui.process.processingtype
 
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.process.processingtypedata.ValueAccessPermission.{AnyUser, UserWithAccessRightsToCategory}
+import pl.touk.nussknacker.ui.process.processingtype.ValueAccessPermission.{AnyUser, UserWithAccessRightsToCategory}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.util.concurrent.atomic.AtomicReference
@@ -58,7 +58,7 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
   //       Thanks to that we will be sure that no sensitive data leak
   final def combined: CombinedData = state.getCombined()
 
-  private[processingtypedata] def state: ProcessingTypeDataState[Data, CombinedData]
+  private[processingtype] def state: ProcessingTypeDataState[Data, CombinedData]
 
   final def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] =
     new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CombinedData](this, _.mapValues(fun))
@@ -68,14 +68,14 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
 }
 
-private[processingtypedata] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
+private[processingtype] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
     observed: ProcessingTypeDataProvider[T, C],
     transformState: ProcessingTypeDataState[T, C] => ProcessingTypeDataState[TT, CC]
 ) extends ProcessingTypeDataProvider[TT, CC] {
 
   private val stateValue = new AtomicReference(transformState(observed.state))
 
-  override private[processingtypedata] def state: ProcessingTypeDataState[TT, CC] = {
+  override private[processingtype] def state: ProcessingTypeDataState[TT, CC] = {
     stateValue.updateAndGet { currentValue =>
       val currentObservedState = observed.state
       if (currentObservedState.stateIdentity != currentValue.stateIdentity) {
@@ -97,7 +97,7 @@ object ProcessingTypeDataProvider {
 
   def apply[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] =
     new ProcessingTypeDataProvider[T, C] {
-      override private[processingtypedata] def state: ProcessingTypeDataState[T, C] = stateValue
+      override private[processingtype] def state: ProcessingTypeDataState[T, C] = stateValue
     }
 
   def apply[T, C](
@@ -106,7 +106,7 @@ object ProcessingTypeDataProvider {
   ): ProcessingTypeDataProvider[T, C] =
     new ProcessingTypeDataProvider[T, C] {
 
-      override private[processingtypedata] val state: ProcessingTypeDataState[T, C] = ProcessingTypeDataState(
+      override private[processingtype] val state: ProcessingTypeDataState[T, C] = ProcessingTypeDataState(
         allValues,
         () => combinedValue,
         allValues
@@ -119,7 +119,7 @@ object ProcessingTypeDataProvider {
   ): ProcessingTypeDataProvider[T, Nothing] =
     new ProcessingTypeDataProvider[T, Nothing] {
 
-      override private[processingtypedata] val state: ProcessingTypeDataState[T, Nothing] = ProcessingTypeDataState(
+      override private[processingtype] val state: ProcessingTypeDataState[T, Nothing] = ProcessingTypeDataState(
         allValues,
         noCombinedDataFun,
         allValues

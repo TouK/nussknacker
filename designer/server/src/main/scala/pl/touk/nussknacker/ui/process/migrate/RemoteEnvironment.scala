@@ -13,12 +13,13 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetailsForMigrations}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
+import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -47,7 +48,12 @@ trait RemoteEnvironment {
 
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ScenarioVersion]]
 
-  def migrate(localProcess: ScenarioGraph, processName: ProcessName, category: String, isFragment: Boolean)(
+  def migrate(
+      localProcess: ScenarioGraph,
+      processName: ProcessName,
+      parameters: ScenarioParameters,
+      isFragment: Boolean
+  )(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
   ): Future[Either[NuDesignerError, Unit]]
@@ -177,7 +183,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   override def migrate(
       localGraph: ScenarioGraph,
       processName: ProcessName,
-      category: String,
+      parameters: ScenarioParameters,
       isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
     (for {
@@ -196,7 +202,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         case Right(_) => EitherT.rightT[Future, NuDesignerError](())
         case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) =>
           val userToForward = if (passUsernameInMigration) Some(loggedUser) else None
-          createProcessOnRemote(processName, category, isFragment, userToForward)
+          createProcessOnRemote(processName, parameters, isFragment, userToForward)
         case Left(other) => EitherT.leftT[Future, NuDesignerError](other)
       }
       usernameToPass = if (passUsernameInMigration) Some(RemoteUserName(loggedUser.username)) else None
@@ -213,22 +219,41 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def createProcessOnRemote(
       processName: ProcessName,
-      category: String,
+      parameters: ScenarioParameters,
       isFragment: Boolean,
       loggedUser: Option[LoggedUser]
   )(
       implicit ec: ExecutionContext
   ): FutureE[Unit] = {
-    val remoteUserNameHeader: List[HttpHeader] =
-      loggedUser.map(user => RawHeader(RemoteUserName.headerName, user.username)).toList
     EitherT {
-      invokeForSuccess(
-        HttpMethods.POST,
-        List("processes", processName.value, category),
-        Query(("isFragment", isFragment.toString)),
-        HttpEntity.Empty,
-        remoteUserNameHeader
-      )
+      // FIXME: feature flag
+      if (true) {
+        val command = CreateScenarioCommand(
+          processName,
+          Some(parameters.category),
+          Some(parameters.processingMode),
+          Some(parameters.engineSetupName),
+          isFragment = isFragment,
+          forwardedUserName = loggedUser.map(u => RemoteUserName(u.username))
+        )
+        invokeForSuccess(
+          HttpMethods.POST,
+          List("processes"),
+          Query.Empty,
+          HttpEntity(command.asJson.noSpaces),
+          List.empty
+        )
+      } else {
+        val remoteUserNameHeader: List[HttpHeader] =
+          loggedUser.map(user => RawHeader(RemoteUserName.headerName, user.username)).toList
+        invokeForSuccess(
+          HttpMethods.POST,
+          List("processes", processName.value, parameters.category),
+          Query(("isFragment", isFragment.toString)),
+          HttpEntity.Empty,
+          remoteUserNameHeader
+        )
+      }
     }
   }
 
@@ -328,7 +353,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       forwardedUserName: Option[RemoteUserName]
   )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, ValidationResult]] = {
     for {
-      processToSave <- Marshal(UpdateProcessCommand(scenarioGraph, comment, forwardedUserName))
+      processToSave <- Marshal(UpdateScenarioCommand(scenarioGraph, comment, forwardedUserName))
         .to[MessageEntity](marshaller, ec)
       response <- invokeJson[ValidationResult](
         HttpMethods.PUT,

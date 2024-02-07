@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, User
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ValueWithPermission}
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ValueWithPermission}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 

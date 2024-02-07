@@ -24,11 +24,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `DisplayableProcess.id` of type `String` was replaced by `name` field of type `ProcessName`, `processName` field is removed
   * deprecated `AsyncExecutionContextPreparer.prepareExecutionContext` was removed
   * `AsyncExecutionContextPreparer.prepare` now takes `ProcessName` instead of `String`
-* [#5288](https://github.com/TouK/nussknacker/pull/5288) RemoteEnvironment / ModelMigration changes:
+* [#5288](https://github.com/TouK/nussknacker/pull/5288) [#5474](https://github.com/TouK/nussknacker/pull/5474) RemoteEnvironment / ModelMigration changes:
   * `ProcessMigration.failOnNewValidationError` was removed - it wasn't used anywhere anymore
   * `RemoteEnvironment.testMigration` result types changes
     * `shouldFailOnNewErrors` field was removed - it wasn't used anywhere anymore
     * `converted` field was replaced by the `processName` field which was the only information that was used
+  * `RemoteEnvironment.migrate` takes `ScenarioParameters` instead of `category`
 * [#5361](https://github.com/TouK/nussknacker/pull/5361) `Parameter` has new, optional `labelOpt` field which allows
   to specify label presented to the user without changing identifier used in scenario graph json (`Parameteter.name`)
 * [#5356](https://github.com/TouK/nussknacker/pull/5356) Changes in AdditionalUIConfigProvider.getAllForProcessingType now require model reload to take effect.
@@ -59,6 +60,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       If you have a list of types and you are not sure how to translate it to `TypingResult` you can try to use `Typed.fromIterableOrUnknownIfEmpty`
       but it is not recommended - see docs next to it.
     * `TypedUnion`is not a case class anymore, but is still serializable - If it was used in a Flink state, state will be probably not compatible
+  * [#5474](https://github.com/TouK/nussknacker/pull/5474) `Component` class now need to specify `allowedProcessingModes`. 
+    Most of the implementations (`CustomStreamTransformer`, `Service`, `SinkFactory`) has default wildcard (`None`).
+    For `SourceFactory` you need to specify which `ProcessingMode` this source support. You have predefined traits:
+    `UnboundedStreamComponent`, `BoundedStreamComponent`, `RequestResponseComponent`, `AllProcessingModesComponent`
+    that can be mixed into the component
+  * [#5474](https://github.com/TouK/nussknacker/pull/5474) Changes around new scenario metadata (aka "parameters"):
+    * `ScenarioWithDetails`: added `processingMode` and `engineSetupName` fields
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
@@ -84,17 +92,20 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * GET `processes/$name/$version/activity/attachments` - `$version` segment is removed now
 * [#5393](https://github.com/TouK/nussknacker/pull/5393) Changes around metadata removal from the REST API requests and responses:
   * `/processValidation` was changed to `/processValidation/$scenarioName` and changed request type
-  * `/testInfo/*` was changed to `/testInfo/$scenarioName/*` and changed request type
+  * `/testInfo/*` was changed to `/testInfo/$scenarioName/*` and changed request format regarding code API changes
   * `/processManagement/generateAndTest/$samples` was changed to `/processManagement/generateAndTest/$scenarioName/$samples`
-  * `/processesExport/*` was changed to `/processesExport/$scenarioName/*` and changed response type
+  * `/processesExport/*` was changed to `/processesExport/$scenarioName/*` and changed response format regarding code API changes
   * `/processes/import/$scenarioName` was changed response into `{"scenarioGraph": {...}, "validationResult": {...}`
-  * GET `/processes/*` and `/processesDetails/*` changed response type
+  * GET `/processes/*` and `/processesDetails/*` changed response format regarding code API changes
   * PUT `/processes/$scenarioName` was changed request field from `process` to `scenarioGraph`
   * `/adminProcessManagement/testWithParameters/$scenarioName` was changed request field from `displayableProcess` to `scenarioGraph`
 * [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
   * Endpoints returning test results (`/processManagement/test*`) return `nodeId` instead of `nodeComponentInfo` now
   * `/processDefinitionData/*` response: field `type` was replaced by `componentId` inside the  path `.componentGroups[].components[]`
 * [#5462](https://github.com/TouK/nussknacker/pull/5462) `/processes/category/*` endpoint was removed
+* [#5474](https://github.com/TouK/nussknacker/pull/5474) POST `/processes/$scenarioName/$category?isFragment=$isFragment` resource become deprecated.
+  It will be replaced by POST `/processes` with fields: `name`, `isFragment`, `forwardedUserName`, `category`, `processingMode`, `engineSetupName`.
+  Three last fields are optional. Please switch to the new API because in version 1.5, old API will be removed.
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
@@ -103,6 +114,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   In the new format, you should specify `category` field inside each scenario type.
 * [#5419](https://github.com/TouK/nussknacker/pull/5419) Support for system properties was removed from model configuration
   (they aren't resolved and added to merged configuration)
+* [#5474](https://github.com/TouK/nussknacker/pull/5474) You have to ensure that in every scenarioType model's `classPath`, in every
+  jar are only components with not colliding processing modes. Also at least one component has defined processing mode other 
+  than wildcard.
+  On the other hand starting from this version, you can use the same category for many scenarioTypes. You only have to ensure that they 
+  have components with other processing modes or other deployment configuration.
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
