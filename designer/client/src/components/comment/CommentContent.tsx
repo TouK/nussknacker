@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { isEmpty } from "lodash";
 import xss from "xss";
 import { PanelComment } from "./StyledComment";
+import { Typography } from "@mui/material";
 
 interface Props {
     content: string;
@@ -33,7 +34,7 @@ function CommentContent({ commentSettings, content }: Props): JSX.Element {
 
     return (
         <PanelComment>
-            <p dangerouslySetInnerHTML={{ __html }} />
+            <Typography variant={"caption"} dangerouslySetInnerHTML={{ __html }} />
         </PanelComment>
     );
 }

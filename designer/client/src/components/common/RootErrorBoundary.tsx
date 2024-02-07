@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from "react";
-import { css, styled } from "@mui/material";
+import { css, styled, Typography } from "@mui/material";
 import ProblemOccurredSvg from "./problem-occurred.svg";
 import { ErrorBoundary as ErrorBoundaryLibrary, ErrorBoundaryProps } from "react-error-boundary";
 import { t } from "i18next";
@@ -109,10 +109,8 @@ export function RootErrorPage({ message, description, children }: PropsWithChild
         <StylesWrapper>
             <div className="position-wrapper">
                 <div className="text-position">
-                    <div className="text">
-                        <h1>{message}</h1>
-                        <h2>{description}</h2>
-                    </div>
+                    <Typography variant={"h1"}>{message}</Typography>
+                    <Typography variant={"h2"}>{description}</Typography>
                     {children}
                 </div>
                 <ProblemOccurredSvg className="artwork" />
