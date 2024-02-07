@@ -22,7 +22,7 @@ object TestData {
       case object Streaming  extends TestProcessingType
       case object Streaming2 extends TestProcessingType
 
-      override val values: IndexedSeq[TestProcessingType] = findValues
+      override val values = findValues
 
       validateTestDataWithDesignerConfFile()
     }
@@ -53,7 +53,7 @@ object TestData {
       case object Category1 extends TestCategory
       case object Category2 extends TestCategory
 
-      override val values: IndexedSeq[TestCategory] = findValues
+      override val values = findValues
 
       implicit class CategoryStringify(category: TestCategory) {
 
