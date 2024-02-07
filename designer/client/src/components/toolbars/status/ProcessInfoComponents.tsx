@@ -1,4 +1,4 @@
-import { styled } from "@mui/material";
+import { styled, Typography } from "@mui/material";
 
 export const PanelProcessInfo = styled("div")`
     display: flex;
@@ -20,7 +20,7 @@ export const ProcessInfoText = styled("div")`
     vertical-align: middle;
 `;
 
-export const ProcessName = styled("div")`
+export const ProcessName = styled(Typography)`
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 215px;

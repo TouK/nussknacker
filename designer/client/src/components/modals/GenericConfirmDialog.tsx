@@ -3,6 +3,7 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { PropsWithChildren, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { PromptContent, WindowKind } from "../../windowManager";
+import { Typography } from "@mui/material";
 
 export interface ConfirmDialogData {
     text: string;
@@ -43,7 +44,9 @@ export function GenericConfirmDialog({
     return (
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
-                <h3 className={css({ textAlign: "center" })}>{props.data.title}</h3>
+                <Typography textAlign={"center"} variant={"h3"}>
+                    {props.data.title}
+                </Typography>
                 {children}
             </div>
         </PromptContent>
