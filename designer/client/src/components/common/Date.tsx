@@ -1,12 +1,11 @@
 import React from "react";
 import { formatAbsolutely, formatRelatively } from "../../common/DateUtils";
-import { styled } from "@mui/material";
-
-const StyledDate = styled("span")(({ theme }) => ({
-    whiteSpace: "normal",
-    color: theme.custom.colors.silverChalice,
-}));
+import { Typography } from "@mui/material";
 
 export default function Date({ date }: { date: string }): JSX.Element {
-    return <StyledDate title={formatAbsolutely(date)}>{formatRelatively(date)}</StyledDate>;
+    return (
+        <Typography variant={"overline"} component={"span"} title={formatAbsolutely(date)}>
+            {formatRelatively(date)}
+        </Typography>
+    );
 }

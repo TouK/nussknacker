@@ -1,13 +1,14 @@
 import React, { PropsWithChildren } from "react";
 import { useTheme } from "@mui/material";
 import { WindowManagerProvider } from "@touk/window-manager";
-import { contentGetter } from "./ContentGetter";
+import { ContentGetter } from "./ContentGetter";
 
 export function WindowManager(props: PropsWithChildren<{ className: string }>) {
     const {
         zIndex,
         custom: { spacing, colors },
     } = useTheme();
+
     return (
         <WindowManagerProvider
             theme={{
@@ -23,7 +24,7 @@ export function WindowManager(props: PropsWithChildren<{ className: string }>) {
                 },
                 zIndex: zIndex.modal,
             }}
-            contentGetter={contentGetter}
+            contentGetter={ContentGetter}
             {...props}
         />
     );

@@ -1,5 +1,13 @@
 import React from "react";
+import { Typography } from "@mui/material";
 
-export const ErrorHeader = ({ message, className }: { message: string; className?: string }) => {
-    return <span className={className}>{message}</span>;
+interface Props {
+    message: string;
+}
+export const ErrorHeader = ({ message }: Props) => {
+    return (
+        <Typography component={"span"} variant={"body2"}>
+            {message}
+        </Typography>
+    );
 };

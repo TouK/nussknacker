@@ -1,12 +1,13 @@
 import React, { ComponentType, SVGProps } from "react";
 import { styledIcon } from "./Styled";
+import { Box, Typography } from "@mui/material";
 
 export default function ValidTip({ icon: Icon, message }: { icon: ComponentType<SVGProps<SVGSVGElement>>; message: string }) {
     const StyledIcon = styledIcon(Icon);
     return (
-        <div style={{ marginBottom: "5px" }}>
+        <Box mb={0.5}>
             <StyledIcon />
-            <span>{message}</span>
-        </div>
+            <Typography variant={"body2"}>{message}</Typography>
+        </Box>
     );
 }

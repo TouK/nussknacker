@@ -34,11 +34,6 @@ export const AttachmentDropZone = styled("div")`
     }
 `;
 
-export const AttachmentButtonText = styled("div")`
-    cursor: pointer;
-    text-align: center;
-`;
-
 export const AttachmentButton = styled("div")`
     border-radius: 3px;
 
