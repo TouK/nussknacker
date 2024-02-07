@@ -135,7 +135,8 @@ class HttpRemoteEnvironment(
 final case class StandardRemoteEnvironmentConfig(
     uri: String,
     batchSize: Int = 10,
-    batchTimeout: FiniteDuration = 120 seconds
+    batchTimeout: FiniteDuration = 120 seconds,
+    useLegacyCreateScenarioApi: Boolean = false
 )
 
 //TODO: extract interface to remote environment?
@@ -226,8 +227,17 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       implicit ec: ExecutionContext
   ): FutureE[Unit] = {
     EitherT {
-      // FIXME: feature flag
-      if (true) {
+      if (config.useLegacyCreateScenarioApi) {
+        val remoteUserNameHeader: List[HttpHeader] =
+          loggedUser.map(user => RawHeader(RemoteUserName.headerName, user.username)).toList
+        invokeForSuccess(
+          HttpMethods.POST,
+          List("processes", processName.value, parameters.category),
+          Query(("isFragment", isFragment.toString)),
+          HttpEntity.Empty,
+          remoteUserNameHeader
+        )
+      } else {
         val command = CreateScenarioCommand(
           processName,
           Some(parameters.category),
@@ -242,16 +252,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
           Query.Empty,
           HttpEntity(command.asJson.noSpaces),
           List.empty
-        )
-      } else {
-        val remoteUserNameHeader: List[HttpHeader] =
-          loggedUser.map(user => RawHeader(RemoteUserName.headerName, user.username)).toList
-        invokeForSuccess(
-          HttpMethods.POST,
-          List("processes", processName.value, parameters.category),
-          Query(("isFragment", isFragment.toString)),
-          HttpEntity.Empty,
-          remoteUserNameHeader
         )
       }
     }

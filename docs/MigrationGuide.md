@@ -126,6 +126,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5432](https://github.com/TouK/nussknacker/pull/5432) Kafka client, Confluent Schema Registry Client and Avro bump
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13 
 * [#5465](https://github.com/TouK/nussknacker/pull/5465) Removed `strictTypeChecking` option and `SupertypeClassResolutionStrategy.Union` used behind it
+* [#5474](https://github.com/TouK/nussknacker/pull/5474) The mechanism allowing migration between two environments uses by default the new,
+  scenario creating API. In case when the secondary environment is in the version < 1.14, you should switch `secondaryEnvironment.useLegacyCreateScenarioApi` flag to on.
 
 ## In version 1.13.1 (Not released yet)
 
