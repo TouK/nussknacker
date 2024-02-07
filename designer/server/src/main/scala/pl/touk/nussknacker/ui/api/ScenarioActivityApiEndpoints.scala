@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.{BaseEndpointDefinitions, CustomAuthorizationError}
+import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
   ProcessActivity => DbProcessActivity
 }
 import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
+import pl.touk.nussknacker.ui.services.BaseHttpService.CustomAuthorizationError
 import sttp.model.StatusCode.{InternalServerError, NotFound, Ok}
 import sttp.model.{HeaderNames, MediaType}
 import sttp.tapir.EndpointIO.Example

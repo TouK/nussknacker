@@ -2,11 +2,11 @@ package pl.touk.nussknacker.ui.services
 
 import cats.data.EitherT
 import com.typesafe.config.Config
-import pl.touk.nussknacker.restmodel.{CustomAuthorizationError, SecurityError}
+import pl.touk.nussknacker.restmodel.SecurityError
 import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api._
-import pl.touk.nussknacker.ui.services.BaseHttpService.NoRequirementServerEndpoint
+import pl.touk.nussknacker.ui.services.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
 import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
 
 import java.util.concurrent.atomic.AtomicReference
@@ -103,4 +103,7 @@ object BaseHttpService {
 
   // we assume that our endpoints have no special requirements (in the Tapir sense)
   type NoRequirementServerEndpoint = ServerEndpoint[Any, Future]
+
+  // it's marker interface which simplifies error handling when serverLogicEitherT is used
+  trait CustomAuthorizationError
 }

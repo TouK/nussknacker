@@ -92,5 +92,3 @@ object SecurityError {
   case object AuthenticationError extends SecurityError
   case object AuthorizationError  extends SecurityError
 }
-
-trait CustomAuthorizationError
