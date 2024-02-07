@@ -20,6 +20,13 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
 
   private val testScenarioRunner = TestScenarioRunner
     .liteBased()
+    .withExtraComponents {
+      new DecisionTableComponentProvider()
+        .create(
+          ConfigFactory.empty(),
+          ProcessObjectDependencies.empty
+        )
+    }
     .build()
 
   test("simple test") { // todo: change name
