@@ -1,9 +1,5 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.process
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -14,18 +10,17 @@ import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.io.ByteArrayInputStream
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Random
 
-class ProcessAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaFutures {
+class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaFutures {
   private implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   private implicit val user: LoggedUser             = LoggedUser("test user", "test user")
-  private implicit val actorSystem: ActorSystem     = ActorSystem(getClass.getSimpleName)
-  private implicit val materializer: Materializer   = Materializer(actorSystem)
-  private val service = new ProcessAttachmentService(AttachmentsConfig(10), TestProcessActivityRepository)
+  private val service = new ScenarioAttachmentService(AttachmentsConfig(10), TestProcessActivityRepository)
 
   test("should respect size limit") {
-    val random12bytes = getRandomBytesSourceStream(3, 4)
+    val random12bytes = new ByteArrayInputStream(nextBytes(12))
 
     val error = service.saveAttachment(ProcessId(123L), VersionId(12L), "data", random12bytes).failed.futureValue
 
@@ -33,17 +28,15 @@ class ProcessAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaF
   }
 
   test("should accept attachment with allowed size") {
-    val random10bytes = getRandomBytesSourceStream(5, 2)
+    val random10bytes = new ByteArrayInputStream(nextBytes(10))
 
     service.saveAttachment(ProcessId(123L), VersionId(12L), "data", random10bytes).futureValue
   }
 
-  private def getRandomBytesSourceStream(chunks: Int, sizeOfChunk: Int) = {
-    Source.apply((1 to chunks).map { _ =>
-      val b = new Array[Byte](sizeOfChunk)
-      new Random().nextBytes(b)
-      ByteString(b)
-    }.toList)
+  private def nextBytes(length: Int): Array[Byte] = {
+    val b = new Array[Byte](length)
+    new Random().nextBytes(b)
+    b
   }
 
 }
@@ -55,14 +48,14 @@ private object TestProcessActivityRepository extends ProcessActivityRepository {
       loggedUser: LoggedUser
   ): Future[Unit] = ???
 
-  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = ???
+  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Either[Exception, Unit]] = ???
 
   override def findActivity(processId: ProcessId)(
       implicit ec: ExecutionContext
   ): Future[DbProcessActivityRepository.ProcessActivity] = ???
 
   override def addAttachment(
-      attachmentToAdd: ProcessAttachmentService.AttachmentToAdd
+      attachmentToAdd: ScenarioAttachmentService.AttachmentToAdd
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = Future.successful(())
 
   override def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]] =

@@ -94,7 +94,9 @@ object ProcessService {
 }
 
 trait ProcessService {
-  def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId]
+  def getProcessIdUnsafe(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId]
+
+  def getProcessId(scenarioName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]]
 
   def getLatestProcessWithDetails(processId: ProcessIdWithName, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
@@ -153,10 +155,13 @@ class DBProcessService(
     extends ProcessService
     with LazyLogging {
 
-  override def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId] = {
-    fetchingProcessRepository
-      .fetchProcessId(processName)
+  override def getProcessIdUnsafe(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId] = {
+    getProcessId(processName)
       .map(_.getOrElse(throw ProcessNotFoundError(processName)))
+  }
+
+  override def getProcessId(scenarioName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]] = {
+    fetchingProcessRepository.fetchProcessId(scenarioName)
   }
 
   override def getLatestProcessWithDetails(
