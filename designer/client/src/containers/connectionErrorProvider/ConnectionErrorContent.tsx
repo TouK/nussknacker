@@ -20,7 +20,7 @@ export const ConnectionErrorContent: FC<Props> = ({ Icon, headerText, contentTex
             sx={{ backgroundColor: theme.custom.colors.secondaryBackground }}
         >
             <Icon sx={{ width: "56px", height: "56px", fill: "white" }} />
-            <Typography mb={2} color={"white"} variant={"h5"}>
+            <Typography mb={2} mt={0} color={"white"} variant={"h5"}>
                 {headerText}
             </Typography>
             <Typography align={"center"} color={"white"} variant={"body2"}>

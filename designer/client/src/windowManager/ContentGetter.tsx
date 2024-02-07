@@ -7,6 +7,7 @@ import { WindowKind } from "./WindowKind";
 import loadable from "@loadable/component";
 import LoaderSpinner from "../components/spinner/Spinner";
 import FrameDialog from "../components/FrameDialog";
+import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), { fallback: <LoaderSpinner show /> });
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
@@ -41,7 +42,7 @@ const GenerateDataAndTestDialog = loadable(() => import("../components/modals/Ge
     fallback: <LoaderSpinner show />,
 });
 
-export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
+const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
             return <AddProcessDialog {...props} isFragment />;
@@ -82,3 +83,5 @@ export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) =
             );
     }
 };
+
+export const ContentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => <NuThemeProvider>{contentGetter(props)}</NuThemeProvider>;

@@ -20,8 +20,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -1534,6 +1536,25 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               )
             ) =>
       }
+    }
+  }
+
+  test("return error with all invalid scenario ending node ids") {
+    val invalidEndingNodeId1 = "endingSplit1"
+    val invalidEndingNodeId2 = "endingSplit2"
+    val scenario = ScenarioBuilder
+      .streaming("scenario1")
+      .source("source", "source1")
+      .split("split", GraphBuilder.split(invalidEndingNodeId1), GraphBuilder.split(invalidEndingNodeId2))
+
+    val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
+    val result        = processValidator.validate(scenarioGraph, ProcessName("name"), isFragment = false)
+
+    inside(result.errors.globalErrors) { case UIGlobalError(error, nodeIds) :: Nil =>
+      error shouldBe PrettyValidationErrors.formatErrorMessage(
+        InvalidTailOfBranch(Set(invalidEndingNodeId1, invalidEndingNodeId2))
+      )
+      nodeIds should contain theSameElementsAs List(invalidEndingNodeId1, invalidEndingNodeId2)
     }
   }
 

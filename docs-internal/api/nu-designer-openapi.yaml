@@ -476,6 +476,211 @@ paths:
                     resource
       security:
       - httpAuth: []
+  /api/processes/{scenarioName}/{versionId}/activity/comments:
+    post:
+      tags:
+      - Scenario
+      summary: Add scenario comment service
+      operationId: postApiProcessesScenarionameVersionidActivityComments
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: versionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: path parameter versionId, Invalid value
+            for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+      security:
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity/comments/{commentId}:
+    delete:
+      tags:
+      - Scenario
+      summary: Delete process comment service
+      operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: path parameter commentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: 'Unable to delete comment with id: {commentId}'
+                  value: 'Unable to delete comment with id: 1'
+      security:
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity:
+    get:
+      tags:
+      - Scenario
+      summary: Scenario activity service
+      operationId: getApiProcessesScenarionameActivity
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioActivity'
+              examples:
+                Example:
+                  summary: Display scenario activity
+                  value:
+                    comments:
+                    - id: 1
+                      processVersionId: 1
+                      content: some comment
+                      user: test
+                      createDate: '2024-01-17T14:21:17Z'
+                    attachments:
+                    - id: 1
+                      processVersionId: 1
+                      fileName: some_file.txt
+                      user: test
+                      createDate: '2024-01-17T14:21:17Z'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+      security:
+      - httpAuth: []
   /api/user:
     get:
       tags:
@@ -538,6 +743,28 @@ paths:
       - httpAuth: []
 components:
   schemas:
+    Attachment:
+      required:
+      - id
+      - processVersionId
+      - fileName
+      - user
+      - createDate
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        processVersionId:
+          type: integer
+          format: int64
+        fileName:
+          type: string
+        user:
+          type: string
+        createDate:
+          type: string
+          format: date-time
     BuildInfoDto:
       required:
       - name
@@ -559,6 +786,28 @@ components:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
           $ref: '#/components/schemas/Map_String'
+    Comment:
+      required:
+      - id
+      - processVersionId
+      - content
+      - user
+      - createDate
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        processVersionId:
+          type: integer
+          format: int64
+        content:
+          type: string
+        user:
+          type: string
+        createDate:
+          type: string
+          format: date-time
     ComponentGroupName:
       required:
       - value
@@ -862,6 +1111,17 @@ components:
       properties:
         value:
           type: string
+    ScenarioActivity:
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
     ScenarioUsageData:
       required:
       - nodeId
