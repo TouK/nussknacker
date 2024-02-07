@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.ui.api.DeploymentCommentSettings.createDeploymentCommentSettingsOption
+import pl.touk.nussknacker.ui.api.DeploymentCommentSettings.createNonEmptyDeploymentCommentSettings
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
@@ -123,7 +123,7 @@ class DeploymentServiceSpec
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
 
-  private val nonEmptyCommentSettings = createDeploymentCommentSettingsOption()
+  private val nonEmptyCommentSettings = Some(createNonEmptyDeploymentCommentSettings())
 
   def createDeploymentServiceWithCommentSettings(): DeploymentService = {
     createDeploymentService(deploymentCommentSettings = nonEmptyCommentSettings)
