@@ -309,10 +309,11 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
     }
   }
 
-  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ExpressionCompiler =
+  def withLabelsDictTyper: ExpressionCompiler =
     new ExpressionCompiler(
-      expressionParsers.map { case (k, v) =>
-        k -> modify.lift(v).getOrElse(v)
+      expressionParsers.map {
+        case (k, spel: SpelExpressionParser) => k -> spel.typingDictLabels
+        case other                           => other
       },
       dictRegistry
     )
