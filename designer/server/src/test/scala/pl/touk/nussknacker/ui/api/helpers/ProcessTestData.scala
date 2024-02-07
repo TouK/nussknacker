@@ -120,10 +120,13 @@ object ProcessTestData {
 
   def modelDefinitionWithDicts(
       dictionaries: Map[String, DictDefinition]
-  ): ModelDefinition = modelDefinition().copy(
-    expressionConfig =
-      modelDefinition().expressionConfig.copy(dictionaries = dictionaries) // todo dont create multiple times
-  )
+  ): ModelDefinition = {
+    val definition = modelDefinition()
+
+    definition.copy(
+      expressionConfig = definition.expressionConfig.copy(dictionaries = dictionaries)
+    )
+  }
 
   def processValidator: UIProcessValidator = new UIProcessValidator(
     TestProcessingTypes.Streaming,
