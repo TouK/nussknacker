@@ -15,25 +15,25 @@ class ServiceWithDictParameterEditor extends Service with Serializable with Time
       @ParamName("RGBDict")
       @SimpleEditor(
         `type` = SimpleEditorType.DICT_EDITOR,
-        dictId = "RGB"
+        dictId = "rgb"
       )
-      rgb: String,
-      @ParamName("TestDict")
+      rgb: Option[String],
+      @ParamName("BooleanDict")
       @SimpleEditor(
         `type` = SimpleEditorType.DICT_EDITOR,
-        dictId = "DICT"
+        dictId = "boolean_dict"
       )
-      testDictValue: String,
-      @ParamName("BusinessConfig")
+      booleanDict: Option[Boolean],
+      @ParamName("LongDict")
       @SimpleEditor(
         `type` = SimpleEditorType.DICT_EDITOR,
-        dictId = "BusinessConfig"
+        dictId = "long_dict"
       )
-      businessConfig: String
+      longDict: Option[Long]
   ): Future[String] = {
     Future.successful(s"""RGBDict: $rgb
-         |TestDict: $testDictValue
-         |BusinessConfig: $businessConfig""".stripMargin)
+         |LongDict: $longDict
+         |BooleanDict: $booleanDict""".stripMargin)
   }
 
 }

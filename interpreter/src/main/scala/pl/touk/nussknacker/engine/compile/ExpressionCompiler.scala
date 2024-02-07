@@ -32,6 +32,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
+import pl.touk.nussknacker.engine.spel.parser.LiteralExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
@@ -78,9 +79,11 @@ object ExpressionCompiler {
         flavour,
         classDefinitionSet
       )
-    val defaultParsers = Seq(spelParser(SpelExpressionParser.Standard), spelParser(SpelExpressionParser.Template))
-    val parsersSeq     = defaultParsers ++ expressionConfig.languages.expressionParsers
-    val parsers        = parsersSeq.map(p => p.languageId -> p).toMap
+
+    val defaultParsers =
+      Seq(spelParser(SpelExpressionParser.Standard), spelParser(SpelExpressionParser.Template), LiteralExpressionParser)
+    val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
+    val parsers    = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers, dictRegistry)
   }
 
@@ -131,7 +134,6 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
     val paramValidatorsMap = parameterValidatorsMap(parameterDefinitions)
     val paramDefMap        = parameterDefinitions.map(p => p.name -> p).toMap
 
-    // TODO adding validation here covers most (if not all) possible usages of DictParameterEditor, make sure it's enough
     val dictEditorParametersValidation = Validations.validateDictEditorParameters(
       nodeParameters ++ nodeBranchParameters.flatMap(_.parameters),
       paramDefMap,

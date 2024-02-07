@@ -111,7 +111,7 @@ object Validations {
       dictRegistry
         .labelByKey(dictId, parameter.expression.expression)
         .map(_ => ())
-        .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id)))
+        .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, definition.name)))
     case _ => Valid(())
   }
 

@@ -316,7 +316,7 @@ object ProcessCompilationError {
       extends DuplicateFragmentOutputNames
       with ScenarioGraphLevelError
 
-  final case class DictNotDeclared(dictId: String, nodeId: String)
+  final case class DictNotDeclared(dictId: String, nodeId: String, paramName: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -324,7 +324,8 @@ object ProcessCompilationError {
       dictId: String,
       label: String,
       possibleLabels: Option[List[String]],
-      nodeId: String
+      nodeId: String,
+      paramName: String
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -332,7 +333,8 @@ object ProcessCompilationError {
       dictId: String,
       key: String,
       possibleKeys: Option[List[String]],
-      nodeId: String
+      nodeId: String,
+      paramName: String
   ) extends PartSubGraphCompilationError
       with InASingleNode
 

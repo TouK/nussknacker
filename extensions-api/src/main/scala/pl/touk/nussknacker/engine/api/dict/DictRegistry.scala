@@ -39,24 +39,24 @@ trait EngineDictRegistry extends DictRegistry {
 object DictRegistry {
 
   sealed trait DictLookupError {
-    def toPartSubGraphCompilationError(nodeId: String): PartSubGraphCompilationError
+    def toPartSubGraphCompilationError(nodeId: String, paramName: String): PartSubGraphCompilationError
   }
 
   case class DictNotDeclared(dictId: String) extends DictLookupError {
-    override def toPartSubGraphCompilationError(nodeId: String): PartSubGraphCompilationError =
-      ProcessCompilationError.DictNotDeclared(dictId, nodeId)
+    override def toPartSubGraphCompilationError(nodeId: String, paramName: String): PartSubGraphCompilationError =
+      ProcessCompilationError.DictNotDeclared(dictId, nodeId, paramName)
   }
 
   case class DictEntryWithLabelNotExists(dictId: String, label: String, possibleLabels: Option[List[String]])
       extends DictLookupError {
-    override def toPartSubGraphCompilationError(nodeId: String): PartSubGraphCompilationError =
-      ProcessCompilationError.DictEntryWithLabelNotExists(dictId, label, possibleLabels, nodeId)
+    override def toPartSubGraphCompilationError(nodeId: String, paramName: String): PartSubGraphCompilationError =
+      ProcessCompilationError.DictEntryWithLabelNotExists(dictId, label, possibleLabels, nodeId, paramName)
   }
 
   case class DictEntryWithKeyNotExists(dictId: String, key: String, possibleKeys: Option[List[String]])
       extends DictLookupError {
-    override def toPartSubGraphCompilationError(nodeId: String): PartSubGraphCompilationError =
-      ProcessCompilationError.DictEntryWithKeyNotExists(dictId, key, possibleKeys, nodeId)
+    override def toPartSubGraphCompilationError(nodeId: String, paramName: String): PartSubGraphCompilationError =
+      ProcessCompilationError.DictEntryWithKeyNotExists(dictId, key, possibleKeys, nodeId, paramName)
   }
 
 }

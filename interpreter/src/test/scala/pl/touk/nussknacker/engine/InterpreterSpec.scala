@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import org.scalatest.funsuite.AnyFunSuite
@@ -22,11 +22,10 @@ import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, _}
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -78,7 +77,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     ComponentDefinition("eagerServiceWithMethod", EagerServiceWithMethod),
     ComponentDefinition("dynamicEagerService", DynamicEagerService),
     ComponentDefinition("eagerServiceWithFixedAdditional", EagerServiceWithFixedAdditional),
-    ComponentDefinition("dictParameterEditorService", ServiceWithDictParameterEditor),
+    ComponentDefinition("dictParameterEditorService", DictParameterEditorService),
   )
 
   def listenersDef(listener: Option[ProcessListener] = None): Seq[ProcessListener] =
@@ -175,16 +174,14 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val definitions = ModelDefinition(
       ComponentDefinitionWithImplementation
         .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
-      ModelDefinitionBuilder.emptyExpressionConfig.copy(
-        languages = LanguageConfiguration(List(LiteralExpressionParser))
-      ),
+      ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
       definitionsWithTypes,
       new SimpleDictRegistry(
-        Map("someDictId" -> EmbeddedDictDefinition(Map("'someKey'" -> "someLabel")))
+        Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))
       ).toEngineRegistry,
       listeners,
       getClass.getClassLoader,
@@ -960,7 +957,12 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val process = ScenarioBuilder
       .streaming("test")
       .source("start", "transaction-source")
-      .enricher("customNode", "data", "dictParameterEditorService", "param" -> "'someKey'")
+      .enricher(
+        "customNode",
+        "data",
+        "dictParameterEditorService",
+        "param" -> Expression(Expression.Language.Literal, "someKey")
+      )
       .buildSimpleVariable("result-end", resultVariable, "#data")
       .emptySink("end-end", "dummySink")
 
@@ -985,8 +987,6 @@ object InterpreterSpec {
   case class Transaction(msisdn: String = "123", accountId: String = "123")
 
   case class Account(marketingAgreement1: Boolean, name: String, name2: String)
-
-  case class LiteralExpressionTypingInfo(typingResult: TypingResult) extends ExpressionTypingInfo
 
   object AccountService extends Service {
 
@@ -1101,7 +1101,7 @@ object InterpreterSpec {
 
   }
 
-  object ServiceWithDictParameterEditor extends EagerServiceWithStaticParametersAndReturnType {
+  object DictParameterEditorService extends EagerServiceWithStaticParametersAndReturnType {
 
     override def parameters: List[Parameter] = List(
       Parameter[String]("param").copy(
@@ -1119,34 +1119,6 @@ object InterpreterSpec {
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
       Future.successful(params.head._2.toString)
-    }
-
-  }
-
-  object LiteralExpressionParser extends ExpressionParser {
-
-    override def languageId: String = "literal"
-
-    override def parse(
-        original: String,
-        ctx: ValidationContext,
-        expectedType: typing.TypingResult
-    ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
-      parseWithoutContextValidation(original, expectedType).map(
-        TypedExpression(_, Typed[String], LiteralExpressionTypingInfo(typing.Unknown))
-      )
-
-    override def parseWithoutContextValidation(
-        original: String,
-        expectedType: TypingResult
-    ): Validated[NonEmptyList[ExpressionParseError], CompiledExpression] = Valid(
-      LiteralExpression(original)
-    )
-
-    case class LiteralExpression(original: String) extends CompiledExpression {
-      override def language: String = languageId
-
-      override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = original.asInstanceOf[T]
     }
 
   }

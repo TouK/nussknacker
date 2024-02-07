@@ -3,17 +3,9 @@ package pl.touk.nussknacker.restmodel.validation
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.node.{
-  InitialValueFieldName,
-  InputModeFieldName,
-  ParameterNameFieldName,
-  TypFieldName,
-  ValidationExpressionFieldName,
-  qualifiedParamFieldName
-}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
@@ -205,11 +197,23 @@ object PrettyValidationErrors {
           fieldName =
             Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ValidationExpressionFieldName)))
         )
-      case _ =>
+      case DictNotDeclared(dictId, _, paramName) =>
         node(
-          s"DICT ERROR TODO",
-          s"DICT ERROR TODO",
-          fieldName = Some("TODO")
+          s"Dictionary not declared: $dictId",
+          s"Dictionary not declared: $dictId",
+          fieldName = Some(paramName)
+        )
+      case DictEntryWithKeyNotExists(dictId, key, possibleKeys, _, paramName) =>
+        node(
+          s"Dictionary $dictId doesn't contain entry with key: $key",
+          s"Dictionary $dictId possible keys: $possibleKeys",
+          fieldName = Some(paramName)
+        )
+      case DictEntryWithLabelNotExists(dictId, label, possibleLabels, _, paramName) =>
+        node(
+          s"Dictionary $dictId doesn't contain entry with label: $label",
+          s"Dictionary $dictId possible labels: $possibleLabels",
+          fieldName = Some(paramName)
         )
     }
   }

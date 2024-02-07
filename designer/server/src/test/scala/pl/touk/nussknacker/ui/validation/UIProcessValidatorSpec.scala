@@ -1047,7 +1047,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         Source("inID", SourceRef(existingSourceFactory, List())),
         Enricher(
           "custom",
-          ServiceRef(dictParameterEditorServiceId, List(NodeParameter("expression", Expression.spel("'someKey'")))),
+          ServiceRef(dictParameterEditorServiceId, List(NodeParameter("expression", Expression.literal("someKey")))),
           "out"
         ),
         Sink("out", SinkRef(existingSinkFactory, List()))
@@ -1065,7 +1065,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "DictNotDeclared",
                 _,
                 _,
-                _, // todo
+                Some("expression"),
                 NodeValidationErrorType.SaveAllowed
               )
             )
@@ -1082,7 +1082,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "custom",
           ServiceRef(
             dictParameterEditorServiceId,
-            List(NodeParameter("expression", Expression.spel("'thisKeyDoesntExist'")))
+            List(NodeParameter("expression", Expression.literal("thisKeyDoesntExist")))
           ),
           "out"
         ),
@@ -1103,7 +1103,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "DictEntryWithKeyNotExists",
                 _,
                 _,
-                _, // todo
+                Some("expression"),
                 NodeValidationErrorType.SaveAllowed
               )
             )
@@ -1120,7 +1120,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "custom",
           ServiceRef(
             dictParameterEditorServiceId,
-            List(NodeParameter("expression", Expression.spel("'someKey'")))
+            List(NodeParameter("expression", Expression.literal("someKey")))
           ),
           "out"
         ),
@@ -1131,7 +1131,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val result = processValidatorWithDicts(
       Map(
-        "someDictId" -> EmbeddedDictDefinition(Map("'someKey'" -> "someLabel"))
+        "someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel"))
       )
     ).validate(process, sampleProcessName, isFragment = false)
 
