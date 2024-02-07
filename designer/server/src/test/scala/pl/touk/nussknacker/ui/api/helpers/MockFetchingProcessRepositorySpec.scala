@@ -27,8 +27,8 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val categoryFraudSecond = "fraudSecond"
   private val categorySecret      = "secret"
 
-  private val processingTypeStreaming = "Streaming"
-  private val processingTypeFraud     = "Fraud"
+  private val processingTypeStreaming = "streaming"
+  private val processingTypeFraud     = "fraud"
 
   private val scenarioGraph = ProcessTestData.sampleScenarioGraph
   private val fragmentGraph = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
