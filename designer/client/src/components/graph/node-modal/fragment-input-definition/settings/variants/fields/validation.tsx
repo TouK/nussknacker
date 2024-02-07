@@ -62,7 +62,7 @@ export function ValidationsFields(props: Validation) {
                         }
                         label=""
                     />
-                    <Typography variant={"subtitle2"}>
+                    <Typography component={"p"} color={"text.secondary"} variant={"caption"}>
                         {t(
                             "fragment.validation.validationWarning",
                             "When validation is enabled, only literal values and operations on them are allowed in the parameter's value (i.e. the value passed to the fragment when it is used). This is because Nussknacker has to be able to evaluate it at deployment time.",

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.test
 
-import io.restassured.builder.MultiPartSpecBuilder
 import io.restassured.http.ContentType
 import io.restassured.response.ValidatableResponse
 import io.restassured.specification.RequestSpecification
@@ -43,6 +42,14 @@ trait NuRestAssureExtensions {
         .none()
     }
 
+    // https://github.com/rest-assured/rest-assured/issues/507
+    def preemptiveBasicAuth(name: String, password: String): RequestSpecification = {
+      requestSpecification
+        .auth()
+        .preemptive()
+        .basic(name, password)
+    }
+
   }
 
   implicit class JsonBody[T <: RequestSpecification](requestSpecification: T) {
@@ -65,21 +72,17 @@ trait NuRestAssureExtensions {
 
   }
 
-  implicit class MultiPartBody[T <: RequestSpecification](requestSpecification: T) {
+  implicit class StreamBody[T <: RequestSpecification](requestSpecification: T) {
     private val doubleQuote = '"'
 
-    def multiPartBody(fileContent: String, fileName: String): RequestSpecification = {
+    def streamBody(fileContent: String, fileName: String): RequestSpecification = {
       requestSpecification
-        .multiPart(
-          new MultiPartSpecBuilder(fileContent)
-            // https://github.com/rest-assured/rest-assured/issues/866#issuecomment-617127889
-            .header(
-              "Content-Disposition",
-              s"form-data; name=${doubleQuote}attachment${doubleQuote}; filename=${doubleQuote}${fileName}${doubleQuote}"
-            )
-            .build()
+        .body(fileContent.getBytes(StandardCharsets.UTF_8))
+        .contentType(ContentType.BINARY)
+        .header(
+          "Content-Disposition",
+          s"attachment; filename=${doubleQuote}${fileName}${doubleQuote}"
         )
-        .contentType("multipart/form-data")
     }
 
   }

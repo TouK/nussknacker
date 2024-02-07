@@ -4,8 +4,8 @@ import { NodeInput } from "../../withFocus";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { css, cx } from "@emotion/css";
 import { variables } from "../../../stylesheets/variables";
-import { Icon, Label } from "./ToolbarButtonStyled";
-import { useTheme } from "@mui/material";
+import { Icon } from "./ToolbarButtonStyled";
+import { Typography, useTheme } from "@mui/material";
 
 const { buttonSize, rightPanelButtonFontSize, buttonSmallSize } = variables;
 
@@ -57,7 +57,9 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
         children: (
             <>
                 <Icon title={title}>{icon}</Icon>
-                <Label variant={variant}>{name}</Label>
+                <Typography variant={"caption"} display={variant === ButtonsVariant.small ? "none" : "unset"}>
+                    {name}
+                </Typography>
             </>
         ),
     };

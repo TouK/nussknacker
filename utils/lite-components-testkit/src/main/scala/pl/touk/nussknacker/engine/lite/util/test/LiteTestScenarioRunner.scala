@@ -134,11 +134,7 @@ private[test] class SimpleSourceFactory(result: TypingResult)
 
   override def nodeDependencies: List[NodeDependency] = TypedNodeDependency[NodeId] :: Nil
 
-  override def typesToExtract: List[typing.TypedClass] = result match {
-    case result: typing.SingleTypingResult => List(result.objType)
-    case typing.TypedUnion(possibleTypes)  => possibleTypes.map(_.objType).toList
-    case typing.TypedNull | typing.Unknown => Nil
-  }
+  override def typesToExtract: List[typing.TypingResult] = List(result)
 
 }
 

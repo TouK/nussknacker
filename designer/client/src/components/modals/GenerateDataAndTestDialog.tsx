@@ -19,6 +19,7 @@ import ValidationLabels from "./ValidationLabels";
 import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
 import { isEmpty } from "lodash";
 import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
+import { Typography } from "@mui/material";
 
 function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
@@ -51,7 +52,7 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     return (
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
-                <h3>{t("generate-and-test.title", "Generate scenario test data and run tests")}</h3>
+                <Typography variant={"h3"}>{t("generate-and-test.title", "Generate scenario test data and run tests")}</Typography>
                 <NodeInput
                     value={testSampleSize}
                     onChange={(event) => setState({ testSampleSize: event.target.value })}

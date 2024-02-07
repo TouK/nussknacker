@@ -159,7 +159,7 @@ describe("Components list", () => {
             .click();
 
         // we are clicking "X more" on list of places of usages to test usages list expansion
-        cy.contains("4 more").click();
+        cy.contains("5 more").click();
         cy.get("#app-container>main").matchImage({
             screenshotConfig: { clip: { x: 0, y: 0, width: 1400, height: 300 } },
         });

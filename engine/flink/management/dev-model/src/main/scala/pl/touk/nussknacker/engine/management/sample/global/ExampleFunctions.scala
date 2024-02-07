@@ -109,7 +109,7 @@ object ExampleFunctions {
       case TypedObjectTypingResult(fields, obj, info) :: Nil =>
         fields.get("a") match {
           case Some(_) => GenericFunctionTypingError.OtherError("Given object already has field 'a'").invalidNel
-          case None    => TypedObjectTypingResult(fields + ("a" -> Typed[Int]), obj, info).validNel
+          case None    => Typed.record(fields + ("a" -> Typed[Int]), obj, info).validNel
         }
       case _ =>
         GenericFunctionTypingError.ArgumentTypeError.invalidNel
@@ -150,8 +150,8 @@ object ExampleFunctions {
       if (arguments.exists(!_.canBeSubclassOf(Typed[Number]))) return ArgumentTypeError.invalidNel
       arguments match {
         case t :: Nil           => t.validNel
-        case l :: r :: Nil      => TypedObjectTypingResult(Map("left" -> l, "right" -> r)).validNel
-        case l :: m :: r :: Nil => TypedObjectTypingResult(Map("left" -> l, "mid" -> m, "right" -> r)).validNel
+        case l :: r :: Nil      => Typed.record(Map("left" -> l, "right" -> r)).validNel
+        case l :: m :: r :: Nil => Typed.record(Map("left" -> l, "mid" -> m, "right" -> r)).validNel
         case _                  => ArgumentTypeError.invalidNel
       }
     }

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.ui.BadRequestError
+import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
   OnActionExecutionFinished,
@@ -165,7 +165,7 @@ class DeploymentServiceImpl(
     for {
       processDetailsOpt <- dbioRunner.run(processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id))
       processDetails    <- dbioRunner.run(existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name)))
-      _                          = checkIfCanPerformActionOnProcess(actionType, processDetails)
+      _                          = checkIfCanPerformActionOnProcess(actionType.toString, processDetails)
       versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
       buildInfoProcessIngType    = getBuildInfoProcessingType(processDetails)
       // We wrap only in progress action adding to avoid long transactions and potential deadlocks
@@ -202,13 +202,13 @@ class DeploymentServiceImpl(
   }
 
   private def checkIfCanPerformActionOnProcess[PS: ScenarioShapeFetchStrategy](
-      actionType: ProcessActionType,
+      actionName: String,
       processDetails: ScenarioWithDetailsEntity[PS]
   ): Unit = {
     if (processDetails.isArchived) {
-      throw ProcessIllegalAction.archived(actionType, processDetails.name)
+      throw ProcessIllegalAction.archived(actionName, processDetails.name)
     } else if (processDetails.isFragment) {
-      throw ProcessIllegalAction.fragment(actionType, processDetails.name)
+      throw ProcessIllegalAction.fragment(actionName, processDetails.name)
     }
   }
 
@@ -219,7 +219,7 @@ class DeploymentServiceImpl(
   ): Unit = {
     if (!ps.allowedActions.contains(actionType)) {
       logger.debug(s"Action: $actionType on process: ${processDetails.name} not allowed in ${ps.status} state")
-      throw ProcessIllegalAction(actionType, processDetails.name, ps)
+      throw ProcessIllegalAction(actionType.toString, processDetails.name, ps)
     }
   }
 
@@ -569,6 +569,62 @@ class DeploymentServiceImpl(
     Await.result(dbioRunner.run(actionRepository.deleteInProgressActions()), 10 seconds)
   }
 
+  // TODO: further changes
+  //       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
+  //       - see those actions in the actions table
+  //       - send notifications about finished/failed custom actions
+  override def invokeCustomAction(
+      actionName: String,
+      processIdWithName: ProcessIdWithName,
+      params: Map[String, String]
+  )(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[CustomActionResult] = {
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    dbioRunner.run(
+      for {
+        // Fetch and validate process details
+        processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](
+          processIdWithName.id
+        )
+        processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
+        _ = checkIfCanPerformActionOnProcess(actionName, processDetails)
+        processState <- DBIOAction.from(getProcessState(processDetails))
+        manager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
+        // Fetch and validate custom action details
+        actionReq = CustomActionRequest(
+          actionName,
+          processDetails.toEngineProcessVersion,
+          loggedUser.toManagerUser,
+          params
+        )
+        customActionOpt = manager.customActions.find(_.name == actionName)
+        _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionReq))
+        _ = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
+        invokeActionResult <- DBIOAction.from(manager.invokeCustomAction(actionReq, processDetails.json))
+      } yield invokeActionResult
+    )
+  }
+
+  private def checkIfCanPerformCustomActionInState[PS: ScenarioShapeFetchStrategy](
+      actionName: String,
+      processDetails: ScenarioWithDetailsEntity[PS],
+      ps: ProcessState,
+      manager: DeploymentManager
+  ): Unit = {
+    val allowedActionsForStatus = manager.customActions.collect {
+      case a if a.allowedStateStatusNames.contains(ps.status.name) => a.name
+    }.distinct
+    if (!allowedActionsForStatus.contains(actionName)) {
+      logger.debug(s"Action: $actionName on process: ${processDetails.name} not allowed in ${ps.status} state")
+      throw ProcessIllegalAction(actionName, processDetails.name, ps.status.name, allowedActionsForStatus)
+    }
+  }
+
 }
 
 private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")
+
+private case class CustomActionNonExisting(req: CustomActionRequest)
+    extends NotFoundError(s"${req.name} is not existing")

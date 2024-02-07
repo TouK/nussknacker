@@ -1,7 +1,7 @@
 import { useSelector } from "react-redux";
 import { getEnvironmentAlert } from "../reducers/selectors/settings";
 import React, { useMemo } from "react";
-import { styled } from "@mui/material";
+import { styled, Typography } from "@mui/material";
 
 // TODO: get rid of 'indicator-', maybe rename to "warn", "prod" etc.
 export enum EnvironmentTagColor {
@@ -11,27 +11,14 @@ export enum EnvironmentTagColor {
     yellow = "indicator-yellow",
 }
 
-const Tag = styled("div")(
-    {
-        display: "inline-block",
-        padding: "3px 8px",
-        marginBottom: 0,
-        fontSize: 15,
-        fontWeight: "normal",
-        textAlign: "center",
-        whiteSpace: "nowrap",
-        verticalAlign: "middle",
-        backgroundImage: "none",
-        borderRadius: "3px",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        letterSpacing: "0.2px",
-        color: "hsl(0,0%,100%)",
-    },
-    ({ color }) => ({
-        backgroundColor: color,
-    }),
-);
+const Tag = styled(Typography)<{ backgroundColor: string }>(({ backgroundColor }) => ({
+    backgroundColor: backgroundColor,
+    whiteSpace: "nowrap",
+    borderRadius: "3px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    color: "hsl(0,0%,100%)",
+}));
 
 export function EnvironmentTag() {
     const { content, color } = useSelector(getEnvironmentAlert);
@@ -55,7 +42,7 @@ export function EnvironmentTag() {
     }
 
     return (
-        <Tag color={background} title={content}>
+        <Tag variant={"body2"} px={1} py={0.5} backgroundColor={background} title={content}>
             {content}
         </Tag>
     );

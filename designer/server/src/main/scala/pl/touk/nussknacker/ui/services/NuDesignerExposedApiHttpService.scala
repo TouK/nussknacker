@@ -11,14 +11,16 @@ class NuDesignerExposedApiHttpService(
     appApiHttpService: AppApiHttpService,
     componentsApiHttpService: ComponentApiHttpService,
     userApiHttpService: UserApiHttpService,
-    notificationApiHttpService: NotificationApiHttpService
+    notificationApiHttpService: NotificationApiHttpService,
+    scenarioActivityApiHttpService: ScenarioActivityApiHttpService
 ) {
 
   private val apiEndpoints =
     appApiHttpService.serverEndpoints ++
       componentsApiHttpService.serverEndpoints ++
       userApiHttpService.serverEndpoints ++
-      notificationApiHttpService.serverEndpoints
+      notificationApiHttpService.serverEndpoints ++
+      scenarioActivityApiHttpService.serverEndpoints
 
   private val endpointDefinitions = apiEndpoints.map(_.endpoint)
 

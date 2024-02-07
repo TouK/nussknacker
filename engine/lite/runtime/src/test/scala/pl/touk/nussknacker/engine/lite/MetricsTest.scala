@@ -82,7 +82,7 @@ class MetricsTest extends AnyFunSuite with Matchers {
   test("should unregister metrics") {
     val metricRegistry   = new MetricRegistry
     val metricProvider   = new DropwizardMetricsProviderFactory(metricRegistry)(ProcessName("fooScenarioId"))
-    val metricIdentifier = MetricIdentifier(NonEmptyList("foo", Nil), Map.empty)
+    val metricIdentifier = MetricIdentifier(NonEmptyList.one("foo"), Map.empty)
     val someGauge = new Gauge[Int] {
       override def getValue: Int = 123
     }

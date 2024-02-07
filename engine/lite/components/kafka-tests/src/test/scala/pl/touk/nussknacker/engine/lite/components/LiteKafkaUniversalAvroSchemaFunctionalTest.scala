@@ -329,7 +329,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
             Input
           ),
           invalidTypes(
-            "path 'field' actual: 'Map[String,Long] | Long' expected: 'Map[String,Null | Integer] | Integer'"
+            "path 'field' actual: 'Long | Map[String,Long]' expected: 'Map[String,Null | Integer] | Integer'"
           )
         ),
         (
@@ -343,7 +343,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleUnionMapOfIntsAndInt, recordUnionMapOfIntsAndIntSchema, recordMapOfIntsSchema, Input),
-          invalidTypes("path 'field' actual: 'Map[String,Integer] | Integer' expected: 'Map[String,Null | Integer]'")
+          invalidTypes("path 'field' actual: 'Integer | Map[String,Integer]' expected: 'Map[String,Null | Integer]'")
         ),
         (
           rConfig(
@@ -369,7 +369,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleBoolean, recordUnionStringAndBooleanSchema, recordUnionStringAndIntegerSchema, Input),
-          invalidTypes("path 'field' actual: 'String | Boolean' expected: 'String | Integer'")
+          invalidTypes("path 'field' actual: 'Boolean | String' expected: 'String | Integer'")
         ),
         (
           rConfig(sampleBoolean, recordMaybeBooleanSchema, recordUnionStringAndIntegerSchema, Input),

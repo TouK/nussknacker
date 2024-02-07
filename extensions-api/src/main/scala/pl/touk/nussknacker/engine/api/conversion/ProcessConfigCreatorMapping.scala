@@ -44,7 +44,6 @@ object ProcessConfigCreatorMapping {
           additionalClasses = jec.getAdditionalClasses.asScala.toList,
           languages = jec.getLanguages,
           optimizeCompilation = jec.isOptimizeCompilation,
-          strictTypeChecking = jec.isStrictTypeChecking,
           dictionaries = jec.getDictionaries.asScala.toMap,
           hideMetaVariable = jec.isHideMetaVariable,
           methodExecutionForUnknownAllowed = jec.isMethodExecutionForUnknownAllowed

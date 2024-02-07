@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import cats.data.{Validated, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -15,13 +15,8 @@ import pl.touk.nussknacker.engine.api.context.{
   ProcessCompilationError,
   ValidationContext
 }
-import pl.touk.nussknacker.engine.api.typed.supertype.{
-  CommonSupertypeFinder,
-  NumberTypesPromotionStrategy,
-  SupertypeClassResolutionStrategy
-}
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
   FlinkCustomJoinTransformation,
@@ -29,22 +24,18 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
-import pl.touk.nussknacker.engine.api.NodeId
 
 object UnionTransformer extends UnionTransformer(None) {
-
-  @transient
-  private lazy val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)
 
   def transformContextsDefinition(outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)(
       contexts: Map[String, ValidationContext]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val branchReturnTypes: List[typing.TypingResult] = outputExpressionByBranchId.values.map(_.returnType).toList
-    val unifiedReturnType = branchReturnTypes
-      .reduceOption[TypingResult] { case (left, right) =>
-        findSuperTypeCheckingAllFieldsMatchingForObjects(left, right)
+    val branchReturnTypes = outputExpressionByBranchId.values.map(_.returnType)
+    val unifiedReturnType = NonEmptyList.fromList(branchReturnTypes.toList).flatMap { case NonEmptyList(head, tail) =>
+      tail.foldLeft(Option(head)) { (acc, el) =>
+        acc.flatMap(findSuperTypeCheckingAllFieldsMatchingForObjects(_, el))
       }
-      .filterNot(_ == Typed.empty)
+    }
     unifiedReturnType
       .map(unionValidationContext(variableName, contexts, _))
       .getOrElse(Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId.id)))
@@ -53,17 +44,20 @@ object UnionTransformer extends UnionTransformer(None) {
   private def findSuperTypeCheckingAllFieldsMatchingForObjects(
       left: TypingResult,
       right: TypingResult
-  ): TypingResult = {
-    val result = superTypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
-    (left, right, result) match {
-      // normally (e.g. in ternary operator and equals) we are more lax in comparison of objects, but here we want to strictly check
-      // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
-      case (leftObj: TypedObjectTypingResult, rightObj: TypedObjectTypingResult, resultObj: TypedObjectTypingResult)
-          if resultObj.fields.keySet != leftObj.fields.keySet || resultObj.fields.keySet != rightObj.fields.keySet =>
-        Typed.empty
-      case _ =>
-        result
-    }
+  ): Option[TypingResult] = {
+    CommonSupertypeFinder.Intersection
+      .commonSupertypeOpt(left, right)
+      .flatMap { result =>
+        (left, right, result) match {
+          // normally (e.g. in equals) we are more lax in comparison of objects, but here we want to strictly check
+          // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
+          case (leftObj: TypedObjectTypingResult, rightObj: TypedObjectTypingResult, resultObj: TypedObjectTypingResult)
+              if resultObj.fields.keySet != leftObj.fields.keySet || resultObj.fields.keySet != rightObj.fields.keySet =>
+            None
+          case _ =>
+            Some(result)
+        }
+      }
   }
 
   private def unionValidationContext(
