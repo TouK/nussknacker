@@ -102,7 +102,7 @@ class MethodTypeInfoSubclassCheckerSpec extends AnyFunSuite with Matchers with V
 
   test("should work with typed maps") {
     check(
-      List(TypedObjectTypingResult(Map("a" -> Typed[String], "b" -> Typed[String]))),
+      List(Typed.record(Map("a" -> Typed[String], "b" -> Typed[String]))),
       None,
       List(Typed[java.util.Map[_, _]]),
       None,
@@ -110,7 +110,7 @@ class MethodTypeInfoSubclassCheckerSpec extends AnyFunSuite with Matchers with V
     )
 
     check(
-      List(TypedObjectTypingResult(Map("a" -> Typed[Int], "b" -> Typed[Double]))),
+      List(Typed.record(Map("a" -> Typed[Int], "b" -> Typed[Double]))),
       None,
       List(Typed.fromDetailedType[java.util.Map[String, Number]]),
       None,

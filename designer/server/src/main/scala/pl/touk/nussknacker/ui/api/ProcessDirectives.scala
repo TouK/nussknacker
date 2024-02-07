@@ -27,7 +27,7 @@ trait ProcessDirectives extends NuPathMatchers {
   }
 
   def processId(processName: ProcessName): Directive1[ProcessIdWithName] = {
-    onSuccess(processService.getProcessId(processName))
+    onSuccess(processService.getProcessIdUnsafe(processName))
       .map(ProcessIdWithName(_, processName))
       .flatMap(provide)
   }

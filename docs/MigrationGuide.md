@@ -47,6 +47,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ComponentId` was renamed to `DesignerWideComponentId`
   * new `ComponentId` is serialized in json to string in format `$componentType-$componentName` instead of separate fields (`name` and `type`)
   * `NodeComponentInfo.componentInfo` was renamed to `componentId`
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) [#5457](https://github.com/TouK/nussknacker/pull/5457) Typed related changes
+  * `CommonSupertypeFinder` shouldn't be created directly anymore - `CommonSupertypeFinder.*` predefined variables should be used instead,
+    in most cases just (`CommonSupertypeFinder.Default`)
+  * `TypedObjectTypingResult.apply` removed legacy factory method taking `List[(String, TypingResult)]` - should be used variant with `Map` 
+  * `TypedObjectTypingResult.apply` removed legacy factory method taking `TypedObjectDefinition` - should be used variant with `Map` 
+  * `TypedObjectTypingResult.apply` is deprecated - should be used `Typed.record(...)` instead. It will be removed in further releases
+  * `TypedObjectDefinition` was removed 
+  * `Typed.empty` was removed, `TypedUnion` now handles only >= 2 types
+    * `Typed.apply(vararg...)` was replaced by `Typed.apply(NonEmptyList)` and `Typed.apply(firstType, secondType, restOfTypesVaraarg...)`
+      If you have a list of types and you are not sure how to translate it to `TypingResult` you can try to use `Typed.fromIterableOrUnknownIfEmpty`
+      but it is not recommended - see docs next to it.
+    * `TypedUnion`is not a case class anymore, but is still serializable - If it was used in a Flink state, state will be probably not compatible
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
@@ -97,6 +109,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
 * [#5432](https://github.com/TouK/nussknacker/pull/5432) Kafka client, Confluent Schema Registry Client and Avro bump
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13 
+* [#5465](https://github.com/TouK/nussknacker/pull/5465) Removed `strictTypeChecking` option and `SupertypeClassResolutionStrategy.Union` used behind it
+
+## In version 1.13.1 (Not released yet)
+
+### Code API changes
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13
 
 ## In version 1.13.0 
 
@@ -195,6 +213,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Boolean expressions in `Switch` and `Filter` nodes are required not null values
   * Variable values in `MapVariable`, `FragmentOutput` and `Variable` are mandatory
   * Field names in `MapVariable`, `FragmentOutput` are required to be unique
+* [#4698](https://github.com/TouK/nussknacker/pull/4698) Due to change in program argument encoding all scheduled batch
+  scenarios handled by periodic DM must be cancelled before upgrade
+
+## In version 1.12.6
+
+### Other changes
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13
 
 ## In version 1.12.x
 

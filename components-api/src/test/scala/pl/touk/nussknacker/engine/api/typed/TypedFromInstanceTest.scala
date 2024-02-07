@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.LoneElement
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
@@ -47,10 +47,10 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
     val data: List[(Object, TypedObjectTypingResult)] = List(
       (
         Map("a" -> 1, "b" -> "string"),
-        TypedObjectTypingResult(fieldTypes, Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
+        Typed.record(fieldTypes, Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
       ),
-      (Map("a" -> 1, "b" -> "string").asJava, TypedObjectTypingResult(fieldTypes)),
-      (TypedMap(Map("a" -> 1, "b" -> "string")), TypedObjectTypingResult(fieldTypes))
+      (Map("a" -> 1, "b" -> "string").asJava, Typed.record(fieldTypes)),
+      (TypedMap(Map("a" -> 1, "b" -> "string")), Typed.record(fieldTypes))
     )
 
     forEvery(Table(("map", "excepted"), data: _*)) { (map, excepted) =>
@@ -81,20 +81,20 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
     checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Number]))
 
     val listOfTypedMaps      = List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 1)))
-    val typedMapTypingResult = TypedObjectTypingResult(Map("a" -> Typed(classOf[Integer])))
+    val typedMapTypingResult = Typed.record(Map("a" -> Typed(classOf[Integer])))
     checkTypingResult(listOfTypedMaps, classOf[List[_]], typedMapTypingResult)
     checkTypingResult(listOfTypedMaps.asJava, classOf[java.util.List[_]], typedMapTypingResult)
     checkNotASubclassOfOtherParamTypingResult(
       listOfTypedMaps,
-      TypedObjectTypingResult(Map("c" -> Typed(classOf[Integer])))
+      Typed.record(Map("c" -> Typed(classOf[Integer])))
     )
     checkNotASubclassOfOtherParamTypingResult(
       listOfTypedMaps,
-      TypedObjectTypingResult(Map("b" -> Typed(classOf[Integer])))
+      Typed.record(Map("b" -> Typed(classOf[Integer])))
     )
     checkNotASubclassOfOtherParamTypingResult(
       listOfTypedMaps,
-      TypedObjectTypingResult(Map("a" -> Typed(classOf[String])))
+      Typed.record(Map("a" -> Typed(classOf[String])))
     )
   }
 

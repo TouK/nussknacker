@@ -24,10 +24,6 @@ export const ModalHeader = styled("div")`
     font-size: 14px !important;
     font-weight: 600;
     height: ${variables.modalHeaderHeight}px;
-    span {
-        margin-left: 5px;
-        margin-right: 5px;
-    }
 `;
 
 export const ModalTitleContainer = styled("div")`

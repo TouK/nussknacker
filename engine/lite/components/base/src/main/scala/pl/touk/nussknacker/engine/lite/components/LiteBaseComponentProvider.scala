@@ -40,6 +40,10 @@ object LiteBaseComponentProvider {
       ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
       ComponentDefinition("union", Union).withRelativeDocs("BasicNodes#union"),
       ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink)).withRelativeDocs("DataSourcesAndSinks#deadend"),
+//      ComponentDefinition(
+//        name = "decision-table",
+//        component = DecisionTable
+//      ).withRelativeDocs("BasicNodes#decisiontable")
     )
 
   }

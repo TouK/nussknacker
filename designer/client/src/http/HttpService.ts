@@ -341,11 +341,10 @@ class HttpService {
     }
 
     addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File) {
-        const data = new FormData();
-        data.append("attachment", file);
-
         return api
-            .post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, data)
+            .post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, file, {
+                headers: { "Content-Disposition": `attachment; filename="${file.name}"` },
+            })
             .then(() => this.#addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added")))
             .catch((error) =>
                 this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true),

@@ -31,7 +31,7 @@ function ProcessStateIcon({ scenario, processState }: Props) {
                 onClose={() => setAnchorEl(null)}
                 open={!!anchorEl}
             >
-                <Typography p={1} variant="h6">
+                <Typography p={1} variant="body1">
                     {scenario.name}
                 </Typography>
                 <Divider />

@@ -186,7 +186,6 @@ object ModelDefinitionBuilder {
       defaultAdditionalClasses,
       languages = LanguageConfiguration.default,
       optimizeCompilation = true,
-      strictTypeChecking = defaultStrictTypeChecking,
       dictionaries = Map.empty,
       hideMetaVariable = false,
       strictMethodsChecking = defaultStrictMethodsChecking,

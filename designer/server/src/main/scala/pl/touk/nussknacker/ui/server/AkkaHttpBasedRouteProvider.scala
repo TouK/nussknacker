@@ -195,12 +195,6 @@ class AkkaHttpBasedRouteProvider(
         )
       }
 
-      val customActionInvokerService = new CustomActionInvokerServiceImpl(
-        futureProcessRepository,
-        dmDispatcher,
-        deploymentService
-      )
-
       val stateDefinitionService = new ProcessStateDefinitionService(
         typeToConfig
           .mapValues(_.category)
@@ -263,6 +257,18 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         notificationService = notificationService
       )
+      val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        scenarioActivityRepository = processActivityRepository,
+        scenarioService = processService,
+        scenarioAuthorizer = processAuthorizer,
+        new ScenarioAttachmentService(
+          AttachmentsConfig.create(resolvedConfig),
+          processActivityRepository
+        ),
+        new AkkaHttpBasedTapirStreamEndpointProvider()
+      )
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
@@ -289,14 +295,12 @@ class AkkaHttpBasedRouteProvider(
             processActivityRepository,
             processResolver
           ),
-          new ProcessActivityResource(processActivityRepository, processService, processAuthorizer),
           new ManagementResources(
             processAuthorizer,
             processService,
             featureTogglesConfig.deploymentCommentSettings,
             deploymentService,
             dmDispatcher,
-            customActionInvokerService,
             metricsRegistry,
             scenarioTestService,
             typeToConfig.mapValues(_.modelData)
@@ -313,14 +317,6 @@ class AkkaHttpBasedRouteProvider(
             }
           ),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
-          new AttachmentResources(
-            new ProcessAttachmentService(
-              AttachmentsConfig.create(resolvedConfig),
-              processActivityRepository
-            ),
-            processService,
-            processAuthorizer
-          ),
           new StatusResources(stateDefinitionService),
         )
 
@@ -373,7 +369,8 @@ class AkkaHttpBasedRouteProvider(
           appApiHttpService,
           componentsApiHttpService,
           userApiHttpService,
-          notificationApiHttpService
+          notificationApiHttpService,
+          scenarioActivityApiHttpService
         )
 
       createAppRoute(

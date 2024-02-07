@@ -13,14 +13,8 @@ import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
 import { ActionButton } from "../../toolbarSettings/buttons";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
-import {
-    PanelProcessInfo,
-    PanelProcessInfoIcon,
-    ProcessInfoDescription,
-    ProcessInfoText,
-    ProcessName,
-    ProcessRename,
-} from "./ProcessInfoComponents";
+import { PanelProcessInfo, PanelProcessInfoIcon, ProcessInfoText, ProcessName, ProcessRename } from "./ProcessInfoComponents";
+import { Typography } from "@mui/material";
 
 const ProcessInfo = memo(({ id, buttonsVariant, children }: ToolbarPanelProps) => {
     const scenario = useSelector((state: RootState) => getScenario(state));
@@ -45,9 +39,9 @@ const ProcessInfo = memo(({ id, buttonsVariant, children }: ToolbarPanelProps) =
                             {isRenamePending ? (
                                 <ProcessRename title={scenario.name}>{unsavedNewName}*</ProcessRename>
                             ) : (
-                                <ProcessName>{scenario.name}</ProcessName>
+                                <ProcessName variant={"subtitle2"}>{scenario.name}</ProcessName>
                             )}
-                            <ProcessInfoDescription>{description}</ProcessInfoDescription>
+                            <Typography variant={"caption"}>{description}</Typography>
                         </ProcessInfoText>
                     </PanelProcessInfo>
                 </CssFade>

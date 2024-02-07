@@ -9,6 +9,7 @@ import NodeUtils from "../../NodeUtils";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { ComponentIconStyled, ModalHeader, ModalTitleContainer, NodeDetailsModalTitle } from "./NodeDetailsStyled";
 import { NodeClassDocs } from "./SubHeader";
+import { Typography } from "@mui/material";
 
 const nodeClassProperties = [`service.id`, `ref.typ`, `nodeType`, `ref.id`];
 
@@ -36,7 +37,9 @@ const NodeDetailsModalHeader = ({ node }: { node: NodeType }): JSX.Element => {
             <ModalTitleContainer>
                 <NodeDetailsModalTitle style={titleStyles}>
                     <ComponentIconStyled node={node} />
-                    <span>{header}</span>
+                    <Typography mx={0.5} variant={"subtitle2"}>
+                        {header}
+                    </Typography>
                 </NodeDetailsModalTitle>
             </ModalTitleContainer>
             <NodeClassDocs nodeClass={nodeClass} docsUrl={docsUrl} />

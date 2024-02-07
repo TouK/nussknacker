@@ -1,13 +1,16 @@
 package pl.touk.nussknacker.ui.server
 
 import com.typesafe.scalalogging.LazyLogging
-import sttp.tapir.DecodeResult
+import sttp.model.StatusCode
 import sttp.tapir.EndpointIO.Header
 import sttp.tapir.server.akkahttp.{AkkaHttpServerInterpreter, AkkaHttpServerOptions}
 import sttp.tapir.server.interceptor.DecodeFailureContext
 import sttp.tapir.server.interceptor.decodefailure.DefaultDecodeFailureHandler
+import sttp.tapir.server.interceptor.exception.{ExceptionContext, ExceptionHandler}
+import sttp.tapir.server.model.ValuedEndpointOutput
+import sttp.tapir.{DecodeResult, statusCode, stringBody}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext: ExecutionContext)
     extends AkkaHttpServerInterpreter
@@ -16,6 +19,7 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext:
   override val akkaHttpServerOptions: AkkaHttpServerOptions =
     AkkaHttpServerOptions.customiseInterceptors
       .decodeFailureHandler(customDecodeFailureHandler)
+      .exceptionHandler(customExceptionHandler)
       .options
 
   private lazy val customDecodeFailureHandler = {
@@ -34,6 +38,18 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext:
       case (Header("Authorization", _, _), DecodeResult.Missing) => true
       case _                                                     => false
     }
+  }
+
+  private lazy val customExceptionHandler = ExceptionHandler.pure[Future] { ctx: ExceptionContext =>
+    Some(
+      ValuedEndpointOutput(
+        statusCode.and(stringBody),
+        (
+          StatusCode.InternalServerError,
+          ctx.e.getMessage
+        )
+      )
+    )
   }
 
 }

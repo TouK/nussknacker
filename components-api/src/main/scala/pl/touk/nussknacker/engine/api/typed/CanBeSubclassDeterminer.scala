@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import cats.data.Validated._
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, NonEmptySet, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, _}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -26,8 +26,10 @@ trait CanBeSubclassDeterminer {
       case (Unknown, _)       => ().validNel
       case (TypedNull, other) => canNullBeSubclassOf(other)
       case (_, TypedNull)     => s"No type can be subclass of ${TypedNull.display}".invalidNel
-      case (given: SingleTypingResult, superclass: TypedUnion) => canBeSubclassOf(Set(given), superclass.possibleTypes)
-      case (given: TypedUnion, superclass: SingleTypingResult) => canBeSubclassOf(given.possibleTypes, Set(superclass))
+      case (given: SingleTypingResult, superclass: TypedUnion) =>
+        canBeSubclassOf(NonEmptyList.one(given), superclass.possibleTypes)
+      case (given: TypedUnion, superclass: SingleTypingResult) =>
+        canBeSubclassOf(given.possibleTypes, NonEmptyList.one(superclass))
       case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeSubclassOf(given, superclass)
       case (given: TypedUnion, superclass: TypedUnion) => canBeSubclassOf(given.possibleTypes, superclass.possibleTypes)
     }
@@ -151,8 +153,8 @@ trait CanBeSubclassDeterminer {
   }
 
   private def canBeSubclassOf(
-      givenTypes: Set[SingleTypingResult],
-      superclassCandidates: Set[SingleTypingResult]
+      givenTypes: NonEmptyList[SingleTypingResult],
+      superclassCandidates: NonEmptyList[SingleTypingResult]
   ): ValidatedNel[String, Unit] = {
     // Would be more safety to do givenTypes.forAll(... superclassCandidates.exists ...) - we wil protect against
     // e.g. (String | Int).canBeSubclassOf(String) which can fail in runtime for Int, but on the other hand we can't block user's intended action.
@@ -162,9 +164,9 @@ trait CanBeSubclassDeterminer {
       givenTypes.exists(given => superclassCandidates.exists(singleCanBeSubclassOf(given, _).isValid)),
       (),
       s"""None of the following types:
-         |${givenTypes.map(" - " + _.display).mkString(",\n")}
+         |${givenTypes.map(" - " + _.display).toList.mkString(",\n")}
          |can be a subclass of any of:
-         |${superclassCandidates.map(" - " + _.display).mkString(",\n")}""".stripMargin
+         |${superclassCandidates.map(" - " + _.display).toList.mkString(",\n")}""".stripMargin
     )
   }
 

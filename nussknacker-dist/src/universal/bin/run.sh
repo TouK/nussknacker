@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 RUN_IN_BACKGROUND=${RUN_IN_BACKGROUND:-false}
 

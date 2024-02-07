@@ -94,7 +94,9 @@ object ProcessService {
 }
 
 trait ProcessService {
-  def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId]
+  def getProcessIdUnsafe(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId]
+
+  def getProcessId(scenarioName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]]
 
   def getLatestProcessWithDetails(processId: ProcessIdWithName, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
@@ -153,10 +155,13 @@ class DBProcessService(
     extends ProcessService
     with LazyLogging {
 
-  override def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId] = {
-    fetchingProcessRepository
-      .fetchProcessId(processName)
+  override def getProcessIdUnsafe(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId] = {
+    getProcessId(processName)
       .map(_.getOrElse(throw ProcessNotFoundError(processName)))
+  }
+
+  override def getProcessId(scenarioName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]] = {
+    fetchingProcessRepository.fetchProcessId(scenarioName)
   }
 
   override def getLatestProcessWithDetails(
@@ -423,7 +428,7 @@ class DBProcessService(
         if (state.allowedActions.contains(actionToCheck)) {
           callback
         } else {
-          throw ProcessIllegalAction(actionToCheck, process.name, state)
+          throw ProcessIllegalAction(actionToCheck.toString, process.name, state)
         }
       })
   }
@@ -481,7 +486,7 @@ class DBProcessService(
   )(implicit user: LoggedUser): Future[T] =
     getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
-        throw ProcessIllegalAction.archived(action, process.name)
+        throw ProcessIllegalAction.archived(action.toString, process.name)
       } else {
         callback(process)
       }

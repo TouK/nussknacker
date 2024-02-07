@@ -102,6 +102,8 @@ object CanonicalProcessConverter {
     CanonicalProcess(graph.toMetaData(name), nodes, additionalBranches)
   }
 
+  // TODO: Should find root nodes based no structure to have loose nodes visible at canonical process level - otherwise
+  //  we need to fail fast on loose nodes before calling converter
   private def findRootNodes(process: ScenarioGraph): List[NodeData] =
     process.nodes.filter(n => n.isInstanceOf[StartingNodeData])
 
@@ -129,9 +131,8 @@ object CanonicalProcessConverter {
           .flatten
         canonicalnode.FilterNode(data, nextFalse) :: next
       case (data: Switch, _) =>
-        val nexts = getEdges(data.id).collect {
-          case e @ Edge(_, _, Some(EdgeType.NextSwitch(edgeExpr))) =>
-            canonicalnode.Case(edgeExpr, unflattenEdgeEnd(data.id, e))
+        val nexts = getEdges(data.id).collect { case e @ Edge(_, _, Some(EdgeType.NextSwitch(edgeExpr))) =>
+          canonicalnode.Case(edgeExpr, unflattenEdgeEnd(data.id, e))
         }
         val default = getEdges(data.id)
           .find(_.edgeType.contains(EdgeType.SwitchDefault))
