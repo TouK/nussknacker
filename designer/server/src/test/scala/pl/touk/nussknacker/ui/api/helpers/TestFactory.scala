@@ -7,11 +7,14 @@ import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
@@ -51,8 +54,8 @@ object TestFactory extends TestPermissions {
 
   // FIXME: remove testCategory dummy implementation
   val testCategory: CategorizedPermission = Map(
-    TestCategories.Category1 -> Permission.ALL_PERMISSIONS,
-    TestCategories.Category2 -> Permission.ALL_PERMISSIONS
+    Category1 -> Permission.ALL_PERMISSIONS,
+    Category2 -> Permission.ALL_PERMISSIONS
   )
 
   val possibleValues: List[FixedExpressionValue] = List(FixedExpressionValue("a", "a"))
@@ -64,7 +67,7 @@ object TestFactory extends TestPermissions {
     .withScenarioPropertiesConfig(FlinkStreamingPropertiesConfig.properties)
 
   val processValidatorByProcessingType: ProcessingTypeDataProvider[UIProcessValidator, _] =
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> flinkProcessValidator)
+    mapProcessingTypeDataProvider(Streaming -> flinkProcessValidator)
 
   val processResolver = new UIProcessResolver(
     processValidator,
@@ -72,7 +75,7 @@ object TestFactory extends TestPermissions {
   )
 
   val processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _] =
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processResolver)
+    mapProcessingTypeDataProvider(Streaming -> processResolver)
 
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
 
@@ -81,14 +84,14 @@ object TestFactory extends TestPermissions {
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
   def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
     Map(
-      TestProcessingTypes.Streaming -> List(ProcessTestData.sampleFragment)
+      Streaming.stringify -> List(ProcessTestData.sampleFragment)
     )
   )
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
 
   def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] = mapProcessingTypeDataProvider(
-    TestProcessingTypes.Streaming -> new ScenarioResolver(sampleResolver, TestProcessingTypes.Streaming)
+    Streaming -> new ScenarioResolver(sampleResolver, Streaming.stringify)
   )
 
   def deploymentService() = new StubDeploymentService(Map.empty)
@@ -108,7 +111,7 @@ object TestFactory extends TestPermissions {
   def newWriteProcessRepository(dbRef: DbRef, modelVersions: Option[Int] = Some(1)) =
     new DBProcessRepository(
       dbRef,
-      mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*)
+      mapProcessingTypeDataProvider(modelVersions.map(Streaming -> _).toList: _*)
     )
 
   def newDummyWriteProcessRepository(): DBProcessRepository =
@@ -118,8 +121,7 @@ object TestFactory extends TestPermissions {
     new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
-    new DbProcessActionRepository(dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
-      with DbioRepository
+    new DbProcessActionRepository(dbRef, mapProcessingTypeDataProvider(Streaming -> buildInfo)) with DbioRepository
 
   def newDummyActionRepository(): DbProcessActionRepository =
     newActionProcessRepository(dummyDbRef)
@@ -137,7 +139,7 @@ object TestFactory extends TestPermissions {
 
   val newProcessPreparerByProcessingType: ProcessingTypeDataProvider[NewProcessPreparer, _] =
     mapProcessingTypeDataProvider(
-      TestProcessingTypes.Streaming -> newProcessPreparer
+      Streaming -> newProcessPreparer
     )
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
@@ -153,7 +155,7 @@ object TestFactory extends TestPermissions {
   def userWithCategoriesReadPermission(
       id: String = "1",
       username: String = "user",
-      categories: List[String]
+      categories: List[TestCategory]
   ): LoggedUser =
     user(id, username, categories.map(c => c -> Set(Permission.Read)).toMap)
 
@@ -163,15 +165,20 @@ object TestFactory extends TestPermissions {
       username: String = "user",
       permissions: CategorizedPermission = testPermissionEmpty
   ): LoggedUser =
-    LoggedUser(id, username, permissions, globalPermissions = List("CustomFixedPermission"))
+    LoggedUser(
+      id,
+      username,
+      permissions.map { case (k, v) => (k.stringify, v) },
+      globalPermissions = List("CustomFixedPermission")
+    )
 
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser =
     LoggedUser(id, username, Map.empty, isAdmin = true)
 
-  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
+  def mapProcessingTypeDataProvider[T](data: (TestProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
     ProcessingTypeDataProvider.withEmptyCombinedData(
-      Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
+      data.toMap.map { case (k, v) => (k.stringify, ValueWithPermission.anyUser(v)) }
     )
   }
 

@@ -3,16 +3,17 @@ package pl.touk.nussknacker.ui.api.helpers
 import cats.instances.all._
 import cats.syntax.semigroup._
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
 
 import scala.language.implicitConversions
 
 trait TestPermissions {
 
-  import TestCategories._
   import TestPermissions._
 
   protected implicit def convertCategoryPermissionPairToCategorizedPermissionsMap(
-      pair: (String, Permission.Value)
+      pair: (TestCategory, Permission.Value)
   ): CategorizedPermission = pair match {
     case (name, permission) => Map(name -> Set(permission))
   }
@@ -28,5 +29,5 @@ trait TestPermissions {
 }
 
 object TestPermissions {
-  type CategorizedPermission = Map[String, Set[Permission.Permission]]
+  type CategorizedPermission = Map[TestCategory, Set[Permission.Permission]]
 }

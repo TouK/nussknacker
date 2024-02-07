@@ -19,8 +19,9 @@ import pl.touk.nussknacker.engine.definition.test.{
   TestingCapabilities
 }
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
-import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestData}
 
 class TestInfoResourcesSpec
     extends AnyFunSuite
@@ -65,7 +66,7 @@ class TestInfoResourcesSpec
     processAuthorizer,
     processService,
     mapProcessingTypeDataProvider(
-      TestProcessingTypes.Streaming -> createScenarioTestService(testInfoProvider(additionalDataSize))
+      Streaming -> createScenarioTestService(testInfoProvider(additionalDataSize))
     )
   )
 

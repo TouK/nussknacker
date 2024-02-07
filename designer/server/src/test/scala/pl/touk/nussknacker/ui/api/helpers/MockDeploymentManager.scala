@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import shapeless.syntax.typeable.typeableOps
@@ -36,7 +37,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
         TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-        DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
+        DesignerWideComponentId.default(Streaming.stringify, _)
       ),
       shouldVerifyBeforeDeploy = false,
       mainClassName = "UNUSED"

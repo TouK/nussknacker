@@ -42,7 +42,6 @@ class UserApiSpec
              |  "globalPermissions": []
              |}""".stripMargin)
       }
-
       "return admin info" in {
         given()
           .basicAuth("admin", "admin")
@@ -78,12 +77,11 @@ class UserApiSpec
         given()
           .noAuth()
           .when()
+          .basicAuth("unknown-user", "wrong-password")
           .get(s"$nuDesignerHttpAddress/api/user")
           .Then()
           .statusCode(401)
-          .body(
-            equalTo("The resource requires authentication, which was not supplied with the request")
-          )
+          .body(equalTo("The supplied authentication is invalid"))
       }
     }
   }

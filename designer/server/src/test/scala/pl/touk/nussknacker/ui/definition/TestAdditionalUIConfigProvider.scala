@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import pl.touk.nussknacker.ui.api.helpers.TestData
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 
 object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
   val componentGroupName: ComponentGroupName = ComponentGroupName("someComponentGroup")
@@ -45,13 +46,13 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
   override def getAllForProcessingType(
       processingType: String
   ): Map[DesignerWideComponentId, ComponentAdditionalConfig] =
-    if (processingType == TestProcessingTypes.Streaming)
+    if (processingType == Streaming.stringify)
       componentAdditionalConfigMap
     else
       Map.empty
 
   override def getScenarioPropertiesUIConfigs(processingType: String): Map[String, ScenarioPropertyConfig] =
-    if (processingType == TestProcessingTypes.Streaming)
+    if (processingType == Streaming.stringify)
       scenarioPropertyConfigOverride
     else
       Map.empty

@@ -24,8 +24,9 @@ import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
+import pl.touk.nussknacker.ui.api.helpers.TestData
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
+import pl.touk.nussknacker.ui.api.helpers.TestData._
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{ScenarioComponentsUsagesHelper, ScenarioWithDetailsEntity}
@@ -125,7 +126,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   private val processDetailsWithSomeBasesFraud = wrapGraphWithScenarioDetailsEntity(
     processWithSomeBasesFraud.name,
     CanonicalProcessConverter.toScenarioGraph(processWithSomeBasesFraud),
-    TestProcessingTypes.Fraud
+    Streaming2.stringify
   )
 
   private val processWithFragment = ScenarioBuilder
@@ -183,10 +184,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   private val processingTypeAndInfoToNonFragmentDesignerWideId =
-    (nonFragmentComponents(DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)).map { component =>
-      (TestProcessingTypes.Streaming, component.id) -> component.designerWideId
-    } ::: nonFragmentComponents(DesignerWideComponentId.default(TestProcessingTypes.Fraud, _)).map { component =>
-      (TestProcessingTypes.Fraud, component.id) -> component.designerWideId
+    (nonFragmentComponents(DesignerWideComponentId.default(Streaming.stringify, _)).map { component =>
+      (Streaming.stringify, component.id) -> component.designerWideId
+    } ::: nonFragmentComponents(DesignerWideComponentId.default(Streaming2.stringify, _)).map { component =>
+      (Streaming2.stringify, component.id) -> component.designerWideId
     }).toMap
 
   test("should compute components usage count") {
@@ -386,10 +387,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   private def sid(componentType: ComponentType, id: String) =
-    DesignerWideComponentId.default(Streaming, ComponentId(componentType, id))
+    DesignerWideComponentId.default(Streaming.stringify, ComponentId(componentType, id))
 
   private def fid(componentType: ComponentType, id: String) =
-    DesignerWideComponentId.default(Fraud, ComponentId(componentType, id))
+    DesignerWideComponentId.default(Streaming2.stringify, ComponentId(componentType, id))
 
   private def bid(componentId: ComponentId) = DesignerWideComponentId.forBuiltInComponent(componentId)
 

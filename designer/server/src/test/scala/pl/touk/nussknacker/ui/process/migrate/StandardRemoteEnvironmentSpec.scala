@@ -9,8 +9,9 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.parser
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -24,9 +25,11 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{
   sampleProcessName,
   validProcess
 }
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -34,7 +37,6 @@ import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class StandardRemoteEnvironmentSpec
@@ -60,9 +62,9 @@ class StandardRemoteEnvironmentSpec
 
     override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
       mapProcessingTypeDataProvider(
-        TestProcessingTypes.Streaming -> new ProcessModelMigrator(new TestMigrations(1, 2))
+        Streaming -> new ProcessModelMigrator(new TestMigrations(1, 2))
       ),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> flinkProcessValidator)
+      mapProcessingTypeDataProvider(Streaming -> flinkProcessValidator)
     )
 
   }
@@ -408,18 +410,20 @@ class StandardRemoteEnvironmentSpec
   }
 
   it should "migrate fragment" in {
-    val category                                       = TestCategories.Category1
+    val category                                       = Category1
     var migrated: Option[Future[UpdateProcessCommand]] = None
     val fragment                 = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
     val validatedFragmentDetails = TestProcessUtil.wrapWithDetailsForMigration(fragment, sampleFragmentName)
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       validatedFragmentDetails,
-      expectedProcessCategory = category,
+      expectedProcessCategory = category.stringify,
       initialRemoteProcessList = Nil,
       onMigrate = migrationFuture => migrated = Some(migrationFuture)
     )
 
-    remoteEnvironment.migrate(fragment, sampleFragmentName, category, isFragment = true).futureValue shouldBe Symbol(
+    remoteEnvironment
+      .migrate(fragment, sampleFragmentName, category.stringify, isFragment = true)
+      .futureValue shouldBe Symbol(
       "right"
     )
     migrated shouldBe Symbol("defined")

@@ -18,6 +18,8 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider.noCombinedDataFun
@@ -50,9 +52,7 @@ class DeploymentServiceSpec
     with WithHsqlDbTesting
     with EitherValuesDetailedMessage {
 
-  import TestCategories._
   import TestFactory._
-  import TestProcessingTypes._
   import VersionId._
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
@@ -76,7 +76,7 @@ class DeploymentServiceSpec
         new ProcessingTypeDataState[DeploymentManager, Nothing] {
 
           override def all: Map[ProcessingType, ValueWithPermission[DeploymentManager]] = Map(
-            TestProcessingTypes.Streaming -> ValueWithPermission.anyUser(deploymentManager)
+            Streaming.stringify -> ValueWithPermission.anyUser(deploymentManager)
           )
 
           override def getCombined: () => Nothing = noCombinedDataFun
@@ -94,9 +94,9 @@ class DeploymentServiceSpec
 
   deploymentManager = new MockDeploymentManager(SimpleStateStatus.Running)(
     new DefaultProcessingTypeDeploymentService(
-      TestProcessingTypes.Streaming,
+      Streaming.stringify,
       deploymentService,
-      AllDeployedScenarioService(testDbRef, TestProcessingTypes.Streaming)
+      AllDeployedScenarioService(testDbRef, Streaming.stringify)
     )
   )
 
@@ -153,7 +153,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, actionId)    = prepareDeployedProcess(processName).dbioActionValues
 
-    deploymentService.markActionExecutionFinished(Streaming, actionId).futureValue
+    deploymentService.markActionExecutionFinished(Streaming.stringify, actionId).futureValue
     eventually {
       val action =
         actionRepository.getFinishedProcessActions(processId.id, Some(Set(ProcessActionType.Deploy))).dbioActionValues
@@ -826,9 +826,9 @@ class DeploymentServiceSpec
       .emptySink("sink", existingSinkFactory)
     val action = CreateProcessAction(
       processName,
-      Category1,
+      Category1.stringify,
       canonicalProcess,
-      Streaming,
+      Streaming.stringify,
       isFragment = false,
       forwardedUserName = None
     )
@@ -842,9 +842,9 @@ class DeploymentServiceSpec
 
     val action = CreateProcessAction(
       processName,
-      Category1,
+      Category1.stringify,
       canonicalProcess,
-      Streaming,
+      Streaming.stringify,
       isFragment = true,
       forwardedUserName = None
     )

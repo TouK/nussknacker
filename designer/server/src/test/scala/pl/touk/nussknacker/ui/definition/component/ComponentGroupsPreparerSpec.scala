@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, component}
 
@@ -189,7 +190,7 @@ class ComponentGroupsPreparerSpec
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         Some(_),
-        DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
+        DesignerWideComponentId.default(Streaming.stringify, _)
       ),
       modelDefinition,
     )

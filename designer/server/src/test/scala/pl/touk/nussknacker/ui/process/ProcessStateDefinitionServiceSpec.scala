@@ -11,10 +11,11 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
+import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider}
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ValueWithPermission}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
@@ -41,7 +42,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         displayableName = expectedCommon.displayableName,
         icon = expectedCommon.icon,
         tooltip = expectedCommon.tooltip,
-        categories = List(Category1, Category2)
+        categories = List(Category1.stringify, Category2.stringify)
       )
     )
 
@@ -52,7 +53,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         displayableName = expectedCustomStreaming.displayableName,
         icon = expectedCustomStreaming.icon,
         tooltip = expectedCustomStreaming.tooltip,
-        categories = List(Category1)
+        categories = List(Category1.stringify)
       )
     )
 
@@ -63,7 +64,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         displayableName = expectedCustomFraud.displayableName,
         icon = expectedCustomFraud.icon,
         tooltip = expectedCustomFraud.tooltip,
-        categories = List(Category2)
+        categories = List(Category2.stringify)
       )
     )
   }
@@ -75,7 +76,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_FRAUD" -> "Fraud"))
 
     val definitions = testStateDefinitions(
-      CommonUser("user", "user", Map(Category1 -> Set(Permission.Read))),
+      CommonUser("user", "user", Map(Category1.stringify -> Set(Permission.Read))),
       streamingProcessStateDefinitionManager,
       fraudProcessStateDefinitionManager
     )
@@ -89,7 +90,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         displayableName = expectedCommon.displayableName,
         icon = expectedCommon.icon,
         tooltip = expectedCommon.tooltip,
-        categories = List(Category1)
+        categories = List(Category1.stringify)
       )
     )
 
@@ -100,7 +101,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         displayableName = expectedCustomStreaming.displayableName,
         icon = expectedCustomStreaming.icon,
         tooltip = expectedCustomStreaming.tooltip,
-        categories = List(Category1)
+        categories = List(Category1.stringify)
       )
     )
   }
@@ -127,7 +128,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
           displayableName = displayableName,
           icon = UnknownIcon,
           tooltip = "dummy",
-          description = s"Description for ${displayableName}"
+          description = s"Description for $displayableName"
         )
       },
       delegate = emptyStateDefinitionManager
@@ -144,8 +145,10 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     val service = new ProcessStateDefinitionService(
       ProcessingTypeDataProvider(
         Map(
-          Streaming -> ValueWithPermission.userWithAccessRightsToCategory(Category1, Category1),
-          Fraud     -> ValueWithPermission.userWithAccessRightsToCategory(Category2, Category2)
+          Streaming.stringify -> ValueWithPermission
+            .userWithAccessRightsToCategory(Category1.stringify, Category1.stringify),
+          Streaming2.stringify -> ValueWithPermission
+            .userWithAccessRightsToCategory(Category2.stringify, Category2.stringify)
         ),
         stateDefinitions
       )
@@ -163,35 +166,35 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       fraud: ProcessStateDefinitionManager
   ): Map[ProcessingType, ProcessingTypeData] = {
     Map(
-      Streaming -> createProcessingTypeData(
-        Streaming,
+      Streaming.stringify -> createProcessingTypeData(
         new MockDeploymentManager() {
           override def processStateDefinitionManager: ProcessStateDefinitionManager = streaming
         },
+        Streaming,
         Category1
       ),
-      Fraud -> createProcessingTypeData(
-        Fraud,
+      Streaming2.stringify -> createProcessingTypeData(
         new MockDeploymentManager() {
           override def processStateDefinitionManager: ProcessStateDefinitionManager = fraud
         },
-        Category1
+        Streaming2,
+        Category2
       ),
     )
   }
 
   private def createProcessingTypeData(
-      processingType: ProcessingType,
       deploymentManager: DeploymentManager,
-      category: Category
+      processingType: TestProcessingType,
+      category: TestCategory
   ): ProcessingTypeData = {
     ProcessingTypeData.createProcessingTypeData(
-      processingType,
+      processingType.stringify,
       MockManagerProvider,
       deploymentManager,
       LocalModelData(ConfigFactory.empty(), List.empty),
       ConfigFactory.empty(),
-      category
+      category.stringify
     )
   }
 
