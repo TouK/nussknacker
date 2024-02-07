@@ -88,12 +88,12 @@ object DeploymentCommentSettings {
     new DeploymentCommentSettings(validationPattern, exampleComment)
   }
 
-  def createDeploymentCommentSettingsOption(
+  def createNonEmptyDeploymentCommentSettings(
       commentPattern: String = ".+",
       exampleComment: Option[String] = Option("sampleComment")
-  ): Option[DeploymentCommentSettings] = {
+  ): DeploymentCommentSettings = {
     DeploymentCommentSettings.create(commentPattern, exampleComment) match {
-      case Valid(value) => Some(value)
+      case Valid(value) => value
       case Invalid(exc) => throw exc
     }
   }

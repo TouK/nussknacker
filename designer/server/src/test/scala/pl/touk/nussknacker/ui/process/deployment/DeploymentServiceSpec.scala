@@ -23,7 +23,7 @@ import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeLi
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.ui.api.DeploymentCommentSettings.createDeploymentCommentSettingsOption
+import pl.touk.nussknacker.ui.api.DeploymentCommentSettings.createNonEmptyDeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ProcessingTypeDataState, ValueWithRestriction}
@@ -118,7 +118,7 @@ class DeploymentServiceSpec
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
 
-  private val nonEmptyCommentSettings = createDeploymentCommentSettingsOption()
+  private val nonEmptyCommentSettings = Some(createNonEmptyDeploymentCommentSettings())
 
   def createDeploymentServiceWithCommentSettings(): DeploymentService = {
     createDeploymentService(deploymentCommentSettings = nonEmptyCommentSettings)
