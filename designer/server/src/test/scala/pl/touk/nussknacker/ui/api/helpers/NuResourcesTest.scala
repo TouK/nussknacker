@@ -96,8 +96,6 @@ trait NuResourcesTest
 
   protected val processChangeListener = new TestProcessChangeListener()
 
-  protected val deploymentCommentSettings: Option[DeploymentCommentSettings] = None
-
   protected lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
 
   protected val dmDispatcher = new DeploymentManagerDispatcher(
@@ -114,8 +112,8 @@ trait NuResourcesTest
       processValidatorByProcessingType,
       scenarioResolverByProcessingType,
       processChangeListener,
-      None,
-      deploymentCommentSettings
+      scenarioStateTimeout = None,
+      deploymentCommentSettings = None
     )
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
