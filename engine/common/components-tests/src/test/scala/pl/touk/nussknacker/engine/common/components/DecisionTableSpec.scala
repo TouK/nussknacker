@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.decisiontable
+package pl.touk.nussknacker.engine.common.components
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
@@ -20,13 +20,6 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
 
   private val testScenarioRunner = TestScenarioRunner
     .liteBased()
-    .withExtraComponents {
-      new DecisionTableComponentProvider()
-        .create(
-          ConfigFactory.empty(),
-          ProcessObjectDependencies.empty
-        )
-    }
     .build()
 
   test("simple test") { // todo: change name

@@ -1,12 +1,8 @@
-package pl.touk.nussknacker.decisiontable
+package pl.touk.nussknacker.engine.common.components
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerParameter,
-  NodeDependencyValue,
-  SingleInputGenericNodeTransformation
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData
 import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.Column
 import pl.touk.nussknacker.engine.api.definition._

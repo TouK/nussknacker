@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.common.components.DecisionTable
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{
   EspDeserializationSchema,
@@ -213,7 +214,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "dynamicService"         -> categories(new DynamicService),
       "customValidatedService" -> categories(new CustomValidatedService),
       "modelConfigReader"      -> categories(new ModelConfigReaderService(modelDependencies.config)),
-      "log"                    -> all(LoggingService)
+      "log"                    -> all(LoggingService),
+      "decisionTable"          -> all(DecisionTable)
     )
 
   override def customStreamTransformers(

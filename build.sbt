@@ -490,7 +490,6 @@ componentArtifacts := {
     (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
     (openapiComponents / assembly).value             -> "components/common/openapi.jar",
     (sqlComponents / assembly).value                 -> "components/common/sql.jar",
-    (decisionTableComponents / assembly).value       -> "components/common/decisiontable.jar",
   )
 }
 
@@ -682,6 +681,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     }
   )
   .dependsOn(
+    commonComponents,
     flinkSchemedKafkaComponentsUtils,
     flinkComponentsUtils % Provided,
     // We use some components for testing with embedded engine, because of that we need dependency to this api
@@ -1015,7 +1015,13 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
       )
     }
   )
-  .dependsOn(componentsTestkit, flinkExecutor, flinkTestUtils, flinkBaseComponents, defaultModel)
+  .dependsOn(
+    componentsTestkit,
+    flinkExecutor,
+    flinkTestUtils,
+    flinkBaseComponents,
+    defaultModel
+  )
 
 //this should be only added in scope test - 'module % "test"'
 lazy val liteComponentsTestkit = (project in utils("lite-components-testkit"))
@@ -1202,7 +1208,13 @@ lazy val liteBaseComponents = (project in lite("components/base"))
   .settings(
     name := "nussknacker-lite-base-components",
   )
-  .dependsOn(liteComponentsApi % "provided", componentsUtils % Provided, testUtils % "test", liteEngineRuntime % "test")
+  .dependsOn(
+    commonComponents,
+    liteComponentsApi % Provided,
+    componentsUtils   % Provided,
+    testUtils         % "test",
+    liteEngineRuntime % "test"
+  )
 
 lazy val liteKafkaComponents: Project = (project in lite("components/kafka"))
   .settings(commonSettings)
@@ -1358,7 +1370,6 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app"))
       (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
       (openapiComponents / assembly).value             -> "components/common/openapi.jar",
       (sqlComponents / assembly).value                 -> "components/common/sql.jar",
-      (decisionTableComponents / assembly).value       -> "components/common/decisiontable.jar",
     ),
     javaAgents += JavaAgent("io.prometheus.jmx" % "jmx_prometheus_javaagent" % jmxPrometheusJavaagentV % "dist"),
     libraryDependencies ++= Seq(
@@ -1665,18 +1676,22 @@ lazy val sqlComponents = (project in component("sql"))
     liteComponentsTestkit % "test"
   )
 
-lazy val decisionTableComponents = (project in component("decisiontable"))
+lazy val commonComponents = (project in engine("common/components"))
   .settings(commonSettings)
-  .settings(assemblyNoScala("decisiontable.jar"): _*)
-  .settings(publishAssemblySettings: _*)
   .settings(
-    name := "nussknacker-decision-table",
-    libraryDependencies ++= Seq(),
+    name := "nussknacker-common-components"
   )
   .dependsOn(
-    componentsUtils        % Provided,
-    componentsApi          % Provided,
-    commonUtils            % Provided,
+    componentsApi % Provided
+  )
+
+lazy val commonComponentsTests = (project in engine("common/components-tests"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-common-components-tests"
+  )
+  .dependsOn(
+    commonComponents,
     liteComponentsTestkit  % "test",
     flinkComponentsTestkit % "test" // todo:
   )
@@ -1696,6 +1711,7 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
     ),
   )
   .dependsOn(
+    commonComponents,
     flinkComponentsUtils % Provided,
     componentsUtils      % Provided,
     flinkTestUtils       % Test,
@@ -1978,8 +1994,9 @@ lazy val modules = List[ProjectReference](
   deploymentManagerApi,
   designer,
   sqlComponents,
-  decisionTableComponents,
   schemedKafkaComponentsUtils,
+  commonComponents,
+  commonComponentsTests,
   flinkBaseComponents,
   flinkBaseComponentsTests,
   flinkKafkaComponents,

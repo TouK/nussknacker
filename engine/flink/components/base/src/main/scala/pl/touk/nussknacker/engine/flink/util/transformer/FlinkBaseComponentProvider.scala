@@ -65,6 +65,10 @@ object FlinkBaseComponentProvider {
         "AggregatesInTimeWindows#full-outer-join"
       ),
       ComponentDefinition("delay", DelayTransformer).withRelativeDocs("DataSourcesAndSinks#delay"),
+//      ComponentDefinition(
+//        name = "decision-table",
+//        component = DecisionTable
+//      ).withRelativeDocs("BasicNodes#decisiontable")
     )
 
     statefulComponents ++ statelessComponents
