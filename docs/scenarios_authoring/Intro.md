@@ -68,7 +68,7 @@ In some contexts data type conversions may be necessary - conversion functions a
 &nbsp;
 ## Variables
 
-Nussknacker uses variables as containers for data. Variables have to be declared; a `variable` or `record-variable` component is used for this. Once declared, a hash sign `"#"` is used to refer to a variable from a SpEL expression. Variables are part of a data record, they do not exist by themselves. 
+Nussknacker uses variables as containers for data. Variables have to be declared; a `variable` or `record-variable` component is used for this. Once declared, a hash sign `"#"` is used to refer to a variable from a SpEL expression. Variables are atrributes of a data record, they do not exist by themselves. 
 
 There are three predefined variables: `#input`, `#inputMeta` and `#meta`. 
 
