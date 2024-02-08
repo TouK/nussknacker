@@ -19,8 +19,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.prepareTestFromParametersDecoder
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.TestFromParametersRequest
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{TestFromParametersRequest, prepareTestFromParametersDecoder}
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService

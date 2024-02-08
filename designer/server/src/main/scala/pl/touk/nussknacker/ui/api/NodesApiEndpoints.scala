@@ -25,13 +25,19 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodeValidationRequestDto
 import pl.touk.nussknacker.ui.api.typingDtoSchemas._
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{
+  MalformedTypingResult,
+  NoProcessingType,
+  NoScenario
+}
+import pl.touk.nussknacker.ui.services.BaseHttpService.CustomAuthorizationError
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.derevo.schema
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -43,7 +49,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
   import NodesApiEndpoints.Dtos._
 
   lazy val nodesAdditionalInfoEndpoint
-      : SecuredEndpoint[(ProcessName, NodeData), String, Option[AdditionalInfo], Any] = {
+      : SecuredEndpoint[(ProcessName, NodeData), NodesError, Option[AdditionalInfo], Any] = {
     baseNuApiEndpoint
       .summary("Additional info for provided node")
       .tag("Nodes")
@@ -55,16 +61,12 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[Option[AdditionalInfo]]
         )
       )
-      .errorOut(
-        statusCode(NotFound).and(
-          stringBody
-        )
-      )
+      .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
   }
 
   lazy val nodesValidationEndpoint
-      : SecuredEndpoint[(ProcessName, NodeValidationRequestDto), String, NodeValidationResultDto, Any] = {
+      : SecuredEndpoint[(ProcessName, NodeValidationRequestDto), NodesError, NodeValidationResultDto, Any] = {
     baseNuApiEndpoint
       .summary("Validate provided Node")
       .tag("Nodes")
@@ -76,17 +78,29 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[NodeValidationResultDto]
         )
       )
-      // Todo: bad request code if wrong typing result sent
       .errorOut(
-        statusCode(NotFound).and(
-          stringBody
+        oneOf[NodesError](
+          oneOfVariantFromMatchType(
+            NotFound,
+            plainBody[NoScenario]
+              .example(
+                Example.of(
+                  summary = Some("No scenario {scenarioName} found"),
+                  value = NoScenario(ProcessName("'example scenario'"))
+                )
+              )
+          ),
+          oneOfVariantFromMatchType(
+            BadRequest,
+            plainBody[MalformedTypingResult]
+          )
         )
       )
       .withSecurity(auth)
   }
 
   lazy val propertiesAdditionalInfoEndpoint
-      : SecuredEndpoint[(ProcessName, ProcessProperties), String, Option[AdditionalInfo], Any] = {
+      : SecuredEndpoint[(ProcessName, ProcessProperties), NodesError, Option[AdditionalInfo], Any] = {
     baseNuApiEndpoint
       .summary("Additional info for provided properties")
       .tag("Nodes")
@@ -98,16 +112,12 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[Option[AdditionalInfo]]
         )
       )
-      .errorOut(
-        statusCode(NotFound).and(
-          stringBody
-        )
-      )
+      .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
   }
 
   lazy val propertiesValidationEndpoint
-      : SecuredEndpoint[(ProcessName, PropertiesValidationRequestDto), String, NodeValidationResultDto, Any] = {
+      : SecuredEndpoint[(ProcessName, PropertiesValidationRequestDto), NodesError, NodeValidationResultDto, Any] = {
     baseNuApiEndpoint
       .summary("Validate node properties")
       .tag("Nodes")
@@ -119,17 +129,13 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[NodeValidationResultDto]
         )
       )
-      .errorOut(
-        statusCode(NotFound).and(
-          stringBody
-        )
-      )
+      .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
   }
 
   lazy val parametersValidationEndpoint: SecuredEndpoint[
     (ProcessingType, ParametersValidationRequestDto),
-    String,
+    NodesError,
     ParametersValidationResultDto,
     Any
   ] = {
@@ -144,10 +150,16 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[ParametersValidationResultDto]
         )
       )
-      // Todo: bad request code if wrong typing result sent
       .errorOut(
-        statusCode(NotFound).and(
-          stringBody
+        oneOf[NodesError](
+          oneOfVariantFromMatchType(
+            NotFound,
+            plainBody[NoProcessingType]
+          ),
+          oneOfVariantFromMatchType(
+            BadRequest,
+            plainBody[MalformedTypingResult]
+          )
         )
       )
       .withSecurity(auth)
@@ -155,7 +167,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
 
   lazy val parametersSuggestionsEndpoint: SecuredEndpoint[
     (ProcessingType, ExpressionSuggestionRequestDto),
-    String,
+    NodesError,
     List[ExpressionSuggestionDto],
     Any
   ] = {
@@ -170,14 +182,34 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           jsonBody[List[ExpressionSuggestionDto]]
         )
       )
-      // Todo: bad request code if wrong typing result sent
       .errorOut(
-        statusCode(NotFound).and(
-          stringBody
+        oneOf[NodesError](
+          oneOfVariantFromMatchType(
+            NotFound,
+            plainBody[NoProcessingType]
+          ),
+          oneOfVariantFromMatchType(
+            BadRequest,
+            plainBody[MalformedTypingResult]
+          )
         )
       )
       .withSecurity(auth)
   }
+
+  private lazy val scenarioNotFoundErrorOutput: EndpointOutput.OneOf[NodesError, NodesError] =
+    oneOf[NodesError](
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[NoScenario]
+          .example(
+            Example.of(
+              summary = Some("No scenario {scenarioName} found"),
+              value = NoScenario(ProcessName("'example scenario'"))
+            )
+          )
+      )
+    )
 
 }
 
@@ -356,9 +388,6 @@ object NodesApiEndpoints {
         refClazz: TypingResult
     )
 
-    //    Things copied from NodesResource
-    //    These 2 are used in ManagementResources for example
-
     def prepareTypingResultDecoder(modelData: ModelData): Decoder[TypingResult] = {
       new TypingResultDecoder(name =>
         ClassUtils.forName(name, modelData.modelClassLoader.classLoader)
@@ -372,101 +401,135 @@ object NodesApiEndpoints {
       deriveConfiguredDecoder[TestFromParametersRequest]
     }
 
-  }
+    @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
+        sourceId: String,
+        parameterExpressions: Map[String, Expression]
+    )
 
-  @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
-      sourceId: String,
-      parameterExpressions: Map[String, Expression]
-  )
+    @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
+        sourceParameters: TestSourceParameters,
+        scenarioGraph: ScenarioGraph
+    )
 
-  @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
-      sourceParameters: TestSourceParameters,
-      scenarioGraph: ScenarioGraph
-  )
+    @JsonCodec(encodeOnly = true) final case class ParametersValidationRequest(
+        parameters: List[UIValueParameter],
+        variableTypes: Map[String, TypingResult]
+    )
 
-  @JsonCodec(encodeOnly = true) final case class ParametersValidationRequest(
-      parameters: List[UIValueParameter],
-      variableTypes: Map[String, TypingResult]
-  )
+    object ParametersValidationRequest {
 
-  object ParametersValidationRequest {
-    import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.ParametersValidationRequestDto
-
-    def apply(
-        request: ParametersValidationRequestDto
-    )(typingResultDecoder: Decoder[TypingResult]): ParametersValidationRequest = {
-      new ParametersValidationRequest(
-        request.parameters.map { parameter =>
-          UIValueParameter(
-            name = parameter.name,
-            typ = typingResultDecoder
-              .decodeJson(parameter.typ) match {
-              case Left(failure)       => throw failure
-              case Right(typingResult) => typingResult
-            },
-            expression = parameter.expression
-          )
-        },
-        mapVariableTypesOrThrowError(request.variableTypes, typingResultDecoder)
-      )
-    }
-
-  }
-
-  @JsonCodec(encodeOnly = true) final case class NodeValidationResult(
-      // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
-      parameters: Option[List[UIParameter]],
-      // expressionType is returned to present inferred types of a single, hardcoded parameter of the node
-      // We currently support only type inference for an expression in the built-in components: variable and switch
-      // and fields of the record-variable and fragment output (we return TypedObjectTypingResult in this case)
-      // TODO: We should keep this in a map, instead of TypedObjectTypingResult as it is done in ValidationResult.typingInfo
-      //       Thanks to that we could remove some code on the FE side and be closer to support also not built-in components
-      expressionType: Option[TypingResult],
-      validationErrors: List[NodeValidationError],
-      validationPerformed: Boolean
-  )
-
-  @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
-      nodeData: NodeData,
-      processProperties: ProcessProperties,
-      variableTypes: Map[String, TypingResult],
-      branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
-      // TODO: remove Option when FE is ready
-      // In this request edges are not guaranteed to have the correct "from" field. Normally it's synced with node id but
-      // when renaming node, it contains node's id before the rename.
-      outgoingEdges: Option[List[Edge]]
-  )
-
-  object NodeValidationRequest {
-
-    def apply(node: NodeValidationRequestDto)(typingResultDecoder: Decoder[TypingResult]): NodeValidationRequest = {
-      new NodeValidationRequest(
-        nodeData = node.nodeData,
-        processProperties = node.processProperties,
-        variableTypes = mapVariableTypesOrThrowError(node.variableTypes, typingResultDecoder),
-        branchVariableTypes = node.branchVariableTypes.map { outerMap =>
-          outerMap.map { case (name, innerMap) =>
-            val changedMap = mapVariableTypesOrThrowError(innerMap, typingResultDecoder)
-            (name, changedMap)
-          }
-        },
-        outgoingEdges = node.outgoingEdges
-      )
+      def apply(
+          request: ParametersValidationRequestDto
+      )(typingResultDecoder: Decoder[TypingResult]): ParametersValidationRequest = {
+        new ParametersValidationRequest(
+          request.parameters.map { parameter =>
+            UIValueParameter(
+              name = parameter.name,
+              typ = typingResultDecoder
+                .decodeJson(parameter.typ) match {
+                case Left(failure)       => throw failure
+                case Right(typingResult) => typingResult
+              },
+              expression = parameter.expression
+            )
+          },
+          mapVariableTypesOrThrowError(request.variableTypes, typingResultDecoder)
+        )
+      }
 
     }
 
-  }
+    @JsonCodec(encodeOnly = true) final case class NodeValidationResult(
+        // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
+        parameters: Option[List[UIParameter]],
+        // expressionType is returned to present inferred types of a single, hardcoded parameter of the node
+        // We currently support only type inference for an expression in the built-in components: variable and switch
+        // and fields of the record-variable and fragment output (we return TypedObjectTypingResult in this case)
+        // TODO: We should keep this in a map, instead of TypedObjectTypingResult as it is done in ValidationResult.typingInfo
+        //       Thanks to that we could remove some code on the FE side and be closer to support also not built-in components
+        expressionType: Option[TypingResult],
+        validationErrors: List[NodeValidationError],
+        validationPerformed: Boolean
+    )
 
-  def mapVariableTypesOrThrowError(
-      variableTypes: Map[String, Dtos.TypingResultInJson],
-      typingResultDecoder: Decoder[TypingResult]
-  ): Map[String, TypingResult] = {
-    variableTypes.map { case (key, typingResult) =>
-      typingResultDecoder.decodeJson(typingResult) match {
-        case Left(failure) => throw failure
-        case Right(result) => (key, result)
+    @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
+        nodeData: NodeData,
+        processProperties: ProcessProperties,
+        variableTypes: Map[String, TypingResult],
+        branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
+        // TODO: remove Option when FE is ready
+        // In this request edges are not guaranteed to have the correct "from" field. Normally it's synced with node id but
+        // when renaming node, it contains node's id before the rename.
+        outgoingEdges: Option[List[Edge]]
+    )
+
+    object NodeValidationRequest {
+
+      def apply(node: NodeValidationRequestDto)(typingResultDecoder: Decoder[TypingResult]): NodeValidationRequest = {
+        new NodeValidationRequest(
+          nodeData = node.nodeData,
+          processProperties = node.processProperties,
+          variableTypes = mapVariableTypesOrThrowError(node.variableTypes, typingResultDecoder),
+          branchVariableTypes = node.branchVariableTypes.map { outerMap =>
+            outerMap.map { case (name, innerMap) =>
+              val changedMap = mapVariableTypesOrThrowError(innerMap, typingResultDecoder)
+              (name, changedMap)
+            }
+          },
+          outgoingEdges = node.outgoingEdges
+        )
+
+      }
+
+    }
+
+    def mapVariableTypesOrThrowError(
+        variableTypes: Map[String, Dtos.TypingResultInJson],
+        typingResultDecoder: Decoder[TypingResult]
+    ): Map[String, TypingResult] = {
+      variableTypes.map { case (key, typingResult) =>
+        typingResultDecoder.decodeJson(typingResult) match {
+          case Left(failure) => throw failure
+          case Right(result) => (key, result)
+        }
       }
     }
+
+    sealed trait NodesError
+
+    object NodesError {
+      final case class NoScenario(scenarioName: ProcessName)            extends NodesError
+      final case class NoProcessingType(processingType: ProcessingType) extends NodesError
+      final case object NoPermission                                    extends NodesError with CustomAuthorizationError
+      final case class MalformedTypingResult(msg: String)               extends NodesError
+
+      private def deserializationException =
+        (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
+
+      implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
+        Codec.string.map(
+          Mapping.from[String, NoScenario](deserializationException)(e => s"No scenario ${e.scenarioName} found")
+        )
+      }
+
+      implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
+        Codec.string.map(
+          Mapping.from[String, NoProcessingType](deserializationException)(e =>
+            s"ProcessingType type: ${e.processingType} not found"
+          )
+        )
+      }
+
+      implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
+        Codec.string.map(
+          Mapping.from[String, MalformedTypingResult](deserializationException)(e =>
+            s"The request content was malformed:\n${e.msg}"
+          )
+        )
+      }
+
+    }
+
   }
 
 }
