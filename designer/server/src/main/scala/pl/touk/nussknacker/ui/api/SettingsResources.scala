@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
 import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
@@ -86,16 +85,6 @@ object DeploymentCommentSettings {
 
   def unsafe(validationPattern: String, exampleComment: Option[String]): DeploymentCommentSettings = {
     new DeploymentCommentSettings(validationPattern, exampleComment)
-  }
-
-  def createNonEmptyDeploymentCommentSettings(
-      commentPattern: String = ".+",
-      exampleComment: Option[String] = Option("sampleComment")
-  ): DeploymentCommentSettings = {
-    DeploymentCommentSettings.create(commentPattern, exampleComment) match {
-      case Valid(value) => value
-      case Invalid(exc) => throw exc
-    }
   }
 
 }
