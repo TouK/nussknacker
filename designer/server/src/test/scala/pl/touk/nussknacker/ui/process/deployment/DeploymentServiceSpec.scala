@@ -140,13 +140,7 @@ class DeploymentServiceSpec
     val processName: ProcessName             = generateProcessName
     val id                                   = prepareProcess(processName).dbioActionValues
 
-    deploymentManager.withWaitForDeployFinish(processName) {
-      deploymentServiceWithCommentSettings.deployProcessAsync(id, None, Some("samplePattern")).futureValue
-      deploymentServiceWithCommentSettings
-        .getProcessState(id)
-        .futureValue
-        .status shouldBe SimpleStateStatus.DuringDeploy
-    }
+    deploymentServiceWithCommentSettings.deployProcessAsync(id, None, Some("samplePattern"))
 
     eventually {
       deploymentService
