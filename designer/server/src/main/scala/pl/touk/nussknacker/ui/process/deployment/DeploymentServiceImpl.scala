@@ -459,41 +459,6 @@ class DeploymentServiceImpl(
       .getOrElse(state)
   }
 
-  def markProcessFinishedIfLastActionDeploy(expectedProcessingType: ProcessingType, processName: ProcessName)(
-      implicit ec: ExecutionContext
-  ): Future[Option[ProcessAction]] = {
-    implicit val user: AdminUser            = NussknackerInternalUser.instance
-    implicit val listenerUser: ListenerUser = ListenerApiUser(user)
-    logger.debug(s"About to mark process $processName as finished if last action was DEPLOY")
-    dbioRunner.run(for {
-      processIdOpt      <- processRepository.fetchProcessId(processName)
-      processId         <- existsOrFail(processIdOpt, ProcessNotFoundError(processName))
-      processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
-      processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processName))
-      _ = validateExpectedProcessingType(expectedProcessingType, processDetails.processingType)
-      cancelActionOpt <- {
-        logger.debug(s"lastDeployedAction for $processName: ${processDetails.lastDeployedAction}")
-        processDetails.lastDeployedAction
-          .map { lastDeployedAction =>
-            logger.info(s"Marking process $processName as finished")
-            val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)
-            processChangeListener.handle(OnFinished(processDetails.processId, lastDeployedAction.processVersionId))
-            actionRepository
-              .addInstantAction(
-                processDetails.processId,
-                lastDeployedAction.processVersionId,
-                ProcessActionType.Cancel,
-                Some(finishedComment),
-                None
-              )
-              .map(Some(_))
-
-          }
-          .getOrElse(DBIOAction.successful(None))
-      }
-    } yield cancelActionOpt)
-  }
-
   override def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(
       implicit ec: ExecutionContext
   ): Future[Boolean] = {

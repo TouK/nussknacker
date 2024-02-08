@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.management
 
-import cats.data.OptionT
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -60,30 +59,14 @@ abstract class FlinkDeploymentManager(
       idWithName: ProcessIdWithName,
       statusDetailsList: List[StatusDetails]
   ): Future[Option[ProcessAction]] = {
-    val allDeploymentIdsAsCorrectActionIds = Option(
-      statusDetailsList.map(details => details.deploymentId.flatMap(_.toActionIdOpt).map(id => (id, details.status)))
+    val allDeploymentIdsAsCorrectActionIds =
+      statusDetailsList.flatMap(details =>
+        details.deploymentId.flatMap(_.toActionIdOpt).map(id => (id, details.status))
+      )
+    markEachFinishedDeploymentAsExecutionFinishedAndReturnLastStateAction(
+      idWithName,
+      allDeploymentIdsAsCorrectActionIds
     )
-      .filter(_.forall(_.isDefined))
-      .map(_.flatten)
-    allDeploymentIdsAsCorrectActionIds
-      .map(markEachFinishedDeploymentAsExecutionFinishedAndReturnLastStateAction(idWithName, _))
-      .getOrElse {
-        legacyMarkProcessFinished(idWithName.name, statusDetailsList)
-      }
-  }
-
-  // TODO: This method is for backward compatibility. Remove it after switching all Flink jobs into mandatory deploymentId in StatusDetails
-  private def legacyMarkProcessFinished(name: ProcessName, statusDetailsList: List[StatusDetails]) = {
-    statusDetailsList.headOption
-      .filter(_.status == SimpleStateStatus.Finished)
-      .map { _ =>
-        logger.debug(
-          s"Flink job doesn't contain deploymentId for process: $name. Will be used legacy method of marking process as finished by adding cancel action"
-        )
-        deploymentService.markProcessFinishedIfLastActionDeploy(name)
-      }
-      .sequence
-      .map(_.flatten)
   }
 
   private def markEachFinishedDeploymentAsExecutionFinishedAndReturnLastStateAction(
