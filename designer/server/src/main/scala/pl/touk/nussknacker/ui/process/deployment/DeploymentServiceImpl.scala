@@ -14,13 +14,11 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
   OnActionExecutionFinished,
   OnDeployActionFailed,
-  OnDeployActionSuccess,
-  OnFinished
+  OnDeployActionSuccess
 }
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
@@ -32,6 +30,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
 
 import java.time.Clock
