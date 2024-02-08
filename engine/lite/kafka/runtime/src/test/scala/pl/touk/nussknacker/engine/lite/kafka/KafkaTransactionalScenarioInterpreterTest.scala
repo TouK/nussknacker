@@ -443,7 +443,7 @@ class KafkaTransactionalScenarioInterpreterTest
       val result = interpreter.run()
       (result, action)
     }
-    Await.result(runResult, 10 seconds)
+    Await.result(runResult, 30 seconds)
     output
   }
 

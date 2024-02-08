@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.test
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{Context, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -32,7 +32,7 @@ private object testComponents {
 
   def testDataSourceComponent[T: ClassTag: TypeInformation](
       data: List[T],
-      timestampAssigner: Option[TimestampWatermarkHandler[T]]
+      timestampAssigner: Option[TimestampWatermarkHandler[Context]]
   ): ComponentDefinition = {
     ComponentDefinition(
       TestScenarioRunner.testDataSource,
@@ -74,7 +74,7 @@ class FlinkTestScenarioRunner(
   def runWithDataAndTimestampAssigner[I: ClassTag, R](
       scenario: CanonicalProcess,
       data: List[I],
-      timestampAssigner: TimestampWatermarkHandler[I]
+      timestampAssigner: TimestampWatermarkHandler[Context]
   ): RunnerListResult[R] = {
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])

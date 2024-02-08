@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.source
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
@@ -13,7 +14,7 @@ case class EmptySource[T: TypeInformation](returnType: TypingResult) extends Bas
 
   override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = None
+  override def timestampAssigner: Option[TimestampWatermarkHandler[Context]] = None
 
 }
 

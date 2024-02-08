@@ -24,7 +24,6 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
-  LegacyTimestampWatermarkHandler,
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
@@ -68,17 +67,6 @@ object DelayedFlinkKafkaConsumer {
       NodeId(flinkNodeContext.nodeId)
     )
     timestampAssigner match {
-      case Some(lth: LegacyTimestampWatermarkHandler[T]) =>
-        new DelayedFlinkKafkaConsumer[T](
-          topics,
-          schema,
-          props,
-          delayCalculator,
-          (_, e, t) => lth.extractTimestamp(e, t),
-          flinkNodeContext.exceptionHandlerPreparer,
-          flinkNodeContext.convertToEngineRuntimeContext,
-          NodeId(flinkNodeContext.nodeId)
-        )
       case Some(sth: StandardTimestampWatermarkHandler[T]) =>
         defaultConsumer.assignTimestampsAndWatermarks(sth.strategy)
       case None => defaultConsumer

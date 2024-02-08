@@ -31,7 +31,7 @@ trait FlinkSourceTestSupport[Raw] extends SourceTestSupport[Raw] { self: Source 
   // TODO: design better way of handling test data in generic FlinkSource
   // Probably we *still* want to use CollectionSource (and have some custom logic in parser if needed), but timestamps
   // have to be handled here for now
-  def timestampAssignerForTest: Option[TimestampWatermarkHandler[Raw]]
+  def timestampAssignerForTest: Option[TimestampWatermarkHandler[Context]]
 
   def typeInformation: TypeInformation[Raw]
 

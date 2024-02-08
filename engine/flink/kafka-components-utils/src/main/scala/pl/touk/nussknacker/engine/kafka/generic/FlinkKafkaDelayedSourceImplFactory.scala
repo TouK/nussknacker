@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.kafka.generic
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
@@ -38,9 +39,9 @@ import java.time.Duration
   * @param timestampAssigner - provides event timestamp to calculate delay, user is allowed to calculate delay in relation to their selected field that represents "business timestamp".
   */
 class FlinkKafkaDelayedSourceImplFactory[K, V](
-    timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
-    extractTimestampFromField: String => SerializableTimestampAssigner[ConsumerRecord[K, V]]
-) extends FlinkKafkaSourceImplFactory[K, V](timestampAssigner) {
+    contextTimestampAssigner: Option[TimestampWatermarkHandler[Context]],
+    extractTimestampFromField: String => GenericTimestampAssigner
+) extends FlinkKafkaSourceImplFactory[K, V](contextTimestampAssigner) {
 
   override def createSource(
       params: Map[String, Any],
@@ -56,15 +57,15 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
     extractDelayInMillis(params) match {
       case millis if millis > 0 =>
         val timestampFieldName = extractTimestampField(params)
-        val timestampAssignerWithExtract: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
-          Option(timestampFieldName)
-            .map(fieldName => prepareTimestampAssigner(kafkaConfig, extractTimestampFromField(fieldName)))
-            .orElse(timestampAssigner)
+        val genericTimestampAssignerWithExtract: Option[GenericTimestampAssigner] =
+          Option(timestampFieldName).map(extractTimestampFromField(_))
+
         createDelayedKafkaSourceWithFixedDelay(
           preparedTopics,
           kafkaConfig,
           deserializationSchema,
-          timestampAssignerWithExtract,
+          genericTimestampAssignerWithExtract,
+          contextTimestampAssigner,
           formatter,
           contextInitializer,
           testParametersInfo,
@@ -89,7 +90,8 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       preparedTopics: List[PreparedKafkaTopic],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-      timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
+      genericTimestampAssigner: Option[GenericTimestampAssigner],
+      timestampAssigner: Option[TimestampWatermarkHandler[Context]],
       formatter: RecordFormatter,
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
@@ -100,6 +102,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       preparedTopics,
       kafkaConfig,
       deserializationSchema,
+      genericTimestampAssigner,
       timestampAssigner,
       formatter,
       contextInitializer,
@@ -112,7 +115,8 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       preparedTopics: List[PreparedKafkaTopic],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-      timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
+      genericTimestampAssigner: Option[GenericTimestampAssigner],
+      timestampAssigner: Option[TimestampWatermarkHandler[Context]],
       formatter: RecordFormatter,
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
       testParametersInfo: KafkaTestParametersInfo,
@@ -138,7 +142,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
           this.kafkaConfig,
           consumerGroupId,
           delayCalculator,
-          this.timestampAssigner,
+          genericTimestampAssigner.map(t => prepareTimestampAssigner(this.kafkaConfig, t.conumerRecordAssigner)),
           flinkNodeContext
         )
 

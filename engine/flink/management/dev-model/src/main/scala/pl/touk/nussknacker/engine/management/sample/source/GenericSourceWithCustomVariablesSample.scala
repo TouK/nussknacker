@@ -88,7 +88,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
       override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
         CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Context]] = timestampAssigner
     }
   }
 

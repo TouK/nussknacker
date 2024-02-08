@@ -15,6 +15,7 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.VariableConstants.InputVariableName
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context._
@@ -855,7 +856,7 @@ object SampleNodes {
         override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
           CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
-        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
+        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Context]] = timestampAssigner
       }
     }
 
@@ -955,10 +956,13 @@ object SampleNodes {
 
   }
 
-  private val ascendingTimestampExtractor = new StandardTimestampWatermarkHandler[SimpleRecord](
+  private val ascendingTimestampExtractor = new StandardTimestampWatermarkHandler[Context](
     WatermarkStrategy
-      .forMonotonousTimestamps[SimpleRecord]()
-      .withTimestampAssigner(StandardTimestampWatermarkHandler.toAssigner[SimpleRecord](_.date.getTime))
+      .forMonotonousTimestamps[Context]()
+      .withTimestampAssigner(
+        StandardTimestampWatermarkHandler
+          .toAssigner[Context](_.get(InputVariableName).orNull.asInstanceOf[SimpleRecord].date.getTime)
+      )
   )
 
   private val simpleRecordParser = new TestRecordParser[SimpleRecord] {
@@ -983,7 +987,7 @@ object SampleNodes {
       with FlinkSourceTestSupport[SimpleRecord] {
       override def testRecordParser: TestRecordParser[SimpleRecord] = simpleRecordParser
 
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleRecord]] = timestampAssigner
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Context]] = timestampAssigner
     }
   )
 
@@ -995,7 +999,7 @@ object SampleNodes {
         CirceUtil.decodeJsonUnsafe[SimpleJsonRecord](testRecord.json, "invalid request")
       }
 
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleJsonRecord]] = timestampAssigner
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Context]] = timestampAssigner
     }
   )
 
@@ -1017,7 +1021,7 @@ object SampleNodes {
 
         override val returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
 
-        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[TypedMap]] = timestampAssigner
+        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Context]] = timestampAssigner
       }
     }
 

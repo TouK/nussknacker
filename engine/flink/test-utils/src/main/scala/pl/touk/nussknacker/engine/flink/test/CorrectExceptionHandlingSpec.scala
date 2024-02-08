@@ -5,6 +5,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Suite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -79,9 +80,9 @@ object SamplesComponent extends Serializable {
         .toList
       CollectionSource(
         samples,
-        Some(StandardTimestampWatermarkHandler.afterEachEvent[AnyRef]((_: AnyRef) => 1L)),
+        Some(StandardTimestampWatermarkHandler.afterEachEvent[Context]((_: Context) => 1L)),
         Typed.fromDetailedType[java.util.List[Int]]
-      )(TypeInformation.of(classOf[AnyRef]))
+      )(TypeInformation.of(classOf[java.util.List[Int]]))
     }
     SourceFactory.noParam(createSource, Typed.fromDetailedType[java.util.List[Int]])
   }

@@ -36,7 +36,7 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
   // * for production sources (eg BaseFlinkSource, KafkaSource) it is used to determine type information for flinkSourceFunction
   def typeInformation: TypeInformation[Raw]
 
-  def timestampAssigner: Option[TimestampWatermarkHandler[Raw]]
+  def timestampAssigner: Option[TimestampWatermarkHandler[Context]]
 
   val contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
 
@@ -46,22 +46,18 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
       sourceFunction: SourceFunction[Raw]
   ): DataStream[Context] = {
 
+    val nodeId = flinkNodeContext.nodeId
+
     // 1. add source and 2. set UID
     val rawSourceWithUid = setUidToNodeIdIfNeed(
       flinkNodeContext,
       env
         .addSource[Raw](sourceFunction, typeInformation)
-        .name(flinkNodeContext.nodeId)
+        .name(nodeId)
     )
 
-    // 3. assign timestamp and watermark policy
-    val rawSourceWithUidAndTimestamp = timestampAssigner
-      .map(_.assignTimestampAndWatermarks(rawSourceWithUid))
-      .getOrElse(rawSourceWithUid)
-
-    // 4. initialize Context and spool Context to the stream
-    val nodeId = flinkNodeContext.nodeId
-    rawSourceWithUidAndTimestamp
+    // 3. initialize Context and spool Context to the stream
+    val contextSourceWithUid = rawSourceWithUid
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer,
@@ -70,6 +66,11 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
         ),
         flinkNodeContext.contextTypeInfo
       )
+
+    // 4. assign timestamp and watermark policy
+    timestampAssigner
+      .map(_.assignTimestampAndWatermarks(contextSourceWithUid))
+      .getOrElse(contextSourceWithUid)
   }
 
 }

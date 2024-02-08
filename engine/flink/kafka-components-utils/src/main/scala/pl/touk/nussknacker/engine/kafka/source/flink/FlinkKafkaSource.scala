@@ -10,6 +10,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.VariableConstants.InputMetaVariableName
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
@@ -33,6 +34,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
   FlinkDeserializationSchemaWrapper,
   wrapToFlinkDeserializationSchema
 }
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
@@ -45,7 +47,7 @@ class FlinkKafkaSource[T](
     preparedTopics: List[PreparedKafkaTopic],
     val kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[T],
-    passedAssigner: Option[TimestampWatermarkHandler[T]],
+    passedAssigner: Option[TimestampWatermarkHandler[Context]],
     val formatter: RecordFormatter,
     testParametersInfo: KafkaTestParametersInfo,
     overriddenConsumerGroup: Option[String] = None
@@ -103,11 +105,11 @@ class FlinkKafkaSource[T](
     deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
   }
 
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Context]] = timestampAssigner
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = Some(
+  override def timestampAssigner: Option[TimestampWatermarkHandler[Context]] = Some(
     passedAssigner.getOrElse(
-      new StandardTimestampWatermarkHandler[T](
+      new StandardTimestampWatermarkHandler[Context](
         WatermarkStrategy
           .forBoundedOutOfOrderness(
             Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis))
@@ -168,7 +170,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     preparedTopics: List[PreparedKafkaTopic],
     kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
-    timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
+    timestampAssigner: Option[TimestampWatermarkHandler[Context]],
     formatter: RecordFormatter,
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     testParametersInfo: KafkaTestParametersInfo
@@ -181,11 +183,13 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
       testParametersInfo
     ) {
 
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Context]] =
     timestampAssigner.orElse(
       Some(
-        StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](
-          (_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]]
+        StandardTimestampWatermarkHandler.afterEachEvent[Context](
+          (_.get[InputMeta[K]](InputMetaVariableName)
+            .map(_.timestamp)
+            .orNull): SimpleSerializableTimestampAssigner[Context]
         )
       )
     )

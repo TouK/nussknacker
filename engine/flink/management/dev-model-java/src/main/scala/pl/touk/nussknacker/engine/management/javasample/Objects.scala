@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management.javasample
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -26,7 +27,7 @@ class Objects extends Serializable {
 
       override val typeInformation: TypeInformation[Model] = TypeInformation.of(classOf[Model])
 
-      override def timestampAssigner: Option[TimestampWatermarkHandler[Model]] = None
+      override def timestampAssigner: Option[TimestampWatermarkHandler[Context]] = None
     }))
 
   def sink = WithCategories.anyCategory(SinkFactory.noParam(EmptySink))

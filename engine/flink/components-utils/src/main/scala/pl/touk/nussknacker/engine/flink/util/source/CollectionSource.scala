@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.source
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.FromElementsFunction
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
@@ -11,7 +12,7 @@ import scala.jdk.CollectionConverters._
 
 case class CollectionSource[T: TypeInformation](
     list: List[T],
-    timestampAssigner: Option[TimestampWatermarkHandler[T]],
+    timestampAssigner: Option[TimestampWatermarkHandler[Context]],
     returnType: TypingResult
 ) extends BasicFlinkSource[T]
     with ReturningType {

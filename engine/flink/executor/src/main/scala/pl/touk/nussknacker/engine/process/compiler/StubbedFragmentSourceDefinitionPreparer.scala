@@ -51,13 +51,13 @@ class StubbedFragmentSourceDefinitionPreparer(
       with FlinkIntermediateRawSource[Map[String, Any]]
       with FlinkSourceTestSupport[Map[String, Any]]
       with TestWithParametersSupport[Map[String, Any]] {
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Map[String, Any]]] = None
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Context]] = None
 
       override def typeInformation: TypeInformation[Map[String, Any]] = TypeInformation.of(classOf[Map[String, Any]])
 
       override def testRecordParser: TestRecordParser[Map[String, Any]] = ???
 
-      override def timestampAssigner: Option[TimestampWatermarkHandler[Map[String, Any]]] = None
+      override def timestampAssigner: Option[TimestampWatermarkHandler[Context]] = None
 
       override def testParametersDefinition: List[Parameter] = inputParameters
 

@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.{CirceUtil, Context}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
@@ -17,12 +17,12 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
 class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSupport[String] {
   override val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(
+  override def timestampAssigner: Option[TimestampWatermarkHandler[Context]] = Option(
     StandardTimestampWatermarkHandler
-      .boundedOutOfOrderness[String]((_: String) => System.currentTimeMillis(), Duration.ofMinutes(10))
+      .boundedOutOfOrderness[Context]((_: Context) => System.currentTimeMillis(), Duration.ofMinutes(10))
   )
 
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Context]] = timestampAssigner
 
   override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
     CirceUtil.decodeJsonUnsafe[String](testRecord.json)

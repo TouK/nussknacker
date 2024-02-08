@@ -77,19 +77,3 @@ object StandardTimestampWatermarkHandler {
   }
 
 }
-
-@silent("deprecated")
-class LegacyTimestampWatermarkHandler[T](timestampAssigner: TimestampAssigner[T]) extends TimestampWatermarkHandler[T] {
-
-  override def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {
-    timestampAssigner match {
-      case periodic: AssignerWithPeriodicWatermarks[T @unchecked] =>
-        dataStream.assignTimestampsAndWatermarks(periodic)
-      case punctuated: AssignerWithPunctuatedWatermarks[T @unchecked] =>
-        dataStream.assignTimestampsAndWatermarks(punctuated)
-    }
-  }
-
-  def extractTimestamp(element: T, recordTimestamp: Long): Long =
-    timestampAssigner.extractTimestamp(element, recordTimestamp)
-}
