@@ -27,10 +27,6 @@ case class CustomActionDefinition(
 )
 
 //TODO: validators?
-case class CustomActionParameter(
-    name: String,
-    editor: Option[ParameterEditor],
-    validators: Option[List[ParameterValidator]]
-)
+case class CustomActionParameter(name: String, editor: ParameterEditor, validators: Option[List[ParameterValidator]])
 
 case class CustomActionResult(msg: String)
