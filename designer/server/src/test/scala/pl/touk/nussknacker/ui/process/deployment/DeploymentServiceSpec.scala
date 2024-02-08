@@ -121,11 +121,15 @@ class DeploymentServiceSpec
   }
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
-
-  test { "should return error when trying to deploy without comment when comment is required" } {
+  private def createDeploymentServiceWithCommentSettings = {
     val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
     val deploymentServiceWithCommentSettings =
       createDeploymentService(deploymentCommentSettings = Some(commentSettings))
+    deploymentServiceWithCommentSettings
+  }
+
+  test { "should return error when trying to deploy without comment when comment is required" } {
+    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
@@ -142,9 +146,7 @@ class DeploymentServiceSpec
   }
 
   test { "should not deploy without comment when comment is required " } {
-    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
-    val deploymentServiceWithCommentSettings =
-      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
+    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
@@ -170,9 +172,7 @@ class DeploymentServiceSpec
   }
 
   test { "should pass when having an ok comment" } {
-    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
-    val deploymentServiceWithCommentSettings =
-      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
+    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
@@ -188,9 +188,7 @@ class DeploymentServiceSpec
   }
 
   test { "should return error when trying to cancel without comment when comment is required" } {
-    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
-    val deploymentServiceWithCommentSettings =
-      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
+    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
@@ -203,9 +201,7 @@ class DeploymentServiceSpec
   }
 
   test { "should not cancel a deployed process without cancel comment when comment is required" } {
-    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
-    val deploymentServiceWithCommentSettings =
-      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
+    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues

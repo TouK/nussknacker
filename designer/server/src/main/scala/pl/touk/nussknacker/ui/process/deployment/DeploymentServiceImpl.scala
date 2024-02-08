@@ -92,6 +92,7 @@ class DeploymentServiceImpl(
   // We split deploy process that way because we want to be able to split FE logic into two phases:
   // - validations - it is quick part, the result will be displayed on deploy modal
   // - deployment on engine side - it is longer part, the result will be shown as a notification
+  // TODO: refactor this into smaller steps, currently "validators" in this method have a lot of side effects and the whole thing is pretty confusing
   override def deployProcessAsync(
       processIdWithName: ProcessIdWithName,
       savepointPath: Option[String],
