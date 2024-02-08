@@ -13,11 +13,11 @@ import pl.touk.nussknacker.ui.api.ScenarioActivityApiEndpoints.Dtos.ScenarioActi
 }
 import pl.touk.nussknacker.ui.api.ScenarioActivityApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioActivityApiEndpoints}
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
-import pl.touk.nussknacker.ui.server.TapirStreamEndpointProvider
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
+import pl.touk.nussknacker.ui.server.TapirStreamEndpointProvider
 import pl.touk.nussknacker.ui.util.EitherTImplicits
 import sttp.model.MediaType
 
@@ -43,9 +43,10 @@ class ScenarioActivityApiHttpService(
   expose {
     scenarioActivityApiEndpoints.scenarioActivityEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { _: LoggedUser => scenarioName: ProcessName =>
+      .serverLogicEitherT { implicit loggedUser => scenarioName: ProcessName =>
         for {
           scenarioId       <- getScenarioIdByName(scenarioName)
+          _                <- isAuthorized(scenarioId, Permission.Read)
           scenarioActivity <- scenarioActivityRepository.findActivity(scenarioId).eitherT()
         } yield ScenarioActivity(scenarioActivity)
       }
@@ -92,10 +93,11 @@ class ScenarioActivityApiHttpService(
     scenarioActivityApiEndpoints
       .downloadAttachmentEndpoint(streamEndpointProvider.streamBodyEndpointOutput)
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { _: LoggedUser => request: GetAttachmentRequest =>
+      .serverLogicEitherT { implicit loggedUser => request: GetAttachmentRequest =>
         for {
-          _               <- getScenarioIdByName(request.scenarioName)
-          maybeAttachment <- attachmentService.readAttachment(request.attachmentId).eitherT()
+          scenarioId      <- getScenarioIdByName(request.scenarioName)
+          _               <- isAuthorized(scenarioId, Permission.Read)
+          maybeAttachment <- attachmentService.readAttachment(request.attachmentId, scenarioId).eitherT()
           response = buildResponse(maybeAttachment)
         } yield response
       }

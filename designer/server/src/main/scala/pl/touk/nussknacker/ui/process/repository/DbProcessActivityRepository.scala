@@ -28,7 +28,10 @@ trait ProcessActivityRepository {
       attachmentToAdd: AttachmentToAdd
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit]
 
-  def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]]
+  def findAttachment(attachmentId: Long, scenarioId: ProcessId)(
+      implicit ec: ExecutionContext
+  ): Future[Option[AttachmentEntityData]]
+
 }
 
 final case class DbProcessActivityRepository(protected val dbRef: DbRef)
@@ -90,9 +93,14 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef)
   }
 
   override def findAttachment(
-      attachmentId: Long
+      attachmentId: Long,
+      scenarioId: ProcessId
   )(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]] = {
-    val findAttachmentAction = attachmentsTable.filter(_.id === attachmentId).result.headOption
+    val findAttachmentAction = attachmentsTable
+      .filter(_.id === attachmentId)
+      .filter(_.processId === scenarioId)
+      .result
+      .headOption
     run(findAttachmentAction)
   }
 

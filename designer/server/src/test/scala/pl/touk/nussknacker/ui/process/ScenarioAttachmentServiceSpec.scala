@@ -58,6 +58,9 @@ private object TestProcessActivityRepository extends ProcessActivityRepository {
       attachmentToAdd: ScenarioAttachmentService.AttachmentToAdd
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = Future.successful(())
 
-  override def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]] =
+  override def findAttachment(attachmentId: Long, scenarioId: ProcessId)(
+      implicit ec: ExecutionContext
+  ): Future[Option[AttachmentEntityData]] =
     ???
+
 }
