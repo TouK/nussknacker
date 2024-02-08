@@ -20,11 +20,6 @@ class DefaultProcessingTypeDeploymentService(
   override def getDeployedScenarios(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] =
     allDeploymentsService.getDeployedScenarios
 
-  override def markProcessFinishedIfLastActionDeploy(processName: ProcessName)(
-      implicit ec: ExecutionContext
-  ): Future[Option[ProcessAction]] =
-    deploymentService.markProcessFinishedIfLastActionDeploy(processingType, processName)
-
   override def markActionExecutionFinished(actionId: ProcessActionId)(implicit ec: ExecutionContext): Future[Boolean] =
     deploymentService.markActionExecutionFinished(processingType, actionId)
 
