@@ -66,25 +66,25 @@ class DeploymentServiceImpl(
       comment: Option[String]
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[Unit] = {
     val actionType = ProcessActionType.Cancel
-    checkCanPerformActionAndAddInProgressAction[Unit](
-      processId,
-      actionType,
-      _.lastDeployedAction.map(_.processVersionId),
-      _ => None
-    ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-      for {
-        deploymentCommentOpt <- validateDeploymentComment(comment)
-        _ <- runDeploymentActionWithNotifications(
+
+    validateDeploymentComment(comment).flatMap { comment =>
+      checkCanPerformActionAndAddInProgressAction[Unit](
+        processId,
+        actionType,
+        _.lastDeployedAction.map(_.processVersionId),
+        _ => None
+      ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
+        runDeploymentActionWithNotifications(
           actionType,
           actionId,
           processId,
           versionOnWhichActionIsDone,
-          deploymentCommentOpt,
+          comment,
           buildInfoProcessIngType
         ) {
           dispatcher.deploymentManagerUnsafe(processDetails.processingType).cancel(processId.name, user.toManagerUser)
-        }
-      } yield ()
+        }.map(_ => ())
+      }
     }
   }
 
@@ -98,15 +98,14 @@ class DeploymentServiceImpl(
       comment: Option[String]
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] = {
     val actionType = ProcessActionType.Deploy
-    checkCanPerformActionAndAddInProgressAction[CanonicalProcess](
-      processIdWithName,
-      actionType,
-      d => Some(d.processVersionId),
-      d => Some(d.processingType)
-    ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-      for {
-        deploymentCommentOpt <- validateDeploymentComment(comment)
-        deployment <- validateBeforeDeploy(processDetails, actionId).transformWith {
+    validateDeploymentComment(comment).flatMap { validatedComment =>
+      checkCanPerformActionAndAddInProgressAction[CanonicalProcess](
+        processIdWithName,
+        actionType,
+        d => Some(d.processVersionId),
+        d => Some(d.processingType)
+      ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
+        validateBeforeDeploy(processDetails, actionId).transformWith {
           case Failure(ex) =>
             dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
           case Success(validationResult) =>
@@ -116,7 +115,7 @@ class DeploymentServiceImpl(
               actionId,
               processIdWithName,
               versionOnWhichActionIsDone,
-              deploymentCommentOpt,
+              validatedComment,
               buildInfoProcessIngType
             ) {
               dispatcher
@@ -130,7 +129,7 @@ class DeploymentServiceImpl(
             }
             Future.successful(deploymentFuture)
         }
-      } yield deployment
+      }
     }
   }
 

@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.ui.api.DeploymentCommentSettings.createNonEmptyDeploymentCommentSettings
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
@@ -116,34 +115,67 @@ class DeploymentServiceSpec
       processValidatorByProcessingType,
       TestFactory.scenarioResolverByProcessingType,
       listener,
-      scenarioStateTimeout = scenarioStateTimeout,
+      scenarioStateTimeout,
       deploymentCommentSettings
     )
   }
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
 
-  private val nonEmptyCommentSettings = Some(createNonEmptyDeploymentCommentSettings())
-
-  def createDeploymentServiceWithCommentSettings(): DeploymentService = {
-    createDeploymentService(deploymentCommentSettings = nonEmptyCommentSettings)
-  }
-
   test { "should return error when trying to deploy without comment when comment is required" } {
-    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
-    val processName: ProcessName             = generateProcessName
-    val id                                   = prepareProcess(processName).dbioActionValues
+    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
+    val deploymentServiceWithCommentSettings =
+      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
+
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
 
     val result = deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None).failed.futureValue
 
     result shouldBe a[ValidationError]
     result.getMessage.trim shouldBe "Comment is required."
+
+    eventually {
+      val inProgressActions = actionRepository.getInProgressActionTypes(id.id).dbioActionValues
+      inProgressActions should have size 0
+    }
+  }
+
+  test { "should not deploy without comment when comment is required " } {
+    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
+    val deploymentServiceWithCommentSettings =
+      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
+
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
+
+    deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None)
+
+    eventually {
+      deploymentServiceWithCommentSettings
+        .getProcessState(id)
+        .futureValue
+        .status should not be SimpleStateStatus.DuringDeploy
+
+      deploymentServiceWithCommentSettings
+        .getProcessState(id)
+        .futureValue
+        .status shouldBe SimpleStateStatus.NotDeployed
+    }
+
+    eventually {
+      val inProgressActions = actionRepository.getInProgressActionTypes(id.id).dbioActionValues
+      inProgressActions should have size 0
+    }
   }
 
   test { "should pass when having an ok comment" } {
-    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
-    val processName: ProcessName             = generateProcessName
-    val id                                   = prepareProcess(processName).dbioActionValues
+    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
+    val deploymentServiceWithCommentSettings =
+      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
+
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
 
     deploymentManager.withWaitForDeployFinish(processName) {
       deploymentServiceWithCommentSettings.deployProcessAsync(id, None, Some("samplePattern")).futureValue
@@ -154,7 +186,7 @@ class DeploymentServiceSpec
     }
 
     eventually {
-      deploymentService
+      deploymentServiceWithCommentSettings
         .getProcessState(id)
         .futureValue
         .status shouldBe SimpleStateStatus.Running
@@ -162,20 +194,47 @@ class DeploymentServiceSpec
   }
 
   test { "should return error when trying to cancel without comment when comment is required" } {
-    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings()
-    val processName: ProcessName             = generateProcessName
+    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
+    val deploymentServiceWithCommentSettings =
+      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
 
-    val (processId, _) = prepareDeployedProcess(processName).dbioActionValues
+    val processName: ProcessName = generateProcessName
+    val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
     deploymentManager.withWaitForCancelFinish {
-      deploymentServiceWithCommentSettings.cancelProcess(processId, None)
+      val result = deploymentServiceWithCommentSettings.cancelProcess(processId, None).failed.futureValue
+      result shouldBe a[ValidationError]
+      result.getMessage.trim shouldBe "Comment is required."
+    }
+  }
+
+  test { "should not cancel a deployed process without cancel comment when comment is required" } {
+    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
+    val deploymentServiceWithCommentSettings =
+      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
+
+    val processName: ProcessName = generateProcessName
+    val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
+
+    deploymentManager.withWaitForCancelFinish {
+      deploymentServiceWithCommentSettings.cancelProcess(processId, None).failed.futureValue
+
       eventually {
         deploymentServiceWithCommentSettings
           .getProcessState(processId)
           .futureValue
-          .status shouldBe SimpleStateStatus.DuringCancel
+          .status should not be SimpleStateStatus.Canceled
+
+        deploymentServiceWithCommentSettings
+          .getProcessState(processId)
+          .futureValue
+          .status shouldBe SimpleStateStatus.Running
       }
 
+      eventually {
+        val inProgressActions = actionRepository.getInProgressActionTypes(processId.id).dbioActionValues
+        inProgressActions should have size 0
+      }
     }
   }
 
