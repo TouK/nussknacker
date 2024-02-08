@@ -1,15 +1,21 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioParametersWithEngineSetupErrors}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-class ScenarioParametersServiceTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+class ScenarioParametersServiceTest
+    extends AnyFunSuite
+    with Matchers
+    with ValidatedValuesDetailedMessage
+    with OptionValues {
 
   private val oneToOneProcessingType1 = "oneToOneProcessingType1"
   private val oneToOneCategory1       = "OneToOneCategory1"
@@ -40,12 +46,6 @@ class ScenarioParametersServiceTest extends AnyFunSuite with Matchers with Valid
     parameters.category shouldEqual categoryUsedMoreThanOnce
     processingTypes should contain theSameElementsAs Set(scenarioTypeA, scenarioTypeB)
   }
-
-  private def parametersWithCategory(category: String) =
-    ScenarioParametersWithEngineSetupErrors(
-      ScenarioParameters(ProcessingMode.UnboundedStream, category, EngineSetupName("Flink")),
-      List.empty
-    )
 
   test("should query processing type based on provided parameters") {
     val aCategory = "aCategory"
@@ -79,12 +79,80 @@ class ScenarioParametersServiceTest extends AnyFunSuite with Matchers with Valid
 
     implicit val user: LoggedUser = TestFactory.adminUser()
     service
-      .getProcessingTypeWithWritePermission(Some(aCategory), Some(ProcessingMode.UnboundedStream), None)
+      .queryProcessingTypeWithWritePermission(Some(aCategory), Some(ProcessingMode.UnboundedStream), None)
       .validValue shouldEqual unboundedType
     service
-      .getProcessingTypeWithWritePermission(Some(aCategory), Some(ProcessingMode.BoundedStream), None)
+      .queryProcessingTypeWithWritePermission(Some(aCategory), Some(ProcessingMode.BoundedStream), None)
       .validValue shouldEqual boundedType
-    service.getProcessingTypeWithWritePermission(Some(bCategory), None, None).validValue shouldEqual bCategoryType
+    service.queryProcessingTypeWithWritePermission(Some(bCategory), None, None).validValue shouldEqual bCategoryType
   }
+
+  test("should return engine errors that are only available for user with write access to the given category") {
+    val writeAccessCategory        = "writeAccessCategory"
+    val noAccessCategory           = "noAccessCategory"
+    val writeAccessEngineSetupName = EngineSetupName("writeAccessEngine")
+    val noAccessEngineSetupName    = EngineSetupName("noAccessEngine")
+    implicit val user: LoggedUser  = TestFactory.user(permissions = Map(writeAccessCategory -> Set(Permission.Write)))
+
+    val setupErrors = ScenarioParametersService
+      .create(
+        Map(
+          "writeAccessProcessingType" -> ScenarioParametersWithEngineSetupErrors(
+            ScenarioParameters(ProcessingMode.UnboundedStream, writeAccessCategory, writeAccessEngineSetupName),
+            List("aError")
+          ),
+          "noAccessProcessingType" -> ScenarioParametersWithEngineSetupErrors(
+            ScenarioParameters(ProcessingMode.UnboundedStream, noAccessCategory, noAccessEngineSetupName),
+            List("bError")
+          ),
+        )
+      )
+      .validValue
+      .engineSetupErrorsWithWritePermission
+
+    setupErrors.get(writeAccessEngineSetupName).value shouldBe List("aError")
+    setupErrors.get(noAccessEngineSetupName) shouldBe empty
+  }
+
+  test(
+    "should return engine errors when user has no access to some category where engine setup was used but has access to some other category with the same engine setup"
+  ) {
+    val writeAccessCategory                       = "writeAccessCategory"
+    val noAccessCategory                          = "noAccessCategory"
+    val engineSetupNameUsedForMoreThanOneCategory = EngineSetupName("foo")
+    implicit val user: LoggedUser = TestFactory.user(permissions = Map(writeAccessCategory -> Set(Permission.Write)))
+
+    val setupErrors = ScenarioParametersService
+      .create(
+        Map(
+          "writeAccessProcessingType" -> ScenarioParametersWithEngineSetupErrors(
+            ScenarioParameters(
+              ProcessingMode.UnboundedStream,
+              writeAccessCategory,
+              engineSetupNameUsedForMoreThanOneCategory
+            ),
+            List("aError")
+          ),
+          "writeAccessProcessingType2" -> ScenarioParametersWithEngineSetupErrors(
+            ScenarioParameters(
+              ProcessingMode.UnboundedStream,
+              noAccessCategory,
+              engineSetupNameUsedForMoreThanOneCategory
+            ),
+            List("aError")
+          ),
+        )
+      )
+      .validValue
+      .engineSetupErrorsWithWritePermission
+
+    setupErrors.get(engineSetupNameUsedForMoreThanOneCategory).value shouldBe List("aError")
+  }
+
+  private def parametersWithCategory(category: String, errors: List[String] = List.empty) =
+    ScenarioParametersWithEngineSetupErrors(
+      ScenarioParameters(ProcessingMode.UnboundedStream, category, EngineSetupName("Mock")),
+      errors
+    )
 
 }

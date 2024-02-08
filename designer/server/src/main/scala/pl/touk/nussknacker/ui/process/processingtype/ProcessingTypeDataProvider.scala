@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.process.processingtype.ValueAccessPermission.{AnyUser, UserWithAccessRightsToCategory}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.util.concurrent.atomic.AtomicReference
@@ -47,12 +46,8 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
     (k, v)
   }
 
-  private def allAuthorized(implicit user: LoggedUser): Map[ProcessingType, Option[Data]] = state.all.map {
-    case (k, ValueWithPermission(v, AnyUser)) => (k, Some(v))
-    case (k, ValueWithPermission(v, UserWithAccessRightsToCategory(category))) if user.can(category, Permission.Read) =>
-      (k, Some(v))
-    case (k, _) => (k, None)
-  }
+  private def allAuthorized(implicit user: LoggedUser): Map[ProcessingType, Option[Data]] =
+    state.all.mapValuesNow(_.valueWithAllowedAccess(Permission.Read))
 
   // TODO: We should return a generic type that can produce views for users with access rights to certain categories only.
   //       Thanks to that we will be sure that no sensitive data leak
@@ -101,7 +96,7 @@ object ProcessingTypeDataProvider {
     }
 
   def apply[T, C](
-      allValues: Map[ProcessingType, ValueWithPermission[T]],
+      allValues: Map[ProcessingType, ValueWithRestriction[T]],
       combinedValue: C
   ): ProcessingTypeDataProvider[T, C] =
     new ProcessingTypeDataProvider[T, C] {
@@ -115,7 +110,7 @@ object ProcessingTypeDataProvider {
     }
 
   def withEmptyCombinedData[T](
-      allValues: Map[ProcessingType, ValueWithPermission[T]]
+      allValues: Map[ProcessingType, ValueWithRestriction[T]]
   ): ProcessingTypeDataProvider[T, Nothing] =
     new ProcessingTypeDataProvider[T, Nothing] {
 
@@ -131,7 +126,7 @@ object ProcessingTypeDataProvider {
 
 // It keeps a state (Data and CombinedData) that is cached and restricted by ProcessingTypeDataProvider
 trait ProcessingTypeDataState[+Data, +CombinedData] {
-  def all: Map[ProcessingType, ValueWithPermission[Data]]
+  def all: Map[ProcessingType, ValueWithRestriction[Data]]
 
   // It returns function because we want to sometimes throw Exception instead of return value and we want to
   // transform values without touch combined part
@@ -154,33 +149,14 @@ trait ProcessingTypeDataState[+Data, +CombinedData] {
 object ProcessingTypeDataState {
 
   def apply[Data, CombinedData](
-      allValues: Map[ProcessingType, ValueWithPermission[Data]],
+      allValues: Map[ProcessingType, ValueWithRestriction[Data]],
       getCombinedValue: () => CombinedData,
       stateIdentityValue: Any
   ): ProcessingTypeDataState[Data, CombinedData] =
     new ProcessingTypeDataState[Data, CombinedData] {
-      override def all: Map[ProcessingType, ValueWithPermission[Data]] = allValues
-      override def getCombined: () => CombinedData                     = getCombinedValue
-      override def stateIdentity: Any                                  = stateIdentityValue
+      override def all: Map[ProcessingType, ValueWithRestriction[Data]] = allValues
+      override def getCombined: () => CombinedData                      = getCombinedValue
+      override def stateIdentity: Any                                   = stateIdentityValue
     }
 
-}
-
-final case class ValueWithPermission[+T](value: T, permission: ValueAccessPermission) {
-  def map[TT](fun: T => TT): ValueWithPermission[TT] = copy(value = fun(value))
-}
-
-object ValueWithPermission {
-  def anyUser[T](value: T): ValueWithPermission[T] = ValueWithPermission(value, AnyUser)
-  def userWithAccessRightsToCategory[T](value: T, category: String): ValueWithPermission[T] =
-    ValueWithPermission(value, UserWithAccessRightsToCategory(category))
-}
-
-sealed trait ValueAccessPermission
-
-object ValueAccessPermission {
-  // This permission is mainly to provide easier testing where we want to simulate simple setup without
-  // `ProcessingTypeData` reload, without category access control.
-  case object AnyUser                                               extends ValueAccessPermission
-  final case class UserWithAccessRightsToCategory(category: String) extends ValueAccessPermission
 }

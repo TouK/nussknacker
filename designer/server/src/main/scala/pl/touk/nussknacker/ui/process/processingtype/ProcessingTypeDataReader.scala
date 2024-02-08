@@ -18,9 +18,8 @@ import pl.touk.nussknacker.ui.process.deployment.{
 }
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.{
   selectedScenarioTypeConfigurationPath,
-  toValueWithPermission
+  toValueWithRestriction
 }
-import pl.touk.nussknacker.ui.process.processingtype.ValueAccessPermission.UserWithAccessRightsToCategory
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,9 +27,8 @@ object ProcessingTypeDataReader extends ProcessingTypeDataReader {
 
   val selectedScenarioTypeConfigurationPath = "selectedScenarioType"
 
-  def toValueWithPermission(processingTypeData: ProcessingTypeData): ValueWithPermission[ProcessingTypeData] = {
-    val accessPermission = UserWithAccessRightsToCategory(processingTypeData.category)
-    ValueWithPermission(processingTypeData, accessPermission)
+  def toValueWithRestriction(processingTypeData: ProcessingTypeData): ValueWithRestriction[ProcessingTypeData] = {
+    ValueWithRestriction.userWithAccessRightsToAnyOfCategories(processingTypeData, Set(processingTypeData.category))
   }
 
 }
@@ -83,7 +81,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
     val combinedData = createCombinedData(processingTypesData)
 
     ProcessingTypeDataState(
-      processingTypesData.mapValuesNow(toValueWithPermission),
+      processingTypesData.mapValuesNow(toValueWithRestriction),
       () => combinedData,
       // We pass here new Object to enforce update of observers
       new Object

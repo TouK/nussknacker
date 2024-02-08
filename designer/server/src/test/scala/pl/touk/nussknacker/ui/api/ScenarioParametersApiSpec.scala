@@ -30,28 +30,23 @@ class ScenarioParametersApiSpec
           .Then()
           .statusCode(200)
           .equalsJsonBody(
-            s"""[
-               |    {
-               |        "processingMode": "Unbounded-Stream",
-               |        "category": "Category1",
-               |        "engineSetup": {
-               |            "name": "Flink",
-               |            "errors": [
-               |
-               |            ]
+            s"""{
+               |    "combinations": [
+               |        {
+               |            "processingMode": "Unbounded-Stream",
+               |            "category": "Category1",
+               |            "engineSetupName": "Flink"
+               |        },
+               |        {
+               |            "processingMode": "Unbounded-Stream",
+               |            "category": "Category2",
+               |            "engineSetupName": "Flink"
                |        }
-               |    },
-               |    {
-               |        "processingMode": "Unbounded-Stream",
-               |        "category": "Category2",
-               |        "engineSetup": {
-               |            "name": "Flink",
-               |            "errors": [
+               |    ],
+               |    "engineSetupErrors": {
                |
-               |            ]
-               |        }
                |    }
-               |]""".stripMargin
+               |}""".stripMargin
           )
       }
     }
@@ -64,18 +59,18 @@ class ScenarioParametersApiSpec
           .Then()
           .statusCode(200)
           .equalsJsonBody(
-            s"""[
-               |    {
-               |        "processingMode": "Unbounded-Stream",
-               |        "category": "Category1",
-               |        "engineSetup": {
-               |            "name": "Flink",
-               |            "errors": [
-               |
-               |            ]
+            s"""{
+               |    "combinations": [
+               |        {
+               |            "processingMode": "Unbounded-Stream",
+               |            "category": "Category1",
+               |            "engineSetupName": "Flink"
                |        }
+               |    ],
+               |    "engineSetupErrors": {
+               |
                |    }
-               |]""".stripMargin
+               |}""".stripMargin
           )
       }
     }
@@ -87,7 +82,16 @@ class ScenarioParametersApiSpec
           .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
           .Then()
           .statusCode(200)
-          .equalsJsonBody("[]")
+          .equalsJsonBody(
+            """{
+              |    "combinations": [
+              |
+              |    ],
+              |    "engineSetupErrors": {
+              |
+              |    }
+              |}""".stripMargin
+          )
       }
     }
     "unauthenticated" - {

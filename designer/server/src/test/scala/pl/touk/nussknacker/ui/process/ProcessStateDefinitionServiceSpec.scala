@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeData,
   ProcessingTypeDataProvider,
-  ValueWithPermission
+  ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 import sttp.client3.SttpBackend
@@ -160,8 +160,8 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     val service = new ProcessStateDefinitionService(
       ProcessingTypeDataProvider(
         Map(
-          Streaming -> ValueWithPermission.userWithAccessRightsToCategory(Category1, Category1),
-          Fraud     -> ValueWithPermission.userWithAccessRightsToCategory(Category2, Category2)
+          Streaming -> ValueWithRestriction.userWithAccessRightsToAnyOfCategories(Category1, Set(Category1)),
+          Fraud     -> ValueWithRestriction.userWithAccessRightsToAnyOfCategories(Category2, Set(Category2))
         ),
         stateDefinitions
       )

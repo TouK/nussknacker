@@ -766,7 +766,7 @@ class DefaultComponentServiceSpec
     }
 
     ProcessingTypeDataProvider(
-      processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
+      processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithRestriction),
       ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
     ).mapValues { processingTypeData =>
       val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(

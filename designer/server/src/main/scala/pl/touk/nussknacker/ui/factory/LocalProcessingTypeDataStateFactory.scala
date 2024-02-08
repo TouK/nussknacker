@@ -19,7 +19,7 @@ import _root_.sttp.client3.SttpBackend
 import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.toValueWithPermission
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.toValueWithRestriction
 
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
@@ -55,7 +55,7 @@ class LocalProcessingTypeDataStateFactory(
       )
     val processingTypes = Map(typeName -> data)
     val combinedData    = CombinedProcessingTypeData.create(processingTypes)
-    ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithPermission), () => combinedData, new Object)
+    ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), () => combinedData, new Object)
   }
 
 }

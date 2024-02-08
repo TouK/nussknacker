@@ -693,28 +693,23 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ScenarioParametersCombination'
+                $ref: '#/components/schemas/ScenarioParametersCombinationWithEngineErrors'
               examples:
                 Example:
                   summary: List of available parameters combinations
                   value:
-                  - processingMode: Unbounded-Stream
-                    category: Marketing
-                    engineSetup:
-                      name: Flink
-                      errors: []
-                  - processingMode: Request-Response
-                    category: Fraud
-                    engineSetup:
-                      name: Lite K8s
-                      errors: []
-                  - processingMode: Unbounded-Stream
-                    category: Fraud
-                    engineSetup:
-                      name: Flink Fraud Detection
-                      errors:
+                    combinations:
+                    - processingMode: Unbounded-Stream
+                      category: Marketing
+                      engineSetupName: Flink
+                    - processingMode: Request-Response
+                      category: Fraud
+                      engineSetupName: Lite K8s
+                    - processingMode: Unbounded-Stream
+                      category: Fraud
+                      engineSetupName: Flink Fraud Detection
+                    engineSetupErrors:
+                      Flink:
                       - Invalid Flink configuration
         '401':
           description: ''
@@ -996,17 +991,6 @@ components:
           type: array
           items:
             type: string
-    EngineSetupDetails:
-      required:
-      - name
-      type: object
-      properties:
-        name:
-          type: string
-        errors:
-          type: array
-          items:
-            type: string
     FragmentUsageData:
       required:
       - fragmentNodeId
@@ -1051,6 +1035,12 @@ components:
           - 'null'
           items:
             type: string
+    Map_EngineSetupName_List_String:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: string
     Map_List_String:
       type: object
       additionalProperties:
@@ -1191,19 +1181,30 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Attachment'
-    ScenarioParametersCombination:
+    ScenarioParameters:
       required:
       - processingMode
       - category
-      - engineSetup
+      - engineSetupName
       type: object
       properties:
         processingMode:
           type: string
         category:
           type: string
-        engineSetup:
-          $ref: '#/components/schemas/EngineSetupDetails'
+        engineSetupName:
+          type: string
+    ScenarioParametersCombinationWithEngineErrors:
+      required:
+      - engineSetupErrors
+      type: object
+      properties:
+        combinations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScenarioParameters'
+        engineSetupErrors:
+          $ref: '#/components/schemas/Map_EngineSetupName_List_String'
     ScenarioUsageData:
       required:
       - nodeId
