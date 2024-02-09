@@ -87,6 +87,15 @@ class ScenarioParametersApiSpec
           .equalsJsonBody("[]")
       }
     }
+    "unauthenticated" - {
+      "return 401 status code" in {
+        given()
+          .when()
+          .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
+          .Then()
+          .statusCode(401)
+      }
+    }
   }
 
 }
