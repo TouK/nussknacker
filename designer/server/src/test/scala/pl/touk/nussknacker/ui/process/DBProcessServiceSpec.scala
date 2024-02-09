@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -60,8 +60,6 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     fragmentCategory1,
     fragmentCategory2,
   )
-
-  private val processCategoryService = TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   it should "return user processes" in {
     val dBProcessService = createDbProcessService(processes)
@@ -197,7 +195,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
-      processCategoryServiceProvider = ProcessingTypeDataProvider(Map.empty, processCategoryService),
+      scenarioParametersServiceProvider = TestFactory.scenarioParametersServiceProvider,
       processResolverByProcessingType = TestFactory.processResolverByProcessingType,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),

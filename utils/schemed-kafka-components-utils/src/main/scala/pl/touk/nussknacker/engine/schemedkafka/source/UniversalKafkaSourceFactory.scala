@@ -8,6 +8,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -38,7 +39,8 @@ class UniversalKafkaSourceFactory(
     protected val implProvider: KafkaSourceImplFactory[Any, Any]
 ) extends SourceFactory
     with KafkaUniversalComponentTransformer[Source]
-    with WithExplicitTypesToExtract {
+    with WithExplicitTypesToExtract
+    with UnboundedStreamComponent {
 
   override type State = UniversalKafkaSourceFactoryState
 

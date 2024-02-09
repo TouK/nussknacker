@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 
-class ReturningClassInstanceSource extends SourceFactory {
+class ReturningClassInstanceSource extends SourceFactory with UnboundedStreamComponent {
 
   @MethodToInvoke
   def source(

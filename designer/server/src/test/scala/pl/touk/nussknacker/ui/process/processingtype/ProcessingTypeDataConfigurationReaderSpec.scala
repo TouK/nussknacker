@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.processingtypedata
+package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}

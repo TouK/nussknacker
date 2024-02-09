@@ -7,7 +7,7 @@ import java.io.File
 import java.net.URL
 
 case class ProcessingTypeConfig(
-    engineType: String,
+    deploymentManagerType: String,
     classPath: List[URL],
     deploymentConfig: Config,
     modelConfig: ConfigWithUnresolvedVersion,

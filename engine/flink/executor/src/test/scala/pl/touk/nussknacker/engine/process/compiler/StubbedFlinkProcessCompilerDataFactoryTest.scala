@@ -63,13 +63,16 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     .withValue("exceptionHandler.withRateMeter", fromAnyRef(true))
 
   private val components = List(
-    ComponentDefinition("test-source", SourceFactory.noParam[Int](SampleTestSupportSource)),
-    ComponentDefinition("test-source2", SourceFactory.noParam[Int](SampleTestSupportSource)),
+    ComponentDefinition("test-source", SourceFactory.noParamUnboundedStreamFactory[Int](SampleTestSupportSource)),
+    ComponentDefinition("test-source2", SourceFactory.noParamUnboundedStreamFactory[Int](SampleTestSupportSource)),
     ComponentDefinition(
       "test-source-with-parameters-test",
-      SourceFactory.noParam[Int](SampleTestSupportParametersSource)
+      SourceFactory.noParamUnboundedStreamFactory[Int](SampleTestSupportParametersSource)
     ),
-    ComponentDefinition("source-no-test-support", SourceFactory.noParam[Int](EmptySource(Typed.fromDetailedType[Int]))),
+    ComponentDefinition(
+      "source-no-test-support",
+      SourceFactory.noParamUnboundedStreamFactory[Int](EmptySource(Typed.fromDetailedType[Int]))
+    ),
     ComponentDefinition("mockService", new MockService(mockServiceResultsHolder))
   )
 

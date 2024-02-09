@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.kafka.source
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
@@ -41,7 +42,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 ) extends SourceFactory
     with SingleInputGenericNodeTransformation[Source]
     with WithCachedTopicsExistenceValidator
-    with WithExplicitTypesToExtract {
+    with WithExplicitTypesToExtract
+    with UnboundedStreamComponent {
 
   protected val topicNameSeparator = ","
 

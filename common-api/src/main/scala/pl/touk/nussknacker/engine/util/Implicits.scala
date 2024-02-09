@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.util
 
 import cats.data.NonEmptyList
 
+import scala.annotation.tailrec
+import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.{Failure, Success}
@@ -17,11 +19,15 @@ object Implicits {
 
   implicit class RichTupleList[K, V](seq: List[(K, V)]) {
 
-    def toGroupedMap: Map[K, List[V]] =
-      seq.groupBy(_._1).mapValuesNow(_.map(_._2))
+    def toGroupedMap: ListMap[K, List[V]] =
+      ListMap(
+        seq.orderedGroupBy(_._1).map { case (k, vList) =>
+          k -> vList.map(_._2)
+        }: _*
+      )
 
-    def toGroupedMapSafe: Map[K, NonEmptyList[V]] =
-      seq.groupBy(_._1).mapValuesNow(groupedValue => NonEmptyList.fromListUnsafe(groupedValue.map(_._2)))
+    def toGroupedMapSafe: ListMap[K, NonEmptyList[V]] =
+      toGroupedMap.map { case (k, v) => k -> NonEmptyList.fromListUnsafe(v) }
 
     def toMapCheckingDuplicates: Map[K, V] = {
       val moreThanOneValueForKey = seq.toGroupedMap.filter(_._2.size > 1)
@@ -57,11 +63,24 @@ object Implicits {
 
   }
 
-  implicit class RichIterable[T](iterable: Iterable[T]) {
+  implicit class RichIterable[T](list: List[T]) {
 
-    def exactlyOne: Option[T] = iterable match {
+    def exactlyOne: Option[T] = list match {
       case head :: Nil => Some(head)
       case _           => None
+    }
+
+    def orderedGroupBy[P](f: T => P): List[(P, List[T])] = {
+      @tailrec
+      def accumulator(seq: List[T], f: T => P, res: List[(P, List[T])]): List[(P, List[T])] = seq.headOption match {
+        case None => res.reverse
+        case Some(h) =>
+          val key                         = f(h)
+          val (withSameKey, withOtherKey) = seq.partition(f(_) == key)
+          accumulator(withOtherKey, f, (key -> withSameKey) :: res)
+      }
+
+      accumulator(list, f, Nil)
     }
 
   }

@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
@@ -74,7 +74,7 @@ class InterpreterSetup[T: ClassTag] {
     case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  class Source extends SourceFactory {
+  class Source extends SourceFactory with UnboundedStreamComponent {
 
     @MethodToInvoke
     def create(): api.process.Source = null

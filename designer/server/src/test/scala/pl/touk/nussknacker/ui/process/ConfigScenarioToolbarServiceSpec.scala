@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.process
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.UriUtils
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
 import pl.touk.nussknacker.ui.config.scenariotoolbar._
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
@@ -538,7 +537,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  private def createProcess(name: String, category: Category, isFragment: Boolean, isArchived: Boolean) =
+  private def createProcess(name: String, category: String, isFragment: Boolean, isArchived: Boolean) =
     TestProcessUtil.wrapWithScenarioDetailsEntity(
       ProcessName(name),
       category = category,
