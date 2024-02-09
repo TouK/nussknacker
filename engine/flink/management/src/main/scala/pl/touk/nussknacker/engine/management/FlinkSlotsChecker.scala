@@ -8,13 +8,13 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
-import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
+import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.ClusterOverview
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) extends LazyLogging {
+class FlinkSlotsChecker(client: FlinkClient)(implicit ec: ExecutionContext) extends LazyLogging {
 
   def checkRequiredSlotsExceedAvailableSlots(
       canonicalProcess: CanonicalProcess,

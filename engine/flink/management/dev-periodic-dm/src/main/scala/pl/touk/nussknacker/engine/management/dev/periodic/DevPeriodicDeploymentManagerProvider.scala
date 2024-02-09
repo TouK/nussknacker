@@ -11,11 +11,16 @@ import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidato
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
@@ -23,7 +28,7 @@ class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
   ): DeploymentManager = {
     // TODO: make possible to use PeriodicDeploymentManagerProvider with non-flink DMs like embedded or lite-k8s
     new PeriodicDeploymentManagerProvider(new FlinkStreamingDeploymentManagerProvider())
-      .createDeploymentManager(modelData, config)
+      .createDeploymentManager(modelData, config, scenarioStateCacheTTL)
   }
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =

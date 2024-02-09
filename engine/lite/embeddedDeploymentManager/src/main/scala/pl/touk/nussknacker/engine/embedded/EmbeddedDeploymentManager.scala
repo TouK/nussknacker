@@ -18,13 +18,17 @@ import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, ModelD
 import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
 import sttp.client3.SttpBackend
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, engineConfig: Config)(
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      engineConfig: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
@@ -182,20 +186,24 @@ class EmbeddedDeploymentManager(
     }
   }
 
-  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future.successful(
-      deployments
-        .get(name)
-        .map { interpreterData =>
-          StatusDetails(
-            status = interpreterData.scenarioDeployment
-              .fold(ex => ProblemStateStatus(s"Scenario compilation errors"), _.status()),
-            deploymentId = Some(interpreterData.deploymentId),
-            externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
-            version = Some(interpreterData.processVersion)
-          )
-        }
-        .toList
+      WithDataFreshnessStatus.fresh(
+        deployments
+          .get(name)
+          .map { interpreterData =>
+            StatusDetails(
+              status = interpreterData.scenarioDeployment
+                .fold(ex => ProblemStateStatus(s"Scenario compilation errors"), _.status()),
+              deploymentId = Some(interpreterData.deploymentId),
+              externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
+              version = Some(interpreterData.processVersion)
+            )
+          }
+          .toList
+      )
     )
   }
 

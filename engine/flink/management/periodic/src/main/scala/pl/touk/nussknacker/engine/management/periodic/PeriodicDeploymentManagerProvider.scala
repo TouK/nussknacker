@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class PeriodicDeploymentManagerProvider(
@@ -25,14 +26,18 @@ class PeriodicDeploymentManagerProvider(
 
   override def name: String = s"${delegate.name}Periodic"
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: ProcessingTypeDeploymentService
   ): DeploymentManager = {
     logger.info("Creating periodic scenario manager")
-    val delegateDeploymentManager = delegate.createDeploymentManager(modelData, config)
+    val delegateDeploymentManager = delegate.createDeploymentManager(modelData, config, scenarioStateCacheTTL)
 
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._

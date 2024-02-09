@@ -299,7 +299,9 @@ class K8sDeploymentManager(
     }
   }
 
-  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
       deployments <- scenarioStateK8sClient
@@ -307,7 +309,7 @@ class K8sDeploymentManager(
         .map(_.items)
       pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
     } yield {
-      deployments.map(mapper.status(_, pods))
+      WithDataFreshnessStatus.fresh(deployments.map(mapper.status(_, pods)))
     }
   }
 

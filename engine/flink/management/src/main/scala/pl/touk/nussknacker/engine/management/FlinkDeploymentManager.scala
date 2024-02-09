@@ -26,7 +26,6 @@ abstract class FlinkDeploymentManager(
 )(implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
     extends DeploymentManager
     with PostprocessingProcessStatus
-    with AlwaysFreshProcessState
     with LazyLogging {
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
@@ -156,8 +155,9 @@ abstract class FlinkDeploymentManager(
   protected def waitForDuringDeployFinished(processName: ProcessName, deploymentId: ExternalDeploymentId): Future[Unit]
 
   private def oldJobsToStop(processVersion: ProcessVersion): Future[List[StatusDetails]] = {
-    getFreshProcessStates(processVersion.processName)
-      .map(_.filter(details => SimpleStateStatus.DefaultFollowingDeployStatuses.contains(details.status)))
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    getProcessStates(processVersion.processName)
+      .map(_.value.filter(details => SimpleStateStatus.DefaultFollowingDeployStatuses.contains(details.status)))
   }
 
   protected def checkRequiredSlotsExceedAvailableSlots(
@@ -208,14 +208,14 @@ abstract class FlinkDeploymentManager(
   private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(
       action: ExternalDeploymentId => Future[T]
   ): Future[T] = {
-    val name = processName.value
-    getFreshProcessStates(processName).flatMap { statuses =>
-      val runningDeploymentIds = statuses.filter(statusDetailsPredicate).collect {
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    getProcessStates(processName).flatMap { statuses =>
+      val runningDeploymentIds = statuses.value.filter(statusDetailsPredicate).collect {
         case StatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _, _, _) => deploymentId
       }
       runningDeploymentIds match {
         case Nil =>
-          Future.failed(new IllegalStateException(s"Job $name not found"))
+          Future.failed(new IllegalStateException(s"Job $processName not found"))
         case single :: Nil =>
           action(single)
         case moreThanOne =>

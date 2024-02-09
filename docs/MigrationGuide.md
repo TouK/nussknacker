@@ -3,6 +3,17 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In Version 1.13.0-esp
+* [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) Scenario status caching more often:
+    * `DeploymentManager` related changes:
+        * Method `getProcessStates` signature was changed and now requires an implicit `freshnessPolicy: DataFreshnessPolicy`
+        * Trait `AlwaysFreshProcessState` and method `getFreshProcessStates` were removed, instead of it please
+          use `getProcessStates` with `DataFreshnessPolicy.Fresh`
+    * `DeploymentManagerProvider` related changes:
+        * Method `createDeploymentManager` signature was changed and now requires new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
+    * `FlinkStreamingRestManager` and `FlinkRestManager` related changes:
+        * Both managers require new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
+
 ## In version 1.13.0 
 
 ### Code API changes

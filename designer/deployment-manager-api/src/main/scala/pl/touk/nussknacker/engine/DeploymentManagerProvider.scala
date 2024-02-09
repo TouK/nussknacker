@@ -9,13 +9,19 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
 import sttp.client3.SttpBackend
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 // If you are adding a new DeploymentManagerProvider available in the public distribution, please remember
 // to add it's type to UsageStatisticsHtmlSnippet.knownDeploymentManagerTypes
 trait DeploymentManagerProvider extends NamedServiceProvider {
 
-  def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  // Exceptions returned by this method won't cause designer's exit. Instead, they will be catched and messages will
+  // be shown to the user.
+  // Normally, we would probably have a ValidateNel in the method return type, but for the backward compatibility
+  // reasons we decided to pass these errors without changing method's return type until we do some more changes around this API
+  // TODO: Change return type into ValidatedNel
+  def createDeploymentManager(modelData: BaseModelData, config: Config, scenarioStateCacheTTL: Option[FiniteDuration])(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],

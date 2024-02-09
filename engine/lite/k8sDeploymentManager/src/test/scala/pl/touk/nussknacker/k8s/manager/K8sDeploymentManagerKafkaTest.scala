@@ -7,6 +7,7 @@ import org.scalatest.Inspectors.forAll
 import org.scalatest.OptionValues
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -38,8 +39,9 @@ class K8sDeploymentManagerKafkaTest
     with EitherValuesDetailedMessage
     with LazyLogging {
 
-  private lazy val kafka                                   = new KafkaK8sSupport(k8s)
-  private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+  private lazy val kafka                                    = new KafkaK8sSupport(k8s)
+  private implicit val backend: SttpBackend[Identity, Any]  = HttpURLConnectionBackend()
+  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
   test("deployment of kafka ping-pong") {
     val f = createKafkaFixture()
@@ -82,7 +84,7 @@ class K8sDeploymentManagerKafkaTest
 
     def waitForRunning(version: ProcessVersion) = {
       eventually {
-        val state = manager.getFreshProcessStates(version.processName).futureValue
+        val state = manager.getProcessStates(version.processName).map(_.value).futureValue
         state.flatMap(_.version) shouldBe List(version)
         state.map(_.status) shouldBe List(SimpleStateStatus.Running)
       }
@@ -351,7 +353,7 @@ class K8sDeploymentManagerKafkaTest
   private def cancelAndAssertCleanup(manager: K8sDeploymentManager, version: ProcessVersion) = {
     manager.cancel(version.processName, DeploymentData.systemUser).futureValue
     eventually {
-      manager.getFreshProcessStates(version.processName).futureValue shouldBe List.empty
+      manager.getProcessStates(version.processName).map(_.value).futureValue shouldBe List.empty
     }
     assertNoGarbageLeft()
   }

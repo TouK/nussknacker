@@ -14,10 +14,15 @@ import pl.touk.nussknacker.engine.api.definition.{
   MinimalNumberValidator,
   StringParameterEditor
 }
-import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
+import pl.touk.nussknacker.engine.api.deployment.cache.{
+  CachingProcessStateDeploymentManager,
+  ScenarioStateCachingConfig
+}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider {
 
@@ -25,16 +30,21 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: ProcessingTypeDeploymentService
   ): DeploymentManager = {
     val flinkConfig = config.rootAs[FlinkConfig]
+
     CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
-      new FlinkStreamingRestManager(flinkConfig, modelData),
-      config
+      new FlinkStreamingRestManager(flinkConfig, scenarioStateCacheTTL, modelData),
+      scenarioStateCacheTTL
     )
   }
 
@@ -55,7 +65,9 @@ object FlinkStreamingDeploymentManagerProvider {
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: ProcessingTypeDeploymentService
   ): DeploymentManager = {
-    val typeConfig = ProcessingTypeConfig.read(config)
+    val typeConfig            = ProcessingTypeConfig.read(config)
+    val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(typeConfig.deploymentConfig)
+
     new FlinkStreamingDeploymentManagerProvider()
       .createDeploymentManager(ModelData(typeConfig), typeConfig.deploymentConfig)
   }
