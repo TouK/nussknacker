@@ -39,9 +39,9 @@ class ScenarioAttachmentService(config: AttachmentsConfig, scenarioActivityRepos
       })
   }
 
-  def readAttachment(attachmentId: Long): Future[Option[AttachmentDataWithName]] = {
+  def readAttachment(attachmentId: Long, scenarioId: ProcessId): Future[Option[AttachmentDataWithName]] = {
     scenarioActivityRepository
-      .findAttachment(attachmentId)
+      .findAttachment(attachmentId, scenarioId)
       .map(_.map(attachment => (attachment.fileName, attachment.data)))
   }
 

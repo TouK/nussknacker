@@ -60,6 +60,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       If you have a list of types and you are not sure how to translate it to `TypingResult` you can try to use `Typed.fromIterableOrUnknownIfEmpty`
       but it is not recommended - see docs next to it.
     * `TypedUnion`is not a case class anymore, but is still serializable - If it was used in a Flink state, state will be probably not compatible
+  * [#5517](https://github.com/TouK/nussknacker/pull/5517) Legacy `OnFinished` listener-api event was removed
   * [#5474](https://github.com/TouK/nussknacker/pull/5474) `Component` class now need to specify `allowedProcessingModes`. 
     Most of the implementations (`CustomStreamTransformer`, `Service`, `SinkFactory`) has default wildcard (`None`).
     For `SourceFactory` you need to specify which `ProcessingMode` this source support. You have predefined traits:
@@ -126,6 +127,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5432](https://github.com/TouK/nussknacker/pull/5432) Kafka client, Confluent Schema Registry Client and Avro bump
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13 
 * [#5465](https://github.com/TouK/nussknacker/pull/5465) Removed `strictTypeChecking` option and `SupertypeClassResolutionStrategy.Union` used behind it
+* [#5517](https://github.com/TouK/nussknacker/pull/5517) Removed legacy mechanism marking scenario finished based on the fact that the last action was deploy and job was finished. 
+  The new mechanism leverage deployment id which was introduced in [#4462](https://github.com/TouK/nussknacker/pull/4462) in 1.11 version.
 * [#5474](https://github.com/TouK/nussknacker/pull/5474) The mechanism allowing migration between two environments uses by default the new,
   scenario creating API. In case when the secondary environment is in the version < 1.14, you should switch `secondaryEnvironment.useLegacyCreateScenarioApi` flag to on.
 
