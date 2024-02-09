@@ -29,28 +29,30 @@ class ScenarioParametersApiSpec
           .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
           .Then()
           .statusCode(200)
-          .equalsJsonBody(s"""[
-                             |    {
-                             |        "processingMode": "Unbounded-Stream",
-                             |        "category": "Category1",
-                             |        "engineSetup": {
-                             |            "name": "Flink",
-                             |            "errors": [
-                             |
-                             |            ]
-                             |        }
-                             |    },
-                             |    {
-                             |        "processingMode": "Unbounded-Stream",
-                             |        "category": "Category2",
-                             |        "engineSetup": {
-                             |            "name": "Flink",
-                             |            "errors": [
-                             |
-                             |            ]
-                             |        }
-                             |    }
-                             |]""".stripMargin)
+          .equalsJsonBody(
+            s"""[
+               |    {
+               |        "processingMode": "Unbounded-Stream",
+               |        "category": "Category1",
+               |        "engineSetup": {
+               |            "name": "Flink",
+               |            "errors": [
+               |
+               |            ]
+               |        }
+               |    },
+               |    {
+               |        "processingMode": "Unbounded-Stream",
+               |        "category": "Category2",
+               |        "engineSetup": {
+               |            "name": "Flink",
+               |            "errors": [
+               |
+               |            ]
+               |        }
+               |    }
+               |]""".stripMargin
+          )
       }
     }
     "authenticated with write access one category should" - {
@@ -61,8 +63,8 @@ class ScenarioParametersApiSpec
           .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
           .Then()
           .statusCode(200)
-          .equalsJsonBody(s"""
-               |[
+          .equalsJsonBody(
+            s"""[
                |    {
                |        "processingMode": "Unbounded-Stream",
                |        "category": "Category1",
@@ -73,7 +75,8 @@ class ScenarioParametersApiSpec
                |            ]
                |        }
                |    }
-               |]""".stripMargin)
+               |]""".stripMargin
+          )
       }
     }
     "authenticated without write access to category should" - {
