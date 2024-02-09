@@ -37,9 +37,9 @@ object ScenarioParametersDeterminer {
             throw new IllegalStateException(
               s"Detected collision of allowed processing modes for processing type: $processingType among components: $componentsWithDefinedAllowedProcessingModes"
             )
-          case moreThenOne =>
+          case moreThanOne =>
             throw new IllegalStateException(
-              s"More than one allowed processing modes: $moreThenOne for processing type: $processingType for components: $componentsToProcessingMode"
+              s"More than one allowed processing modes: $moreThanOne for processing type: $processingType for components: $componentsToProcessingMode"
             )
         }
     }

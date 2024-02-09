@@ -29,8 +29,7 @@ class ScenarioParametersApiSpec
           .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
           .Then()
           .statusCode(200)
-          .equalsJsonBody(s"""
-                             |[
+          .equalsJsonBody(s"""[
                              |    {
                              |        "processingMode": "Unbounded-Stream",
                              |        "category": "Category1",
