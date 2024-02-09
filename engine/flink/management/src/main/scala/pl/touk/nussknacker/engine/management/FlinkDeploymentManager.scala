@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -15,18 +14,21 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 abstract class FlinkDeploymentManager(
     modelData: BaseModelData,
+    dependencies: DeploymentManagerDependencies,
     shouldVerifyBeforeDeploy: Boolean,
     mainClassName: String
-)(implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
-    extends DeploymentManager
+) extends DeploymentManager
     with PostprocessingProcessStatus
     with AlwaysFreshProcessState
     with LazyLogging {
+
+  import dependencies._
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
 

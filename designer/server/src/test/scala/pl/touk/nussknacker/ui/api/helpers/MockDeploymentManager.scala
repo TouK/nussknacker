@@ -11,11 +11,12 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import shapeless.syntax.typeable.typeableOps
 import sttp.client3.SttpBackend
+import sttp.client3.testing.SttpBackendStub
 
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
@@ -30,23 +31,26 @@ object MockDeploymentManager {
   val maxParallelism    = 10
 }
 
-class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
-    implicit deploymentService: ProcessingTypeDeploymentService
+class MockDeploymentManager(
+    defaultProcessStateStatus: StateStatus = SimpleStateStatus.NotDeployed,
+    deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(Nil)
 ) extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
         TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
         DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
       ),
+      DeploymentManagerDependencies(
+        deploymentService,
+        ExecutionContext.global,
+        ActorSystem("MockDeploymentManager"),
+        SttpBackendStub.asynchronousFuture
+      ),
       shouldVerifyBeforeDeploy = false,
       mainClassName = "UNUSED"
     ) {
 
   import MockDeploymentManager._
-
-  def this() = {
-    this(SimpleStateStatus.NotDeployed)(new ProcessingTypeDeploymentServiceStub(Nil))
-  }
 
   private def prepareProcessState(status: StateStatus, deploymentId: DeploymentId): List[StatusDetails] =
     List(prepareProcessState(status, deploymentId, Some(ProcessVersion.empty)))
@@ -249,7 +253,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
 
 object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  override def createDeploymentManager(modelData: BaseModelData, deploymentConfig: Config)(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],

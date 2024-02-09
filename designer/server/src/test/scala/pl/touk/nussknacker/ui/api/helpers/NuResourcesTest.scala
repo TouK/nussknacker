@@ -118,7 +118,7 @@ trait NuResourcesTest
   protected val deploymentManagerProvider: FlinkStreamingDeploymentManagerProvider =
     new FlinkStreamingDeploymentManagerProvider {
 
-      override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+      override def createDeploymentManager(modelData: BaseModelData, deploymentConfig: Config)(
           implicit ec: ExecutionContext,
           actorSystem: ActorSystem,
           sttpBackend: SttpBackend[Future, Any],
@@ -229,7 +229,7 @@ trait NuResourcesTest
 
   protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(
     SimpleStateStatus.NotDeployed
-  )(new ProcessingTypeDeploymentServiceStub(Nil))
+  )
 
   override def beforeEach(): Unit = {
     super.beforeEach()

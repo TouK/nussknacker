@@ -194,7 +194,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     ProcessingTypeData.createProcessingTypeData(
       processingType,
       new FlinkStreamingDeploymentManagerProvider {
-        override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+        override def createDeploymentManager(modelData: BaseModelData, deploymentConfig: Config)(
             implicit ec: ExecutionContext,
             actorSystem: ActorSystem,
             sttpBackend: SttpBackend[Future, Any],
