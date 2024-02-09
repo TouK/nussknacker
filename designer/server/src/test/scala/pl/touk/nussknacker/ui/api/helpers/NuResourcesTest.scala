@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import _root_.sttp.client3.SttpBackend
-import _root_.sttp.client3.akkahttp.AkkaHttpBackend
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
@@ -74,8 +73,6 @@ trait NuResourcesTest
   import TestCategories._
   import TestProcessingTypes._
 
-  private implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(system)
-
   protected val adminUser: LoggedUser = TestFactory.adminUser("user")
 
   private implicit val implicitAdminUser: LoggedUser = adminUser
@@ -115,13 +112,6 @@ trait NuResourcesTest
       None
     )
 
-  private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
-    new DefaultProcessingTypeDeploymentService(
-      Streaming,
-      deploymentService,
-      AllDeployedScenarioService(testDbRef, Streaming)
-    )
-
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
 
@@ -150,6 +140,7 @@ trait NuResourcesTest
       Streaming -> ProcessingTypeData.createProcessingTypeData(
         TestProcessingTypes.Streaming,
         deploymentManagerProvider,
+        deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig,
         TestAdditionalUIConfigProvider
@@ -162,8 +153,7 @@ trait NuResourcesTest
     ProcessingTypeDataProvider(
       ProcessingTypeDataReader.loadProcessingTypeData(
         ConfigWithUnresolvedVersion(testConfig),
-        deploymentService,
-        AllDeployedScenarioService(testDbRef, _),
+        _ => deploymentManagerDependencies,
         TestAdditionalUIConfigProvider
       )
     )

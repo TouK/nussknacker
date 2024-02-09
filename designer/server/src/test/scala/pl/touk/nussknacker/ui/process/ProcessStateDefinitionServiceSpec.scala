@@ -15,9 +15,9 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
-import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeData,
   ProcessingTypeDataProvider,
@@ -25,16 +25,10 @@ import pl.touk.nussknacker.ui.process.processingtype.{
 }
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 import sttp.client3.SttpBackend
-import sttp.client3.akkahttp.AkkaHttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits._
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
-
-  private implicit val actorSystem: ActorSystem              = ActorSystem(getClass.getSimpleName)
-  private implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(actorSystem)
-  private implicit val processingTypeDeploymentService: ProcessingTypeDeploymentService = null
 
   test("should fetch state definitions when definitions with the same name are unique") {
     val streamingProcessStateDefinitionManager =
@@ -210,6 +204,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
             override def processStateDefinitionManager: ProcessStateDefinitionManager = stateDefinitionManager
           }
       },
+      TestFactory.deploymentManagerDependencies,
       EngineSetupName("mock"),
       LocalModelData(
         ConfigFactory.empty(),

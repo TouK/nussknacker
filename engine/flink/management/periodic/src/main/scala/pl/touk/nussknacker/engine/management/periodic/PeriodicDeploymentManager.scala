@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.BaseModelData
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -40,13 +40,10 @@ object PeriodicDeploymentManager {
       modelData: BaseModelData,
       listenerFactory: PeriodicProcessListenerFactory,
       additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
-      customActionsProviderFactory: PeriodicCustomActionsProviderFactory
-  )(
-      implicit ec: ExecutionContext,
-      system: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
+      customActionsProviderFactory: PeriodicCustomActionsProviderFactory,
+      dependencies: DeploymentManagerDependencies
   ): PeriodicDeploymentManager = {
+    import dependencies._
 
     val clock = Clock.systemDefaultZone()
 
@@ -65,13 +62,14 @@ object PeriodicDeploymentManager {
       periodicBatchConfig.deploymentRetry,
       periodicBatchConfig.executionConfig,
       processConfigEnricher,
-      clock
+      clock,
+      dependencies.deploymentService
     )
-    val deploymentActor = system.actorOf(
+    val deploymentActor = dependencies.actorSystem.actorOf(
       DeploymentActor.props(service, periodicBatchConfig.deployInterval),
       s"periodic-${periodicBatchConfig.processingType}-deployer"
     )
-    val rescheduleFinishedActor = system.actorOf(
+    val rescheduleFinishedActor = dependencies.actorSystem.actorOf(
       RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval),
       s"periodic-${periodicBatchConfig.processingType}-rescheduler"
     )
@@ -80,8 +78,8 @@ object PeriodicDeploymentManager {
 
     val toClose = () => {
       runSafely(listener.close())
-      runSafely(system.stop(deploymentActor))
-      runSafely(system.stop(rescheduleFinishedActor))
+      runSafely(dependencies.actorSystem.stop(deploymentActor))
+      runSafely(dependencies.actorSystem.stop(rescheduleFinishedActor))
       runSafely(db.close())
     }
     new PeriodicDeploymentManager(

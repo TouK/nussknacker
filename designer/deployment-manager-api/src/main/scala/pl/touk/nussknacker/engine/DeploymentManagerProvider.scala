@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine
 
 import akka.actor.ActorSystem
+import cats.data.Validated.valid
+import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.MetaDataInitializer.MetadataType
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
@@ -17,17 +19,31 @@ import scala.concurrent.{ExecutionContext, Future}
 // to add it's type to UsageStatisticsHtmlSnippet.knownDeploymentManagerTypes
 trait DeploymentManagerProvider extends NamedServiceProvider {
 
+  def createDeploymentManager(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      deploymentConfig: Config
+  ): ValidatedNel[String, DeploymentManager] =
+    // TODO: remove default implementation after removing the legacy method
+    valid(
+      createDeploymentManager(modelData, deploymentConfig)(
+        dependencies.executionContext,
+        dependencies.actorSystem,
+        dependencies.sttpBackend,
+        dependencies.deploymentService
+      )
+    )
+
   // Exceptions returned by this method won't cause designer's exit. Instead, they will be catched and messages will
   // be shown to the user.
-  // Normally, we would probably have a ValidateNel in the method return type, but for the backward compatibility
-  // reasons we decided to pass these errors without changing method's return type until we do some more changes around this API
-  // TODO: Change return type into ValidatedNel
-  def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  // TODO: This method is legacy. It will be removed in further versions. It is not implemented by design because for
+  //       a new DMs it won't be used
+  protected def createDeploymentManager(modelData: BaseModelData, config: Config)(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: ProcessingTypeDeploymentService
-  ): DeploymentManager
+  ): DeploymentManager = ???
 
   def metaDataInitializer(config: Config): MetaDataInitializer
 

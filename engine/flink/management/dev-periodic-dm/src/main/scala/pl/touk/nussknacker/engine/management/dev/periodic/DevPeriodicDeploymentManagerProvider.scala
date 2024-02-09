@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.dev.periodic
 
 import akka.actor.ActorSystem
+import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
@@ -8,22 +9,26 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingT
 import pl.touk.nussknacker.engine.management.{FlinkStreamingDeploymentManagerProvider, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine.management.periodic.{CronSchedulePropertyExtractor, PeriodicDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
+import pl.touk.nussknacker.engine.{
+  BaseModelData,
+  DeploymentManagerDependencies,
+  DeploymentManagerProvider,
+  MetaDataInitializer
+}
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
-  ): DeploymentManager = {
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      deploymentConfig: Config
+  ): ValidatedNel[String, DeploymentManager] = {
     // TODO: make possible to use PeriodicDeploymentManagerProvider with non-flink DMs like embedded or lite-k8s
     new PeriodicDeploymentManagerProvider(new FlinkStreamingDeploymentManagerProvider())
-      .createDeploymentManager(modelData, config)
+      .createDeploymentManager(modelData, dependencies, deploymentConfig)
   }
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =

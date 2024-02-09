@@ -1,27 +1,17 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
-import _root_.sttp.client3.SttpBackend
-import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.process.deployment.{
-  AllDeployedScenarioService,
-  DefaultProcessingTypeDeploymentService,
-  DeploymentService
-}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.{
   selectedScenarioTypeConfigurationPath,
   toValueWithRestriction
 }
-
-import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessingTypeDataReader extends ProcessingTypeDataReader {
 
@@ -37,13 +27,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
   def loadProcessingTypeData(
       config: ConfigWithUnresolvedVersion,
-      deploymentService: DeploymentService,
-      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
+      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
       additionalUIConfigProvider: AdditionalUIConfigProvider
-  )(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any]
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
@@ -68,9 +53,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
           processingType,
           typeConfig,
           provider,
+          getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),
-          deploymentService,
-          createAllDeployedScenarioService,
           additionalUIConfigProvider
         )
         processingType -> processingTypeData
@@ -106,22 +90,15 @@ trait ProcessingTypeDataReader extends LazyLogging {
       processingType: ProcessingType,
       processingTypeConfig: ProcessingTypeConfig,
       deploymentManagerProvider: DeploymentManagerProvider,
+      deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
-      deploymentService: DeploymentService,
-      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
       additionalUIConfigProvider: AdditionalUIConfigProvider
-  )(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any]
   ): ProcessingTypeData = {
     logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
-    val allDeployedScenarioService = createAllDeployedScenarioService(processingType)
-    implicit val processTypeDeploymentService: ProcessingTypeDeploymentService =
-      new DefaultProcessingTypeDeploymentService(processingType, deploymentService, allDeployedScenarioService)
     ProcessingTypeData.createProcessingTypeData(
       processingType,
       deploymentManagerProvider,
+      deploymentManagerDependencies,
       engineSetupName,
       processingTypeConfig,
       additionalUIConfigProvider

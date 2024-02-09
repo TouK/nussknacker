@@ -68,7 +68,7 @@ class PeriodicDeploymentManagerTest
     val jarManagerStub                = new JarManagerStub
     val preparedDeploymentData        = DeploymentData.withDeploymentId(UUID.randomUUID().toString)
 
-    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
+    val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
       List.empty
     )
 
@@ -81,7 +81,8 @@ class PeriodicDeploymentManagerTest
       deploymentRetryConfig = DeploymentRetryConfig(),
       executionConfig = executionConfig,
       processConfigEnricher = ProcessConfigEnricher.identity,
-      clock = Clock.systemDefaultZone()
+      clock = Clock.systemDefaultZone(),
+      deploymentService
     )
 
     val periodicDeploymentManager = new PeriodicDeploymentManager(
