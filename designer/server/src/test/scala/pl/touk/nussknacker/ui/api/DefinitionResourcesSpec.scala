@@ -16,17 +16,18 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.TestFactory.withPermissions
+import pl.touk.nussknacker.tests.base.it.NuResourcesTest
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
   DefinitionsService,
-  ScenarioPropertiesConfigFinalizer,
-  TestAdditionalUIConfigProvider
+  ScenarioPropertiesConfigFinalizer
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.tests.ProcessTestData
+import pl.touk.nussknacker.tests.mock.TestAdditionalUIConfigProvider
 
 class DefinitionResourcesSpec
     extends AnyFunSpec

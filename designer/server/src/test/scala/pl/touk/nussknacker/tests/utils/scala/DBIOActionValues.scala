@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.util
+package pl.touk.nussknacker.tests.utils.scala
 
 import db.util.DBIOActionInstances.DB
 import org.scalatest.concurrent.ScalaFutures

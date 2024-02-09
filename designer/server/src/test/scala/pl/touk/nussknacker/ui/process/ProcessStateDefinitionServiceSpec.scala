@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider}
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
+import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ValueWithPermission}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 

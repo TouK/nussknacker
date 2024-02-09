@@ -15,9 +15,9 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.base.it.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 class ComponentApiSpec
     extends AnyFreeSpecLike
@@ -31,7 +31,6 @@ class ComponentApiSpec
 
   "The endpoint for getting components when" - {
     "authenticated should" - {
-
       "return component list for current user" in {
         val componentIdListForTestUser: List[String] =
           given()
@@ -44,7 +43,6 @@ class ComponentApiSpec
 
         componentIdListForTestUser.sorted should contain theSameElementsAs correctListForTestUser
       }
-
       "return different component lists for users(allpermuser, admin)" in {
         val componentIdListForTestUser: List[String] =
           given()
@@ -124,7 +122,6 @@ class ComponentApiSpec
             )
           )
       }
-
       "return 404 when component not exist" in {
         val badComponentId: DesignerWideComponentId = DesignerWideComponentId("not-exist-component")
 
@@ -151,7 +148,6 @@ class ComponentApiSpec
           )
       }
     }
-
     "not authenticated should" - {
       "forbid access" in {
         given()

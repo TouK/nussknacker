@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api.helpers
+package pl.touk.nussknacker.tests.base.it
 
 import _root_.sttp.client3.SttpBackend
 import _root_.sttp.client3.akkahttp.AkkaHttpBackend
@@ -32,16 +32,19 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProv
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.TestFactory._
+import pl.touk.nussknacker.tests.TestPermissions.CategorizedPermission
+import pl.touk.nussknacker.tests._
+import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, TestAdditionalUIConfigProvider, TestProcessChangeListener}
+import pl.touk.nussknacker.tests.utils.scala.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -57,7 +60,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils, NuPathMatchers}
+import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
 import java.net.URI
@@ -327,10 +330,7 @@ trait NuResourcesTest
   protected def doUpdateProcess(command: UpdateProcessCommand, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    Put(
-      s"/processes/$name",
-      TestFactory.posting.toRequestEntity(command)
-    ) ~> processesRouteWithAllPermissions ~> check {
+    Put(s"/processes/$name", command.toJsonRequestEntity()) ~> processesRouteWithAllPermissions ~> check {
       testCode
     }
 
@@ -369,7 +369,7 @@ trait NuResourcesTest
     )
 
   protected def customAction(processName: ProcessName, reqPayload: CustomActionRequest): RouteTestResult =
-    Post(s"/processManagement/customAction/$processName", TestFactory.posting.toRequestEntity(reqPayload)) ~>
+    Post(s"/processManagement/customAction/$processName", reqPayload.toJsonRequestEntity()) ~>
       withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
 
   protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {

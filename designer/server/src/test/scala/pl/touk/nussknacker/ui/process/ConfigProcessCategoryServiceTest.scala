@@ -5,7 +5,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.api.helpers.TestFactory
+import pl.touk.nussknacker.tests.TestFactory
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService.CategoryToProcessingTypeMappingAmbiguousException
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataConfigurationReader

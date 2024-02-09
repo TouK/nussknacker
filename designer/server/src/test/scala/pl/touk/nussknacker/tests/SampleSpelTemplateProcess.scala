@@ -1,9 +1,9 @@
-package pl.touk.nussknacker.ui.api.helpers.spel
+package pl.touk.nussknacker.tests
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.expression.Expression.{spel, spelTemplate}
+import pl.touk.nussknacker.engine.graph.expression.Expression.spelTemplate
 import pl.touk.nussknacker.engine.graph.node.SubsequentNode
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
 

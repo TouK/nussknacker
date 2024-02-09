@@ -8,9 +8,9 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefini
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.migration.{NodeMigration, ProcessMigration, ProcessMigrations}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
+import pl.touk.nussknacker.tests.ProcessTestData
 
-class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
+private[migrate] class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

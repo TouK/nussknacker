@@ -9,9 +9,10 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
+import pl.touk.nussknacker.tests.TestFactory.{withAdminPermissions, withAllPermissions}
+import pl.touk.nussknacker.tests.base.it.NuResourcesTest
+import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -30,7 +31,7 @@ class ProcessesChangeListenerSpec
 
   private val routeWithAllPermissions   = withAllPermissions(processesRoute)
   private val routeWithAdminPermissions = withAdminPermissions(processesRoute)
-  implicit val loggedUser: LoggedUser   = createLoggedUser("1", "lu", testCategory)
+  implicit val loggedUser: LoggedUser   = createLoggedUser("1", "lu", TestFactory.testCategory)
 
   private val processName = ProcessTestData.sampleScenario.name
 

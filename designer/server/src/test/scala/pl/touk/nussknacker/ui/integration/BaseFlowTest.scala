@@ -11,8 +11,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -31,13 +31,16 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationResult
 }
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
+import pl.touk.nussknacker.tests.TestProcessUtil.toJson
+import pl.touk.nussknacker.tests.base.it.NuItTest
+import pl.touk.nussknacker.tests.mock.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
+import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.{NodeValidationRequest, ScenarioValidationRequest}
-import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, SecurityHeadersSupport}
+import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
 import sttp.client3.circe.asJson
 import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{Header, MediaType, StatusCode}
@@ -331,7 +334,7 @@ class BaseFlowTest
       quickRequest
         .put(uri"$nuDesignerHttpAddress/api/processes/$processId")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJsonAsProcessToSave(scenarioGraph).spaces2)
+        .body(scenarioGraph.toJsonAsProcessToSave.spaces2)
         .auth
         .basic("admin", "admin")
         .response(asJson[ValidationResult])
@@ -378,7 +381,7 @@ class BaseFlowTest
         .multipartBody(
           sttpPrepareMultiParts(
             "testData"      -> testDataContent,
-            "scenarioGraph" -> TestProcessUtil.toJson(process).noSpaces
+            "scenarioGraph" -> toJson(process).noSpaces
           )()
         )
         .auth
@@ -526,7 +529,7 @@ class BaseFlowTest
         .basic("admin", "admin")
         .put(uri"$nuDesignerHttpAddress/api/processes/$processId")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJsonAsProcessToSave(process).spaces2)
+        .body(process.toJsonAsProcessToSave.spaces2)
         .response(asJson[ValidationResult])
     )
     response.code shouldEqual StatusCode.Ok

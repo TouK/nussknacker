@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
+import pl.touk.nussknacker.tests.ProcessTestData
 
 class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 

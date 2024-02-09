@@ -1,11 +1,10 @@
-package pl.touk.nussknacker.ui.util
+package pl.touk.nussknacker.tests
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.ui.api.helpers.TestData
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
 
 object ConfigWithScalaVersion {
 

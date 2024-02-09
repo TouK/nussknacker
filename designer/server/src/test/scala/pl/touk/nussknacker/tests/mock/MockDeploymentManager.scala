@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api.helpers
+package pl.touk.nussknacker.tests.mock
 
 import akka.actor.ActorSystem
 import com.google.common.collect.LinkedHashMultimap
@@ -12,9 +12,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig}
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.ConfigWithScalaVersion
 import shapeless.syntax.typeable.typeableOps
 import sttp.client3.SttpBackend
 

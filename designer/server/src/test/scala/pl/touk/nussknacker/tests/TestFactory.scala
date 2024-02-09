@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api.helpers
+package pl.touk.nussknacker.tests
 
 import akka.http.scaladsl.server.Route
 import cats.effect.unsafe.IORuntime
@@ -11,11 +11,12 @@ import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegist
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.TestPermissions.CategorizedPermission
+import pl.touk.nussknacker.tests.mock.{StubDeploymentService, StubFragmentRepository}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
@@ -78,8 +79,6 @@ object TestFactory extends TestPermissions {
     mapProcessingTypeDataProvider(Streaming -> processResolver)
 
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
-
-  val posting = new ProcessPosting
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
   def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(

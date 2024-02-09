@@ -25,9 +25,11 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
+import pl.touk.nussknacker.tests.base.it.NuResourcesTest
+import pl.touk.nussknacker.tests.utils.scala.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
@@ -47,7 +49,7 @@ class ValidationResourcesSpec
 
   private val processValidatorByProcessingType = mapProcessingTypeDataProvider(
     Streaming -> new UIProcessResolver(
-      processValidator.withScenarioPropertiesConfig(
+      TestFactory.processValidator.withScenarioPropertiesConfig(
         Map(
           "requiredStringProperty" -> ScenarioPropertyConfig(
             None,
@@ -57,8 +59,8 @@ class ValidationResourcesSpec
           ),
           "numberOfThreads" -> ScenarioPropertyConfig(
             None,
-            Some(FixedValuesParameterEditor(possibleValues)),
-            Some(List(FixedValuesValidator(possibleValues))),
+            Some(FixedValuesParameterEditor(TestFactory.possibleValues)),
+            Some(List(FixedValuesValidator(TestFactory.possibleValues))),
             None
           ),
           "maxEvents" -> ScenarioPropertyConfig(
@@ -259,7 +261,7 @@ class ValidationResourcesSpec
     val request = ScenarioValidationRequest(name, scenarioGraph)
     Post(
       Uri(path = Path.Empty / "processValidation" / name.value),
-      posting.toRequestEntity(request)
+      request.toJsonRequestEntity()
     ) ~> route ~> check {
       testCode
     }

@@ -19,9 +19,11 @@ import pl.touk.nussknacker.engine.definition.test.{
   TestingCapabilities
 }
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
-import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestData}
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
+import pl.touk.nussknacker.tests.base.it.NuResourcesTest
+import pl.touk.nussknacker.tests.utils.scala.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 
 class TestInfoResourcesSpec
     extends AnyFunSuite
@@ -74,7 +76,7 @@ class TestInfoResourcesSpec
     saveProcess(scenarioGraph) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/generate/5",
-        posting.toRequestEntity(scenarioGraph)
+        scenarioGraph.toJsonRequestEntity()
       ) ~> withPermissions(
         route(),
         testPermissionAll
@@ -91,7 +93,7 @@ class TestInfoResourcesSpec
     saveProcess(scenarioGraph) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/generate/100",
-        posting.toRequestEntity(scenarioGraph)
+        scenarioGraph.toJsonRequestEntity()
       ) ~> withPermissions(
         route(),
         testPermissionAll
@@ -100,7 +102,7 @@ class TestInfoResourcesSpec
       }
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/generate/1",
-        posting.toRequestEntity(scenarioGraph)
+        scenarioGraph.toJsonRequestEntity()
       ) ~> withPermissions(
         route(additionalDataSize = 20000),
         testPermissionAll
@@ -114,7 +116,7 @@ class TestInfoResourcesSpec
     saveProcess(scenarioGraph) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/capabilities",
-        posting.toRequestEntity(scenarioGraph)
+        scenarioGraph.toJsonRequestEntity()
       ) ~> withPermissions(
         route(),
         testPermissionAll
@@ -131,7 +133,7 @@ class TestInfoResourcesSpec
     saveProcess(scenarioGraph) {
       Post(
         s"/testInfo/${ProcessTestData.sampleProcessName}/capabilities",
-        posting.toRequestEntity(scenarioGraph)
+        scenarioGraph.toJsonRequestEntity()
       ) ~> withPermissions(
         route(),
         testPermissionRead

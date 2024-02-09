@@ -1,12 +1,11 @@
-package pl.touk.nussknacker.ui.api.helpers
+package pl.touk.nussknacker.tests
 
 import com.typesafe.config.ConfigObject
 import enumeratum.{Enum, EnumEntry}
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
 
 import scala.jdk.CollectionConverters._
 

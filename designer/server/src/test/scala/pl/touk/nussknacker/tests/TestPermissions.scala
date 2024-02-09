@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.ui.api.helpers
+package pl.touk.nussknacker.tests
 
 import cats.instances.all._
 import cats.syntax.semigroup._
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
 
 import scala.language.implicitConversions
 

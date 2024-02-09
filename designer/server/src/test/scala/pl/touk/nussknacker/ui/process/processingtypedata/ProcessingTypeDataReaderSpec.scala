@@ -11,9 +11,8 @@ import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.{AllDeployedScenarioService, DeploymentService}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}

@@ -6,8 +6,8 @@ import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
+import pl.touk.nussknacker.tests.base.it.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 import java.util.UUID
 
@@ -19,6 +19,7 @@ class ScenarioActivityApiSpec
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
+
   import ScenarioActivitySpecAsserts._
 
   private val exampleScenarioName = UUID.randomUUID().toString
@@ -84,7 +85,7 @@ class ScenarioActivityApiSpec
       "forbid access for insufficient privileges" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .plainBody(commentContent)
           .basicAuth("limitedReader", "limitedReader")
@@ -351,7 +352,7 @@ class ScenarioActivityApiSpec
       "not return existing attachment not connected to the scenario" in {
         val notRelevantScenarioId = given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
             createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent)
           }
           .basicAuth("reader", "reader")
@@ -363,7 +364,7 @@ class ScenarioActivityApiSpec
         given()
           .basicAuth("reader", "reader")
           .applicationState {
-            createSavedScenario(otherExampleScenario)
+            createSavedScenario(otherExampleScenario, category = Category1)
           }
           .when()
           .get(
@@ -413,7 +414,7 @@ class ScenarioActivityApiSpec
       "forbid access for insufficient privileges" in {
         given()
           .applicationState {
-            createSavedScenario(exampleScenario)
+            createSavedScenario(exampleScenario, category = Category1)
           }
           .plainBody(commentContent)
           .basicAuth("limitedReader", "limitedReader")

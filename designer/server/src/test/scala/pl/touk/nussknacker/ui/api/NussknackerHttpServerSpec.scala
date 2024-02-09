@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
-import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -12,11 +11,11 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.test.{DefaultUniquePortProvider, WithTestHttpClientCreator}
+import pl.touk.nussknacker.tests.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.security.ssl.HttpsConnectionContextFactory.prepareSSLContext
 import pl.touk.nussknacker.ui.security.ssl.KeyStoreConfig
 import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, RouteProvider}
-import pl.touk.nussknacker.ui.util.CatsTestExtensions._
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.tests.utils.scala.CatsTestExtensions._
 import sttp.client3.{UriContext, basicRequest}
 import sttp.model.StatusCode
 

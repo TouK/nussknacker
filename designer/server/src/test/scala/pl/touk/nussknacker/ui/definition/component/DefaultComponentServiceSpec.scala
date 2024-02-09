@@ -20,13 +20,9 @@ import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData,
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-import pl.touk.nussknacker.ui.api.helpers.{
-  MockDeploymentManager,
-  MockFetchingProcessRepository,
-  MockManagerProvider,
-  TestFactory
-}
+import pl.touk.nussknacker.tests.TestFactory
+import pl.touk.nussknacker.tests.TestProcessUtil.createFragmentEntity
+import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, MockFetchingProcessRepository, MockManagerProvider}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._

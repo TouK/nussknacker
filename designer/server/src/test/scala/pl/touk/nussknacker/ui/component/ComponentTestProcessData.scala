@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+import pl.touk.nussknacker.tests.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import java.time.Instant
 import java.util.UUID
 
-object ComponentTestProcessData {
+private[component] object ComponentTestProcessData {
 
   import VersionId._
   import pl.touk.nussknacker.engine.spel.Implicits._

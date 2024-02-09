@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api.helpers
+package pl.touk.nussknacker.tests
 
 object TestProcessingTypes {
   val Streaming = "streaming"

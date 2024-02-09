@@ -1,9 +1,20 @@
-package pl.touk.nussknacker.ui.definition
+package pl.touk.nussknacker.tests.mock
 
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.ui.api.helpers.TestData
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import sttp.client3.SttpBackend
+
+import scala.concurrent.{ExecutionContext, Future}
+
+class TestAdditionalUIConfigProviderFactory extends AdditionalUIConfigProviderFactory {
+
+  override def create(config: Config, sttpBackend: SttpBackend[Future, Any])(
+      implicit ec: ExecutionContext
+  ): AdditionalUIConfigProvider = TestAdditionalUIConfigProvider
+
+}
 
 object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
   val componentGroupName: ComponentGroupName = ComponentGroupName("someComponentGroup")

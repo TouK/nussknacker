@@ -1,28 +1,17 @@
-package pl.touk.nussknacker.ui.api.helpers
+package pl.touk.nussknacker.tests.mock
 
 import cats.instances.future._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
-  FetchCanonical,
-  FetchComponentsUsages,
-  FetchScenarioGraph,
-  NotFetch
-}
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.tests.TestFactory
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.repository.{
-  BasicRepository,
-  FetchingProcessRepository,
-  ScenarioComponentsUsagesHelper,
-  ScenarioShapeFetchStrategy,
-  ScenarioWithDetailsEntity
-}
+import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{FetchCanonical, FetchComponentsUsages, FetchScenarioGraph, NotFetch}
+import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}

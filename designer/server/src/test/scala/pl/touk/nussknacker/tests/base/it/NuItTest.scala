@@ -1,12 +1,13 @@
-package pl.touk.nussknacker.ui.api.helpers
+package pl.touk.nussknacker.tests.base.it
 
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
+import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, TestPermissions}
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
-import cats.effect.unsafe.implicits.global
 
 trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with TestPermissions with BeforeAndAfterAll {
   this: Suite =>
@@ -29,7 +30,7 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Tes
     super.afterAll()
   }
 
-  private def adjustNuTestConfig() = {
+  private def adjustNuTestConfig(): Config = {
     nuTestConfig
       .withValue("db", testDbConfig.getConfig("db").root())
       .withValue("http.port", fromAnyRef(port))

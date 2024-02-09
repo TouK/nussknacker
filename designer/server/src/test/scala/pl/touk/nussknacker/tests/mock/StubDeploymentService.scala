@@ -1,18 +1,17 @@
-package pl.touk.nussknacker.ui.api.helpers
+package pl.touk.nussknacker.tests.mock
 
 import cats.Traverse
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, User}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, ScenarioWithDetailsEntity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.language.higherKinds
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.higherKinds
 
 class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends DeploymentService {
 

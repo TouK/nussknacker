@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
+import pl.touk.nussknacker.tests.ProcessTestData
 
 class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
 

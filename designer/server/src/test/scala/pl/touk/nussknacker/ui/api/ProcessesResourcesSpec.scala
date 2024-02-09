@@ -21,11 +21,13 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.api.helpers.spel._
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
+import pl.touk.nussknacker.tests.TestFactory.{withAllPermissions, withPermissions}
+import pl.touk.nussknacker.tests.base.it.{NuResourcesTest, StateJson}
+import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.ScenarioToJson
+import pl.touk.nussknacker.tests.utils.scala.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.tests.{ProcessTestData, SampleSpelTemplateProcess, TestFactory}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
@@ -52,15 +54,15 @@ class ProcessesResourcesSpec
     with BeforeAndAfterAll
     with NuResourcesTest {
 
-  import ProcessesQueryEnrichments._
   import io.circe._
   import io.circe.parser._
+  import pl.touk.nussknacker.tests.base.it.ProcessesQueryEnrichments._
 
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private implicit val loggedUser: LoggedUser =
-    LoggedUser("1", "lu", testCategory.map { case (k, v) => (k.stringify, v) })
+    LoggedUser("1", "lu", TestFactory.testCategory.map { case (k, v) => (k.stringify, v) })
 
   private val routeWithRead: Route = withPermissions(processesRoute, testPermissionRead)
 
@@ -690,14 +692,14 @@ class ProcessesResourcesSpec
   test("not authorize user with read permissions to modify node") {
     Put(
       s"/processes/$Category1/$processName",
-      posting.toRequestEntity(posting.toJsonAsProcessToSave(ProcessTestData.validProcess))
+      ProcessTestData.validProcess.toJsonAsProcessToSave.toJsonRequestEntity()
     ) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
 
     val modifiedParallelism = 123
     val props               = ProcessProperties(StreamMetaData(Some(modifiedParallelism)))
-    Put(s"/processes/$Category1/$processName", posting.toRequestEntity(props)) ~> routeWithRead ~> check {
+    Put(s"/processes/$Category1/$processName", props.toJsonRequestEntity()) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
   }

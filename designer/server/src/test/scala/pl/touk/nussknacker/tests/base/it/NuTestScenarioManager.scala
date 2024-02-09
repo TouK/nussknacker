@@ -1,22 +1,18 @@
-package pl.touk.nussknacker.ui.api.helpers
+package pl.touk.nussknacker.tests.base.it
 
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.{TestProcessingType, processingTypeBy}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{
-  newActionProcessRepository,
-  newDBIOActionRunner,
-  newFutureFetchingScenarioRepository,
-  newWriteProcessRepository
-}
+import pl.touk.nussknacker.tests.TestData.Categories.TestCategory
+import pl.touk.nussknacker.tests.TestData.ProcessingTypes.{TestProcessingType, processingTypeBy}
+import pl.touk.nussknacker.tests.TestFactory._
+import pl.touk.nussknacker.tests.base.db.WithTestDb
+import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

@@ -1,9 +1,10 @@
-package pl.touk.nussknacker.ui.util
+package pl.touk.nussknacker.tests.utils
 
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import com.typesafe.scalalogging.StrictLogging
 import pl.touk.nussknacker.ui.api.NuDesignerApiAvailableToExpose
+import pl.touk.nussknacker.ui.util.Project
 
 object GenerateDesignerOpenApiYamlFile extends IOApp with StrictLogging {
 

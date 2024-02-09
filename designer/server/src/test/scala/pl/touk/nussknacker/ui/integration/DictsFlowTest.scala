@@ -11,10 +11,12 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
+import pl.touk.nussknacker.tests.TestProcessUtil.toJson
+import pl.touk.nussknacker.tests.base.it.NuItTest
+import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.ScenarioToJson
+import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
-import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{MediaType, StatusCode}
@@ -123,7 +125,7 @@ class DictsFlowTest
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processesExport/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(TestProcessUtil.toJson(process).noSpaces)
+        .body(toJson(process).noSpaces)
         .auth
         .basic("admin", "admin")
     )
@@ -146,7 +148,7 @@ class DictsFlowTest
         .multipartBody(
           sttpPrepareMultiParts(
             "testData"      -> """{"sourceId":"source","record":"field1|field2"}""",
-            "scenarioGraph" -> TestProcessUtil.toJson(process).noSpaces
+            "scenarioGraph" -> toJson(process).noSpaces
           )()
         )
         .auth
@@ -215,7 +217,7 @@ class DictsFlowTest
       quickRequest
         .put(uri"$nuDesignerHttpAddress/api/processes/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJsonAsProcessToSave(process).spaces2)
+        .body(process.toJsonAsProcessToSave.spaces2)
         .auth
         .basic("admin", "admin")
     )
