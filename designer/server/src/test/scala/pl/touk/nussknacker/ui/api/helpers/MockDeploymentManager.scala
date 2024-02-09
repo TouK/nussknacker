@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import akka.actor.ActorSystem
+import cats.data.Validated.valid
+import cats.data.ValidatedNel
 import com.google.common.collect.LinkedHashMultimap
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
@@ -15,7 +17,6 @@ import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies,
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import shapeless.syntax.typeable.typeableOps
-import sttp.client3.SttpBackend
 import sttp.client3.testing.SttpBackendStub
 
 import java.util.UUID
@@ -251,15 +252,15 @@ class MockDeploymentManager(
 
 }
 
-object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
+class MockManagerProvider(deploymentManager: DeploymentManager = new MockDeploymentManager())
+    extends FlinkStreamingDeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, deploymentConfig: Config)(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
-  ): DeploymentManager =
-    new MockDeploymentManager
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      deploymentManagerDependencies: DeploymentManagerDependencies,
+      deploymentConfig: Config
+  ): ValidatedNel[String, DeploymentManager] =
+    valid(deploymentManager)
 
   override def engineSetupIdentity(config: Config): Any = ()
 

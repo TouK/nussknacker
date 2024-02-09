@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -21,9 +19,9 @@ import pl.touk.nussknacker.engine.management.periodic.service.{
   ProcessConfigEnricherFactory
 }
 import pl.touk.nussknacker.engine.testmode.TestProcess
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
-import sttp.client3.SttpBackend
 
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}

@@ -13,5 +13,6 @@ case class DeploymentManagerDependencies(
     sttpBackend: SttpBackend[Future, Any],
 ) {
   implicit def implicitExecutionContext: ExecutionContext    = executionContext
+  implicit def implicitActorSystem: ActorSystem              = actorSystem
   implicit def implicitSttpBackend: SttpBackend[Future, Any] = sttpBackend
 }

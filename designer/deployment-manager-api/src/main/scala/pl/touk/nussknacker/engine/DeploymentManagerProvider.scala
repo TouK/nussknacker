@@ -24,7 +24,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
       dependencies: DeploymentManagerDependencies,
       deploymentConfig: Config
   ): ValidatedNel[String, DeploymentManager] =
-    // TODO: remove default implementation after removing the legacy method
+    // TODO: remove default implementation after removing the legacy method below
     valid(
       createDeploymentManager(modelData, deploymentConfig)(
         dependencies.executionContext,
@@ -36,8 +36,8 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   // Exceptions returned by this method won't cause designer's exit. Instead, they will be catched and messages will
   // be shown to the user.
-  // TODO: This method is legacy. It will be removed in further versions. It is not implemented by design because for
-  //       a new DMs it won't be used
+  // TODO: This method is deprecated. It will be removed in 1.15 versions. It is not implemented by design, because for
+  //       a new DMs it won't be used - would be used version with DeploymentManagerDependencies
   protected def createDeploymentManager(modelData: BaseModelData, config: Config)(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,

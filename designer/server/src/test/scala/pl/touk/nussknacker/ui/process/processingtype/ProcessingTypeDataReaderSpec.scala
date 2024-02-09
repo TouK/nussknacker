@@ -110,8 +110,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
     override protected def createDeploymentManagerProvider(
         typeConfig: ProcessingTypeConfig
-    ): DeploymentManagerProvider =
-      MockManagerProvider
+    ): DeploymentManagerProvider = new MockManagerProvider
 
     override protected def createProcessingTypeData(
         processingType: ProcessingType,

@@ -68,6 +68,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     that can be mixed into the component
   * [#5474](https://github.com/TouK/nussknacker/pull/5474) Changes around new scenario metadata (aka "parameters"):
     * `ScenarioWithDetails`: added `processingMode` and `engineSetupName` fields
+  * [#5521](https://github.com/TouK/nussknacker/pull/5521) `DeploymentManagerProvider` changes related with engine setup name and errors provided to user:
+    * New methods were added: `defaultEngineSetupName` and `engineSetupIdentity`. They have default implementations, you should consider to replace them by your own
+    * New, overloaded `createDeploymentManager` was added. In the new one most of the parameters were bundled into `DeploymentManagerDependencies` class
+      which allows to easier pass these dependencies to delegates. Also, this method returns `ValidateNel[String, DeploymentManager]`.
+      You can return errors that will be visible to users e.g. invalid configuration etc. The old one is deprecated - it will be removed in 1.15 version.
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:

@@ -748,7 +748,7 @@ class DefaultComponentServiceSpec
       case (processingType, (modelData, category)) =>
         ProcessingTypeData.createProcessingTypeData(
           processingType,
-          MockManagerProvider,
+          new MockManagerProvider,
           TestFactory.deploymentManagerDependencies,
           EngineSetupName("Mock"),
           modelData,

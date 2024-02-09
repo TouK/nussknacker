@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import _root_.sttp.client3.SttpBackend
-import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -22,12 +20,10 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -93,7 +89,7 @@ trait NuResourcesTest
 
   protected val processChangeListener = new TestProcessChangeListener()
 
-  protected lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
+  protected lazy val deploymentManager: MockDeploymentManager = new MockDeploymentManager
 
   protected val dmDispatcher = new DeploymentManagerDispatcher(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
@@ -115,17 +111,8 @@ trait NuResourcesTest
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
 
-  protected val deploymentManagerProvider: FlinkStreamingDeploymentManagerProvider =
-    new FlinkStreamingDeploymentManagerProvider {
-
-      override def createDeploymentManager(modelData: BaseModelData, deploymentConfig: Config)(
-          implicit ec: ExecutionContext,
-          actorSystem: ActorSystem,
-          sttpBackend: SttpBackend[Future, Any],
-          deploymentService: ProcessingTypeDeploymentService
-      ): DeploymentManager = deploymentManager
-
-    }
+  protected val deploymentManagerProvider: DeploymentManagerProvider =
+    new MockManagerProvider(deploymentManager)
 
   private def createModelData(processingType: ProcessingType) = {
     ModelData(
@@ -226,10 +213,6 @@ trait NuResourcesTest
       scenarioTestServices = scenarioTestServiceByProcessingType,
       typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData)
     )
-
-  protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(
-    SimpleStateStatus.NotDeployed
-  )
 
   override def beforeEach(): Unit = {
     super.beforeEach()

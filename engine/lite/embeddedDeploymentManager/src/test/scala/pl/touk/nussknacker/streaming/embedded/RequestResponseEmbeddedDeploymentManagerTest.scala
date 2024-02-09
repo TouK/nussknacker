@@ -5,7 +5,6 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{
@@ -23,13 +22,17 @@ import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestRespons
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.{AvailablePortFinder, VeryPatientScalaFutures}
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
+import pl.touk.nussknacker.test.{AvailablePortFinder, ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
+import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, UriContext, basicRequest}
 import sttp.model.StatusCode
 
-import scala.concurrent.Future
-
-class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matchers with VeryPatientScalaFutures {
+class RequestResponseEmbeddedDeploymentManagerTest
+    extends AnyFunSuite
+    with Matchers
+    with VeryPatientScalaFutures
+    with ValidatedValuesDetailedMessage {
 
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
@@ -40,21 +43,25 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
       ConfigFactory.empty(),
       RequestResponseComponentProvider.Components
     )
-    implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(
-      initiallyDeployedScenarios
+    val as: ActorSystem = ActorSystem(getClass.getSimpleName)
+    val dependencies = DeploymentManagerDependencies(
+      new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios),
+      as.dispatcher,
+      as,
+      SttpBackendStub.asynchronousFuture
     )
-    implicit val as: ActorSystem                        = ActorSystem(getClass.getSimpleName)
-    implicit val dummyBackend: SttpBackend[Future, Any] = null
-    import as.dispatcher
     val port = AvailablePortFinder.findAvailablePorts(1).head
-    val manager = new EmbeddedDeploymentManagerProvider().createDeploymentManager(
-      modelData,
-      ConfigFactory
-        .empty()
-        .withValue("mode", fromAnyRef("request-response"))
-        .withValue("http.port", fromAnyRef(port))
-        .withValue("http.interface", fromAnyRef("localhost"))
-    )
+    val manager = new EmbeddedDeploymentManagerProvider()
+      .createDeploymentManager(
+        modelData,
+        dependencies,
+        ConfigFactory
+          .empty()
+          .withValue("mode", fromAnyRef("request-response"))
+          .withValue("http.port", fromAnyRef(port))
+          .withValue("http.interface", fromAnyRef("localhost"))
+      )
+      .validValue
     FixtureParam(manager, modelData, port)
   }
 

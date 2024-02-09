@@ -1,23 +1,19 @@
 package pl.touk.nussknacker.engine.management.dev.periodic
 
-import akka.actor.ActorSystem
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
-import pl.touk.nussknacker.engine.management.{FlinkStreamingDeploymentManagerProvider, FlinkStreamingPropertiesConfig}
-import pl.touk.nussknacker.engine.management.periodic.{CronSchedulePropertyExtractor, PeriodicDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
+import pl.touk.nussknacker.engine.management.periodic.{CronSchedulePropertyExtractor, PeriodicDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.management.{FlinkStreamingDeploymentManagerProvider, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
   DeploymentManagerProvider,
   MetaDataInitializer
 }
-import sttp.client3.SttpBackend
-
-import scala.concurrent.{ExecutionContext, Future}
 
 class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
 
