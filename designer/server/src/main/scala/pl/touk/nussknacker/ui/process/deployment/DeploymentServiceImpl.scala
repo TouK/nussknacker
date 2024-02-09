@@ -14,13 +14,11 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
   OnActionExecutionFinished,
   OnDeployActionFailed,
-  OnDeployActionSuccess,
-  OnFinished
+  OnDeployActionSuccess
 }
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
@@ -32,6 +30,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
 
 import java.time.Clock
@@ -457,41 +456,6 @@ class DeploymentServiceImpl(
         }
       }
       .getOrElse(state)
-  }
-
-  def markProcessFinishedIfLastActionDeploy(expectedProcessingType: ProcessingType, processName: ProcessName)(
-      implicit ec: ExecutionContext
-  ): Future[Option[ProcessAction]] = {
-    implicit val user: AdminUser            = NussknackerInternalUser.instance
-    implicit val listenerUser: ListenerUser = ListenerApiUser(user)
-    logger.debug(s"About to mark process $processName as finished if last action was DEPLOY")
-    dbioRunner.run(for {
-      processIdOpt      <- processRepository.fetchProcessId(processName)
-      processId         <- existsOrFail(processIdOpt, ProcessNotFoundError(processName))
-      processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
-      processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processName))
-      _ = validateExpectedProcessingType(expectedProcessingType, processDetails.processingType)
-      cancelActionOpt <- {
-        logger.debug(s"lastDeployedAction for $processName: ${processDetails.lastDeployedAction}")
-        processDetails.lastDeployedAction
-          .map { lastDeployedAction =>
-            logger.info(s"Marking process $processName as finished")
-            val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)
-            processChangeListener.handle(OnFinished(processDetails.processId, lastDeployedAction.processVersionId))
-            actionRepository
-              .addInstantAction(
-                processDetails.processId,
-                lastDeployedAction.processVersionId,
-                ProcessActionType.Cancel,
-                Some(finishedComment),
-                None
-              )
-              .map(Some(_))
-
-          }
-          .getOrElse(DBIOAction.successful(None))
-      }
-    } yield cancelActionOpt)
   }
 
   override def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(

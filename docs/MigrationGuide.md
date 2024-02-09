@@ -59,6 +59,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       If you have a list of types and you are not sure how to translate it to `TypingResult` you can try to use `Typed.fromIterableOrUnknownIfEmpty`
       but it is not recommended - see docs next to it.
     * `TypedUnion`is not a case class anymore, but is still serializable - If it was used in a Flink state, state will be probably not compatible
+  * [#5517](https://github.com/TouK/nussknacker/pull/5517) Legacy `OnFinished` listener-api event was removed
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
@@ -110,6 +111,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5432](https://github.com/TouK/nussknacker/pull/5432) Kafka client, Confluent Schema Registry Client and Avro bump
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13 
 * [#5465](https://github.com/TouK/nussknacker/pull/5465) Removed `strictTypeChecking` option and `SupertypeClassResolutionStrategy.Union` used behind it
+* [#5517](https://github.com/TouK/nussknacker/pull/5517) Removed legacy mechanism marking scenario finished based on the fact that the last action was deploy and job was finished. 
+  The new mechanism leverage deployment id which was introduced in [#4462](https://github.com/TouK/nussknacker/pull/4462) in 1.11 version.
 
 ## In version 1.13.1 (Not released yet)
 
