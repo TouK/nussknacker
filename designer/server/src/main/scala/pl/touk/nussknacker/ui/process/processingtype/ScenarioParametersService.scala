@@ -5,27 +5,32 @@ import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioParametersWithEngineSetupErrors}
+import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.{NotFoundError, NuDesignerError, UnauthorizedError}
 
 class ScenarioParametersService private (
-    parametersForProcessingType: Map[ProcessingType, ScenarioParametersWithEngineSetupErrors]
+    parametersForProcessingType: Map[ProcessingType, ScenarioParameters],
+    engineSetupErrors: Map[EngineSetupName, ValueWithRestriction[List[String]]]
 ) {
 
-  def scenarioParametersCombinationsWithWritePermission(
-      implicit loggedUser: LoggedUser
-  ): List[ScenarioParametersWithEngineSetupErrors] =
+  def scenarioParametersCombinationsWithWritePermission(implicit loggedUser: LoggedUser): List[ScenarioParameters] =
     parametersForProcessingType.values.toList
-      .filter { parametersWithEngineErrors =>
-        loggedUser.can(parametersWithEngineErrors.parameters.category, Permission.Write)
+      .filter { parameters =>
+        loggedUser.can(parameters.category, Permission.Write)
+      }
+
+  def engineSetupErrorsWithWritePermission(implicit loggedUser: LoggedUser): Map[EngineSetupName, List[String]] =
+    engineSetupErrors
+      .flatMap { case (engineSetupName, errorsWithRestriction) =>
+        errorsWithRestriction.valueWithAllowedAccess(Permission.Write).map(engineSetupName -> _)
       }
 
   // We decided to not show all parameters except processing mode when they are not needed to pick
   // the correct processing type. Because of that, all parameters are optional
-  def getProcessingTypeWithWritePermission(
+  def queryProcessingTypeWithWritePermission(
       category: Option[String],
       processingMode: Option[ProcessingMode],
       engineSetupName: Option[EngineSetupName],
@@ -34,10 +39,10 @@ class ScenarioParametersService private (
       invalid(new UnauthorizedError("User doesn't have access to the given category"))
     } else {
       val matchingProcessingTypes = parametersForProcessingType.toList.collect {
-        case (processingType, parametersWithEngineErrors)
-            if processingMode.forall(_ == parametersWithEngineErrors.parameters.processingMode) &&
-              engineSetupName.forall(_ == parametersWithEngineErrors.parameters.engineSetupName) &&
-              category.forall(_ == parametersWithEngineErrors.parameters.category) =>
+        case (processingType, parameters)
+            if processingMode.forall(_ == parameters.processingMode) &&
+              engineSetupName.forall(_ == parameters.engineSetupName) &&
+              category.forall(_ == parameters.category) =>
           processingType
       }
       matchingProcessingTypes match {
@@ -56,13 +61,13 @@ class ScenarioParametersService private (
   def categoryUnsafe(processingType: ProcessingType): String =
     parametersForProcessingType
       .get(processingType)
-      .map(parametersWithEngineErrors => parametersWithEngineErrors.parameters.category)
+      .map(parametersWithEngineErrors => parametersWithEngineErrors.category)
       .getOrElse(throw new IllegalStateException(s"Processing type: $processingType not found"))
 
   def getParametersWithReadPermissionUnsafe(
       processingType: ProcessingType
   )(implicit loggedUser: LoggedUser): ScenarioParameters = {
-    val parameters = parametersForProcessingType(processingType).parameters
+    val parameters = parametersForProcessingType(processingType)
     if (!loggedUser.can(parameters.category, Permission.Read)) {
       throw new UnauthorizedError("User doesn't have access to the given category")
     } else {
@@ -75,16 +80,18 @@ class ScenarioParametersService private (
 object ScenarioParametersService {
 
   def createUnsafe(
-      parametersForProcessingType: Map[ProcessingType, ScenarioParametersWithEngineSetupErrors]
+      parametersWithEngineErrorsForProcessingType: Map[ProcessingType, ScenarioParametersWithEngineSetupErrors]
   ): ScenarioParametersService =
-    create(parametersForProcessingType).valueOr(ex => throw ex)
+    create(parametersWithEngineErrorsForProcessingType).valueOr(ex => throw ex)
 
   def create(
-      parametersForProcessingType: Map[ProcessingType, ScenarioParametersWithEngineSetupErrors]
+      parametersWithEngineErrorsForProcessingType: Map[ProcessingType, ScenarioParametersWithEngineSetupErrors]
   ): Validated[ParametersToProcessingTypeMappingAmbiguousException, ScenarioParametersService] = {
-    checkParametersToProcessingTypeMappingAmbiguity(parametersForProcessingType).map(_ =>
-      new ScenarioParametersService(parametersForProcessingType)
-    )
+    checkParametersToProcessingTypeMappingAmbiguity(parametersWithEngineErrorsForProcessingType).map { _ =>
+      val parametersForProcessingType = parametersWithEngineErrorsForProcessingType.mapValuesNow(_.parameters)
+      val engineSetupErrors           = deduplicateEngineSetupErrors(parametersWithEngineErrorsForProcessingType)
+      new ScenarioParametersService(parametersForProcessingType, engineSetupErrors)
+    }
   }
 
   private def checkParametersToProcessingTypeMappingAmbiguity(
@@ -100,6 +107,20 @@ object ScenarioParametersService {
       invalid(ParametersToProcessingTypeMappingAmbiguousException(unambiguousParametersToProcessingTypeMappings))
     else
       valid(())
+  }
+
+  private def deduplicateEngineSetupErrors(
+      parametersWithEngineErrorsForProcessingType: Map[ProcessingType, ScenarioParametersWithEngineSetupErrors]
+  ) = {
+    parametersWithEngineErrorsForProcessingType.toList
+      .map { case (_, withErrors) =>
+        withErrors.parameters.engineSetupName -> (withErrors.engineSetupErrors, Set(withErrors.parameters.category))
+      }
+      .toGroupedMapSafe
+      .mapValuesNow(_.reduce)
+      .mapValuesNow { case (errors, categories) =>
+        ValueWithRestriction.userWithAccessRightsToAnyOfCategories(errors.distinct, categories)
+      }
   }
 
 }

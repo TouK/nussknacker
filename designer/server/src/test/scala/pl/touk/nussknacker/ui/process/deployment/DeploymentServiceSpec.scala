@@ -26,7 +26,7 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
   ProcessingTypeDataState,
-  ValueWithPermission
+  ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
@@ -76,8 +76,8 @@ class DeploymentServiceSpec
       override val state: ProcessingTypeDataState[DeploymentManager, Nothing] =
         new ProcessingTypeDataState[DeploymentManager, Nothing] {
 
-          override def all: Map[ProcessingType, ValueWithPermission[DeploymentManager]] = Map(
-            TestProcessingTypes.Streaming -> ValueWithPermission.anyUser(deploymentManager)
+          override def all: Map[ProcessingType, ValueWithRestriction[DeploymentManager]] = Map(
+            TestProcessingTypes.Streaming -> ValueWithRestriction.anyUser(deploymentManager)
           )
 
           override def getCombined: () => Nothing = noCombinedDataFun

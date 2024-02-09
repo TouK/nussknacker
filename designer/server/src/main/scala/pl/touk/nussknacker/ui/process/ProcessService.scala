@@ -356,7 +356,7 @@ class DBProcessService(
   )(implicit user: LoggedUser): Future[Validated[NuDesignerError, ProcessResponse]] = {
     val scenarioParametersService = scenarioParametersServiceProvider.combined
     scenarioParametersService
-      .getProcessingTypeWithWritePermission(command.category, command.processingMode, command.engineSetupName)
+      .queryProcessingTypeWithWritePermission(command.category, command.processingMode, command.engineSetupName)
       .map { processingType =>
         val newProcessPreparer = newProcessPreparers.forTypeUnsafe(processingType)
         val emptyCanonicalProcess =

@@ -6,8 +6,9 @@ import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.ScenarioParametersEndpoints.Dtos.{EngineSetupDetails, ScenarioParametersCombination}
+import pl.touk.nussknacker.ui.api.ScenarioParametersEndpoints.Dtos.ScenarioParametersCombinationWithEngineErrors
 import sttp.model.StatusCode.Ok
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -17,7 +18,7 @@ import sttp.tapir.json.circe.jsonBody
 class ScenarioParametersEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   lazy val scenarioParametersCombinationsEndpoint
-      : SecuredEndpoint[Unit, Unit, List[ScenarioParametersCombination], Any] =
+      : SecuredEndpoint[Unit, Unit, ScenarioParametersCombinationWithEngineErrors, Any] =
     baseNuApiEndpoint
       .summary("Service providing available combinations of scenario's parameters")
       .tag("App")
@@ -25,27 +26,29 @@ class ScenarioParametersEndpoints(auth: EndpointInput[AuthCredentials]) extends 
       .in("scenarioParametersCombinations")
       .out(
         statusCode(Ok).and(
-          jsonBody[List[ScenarioParametersCombination]]
+          jsonBody[ScenarioParametersCombinationWithEngineErrors]
             .example(
               Example.of(
                 summary = Some("List of available parameters combinations"),
-                value = List(
-                  ScenarioParametersCombination(
-                    processingMode = ProcessingMode.UnboundedStream,
-                    category = "Marketing",
-                    engineSetup = EngineSetupDetails(EngineSetupName("Flink"), List.empty)
+                value = ScenarioParametersCombinationWithEngineErrors(
+                  combinations = List(
+                    ScenarioParameters(
+                      processingMode = ProcessingMode.UnboundedStream,
+                      category = "Marketing",
+                      engineSetupName = EngineSetupName("Flink")
+                    ),
+                    ScenarioParameters(
+                      processingMode = ProcessingMode.RequestResponse,
+                      category = "Fraud",
+                      engineSetupName = EngineSetupName("Lite K8s")
+                    ),
+                    ScenarioParameters(
+                      processingMode = ProcessingMode.UnboundedStream,
+                      category = "Fraud",
+                      engineSetupName = EngineSetupName("Flink Fraud Detection")
+                    )
                   ),
-                  ScenarioParametersCombination(
-                    processingMode = ProcessingMode.RequestResponse,
-                    category = "Fraud",
-                    engineSetup = EngineSetupDetails(EngineSetupName("Lite K8s"), List.empty)
-                  ),
-                  ScenarioParametersCombination(
-                    processingMode = ProcessingMode.UnboundedStream,
-                    category = "Fraud",
-                    engineSetup =
-                      EngineSetupDetails(EngineSetupName("Flink Fraud Detection"), List("Invalid Flink configuration"))
-                  )
+                  engineSetupErrors = Map(EngineSetupName("Flink") -> List("Invalid Flink configuration"))
                 )
               )
             )
@@ -60,25 +63,21 @@ object ScenarioParametersEndpoints {
   object Dtos {
 
     @derive(encoder, decoder, schema)
-    case class ScenarioParametersCombination(
-        processingMode: ProcessingMode,
-        category: String,
-        // TODO Engine setup shouldn't be inside parameters. It should be rather picked on the stage when user decide where to deploy scenario
-        engineSetup: EngineSetupDetails
+    final case class ScenarioParametersCombinationWithEngineErrors(
+        combinations: List[ScenarioParameters],
+        engineSetupErrors: Map[EngineSetupName, List[String]]
     )
 
-    @derive(encoder, decoder, schema)
-    case class EngineSetupDetails(name: EngineSetupName, errors: List[String])
-
-    object ScenarioParametersCombination {
+    object ScenarioParametersCombinationWithEngineErrors {
 
       implicit val processNameSchema: Schema[ProcessingMode] = Schema.string
 
-    }
-
-    object EngineSetupDetails {
-
       implicit val engineSetupNameSchema: Schema[EngineSetupName] = Schema.string
+
+      implicit val scenarioParametersSchema: Schema[ScenarioParameters] = Schema.derived[ScenarioParameters]
+
+      implicit val engineSetupErrorsSchema: Schema[Map[EngineSetupName, List[String]]] =
+        Schema.schemaForMap[EngineSetupName, List[String]](_.value)
 
     }
 

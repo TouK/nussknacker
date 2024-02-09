@@ -74,7 +74,7 @@ class ProcessingTypeDataProviderTest extends AnyFunSuite with Matchers {
   }
 
   private def createState(value: String, combined: Int, identity: Int) = {
-    ProcessingTypeDataState(Map("foo" -> ValueWithPermission.anyUser(value)), () => combined, identity)
+    ProcessingTypeDataState(Map("foo" -> ValueWithRestriction.anyUser(value)), () => combined, identity)
   }
 
 }

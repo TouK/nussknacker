@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioParametersWithEngineSetupErrors}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
@@ -23,7 +23,8 @@ import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, Fragm
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
   ScenarioParametersService,
-  ValueWithPermission
+  ScenarioParametersWithEngineSetupErrors,
+  ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -191,7 +192,7 @@ object TestFactory extends TestPermissions {
   def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
     ProcessingTypeDataProvider.withEmptyCombinedData(
-      Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
+      Map(data: _*).mapValuesNow(ValueWithRestriction.anyUser)
     )
   }
 
