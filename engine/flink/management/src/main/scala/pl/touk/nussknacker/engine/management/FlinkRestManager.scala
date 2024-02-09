@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
+import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobStatus
 import pl.touk.nussknacker.engine.BaseModelData
@@ -12,8 +13,9 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkRestManager.JobDetails
-import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
+import pl.touk.nussknacker.engine.management.rest.{HttpFlinkClient, flinkRestModel}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
+import scala.compat.java8.FutureConverters._
 import sttp.client3._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,6 +32,12 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   private val client = new HttpFlinkClient(config)
 
   private val slotsChecker = new FlinkSlotsChecker(client)
+
+  private val jobDetailsCache: AsyncCache[String, Option[JobDetails]] =
+    Caffeine
+      .newBuilder()
+      .maximumSize(config.jobConfigsCacheSize)
+      .buildAsync[String, Option[JobDetails]]()
 
   override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
     val preparedName =
@@ -129,9 +137,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
       .getOrElse(Future.successful(()))
   }
 
-  // TODO: cache by jobId?
   private def withJobDetails(jobId: String, name: ProcessName): Future[Option[JobDetails]] = {
-    client.getJobConfig(jobId).map { executionConfig =>
+    def toJobDetails(executionConfig: flinkRestModel.ExecutionConfig): Option[JobDetails] = {
       val userConfig = executionConfig.`user-config`
       for {
         version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong).map(VersionId(_))
@@ -144,6 +151,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
         JobDetails(versionDetails, deploymentId)
       }
     }
+
+    jobDetailsCache
+      .get(jobId, (key, _) => client.getJobConfig(key).map(toJobDetails).toJava.toCompletableFuture)
+      .toScala
   }
 
   override def cancel(processName: ProcessName, user: User): Future[Unit] = {
