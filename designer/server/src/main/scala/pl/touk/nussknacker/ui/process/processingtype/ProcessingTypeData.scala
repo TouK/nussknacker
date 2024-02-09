@@ -1,15 +1,12 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  DesignerWideComponentId,
-  ScenarioPropertyConfig
-}
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, DesignerWideComponentId, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
@@ -111,11 +108,14 @@ object ProcessingTypeData {
       managerConfig: Config,
       metaDataInitializer: MetaDataInitializer
   ) = {
+    val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(managerConfig)
+
     val validDeploymentManager =
-      deploymentManagerProvider.createDeploymentManager(modelData, deploymentManagerDependencies, managerConfig)
+      deploymentManagerProvider.createDeploymentManager(modelData, deploymentManagerDependencies, managerConfig, scenarioStateCacheTTL)
     val scenarioProperties =
       deploymentManagerProvider.scenarioPropertiesConfig(managerConfig) ++ modelData.modelConfig
         .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
+
     DeploymentData(
       validDeploymentManager,
       metaDataInitializer,

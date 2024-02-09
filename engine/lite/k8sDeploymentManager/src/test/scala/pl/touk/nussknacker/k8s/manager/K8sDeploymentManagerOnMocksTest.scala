@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span.convertSpanToDuration
 import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentServiceStub
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
@@ -27,6 +27,7 @@ class K8sDeploymentManagerOnMocksTest
     with Matchers
     with OptionValues {
 
+  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
   private val system: ActorSystem = ActorSystem(getClass.getSimpleName)
 
   private var wireMockServer: WireMockServer = _
@@ -77,13 +78,14 @@ class K8sDeploymentManagerOnMocksTest
     stubWithFixedDelay(durationLongerThanClientTimeout)
     a[TcpIdleTimeoutException] shouldBe thrownBy {
       manager
-        .getFreshProcessStates(ProcessName("foo"))
+        .getProcessStates(ProcessName("foo"))
         .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     }
 
     stubWithFixedDelay(0 seconds)
     val result = manager
-      .getFreshProcessStates(ProcessName("foo"))
+      .getProcessStates(ProcessName("foo"))
+      .map(_.value)
       .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     result shouldEqual List.empty
   }

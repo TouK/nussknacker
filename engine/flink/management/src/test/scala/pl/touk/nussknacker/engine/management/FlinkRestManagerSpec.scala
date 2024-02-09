@@ -11,6 +11,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -35,6 +36,9 @@ import scala.concurrent.duration._
 
 //TODO move some tests to FlinkHttpClientTest
 class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
+
+  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
   // We don't test scenario's json here
   private val defaultConfig = FlinkConfig("http://test.pl", shouldVerifyBeforeDeploy = false)
@@ -300,7 +304,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         ProblemStateStatus.MultipleJobsRunning,
@@ -320,7 +324,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         ProblemStateStatus.MultipleJobsRunning,
@@ -340,7 +344,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Running,
@@ -359,7 +363,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Finished,
@@ -379,7 +383,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Restarting,
@@ -414,7 +418,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager = createManager(statuses)
-    manager.getFreshProcessStates(processName).futureValue shouldBe List(
+    manager.getProcessStates(processName).map(_.value).futureValue shouldBe List(
       StatusDetails(
         SimpleStateStatus.Finished,
         Some(DeploymentId(deploymentId)),
@@ -450,13 +454,14 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       stubWithFixedDelay(durationLongerThanClientTimeout)
       a[SttpClientException.TimeoutException] shouldBe thrownBy {
         manager
-          .getFreshProcessStates(ProcessName("p1"))
+          .getProcessStates(ProcessName("p1"))
           .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
       }
 
       stubWithFixedDelay(0.seconds)
       val resultWithoutDelay = manager
-        .getFreshProcessStates(ProcessName("p1"))
+        .getProcessStates(ProcessName("p1"))
+        .map(_.value)
         .futureValue(Timeout(durationLongerThanClientTimeout.plus(1 second)))
       resultWithoutDelay shouldEqual List.empty
     } finally {
@@ -476,6 +481,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
     new FlinkRestManager(
       config = config,
+      ScenarioStateCachingConfig.Default.cacheTTL,
       modelData = LocalModelData(ConfigFactory.empty, List.empty),
       deploymentManagerDependencies,
       mainClassName = "UNUSED"

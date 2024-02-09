@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProv
 import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -27,7 +27,8 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
   override def createDeploymentManager(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
-      engineConfig: Config
+      engineConfig: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
     import dependencies._
     val strategy = forMode(engineConfig)(
@@ -182,20 +183,24 @@ class EmbeddedDeploymentManager(
     }
   }
 
-  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future.successful(
-      deployments
-        .get(name)
-        .map { interpreterData =>
-          StatusDetails(
-            status = interpreterData.scenarioDeployment
-              .fold(ex => ProblemStateStatus(s"Scenario compilation errors"), _.status()),
-            deploymentId = Some(interpreterData.deploymentId),
-            externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
-            version = Some(interpreterData.processVersion)
-          )
-        }
-        .toList
+      WithDataFreshnessStatus.fresh(
+        deployments
+          .get(name)
+          .map { interpreterData =>
+            StatusDetails(
+              status = interpreterData.scenarioDeployment
+                .fold(ex => ProblemStateStatus(s"Scenario compilation errors"), _.status()),
+              deploymentId = Some(interpreterData.deploymentId),
+              externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
+              version = Some(interpreterData.processVersion)
+            )
+          }
+          .toList
+      )
     )
   }
 

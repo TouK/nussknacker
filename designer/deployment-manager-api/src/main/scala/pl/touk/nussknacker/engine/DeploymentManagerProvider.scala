@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.IdToTitleConverter
 import sttp.client3.SttpBackend
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 // If you are adding a new DeploymentManagerProvider available in the public distribution, please remember
@@ -22,11 +23,12 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
   def createDeploymentManager(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
-      deploymentConfig: Config
+      deploymentConfig: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] =
     // TODO: remove default implementation after removing the legacy method below
     valid(
-      createDeploymentManager(modelData, deploymentConfig)(
+      createDeploymentManager(modelData, deploymentConfig, scenarioStateCacheTTL)(
         dependencies.executionContext,
         dependencies.actorSystem,
         dependencies.sttpBackend,
@@ -38,7 +40,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
   // be shown to the user.
   // TODO: This method is deprecated. It will be removed in 1.15 versions. It is not implemented by design, because for
   //       a new DMs it won't be used - would be used version with DeploymentManagerDependencies
-  protected def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  protected def createDeploymentManager(modelData: BaseModelData, config: Config, scenarioStateCacheTTL: Option[FiniteDuration])(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
