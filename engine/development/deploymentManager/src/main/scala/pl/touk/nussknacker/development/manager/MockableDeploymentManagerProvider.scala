@@ -89,16 +89,12 @@ object MockableDeploymentManagerProvider {
         scenarioTestData: ScenarioTestData
     ): Future[TestProcess.TestResults] = ???
 
-    override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-        implicit freshnessPolicy: DataFreshnessPolicy
-    ): Future[WithDataFreshnessStatus[ProcessState]] = {
-      Future {
-        val status = processesStates.get().getOrElse(idWithName.name, SimpleStateStatus.NotDeployed)
-        WithDataFreshnessStatus(
-          processStateDefinitionManager.processState(StatusDetails(status, None)),
-          cached = false
-        )
-      }
+    override def resolve(
+        idWithName: ProcessIdWithName,
+        statusDetails: List[StatusDetails],
+        lastStateAction: Option[ProcessAction]
+    ): Future[ProcessState] = {
+      Future.successful(processStateDefinitionManager.processState(statusDetails.head))
     }
 
     override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =

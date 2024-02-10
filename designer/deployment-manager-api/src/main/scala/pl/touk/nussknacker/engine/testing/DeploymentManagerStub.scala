@@ -62,9 +62,11 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
   ): Future[TestProcess.TestResults] = ???
 
   // We map lastStateAction to state to avoid some corner/blocking cases with the deleting/canceling scenario on tests..
-  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] = {
+  override def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetails: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState] = {
     val lastStateActionStatus = lastStateAction match {
       case Some(action) if action.actionType.equals(ProcessActionType.Deploy) =>
         SimpleStateStatus.Running
@@ -73,13 +75,7 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
       case _ =>
         SimpleStateStatus.NotDeployed
     }
-
-    Future.successful(
-      WithDataFreshnessStatus(
-        processStateDefinitionManager.processState(StatusDetails(lastStateActionStatus, None)),
-        cached = false
-      )
-    )
+    Future.successful(processStateDefinitionManager.processState(StatusDetails(lastStateActionStatus, None)))
   }
 
   override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
