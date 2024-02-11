@@ -14,13 +14,14 @@ import scala.concurrent.Future
 trait DeploymentManagerInconsistentStateHandlerMixIn {
   self: DeploymentManager =>
 
-  final override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] =
-    getProcessStates(idWithName.name).map(_.map(statusDetails => {
-      val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetails)
-      processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
-    }))
+  final override def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetails: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState] = {
+    val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetails)
+    Future.successful(processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
+  }
 
   // This method is protected to make possible to override it with own logic handling different edge cases like
   // other state on engine than based on lastStateAction
@@ -65,16 +66,29 @@ trait DeploymentManager extends AutoCloseable {
       scenarioTestData: ScenarioTestData
   ): Future[TestResults]
 
+  final def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[ProcessState]] = {
+    for {
+      statusDetailsWithFreshness <- getProcessStates(idWithName.name)
+      stateWithFreshness <- resolve(idWithName, statusDetailsWithFreshness.value, lastStateAction).map(state =>
+        statusDetailsWithFreshness.map(_ => state)
+      )
+    } yield stateWithFreshness
+  }
+
   def getProcessStates(name: ProcessName)(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[StatusDetails]]]
 
   /**
-    * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
+    * Resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
-  def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]]
+  def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetails: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 

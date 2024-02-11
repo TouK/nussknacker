@@ -35,20 +35,18 @@ abstract class FlinkDeploymentManager(
   /**
     * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
-  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] = {
+  override def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetails: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState] = {
     for {
-      statusesWithFreshness <- getProcessStates(idWithName.name)
-      _ = logger.debug(s"Statuses for ${idWithName.name}: $statusesWithFreshness")
-      actionAfterPostprocessOpt <- postprocess(idWithName, statusesWithFreshness.value)
+      actionAfterPostprocessOpt <- postprocess(idWithName, statusDetails)
       engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(
-        statusesWithFreshness.value,
+        statusDetails,
         actionAfterPostprocessOpt.orElse(lastStateAction)
       )
-    } yield statusesWithFreshness.copy(value =
-      processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
-    )
+    } yield processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
   }
 
   // There is small problem here: if no one invokes process status for long time, Flink can remove process from history

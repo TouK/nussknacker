@@ -49,15 +49,14 @@ class DeploymentManagerStub extends BaseDeploymentManager with PostprocessingPro
       scenarioTestData: ScenarioTestData
   ): Future[TestProcess.TestResults] = ???
 
-  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] =
+  override def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetails: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState] =
     Future.successful(
-      WithDataFreshnessStatus(
-        processStateDefinitionManager.processState(
-          jobStatus.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed, None))
-        ),
-        cached = false
+      processStateDefinitionManager.processState(
+        statusDetails.headOption.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed, None))
       )
     )
 

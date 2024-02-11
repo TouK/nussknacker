@@ -68,6 +68,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     that can be mixed into the component
   * [#5474](https://github.com/TouK/nussknacker/pull/5474) Changes around new scenario metadata (aka "parameters"):
     * `ScenarioWithDetails`: added `processingMode` and `engineSetupName` fields
+  * [#5522](https://github.com/TouK/nussknacker/pull/5522) `DeploymentManager.getProcessState(ProcessIdWithName, Option[ProcessAction])`
+    become final. You should implement `resolve` method instead. It does the same, only `List[StatusDetails]` are already determined.
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
