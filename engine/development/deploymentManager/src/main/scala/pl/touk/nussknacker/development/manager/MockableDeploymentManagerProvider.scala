@@ -113,8 +113,10 @@ object MockableDeploymentManagerProvider {
 
     override def getProcessStates(name: ProcessName)(
         implicit freshnessPolicy: DataFreshnessPolicy
-    ): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
-      Future.successful(WithDataFreshnessStatus(List.empty, cached = false))
+    ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+      val status = processesStates.get().getOrElse(name, SimpleStateStatus.NotDeployed)
+      Future.successful(WithDataFreshnessStatus(List(StatusDetails(status, None)), cached = false))
+    }
 
     override def close(): Unit = {}
   }
