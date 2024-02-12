@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionId, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
@@ -92,5 +92,6 @@ final case class ProcessActionEntityData(
 
   lazy val createdAtTime: Instant           = createdAt.toInstant
   lazy val performedAtTime: Option[Instant] = performedAt.map(_.toInstant)
-  lazy val isDeployed: Boolean              = actionType.equals(ProcessActionType.Deploy)
+  lazy val isDeployed: Boolean =
+    actionType.equals(ProcessActionType.Deploy) && !state.equals(ProcessActionState.ExecutionFinished)
 }
