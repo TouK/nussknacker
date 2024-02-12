@@ -7,12 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.process.{
-  ProcessObjectDependencies,
-  Sink,
-  SinkFactory,
-  TestProcessObjectDependenciesProvider
-}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractorTest.largeMajorVersion
 import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, DefaultModelConfigLoader}
@@ -165,7 +160,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(componentsConfig.toSeq: _*)), cl)
       extractor.extractComponents(
-        TestProcessObjectDependenciesProvider.withConfig(resolved.config),
+        ProcessObjectDependencies.withConfig(resolved.config),
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty
@@ -179,7 +174,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
       extractor.extractComponents(
-        TestProcessObjectDependenciesProvider.withConfig(resolved.config),
+        ProcessObjectDependencies.withConfig(resolved.config),
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty

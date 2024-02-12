@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
   ProcessingTypeDeploymentServiceStub
 }
-import pl.touk.nussknacker.engine.api.process.TestProcessObjectDependenciesProvider
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager
@@ -106,7 +106,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
       )
 
     val kafkaComponents = new MockLiteKafkaComponentProvider()
-      .create(kafkaComponentProviderConfig, TestProcessObjectDependenciesProvider.withConfig(config))
+      .create(kafkaComponentProviderConfig, ProcessObjectDependencies.withConfig(config))
 
     val modelData         = LocalModelData(configToUse, kafkaComponents)
     val deploymentService = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)

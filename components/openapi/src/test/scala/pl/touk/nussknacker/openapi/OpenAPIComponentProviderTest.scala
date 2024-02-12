@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TestProcessObjectDependenciesProvider}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 
 import java.util
 
@@ -22,7 +22,7 @@ class OpenAPIComponentProviderTest extends AnyFunSuite with Matchers {
       .withValue("namePattern", fromAnyRef("p.*Service"))
 
     val resolved = provider.resolveConfigForExecution(config)
-    val services = provider.create(resolved, TestProcessObjectDependenciesProvider.empty)
+    val services = provider.create(resolved, ProcessObjectDependencies.withConfig(ConfigFactory.empty()))
 
     services.map(_.name).toSet shouldBe Set("postService")
   }

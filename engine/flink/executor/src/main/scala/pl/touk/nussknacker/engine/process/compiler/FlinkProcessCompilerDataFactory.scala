@@ -60,7 +60,7 @@ class FlinkProcessCompilerDataFactory(
       usedNodes: UsedNodes,
       userCodeClassLoader: ClassLoader
   ): FlinkProcessCompilerData = {
-    val modelDependencies = ProcessObjectDependencies(modelConfig, namingStrategy)
+    val modelDependencies = ProcessObjectDependencies.withConfig(modelConfig)
 
     // TODO: this should be somewhere else?
     val timeout = modelConfig.as[FiniteDuration]("timeout")

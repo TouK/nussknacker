@@ -23,8 +23,6 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
 
   import KafkaAvroNamespacedMockSchemaRegistry._
 
-  protected val namingStrategy: NamingStrategy = NamingStrategy(Some(namespace))
-
   override protected def resolveConfig(config: Config): Config = {
     super
       .resolveConfig(config)
@@ -32,7 +30,7 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
   }
 
   override protected lazy val testModelDependencies: ProcessObjectDependencies =
-    ProcessObjectDependencies(config, namingStrategy)
+    ProcessObjectDependencies.withConfig(config)
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 

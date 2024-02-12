@@ -11,7 +11,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, schemaRegistryMockClient}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TestProcessObjectDependenciesProvider}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -62,7 +62,7 @@ abstract class FlinkWithKafkaSuite
     super.beforeAll()
     val components =
       new MockFlinkKafkaComponentProvider()
-        .create(kafkaComponentsConfig, TestProcessObjectDependenciesProvider.withConfig(config)) :::
+        .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
         FlinkBaseComponentProvider.Components
     val modelData =
       LocalModelData(config, components, configCreator = creator, namingStrategy = Some(NamingStrategy(Some("ns"))))

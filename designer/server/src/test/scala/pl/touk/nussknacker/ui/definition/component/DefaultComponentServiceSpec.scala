@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessingType, TestProcessObjectDependenciesProvider}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
@@ -472,7 +472,8 @@ class DefaultComponentServiceSpec
     TestFactory.userWithCategoriesReadPermission(username = "fraudUser", categories = List(CategoryFraud))
 
   private val providerComponents =
-    new DynamicComponentProvider().create(ConfigFactory.empty, TestProcessObjectDependenciesProvider.empty)
+    new DynamicComponentProvider()
+      .create(ConfigFactory.empty, ProcessObjectDependencies.withConfig(ConfigFactory.empty()))
 
   private val modelDataMap: Map[ProcessingType, (LocalModelData, String)] = Map(
     Streaming -> (LocalModelData(

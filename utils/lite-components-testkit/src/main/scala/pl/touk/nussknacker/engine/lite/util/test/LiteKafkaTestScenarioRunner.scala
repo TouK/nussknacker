@@ -92,7 +92,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     copy(schemaRegistryClientFactor = schemaRegistryClientFactor)
 
   override def build(): LiteKafkaTestScenarioRunner = {
-    val modelDependencies             = ProcessObjectDependencies(config, NamingStrategyProvider(config))
+    val modelDependencies             = ProcessObjectDependencies.withConfig(config)
     val mockedKafkaComponentsProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactor)
     val mockedKafkaComponents         = mockedKafkaComponentsProvider.create(config, modelDependencies)
     val schemaRegistryClient          = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(config))

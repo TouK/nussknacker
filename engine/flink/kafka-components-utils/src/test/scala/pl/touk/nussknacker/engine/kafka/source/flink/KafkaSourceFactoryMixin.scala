@@ -13,7 +13,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TestProcessObjectDependenciesProvider}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{
   ConsumerRecordDeserializationSchemaFactory,
   ConsumerRecordToJsonFormatterFactory
@@ -39,7 +39,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   val constTimestamp: Long          = 123L
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
-  lazy val modelDependencies: ProcessObjectDependencies = TestProcessObjectDependenciesProvider.withConfig(config)
+  lazy val modelDependencies: ProcessObjectDependencies = ProcessObjectDependencies.withConfig(config)
 
   protected def objToSerializeSerializationSchema(topic: String): serialization.KafkaSerializationSchema[Any] =
     new BaseSimpleSerializationSchema[ObjToSerialize](
