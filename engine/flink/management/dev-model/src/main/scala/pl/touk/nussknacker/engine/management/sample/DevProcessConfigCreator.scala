@@ -215,7 +215,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "customValidatedService" -> categories(new CustomValidatedService),
       "modelConfigReader"      -> categories(new ModelConfigReaderService(modelDependencies.config)),
       "log"                    -> all(LoggingService),
-      "decisionTable3"         -> all(DecisionTable)
+      "decisionTable"          -> all(DecisionTable)
     )
 
   override def customStreamTransformers(

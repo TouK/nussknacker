@@ -105,7 +105,7 @@ private final case class TestMessage(id: String, value: Int)
 
 class DecisionTableComponentProvider extends ComponentProvider {
 
-  override val providerName: String = "decisionTable2"
+  override val providerName: String = "decisionTable"
 
   override def resolveConfigForExecution(config: Config): Config = config
 
