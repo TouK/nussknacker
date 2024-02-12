@@ -30,8 +30,8 @@ class ProcessesChangeListenerSpec
     with BeforeAndAfterAll
     with NuResourcesTest {
 
-  private val routeWithAllPermissions   = withAllPermissions(processesRoute)
-  implicit val loggedUser: LoggedUser   = createLoggedUser("1", "lu", Permission.ALL_PERMISSIONS: _*)
+  private val routeWithAllPermissions = withAllPermissions(processesRoute)
+  implicit val loggedUser: LoggedUser = createLoggedUser("1", "lu", Permission.ALL_PERMISSIONS.toSeq: _*)
 
   private val processName = ProcessTestData.sampleScenario.name
 

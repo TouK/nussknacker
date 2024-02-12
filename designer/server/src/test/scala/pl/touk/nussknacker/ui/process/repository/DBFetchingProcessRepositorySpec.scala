@@ -13,6 +13,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.tests.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -37,7 +38,7 @@ class DBFetchingProcessRepositorySpec
   private val dbioRunner = DBIOActionRunner(testDbRef)
 
   private val writingRepo =
-    new DBProcessRepository(testDbRef, mapProcessingTypeDataProvider(Streaming -> 0)) {
+    new DBProcessRepository(testDbRef, mapProcessingTypeDataProvider("Streaming" -> 0)) {
       override protected def now: Instant = currentTime
     }
 
@@ -54,7 +55,7 @@ class DBFetchingProcessRepositorySpec
 
   test("fetch processes for category") {
 
-    def saveProcessForCategory(category: TestCategory) = {
+    def saveProcessForCategory(category: String) = {
       saveProcess(
         ScenarioBuilder
           .streaming(s"categorized-$category")
@@ -65,10 +66,14 @@ class DBFetchingProcessRepositorySpec
       )
     }
 
-    val c1Reader = TestFactory.user(permissions = Category1 -> Permission.Read)
+    val c1Reader = LoggedUser(
+      id = "1",
+      username = "user",
+      categoryPermissions = Map("Category1" -> Set(Permission.Read))
+    )
 
-    saveProcessForCategory(Category1)
-    saveProcessForCategory(Category2)
+    saveProcessForCategory("Category1")
+    saveProcessForCategory("Category2")
     val processes = fetching
       .fetchLatestProcessesDetails(ScenarioQuery(isArchived = Some(false)))(
         ScenarioShapeFetchStrategy.NotFetch,
@@ -293,14 +298,14 @@ class DBFetchingProcessRepositorySpec
   private def saveProcess(
       process: CanonicalProcess,
       now: Instant = Instant.now(),
-      category: TestCategory = Category1
+      category: String = "Category1"
   ) = {
     currentTime = now
     val action = CreateProcessAction(
       process.name,
-      category.stringify,
+      category,
       process,
-      Streaming.stringify,
+      "Streaming",
       isFragment = false,
       forwardedUserName = None
     )

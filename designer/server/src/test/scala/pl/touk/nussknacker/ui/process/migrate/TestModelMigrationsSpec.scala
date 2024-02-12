@@ -12,11 +12,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationResult,
   ValidationWarnings
 }
-import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.tests.ProcessTestData.{multipleSourcesValidScenarioGraph, validScenarioGraph}
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.tests.TestProcessUtil.wrapWithDetailsForMigration
+import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
@@ -139,8 +138,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragmentOneOut)
 
     val testMigration = new TestModelMigrations(
-      mapProcessingTypeDataProvider(Streaming -> new ProcessModelMigrator(new TestMigrations(8))),
-      mapProcessingTypeDataProvider(Streaming -> TestFactory.flinkProcessValidator)
+      mapProcessingTypeDataProvider("Streaming" -> new ProcessModelMigrator(new TestMigrations(8))),
+      mapProcessingTypeDataProvider("Streaming" -> TestFactory.flinkProcessValidator)
     )
 
     val process =
@@ -181,8 +180,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations =
     new TestModelMigrations(
-      mapProcessingTypeDataProvider(Streaming -> new ProcessModelMigrator(testMigrations)),
-      mapProcessingTypeDataProvider(Streaming -> flinkProcessValidator)
+      mapProcessingTypeDataProvider("Streaming" -> new ProcessModelMigrator(testMigrations)),
+      mapProcessingTypeDataProvider("Streaming" -> flinkProcessValidator)
     )
 
 }

@@ -55,7 +55,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.tests.ProcessTestData.processValidator
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
 import pl.touk.nussknacker.tests.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
 import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -859,7 +858,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val process = processWithOptionalParameterService("")
 
     val validator = new UIProcessValidator(
-      processingType = Streaming.stringify,
+      processingType = "Streaming",
       validator = ProcessValidator.default(
         LocalModelData(
           ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
@@ -901,7 +900,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val process = processWithOptionalParameterService("'Barabasz'")
 
     val validator = new UIProcessValidator(
-      processingType = Streaming.stringify,
+      processingType = "Streaming",
       validator = ProcessValidator.default(
         LocalModelData(
           ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
@@ -948,7 +947,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("validate service parameter based on input config - MandatoryParameterValidator") {
     val validator = new UIProcessValidator(
-      processingType = Streaming.stringify,
+      processingType = "Streaming",
       validator = ProcessValidator.default(
         LocalModelData(
           ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
@@ -989,7 +988,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("validate service parameter based on input config - ValidationExpressionParameterValidator") {
     val validator = new UIProcessValidator(
-      processingType = Streaming.stringify,
+      processingType = "Streaming",
       validator = ProcessValidator.default(
         LocalModelData(
           ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved
@@ -1126,7 +1125,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     validationResult.saveAllowed shouldBe true
 
     val processValidatorWithFragmentInAnotherProcessingType =
-      mockedProcessValidator(Map(Streaming2.stringify -> fragment), ConfigFactory.empty())
+      mockedProcessValidator(Map("Streaming2" -> fragment), ConfigFactory.empty())
 
     val validationResultWithCategory2 =
       processValidatorWithFragmentInAnotherProcessingType.validate(
@@ -1701,7 +1700,7 @@ private object UIProcessValidatorSpec {
   ): UIProcessValidator = {
     mockedProcessValidator(
       fragmentsByProcessingType = fragmentInDefaultProcessingType match {
-        case Some(frag) => Map(Streaming.stringify -> frag)
+        case Some(frag) => Map("Streaming" -> frag)
         case None       => Map.empty
       },
       execConfig = execConfig
@@ -1718,7 +1717,7 @@ private object UIProcessValidatorSpec {
       .build
 
     new UIProcessValidator(
-      processingType = Streaming.stringify,
+      processingType = "Streaming",
       validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition, execConfig)),
       scenarioProperties = FlinkStreamingPropertiesConfig.properties,
       additionalValidators = List(SampleCustomProcessValidator),
