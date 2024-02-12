@@ -17,8 +17,6 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.TestFactory._
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, TestProcessChangeListener}
@@ -26,12 +24,7 @@ import pl.touk.nussknacker.tests.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider.noCombinedDataFun
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  DefaultProcessingTypeDeploymentService,
-  ProcessingTypeDataProvider,
-  ProcessingTypeDataState,
-  ValueWithPermission
-}
+import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, ProcessingTypeDataProvider, ProcessingTypeDataState, ValueWithPermission}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
@@ -77,7 +70,7 @@ class DeploymentServiceSpec
         new ProcessingTypeDataState[DeploymentManager, Nothing] {
 
           override def all: Map[ProcessingType, ValueWithPermission[DeploymentManager]] = Map(
-            Streaming.stringify -> ValueWithPermission.anyUser(deploymentManager)
+            "Streaming" -> ValueWithPermission.anyUser(deploymentManager)
           )
 
           override def getCombined: () => Nothing = noCombinedDataFun
@@ -95,9 +88,9 @@ class DeploymentServiceSpec
 
   deploymentManager = new MockDeploymentManager(SimpleStateStatus.Running)(
     new DefaultProcessingTypeDeploymentService(
-      Streaming.stringify,
+      "Streaming",
       deploymentService,
-      AllDeployedScenarioService(testDbRef, Streaming.stringify)
+      AllDeployedScenarioService(testDbRef, "Streaming")
     )
   )
 
@@ -154,7 +147,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, actionId)    = prepareDeployedProcess(processName).dbioActionValues
 
-    deploymentService.markActionExecutionFinished(Streaming.stringify, actionId).futureValue
+    deploymentService.markActionExecutionFinished("Streaming", actionId).futureValue
     eventually {
       val action =
         actionRepository.getFinishedProcessActions(processId.id, Some(Set(ProcessActionType.Deploy))).dbioActionValues
@@ -827,9 +820,9 @@ class DeploymentServiceSpec
       .emptySink("sink", ProcessTestData.existingSinkFactory)
     val action = CreateProcessAction(
       processName,
-      Category1.stringify,
+      "Category1",
       canonicalProcess,
-      Streaming.stringify,
+      "Streaming",
       isFragment = false,
       forwardedUserName = None
     )
@@ -843,9 +836,9 @@ class DeploymentServiceSpec
 
     val action = CreateProcessAction(
       processName,
-      Category1.stringify,
+      "Category1",
       canonicalProcess,
-      Streaming.stringify,
+      "Streaming",
       isFragment = true,
       forwardedUserName = None
     )

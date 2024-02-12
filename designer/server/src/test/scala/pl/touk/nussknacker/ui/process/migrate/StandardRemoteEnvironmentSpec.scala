@@ -11,19 +11,12 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeValidationError,
-  NodeValidationErrorType,
-  ValidationErrors,
-  ValidationResult
-}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.tests.{ProcessTestData, TestProcessUtil}
-import pl.touk.nussknacker.tests.ProcessTestData.{sampleFragmentName, sampleProcessName, validProcess}
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.ProcessTestData.{sampleProcessName, validProcess}
 import pl.touk.nussknacker.tests.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.tests.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
+import pl.touk.nussknacker.tests.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -56,9 +49,9 @@ class StandardRemoteEnvironmentSpec
 
     override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
       mapProcessingTypeDataProvider(
-        Streaming -> new ProcessModelMigrator(new TestMigrations(1, 2))
+        "Streaming" -> new ProcessModelMigrator(new TestMigrations(1, 2))
       ),
-      mapProcessingTypeDataProvider(Streaming -> flinkProcessValidator)
+      mapProcessingTypeDataProvider("Streaming" -> flinkProcessValidator)
     )
 
   }
@@ -404,20 +397,20 @@ class StandardRemoteEnvironmentSpec
   }
 
   it should "migrate fragment" in {
-    val category                                       = Category1
+    val category                                       = "Category1"
     var migrated: Option[Future[UpdateProcessCommand]] = None
     val fragment = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
     val validatedFragmentDetails =
       TestProcessUtil.wrapWithDetailsForMigration(fragment, ProcessTestData.sampleFragmentName)
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       validatedFragmentDetails,
-      expectedProcessCategory = category.stringify,
+      expectedProcessCategory = category,
       initialRemoteProcessList = Nil,
       onMigrate = migrationFuture => migrated = Some(migrationFuture)
     )
 
     remoteEnvironment
-      .migrate(fragment, ProcessTestData.sampleFragmentName, category.stringify, isFragment = true)
+      .migrate(fragment, ProcessTestData.sampleFragmentName, category, isFragment = true)
       .futureValue shouldBe Symbol(
       "right"
     )

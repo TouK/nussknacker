@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
 
   import ToolbarButtonConfigType._
+  import ToolbarButtonsConfigVariant._
   import ToolbarPanelTypeConfig._
   import org.scalatest.prop.TableDrivenPropertyChecks._
 

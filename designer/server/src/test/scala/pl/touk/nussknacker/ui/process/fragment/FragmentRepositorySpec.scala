@@ -7,9 +7,9 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.tests.ProcessTestData.sampleFragmentName
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.base.it.NuResourcesTest
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 import scala.language.higherKinds
