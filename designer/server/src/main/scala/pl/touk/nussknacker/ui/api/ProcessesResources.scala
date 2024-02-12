@@ -294,12 +294,20 @@ class ProcessesResources(
     parameters(
       Symbol("isFragment").as[Boolean].?,
       Symbol("isArchived").as[Boolean].?,
-      Symbol("isDeployed").as[Boolean].?,
+      Symbol("isDeployed").as[Boolean].?, // deprecated, use isActive
+      Symbol("isActive").as[Boolean].?,
       Symbol("categories").as(CsvSeq[String]).?,
       Symbol("processingTypes").as(CsvSeq[String]).?,
       Symbol("names").as(CsvSeq[String]).?,
-    ).tmap { case (isFragment, isArchived, isDeployed, categories, processingTypes, names) =>
-      (isFragment, isArchived, isDeployed, categories, processingTypes, names.map(_.map(ProcessName(_))))
+    ).tmap { case (isFragment, isArchived, isDeployed, isActive, categories, processingTypes, names) =>
+      (
+        isFragment,
+        isArchived,
+        isActive.orElse(isDeployed),
+        categories,
+        processingTypes,
+        names.map(_.map(ProcessName(_)))
+      )
     }.as(ScenarioQuery.apply _)
   }
 

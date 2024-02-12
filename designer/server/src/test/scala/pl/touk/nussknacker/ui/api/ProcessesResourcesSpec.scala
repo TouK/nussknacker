@@ -472,7 +472,7 @@ class ProcessesResourcesSpec
     }
   }
 
-  test("search processes by isDeployed") {
+  test("search processes by isActive") {
     val firstProcessor  = ProcessName("Processor1")
     val secondProcessor = ProcessName("Processor2")
     val thirdProcessor  = ProcessName("Processor3")
@@ -492,16 +492,16 @@ class ProcessesResourcesSpec
           processes.size shouldBe 3
         }
 
-        forScenariosReturned(ScenarioQuery.empty.deployed()) { processes =>
+        forScenariosReturned(ScenarioQuery.empty.active()) { processes =>
           processes.size shouldBe 1
           val status = processes.find(_.name == thirdProcessor.value).flatMap(_.state.map(_.name))
           status shouldBe Some(SimpleStateStatus.Running.name)
         }
-        forScenariosDetailsReturned(ScenarioQuery.empty.deployed()) { processes =>
+        forScenariosDetailsReturned(ScenarioQuery.empty.active()) { processes =>
           processes.size shouldBe 1
         }
 
-        forScenariosReturned(ScenarioQuery.empty.notDeployed()) { processes =>
+        forScenariosReturned(ScenarioQuery.empty.notActive()) { processes =>
           processes.size shouldBe 2
 
           val status = processes.find(_.name == thirdProcessor.value).flatMap(_.state.map(_.name))
@@ -510,7 +510,7 @@ class ProcessesResourcesSpec
           val canceledProcess = processes.find(_.name == secondProcessor.value).flatMap(_.state.map(_.name))
           canceledProcess shouldBe Some(SimpleStateStatus.Canceled.name)
         }
-        forScenariosDetailsReturned(ScenarioQuery.empty.notDeployed()) { processes =>
+        forScenariosDetailsReturned(ScenarioQuery.empty.notActive()) { processes =>
           processes.size shouldBe 2
         }
       }

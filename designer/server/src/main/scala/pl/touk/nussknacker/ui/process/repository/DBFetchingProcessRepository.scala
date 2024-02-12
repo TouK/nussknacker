@@ -53,7 +53,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         { process =>
           expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
         },
-        query.isDeployed
+        query.isActive
       )
     )
   }

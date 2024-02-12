@@ -39,6 +39,7 @@
   * Added authorization check for listing activities and downloading attachments in scenario activity API
   * Fixed the ability to download an unrelated attachment from a given scenario
 * [#5522](https://github.com/TouK/nussknacker/pull/5522) Scenario status caching more often
+* [#5525](https://github.com/TouK/nussknacker/pull/5525) Exclude Finished batches from `isDeployed` query filter, rename it to `isActive`
 
 1.13.1 (Not released yet)
 ------------------------

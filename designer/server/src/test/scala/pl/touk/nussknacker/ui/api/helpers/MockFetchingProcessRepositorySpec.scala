@@ -154,7 +154,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     }
   }
 
-  it should "fetchDeployedProcessesDetails for each user" in {
+  it should "fetchActiveProcessesDetails for each user" in {
     val testingData = Table(
       ("user", "expected"),
       (admin, List(marketingProcess, fraudProcess)),
@@ -164,7 +164,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
 
     forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[ScenarioGraph]]) =>
       val result = mockRepository
-        .fetchLatestProcessesDetails(ScenarioQuery.deployed)(DisplayableShape, user, global)
+        .fetchLatestProcessesDetails(ScenarioQuery.active)(DisplayableShape, user, global)
         .futureValue
       result shouldBe expected
     }
@@ -366,18 +366,18 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       allProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
     val allProcessesCategoryTypesQuery = allProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
-    val processesQuery         = ScenarioQuery(isFragment = Some(false), isArchived = Some(false))
-    val deployedProcessesQuery = processesQuery.copy(isDeployed = Some(true))
-    val deployedProcessesCategoryQuery =
-      deployedProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
-    val deployedProcessesCategoryProcessingTypesQuery =
-      deployedProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
+    val processesQuery       = ScenarioQuery(isFragment = Some(false), isArchived = Some(false))
+    val activeProcessesQuery = processesQuery.copy(isActive = Some(true))
+    val activeProcessesCategoryQuery =
+      activeProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
+    val activeProcessesCategoryProcessingTypesQuery =
+      activeProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
-    val notDeployedProcessesQuery = processesQuery.copy(isDeployed = Some(false))
-    val notDeployedProcessesCategoryQuery =
-      notDeployedProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
-    val notDeployedProcessesCategoryProcessingTypesQuery =
-      notDeployedProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
+    val notActiveProcessesQuery = processesQuery.copy(isActive = Some(false))
+    val notActiveProcessesCategoryQuery =
+      notActiveProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
+    val notActiveProcessesCategoryProcessingTypesQuery =
+      notActiveProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
     val archivedQuery          = ScenarioQuery(isArchived = Some(true))
     val archivedProcessesQuery = archivedQuery.copy(isFragment = Some(false))
@@ -425,12 +425,12 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
         List(marketingProcess, marketingArchivedProcess, marketingFragment, marketingArchivedFragment)
       ),
       (admin, processesQuery, List(marketingProcess, fraudProcess, fraudSecondProcess, secretProcess)),
-      (admin, deployedProcessesQuery, List(marketingProcess, fraudProcess)),
-      (admin, deployedProcessesCategoryQuery, List(marketingProcess, fraudProcess)),
-      (admin, deployedProcessesCategoryProcessingTypesQuery, List(marketingProcess)),
-      (admin, notDeployedProcessesQuery, List(fraudSecondProcess, secretProcess)),
-      (admin, notDeployedProcessesCategoryQuery, List(fraudSecondProcess)),
-      (admin, notDeployedProcessesCategoryProcessingTypesQuery, List()),
+      (admin, activeProcessesQuery, List(marketingProcess, fraudProcess)),
+      (admin, activeProcessesCategoryQuery, List(marketingProcess, fraudProcess)),
+      (admin, activeProcessesCategoryProcessingTypesQuery, List(marketingProcess)),
+      (admin, notActiveProcessesQuery, List(fraudSecondProcess, secretProcess)),
+      (admin, notActiveProcessesCategoryQuery, List(fraudSecondProcess)),
+      (admin, notActiveProcessesCategoryProcessingTypesQuery, List()),
       (
         admin,
         archivedQuery,
@@ -483,12 +483,12 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
         List(marketingProcess, marketingArchivedProcess, marketingFragment, marketingArchivedFragment)
       ),
       (marketingUser, processesQuery, List(marketingProcess)),
-      (marketingUser, deployedProcessesQuery, List(marketingProcess)),
-      (marketingUser, deployedProcessesCategoryQuery, List(marketingProcess)),
-      (marketingUser, deployedProcessesCategoryProcessingTypesQuery, List(marketingProcess)),
-      (marketingUser, notDeployedProcessesQuery, List()),
-      (marketingUser, notDeployedProcessesCategoryQuery, List()),
-      (marketingUser, notDeployedProcessesCategoryProcessingTypesQuery, List()),
+      (marketingUser, activeProcessesQuery, List(marketingProcess)),
+      (marketingUser, activeProcessesCategoryQuery, List(marketingProcess)),
+      (marketingUser, activeProcessesCategoryProcessingTypesQuery, List(marketingProcess)),
+      (marketingUser, notActiveProcessesQuery, List()),
+      (marketingUser, notActiveProcessesCategoryQuery, List()),
+      (marketingUser, notActiveProcessesCategoryProcessingTypesQuery, List()),
       (marketingUser, archivedQuery, List(marketingArchivedProcess, marketingArchivedFragment)),
       (marketingUser, archivedProcessesQuery, List(marketingArchivedProcess)),
       (marketingUser, archivedProcessesCategoryQuery, List(marketingArchivedProcess)),
@@ -528,12 +528,12 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       ),
       (fraudUser, allProcessesCategoryTypesQuery, List()),
       (fraudUser, processesQuery, List(fraudProcess, fraudSecondProcess)),
-      (fraudUser, deployedProcessesQuery, List(fraudProcess)),
-      (fraudUser, deployedProcessesCategoryQuery, List(fraudProcess)),
-      (fraudUser, deployedProcessesCategoryProcessingTypesQuery, List()),
-      (fraudUser, notDeployedProcessesQuery, List(fraudSecondProcess)),
-      (fraudUser, notDeployedProcessesCategoryQuery, List(fraudSecondProcess)),
-      (fraudUser, notDeployedProcessesCategoryProcessingTypesQuery, List()),
+      (fraudUser, activeProcessesQuery, List(fraudProcess)),
+      (fraudUser, activeProcessesCategoryQuery, List(fraudProcess)),
+      (fraudUser, activeProcessesCategoryProcessingTypesQuery, List()),
+      (fraudUser, notActiveProcessesQuery, List(fraudSecondProcess)),
+      (fraudUser, notActiveProcessesCategoryQuery, List(fraudSecondProcess)),
+      (fraudUser, notActiveProcessesCategoryProcessingTypesQuery, List()),
       (fraudUser, archivedQuery, List(fraudArchivedProcess, fraudArchivedFragment)),
       (fraudUser, archivedProcessesQuery, List(fraudArchivedProcess)),
       (fraudUser, archivedProcessesCategoryQuery, List(fraudArchivedProcess)),
