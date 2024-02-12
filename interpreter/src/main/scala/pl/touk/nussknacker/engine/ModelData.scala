@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.modelconfig.{
   InputConfigDuringExecution,
   ModelConfigLoader
 }
-import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.{NamingStrategyProvider, ThreadUtils}
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
@@ -138,20 +138,6 @@ case class ClassLoaderModelData private (
   override def namingStrategy: NamingStrategy = NamingStrategyProvider(modelConfig)
 
   override val extractModelDefinitionFun: ExtractDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category)
-
-}
-
-object NamingStrategyProvider {
-  private val NamespacePath = "namespace"
-
-  def apply(modelConfig: Config): NamingStrategy = {
-    val namespaceOpt = if (modelConfig.hasPath(NamespacePath)) {
-      Some(modelConfig.getString(NamespacePath))
-    } else {
-      None
-    }
-    NamingStrategy(namespaceOpt)
-  }
 
 }
 

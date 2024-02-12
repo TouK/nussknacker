@@ -10,8 +10,9 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.{NamingStrategyProvider, spel}
+import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.NamingStrategyProvider
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with KafkaSpec with Matchers {
