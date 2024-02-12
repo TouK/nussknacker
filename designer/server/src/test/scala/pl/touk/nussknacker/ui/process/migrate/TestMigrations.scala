@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.migration.{NodeMigration, ProcessMigration, ProcessMigrations}
 import pl.touk.nussknacker.tests.ProcessTestData
 
-private[migrate] class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
+class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

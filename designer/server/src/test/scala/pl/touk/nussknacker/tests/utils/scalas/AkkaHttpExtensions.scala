@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.tests.utils.scala
+package pl.touk.nussknacker.tests.utils.scalas
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity}
 import io.circe.Encoder

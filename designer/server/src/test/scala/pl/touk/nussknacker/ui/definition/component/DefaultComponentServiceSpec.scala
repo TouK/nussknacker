@@ -23,15 +23,9 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.tests.TestFactory
 import pl.touk.nussknacker.tests.TestProcessUtil.createFragmentEntity
 import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, MockFetchingProcessRepository, MockManagerProvider}
-import pl.touk.nussknacker.ui.component.ComponentModelData._
-import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
-import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
-import pl.touk.nussknacker.ui.component.{
-  ComponentFraudTestConfigCreator,
-  ComponentMarketingTestConfigCreator,
-  DynamicComponentProvider,
-  WronglyConfiguredConfigCreator
-}
+import ComponentModelData._
+import pl.touk.nussknacker.ui.definition.component.ComponentTestProcessData._
+import DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider

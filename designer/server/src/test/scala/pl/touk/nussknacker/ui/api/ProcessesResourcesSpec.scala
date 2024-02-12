@@ -26,7 +26,7 @@ import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.{St
 import pl.touk.nussknacker.tests.TestFactory.{withAllPermissions, withPermissions}
 import pl.touk.nussknacker.tests.base.it.{NuResourcesTest, StateJson}
 import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.ScenarioToJson
-import pl.touk.nussknacker.tests.utils.scala.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.tests.{ProcessTestData, SampleSpelTemplateProcess, TestFactory}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}

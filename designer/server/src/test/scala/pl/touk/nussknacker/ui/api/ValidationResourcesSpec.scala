@@ -29,7 +29,7 @@ import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.tests.base.it.NuResourcesTest
-import pl.touk.nussknacker.tests.utils.scala.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 

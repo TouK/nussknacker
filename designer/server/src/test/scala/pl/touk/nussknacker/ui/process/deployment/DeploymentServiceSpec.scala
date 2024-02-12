@@ -22,7 +22,7 @@ import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Str
 import pl.touk.nussknacker.tests.TestFactory._
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, TestProcessChangeListener}
-import pl.touk.nussknacker.tests.utils.scala.DBIOActionValues
+import pl.touk.nussknacker.tests.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider.noCombinedDataFun

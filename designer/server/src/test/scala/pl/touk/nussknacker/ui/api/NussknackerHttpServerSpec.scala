@@ -15,7 +15,7 @@ import pl.touk.nussknacker.tests.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.security.ssl.HttpsConnectionContextFactory.prepareSSLContext
 import pl.touk.nussknacker.ui.security.ssl.KeyStoreConfig
 import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, RouteProvider}
-import pl.touk.nussknacker.tests.utils.scala.CatsTestExtensions._
+import pl.touk.nussknacker.tests.utils.scalas.CatsTestExtensions._
 import sttp.client3.{UriContext, basicRequest}
 import sttp.model.StatusCode
 

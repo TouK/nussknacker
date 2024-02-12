@@ -18,7 +18,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
 import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
-import pl.touk.nussknacker.tests.utils.scala.DBIOActionValues
+import pl.touk.nussknacker.tests.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._

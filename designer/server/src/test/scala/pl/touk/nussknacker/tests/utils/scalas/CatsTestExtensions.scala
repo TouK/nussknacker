@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.tests.utils.scala
+package pl.touk.nussknacker.tests.utils.scalas
 
 import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}

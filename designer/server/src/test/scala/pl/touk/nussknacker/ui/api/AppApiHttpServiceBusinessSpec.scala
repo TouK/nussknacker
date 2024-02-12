@@ -10,17 +10,21 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.tests.base.it.{NuItTest, NuItTest2, NuTestScenarioManager, WithMockableDeploymentManager}
-import pl.touk.nussknacker.tests.config.WithSimplifiedNuConfig
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  PatientScalaFutures,
+  RestAssuredVerboseLogging
+}
+import pl.touk.nussknacker.tests.base.it.{NuItTest2, WithSimplifiedConfigScenarioHelper}
+import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager2, WithSimplifiedNuConfig}
 
 class AppApiHttpServiceBusinessSpec
-  extends AnyFreeSpecLike
+    extends AnyFreeSpecLike
     with NuItTest2
     with WithSimplifiedNuConfig
-    with WithMockableDeploymentManager
-    with NuTestScenarioManager
+    with WithSimplifiedConfigScenarioHelper
+    with WithMockableDeploymentManager2
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
@@ -30,7 +34,7 @@ class AppApiHttpServiceBusinessSpec
     "return simple designer health check (not checking scenario statuses) without authentication" in {
       given()
         .applicationState {
-          createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+          createDeployedExampleScenario(ProcessName("id1"))
 
           MockableDeploymentManager.configure(
             Map("id1" -> SimpleStateStatus.Running)
@@ -55,9 +59,9 @@ class AppApiHttpServiceBusinessSpec
       "return health check also if cannot retrieve statuses" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -67,7 +71,7 @@ class AppApiHttpServiceBusinessSpec
               )
             )
           }
-          .basicAuth("reader", "reader")
+          .basicAuth("allpermuser", "allpermuser")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
@@ -83,15 +87,15 @@ class AppApiHttpServiceBusinessSpec
       "not return health check when scenario is canceled" in {
         given()
           .applicationState {
-            createDeployedCanceledExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedCanceledExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
 
             MockableDeploymentManager.configure(
               Map("id2" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"))
             )
           }
-          .basicAuth("reader", "reader")
           .when()
+          .basicAuth("allpermuser", "allpermuser")
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(500)
@@ -106,8 +110,8 @@ class AppApiHttpServiceBusinessSpec
       "return health check ok if statuses are ok" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -116,7 +120,7 @@ class AppApiHttpServiceBusinessSpec
               )
             )
           }
-          .basicAuth("reader", "reader")
+          .basicAuth("allpermuser", "allpermuser")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
@@ -132,14 +136,14 @@ class AppApiHttpServiceBusinessSpec
       "not report deployment in progress as fail" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
 
             MockableDeploymentManager.configure(
               Map("id1" -> SimpleStateStatus.Running)
             )
           }
           .when()
-          .basicAuth("reader", "reader")
+          .basicAuth("allpermuser", "allpermuser")
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(200)
@@ -156,9 +160,9 @@ class AppApiHttpServiceBusinessSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -183,13 +187,13 @@ class AppApiHttpServiceBusinessSpec
       "return ERROR status and list of scenarios with validation errors" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
 
             MockableDeploymentManager.configure(
               Map("id1" -> SimpleStateStatus.Running)
             )
           }
-          .basicAuth("reader", "reader")
+          .basicAuth("allpermuser", "allpermuser")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
@@ -207,7 +211,7 @@ class AppApiHttpServiceBusinessSpec
       "return OK status and empty list of scenarios where there are no validation errors" in {
         given()
           .applicationState {}
-          .basicAuth("reader", "reader")
+          .basicAuth("allpermuser", "allpermuser")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
@@ -227,9 +231,9 @@ class AppApiHttpServiceBusinessSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -264,11 +268,6 @@ class AppApiHttpServiceBusinessSpec
                |  "buildTime": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}(?::\\\\d{2}\\\\.(?:\\\\d{9}|\\\\d{6}|\\\\d{3})|:\\\\d{2}|)$$",
                |  "version": "^\\\\d+\\\\.\\\\d+\\\\.\\\\d+(?:-.+)*$$",
                |  "processingType": {
-               |    "streaming2": {
-               |      "process-version": "0.1",
-               |      "engine-version": "0.1",
-               |      "generation-time": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}(?::\\\\d{2}\\\\.(?:\\\\d{9}|\\\\d{6}|\\\\d{3})|:\\\\d{2}|)$$"
-               |    },
                |    "streaming": {
                |      "process-version": "0.1",
                |      "engine-version": "0.1",
@@ -302,7 +301,7 @@ class AppApiHttpServiceBusinessSpec
     "not return config when" - {
       "user is an admin" in {
         given()
-          .basicAuth("reader", "reader")
+          .basicAuth("allpermuser", "allpermuser")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/config")
           .Then()
@@ -325,9 +324,9 @@ class AppApiHttpServiceBusinessSpec
       "return user's categories and processing types" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -337,7 +336,7 @@ class AppApiHttpServiceBusinessSpec
               )
             )
           }
-          .basicAuth("reader", "reader")
+          .basicAuth("allpermuser", "allpermuser")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/config/categoriesWithProcessingType")
           .Then()
@@ -345,8 +344,7 @@ class AppApiHttpServiceBusinessSpec
           .body(
             equalsJson(
               s"""{
-                 |  "Category1": "streaming",
-                 |  "Category2": "streaming2"
+                 |  "Default": "streaming"
                  |}""".stripMargin
             )
           )
@@ -356,9 +354,9 @@ class AppApiHttpServiceBusinessSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -383,9 +381,9 @@ class AppApiHttpServiceBusinessSpec
       "allow to reload" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -406,9 +404,9 @@ class AppApiHttpServiceBusinessSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -430,9 +428,9 @@ class AppApiHttpServiceBusinessSpec
       "forbid access" in {
         given()
           .applicationState {
-            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id3"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id1"))
+            createDeployedExampleScenario(ProcessName("id2"))
+            createDeployedExampleScenario(ProcessName("id3"))
 
             MockableDeploymentManager.configure(
               Map(
@@ -442,7 +440,7 @@ class AppApiHttpServiceBusinessSpec
               )
             )
           }
-          .basicAuth("reader", "reader")
+          .basicAuth("allpermuser", "allpermuser")
           .when()
           .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
           .Then()
@@ -452,7 +450,7 @@ class AppApiHttpServiceBusinessSpec
     }
   }
 
-  override def nuTestConfig: Config = super.nuTestConfig
+  override def designerConfig: Config = super.designerConfig
     .withValue("enableConfigEndpoint", fromAnyRef(true))
     .withValue(
       "globalBuildInfo",

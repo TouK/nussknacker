@@ -41,7 +41,7 @@ import pl.touk.nussknacker.tests.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.tests._
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, TestAdditionalUIConfigProvider, TestProcessChangeListener}
-import pl.touk.nussknacker.tests.utils.scala.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
