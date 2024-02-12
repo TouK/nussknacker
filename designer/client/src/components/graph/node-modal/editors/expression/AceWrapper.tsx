@@ -49,6 +49,10 @@ function getTabindexedElements(root: Element, currentElement?: HTMLElement) {
         if (node.tabIndex < Math.max(0, currentElement?.tabIndex)) {
             return NodeFilter.FILTER_SKIP;
         }
+        const rect = node.getBoundingClientRect();
+        if (!rect.width || !rect.height) {
+            return NodeFilter.FILTER_SKIP;
+        }
         return NodeFilter.FILTER_ACCEPT;
     });
 
@@ -56,6 +60,10 @@ function getTabindexedElements(root: Element, currentElement?: HTMLElement) {
     let node;
     while ((node = treeWalker.nextNode())) {
         elements.push(node as HTMLElement);
+    }
+
+    if (elements.length <= 1) {
+        return getTabindexedElements(root.parentElement, currentElement);
     }
 
     const htmlElements = elements.sort((a, b) => Math.max(0, a.tabIndex) - Math.max(0, b.tabIndex));
