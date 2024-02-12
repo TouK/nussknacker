@@ -196,7 +196,7 @@ class UniversalKafkaSinkFactory(
       implicit nodeId: NodeId
   ): NodeTransformationDefinition =
     topicParamStep orElse
-      schemaParamStep orElse
+      schemaParamStep(paramsDeterminedAfterSchema) orElse
       rawEditorParameterStep(context) orElse
       valueEditorParamStep(context)
 

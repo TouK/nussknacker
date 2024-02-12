@@ -51,7 +51,7 @@ class UniversalKafkaSourceFactory(
       implicit nodeId: NodeId
   ): NodeTransformationDefinition =
     topicParamStep orElse
-      schemaParamStep orElse
+      schemaParamStep(paramsDeterminedAfterSchema) orElse
       nextSteps(context, dependencies)
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
