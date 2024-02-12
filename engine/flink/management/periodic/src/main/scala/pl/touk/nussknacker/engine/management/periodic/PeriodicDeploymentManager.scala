@@ -184,22 +184,21 @@ class PeriodicDeploymentManager private[periodic] (
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    throw new IllegalAccessException(
-      "PeriodicDeploymentManager.getProcessStates is not meant to be run directly - should be used getProcessState instead"
-    )
+    service.getStatusDetails(name).map(_.map(List(_)))
   }
 
-  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] = {
-    service.getStatusDetails(idWithName.name).map { statusesWithFreshness =>
-      statusesWithFreshness.map { cd =>
-        // TODO: add "real" presentation of deployments in GUI
-        val mergedStatus = processStateDefinitionManager
-          .processState(cd.copy(status = cd.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status))
-        mergedStatus.copy(tooltip = processStateDefinitionManager.statusTooltip(cd.status))
-      }
-    }
+  override def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetailsList: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState] = {
+    val statusDetails = statusDetailsList.head
+    // TODO: add "real" presentation of deployments in GUI
+    val mergedStatus = processStateDefinitionManager
+      .processState(
+        statusDetails.copy(status = statusDetails.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status)
+      )
+    Future.successful(mergedStatus.copy(tooltip = processStateDefinitionManager.statusTooltip(statusDetails.status)))
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =

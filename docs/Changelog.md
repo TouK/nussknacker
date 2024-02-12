@@ -38,6 +38,7 @@
 * [#5509](https://github.com/TouK/nussknacker/pull/5509) Security improvement: 
   * Added authorization check for listing activities and downloading attachments in scenario activity API
   * Fixed the ability to download an unrelated attachment from a given scenario
+* [#5522](https://github.com/TouK/nussknacker/pull/5522) Scenario status caching more often
 
 1.13.1 (Not released yet)
 ------------------------
