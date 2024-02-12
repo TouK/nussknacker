@@ -7,12 +7,14 @@ import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.deployment.{
   CustomActionResult,
   DeploymentData,
@@ -20,6 +22,7 @@ import pl.touk.nussknacker.engine.deployment.{
   ExternalDeploymentId,
   User
 }
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
@@ -574,6 +577,8 @@ class DeploymentServiceImpl(
       ec: ExecutionContext
   ): Future[CustomActionResult] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+
+    // TODO: add customAction validation before running
     dbioRunner.run(
       for {
         // Fetch and validate process details
@@ -594,10 +599,38 @@ class DeploymentServiceImpl(
         )
         customActionOpt = manager.customActionsDefinitions.find(_.name == actionName)
         _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
+        // TODO: add custom action params validation
+        _ = validateCustomActionParams(actionCommand, checkedCustomAction)
         _ = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
     )
+  }
+
+  // TODO: extract to CustomActionValidator and resolve implicits with DumbNodeId
+  private def validateCustomActionParams(request: CustomActionRequest, customAction: CustomActionDefinition): Unit = {
+    implicit val nodeId: NodeId = NodeId(customAction.name.value)
+    val requestParamsMap        = request.params
+    val customActionParams      = customAction.parameters
+
+    if (requestParamsMap.keys.size != customActionParams.size || requestParamsMap.keys.toSet.size != requestParamsMap.keys.size) {
+      throw new Exception("Different count of custom action parameters than provided in request for: " + request.name)
+    }
+
+    // TODO: ParamValidators won't work here - customAction validators??
+    requestParamsMap.foreach { case (k, v) =>
+      customActionParams.find(_.name == k) match {
+        case Some(param) =>
+          param.validators.foreach { validators =>
+            if (validators.nonEmpty) {
+              validators.foreach(
+                _.isValid(paramName = k, expression = Expression.spel("None"), value = Some(v), label = None)
+              )
+            }
+          }
+        case None => throw new Exception("No such parameter should be defined for this acion: " + customAction.name)
+      }
+    }
   }
 
   private def checkIfCanPerformCustomActionInState[PS: ScenarioShapeFetchStrategy](
