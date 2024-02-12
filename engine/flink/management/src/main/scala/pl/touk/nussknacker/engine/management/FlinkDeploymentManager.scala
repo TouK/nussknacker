@@ -24,7 +24,6 @@ abstract class FlinkDeploymentManager(
     mainClassName: String
 )(implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
     extends DeploymentManager
-    with PostprocessingProcessStatus
     with AlwaysFreshProcessState
     with LazyLogging {
 
@@ -49,11 +48,14 @@ abstract class FlinkDeploymentManager(
     } yield processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
   }
 
-  // There is small problem here: if no one invokes process status for long time, Flink can remove process from history
-  // - then it 's gone, not finished.
-  // TODO: it should be checked periodically instead of checking on each getProcessState invocation
-  // (consider moving marking finished deployments to InconsistentStateDetector as one "detectAndResolveAndFixStatus")
-  override def postprocess(
+  // Flink has a retention for job overviews so we can't rely on this to distinguish between statuses:
+  // - job is finished without troubles
+  // - job has failed
+  // So we synchronize the information that the job was finished by marking deployments actions as execution finished
+  // and treat another case as ProblemStateStatus.shouldBeRunning (see InconsistentStateDetector)
+  // TODO: We should synchronize the status of deployment more explicitly as we already do in periodic case
+  //       See PeriodicProcessService.synchronizeDeploymentsStates and remove the InconsistentStateDetector
+  private def postprocess(
       idWithName: ProcessIdWithName,
       statusDetailsList: List[StatusDetails]
   ): Future[Option[ProcessAction]] = {
