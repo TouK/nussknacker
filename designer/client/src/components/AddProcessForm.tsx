@@ -14,7 +14,7 @@ import RequestResponseIcon from "../assets/img/request-response.svg";
 import BatchIcon from "../assets/img/batch.svg";
 import { CustomRadio } from "./customRadio/CustomRadio";
 
-export type FormValue = { processName: string; processCategory: string; processingMode: string };
+export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
 enum ProcessingMode {
     "streaming" = "streaming",
@@ -88,7 +88,7 @@ export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormP
                                 Processing mode defines how scenario deployed on an engine interacts with the outside world. Click here to
                                 <Link
                                     sx={{ cursor: "pointer", ml: 0.5 }}
-                                    href="https://nussknacker.io/documentation/about/ProcessingModes/"
+                                    href="https://nussknacker.io/documentation/about/ProcessingModes"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
@@ -124,6 +124,48 @@ export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormP
                                 </option>
                             ))}
                         </SelectNodeWithFocus>
+                        <Typography component={"div"} variant={"overline"} mt={1}>
+                            <Trans i18nKey={"addProcessForm.helperText.category"}>
+                                To read more about categories,
+                                <Link
+                                    sx={{ cursor: "pointer", ml: 0.5 }}
+                                    href="https://nussknacker.io/documentation/docs/1.10/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    click here.
+                                </Link>
+                            </Trans>
+                        </Typography>
+                    </div>
+                </FormControl>
+                <FormControl>
+                    <FormLabel>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
+                    <div className="node-value">
+                        <SelectNodeWithFocus
+                            id="processEngine"
+                            value={value.processEngine}
+                            onChange={(e) => onFieldChange("processEngine", e.target.value)}
+                        >
+                            {[].map((engines, index) => (
+                                <option key={index} value={engines}>
+                                    {engines}
+                                </option>
+                            ))}
+                        </SelectNodeWithFocus>
+                        <Typography component={"div"} variant={"overline"} mt={1}>
+                            <Trans i18nKey={"addProcessForm.helperText.engine"}>
+                                To read more about engines,
+                                <Link
+                                    sx={{ cursor: "pointer", ml: 0.5 }}
+                                    href="https://nussknacker.io/documentation/about/engines"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    click here.
+                                </Link>
+                            </Trans>
+                        </Typography>
                     </div>
                 </FormControl>
             </NodeTable>
