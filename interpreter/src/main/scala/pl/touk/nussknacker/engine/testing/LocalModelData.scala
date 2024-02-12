@@ -50,10 +50,10 @@ object LocalModelData {
       configCreator,
       migrations,
       modelClassLoader,
-      namingStrategy = namingStrategy.getOrElse(NamingStrategyProvider(inputConfig)),
       components,
       determineDesignerWideId,
-      additionalConfigsFromProvider
+      additionalConfigsFromProvider,
+      namingStrategy = namingStrategy.getOrElse(NamingStrategyProvider(inputConfig))
     )
 
   class ExtractDefinitionFunImpl(
@@ -100,10 +100,10 @@ case class LocalModelData(
     configCreator: ProcessConfigCreator,
     migrations: ProcessMigrations,
     modelClassLoader: ModelClassLoader,
-    namingStrategy: NamingStrategy,
     components: List[ComponentDefinition],
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
-    additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    namingStrategy: NamingStrategy
 ) extends ModelData {
 
   override val extractModelDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category, components)

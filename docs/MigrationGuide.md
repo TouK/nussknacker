@@ -78,6 +78,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         You can return errors that will be visible to users e.g. invalid configuration etc. The old one is deprecated - it will be removed in 1.15 version.
   * [#5526](https://github.com/TouK/nussknacker/pull/5526) Refactored namespaces:
     * Removed `ObjectNaming` SPI
+    * Removed logging when using naming strategy
     * Replaced `ObjectNaming` with single `NamingStrategy` which prepares a name with a prefix from `namespace` key from 
       `ModelConfig` or returns the original name if the value is not configured
   * [#5526](https://github.com/TouK/nussknacker/pull/5526) Added namespacing of Kafka consumer group id in both engines.

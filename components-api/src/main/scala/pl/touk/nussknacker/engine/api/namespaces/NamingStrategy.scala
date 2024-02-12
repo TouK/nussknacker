@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api.namespaces
 
 import com.typesafe.config.Config
 
-// TODO: document rename and removal of SPI
 case class NamingStrategy(namespace: Option[String]) {
 
   def prepareName(name: String): String = {
