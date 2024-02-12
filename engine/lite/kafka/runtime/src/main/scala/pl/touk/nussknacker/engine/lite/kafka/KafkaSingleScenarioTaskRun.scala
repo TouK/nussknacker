@@ -19,6 +19,7 @@ import org.apache.kafka.common.errors.{
   ProducerFencedException
 }
 import pl.touk.nussknacker.engine.api.exception.WithExceptionExtractor
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
@@ -48,12 +49,13 @@ class KafkaSingleScenarioTaskRun(
     runtimeContext: EngineRuntimeContext,
     engineConfig: KafkaInterpreterConfig,
     interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
-    sourceMetrics: SourceMetrics
+    sourceMetrics: SourceMetrics,
+    namingStrategy: NamingStrategy
 )(implicit ec: ExecutionContext)
     extends Task
     with LazyLogging {
 
-  private val groupId = metaData.name.value
+  private val groupId = namingStrategy.prepareName(metaData.name.value)
 
   private var consumer: KafkaConsumer[Array[Byte], Array[Byte]] = _
   private var producer: KafkaProducerRecordsHandler             = _
@@ -91,7 +93,7 @@ class KafkaSingleScenarioTaskRun(
   }
 
   private def prepareProducer: KafkaProducerRecordsHandler = {
-    val producerProperties = KafkaUtils.toProducerProperties(engineConfig.kafka, groupId)
+    val producerProperties = KafkaUtils.toProducerProperties(engineConfig.kafka, clientId = groupId)
     KafkaProducerRecordsHandler.apply(engineConfig, producerProperties, groupId)
   }
 
