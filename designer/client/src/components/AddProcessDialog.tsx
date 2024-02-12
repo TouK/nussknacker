@@ -20,7 +20,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     const { t } = useTranslation();
     const { isFragment, errors = [], ...passProps } = props;
     const nameValidators = useProcessNameValidators();
-    const [value, setState] = useState({ processName: "", processCategory: "" });
+    const [value, setState] = useState({ processName: "", processCategory: "", processingMode: "" });
     const [processNameFromBackend, setProcessNameFromBackendError] = useState<NodeValidationError[]>([]);
 
     const fieldErrors = getValidationErrorsForField(
