@@ -109,6 +109,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5474](https://github.com/TouK/nussknacker/pull/5474) POST `/processes/$scenarioName/$category?isFragment=$isFragment` resource become deprecated.
   It will be replaced by POST `/processes` with fields: `name`, `isFragment`, `forwardedUserName`, `category`, `processingMode`, `engineSetupName`.
   Three last fields are optional. Please switch to the new API because in version 1.5, old API will be removed.
+* [#5525](https://github.com/TouK/nussknacker/pull/5525) `GET /processes` and `GET /processesDetails`:
+  `isDeployed` query parameter was renamed to `isActive`
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:

@@ -48,7 +48,7 @@ export type FetchProcessQueryParams = Partial<{
     categories: string;
     isFragment: boolean;
     isArchived: boolean;
-    isDeployed: boolean;
+    isActive: boolean;
 }>;
 
 export type StatusesType = Record<Scenario["name"], ProcessStateType>;

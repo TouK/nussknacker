@@ -603,11 +603,11 @@ object ProcessesQueryEnrichments {
     def archived(): ScenarioQuery =
       query.copy(isArchived = Some(true))
 
-    def deployed(): ScenarioQuery =
-      query.copy(isDeployed = Some(true))
+    def active(): ScenarioQuery =
+      query.copy(isActive = Some(true))
 
-    def notDeployed(): ScenarioQuery =
-      query.copy(isDeployed = Some(false))
+    def notActive(): ScenarioQuery =
+      query.copy(isActive = Some(false))
 
     def names(names: List[String]): ScenarioQuery =
       query.copy(names = Some(names.map(ProcessName(_))))
@@ -629,8 +629,8 @@ object ProcessesQueryEnrichments {
         url += s"&isFragment=$isFragment"
       }
 
-      query.isDeployed.foreach { isDeployed =>
-        url += s"&isDeployed=$isDeployed"
+      query.isActive.foreach { isActive =>
+        url += s"&isActive=$isActive"
       }
 
       query.categories.foreach { categories =>

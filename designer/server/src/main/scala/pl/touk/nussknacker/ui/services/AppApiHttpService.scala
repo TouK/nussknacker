@@ -160,7 +160,7 @@ class AppApiHttpService(
   private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[ProcessName, ProcessState]] = {
     for {
       processes <- processService.getLatestProcessesWithDetails(
-        ScenarioQuery.deployed,
+        ScenarioQuery.active,
         GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
       )
       statusMap = processes.flatMap(process => process.state.map(process.name -> _)).toMap

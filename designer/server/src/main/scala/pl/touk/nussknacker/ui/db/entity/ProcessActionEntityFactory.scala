@@ -92,6 +92,6 @@ final case class ProcessActionEntityData(
 
   lazy val createdAtTime: Instant           = createdAt.toInstant
   lazy val performedAtTime: Option[Instant] = performedAt.map(_.toInstant)
-  lazy val isDeployed: Boolean =
+  lazy val isActive: Boolean =
     actionType.equals(ProcessActionType.Deploy) && !state.equals(ProcessActionState.ExecutionFinished)
 }

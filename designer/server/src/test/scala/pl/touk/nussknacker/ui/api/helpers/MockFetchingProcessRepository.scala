@@ -56,7 +56,7 @@ class MockFetchingProcessRepository private (
     getUserProcesses[PS].map(
       _.filter(p =>
         check(q.isFragment, p.isFragment) && check(q.isArchived, p.isArchived) && check(
-          q.isDeployed,
+          q.isActive,
           p.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy))
         ) && checkSeq(q.categories, p.processCategory) && checkSeq(q.processingTypes, p.processingType)
       )

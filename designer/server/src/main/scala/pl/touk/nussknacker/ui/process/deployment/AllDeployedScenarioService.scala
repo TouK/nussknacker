@@ -34,7 +34,7 @@ class AllDeployedScenarioService(
             ScenarioQuery(
               isFragment = Some(false),
               isArchived = Some(false),
-              isDeployed = Some(true),
+              isActive = Some(true),
               processingTypes = Some(Seq(processingType))
             )
           )
