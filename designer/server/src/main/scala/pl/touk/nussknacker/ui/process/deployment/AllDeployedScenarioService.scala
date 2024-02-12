@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, User
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ValueWithPermission}
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ValueWithRestriction}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
@@ -73,7 +73,7 @@ object AllDeployedScenarioService {
   def apply(dbRef: DbRef, processingType: ProcessingType)(implicit ec: ExecutionContext): AllDeployedScenarioService = {
     val dbioRunner = DBIOActionRunner(dbRef)
     val dumbModelInfoProvier = ProcessingTypeDataProvider.withEmptyCombinedData(
-      Map(processingType -> ValueWithPermission.anyUser(Map.empty[String, String]))
+      Map(processingType -> ValueWithRestriction.anyUser(Map.empty[String, String]))
     )
     val actionRepository        = new DbProcessActionRepository(dbRef, dumbModelInfoProvier)
     val processRepository       = DBFetchingProcessRepository.create(dbRef, actionRepository)

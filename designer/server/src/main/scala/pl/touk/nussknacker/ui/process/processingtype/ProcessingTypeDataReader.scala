@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.processingtypedata
+package pl.touk.nussknacker.ui.process.processingtype
 
 import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
@@ -8,14 +8,18 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.process.deployment.{AllDeployedScenarioService, DeploymentService}
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.{
-  selectedScenarioTypeConfigurationPath,
-  toValueWithPermission
+import pl.touk.nussknacker.ui.process.deployment.{
+  AllDeployedScenarioService,
+  DefaultProcessingTypeDeploymentService,
+  DeploymentService
 }
-import pl.touk.nussknacker.ui.process.processingtypedata.ValueAccessPermission.UserWithAccessRightsToCategory
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.{
+  selectedScenarioTypeConfigurationPath,
+  toValueWithRestriction
+}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,9 +27,8 @@ object ProcessingTypeDataReader extends ProcessingTypeDataReader {
 
   val selectedScenarioTypeConfigurationPath = "selectedScenarioType"
 
-  def toValueWithPermission(processingTypeData: ProcessingTypeData): ValueWithPermission[ProcessingTypeData] = {
-    val accessPermission = UserWithAccessRightsToCategory(processingTypeData.category)
-    ValueWithPermission(processingTypeData, accessPermission)
+  def toValueWithRestriction(processingTypeData: ProcessingTypeData): ValueWithRestriction[ProcessingTypeData] = {
+    ValueWithRestriction.userWithAccessRightsToAnyOfCategories(processingTypeData, Set(processingTypeData.category))
   }
 
 }
@@ -44,17 +47,33 @@ trait ProcessingTypeDataReader extends LazyLogging {
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
-    val processingTypesData = processingTypesConfig
-      .filter(selectedScenarioTypeFilter)
-      .map { case (name, typeConfig) =>
-        name ->
-          createProcessingTypeData(
-            name,
-            typeConfig,
-            deploymentService,
-            createAllDeployedScenarioService,
-            additionalUIConfigProvider
-          )
+    val filteredProcessingTypes    = processingTypesConfig.filter(selectedScenarioTypeFilter)
+    // This step with splitting DeploymentManagerProvider loading for all processing types
+    // and after that creating ProcessingTypeData is done because of the deduplication of deployments
+    // See DeploymentManagerProvider.engineSetupIdentity
+    val providerWithNameInputData = filteredProcessingTypes.mapValuesNow { processingTypeConfig =>
+      val provider = createDeploymentManagerProvider(processingTypeConfig)
+      val nameInputData = EngineNameInputData(
+        provider.defaultEngineSetupName,
+        provider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
+        None // FIXME (next PRs) add deployment config and tests for that
+      )
+      (processingTypeConfig, provider, nameInputData)
+    }
+    val engineSetupNames =
+      ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
+    val processingTypesData = providerWithNameInputData
+      .map { case (processingType, (typeConfig, provider, _)) =>
+        val processingTypeData = createProcessingTypeData(
+          processingType,
+          typeConfig,
+          provider,
+          engineSetupNames(processingType),
+          deploymentService,
+          createAllDeployedScenarioService,
+          additionalUIConfigProvider
+        )
+        processingType -> processingTypeData
       }
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
@@ -62,7 +81,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
     val combinedData = createCombinedData(processingTypesData)
 
     ProcessingTypeDataState(
-      processingTypesData.mapValuesNow(toValueWithPermission),
+      processingTypesData.mapValuesNow(toValueWithRestriction),
       () => combinedData,
       // We pass here new Object to enforce update of observers
       new Object
@@ -79,9 +98,15 @@ trait ProcessingTypeDataReader extends LazyLogging {
     (processingType, _) => selectedScenarioTypeOpt.forall(_ == processingType)
   }
 
+  protected def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
+    ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.deploymentManagerType)
+  }
+
   protected def createProcessingTypeData(
       processingType: ProcessingType,
-      typeConfig: ProcessingTypeConfig,
+      processingTypeConfig: ProcessingTypeConfig,
+      deploymentManagerProvider: DeploymentManagerProvider,
+      engineSetupName: EngineSetupName,
       deploymentService: DeploymentService,
       createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
       additionalUIConfigProvider: AdditionalUIConfigProvider
@@ -90,12 +115,17 @@ trait ProcessingTypeDataReader extends LazyLogging {
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any]
   ): ProcessingTypeData = {
-    logger.debug(s"Creating scenario manager: $processingType with config: $typeConfig")
-    val managerProvider            = ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.engineType)
+    logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
     val allDeployedScenarioService = createAllDeployedScenarioService(processingType)
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService =
       new DefaultProcessingTypeDeploymentService(processingType, deploymentService, allDeployedScenarioService)
-    ProcessingTypeData.createProcessingTypeData(processingType, managerProvider, typeConfig, additionalUIConfigProvider)
+    ProcessingTypeData.createProcessingTypeData(
+      processingType,
+      deploymentManagerProvider,
+      engineSetupName,
+      processingTypeConfig,
+      additionalUIConfigProvider
+    )
   }
 
   protected def createCombinedData(

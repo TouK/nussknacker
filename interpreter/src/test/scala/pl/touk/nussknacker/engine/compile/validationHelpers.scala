@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
@@ -20,7 +21,7 @@ import scala.concurrent.Future
 
 object validationHelpers {
 
-  object SimpleStringSource extends SourceFactory {
+  object SimpleStringSource extends SourceFactory with UnboundedStreamComponent {
     @MethodToInvoke(returnType = classOf[String])
     def create(): api.process.Source = null
   }
@@ -270,7 +271,7 @@ object validationHelpers {
     override def nodeDependencies: List[NodeDependency] = List.empty
   }
 
-  class GenericParametersSource extends SourceFactory with GenericParameters[Source] {
+  class GenericParametersSource extends SourceFactory with GenericParameters[Source] with UnboundedStreamComponent {
 
     protected def outputParameters(
         context: ValidationContext,
@@ -300,7 +301,7 @@ object validationHelpers {
 
   }
 
-  class GenericParametersSourceNoTestSupport extends GenericParametersSource {
+  class GenericParametersSourceNoTestSupport extends GenericParametersSource with UnboundedStreamComponent {
 
     override def implementation(
         params: Map[String, Any],
@@ -314,7 +315,7 @@ object validationHelpers {
 
   }
 
-  class GenericParametersSourceNoGenerate extends GenericParametersSource {
+  class GenericParametersSourceNoGenerate extends GenericParametersSource with UnboundedStreamComponent {
 
     override def implementation(
         params: Map[String, Any],
@@ -329,7 +330,7 @@ object validationHelpers {
 
   }
 
-  class SourceWithTestParameters extends GenericParametersSource {
+  class SourceWithTestParameters extends GenericParametersSource with UnboundedStreamComponent {
 
     override def implementation(
         params: Map[String, Any],

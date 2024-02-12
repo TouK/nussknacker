@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
@@ -56,4 +57,10 @@ class PeriodicDeploymentManagerProvider(
 
   override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
     delegate.scenarioPropertiesConfig(config)
+
+  override def defaultEngineSetupName: EngineSetupName = delegate.defaultEngineSetupName
+
+  override def engineSetupIdentity(config: Config): Any =
+    delegate.engineSetupIdentity(config)
+
 }

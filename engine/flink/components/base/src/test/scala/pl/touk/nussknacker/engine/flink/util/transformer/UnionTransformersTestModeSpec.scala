@@ -111,7 +111,7 @@ class UnionTransformersTestModeSpec
   ): LocalModelData = {
     val sourceComponent = ComponentDefinition(
       "start",
-      SourceFactory.noParam[String](
+      SourceFactory.noParamUnboundedStreamFactory[String](
         CollectionSource(inputElements, timestampAssigner = None, returnType = Typed[String])(
           TypeInformation.of(classOf[String])
         )

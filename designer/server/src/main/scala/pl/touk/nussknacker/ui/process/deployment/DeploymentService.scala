@@ -31,11 +31,6 @@ trait DeploymentService extends ProcessStateService {
 
   def invalidateInProgressActions(): Unit
 
-  // TODO: This method is for backward compatibility. Remove it after switching all Flink jobs into mandatory deploymentId in StatusDetails
-  def markProcessFinishedIfLastActionDeploy(processingType: ProcessingType, processName: ProcessName)(
-      implicit ec: ExecutionContext
-  ): Future[Option[ProcessAction]]
-
   // Marks action execution finished. Returns true if update has some effect
   def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(
       implicit ec: ExecutionContext

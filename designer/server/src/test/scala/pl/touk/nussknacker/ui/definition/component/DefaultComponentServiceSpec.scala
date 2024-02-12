@@ -1,33 +1,30 @@
 package pl.touk.nussknacker.ui.definition.component
 
+import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.api.helpers.{
-  MockDeploymentManager,
-  MockFetchingProcessRepository,
-  MockManagerProvider,
-  TestFactory
-}
+import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, MockManagerProvider, TestFactory}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
@@ -40,25 +37,37 @@ import pl.touk.nussknacker.ui.component.{
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
-import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
+import pl.touk.nussknacker.ui.process.processingtype.{
+  ProcessingTypeData,
+  ProcessingTypeDataProvider,
+  ProcessingTypeDataReader,
+  ScenarioParametersService
+}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import sttp.client3.SttpBackend
+import sttp.client3.akkahttp.AkkaHttpBackend
 
 import java.net.URI
+import scala.concurrent.Future
 
 class DefaultComponentServiceSpec
     extends AnyFlatSpec
     with Matchers
     with PatientScalaFutures
     with EitherValuesDetailedMessage
+    with ValidatedValuesDetailedMessage
     with OptionValues {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  private implicit val actorSystem: ActorSystem              = ActorSystem(getClass.getSimpleName)
+  private implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(actorSystem)
+  private implicit val processingTypeDeploymentService: ProcessingTypeDeploymentService = null
 
   private val executionGroupName: ComponentGroupName  = ComponentGroupName("execution")
   private val responseGroupName: ComponentGroupName   = ComponentGroupName("response")
@@ -223,13 +232,6 @@ class DefaultComponentServiceSpec
        |}
        |""".stripMargin)
 
-  private val categoryService = ConfigProcessCategoryService(
-    Map(
-      Streaming -> CategoryMarketing,
-      Fraud     -> CategoryFraud
-    )
-  )
-
   private val baseComponents: List[ComponentListElement] =
     List(
       baseComponent(BuiltInComponentId.Filter, overriddenIcon, BaseGroupName, AllCategories),
@@ -378,14 +380,6 @@ class DefaultComponentServiceSpec
   private def prepareComponents(implicit user: LoggedUser): List[ComponentListElement] =
     baseComponents ++ prepareSharedComponents ++ prepareMarketingComponents ++ prepareFraudComponents ++ fragmentMarketingComponents ++ fragmentFraudComponents
 
-  private val fragmentFromCategories = AllCategories
-    .flatMap(cat =>
-      categoryService
-        .getTypeForCategory(cat)
-        .map(processingType => createFragmentEntity(cat, category = cat, processingType = processingType))
-    )
-    .toSet
-
   private def marketingComponent(
       componentId: ComponentId,
       icon: String,
@@ -473,10 +467,10 @@ class DefaultComponentServiceSpec
     }
   }
 
-  private def hasAccess(user: LoggedUser, categories: Category*): Boolean =
+  private def hasAccess(user: LoggedUser, categories: String*): Boolean =
     categories.forall(cat => user.can(cat, Permission.Read))
 
-  private val admin = TestFactory.adminUser()
+  private lazy val admin = TestFactory.adminUser()
 
   private val marketingUser = TestFactory.userWithCategoriesReadPermission(
     username = "marketingUser",
@@ -489,7 +483,7 @@ class DefaultComponentServiceSpec
   private val providerComponents =
     new DynamicComponentProvider().create(ConfigFactory.empty, ProcessObjectDependencies.empty)
 
-  private val modelDataMap: Map[ProcessingType, (LocalModelData, Category)] = Map(
+  private val modelDataMap: Map[ProcessingType, (LocalModelData, String)] = Map(
     Streaming -> (LocalModelData(
       streamingConfig,
       providerComponents,
@@ -506,9 +500,14 @@ class DefaultComponentServiceSpec
     CategoryFraud)
   )
 
+  private val fragmentFromCategories = modelDataMap.toList
+    .map { case (processingType, (_, category)) =>
+      createFragmentEntity(name = category, category = category, processingType = processingType)
+    }
+
   it should "return components for each user" in {
     val processes        = List(MarketingProcess, FraudProcess, ArchivedFraudProcess)
-    val componentService = prepareService(modelDataMap, processes, fragmentFromCategories.toList)
+    val componentService = prepareService(modelDataMap, processes, fragmentFromCategories)
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
       prepareComponents(user)
@@ -737,34 +736,12 @@ class DefaultComponentServiceSpec
   }
 
   private def prepareService(
-      modelDataMap: Map[ProcessingType, (LocalModelData, Category)],
+      modelDataMap: Map[ProcessingType, (LocalModelData, String)],
       scenarios: List[ScenarioWithDetailsEntity[ScenarioGraph]],
       fragments: List[ScenarioWithDetailsEntity[ScenarioGraph]]
   ): ComponentService = {
-    val processingTypeDataMap: Map[ProcessingType, ProcessingTypeData] = modelDataMap.transform {
-      case (processingType, (modelData, category)) =>
-        ProcessingTypeData.createProcessingTypeData(
-          processingType,
-          MockManagerProvider,
-          new MockDeploymentManager,
-          modelData,
-          ConfigFactory.empty(),
-          category
-        )
-    }
-
-    val processingTypeDataProvider = ProcessingTypeDataProvider
-      .withEmptyCombinedData(
-        processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
-      )
-      .mapValues { processingTypeData =>
-        val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
-          processingTypeData.modelData
-        )
-        ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
-      }
-
-    val processService = createDbProcessService(scenarios)
+    val processingTypeDataProvider = prepareProcessingTypeDataProvider(modelDataMap)
+    val processService             = createDbProcessService(scenarios, processingTypeDataProvider)
     new DefaultComponentService(
       componentLinksConfig,
       processingTypeDataProvider,
@@ -773,13 +750,40 @@ class DefaultComponentServiceSpec
     )
   }
 
+  private def prepareProcessingTypeDataProvider(
+      modelDataMap: Map[ProcessingType, (LocalModelData, String)]
+  ): ProcessingTypeDataProvider[ComponentServiceProcessingTypeData, ScenarioParametersService] = {
+    val processingTypeDataMap: Map[ProcessingType, ProcessingTypeData] = modelDataMap.transform {
+      case (processingType, (modelData, category)) =>
+        ProcessingTypeData.createProcessingTypeData(
+          processingType,
+          MockManagerProvider,
+          EngineSetupName("Mock"),
+          modelData,
+          ConfigFactory.empty(),
+          category
+        )
+    }
+
+    ProcessingTypeDataProvider(
+      processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithRestriction),
+      ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
+    ).mapValues { processingTypeData =>
+      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
+        processingTypeData.designerModelData.modelData
+      )
+      ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
+    }
+  }
+
   private def createDbProcessService(
-      processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = Nil
+      processes: List[ScenarioWithDetailsEntity[ScenarioGraph]],
+      scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService],
   ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
-      processCategoryServiceProvider = ProcessingTypeDataProvider(Map.empty, categoryService),
+      scenarioParametersServiceProvider = scenarioParametersServiceProvider,
       processResolverByProcessingType = TestFactory.processResolverByProcessingType,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),

@@ -1,22 +1,21 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
-import akka.http.scaladsl.server
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
+import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.http.HttpStatus
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.LoneElement._
 import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.graph.ProcessProperties
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -28,6 +27,7 @@ import pl.touk.nussknacker.ui.api.helpers.spel._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
+import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
@@ -55,6 +55,7 @@ class ProcessesResourcesSpec
   import TestCategories._
   import io.circe._
   import io.circe.parser._
+  import io.circe.generic.auto._
 
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
@@ -198,7 +199,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    Post(s"/processes/$processName/$Category1?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
+    createProcessRequest(processName) { status =>
       status shouldBe StatusCodes.BadRequest
       responseAs[String] shouldEqual s"Scenario $processName already exists"
     }
@@ -685,18 +686,17 @@ class ProcessesResourcesSpec
     }
   }
 
-  test("not authorize user with read permissions to modify node") {
-    Put(
-      s"/processes/$Category1/$processName",
-      posting.toRequestEntity(posting.toJsonAsProcessToSave(ProcessTestData.validProcess))
-    ) ~> routeWithRead ~> check {
-      rejection shouldBe server.AuthorizationFailedRejection
-    }
-
-    val modifiedParallelism = 123
-    val props               = ProcessProperties(StreamMetaData(Some(modifiedParallelism)))
-    Put(s"/processes/$Category1/$processName", posting.toRequestEntity(props)) ~> routeWithRead ~> check {
-      rejection shouldBe server.AuthorizationFailedRejection
+  test("not authorize user with read permissions to create scenario") {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(Category1),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post(s"/processes", posting.toRequestEntity(command)) ~> routeWithRead ~> check {
+      status shouldEqual StatusCodes.Unauthorized
     }
   }
 
@@ -783,19 +783,15 @@ class ProcessesResourcesSpec
   }
 
   test("save new process with empty json") {
-    val newProcessId = "tst1"
-    Post(s"/processes/$newProcessId/$Category1?isFragment=false") ~> withPermissions(
-      processesRoute,
-      testPermissionWrite |+| testPermissionRead
-    ) ~> check {
+    val newProcessId = ProcessName("tst1")
+    createProcessRequest(newProcessId) { status =>
       status shouldEqual StatusCodes.Created
-
-      Get(s"/processes/$newProcessId") ~> routeWithRead ~> check {
-        status shouldEqual StatusCodes.OK
-        val loadedProcess = responseAs[ScenarioWithDetails]
-        loadedProcess.processCategory shouldBe Category1
-        loadedProcess.createdAt should not be null
-      }
+    }
+    Get(s"/processes/$newProcessId") ~> routeWithRead ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[ScenarioWithDetails]
+      loadedProcess.processCategory shouldBe Category1
+      loadedProcess.createdAt should not be null
     }
   }
 
@@ -803,17 +799,9 @@ class ProcessesResourcesSpec
     val scenarioGraphToSave = ProcessTestData.sampleScenarioGraph
     saveProcess(scenarioGraphToSave) {
       status shouldEqual StatusCodes.OK
-      Post(s"/processes/${processName}/$Category1?isFragment=false") ~> routeWithWrite ~> check {
+      createProcessRequest(processName) { status =>
         status shouldEqual StatusCodes.BadRequest
       }
-    }
-  }
-
-  test("not allow to save process with category not allowed for user") {
-    Post(s"/processes/p11/abcd/${TestProcessingTypes.Streaming}") ~> routeWithWrite ~> check {
-      // this one below does not work, but I cannot compose path and authorize directives in a right way
-      // rejection shouldBe server.AuthorizationFailedRejection
-      handled shouldBe false
     }
   }
 

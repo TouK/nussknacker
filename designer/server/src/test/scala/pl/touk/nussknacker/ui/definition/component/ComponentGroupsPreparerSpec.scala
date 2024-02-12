@@ -147,7 +147,7 @@ class ComponentGroupsPreparerSpec
   test("hide sources for fragments") {
     val model =
       getAlignedComponentsWithStaticDefinition(
-        ModelDefinitionBuilder.empty.withSource("source").build,
+        ModelDefinitionBuilder.empty.withUnboundedStreamSource("source").build,
         Map.empty,
         forFragment = true
       )

@@ -36,8 +36,7 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
       db              <- DbRef.create(config.resolved)
       server = new NussknackerHttpServer(
         new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataStateFactory)(system, materializer),
-        system,
-        materializer
+        system
       )
       _ <- server.start(config, metricsRegistry)
       _ <- startJmxReporter(metricsRegistry)

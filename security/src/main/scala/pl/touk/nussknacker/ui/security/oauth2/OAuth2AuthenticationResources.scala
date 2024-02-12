@@ -100,7 +100,7 @@ class OAuth2AuthenticationResources(
       case Some(uri) if uri.endsWith("/docs/oauth2-redirect.html") =>
         Some(uri)
       case _ =>
-        Seq(redirectUriFromRequest, redirectUriFromConfiguration).flatten.exactlyOne
+        List(redirectUriFromRequest, redirectUriFromConfiguration).flatten.exactlyOne
     }
   }
 

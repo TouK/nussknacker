@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   CustomComponentSpecificData
 }
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -24,9 +25,13 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
+import pl.touk.nussknacker.restmodel.scenariodetails.{
+  ScenarioParameters,
+  ScenarioWithDetails,
+  ScenarioWithDetailsForMigrations
+}
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
-import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
+import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
@@ -66,9 +71,9 @@ object ProcessTestData {
   ): ModelDefinition =
     ModelDefinitionBuilder
       .empty(groupNameMapping)
-      .withSource(existingSourceFactory)
-      .withSource(otherExistingSourceFactory)
-      .withSource(csvSourceFactory)
+      .withUnboundedStreamSource(existingSourceFactory)
+      .withUnboundedStreamSource(otherExistingSourceFactory)
+      .withUnboundedStreamSource(csvSourceFactory)
       .withSink(existingSinkFactory)
       .withSink(
         existingSinkFactoryKafkaString,
@@ -122,6 +127,9 @@ object ProcessTestData {
     List.empty,
     new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
+
+  val sampleScenarioParameters: ScenarioParameters =
+    ScenarioParameters(ProcessingMode.UnboundedStream, TestCategories.Category1, EngineSetupName("Stub Engine"))
 
   val sampleProcessName: ProcessName = ProcessName("fooProcess")
 
@@ -334,14 +342,14 @@ object ProcessTestData {
 
   def createEmptyUpdateProcessCommand(
       comment: Option[UpdateProcessComment]
-  ): UpdateProcessCommand = {
+  ): UpdateScenarioCommand = {
     val scenarioGraph = ScenarioGraph(
       properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
       nodes = List.empty,
       edges = List.empty
     )
 
-    UpdateProcessCommand(scenarioGraph, comment.getOrElse(UpdateProcessComment("")), None)
+    UpdateScenarioCommand(scenarioGraph, comment.getOrElse(UpdateProcessComment("")), None)
   }
 
   def validProcessWithFragment(
