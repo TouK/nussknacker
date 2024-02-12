@@ -140,7 +140,7 @@ case object TabularTypedDataEditor extends SimpleParameterEditor {
     }
 
     implicit val decoder: Decoder[TabularTypedData] = {
-      implicit val classDecoder: Decoder[Class[_]] = Decoder.decodeString.emapTry { str =>
+      implicit val classDecoder: Decoder[Class[_]] = Decoder.decodeString.emapTry[Class[_]] { str =>
         Try(Class.forName(str))
       }
       implicit val columnDecoder: Decoder[Column.Definition] =
