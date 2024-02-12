@@ -135,7 +135,7 @@ case class ClassLoaderModelData private (
     }
   }
 
-  override def namingStrategy: NamingStrategy = NamingStrategyProvider(modelConfig)
+  override val namingStrategy: NamingStrategy = NamingStrategyProvider(modelConfig)
 
   override val extractModelDefinitionFun: ExtractDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category)
 
