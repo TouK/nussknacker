@@ -19,13 +19,13 @@ describe("Table editor", () => {
 
         cy.getNode("decisionTableCustomNode").dblclick();
         cy.get("[data-testid=window]").should("be.visible").as("modal");
-        cy.get("[title='tableData']").next().as("editor");
+        cy.get("[title='Basic Decision Table']").next().as("editor");
         cy.get("[data-testid='table-container']").should("be.visible").as("table");
         snapshot();
 
         cy.get("@table").click(100, 50);
         cy.get("[value='java.lang.Double']").click();
-        cy.get("@table").click(500, 18);
+        cy.get("@table").click(550, 18);
         cy.realType("some name");
         cy.realPress("Enter");
 
@@ -33,7 +33,7 @@ describe("Table editor", () => {
         cy.get("#portal textarea").should("be.visible");
         cy.realType("hello world");
         cy.realPress("Enter");
-        cy.get("@table").click(550, 25).click(550, 25);
+        cy.get("@table").click(580, 25).click(580, 25);
         cy.get("@table").click(350, 125).click(350, 125);
         cy.get("#portal textarea").should("be.visible");
         cy.realType("foo").realPress("Tab");
@@ -41,13 +41,6 @@ describe("Table editor", () => {
         cy.realPress("Enter");
         cy.realPress("Escape");
         cy.realType("xxx");
-
-        cy.get("[title='Switch to expression mode']").should("be.enabled").click();
-        cy.get("@table").should("not.exist");
-        snapshot();
-
-        cy.get("[title='Switch to table mode']").should("be.enabled").click();
-        cy.get("[data-testid='table-container']").should("be.visible").as("table");
         snapshot();
 
         cy.get("@table").rightclick(15, 125);
@@ -60,10 +53,6 @@ describe("Table editor", () => {
         cy.contains(/^remove row$/i).click();
         cy.get("@table").rightclick(480, 90);
         cy.contains(/^remove column$/i).click();
-        snapshot();
-
-        cy.get("[title='Switch to expression mode']").should("be.enabled").click();
-        cy.get("@table").should("not.exist");
         snapshot();
     });
 });
