@@ -101,12 +101,11 @@ class AkkaHttpBasedRouteProvider(
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
       typeToConfig <- prepareProcessingTypeData(
         config,
-        deploymentServiceSupplier,
-        AllDeployedScenarioService(dbRef, _),
         processingTypeDataStateFactory,
         additionalUIConfigProvider,
+        deploymentServiceSupplier,
+        AllDeployedScenarioService(dbRef, _),
         sttpBackend,
-        system.dispatcher,
       )
     } yield {
       val analyticsConfig = AnalyticsConfig(resolvedConfig)
@@ -498,12 +497,11 @@ class AkkaHttpBasedRouteProvider(
 
   private def prepareProcessingTypeData(
       designerConfig: ConfigWithUnresolvedVersion,
-      deploymentServiceSupplier: Supplier[DeploymentService],
-      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
       processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
+      deploymentServiceSupplier: Supplier[DeploymentService],
+      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
       sttpBackend: SttpBackend[Future, Any],
-      executionContext: ExecutionContext,
   ): Resource[IO, ProcessingTypeDataReload] = {
     Resource
       .make(
@@ -516,7 +514,7 @@ class AkkaHttpBasedRouteProvider(
                   deploymentServiceSupplier.get(),
                   createAllDeployedScenarioService(processingType)
                 ),
-                executionContext,
+                system.dispatcher,
                 system,
                 sttpBackend
               )
