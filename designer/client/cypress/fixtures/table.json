@@ -55,17 +55,26 @@
         },
         {
             "id": "decisionTableCustomNode",
-            "outputVar": null,
-            "nodeType": "table",
-            "parameters": [
-                {
-                    "name": "tableData",
-                    "expression": {
-                        "language": "json",
-                        "expression": "{\n \"columns\": [\n  [\"A\", \"java.lang.String\"]\n ],\n \"rows\": [\n  [\"test\"]\n ]\n}"
+            "service": {
+                "id": "decisionTable",
+                "parameters": [
+                    {
+                        "name": "Basic Decision Table",
+                        "expression": {
+                            "language": "tabularDataDefinition",
+                            "expression": "{\n \"columns\": [\n  {\"name\":\"A\", \"type\": \"java.lang.String\"}\n ],\n \"rows\": [\n  [\"test\"]\n ]\n}"
+                        }
+                    },
+                    {
+                        "name": "Expression",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "true"
+                        }
                     }
-                }
-            ],
+                ]
+            },
+            "output": "output",
             "additionalFields": {
                 "description": null,
                 "layoutData": {
@@ -73,7 +82,7 @@
                     "y": 180
                 }
             },
-            "type": "CustomNode"
+            "type": "Enricher"
         },
         {
             "id": "dead-end-lite",
