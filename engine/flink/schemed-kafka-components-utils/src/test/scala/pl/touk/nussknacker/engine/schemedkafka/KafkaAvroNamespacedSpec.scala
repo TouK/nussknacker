@@ -47,7 +47,7 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    modelData = LocalModelData(config, List.empty, configCreator = creator, namingStrategy = namingStrategy)
+    modelData = LocalModelData(config, List.empty, configCreator = creator)
   }
 
   test("should read event in the same version as source requires and save it in the same version") {

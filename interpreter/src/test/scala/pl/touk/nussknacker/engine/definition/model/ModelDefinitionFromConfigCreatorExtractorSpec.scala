@@ -204,7 +204,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val modelDefinition = ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(
       TestCreator,
       category,
-      ProcessObjectDependencies.withConfig(modelConfig),
+      TestProcessObjectDependenciesProvider.withConfig(modelConfig),
       ComponentsUiConfigParser.parse(modelConfig),
       id => DesignerWideComponentId(id.toString),
       Map.empty

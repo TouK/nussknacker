@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.namespaces
 
+import com.typesafe.config.Config
+
 // TODO: document rename and removal of SPI
 case class NamingStrategy(namespace: Option[String]) {
 
@@ -20,6 +22,20 @@ case class NamingStrategy(namespace: Option[String]) {
         }
       case None => Some(name)
     }
+  }
+
+}
+
+object NamingStrategyProvider {
+  private val NamespacePath = "namespace"
+
+  def apply(modelConfig: Config): NamingStrategy = {
+    val namespaceOpt = if (modelConfig.hasPath(NamespacePath)) {
+      Some(modelConfig.getString(NamespacePath))
+    } else {
+      None
+    }
+    NamingStrategy(namespaceOpt)
   }
 
 }

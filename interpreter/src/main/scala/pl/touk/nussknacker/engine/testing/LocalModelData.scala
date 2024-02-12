@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentId,
   DesignerWideComponentId
 }
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.namespaces.{NamingStrategy, NamingStrategyProvider}
 import pl.touk.nussknacker.engine.api.process.{
   EmptyProcessConfigCreator,
   ProcessConfigCreator,
@@ -39,9 +39,9 @@ object LocalModelData {
       migrations: ProcessMigrations = ProcessMigrations.empty,
       modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
-      namingStrategy: NamingStrategy = NamingStrategy(namespace = None),
       determineDesignerWideId: ComponentId => DesignerWideComponentId = DesignerWideComponentId.default("streaming", _),
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
+      namingStrategy: Option[NamingStrategy] = None
   ): LocalModelData =
     new LocalModelData(
       InputConfigDuringExecution(inputConfig),
@@ -50,7 +50,7 @@ object LocalModelData {
       configCreator,
       migrations,
       modelClassLoader,
-      namingStrategy,
+      namingStrategy = namingStrategy.getOrElse(NamingStrategyProvider(inputConfig)),
       components,
       determineDesignerWideId,
       additionalConfigsFromProvider
