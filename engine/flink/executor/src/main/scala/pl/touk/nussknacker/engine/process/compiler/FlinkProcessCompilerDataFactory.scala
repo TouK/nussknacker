@@ -4,12 +4,11 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
@@ -34,7 +33,7 @@ class FlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
-    objectNaming: ObjectNaming,
+    namingStrategy: NamingStrategy,
     componentUseCase: ComponentUseCase,
 ) extends Serializable {
 
@@ -45,7 +44,7 @@ class FlinkProcessCompilerDataFactory(
     modelData.configCreator,
     modelData.extractModelDefinitionFun,
     modelData.modelConfig,
-    modelData.objectNaming,
+    modelData.namingStrategy,
     componentUseCase = ComponentUseCase.EngineRuntime,
   )
 
@@ -61,7 +60,7 @@ class FlinkProcessCompilerDataFactory(
       usedNodes: UsedNodes,
       userCodeClassLoader: ClassLoader
   ): FlinkProcessCompilerData = {
-    val modelDependencies = ProcessObjectDependencies(modelConfig, objectNaming)
+    val modelDependencies = ProcessObjectDependencies(modelConfig, namingStrategy)
 
     // TODO: this should be somewhere else?
     val timeout = modelConfig.as[FiniteDuration]("timeout")

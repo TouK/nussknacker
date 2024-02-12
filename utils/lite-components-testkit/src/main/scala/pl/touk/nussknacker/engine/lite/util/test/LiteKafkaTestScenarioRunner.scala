@@ -12,6 +12,7 @@ import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.everit.json.schema.{Schema => EveritSchema}
+import pl.touk.nussknacker.engine.NamingStrategyProvider
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -91,7 +92,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     copy(schemaRegistryClientFactor = schemaRegistryClientFactor)
 
   override def build(): LiteKafkaTestScenarioRunner = {
-    val modelDependencies             = ProcessObjectDependencies.withConfig(config)
+    val modelDependencies             = ProcessObjectDependencies(config, NamingStrategyProvider(config))
     val mockedKafkaComponentsProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactor)
     val mockedKafkaComponents         = mockedKafkaComponentsProvider.create(config, modelDependencies)
     val schemaRegistryClient          = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(config))

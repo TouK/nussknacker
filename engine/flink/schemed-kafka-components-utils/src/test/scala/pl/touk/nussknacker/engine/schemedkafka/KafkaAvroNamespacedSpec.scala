@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.avro.Schema
 import org.scalatest.OptionValues
-import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
@@ -23,7 +23,7 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
 
   import KafkaAvroNamespacedMockSchemaRegistry._
 
-  protected val objectNaming: ObjectNaming = new TestObjectNaming(namespace)
+  protected val namingStrategy: NamingStrategy = NamingStrategy(Some(namespace))
 
   override protected def resolveConfig(config: Config): Config = {
     super
@@ -32,7 +32,7 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
   }
 
   override protected lazy val testModelDependencies: ProcessObjectDependencies =
-    ProcessObjectDependencies(config, objectNaming)
+    ProcessObjectDependencies(config, namingStrategy)
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
@@ -47,7 +47,7 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    modelData = LocalModelData(config, List.empty, configCreator = creator, objectNaming = objectNaming)
+    modelData = LocalModelData(config, List.empty, configCreator = creator, namingStrategy = namingStrategy)
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
@@ -67,30 +67,6 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
 object KafkaAvroNamespacedSpec {
 
   private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
-
-}
-
-class TestObjectNaming(namespace: String) extends ObjectNaming {
-
-  private final val NamespacePattern = s"${namespace}_(.*)".r
-
-  override def prepareName(originalName: String, config: Config, namingContext: NamingContext): String =
-    namingContext.usageKey match {
-      case KafkaUsageKey => s"${namespace}_$originalName"
-      case _             => originalName
-    }
-
-  override def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String] =
-    (namingContext.usageKey, preparedName) match {
-      case (KafkaUsageKey, NamespacePattern(value)) => Some(value)
-      case _                                        => Option.empty
-    }
-
-  override def objectNamingParameters(
-      originalName: String,
-      config: Config,
-      namingContext: NamingContext
-  ): Option[ObjectNamingParameters] = None
 
 }
 
