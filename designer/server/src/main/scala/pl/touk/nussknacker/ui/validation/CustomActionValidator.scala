@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.validation
 
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionRequest}
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionRequest}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 object CustomActionValidator {
 
-  def validateCustomActionParams(request: CustomActionRequest, customAction: CustomAction): Unit = {
-    implicit val nodeId: NodeId = NodeId(customAction.name)
+  def validateCustomActionParams(request: CustomActionRequest, customAction: CustomActionDefinition): Unit = {
+    implicit val nodeId: NodeId = NodeId(customAction.name.value)
     val requestParamsMap        = request.params
     val customActionParams      = customAction.parameters
 
