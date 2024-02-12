@@ -9,10 +9,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span.convertSpanToDuration
 import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
+import pl.touk.nussknacker.engine.DeploymentManagerDependencies
+import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentServiceStub
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
 import skuber.api.Configuration
+import sttp.client3.testing.SttpBackendStub
 
 import scala.concurrent.duration._
 
@@ -24,8 +27,7 @@ class K8sDeploymentManagerOnMocksTest
     with Matchers
     with OptionValues {
 
-  protected implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
-  import system.dispatcher
+  private val system: ActorSystem = ActorSystem(getClass.getSimpleName)
 
   private var wireMockServer: WireMockServer = _
 
@@ -60,7 +62,13 @@ class K8sDeploymentManagerOnMocksTest
     val manager = new K8sDeploymentManager(
       LocalModelData(ConfigFactory.empty, List.empty),
       k8sConfig,
-      ConfigFactory.empty()
+      ConfigFactory.empty(),
+      DeploymentManagerDependencies(
+        new ProcessingTypeDeploymentServiceStub(List.empty),
+        system.dispatcher,
+        system,
+        SttpBackendStub.asynchronousFuture
+      )
     ) {
       override protected def k8sConfiguration: Configuration = Configuration.useLocalProxyOnPort(wireMockServer.port())
     }
