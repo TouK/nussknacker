@@ -17,13 +17,13 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLogging
 }
 import pl.touk.nussknacker.tests.base.it.{NuItTest2, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.WithRichNuConfig.TestCategory.Category1
-import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager2, WithRichNuConfig}
+import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager2, WithRichDesignerConfig}
 
 class AppApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
     with NuItTest2
-    with WithRichNuConfig
+    with WithRichDesignerConfig
     with WithRichConfigScenarioHelper
     with WithMockableDeploymentManager2
     with NuRestAssureExtensions

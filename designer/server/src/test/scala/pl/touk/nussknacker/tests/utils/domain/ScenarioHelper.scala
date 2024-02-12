@@ -1,22 +1,15 @@
 package pl.touk.nussknacker.tests.utils.domain
 
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.utils.scalas.FutureExtensions
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  ProcessingTypeDataConfigurationReader,
-  ProcessingTypeDataProvider,
-  ValueWithPermission
-}
+import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ValueWithPermission}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,12 +34,6 @@ private[tests] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implic
 
   private val futureFetchingScenarioRepository: DBFetchingProcessRepository[Future] =
     new DBFetchingProcessRepository[Future](dbRef, actionRepository) with BasicRepository
-
-  private val scenarioCategoryService: ProcessCategoryService = ConfigProcessCategoryService(
-    ProcessingTypeDataConfigurationReader
-      .readProcessingTypeConfig(ConfigWithUnresolvedVersion(designerConfig))
-      .mapValuesNow(_.category)
-  )
 
   def createSavedScenario(
       scenario: CanonicalProcess,

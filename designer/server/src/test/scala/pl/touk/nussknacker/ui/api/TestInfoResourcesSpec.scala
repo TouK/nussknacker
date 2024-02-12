@@ -18,12 +18,13 @@ import pl.touk.nussknacker.engine.definition.test.{
   TestInfoProvider,
   TestingCapabilities
 }
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.tests.base.it.NuResourcesTest
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 
 class TestInfoResourcesSpec
     extends AnyFunSuite
@@ -35,6 +36,7 @@ class TestInfoResourcesSpec
     with EitherValuesDetailedMessage {
 
   private val scenarioGraph: ScenarioGraph = ProcessTestData.sampleScenarioGraph
+  private val testPermissionAll = List(Permission.Deploy, Permission.Read, Permission.Write)
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 
@@ -68,7 +70,7 @@ class TestInfoResourcesSpec
     processAuthorizer,
     processService,
     mapProcessingTypeDataProvider(
-      Streaming -> createScenarioTestService(testInfoProvider(additionalDataSize))
+      Streaming.stringify -> createScenarioTestService(testInfoProvider(additionalDataSize))
     )
   )
 
@@ -79,7 +81,7 @@ class TestInfoResourcesSpec
         scenarioGraph.toJsonRequestEntity()
       ) ~> withPermissions(
         route(),
-        testPermissionAll
+        testPermissionAll: _*
       ) ~> check {
         implicit val contentUnmarshaller: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
         status shouldEqual StatusCodes.OK
@@ -96,7 +98,7 @@ class TestInfoResourcesSpec
         scenarioGraph.toJsonRequestEntity()
       ) ~> withPermissions(
         route(),
-        testPermissionAll
+        testPermissionAll: _*
       ) ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
@@ -105,7 +107,7 @@ class TestInfoResourcesSpec
         scenarioGraph.toJsonRequestEntity()
       ) ~> withPermissions(
         route(additionalDataSize = 20000),
-        testPermissionAll
+        testPermissionAll: _*
       ) ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
@@ -119,7 +121,7 @@ class TestInfoResourcesSpec
         scenarioGraph.toJsonRequestEntity()
       ) ~> withPermissions(
         route(),
-        testPermissionAll
+        testPermissionAll: _*
       ) ~> check {
         status shouldEqual StatusCodes.OK
         val entity = entityAs[Json]
@@ -136,7 +138,7 @@ class TestInfoResourcesSpec
         scenarioGraph.toJsonRequestEntity()
       ) ~> withPermissions(
         route(),
-        testPermissionRead
+        Permission.Read
       ) ~> check {
         status shouldEqual StatusCodes.OK
         val entity = entityAs[Json]

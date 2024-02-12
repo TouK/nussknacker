@@ -4,16 +4,16 @@ import com.typesafe.config.{Config, ConfigFactory}
 import enumeratum.{Enum, EnumEntry}
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.tests.config.WithSimplifiedNuConfig.TestCategory
+import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory
 import pl.touk.nussknacker.tests.utils.DesignerTestConfigValidator
 
-trait WithSimplifiedNuConfig extends WithDesignerConfig {
+trait WithRichDesignerConfig extends WithDesignerConfig {
   this: Suite =>
 
   validateConsistency()
 
   override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
-    ConfigFactory.parseResources("config/simple/simple-streaming-use-case-designer.conf")
+    ConfigFactory.parseResources("config/rich/rich-streaming-use-case-designer.conf")
   )
 
   private def validateConsistency(): Unit = {
@@ -25,25 +25,28 @@ trait WithSimplifiedNuConfig extends WithDesignerConfig {
 
 }
 
-object WithSimplifiedNuConfig {
+object WithRichDesignerConfig {
   sealed trait TestProcessingType extends EnumEntry
 
   object TestProcessingType extends Enum[TestProcessingType] {
-    case object Streaming extends TestProcessingType
+    case object Streaming1 extends TestProcessingType
+    case object Streaming2 extends TestProcessingType
 
     override val values = findValues
 
     implicit class ProcessingTypeStringify(processingType: TestProcessingType) {
 
       def stringify: String = processingType match {
-        case TestProcessingType.Streaming => "streaming"
+        case TestProcessingType.Streaming1 => "streaming1"
+        case TestProcessingType.Streaming2 => "streaming2"
       }
 
     }
 
     def categoryBy(processingType: TestProcessingType): TestCategory = {
       processingType match {
-        case TestProcessingType.Streaming => TestCategory.Default
+        case TestProcessingType.Streaming1 => TestCategory.Category1
+        case TestProcessingType.Streaming2 => TestCategory.Category2
       }
     }
 
@@ -52,14 +55,16 @@ object WithSimplifiedNuConfig {
   sealed trait TestCategory extends EnumEntry
 
   object TestCategory extends Enum[TestCategory] {
-    case object Default extends TestCategory
+    case object Category1 extends TestCategory
+    case object Category2 extends TestCategory
 
     override val values = findValues
 
     implicit class CategoryStringify(category: TestCategory) {
 
       def stringify: String = category match {
-        case Default => "Default"
+        case Category1 => "Category1"
+        case Category2 => "Category2"
       }
 
     }
@@ -70,7 +75,7 @@ object WithSimplifiedNuConfig {
         .apply(category)
     }
 
-    private[WithSimplifiedNuConfig] lazy val categoryByProcessingType =
+    private[WithRichDesignerConfig] lazy val categoryByProcessingType =
       TestProcessingType.values.map { processingType =>
         (processingType, TestProcessingType.categoryBy(processingType))
       }.toMap

@@ -10,12 +10,13 @@ import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.tests.TestProcessUtil.{createFragmentEntity, createScenarioEntity}
+import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory
+import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.tests.mock.MockFetchingProcessRepository
+import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
@@ -35,14 +36,17 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   // These users were created based on categories configuration at designer.conf
   private val adminUser = TestFactory.adminUser()
 
-  private val allCategoriesUser =
-    TestFactory.userWithCategoriesReadPermission(
-      username = "allCategoriesUser",
-      categories = TestCategory.values.toList
-    )
+  private val allCategoriesUser = LoggedUser(
+    id = "allCategoriesUser",
+    username = "allCategoriesUser",
+    categoryPermissions = TestCategory.values.map(c => c.stringify -> Set(Permission.Read)).toMap
+  )
 
-  private val category1User =
-    TestFactory.userWithCategoriesReadPermission(username = "testUser", categories = List(Category1))
+  private val category1User = LoggedUser(
+    id = "testUser",
+    username = "testUser",
+    categoryPermissions = Map(Category1.stringify -> Set(Permission.Read))
+  )
 
   private val category1Process =
     createScenarioEntity("category1Process", category = Category1.stringify, lastAction = Some(Deploy))

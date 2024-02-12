@@ -3,7 +3,7 @@ package pl.touk.nussknacker.tests.mock
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}

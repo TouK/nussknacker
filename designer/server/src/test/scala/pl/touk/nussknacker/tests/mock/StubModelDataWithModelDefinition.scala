@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 
 class StubModelDataWithModelDefinition(
     definition: ModelDefinition,

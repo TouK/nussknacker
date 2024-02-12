@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, ProcessTestData}
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig

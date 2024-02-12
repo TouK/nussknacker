@@ -23,7 +23,6 @@ import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.tests.ProcessTestData
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
 import pl.touk.nussknacker.tests.TestProcessUtil.{toCanonical, wrapGraphWithScenarioDetailsEntity}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -124,7 +123,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   private val processDetailsWithSomeBasesFraud = wrapGraphWithScenarioDetailsEntity(
     processWithSomeBasesFraud.name,
     CanonicalProcessConverter.toScenarioGraph(processWithSomeBasesFraud),
-    Streaming2.stringify
+    "Streaming2"
   )
 
   private val processWithFragment = ScenarioBuilder
@@ -183,10 +182,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   private val processingTypeAndInfoToNonFragmentDesignerWideId =
-    (nonFragmentComponents(DesignerWideComponentId.default(Streaming.stringify, _)).map { component =>
-      (Streaming.stringify, component.id) -> component.designerWideId
-    } ::: nonFragmentComponents(DesignerWideComponentId.default(Streaming2.stringify, _)).map { component =>
-      (Streaming2.stringify, component.id) -> component.designerWideId
+    (nonFragmentComponents(DesignerWideComponentId.default("Streaming", _)).map { component =>
+      ("Streaming", component.id) -> component.designerWideId
+    } ::: nonFragmentComponents(DesignerWideComponentId.default("Streaming2", _)).map { component =>
+      ("Streaming2", component.id) -> component.designerWideId
     }).toMap
 
   test("should compute components usage count") {
@@ -398,10 +397,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   private def sid(componentType: ComponentType, id: String) =
-    DesignerWideComponentId.default(Streaming.stringify, ComponentId(componentType, id))
+    DesignerWideComponentId.default("Streaming", ComponentId(componentType, id))
 
   private def fid(componentType: ComponentType, id: String) =
-    DesignerWideComponentId.default(Streaming2.stringify, ComponentId(componentType, id))
+    DesignerWideComponentId.default("Streaming2", ComponentId(componentType, id))
 
   private def bid(componentId: ComponentId) = DesignerWideComponentId.forBuiltInComponent(componentId)
 

@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand

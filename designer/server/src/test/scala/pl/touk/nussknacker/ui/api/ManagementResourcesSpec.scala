@@ -21,8 +21,8 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
 import pl.touk.nussknacker.tests.TestFactory.{withAllPermissions, withPermissions}
 import pl.touk.nussknacker.tests.base.it.NuResourcesTest
 import pl.touk.nussknacker.tests.mock.MockDeploymentManager
@@ -72,7 +72,7 @@ class ManagementResourcesSpec
   }
 
   test("process during deploy cannot be deployed again") {
-    createDeployedExampleScenario(processName, category = Category1)
+    createDeployedExampleScenario(processName)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
       deployProcess(processName) ~> check {
@@ -82,7 +82,7 @@ class ManagementResourcesSpec
   }
 
   test("canceled process can't be canceled again") {
-    createDeployedCanceledExampleScenario(processName, category = Category1)
+    createDeployedCanceledExampleScenario(processName)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       cancelProcess(processName) ~> check {
@@ -242,7 +242,7 @@ class ManagementResourcesSpec
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
     Post(s"/processManagement/deploy/${ProcessTestData.sampleScenario.name}") ~> withPermissions(
       deployRoute(),
-      testPermissionWrite
+      Permission.Write
     ) ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }

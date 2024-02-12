@@ -8,11 +8,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
+import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.TestFactory.withAllPermissions
 import pl.touk.nussknacker.tests.base.it.NuResourcesTest
-import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -30,13 +31,13 @@ class ProcessesChangeListenerSpec
     with NuResourcesTest {
 
   private val routeWithAllPermissions   = withAllPermissions(processesRoute)
-  implicit val loggedUser: LoggedUser   = createLoggedUser("1", "lu", TestFactory.testCategory)
+  implicit val loggedUser: LoggedUser   = createLoggedUser("1", "lu", Permission.ALL_PERMISSIONS: _*)
 
   private val processName = ProcessTestData.sampleScenario.name
 
   test("listen to process create") {
     Post(
-      s"/processes/$processName/${Category1.stringify}?isFragment=false"
+      s"/processes/$processName/${TestCategory.Default.stringify}?isFragment=false"
     ) ~> processesRouteWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
     }
@@ -111,7 +112,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to deployment cancel") {
-    val processId = createDeployedExampleScenario(processName, category = Category1)
+    val processId = createDeployedExampleScenario(processName)
     val comment   = Some("cancelComment")
 
     cancelProcess(

@@ -11,21 +11,14 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
-import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory, TestPermissions}
+import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
-  CreateProcessAction,
-  ProcessUpdated,
-  UpdateProcessAction
-}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.Instant
@@ -39,8 +32,7 @@ class DBFetchingProcessRepositorySpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with WithHsqlDbTesting
-    with PatientScalaFutures
-    with TestPermissions {
+    with PatientScalaFutures {
 
   private val dbioRunner = DBIOActionRunner(testDbRef)
 

@@ -7,8 +7,6 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCod
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
-import cats.instances.all._
-import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
@@ -29,17 +27,18 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.TestFactory._
-import pl.touk.nussknacker.tests.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.tests._
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Default
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, TestAdditionalUIConfigProvider, TestProcessChangeListener}
 import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
@@ -50,11 +49,7 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  DefaultProcessingTypeDeploymentService,
-  ProcessingTypeDataProvider,
-  ProcessingTypeDataReader
-}
+import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, ProcessingTypeDataConfigurationReader, ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
@@ -69,10 +64,10 @@ import scala.concurrent.{ExecutionContext, Future}
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
     extends WithHsqlDbTesting
+    with WithSimplifiedDesignerConfig
+    with WithSimplifiedConfigScenarioHelper
     with EitherValuesDetailedMessage
     with OptionValues
-    with TestPermissions
-    with NuTestScenarioManager
     with BeforeAndAfterEach
     with LazyLogging {
   self: ScalatestRouteTest with Suite with Matchers with ScalaFutures =>
@@ -89,6 +84,11 @@ trait NuResourcesTest
 
   protected val fetchingProcessRepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(testDbRef)
 
+  protected val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
+    newFutureFetchingScenarioRepository(
+    testDbRef
+  )
+
   protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(futureFetchingScenarioRepository)
 
   protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(testDbRef)
@@ -104,7 +104,7 @@ trait NuResourcesTest
   protected lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
 
   protected val dmDispatcher = new DeploymentManagerDispatcher(
-    mapProcessingTypeDataProvider(Streaming -> deploymentManager),
+    mapProcessingTypeDataProvider(Streaming.stringify -> deploymentManager),
     futureFetchingScenarioRepository
   )
 
@@ -128,6 +128,12 @@ trait NuResourcesTest
       AllDeployedScenarioService(testDbRef, processingType.stringify)
     )
   }
+
+  private val scenarioCategoryService: ProcessCategoryService = ConfigProcessCategoryService(
+    ProcessingTypeDataConfigurationReader
+      .readProcessingTypeConfig(ConfigWithUnresolvedVersion(designerConfig))
+      .mapValuesNow(_.category)
+  )
 
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
@@ -154,7 +160,7 @@ trait NuResourcesTest
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
-      Streaming -> ProcessingTypeData.createProcessingTypeData(
+      Streaming.stringify -> ProcessingTypeData.createProcessingTypeData(
         Streaming.stringify,
         deploymentManagerProvider,
         processingTypeConfig,
@@ -178,7 +184,7 @@ trait NuResourcesTest
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
     mapProcessingTypeDataProvider(
-      Streaming -> createScenarioTestService(createModelData(Streaming))
+      Streaming.stringify -> createScenarioTestService(createModelData(Streaming))
     )
 
   protected val configProcessToolbarService =
@@ -201,8 +207,8 @@ trait NuResourcesTest
 
   override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
-  protected def createLoggedUser(id: String, name: String, categorizedPermission: CategorizedPermission): LoggedUser = {
-    LoggedUser(id, name, categorizedPermission.map { case (k, v) => (k.stringify, v) })
+  protected def createLoggedUser(id: String, name: String, permissions: Permission.Permission*): LoggedUser = {
+    LoggedUser(id, name, Map(Default.stringify -> permissions.toSet))
   }
 
   protected def createDBProcessService(deploymentService: DeploymentService): DBProcessService =
@@ -285,11 +291,11 @@ trait NuResourcesTest
     }
   }
 
-  protected def createProcessRequest(processName: ProcessName, category: TestCategory = Category1)(
+  protected def createProcessRequest(processName: ProcessName)(
       callback: StatusCode => Assertion
   ): Assertion =
     Post(
-      s"/processes/$processName/${category.stringify}?isFragment=false"
+      s"/processes/$processName/${Default.stringify}?isFragment=false"
     ) ~> processesRouteWithAllPermissions ~> check {
       callback(status)
     }
@@ -297,10 +303,9 @@ trait NuResourcesTest
   protected def saveFragment(
       scenarioGraph: ScenarioGraph,
       name: ProcessName = ProcessTestData.sampleFragmentName,
-      category: TestCategory = Category1
   )(testCode: => Assertion): Assertion = {
     Post(
-      s"/processes/$name/${category.stringify}?isFragment=true"
+      s"/processes/$name/${Default.stringify}?isFragment=true"
     ) ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(scenarioGraph, name)(testCode)
@@ -343,7 +348,7 @@ trait NuResourcesTest
       s"/processManagement/deploy/$processName",
       HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
     ) ~>
-      withPermissions(deployRoute(deploymentCommentSettings), testPermissionDeploy |+| testPermissionRead)
+      withPermissions(deployRoute(deploymentCommentSettings), Permission.Deploy, Permission.Read)
 
   protected def cancelProcess(
       processName: ProcessName,
@@ -354,23 +359,23 @@ trait NuResourcesTest
       s"/processManagement/cancel/$processName",
       HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
     ) ~>
-      withPermissions(deployRoute(deploymentCommentSettings), testPermissionDeploy |+| testPermissionRead)
+      withPermissions(deployRoute(deploymentCommentSettings), Permission.Deploy, Permission.Read)
 
   protected def snapshot(processName: ProcessName): RouteTestResult =
     Post(s"/adminProcessManagement/snapshot/$processName") ~> withPermissions(
       deployRoute(),
-      testPermissionDeploy |+| testPermissionRead
+      Permission.Deploy, Permission.Read
     )
 
   protected def stop(processName: ProcessName): RouteTestResult =
     Post(s"/adminProcessManagement/stop/$processName") ~> withPermissions(
       deployRoute(),
-      testPermissionDeploy |+| testPermissionRead
+      Permission.Deploy, Permission.Read
     )
 
   protected def customAction(processName: ProcessName, reqPayload: CustomActionRequest): RouteTestResult =
     Post(s"/processManagement/customAction/$processName", reqPayload.toJsonRequestEntity()) ~>
-      withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
+      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
@@ -380,12 +385,12 @@ trait NuResourcesTest
     )()
     Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
       deployRoute(),
-      testPermissionDeploy |+| testPermissionRead
+      Permission.Deploy, Permission.Read
     )
   }
 
   protected def getProcess(processName: ProcessName): RouteTestResult =
-    Get(s"/processes/$processName") ~> withPermissions(processesRoute, testPermissionRead)
+    Get(s"/processes/$processName") ~> withPermissions(processesRoute, Permission.Read)
 
   protected def getActivity(processName: ProcessName): RouteTestResult =
     Get(s"/processes/$processName/activity") ~> processActivityRouteWithAllPermissions
@@ -484,26 +489,23 @@ trait NuResourcesTest
   protected def createEmptyProcess(
       processName: ProcessName,
       isFragment: Boolean = false,
-      category: TestCategory = Category1,
   ): ProcessId = {
     val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName, isFragment)
-    saveAndGetId(emptyProcess, category, isFragment).futureValue
+    saveAndGetId(emptyProcess, Default, isFragment).futureValue
   }
 
   protected def createValidProcess(
       processName: ProcessName,
       isFragment: Boolean = false,
-      category: TestCategory = Category1,
   ): ProcessId =
-    prepareValidProcess(processName, category, isFragment).futureValue
+    prepareValidProcess(processName, Default, isFragment).futureValue
 
   protected def createArchivedProcess(
       processName: ProcessName,
-      category: TestCategory = Category1,
       isFragment: Boolean = false
   ): ProcessId = {
     (for {
-      id <- prepareValidProcess(processName, category, isFragment)
+      id <- prepareValidProcess(processName, Default, isFragment)
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = ProcessIdWithName(id, processName), isArchived = true),

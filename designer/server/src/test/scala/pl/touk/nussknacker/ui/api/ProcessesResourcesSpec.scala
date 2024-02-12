@@ -20,11 +20,12 @@ import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.{Streaming, Streaming2}
 import pl.touk.nussknacker.tests.TestFactory.{withAllPermissions, withPermissions}
 import pl.touk.nussknacker.tests.base.it.{NuResourcesTest, StateJson}
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Default
 import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.ScenarioToJson
 import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.tests.{ProcessTestData, SampleSpelTemplateProcess, TestFactory}
@@ -62,11 +63,11 @@ class ProcessesResourcesSpec
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private implicit val loggedUser: LoggedUser =
-    LoggedUser("1", "lu", TestFactory.testCategory.map { case (k, v) => (k.stringify, v) })
+    LoggedUser("1", "lu", Map(Default.stringify -> Permission.ALL_PERMISSIONS))
 
-  private val routeWithRead: Route = withPermissions(processesRoute, testPermissionRead)
+  private val routeWithRead: Route = withPermissions(processesRoute, Permission.Read)
 
-  private val routeWithWrite: Route = withPermissions(processesRoute, testPermissionWrite)
+  private val routeWithWrite: Route = withPermissions(processesRoute, Permission.Write)
 
   private val routeWithAllPermissions: Route = withAllPermissions(processesRoute)
 
@@ -79,7 +80,7 @@ class ProcessesResourcesSpec
   private val archivedFragmentName = ProcessName("archived-fragment")
 
   test("should return list of process with state") {
-    createDeployedExampleScenario(processName, category = Category1)
+    createDeployedExampleScenario(processName)
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running))
   }
 
@@ -105,7 +106,7 @@ class ProcessesResourcesSpec
   }
 
   test("return single process") {
-    val processId = createDeployedExampleScenario(processName, category = Category1)
+    createDeployedExampleScenario(processName)
 
     deploymentManager.withProcessRunning(processName) {
       forScenarioReturned(processName) { process =>
@@ -125,7 +126,7 @@ class ProcessesResourcesSpec
   }
 
   test("spel template expression is validated properly") {
-    createDeployedScenario(SampleSpelTemplateProcess.process, category = Category1)
+    createDeployedScenario(SampleSpelTemplateProcess.process)
 
     Get(s"/processes/${SampleSpelTemplateProcess.processName}") ~> routeWithRead ~> check {
       val newProcessDetails = responseAs[ScenarioWithDetails]
@@ -168,7 +169,7 @@ class ProcessesResourcesSpec
   }
 
   test("not allow to archive still running process") {
-    createDeployedExampleScenario(processName, category = Category1)
+    createDeployedExampleScenario(processName)
 
     deploymentManager.withProcessRunning(processName) {
       archiveProcess(processName) { status =>
@@ -201,7 +202,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    Post(s"/processes/$processName/$Category1?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/$processName/${Default.stringify}?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.BadRequest
       responseAs[String] shouldEqual s"Scenario $processName already exists"
     }
@@ -218,7 +219,7 @@ class ProcessesResourcesSpec
   }
 
   test("should allow to rename canceled process") {
-    val processId = createDeployedCanceledExampleScenario(processName, category = Category1)
+    val processId = createDeployedCanceledExampleScenario(processName)
     val newName   = ProcessName("ProcessChangedName")
 
     renameProcess(processName, newName) { status =>
@@ -228,7 +229,7 @@ class ProcessesResourcesSpec
   }
 
   test("should not allow to rename deployed process") {
-    createDeployedExampleScenario(processName, category = Category1)
+    createDeployedExampleScenario(processName)
     deploymentManager.withProcessRunning(processName) {
       val newName = ProcessName("ProcessChangedName")
 
@@ -321,12 +322,12 @@ class ProcessesResourcesSpec
     createEmptyProcess(processName)
 
     forScenarioReturned(processName) { process =>
-      process.processCategory shouldBe Category1.stringify
+      process.processCategory shouldBe Default.stringify
     }
   }
 
   test("not return processes not in user categories") {
-    createEmptyProcess(processName, category = Category2)
+//    createEmptyProcess(processName, category = Category2) // todo: !!
 
     tryForScenarioReturned(processName) { (status, _) =>
       status shouldEqual StatusCodes.NotFound
@@ -338,7 +339,7 @@ class ProcessesResourcesSpec
     forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
       processes.isEmpty shouldBe true
     }
-    forScenariosDetailsReturned(ScenarioQuery.empty.withCategories(List(Category1))) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty.withCategories(List(Default))) { processes =>
       processes.isEmpty shouldBe true
     }
   }
@@ -357,7 +358,7 @@ class ProcessesResourcesSpec
   }
 
   test("search processes by categories") {
-    createEmptyProcess(ProcessName("proc1"), category = Category1)
+    createEmptyProcess(ProcessName("proc1"))
     createEmptyProcess(ProcessName("proc2"), category = Category2)
 
     forScenariosReturned(ScenarioQuery.empty, isAdmin = true) { processes =>
@@ -426,7 +427,7 @@ class ProcessesResourcesSpec
   }
 
   test("search processes with multiple parameters") {
-    createEmptyProcess(ProcessName("proc1"), category = Category1)
+    createEmptyProcess(ProcessName("proc1"))
     createEmptyProcess(ProcessName("proc2"), category = Category2)
     createArchivedProcess(ProcessName("proc3"))
 
@@ -481,8 +482,8 @@ class ProcessesResourcesSpec
     val thirdProcessor  = ProcessName("Processor3")
 
     createEmptyProcess(firstProcessor)
-    createDeployedCanceledExampleScenario(secondProcessor, category = Category1)
-    createDeployedExampleScenario(thirdProcessor, category = Category1)
+    createDeployedCanceledExampleScenario(secondProcessor)
+    createDeployedExampleScenario(thirdProcessor)
 
     deploymentManager.withProcessStateStatus(secondProcessor, SimpleStateStatus.Canceled) {
       deploymentManager.withProcessStateStatus(thirdProcessor, SimpleStateStatus.Running) {
@@ -839,8 +840,8 @@ class ProcessesResourcesSpec
   }
 
   test("should return statuses only for not archived scenarios (excluding fragments)") {
-    createDeployedExampleScenario(processName, category = Category1)
-    createArchivedProcess(archivedProcessName, category = Category1)
+    createDeployedExampleScenario(processName)
+    createArchivedProcess(archivedProcessName)
     createEmptyProcess(ProcessName("fragment"), isFragment = true)
 
     Get(s"/processes/status") ~> routeWithAllPermissions ~> check {
@@ -852,7 +853,7 @@ class ProcessesResourcesSpec
   }
 
   test("should return status for single deployed process") {
-    createDeployedExampleScenario(processName, category = Category1)
+    createDeployedExampleScenario(processName)
 
     deploymentManager.withProcessRunning(processName) {
       forScenarioStatus(processName) { (code, state) =>

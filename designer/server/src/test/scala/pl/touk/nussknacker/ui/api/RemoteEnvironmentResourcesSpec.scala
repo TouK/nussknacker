@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import cats.implicits.catsSyntaxSemigroup
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -13,17 +12,13 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, Ver
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.TestFactory.withPermissions
-import pl.touk.nussknacker.tests.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.tests.ProcessTestData
+import pl.touk.nussknacker.tests.TestFactory.withPermissions
 import pl.touk.nussknacker.tests.base.it.NuResourcesTest
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.process.migrate.{
-  RemoteEnvironment,
-  RemoteEnvironmentCommunicationError,
-  TestMigrationResult
-}
+import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
@@ -45,8 +40,6 @@ class RemoteEnvironmentResourcesSpec
 
   private val processName: ProcessName = ProcessTestData.validProcess.name
 
-  val readWritePermissions: CategorizedPermission = testPermissionRead |+| testPermissionWrite
-
   it should "fail when scenario does not exist" in {
     val remoteEnvironment = new MockRemoteEnvironment
     val route = withPermissions(
@@ -55,7 +48,7 @@ class RemoteEnvironmentResourcesSpec
         processService,
         processAuthorizer
       ),
-      readWritePermissions
+      Permission.Read, Permission.Write
     )
 
     Get(s"/remoteEnvironment/$processName/2/compare/1") ~> route ~> check {
@@ -83,7 +76,7 @@ class RemoteEnvironmentResourcesSpec
         processService,
         processAuthorizer
       ),
-      readWritePermissions
+      Permission.Read, Permission.Write
     )
     val expectedDisplayable = ProcessTestData.validScenarioGraph
 
@@ -121,7 +114,7 @@ class RemoteEnvironmentResourcesSpec
         processService,
         processAuthorizer
       ),
-      testPermissionRead
+      Permission.Read
     )
 
     saveCanonicalProcess(ProcessTestData.validProcessWithName(processId1)) {
@@ -154,7 +147,7 @@ class RemoteEnvironmentResourcesSpec
         processService,
         processAuthorizer
       ),
-      readWritePermissions
+      Permission.Read
     )
 
     saveCanonicalProcess(ProcessTestData.validProcessWithName(processId1)) {

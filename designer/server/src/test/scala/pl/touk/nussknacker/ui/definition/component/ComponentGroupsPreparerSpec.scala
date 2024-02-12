@@ -10,10 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  CustomComponentSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, CustomComponentSpecificData}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -22,14 +19,12 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.tests.{ProcessTestData, TestPermissions}
+import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, component}
 
 class ComponentGroupsPreparerSpec
     extends AnyFunSuite
     with Matchers
-    with TestPermissions
     with OptionValues
     with ValidatedValuesDetailedMessage {
 
@@ -190,7 +185,7 @@ class ComponentGroupsPreparerSpec
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         Some(_),
-        DesignerWideComponentId.default(Streaming.stringify, _)
+        DesignerWideComponentId.default("Streaming", _)
       ),
       modelDefinition,
     )

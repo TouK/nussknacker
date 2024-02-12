@@ -4,8 +4,6 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.{TestProcessingType, processingTypeBy}
 import pl.touk.nussknacker.tests.TestFactory._
 import pl.touk.nussknacker.tests.base.db.WithTestDb
 import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, ProcessTestData, TestFactory}

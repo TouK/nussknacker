@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig}
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.ConfigWithScalaVersion
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import shapeless.syntax.typeable.typeableOps
 import sttp.client3.SttpBackend
 

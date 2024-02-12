@@ -15,8 +15,6 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.tests.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
@@ -25,11 +23,7 @@ import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{
-  DBIOActionRunner,
-  DbProcessActionRepository,
-  ScenarioWithDetailsEntity
-}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository, ScenarioWithDetailsEntity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
@@ -135,7 +129,7 @@ class NotificationServiceTest
     val deployNotificationId = notificationsAfterDeploy.head.id
 
     deploymentService
-      .markActionExecutionFinished(Streaming.stringify, passedDeploymentId.value.toActionIdOpt.value)
+      .markActionExecutionFinished("Streaming", passedDeploymentId.value.toActionIdOpt.value)
       .futureValue
     val notificationAfterExecutionFinished = notificationService.notifications(user, global).futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id
@@ -191,9 +185,9 @@ class NotificationServiceTest
     val action =
       CreateProcessAction(
         processName = processName,
-        category = Category1.stringify,
+        category = "Default",
         canonicalProcess = sampleScenario,
-        processingType = Streaming.stringify,
+        processingType = "Streaming",
         isFragment = false,
         forwardedUserName = None
       )

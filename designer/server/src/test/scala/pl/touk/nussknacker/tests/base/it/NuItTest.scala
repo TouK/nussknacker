@@ -6,10 +6,10 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
-import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, TestPermissions}
+import pl.touk.nussknacker.tests.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 
-trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with TestPermissions with BeforeAndAfterAll {
+trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with BeforeAndAfterAll {
   this: Suite =>
 
   private val port = nextPort()
