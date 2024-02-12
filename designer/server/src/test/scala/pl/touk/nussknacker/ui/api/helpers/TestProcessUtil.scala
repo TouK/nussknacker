@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -33,7 +32,7 @@ object TestProcessUtil {
 
   def createScenarioEntity(
       name: String,
-      category: Category,
+      category: String,
       isArchived: Boolean = false,
       processingType: String = Streaming,
       lastAction: Option[ProcessActionType] = None,
@@ -51,7 +50,7 @@ object TestProcessUtil {
 
   def createFragmentEntity(
       name: String,
-      category: Category,
+      category: String,
       isArchived: Boolean = false,
       processingType: String = Streaming,
       json: Option[ScenarioGraph] = None,
@@ -73,7 +72,7 @@ object TestProcessUtil {
       name: ProcessName,
       scenarioGraph: ScenarioGraph,
       processingType: ProcessingType = TestProcessingTypes.Streaming,
-      category: Category = TestCategories.Category1,
+      category: String = TestCategories.Category1,
       isArchived: Boolean = false,
       isFragment: Boolean = false
   ): ScenarioWithDetailsEntity[ScenarioGraph] =
@@ -89,7 +88,7 @@ object TestProcessUtil {
   def wrapWithScenarioDetailsEntity(
       name: ProcessName,
       scenarioGraph: Option[ScenarioGraph] = None,
-      category: Category = TestCategories.Category1,
+      category: String = TestCategories.Category1,
       isFragment: Boolean = false,
       isArchived: Boolean = false,
       processingType: ProcessingType = Streaming,

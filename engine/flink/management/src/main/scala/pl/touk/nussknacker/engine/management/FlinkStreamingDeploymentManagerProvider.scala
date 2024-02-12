@@ -9,8 +9,11 @@ import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, Scenar
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider {
 
@@ -38,6 +41,15 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
     FlinkStreamingPropertiesConfig.properties
+
+  override def defaultEngineSetupName: EngineSetupName = EngineSetupName("Flink")
+
+  override def engineSetupIdentity(config: Config): Any = {
+    // We don't parse the whole config because some other properties can be unspecified and it would
+    // cause generation of wrong identity. We also use a Try to handle missing or invalid rest url path
+    Try(config.getString(RestUrlPath)).toOption
+  }
+
 }
 
 object FlinkStreamingDeploymentManagerProvider {

@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
@@ -22,6 +24,8 @@ final case class ScenarioWithDetails(
     override val isFragment: Boolean,
     override val processingType: ProcessingType,
     override val processCategory: String,
+    processingMode: ProcessingMode,
+    engineSetupName: EngineSetupName,
     modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
     modifiedAt: Instant,
     modifiedBy: String,
@@ -37,6 +41,8 @@ final case class ScenarioWithDetails(
     override val modelVersion: Option[Int],
     state: Option[ProcessState]
 ) extends BaseScenarioWithDetailsForMigrations {
+
+  def parameters: ScenarioParameters = ScenarioParameters(processingMode, processCategory, engineSetupName)
 
   def withScenarioGraph(scenarioGraph: ScenarioGraph): ScenarioWithDetails =
     copy(scenarioGraph = Some(scenarioGraph))
@@ -68,4 +74,14 @@ object ScenarioWithDetails {
   implicit val decoder: Decoder[ScenarioWithDetails] =
     deriveDecoder[ScenarioWithDetails]
 
+}
+
+// This class is to enforce consistency of fields between CreateScenarioCommand and ScenarioWithDetails.
+// Eventually we want to make our API more restfull. It means that posting DTOs should be similar to getting DTOs
+// For example we should allow to pass scenarioGraph in POST. Currently we do it in two steps: create andThan update.
+// Some of fields can't be added here because during POSTing they are optional and during GETing they are not
+// (category, processingMode and engineSetupName)
+trait BaseCreateScenarioCommand {
+  def name: ProcessName
+  def isFragment: Boolean
 }

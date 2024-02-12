@@ -1,26 +1,31 @@
 package pl.touk.nussknacker.ui.process
 
 import cats._
+import cats.data.Validated
+import cats.implicits.toTraverseOps
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{BaseCreateScenarioCommand, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
+import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{
   ProcessNotFoundError,
   ProcessVersionNotFoundError
@@ -42,14 +47,17 @@ import scala.language.higherKinds
 
 object ProcessService {
 
-  @JsonCodec final case class CreateProcessCommand(
-      processName: ProcessName,
-      category: String,
-      isFragment: Boolean,
+  // TODO For scripting purpose we should also support optional scenarioGraph field to avoid creating and than updating each time
+  @JsonCodec final case class CreateScenarioCommand(
+      override val name: ProcessName,
+      category: Option[String],
+      processingMode: Option[ProcessingMode],
+      engineSetupName: Option[EngineSetupName],
+      override val isFragment: Boolean,
       forwardedUserName: Option[RemoteUserName]
-  )
+  ) extends BaseCreateScenarioCommand
 
-  @JsonCodec final case class UpdateProcessCommand(
+  @JsonCodec final case class UpdateScenarioCommand(
       scenarioGraph: ScenarioGraph,
       comment: UpdateProcessComment,
       forwardedUserName: Option[RemoteUserName]
@@ -124,9 +132,11 @@ trait ProcessService {
       implicit user: LoggedUser
   ): Future[UpdateProcessNameResponse]
 
-  def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[ProcessResponse]
+  def createProcess(command: CreateScenarioCommand)(
+      implicit user: LoggedUser
+  ): Future[Validated[NuDesignerError, ProcessResponse]]
 
-  def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(
+  def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateScenarioCommand)(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse]
 
@@ -145,7 +155,7 @@ trait ProcessService {
 class DBProcessService(
     deploymentService: DeploymentService,
     newProcessPreparers: ProcessingTypeDataProvider[NewProcessPreparer, _],
-    processCategoryServiceProvider: ProcessingTypeDataProvider[_, ProcessCategoryService],
+    scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService],
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
@@ -229,7 +239,11 @@ class DBProcessService(
     (options.fetchGraphOptions match {
       case SkipScenarioGraph =>
         fetchScenario[Unit]
-          .map(_.map(ScenarioWithDetailsConversions.fromEntityIgnoringGraphAndValidationResult))
+          .map(_.map { e =>
+            val parameters =
+              scenarioParametersServiceProvider.combined.getParametersWithReadPermissionUnsafe(e.processingType)
+            ScenarioWithDetailsConversions.fromEntityIgnoringGraphAndValidationResult(e, parameters)
+          })
       case FetchScenarioGraph(validate) =>
         fetchScenario[CanonicalProcess]
           .map(_.map(validateAndReverseResolve(_, validate)))
@@ -265,19 +279,29 @@ class DBProcessService(
 
   private def toDisplayableProcessDetailsWithoutValidation(
       entity: ScenarioWithDetailsEntity[CanonicalProcess]
-  ): ScenarioWithDetails = {
-    ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(entity.mapScenario { canonical =>
-      CanonicalProcessConverter.toScenarioGraph(canonical)
-    })
+  )(implicit user: LoggedUser): ScenarioWithDetails = {
+    val parameters =
+      scenarioParametersServiceProvider.combined.getParametersWithReadPermissionUnsafe(entity.processingType)
+    ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
+      entity.mapScenario { canonical =>
+        CanonicalProcessConverter.toScenarioGraph(canonical)
+      },
+      parameters
+    )
   }
 
   private def validateAndReverseResolve(
       entity: ScenarioWithDetailsEntity[CanonicalProcess]
   )(implicit user: LoggedUser): ScenarioWithDetails = {
-    ScenarioWithDetailsConversions.fromEntity(entity.mapScenario { canonical: CanonicalProcess =>
-      val processResolver = processResolverByProcessingType.forTypeUnsafe(entity.processingType)
-      processResolver.validateAndReverseResolve(canonical, entity.name, entity.isFragment)
-    })
+    val parameters =
+      scenarioParametersServiceProvider.combined.getParametersWithReadPermissionUnsafe(entity.processingType)
+    ScenarioWithDetailsConversions.fromEntity(
+      entity.mapScenario { canonical: CanonicalProcess =>
+        val processResolver = processResolverByProcessingType.forTypeUnsafe(entity.processingType)
+        processResolver.validateAndReverseResolve(canonical, entity.name, entity.isFragment)
+      },
+      parameters
+    )
   }
 
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit] =
@@ -328,39 +352,44 @@ class DBProcessService(
 
   // FIXME: Create process should create two inserts (process, processVersion) in transactional way, but right we do all in process repository..
   override def createProcess(
-      command: CreateProcessCommand
-  )(implicit user: LoggedUser): Future[ProcessResponse] =
-    withProcessingType(command.category) { processingType =>
-      val newProcessPreparer = newProcessPreparers.forTypeUnsafe(processingType)
-      val emptyCanonicalProcess =
-        newProcessPreparer.prepareEmptyProcess(command.processName, command.isFragment)
-      val action = CreateProcessAction(
-        command.processName,
-        command.category,
-        emptyCanonicalProcess,
-        processingType,
-        command.isFragment,
-        command.forwardedUserName
-      )
+      command: CreateScenarioCommand
+  )(implicit user: LoggedUser): Future[Validated[NuDesignerError, ProcessResponse]] = {
+    val scenarioParametersService = scenarioParametersServiceProvider.combined
+    scenarioParametersService
+      .queryProcessingTypeWithWritePermission(command.category, command.processingMode, command.engineSetupName)
+      .map { processingType =>
+        val newProcessPreparer = newProcessPreparers.forTypeUnsafe(processingType)
+        val emptyCanonicalProcess =
+          newProcessPreparer.prepareEmptyProcess(command.name, command.isFragment)
+        val action = CreateProcessAction(
+          command.name,
+          command.category.getOrElse(scenarioParametersService.categoryUnsafe(processingType)),
+          emptyCanonicalProcess,
+          processingType,
+          command.isFragment,
+          command.forwardedUserName
+        )
 
-      val propertiesErrors =
-        validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.isFragment)
+        val propertiesErrors =
+          validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.isFragment)
 
-      if (propertiesErrors.nonEmpty) {
-        throw ProcessValidationError(propertiesErrors.map(_.message).mkString(", "))
-      } else {
-        dbioRunner
-          .runInTransaction(processRepository.saveNewProcess(action))
-          .map { maybeCreated =>
-            maybeCreated
-              .map(created => toProcessResponse(command.processName, created))
-              .getOrElse(throw ProcessValidationError("Unknown error on creating scenario."))
-          }
+        if (propertiesErrors.nonEmpty) {
+          throw ProcessValidationError(propertiesErrors.map(_.message).mkString(", "))
+        } else {
+          dbioRunner
+            .runInTransaction(processRepository.saveNewProcess(action))
+            .map { maybeCreated =>
+              maybeCreated
+                .map(created => toProcessResponse(command.name, created))
+                .getOrElse(throw ProcessValidationError("Unknown error on creating scenario."))
+            }
+        }
       }
-    }
+      .sequence
+  }
 
   // FIXME: Update process should update process and create process version in transactional way, but right we do all in process repository..
-  override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(
+  override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateScenarioCommand)(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
@@ -490,16 +519,6 @@ class DBProcessService(
       } else {
         callback(process)
       }
-    }
-
-  private def withProcessingType[T](
-      category: String
-  )(callback: ProcessingType => Future[T]): Future[T] =
-    processCategoryServiceProvider.combined.getTypeForCategory(category) match {
-      case Some(processingType) =>
-        callback(processingType)
-      case None =>
-        throw ProcessValidationError("Scenario category not found.")
     }
 
 }

@@ -40,11 +40,6 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
 
   override def invalidateInProgressActions(): Unit = {}
 
-  override def markProcessFinishedIfLastActionDeploy(processingType: ProcessingType, processName: ProcessName)(
-      implicit ec: ExecutionContext
-  ): Future[Option[ProcessAction]] =
-    Future.successful(None)
-
   override def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(
       implicit ec: ExecutionContext
   ): Future[Boolean] =

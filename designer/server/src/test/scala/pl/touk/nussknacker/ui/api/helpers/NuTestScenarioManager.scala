@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import db.util.DBIOActionInstances.DB
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -12,11 +11,9 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{
   newWriteProcessRepository
 }
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -32,9 +29,6 @@ trait NuTestScenarioManager extends ScalaFutures {
   private val writeScenarioRepository: DBProcessRepository = newWriteProcessRepository(testDbRef)
   protected val futureFetchingScenarioRepository: DBFetchingProcessRepository[Future] =
     newFutureFetchingScenarioRepository(testDbRef)
-
-  protected val scenarioCategoryService: ProcessCategoryService =
-    TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   protected def createSavedScenario(
       scenario: CanonicalProcess,

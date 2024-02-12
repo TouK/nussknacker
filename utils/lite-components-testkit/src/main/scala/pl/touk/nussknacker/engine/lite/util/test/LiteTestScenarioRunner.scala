@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.util.test
 
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency, WithExplicitTypesToExtract}
@@ -104,7 +104,8 @@ class LiteTestScenarioRunner(
 private[test] class SimpleSourceFactory(result: TypingResult)
     extends SourceFactory
     with SingleInputGenericNodeTransformation[Source]
-    with WithExplicitTypesToExtract {
+    with WithExplicitTypesToExtract
+    with UnboundedStreamComponent {
 
   override type State = Nothing
 

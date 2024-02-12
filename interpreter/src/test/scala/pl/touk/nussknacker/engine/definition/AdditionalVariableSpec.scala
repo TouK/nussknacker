@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
@@ -70,7 +71,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
       .parameters
   }
 
-  class CorrectService extends SourceFactory {
+  class CorrectService extends SourceFactory with UnboundedStreamComponent {
 
     @MethodToInvoke
     def invoke(
@@ -86,7 +87,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
 
   }
 
-  class IncorrectService1 extends SourceFactory {
+  class IncorrectService1 extends SourceFactory with UnboundedStreamComponent {
 
     @MethodToInvoke
     def invoke(
@@ -98,7 +99,10 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
 
   }
 
-  class IncorrectService2 extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
+  class IncorrectService2
+      extends SourceFactory
+      with SingleInputGenericNodeTransformation[Source]
+      with UnboundedStreamComponent {
 
     override type State = Nothing
 

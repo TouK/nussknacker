@@ -3,27 +3,30 @@ package pl.touk.nussknacker.ui.api.helpers
 import akka.http.scaladsl.server.Route
 import cats.effect.unsafe.IORuntime
 import cats.instances.future._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  ProcessingTypeDataConfigurationReader,
+import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
-  ValueWithPermission
+  ScenarioParametersService,
+  ScenarioParametersWithEngineSetupErrors,
+  ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, NewProcessPreparer, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
@@ -73,6 +76,24 @@ object TestFactory extends TestPermissions {
 
   val processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _] =
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processResolver)
+
+  val scenarioParametersService: ScenarioParametersService = {
+    val combinations = Map(
+      TestProcessingTypes.Streaming ->
+        ScenarioParametersWithEngineSetupErrors(
+          ScenarioParameters(
+            ProcessingMode.UnboundedStream,
+            TestCategories.Category1,
+            EngineSetupName("Flink")
+          ),
+          List.empty
+        )
+    )
+    ScenarioParametersService.createUnsafe(combinations)
+  }
+
+  val scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService] =
+    ProcessingTypeDataProvider(Map.empty, scenarioParametersService)
 
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
 
@@ -171,15 +192,8 @@ object TestFactory extends TestPermissions {
   def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
     ProcessingTypeDataProvider.withEmptyCombinedData(
-      Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
+      Map(data: _*).mapValuesNow(ValueWithRestriction.anyUser)
     )
   }
-
-  def createCategoryService(designerConfig: Config): ProcessCategoryService =
-    ConfigProcessCategoryService(
-      ProcessingTypeDataConfigurationReader
-        .readProcessingTypeConfig(ConfigWithUnresolvedVersion(designerConfig))
-        .mapValuesNow(_.category)
-    )
 
 }

@@ -1,11 +1,15 @@
 package pl.touk.nussknacker.ui.factory
 
 import akka.actor.ActorSystem
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.deployment.{AllDeployedScenarioService, DeploymentService}
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataState
+import pl.touk.nussknacker.ui.process.processingtype.{
+  CombinedProcessingTypeData,
+  ProcessingTypeData,
+  ProcessingTypeDataState
+}
 import sttp.client3.SttpBackend
 
 import java.util.function.Supplier
