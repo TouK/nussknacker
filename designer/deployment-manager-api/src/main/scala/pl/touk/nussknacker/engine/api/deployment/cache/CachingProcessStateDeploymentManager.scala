@@ -125,18 +125,7 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
           )
         )
       logger.debug(s"Wrapping DeploymentManager: $delegate with caching mechanism with TTL: $cacheTTL")
-      delegate match {
-        case postprocessing: PostprocessingProcessStatus =>
-          new CachingProcessStateDeploymentManager(delegate, cacheTTL) with PostprocessingProcessStatus {
-            override def postprocess(
-                idWithName: ProcessIdWithName,
-                statusDetailsList: List[StatusDetails]
-            ): Future[Option[ProcessAction]] =
-              postprocessing.postprocess(idWithName, statusDetailsList)
-          }
-        case _ =>
-          new CachingProcessStateDeploymentManager(delegate, cacheTTL)
-      }
+      new CachingProcessStateDeploymentManager(delegate, cacheTTL)
     } else {
       logger.debug(s"Skipping ProcessState caching for DeploymentManager: $delegate")
       delegate

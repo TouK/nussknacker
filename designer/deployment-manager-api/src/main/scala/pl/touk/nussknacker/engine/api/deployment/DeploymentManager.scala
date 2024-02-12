@@ -114,14 +114,6 @@ trait DeploymentManager extends AutoCloseable {
 
 }
 
-// This is Flink-specific but we have to abstract over this, to keep PeriodicDeploymentManager loosely coupled with Flink
-// See comments in FlinkDeploymentManager
-trait PostprocessingProcessStatus { self: DeploymentManager =>
-
-  def postprocess(idWithName: ProcessIdWithName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]]
-
-}
-
 trait AlwaysFreshProcessState { self: DeploymentManager =>
 
   final override def getProcessStates(name: ProcessName)(
