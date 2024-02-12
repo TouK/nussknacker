@@ -128,7 +128,7 @@ class DeploymentServiceSpec
     deploymentServiceWithCommentSettings
   }
 
-  test { "should return error when trying to deploy without comment when comment is required" } {
+  test("should return error when trying to deploy without comment when comment is required") {
     val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
@@ -145,7 +145,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test { "should not deploy without comment when comment is required " } {
+  test("should not deploy without comment when comment is required") {
     val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
@@ -171,7 +171,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test { "should pass when having an ok comment" } {
+  test("should pass when having an ok comment") {
     val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
@@ -187,7 +187,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test { "should return error when trying to cancel without comment when comment is required" } {
+  test("should return error when trying to cancel without comment when comment is required") {
     val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
@@ -200,7 +200,7 @@ class DeploymentServiceSpec
     }
   }
 
-  test { "should not cancel a deployed process without cancel comment when comment is required" } {
+  test("should not cancel a deployed process without cancel comment when comment is required") {
     val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
