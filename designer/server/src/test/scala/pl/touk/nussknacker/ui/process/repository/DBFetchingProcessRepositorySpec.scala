@@ -16,10 +16,14 @@ import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
+  CreateProcessAction,
+  ProcessUpdated,
+  UpdateProcessAction
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.Instant

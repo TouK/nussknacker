@@ -1,33 +1,39 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.actor.ActorSystem
+import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator}
+import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies}
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManagerProvider
-import sttp.client3.SttpBackend
-
-import scala.concurrent.{ExecutionContext, Future}
 
 /*
   Each scenario is deployed as Deployment+ConfigMap
   ConfigMap contains: model config with overrides for execution and scenario
+
+  Currently this DM uses the default engineSetupIdentity. It is done this way because we use
+  the default K8s context.
  */
 class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
-  ): DeploymentManager = {
-    CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
-      new K8sDeploymentManager(modelData.asInvokableModelData, K8sDeploymentManagerConfig.parse(config), config),
-      config
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      config: Config
+  ): ValidatedNel[String, DeploymentManager] = {
+    Validated.valid(
+      CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
+        new K8sDeploymentManager(
+          modelData.asInvokableModelData,
+          K8sDeploymentManagerConfig.parse(config),
+          config,
+          dependencies
+        ),
+        config
+      )
     )
   }
 

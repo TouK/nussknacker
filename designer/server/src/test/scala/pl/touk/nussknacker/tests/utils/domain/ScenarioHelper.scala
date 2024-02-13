@@ -11,7 +11,7 @@ import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.utils.scalas.FutureExtensions
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
-import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ValueWithPermission}
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ValueWithRestriction}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -160,7 +160,7 @@ private[tests] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implic
   private def mapProcessingTypeDataProvider[T](value: T) = {
     ProcessingTypeDataProvider.withEmptyCombinedData(
       processingTypeWithCategories.map { case (processingType, _) =>
-        (processingType, ValueWithPermission.anyUser(value))
+        (processingType, ValueWithRestriction.anyUser(value))
       }.toMap
     )
   }

@@ -545,8 +545,11 @@ object FullOuterJoinTransformerSpec {
       joinedRecordsSource: BlockingQueueSource[OneRecord]
   ): List[ComponentDefinition] = {
     elementsAddedToState.clear()
-    ComponentDefinition("start-main", SourceFactory.noParam[OneRecord](mainRecordsSource)) ::
-      ComponentDefinition("start-joined", SourceFactory.noParam[OneRecord](joinedRecordsSource)) ::
+    ComponentDefinition("start-main", SourceFactory.noParamUnboundedStreamFactory[OneRecord](mainRecordsSource)) ::
+      ComponentDefinition(
+        "start-joined",
+        SourceFactory.noParamUnboundedStreamFactory[OneRecord](joinedRecordsSource)
+      ) ::
       ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)) ::
       joinComponentDefinition :: Nil
   }

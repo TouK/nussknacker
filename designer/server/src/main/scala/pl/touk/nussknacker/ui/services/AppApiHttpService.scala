@@ -10,9 +10,8 @@ import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.ui.api.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
 
@@ -24,7 +23,7 @@ class AppApiHttpService(
     authenticator: AuthenticationResources,
     processingTypeDataReloader: ProcessingTypeDataReload,
     modelBuildInfos: ProcessingTypeDataProvider[Map[String, String], _],
-    categories: ProcessingTypeDataProvider[Category, _],
+    categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
     shouldExposeConfig: Boolean
 )(implicit executionContext: ExecutionContext)

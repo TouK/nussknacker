@@ -8,10 +8,8 @@ if (SystemUtils.hasAccessToken()) {
     headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
 }
 
-const configuration = {
+export default axios.create({
     withCredentials: true,
     baseURL: API_URL,
-    headers: headers,
-};
-
-export default axios.create(configuration);
+    headers,
+});

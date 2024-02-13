@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
+
 import java.time.Instant
 import java.util.UUID
 import scala.util.Random
@@ -32,7 +32,7 @@ object TestProcessUtil {
 
   def createScenarioEntity(
       name: String,
-      category: Category,
+      category: String,
       isArchived: Boolean = false,
       processingType: String = ProcessingTypeStreaming,
       lastAction: Option[ProcessActionType] = None,
@@ -50,7 +50,7 @@ object TestProcessUtil {
 
   def createFragmentEntity(
       name: String,
-      category: Category,
+      category: String,
       isArchived: Boolean = false,
       processingType: String = ProcessingTypeStreaming,
       json: Option[ScenarioGraph] = None,
@@ -72,7 +72,7 @@ object TestProcessUtil {
       name: ProcessName,
       scenarioGraph: ScenarioGraph,
       processingType: ProcessingType = ProcessingTypeStreaming,
-      category: Category = "Category1",
+      category: String = "Category1",
       isArchived: Boolean = false,
       isFragment: Boolean = false
   ): ScenarioWithDetailsEntity[ScenarioGraph] =
@@ -88,7 +88,7 @@ object TestProcessUtil {
   def wrapWithScenarioDetailsEntity(
       name: ProcessName,
       scenarioGraph: Option[ScenarioGraph] = None,
-      category: Category = "Category1",
+      category: String = "Category1",
       isFragment: Boolean = false,
       isArchived: Boolean = false,
       processingType: ProcessingType = ProcessingTypeStreaming,

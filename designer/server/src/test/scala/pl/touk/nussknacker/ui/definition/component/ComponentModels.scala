@@ -73,9 +73,9 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
   override def sourceFactories(
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = Map(
-    SharedSourceName         -> all(SourceFactory.noParam(EmptySource, Unknown), Some(SharedSourceName)),
-    SuperMarketingSourceName -> marketing(SourceFactory.noParam(EmptySource, Unknown)),
-    NotSharedSourceName      -> marketing(SourceFactory.noParam(EmptySource, Unknown)),
+    SharedSourceName -> all(SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown), Some(SharedSourceName)),
+    SuperMarketingSourceName -> marketing(SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown)),
+    NotSharedSourceName      -> marketing(SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown)),
   )
 
   override def sinkFactories(
@@ -108,8 +108,8 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
   override def sourceFactories(
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = Map(
-    SharedSourceName    -> all(SourceFactory.noParam(EmptySource, Unknown), Some(SharedSourceName)),
-    NotSharedSourceName -> fraud(SourceFactory.noParam(EmptySource, Unknown)),
+    SharedSourceName -> all(SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown), Some(SharedSourceName)),
+    NotSharedSourceName -> fraud(SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown)),
   )
 
   override def sinkFactories(
@@ -143,7 +143,10 @@ object WronglyConfiguredConfigCreator extends DefaultStreamingProcessConfigCreat
   override def sourceFactories(
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = Map(
-    SharedSourceV2Name -> all(SourceFactory.noParam(EmptySource, Unknown), Some(SharedSourceName)),
+    SharedSourceV2Name -> all(
+      SourceFactory.noParamUnboundedStreamFactory(EmptySource, Unknown),
+      Some(SharedSourceName)
+    ),
   )
 
   override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =

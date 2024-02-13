@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -15,18 +14,20 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 abstract class FlinkDeploymentManager(
     modelData: BaseModelData,
+    dependencies: DeploymentManagerDependencies,
     shouldVerifyBeforeDeploy: Boolean,
     mainClassName: String
-)(implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
-    extends DeploymentManager
-    with PostprocessingProcessStatus
+) extends DeploymentManager
     with AlwaysFreshProcessState
     with LazyLogging {
+
+  import dependencies._
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
 
@@ -35,27 +36,28 @@ abstract class FlinkDeploymentManager(
   /**
     * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
-  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] = {
+  override def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetails: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState] = {
     for {
-      statusesWithFreshness <- getProcessStates(idWithName.name)
-      _ = logger.debug(s"Statuses for ${idWithName.name}: $statusesWithFreshness")
-      actionAfterPostprocessOpt <- postprocess(idWithName, statusesWithFreshness.value)
+      actionAfterPostprocessOpt <- postprocess(idWithName, statusDetails)
       engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(
-        statusesWithFreshness.value,
+        statusDetails,
         actionAfterPostprocessOpt.orElse(lastStateAction)
       )
-    } yield statusesWithFreshness.copy(value =
-      processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
-    )
+    } yield processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
   }
 
-  // There is small problem here: if no one invokes process status for long time, Flink can remove process from history
-  // - then it 's gone, not finished.
-  // TODO: it should be checked periodically instead of checking on each getProcessState invocation
-  // (consider moving marking finished deployments to InconsistentStateDetector as one "detectAndResolveAndFixStatus")
-  override def postprocess(
+  // Flink has a retention for job overviews so we can't rely on this to distinguish between statuses:
+  // - job is finished without troubles
+  // - job has failed
+  // So we synchronize the information that the job was finished by marking deployments actions as execution finished
+  // and treat another case as ProblemStateStatus.shouldBeRunning (see InconsistentStateDetector)
+  // TODO: We should synchronize the status of deployment more explicitly as we already do in periodic case
+  //       See PeriodicProcessService.synchronizeDeploymentsStates and remove the InconsistentStateDetector
+  private def postprocess(
       idWithName: ProcessIdWithName,
       statusDetailsList: List[StatusDetails]
   ): Future[Option[ProcessAction]] = {

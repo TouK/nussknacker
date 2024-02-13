@@ -13,7 +13,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.TestFactory.withAllPermissions
 import pl.touk.nussknacker.tests.base.it.NuResourcesTest
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -36,10 +35,10 @@ class ProcessesChangeListenerSpec
   private val processName = ProcessTestData.sampleScenario.name
 
   test("listen to process create") {
-    Post(
-      s"/processes/$processName/${TestCategory.Default.stringify}?isFragment=false"
-    ) ~> processesRouteWithAllPermissions ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
+    createProcessRequest(processName) { _ =>
+      eventually {
+        processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
+      }
     }
   }
 

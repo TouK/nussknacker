@@ -27,7 +27,10 @@ class DynamicComponentProvider extends ComponentProvider {
       ComponentDefinition(SharedProvidedComponentName, DynamicProvidedService),
       ComponentDefinition(SingleProvidedComponentName, DynamicProvidedService),
       ComponentDefinition(SourceSinkSameNameComponentName, SinkFactory.noParam(new Sink {})),
-      ComponentDefinition(SourceSinkSameNameComponentName, SourceFactory.noParam(new Source {}, Unknown)),
+      ComponentDefinition(
+        SourceSinkSameNameComponentName,
+        SourceFactory.noParamUnboundedStreamFactory(new Source {}, Unknown)
+      ),
     )
   }
 

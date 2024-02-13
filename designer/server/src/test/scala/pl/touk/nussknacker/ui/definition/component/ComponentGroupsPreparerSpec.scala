@@ -10,7 +10,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, CustomComponentSpecificData}
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  CustomComponentSpecificData
+}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -143,7 +146,7 @@ class ComponentGroupsPreparerSpec
   test("hide sources for fragments") {
     val model =
       getAlignedComponentsWithStaticDefinition(
-        ModelDefinitionBuilder.empty.withSource("source").build,
+        ModelDefinitionBuilder.empty.withUnboundedStreamSource("source").build,
         Map.empty,
         forFragment = true
       )

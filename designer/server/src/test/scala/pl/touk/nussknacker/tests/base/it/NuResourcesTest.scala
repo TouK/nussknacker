@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.tests.base.it
 
-import _root_.sttp.client3.SttpBackend
-import _root_.sttp.client3.akkahttp.AkkaHttpBackend
-import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -21,13 +18,10 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
@@ -35,23 +29,29 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.tests.TestFactory._
 import pl.touk.nussknacker.tests._
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
-import pl.touk.nussknacker.tests.config.{ConfigWithScalaVersion, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.tests.base.it.ProcessesQueryEnrichments.RichProcessesQuery
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Default
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, TestAdditionalUIConfigProvider, TestProcessChangeListener}
+import pl.touk.nussknacker.tests.config.{ConfigWithScalaVersion, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.tests.mock.{
+  MockDeploymentManager,
+  MockManagerProvider,
+  TestAdditionalUIConfigProvider,
+  TestProcessChangeListener
+}
 import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
-import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
+import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  DefaultProcessingTypeDeploymentService,
-  ProcessingTypeDataConfigurationReader,
+import pl.touk.nussknacker.ui.process.processingtype.{
+  CombinedProcessingTypeData,
+  ProcessingTypeData,
   ProcessingTypeDataProvider,
   ProcessingTypeDataReader
 }
@@ -65,6 +65,7 @@ import slick.dbio.DBIOAction
 
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
+import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
@@ -76,10 +77,6 @@ trait NuResourcesTest
     with BeforeAndAfterEach
     with LazyLogging {
   self: ScalatestRouteTest with Suite with Matchers with ScalaFutures =>
-
-  import ProcessesQueryEnrichments.RichProcessesQuery
-
-  private implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(system)
 
   protected val adminUser: LoggedUser = TestFactory.adminUser("user")
 
@@ -106,7 +103,7 @@ trait NuResourcesTest
 
   protected val processChangeListener = new TestProcessChangeListener()
 
-  protected lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
+  protected lazy val deploymentManager: MockDeploymentManager = new MockDeploymentManager
 
   protected val dmDispatcher = new DeploymentManagerDispatcher(
     mapProcessingTypeDataProvider(Streaming.stringify -> deploymentManager),
@@ -125,35 +122,11 @@ trait NuResourcesTest
       None
     )
 
-  private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService = {
-    val processingType = Streaming
-    new DefaultProcessingTypeDeploymentService(
-      processingType.stringify,
-      deploymentService,
-      AllDeployedScenarioService(testDbRef, processingType.stringify)
-    )
-  }
-
-  private val scenarioCategoryService: ProcessCategoryService = ConfigProcessCategoryService(
-    ProcessingTypeDataConfigurationReader
-      .readProcessingTypeConfig(ConfigWithUnresolvedVersion(designerConfig))
-      .mapValuesNow(_.category)
-  )
-
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
 
-  protected val deploymentManagerProvider: FlinkStreamingDeploymentManagerProvider =
-    new FlinkStreamingDeploymentManagerProvider {
-
-      override def createDeploymentManager(modelData: BaseModelData, config: Config)(
-          implicit ec: ExecutionContext,
-          actorSystem: ActorSystem,
-          sttpBackend: SttpBackend[Future, Any],
-          deploymentService: ProcessingTypeDeploymentService
-      ): DeploymentManager = deploymentManager
-
-    }
+  protected val deploymentManagerProvider: DeploymentManagerProvider =
+    new MockManagerProvider(deploymentManager)
 
   private def createModelData(processingType: TestProcessingType) = {
     ModelData(
@@ -168,6 +141,8 @@ trait NuResourcesTest
       Streaming.stringify -> ProcessingTypeData.createProcessingTypeData(
         Streaming.stringify,
         deploymentManagerProvider,
+        deploymentManagerDependencies,
+        deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig,
         TestAdditionalUIConfigProvider
       )
@@ -175,12 +150,11 @@ trait NuResourcesTest
 
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
-  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _] =
+  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] =
     ProcessingTypeDataProvider(
       ProcessingTypeDataReader.loadProcessingTypeData(
         ConfigWithUnresolvedVersion(testConfig),
-        deploymentService,
-        AllDeployedScenarioService(testDbRef, _),
+        _ => deploymentManagerDependencies,
         TestAdditionalUIConfigProvider
       )
     )
@@ -220,7 +194,7 @@ trait NuResourcesTest
     new DBProcessService(
       deploymentService,
       newProcessPreparerByProcessingType,
-      ProcessingTypeDataProvider(Map.empty, scenarioCategoryService),
+      typeToConfig.mapCombined(_.parametersService),
       processResolverByProcessingType,
       dbioRunner,
       futureFetchingScenarioRepository,
@@ -255,12 +229,8 @@ trait NuResourcesTest
       dispatcher = dmDispatcher,
       metricRegistry = new MetricRegistry,
       scenarioTestServices = scenarioTestServiceByProcessingType,
-      typeToConfig = typeToConfig.mapValues(_.modelData)
+      typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData)
     )
-
-  protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(
-    SimpleStateStatus.NotDeployed
-  )(new ProcessingTypeDeploymentServiceStub(Nil))
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -298,20 +268,34 @@ trait NuResourcesTest
 
   protected def createProcessRequest(processName: ProcessName)(
       callback: StatusCode => Assertion
-  ): Assertion =
-    Post(
-      s"/processes/$processName/${Default.stringify}?isFragment=false"
-    ) ~> processesRouteWithAllPermissions ~> check {
+  ): Assertion = {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(Default.stringify),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post("/api/processes", command.toJsonRequestEntity()) ~> processesRouteWithAllPermissions ~> check {
       callback(status)
     }
+  }
 
   protected def saveFragment(
       scenarioGraph: ScenarioGraph,
       name: ProcessName = ProcessTestData.sampleFragmentName,
+      category: String = Default.stringify
   )(testCode: => Assertion): Assertion = {
-    Post(
-      s"/processes/$name/${Default.stringify}?isFragment=true"
-    ) ~> processesRouteWithAllPermissions ~> check {
+    val command = CreateScenarioCommand(
+      name,
+      Some(category),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = true,
+      forwardedUserName = None
+    )
+    Post("/api/processes", command.toJsonRequestEntity()) ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(scenarioGraph, name)(testCode)
     }
@@ -320,7 +304,7 @@ trait NuResourcesTest
   protected def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateProcessCommand(process, UpdateProcessComment(""), None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, UpdateProcessComment(""), None), name)(testCode)
 
   protected def updateCanonicalProcessAndAssertSuccess(process: CanonicalProcess): Assertion =
     updateCanonicalProcess(process) {
@@ -331,13 +315,13 @@ trait NuResourcesTest
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateProcessCommand(CanonicalProcessConverter.toScenarioGraph(process), UpdateProcessComment(comment), None),
+      UpdateScenarioCommand(CanonicalProcessConverter.toScenarioGraph(process), UpdateProcessComment(comment), None),
       process.name
     )(
       testCode
     )
 
-  protected def doUpdateProcess(command: UpdateProcessCommand, name: ProcessName = ProcessTestData.sampleProcessName)(
+  protected def doUpdateProcess(command: UpdateScenarioCommand, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
     Put(s"/processes/$name", command.toJsonRequestEntity()) ~> processesRouteWithAllPermissions ~> check {
@@ -419,11 +403,12 @@ trait NuResourcesTest
       callback(status, responseAs[String])
     }
 
+  private implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[ScenarioWithDetails]] =
+    FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[ScenarioWithDetails]]])
+
   protected def forScenariosReturned(query: ScenarioQuery, isAdmin: Boolean = false)(
       callback: List[ProcessJson] => Assertion
   ): Assertion = {
-    implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[ScenarioWithDetails]] =
-      FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[ScenarioWithDetails]]])
     val url = query.createQueryParamsUrl("/processes")
 
     Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
@@ -437,8 +422,6 @@ trait NuResourcesTest
   protected def forScenariosDetailsReturned(query: ScenarioQuery, isAdmin: Boolean = false)(
       callback: List[ScenarioWithDetails] => Assertion
   ): Assertion = {
-    import FailFastCirceSupport._
-
     val url = query.createQueryParamsUrl("/processesDetails")
 
     Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {

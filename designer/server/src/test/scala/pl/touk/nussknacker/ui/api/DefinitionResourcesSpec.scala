@@ -23,7 +23,11 @@ import pl.touk.nussknacker.tests.base.it.NuResourcesTest
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.mock.TestAdditionalUIConfigProvider
-import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, DefinitionsService, ScenarioPropertiesConfigFinalizer}
+import pl.touk.nussknacker.ui.definition.{
+  AlignedComponentsDefinitionProvider,
+  DefinitionsService,
+  ScenarioPropertiesConfigFinalizer
+}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 class DefinitionResourcesSpec
@@ -39,8 +43,8 @@ class DefinitionResourcesSpec
     with OptionValues {
 
   private val definitionResources = new DefinitionResources(
-    serviceProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
-      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.modelData)
+    definitionsServices = testProcessingTypeDataProvider.mapValues { processingTypeData =>
+      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.designerModelData.modelData)
       DefinitionsService(
         processingTypeData,
         modelDefinitionEnricher,

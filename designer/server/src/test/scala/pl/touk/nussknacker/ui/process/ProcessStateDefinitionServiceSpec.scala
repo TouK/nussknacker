@@ -3,16 +3,22 @@ package pl.touk.nussknacker.ui.process
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ProcessingTypeData
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFactory}
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.tests.TestFactory
 import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, MockManagerProvider}
-import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ValueWithPermission}
+import pl.touk.nussknacker.ui.process.processingtype.{
+  ProcessingTypeData,
+  ProcessingTypeDataProvider,
+  ValueWithRestriction
+}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
@@ -141,10 +147,10 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     val service = new ProcessStateDefinitionService(
       ProcessingTypeDataProvider(
         Map(
-          "Streaming" -> ValueWithPermission
-            .userWithAccessRightsToCategory("Category1", "Category1"),
-          "Streaming2" -> ValueWithPermission
-            .userWithAccessRightsToCategory("Category2", "Category2")
+          "Streaming" -> ValueWithRestriction
+            .userWithAccessRightsToAnyOfCategories("Category1", Set("Category1")),
+          "Streaming2" -> ValueWithRestriction
+            .userWithAccessRightsToAnyOfCategories("Category2", Set("Category2"))
         ),
         stateDefinitions
       )
@@ -163,32 +169,36 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   ): Map[ProcessingType, ProcessingTypeData] = {
     Map(
       "Streaming" -> createProcessingTypeData(
-        new MockDeploymentManager() {
-          override def processStateDefinitionManager: ProcessStateDefinitionManager = streaming
-        },
         "Streaming",
+        streaming,
         "Category1"
       ),
       "Streaming2" -> createProcessingTypeData(
-        new MockDeploymentManager() {
-          override def processStateDefinitionManager: ProcessStateDefinitionManager = fraud
-        },
         "Streaming2",
+        fraud,
         "Category2"
       ),
     )
   }
 
   private def createProcessingTypeData(
-      deploymentManager: DeploymentManager,
       processingType: String,
+      stateDefinitionManager: ProcessStateDefinitionManager,
       category: String
   ): ProcessingTypeData = {
     ProcessingTypeData.createProcessingTypeData(
       processingType,
-      MockManagerProvider,
-      deploymentManager,
-      LocalModelData(ConfigFactory.empty(), List.empty),
+      new MockManagerProvider(
+        new MockDeploymentManager() {
+          override def processStateDefinitionManager: ProcessStateDefinitionManager = stateDefinitionManager
+        }
+      ),
+      TestFactory.deploymentManagerDependencies,
+      EngineSetupName("mock"),
+      LocalModelData(
+        ConfigFactory.empty(),
+        List(ComponentDefinition("source", SourceFactory.noParamUnboundedStreamFactory[Any](new Source {})))
+      ),
       ConfigFactory.empty(),
       category
     )

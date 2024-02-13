@@ -1851,7 +1851,7 @@ lazy val designer = (project in file("designer/server"))
     restmodel,
     listenerApi,
     testUtils                         % "test",
-    // TODO: this is unfortunately needed to run without too much hassle in Intellij...
+    // TODO: this is unfortunately needed to run without too much hassle NussknackerApp from Intellij...
     // provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
     // otherwise it is (wrongly) added to classpath when running Designer from Idea
     flinkDeploymentManager            % "provided",

@@ -1,33 +1,39 @@
 package pl.touk.nussknacker.tests
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import cats.effect.unsafe.IORuntime
 import cats.instances.future._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.DeploymentManagerDependencies
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentServiceStub
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.tests.mock.{StubDeploymentService, StubFragmentRepository}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  ProcessingTypeDataConfigurationReader,
+import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
-  ValueWithPermission
+  ScenarioParametersService,
+  ScenarioParametersWithEngineSetupErrors,
+  ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, NewProcessPreparer, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import sttp.client3.testing.SttpBackendStub
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -69,6 +75,24 @@ object TestFactory {
   val processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _] =
     mapProcessingTypeDataProvider(Streaming.stringify -> processResolver)
 
+  val scenarioParametersService: ScenarioParametersService = {
+    val combinations = Map(
+      TestProcessingType.Streaming.stringify ->
+        ScenarioParametersWithEngineSetupErrors(
+          ScenarioParameters(
+            ProcessingMode.UnboundedStream,
+            TestCategory.Default.stringify,
+            EngineSetupName("Flink")
+          ),
+          List.empty
+        )
+    )
+    ScenarioParametersService.createUnsafe(combinations)
+  }
+
+  val scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService] =
+    ProcessingTypeDataProvider(Map.empty, scenarioParametersService)
+
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
@@ -83,6 +107,16 @@ object TestFactory {
   def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] = mapProcessingTypeDataProvider(
     Streaming.stringify -> new ScenarioResolver(sampleResolver, Streaming.stringify)
   )
+
+  val deploymentManagerDependencies: DeploymentManagerDependencies = {
+    val actorSystem = ActorSystem("TestFactory")
+    DeploymentManagerDependencies(
+      new ProcessingTypeDeploymentServiceStub(List.empty),
+      actorSystem.dispatcher,
+      actorSystem,
+      SttpBackendStub.asynchronousFuture
+    )
+  }
 
   def deploymentService() = new StubDeploymentService(Map.empty)
 
@@ -162,15 +196,8 @@ object TestFactory {
   def mapProcessingTypeDataProvider[T](data: (String, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
     ProcessingTypeDataProvider.withEmptyCombinedData(
-      data.toMap.map { case (k, v) => (k, ValueWithPermission.anyUser(v)) }
+      data.toMap.map { case (k, v) => (k, ValueWithRestriction.anyUser(v)) }
     )
   }
-
-  def createCategoryService(designerConfig: Config): ProcessCategoryService =
-    ConfigProcessCategoryService(
-      ProcessingTypeDataConfigurationReader
-        .readProcessingTypeConfig(ConfigWithUnresolvedVersion(designerConfig))
-        .mapValuesNow(_.category)
-    )
 
 }

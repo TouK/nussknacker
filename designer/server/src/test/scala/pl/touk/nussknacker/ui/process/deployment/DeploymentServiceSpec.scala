@@ -23,8 +23,12 @@ import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, TestProcessChangeL
 import pl.touk.nussknacker.tests.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider.noCombinedDataFun
-import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, ProcessingTypeDataProvider, ProcessingTypeDataState, ValueWithPermission}
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
+import pl.touk.nussknacker.ui.process.processingtype.{
+  ProcessingTypeDataProvider,
+  ProcessingTypeDataState,
+  ValueWithRestriction
+}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
@@ -69,8 +73,8 @@ class DeploymentServiceSpec
       override val state: ProcessingTypeDataState[DeploymentManager, Nothing] =
         new ProcessingTypeDataState[DeploymentManager, Nothing] {
 
-          override def all: Map[ProcessingType, ValueWithPermission[DeploymentManager]] = Map(
-            "Streaming" -> ValueWithPermission.anyUser(deploymentManager)
+          override def all: Map[ProcessingType, ValueWithRestriction[DeploymentManager]] = Map(
+            "Streaming" -> ValueWithRestriction.anyUser(deploymentManager)
           )
 
           override def getCombined: () => Nothing = noCombinedDataFun
@@ -86,7 +90,8 @@ class DeploymentServiceSpec
 
   private val deploymentService = createDeploymentService(None)
 
-  deploymentManager = new MockDeploymentManager(SimpleStateStatus.Running)(
+  deploymentManager = new MockDeploymentManager(
+    SimpleStateStatus.Running,
     new DefaultProcessingTypeDeploymentService(
       "Streaming",
       deploymentService,
@@ -614,7 +619,10 @@ class DeploymentServiceSpec
     val processesDetailsWithState = deploymentService
       .enrichDetailsWithProcessState(
         processesDetails
-          .map(ScenarioWithDetailsConversions.fromEntityIgnoringGraphAndValidationResult)
+          .map(
+            ScenarioWithDetailsConversions
+              .fromEntityIgnoringGraphAndValidationResult(_, ProcessTestData.sampleScenarioParameters)
+          )
       )
       .futureValue
 

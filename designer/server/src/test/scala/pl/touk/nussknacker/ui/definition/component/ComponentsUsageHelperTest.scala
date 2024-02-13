@@ -152,7 +152,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       .withDesignerWideComponentIdDeterminingStrategy(determineDesignerWideId)
       .withSink(ProcessTestData.existingSinkFactory)
       .withSink(ProcessTestData.existingSinkFactory2)
-      .withSource(ProcessTestData.existingSourceFactory)
+      .withUnboundedStreamSource(ProcessTestData.existingSourceFactory)
       .withCustom(
         ProcessTestData.otherExistingStreamTransformer,
         Some(Typed[String]),

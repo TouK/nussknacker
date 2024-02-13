@@ -2,23 +2,24 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
-import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.data.OptionT
+import cats.instances.all._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.LoneElement._
 import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -27,20 +28,18 @@ import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Cat
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestProcessingType.{Streaming1, Streaming2}
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
-import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.ScenarioToJson
 import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.tests.{ProcessTestData, SampleSpelTemplateProcess, TestFactory}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
-import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
+import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, UpdateProcessComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.server.RouteInterceptor
-import pl.touk.nussknacker.engine.spel.Implicits._
 
 import scala.concurrent.Future
 
@@ -201,9 +200,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    Post(
-      s"/api/processes/$processName/${Category1.stringify}?isFragment=false"
-    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+    createProcessRequest(processName, category = Category1, isFragment = false) { status =>
       status shouldBe StatusCodes.BadRequest
       responseAs[String] shouldEqual s"Scenario $processName already exists"
     }
@@ -552,13 +549,21 @@ class ProcessesResourcesSpec
     saveCanonicalProcess(validProcess, category = Category1) {
       status shouldEqual StatusCodes.OK
       fetchScenario(validProcess.name).nodes.head.id shouldEqual validProcess.nodes.head.id
-      val ll = entityAs[ValidationResult]
+      val ll = entityAs[ValidationResult] // todo: remove
       entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe true
     }
   }
 
   test("update process with the same json should not create new version") {
-    val command = ProcessTestData.createEmptyUpdateProcessCommand(None)
+    val command = UpdateScenarioCommand(
+      scenarioGraph = ScenarioGraph(
+        properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
+        nodes = List.empty,
+        edges = List.empty
+      ),
+      comment = UpdateProcessComment(""),
+      forwardedUserName = None
+    )
 
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
@@ -610,7 +615,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
       fetchScenario(
         ProcessTestData.invalidProcess.name
-      ).nodes.head.id shouldEqual (ProcessTestData.invalidProcess.nodes.head.id)
+      ).nodes.head.id shouldEqual ProcessTestData.invalidProcess.nodes.head.id
       entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe false
     }
   }
@@ -708,21 +713,17 @@ class ProcessesResourcesSpec
     }
   }
 
-  test("not authorize user with read permissions to modify node") {
-    Put(
-      s"/api/processes/$Category1/$processName",
-      ProcessTestData.validProcess.toJsonAsProcessToSave.toJsonRequestEntity()
-    ) ~> withReaderUser() ~> applicationRoute ~> check {
-      rejection shouldBe server.AuthorizationFailedRejection
-    }
-
-    val modifiedParallelism = 123
-    val props               = ProcessProperties(StreamMetaData(Some(modifiedParallelism)))
-    Put(
-      s"/api/processes/$Category1/$processName",
-      props.toJsonRequestEntity()
-    ) ~> withReaderUser() ~> applicationRoute ~> check {
-      rejection shouldBe server.AuthorizationFailedRejection
+  test("not authorize user with read permissions to create scenario") {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(Category1.stringify),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post(s"/api/processes", command.toJsonRequestEntity()) ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.Unauthorized
     }
   }
 
@@ -809,18 +810,16 @@ class ProcessesResourcesSpec
   }
 
   test("save new process with empty json") {
-    val newProcessId = "tst1"
-    Post(
-      s"/api/processes/$newProcessId/$Category1?isFragment=false"
-    ) ~> withWriterUser() ~> applicationRoute ~> check {
+    val newProcessId = ProcessName("tst1")
+    createProcessRequest(newProcessId, category = Category1, isFragment = false) { status =>
       status shouldEqual StatusCodes.Created
+    }
 
-      Get(s"/api/processes/$newProcessId") ~> withReaderUser() ~> applicationRoute ~> check {
-        status shouldEqual StatusCodes.OK
-        val loadedProcess = responseAs[ScenarioWithDetails]
-        loadedProcess.processCategory shouldBe Category1.stringify
-        loadedProcess.createdAt should not be null
-      }
+    Get(s"/api/processes/$newProcessId") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[ScenarioWithDetails]
+      loadedProcess.processCategory shouldBe Category1.stringify
+      loadedProcess.createdAt should not be null
     }
   }
 
@@ -828,19 +827,9 @@ class ProcessesResourcesSpec
     val scenarioGraphToSave = ProcessTestData.sampleScenarioGraph
     saveProcess(ProcessName("p1"), scenarioGraphToSave, category = Category1) {
       status shouldEqual StatusCodes.OK
-      Post(
-        s"/api/processes/$processName/$Category1?isFragment=false"
-      ) ~> withWriterUser() ~> applicationRoute ~> check {
+      createProcessRequest(processName, category = Category1, isFragment = false) { status =>
         status shouldEqual StatusCodes.BadRequest
       }
-    }
-  }
-
-  test("not allow to save process with category not allowed for user") {
-    Post(s"/api/processes/p11/abcd/${Streaming1.stringify}") ~> withWriterUser() ~> applicationRoute ~> check {
-      // this one below does not work, but I cannot compose path and authorize directives in a right way
-      // rejection shouldBe server.AuthorizationFailedRejection
-      handled shouldBe false
     }
   }
 
@@ -1140,13 +1129,13 @@ class ProcessesResourcesSpec
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateProcessCommand(CanonicalProcessConverter.toScenarioGraph(process), UpdateProcessComment(comment), None),
+      UpdateScenarioCommand(CanonicalProcessConverter.toScenarioGraph(process), UpdateProcessComment(comment), None),
       process.name
     )(
       testCode
     )
 
-  private def doUpdateProcess(command: UpdateProcessCommand, name: ProcessName = ProcessTestData.sampleProcessName)(
+  private def doUpdateProcess(command: UpdateScenarioCommand, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
     Put(s"/api/processes/$name", command.toJsonRequestEntity()) ~> withAllPermUser() ~> applicationRoute ~> check {
@@ -1189,7 +1178,7 @@ class ProcessesResourcesSpec
   private def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateProcessCommand(process, UpdateProcessComment(""), None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, UpdateProcessComment(""), None), name)(testCode)
 
   private lazy val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
     TestFactory.newFutureFetchingScenarioRepository(testDbRef)

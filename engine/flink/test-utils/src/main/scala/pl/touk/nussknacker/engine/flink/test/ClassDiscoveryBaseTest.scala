@@ -94,7 +94,7 @@ trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside {
         def checkMethods(getMethods: ClassDefinition => Map[String, List[MethodDefinition]]): Unit = {
           val methods        = getMethods(clazzDefinition)
           val decodedMethods = getMethods(decoded)
-          methods.keys shouldBe decodedMethods.keys
+          methods.keySet shouldBe decodedMethods.keySet
           methods.foreach { case (k, v) =>
             withClue(s"$clazz with method: $k does not match, ${v.asJson}, ${decodedMethods(k).asJson}: ") {
               v.map(simplifyMethodDefinition) should contain theSameElementsAs decodedMethods(k)

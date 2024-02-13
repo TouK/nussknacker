@@ -12,6 +12,7 @@ import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -34,12 +35,13 @@ import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.TestProcessUtil.toJson
 import pl.touk.nussknacker.tests.base.it.NuItTest
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Default
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
 import pl.touk.nussknacker.ui.api.{NodeValidationRequest, ScenarioValidationRequest}
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
+import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
@@ -285,17 +287,9 @@ class BaseFlowTest
 
   test("validate process scenario properties") {
     val scenario = ProcessTestData.scenarioGraphWithInvalidScenarioProperties
-    val response1 = httpClient.send(
-      quickRequest
-        .post(
-          uri"$nuDesignerHttpAddress/api/processes/${ProcessTestData.sampleProcessName}/${Default.stringify}?isFragment=false"
-        )
-        .auth
-        .basic("admin", "admin")
-    )
-    response1.code shouldEqual StatusCode.Created
+    createProcess(ProcessTestData.sampleProcessName)
 
-    val response2 = httpClient.send(
+    val validationResponse = httpClient.send(
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processValidation/${ProcessTestData.sampleProcessName}")
         .contentType(MediaType.ApplicationJson)
@@ -304,15 +298,16 @@ class BaseFlowTest
         .basic("admin", "admin")
     )
 
-    response2.code shouldEqual StatusCode.Ok
-    response2.body should include("Configured property environment (Environment) is missing")
-    response2.body should include("This field value has to be an integer number")
-    response2.body should include("Unknown property unknown")
-    response2.body should include("Property numberOfThreads (Number of threads) has invalid value") //
+    validationResponse.code shouldEqual StatusCode.Ok
+    validationResponse.body should include("Configured property environment (Environment) is missing")
+    validationResponse.body should include("This field value has to be an integer number")
+    validationResponse.body should include("Unknown property unknown")
+    validationResponse.body should include("Property numberOfThreads (Number of threads) has invalid value") //
   }
 
   test("be able to work with fragment with custom class inputs") {
-    val processId = UUID.randomUUID().toString
+    val processId = ProcessName(UUID.randomUUID().toString)
+    createProcess(processId)
 
     val scenarioGraph = ScenarioGraph(
       properties = ProcessProperties(FragmentSpecificData()),
@@ -323,15 +318,7 @@ class BaseFlowTest
       edges = List(Edge("input1", "output1", None)),
     )
 
-    val response1 = httpClient.send(
-      quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processes/$processId/${Default.stringify}?isFragment=true")
-        .auth
-        .basic("admin", "admin")
-    )
-    response1.code shouldEqual StatusCode.Created
-
-    val response2 = httpClient.send(
+    val updateResponse = httpClient.send(
       quickRequest
         .put(uri"$nuDesignerHttpAddress/api/processes/$processId")
         .contentType(MediaType.ApplicationJson)
@@ -340,8 +327,8 @@ class BaseFlowTest
         .basic("admin", "admin")
         .response(asJson[ValidationResult])
     )
-    response2.code shouldEqual StatusCode.Ok
-    response2.body.rightValue.errors.invalidNodes("input1") should matchPattern {
+    updateResponse.code shouldEqual StatusCode.Ok
+    updateResponse.body.rightValue.errors.invalidNodes("input1") should matchPattern {
       case List(
             NodeValidationError(
               "FragmentParamClassLoadError",
@@ -353,13 +340,13 @@ class BaseFlowTest
           ) =>
     }
 
-    val response3 = httpClient.send(
+    val fetchResponse = httpClient.send(
       quickRequest
         .get(uri"$nuDesignerHttpAddress/api/processes/$processId")
         .auth
         .basic("admin", "admin")
     )
-    response3.code shouldEqual StatusCode.Ok
+    fetchResponse.code shouldEqual StatusCode.Ok
   }
 
   test("should test process with complexReturnObjectService") {
@@ -515,14 +502,29 @@ class BaseFlowTest
   }
 
   private def saveProcess(process: CanonicalProcess) = {
+    createProcess(process.name)
+    updateProcess(process)
+  }
+
+  private def createProcess(name: ProcessName) = {
+    val createCommand = CreateScenarioCommand(
+      name,
+      Some(Default.stringify),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
     val response = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processes/${process.name}/${Default.stringify}?isFragment=false")
+        .post(uri"$nuDesignerHttpAddress/api/processes/${name.value}/${Default.stringify}?isFragment=false")
         .auth
         .basic("admin", "admin")
+        .post(uri"$nuDesignerHttpAddress/api/processes")
+        .contentType(MediaType.ApplicationJson)
+        .body(createCommand.asJson.spaces2)
     )
     response.code shouldEqual StatusCode.Created
-    updateProcess(process)
   }
 
   private def updateProcess(process: CanonicalProcess) = {

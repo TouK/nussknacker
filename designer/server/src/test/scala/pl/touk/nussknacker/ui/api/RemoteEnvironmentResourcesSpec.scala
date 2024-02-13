@@ -11,14 +11,18 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetailsForMigrations}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.TestFactory.withPermissions
 import pl.touk.nussknacker.tests.base.it.NuResourcesTest
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
+import pl.touk.nussknacker.ui.process.migrate.{
+  RemoteEnvironment,
+  RemoteEnvironmentCommunicationError,
+  TestMigrationResult
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
@@ -48,7 +52,8 @@ class RemoteEnvironmentResourcesSpec
         processService,
         processAuthorizer
       ),
-      Permission.Read, Permission.Write
+      Permission.Read,
+      Permission.Write
     )
 
     Get(s"/remoteEnvironment/$processName/2/compare/1") ~> route ~> check {
@@ -76,7 +81,8 @@ class RemoteEnvironmentResourcesSpec
         processService,
         processAuthorizer
       ),
-      Permission.Read, Permission.Write
+      Permission.Read,
+      Permission.Write
     )
     val expectedDisplayable = ProcessTestData.validScenarioGraph
 
@@ -176,7 +182,7 @@ class RemoteEnvironmentResourcesSpec
     override def migrate(
         localScenarioGraph: ScenarioGraph,
         remoteProcessName: ProcessName,
-        category: String,
+        parameters: ScenarioParameters,
         isFragment: Boolean
     )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
       migrateInvocations = localScenarioGraph :: migrateInvocations
