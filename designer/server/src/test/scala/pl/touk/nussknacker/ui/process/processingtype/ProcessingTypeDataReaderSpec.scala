@@ -18,6 +18,8 @@ import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
+import java.nio.file.Path
+
 class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
   private val processingTypeBasicConfig =
@@ -58,7 +60,8 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         .loadProcessingTypeData(
           ConfigWithUnresolvedVersion(config),
           _ => TestFactory.deploymentManagerDependencies,
-          TestAdditionalUIConfigProvider
+          TestAdditionalUIConfigProvider,
+          workingDirectoryOpt = None
         )
     )
     val scenarioTypes = provider
@@ -86,7 +89,8 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         .loadProcessingTypeData(
           ConfigWithUnresolvedVersion(config),
           _ => TestFactory.deploymentManagerDependencies,
-          TestAdditionalUIConfigProvider
+          TestAdditionalUIConfigProvider,
+          workingDirectoryOpt = None
         )
     )
 
@@ -118,7 +122,8 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         deploymentManagerProvider: DeploymentManagerProvider,
         deploymentManagerDependencies: DeploymentManagerDependencies,
         engineSetupName: EngineSetupName,
-        additionalUIConfigProvider: AdditionalUIConfigProvider
+        additionalUIConfigProvider: AdditionalUIConfigProvider,
+        workingDirectoryOpt: Option[Path]
     ): ProcessingTypeData = {
       val modelData = LocalModelData(ConfigFactory.empty, List.empty)
       ProcessingTypeData(
