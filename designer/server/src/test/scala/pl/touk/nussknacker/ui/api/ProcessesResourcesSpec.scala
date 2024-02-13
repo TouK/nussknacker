@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import cats.data.OptionT
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.LoneElement._
 import org.scalatest._
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -38,6 +40,7 @@ import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, Upd
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.server.RouteInterceptor
+import pl.touk.nussknacker.engine.spel.Implicits._
 
 import scala.concurrent.Future
 
@@ -176,16 +179,16 @@ class ProcessesResourcesSpec
 
   test("allow to archive fragment used in archived process") {
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
+    val fragmentName        = processWithFragment.fragment.name
     val fragmentGraph       = CanonicalProcessConverter.toScenarioGraph(processWithFragment.fragment)
-
-    saveFragment(ProcessName("f1"), fragmentGraph, category = Category1)(succeed)
+    saveFragment(fragmentName, fragmentGraph, category = Category1)(succeed)
     saveCanonicalProcess(processWithFragment.process, category = Category1)(succeed)
 
     archiveProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
     }
 
-    archiveProcess(processWithFragment.fragment.name) { status =>
+    archiveProcess(fragmentName) { status =>
       status shouldEqual StatusCodes.OK
     }
   }
@@ -540,9 +543,16 @@ class ProcessesResourcesSpec
   }
 
   test("save correct process json with ok status") {
-    saveCanonicalProcess(ProcessTestData.validProcess, category = Category1) {
+    val validProcess = ScenarioBuilder
+      .streaming("proc1")
+      .source("id", "input")
+      .filter("filter", "#input.enumValue == #enum['ONE']")
+      .processorEnd("proc2", "logService", "all" -> "#input")
+
+    saveCanonicalProcess(validProcess, category = Category1) {
       status shouldEqual StatusCodes.OK
-      checkSampleProcessRootIdEquals(ProcessTestData.validProcess.nodes.head.id)
+      fetchScenario(validProcess.name).nodes.head.id shouldEqual validProcess.nodes.head.id
+      val ll = entityAs[ValidationResult]
       entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe true
     }
   }
@@ -598,7 +608,9 @@ class ProcessesResourcesSpec
   test("save invalid process json with ok status but with non empty invalid nodes") {
     saveCanonicalProcess(ProcessTestData.invalidProcess, category = Category1) {
       status shouldEqual StatusCodes.OK
-      checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.nodes.head.id)
+      fetchScenario(
+        ProcessTestData.invalidProcess.name
+      ).nodes.head.id shouldEqual (ProcessTestData.invalidProcess.nodes.head.id)
       entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe false
     }
   }
@@ -967,18 +979,16 @@ class ProcessesResourcesSpec
     }
   }
 
-  private def checkSampleProcessRootIdEquals(expected: String): Assertion = {
-    fetchSampleProcess()
-      .map(_.nodes.head.id)
-      .futureValue shouldEqual expected
-  }
-
-  private def fetchSampleProcess(): Future[CanonicalProcess] = {
+  private def fetchScenario(name: ProcessName): CanonicalProcess = {
     implicit val adminUser: LoggedUser = TestFactory.adminUser()
-    futureFetchingScenarioRepository
-      .fetchLatestProcessDetailsForProcessId[CanonicalProcess](getProcessId(processName))
-      .map(_.getOrElse(sys.error("Sample process missing")))
-      .map(_.json)
+    val detailsOptT = for {
+      id      <- OptionT(futureFetchingScenarioRepository.fetchProcessId(name))
+      details <- OptionT(futureFetchingScenarioRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id))
+    } yield details
+    detailsOptT.value.futureValue match {
+      case Some(scenarioDetails) => scenarioDetails.json
+      case None                  => sys.error(s"Scenario [${processName.value}] is missing")
+    }
   }
 
   private def getProcessId(processName: ProcessName): ProcessId =

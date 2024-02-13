@@ -18,18 +18,6 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-object RouteInterceptor extends Supplier[Route] {
-
-  private val interceptedRoute: AtomicReference[Option[Route]] = new AtomicReference[Option[Route]](None)
-
-  override def get(): Route = interceptedRoute.get() match {
-    case Some(value) => value
-    case None        => throw new IllegalStateException("Route was not set")
-  }
-
-  def set(route: Route): Unit = interceptedRoute.set(Some(route))
-}
-
 class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSystem) extends LazyLogging {
 
   private implicit val systemImplicit: ActorSystem                = system
@@ -119,4 +107,17 @@ class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSy
     new DropwizardRegistry(settings)(metricsRegistry)
   }
 
+}
+
+// todo: describe
+object RouteInterceptor extends Supplier[Route] {
+
+  private val interceptedRoute: AtomicReference[Option[Route]] = new AtomicReference[Option[Route]](None)
+
+  override def get(): Route = interceptedRoute.get() match {
+    case Some(value) => value
+    case None        => throw new IllegalStateException("Route was not set")
+  }
+
+  def set(route: Route): Unit = interceptedRoute.set(Some(route))
 }
