@@ -1,7 +1,5 @@
 import { css, cx } from "@emotion/css";
-import React, { useCallback, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { getWritableCategories } from "../reducers/selectors/settings";
+import React, { useCallback, useEffect, useState } from "react";
 import { ChangeableValue } from "./ChangeableValue";
 import ValidationLabels from "./modals/ValidationLabels";
 import { NodeTable } from "./graph/node-modal/NodeDetailsContent/NodeTable";
@@ -13,14 +11,10 @@ import StreamingIcon from "../assets/img/streaming.svg";
 import RequestResponseIcon from "../assets/img/request-response.svg";
 import BatchIcon from "../assets/img/batch.svg";
 import { CustomRadio } from "./customRadio/CustomRadio";
+import HttpService, { ProcessingMode } from "../http/HttpService";
+import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
-
-enum ProcessingMode {
-    "streaming" = "streaming",
-    "requestResponse" = "requestResponse",
-    "batch" = "batch",
-}
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
     fieldErrors: FieldError[];
@@ -28,15 +22,16 @@ interface AddProcessFormProps extends ChangeableValue<FormValue> {
 
 export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormProps): JSX.Element {
     const { t } = useTranslation();
-    const categories = useSelector(getWritableCategories);
-
+    const [allCombinations, setAllCombinations] = useState([]);
     const onFieldChange = useCallback((field: keyof FormValue, next: string) => onChange({ ...value, [field]: next }), [onChange, value]);
+    const { categories, engines, processingModes } = useProcessFormDataOptions({ allCombinations, value });
 
     useEffect(() => {
-        if (!value.processCategory) {
-            onFieldChange("processCategory", categories[0]);
-        }
-    }, [categories, onFieldChange, value.processCategory]);
+        HttpService.fetchScenarioParametersCombinations().then((response) => {
+            const combinations = response.data.combinations;
+            setAllCombinations(combinations);
+        });
+    }, []);
 
     return (
         <div
@@ -65,18 +60,21 @@ export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormP
                             }}
                         >
                             <CustomRadio
+                                disabled={processingModes.every((processingMode) => processingMode !== ProcessingMode.streaming)}
                                 label={t("addProcessForm.label.streaming", "Streaming")}
                                 value={ProcessingMode.streaming}
                                 Icon={StreamingIcon}
                                 active={value.processingMode === ProcessingMode.streaming}
                             />
                             <CustomRadio
+                                disabled={processingModes.every((processingMode) => processingMode !== ProcessingMode.requestResponse)}
                                 label={t("addProcessForm.label.requestResponse", "Request-response")}
                                 value={ProcessingMode.requestResponse}
                                 Icon={RequestResponseIcon}
                                 active={value.processingMode === ProcessingMode.requestResponse}
                             />
                             <CustomRadio
+                                disabled={processingModes.every((processingMode) => processingMode !== ProcessingMode.batch)}
                                 label={t("addProcessForm.label.batch", "Batch")}
                                 value={ProcessingMode.batch}
                                 Icon={BatchIcon}
@@ -116,13 +114,18 @@ export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormP
                         <SelectNodeWithFocus
                             id="processCategory"
                             value={value.processCategory}
-                            onChange={(e) => onFieldChange("processCategory", e.target.value)}
+                            onChange={(e) => {
+                                onFieldChange("processCategory", e.target.value);
+                            }}
                         >
-                            {categories.map((cat, index) => (
-                                <option key={index} value={cat}>
-                                    {cat}
-                                </option>
-                            ))}
+                            <>
+                                <option value={""}></option>
+                                {categories.map((category, index) => (
+                                    <option key={index} value={category}>
+                                        {category}
+                                    </option>
+                                ))}
+                            </>
                         </SelectNodeWithFocus>
                         <Typography component={"div"} variant={"overline"} mt={1}>
                             <Trans i18nKey={"addProcessForm.helperText.category"}>
@@ -145,13 +148,18 @@ export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormP
                         <SelectNodeWithFocus
                             id="processEngine"
                             value={value.processEngine}
-                            onChange={(e) => onFieldChange("processEngine", e.target.value)}
+                            onChange={(e) => {
+                                onFieldChange("processEngine", e.target.value);
+                            }}
                         >
-                            {[].map((engines, index) => (
-                                <option key={index} value={engines}>
-                                    {engines}
-                                </option>
-                            ))}
+                            <>
+                                <option value={""}></option>
+                                {engines.map((engine, index) => (
+                                    <option key={index} value={engine}>
+                                        {engine}
+                                    </option>
+                                ))}
+                            </>
                         </SelectNodeWithFocus>
                         <Typography component={"div"} variant={"overline"} mt={1}>
                             <Trans i18nKey={"addProcessForm.helperText.engine"}>
