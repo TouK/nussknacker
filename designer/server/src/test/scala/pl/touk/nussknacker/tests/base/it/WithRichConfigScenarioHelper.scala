@@ -19,7 +19,7 @@ trait WithRichConfigScenarioHelper {
   }
 
   def createEmptyFragment(fragmentName: ProcessName, category: TestCategory): ProcessId = {
-    rawScenarioHelper.createEmptyScenario(fragmentName, category.stringify, isFragment = false)
+    rawScenarioHelper.createEmptyScenario(fragmentName, category.stringify, isFragment = true)
   }
 
   def createSavedScenario(scenario: CanonicalProcess, category: TestCategory): ProcessId = {

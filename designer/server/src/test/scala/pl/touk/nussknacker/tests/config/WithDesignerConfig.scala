@@ -3,6 +3,7 @@ package pl.touk.nussknacker.tests.config
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{BeforeAndAfterEach, Suite}
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.tests.base.it.NuItTest
 
 import scala.jdk.CollectionConverters._
 
@@ -11,8 +12,8 @@ trait WithDesignerConfig {
   def designerConfig: Config
 }
 
-trait WithMockableDeploymentManager2 extends WithDesignerConfig with BeforeAndAfterEach {
-  this: Suite =>
+trait WithMockableDeploymentManager extends WithDesignerConfig with BeforeAndAfterEach {
+  this: Suite with NuItTest =>
 
   abstract override def designerConfig: Config = {
     val config                   = super.designerConfig

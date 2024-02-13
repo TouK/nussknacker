@@ -24,7 +24,7 @@ import pl.touk.nussknacker.tests.base.it._
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestProcessingType.{Streaming1, Streaming2}
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager2, WithRichDesignerConfig}
+import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
 import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.ScenarioToJson
 import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.tests.{ProcessTestData, SampleSpelTemplateProcess, TestFactory}
@@ -46,10 +46,10 @@ import scala.concurrent.Future
  */
 class ProcessesResourcesSpec
     extends AnyFunSuite
-    with NuItTest2
+    with NuItTest
     with WithRichDesignerConfig
     with WithRichConfigScenarioHelper
-    with WithMockableDeploymentManager2
+    with WithMockableDeploymentManager
     with ScalatestRouteTest
     with Matchers
     with Inside
@@ -68,12 +68,9 @@ class ProcessesResourcesSpec
   private lazy val applicationRoute = RouteInterceptor.get()
 
   private val processName: ProcessName = ProcessTestData.sampleProcessName
-
-  private val archivedProcessName = ProcessName("archived")
-
-  private val fragmentName = ProcessName("fragment")
-
-  private val archivedFragmentName = ProcessName("archived-fragment")
+  private val archivedProcessName      = ProcessName("archived")
+  private val fragmentName             = ProcessName("fragment")
+  private val archivedFragmentName     = ProcessName("archived-fragment")
 
   test("should return list of process with state") {
     createDeployedExampleScenario(processName, category = Category1)
@@ -125,7 +122,7 @@ class ProcessesResourcesSpec
   test("spel template expression is validated properly") {
     createDeployedScenario(SampleSpelTemplateProcess.process, category = Category1)
 
-    Get(s"/processes/${SampleSpelTemplateProcess.processName}") ~> withReadPermissions() ~> applicationRoute ~> check {
+    Get(s"/processes/${SampleSpelTemplateProcess.processName}") ~> withReaderUser() ~> applicationRoute ~> check {
       val newProcessDetails = responseAs[ScenarioWithDetails]
       newProcessDetails.processVersionId shouldBe VersionId.initialVersionId
 
@@ -137,14 +134,16 @@ class ProcessesResourcesSpec
   test("return validated and non-validated process") {
     createEmptyScenario(processName, category = Category1)
 
-    Get(s"/processes/$processName") ~> withReadPermissions() ~> applicationRoute ~> check {
+    Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val validated = responseAs[ScenarioWithDetails]
       validated.name shouldBe processName
       validated.validationResult.value.errors should not be empty
     }
 
-    Get(s"/processes/$processName?skipValidateAndResolve=true") ~> withReadPermissions() ~> applicationRoute ~> check {
+    Get(
+      s"/api/processes/$processName?skipValidateAndResolve=true"
+    ) ~> withReaderUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val validated = responseAs[ScenarioWithDetails]
       validated.name shouldBe processName
@@ -200,8 +199,8 @@ class ProcessesResourcesSpec
     }
 
     Post(
-      s"/processes/$processName/${Category1.stringify}?isFragment=false"
-    ) ~> withAllPermissions() ~> applicationRoute ~> check {
+      s"/api/processes/$processName/${Category1.stringify}?isFragment=false"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldBe StatusCodes.BadRequest
       responseAs[String] shouldEqual s"Scenario $processName already exists"
     }
@@ -589,7 +588,7 @@ class ProcessesResourcesSpec
 
   test("return details of process with empty expression") {
     saveCanonicalProcess(ProcessTestData.validProcessWithEmptySpelExpr, category = Category1) {
-      Get(s"/processes/$processName") ~> withAllPermissions() ~> applicationRoute ~> check {
+      Get(s"/api/processes/$processName") ~> withAllPermUser() ~> applicationRoute ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[String] should include(processName.value)
       }
@@ -632,7 +631,7 @@ class ProcessesResourcesSpec
 
     val meta = ProcessTestData.validProcess.metaData
     val changedMeta = meta.copy(additionalFields =
-      ProcessAdditionalFields(Some("changed descritption..."), Map.empty, meta.additionalFields.metaDataType)
+      ProcessAdditionalFields(Some("changed description..."), Map.empty, meta.additionalFields.metaDataType)
     )
     updateCanonicalProcess(ProcessTestData.validProcess.copy(metaData = changedMeta)) {
       status shouldEqual StatusCodes.OK
@@ -654,19 +653,19 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processes/${ProcessTestData.sampleScenario.name}/1") ~> withAllPermissions() ~> applicationRoute ~> check {
+    Get(s"/api/processes/${ProcessTestData.sampleScenario.name}/1") ~> withAllPermUser() ~> applicationRoute ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
       processDetails.isLatestVersion shouldBe false
     }
 
-    Get(s"/processes/${ProcessTestData.sampleScenario.name}/2") ~> withAllPermissions() ~> applicationRoute ~> check {
+    Get(s"/api/processes/${ProcessTestData.sampleScenario.name}/2") ~> withAllPermUser() ~> applicationRoute ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(2)
       processDetails.isLatestVersion shouldBe false
     }
 
-    Get(s"/processes/${ProcessTestData.sampleScenario.name}/3") ~> withAllPermissions() ~> applicationRoute ~> check {
+    Get(s"/api/processes/${ProcessTestData.sampleScenario.name}/3") ~> withAllPermUser() ~> applicationRoute ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(3)
       processDetails.isLatestVersion shouldBe true
@@ -676,7 +675,9 @@ class ProcessesResourcesSpec
   test("return non-validated process version") {
     createEmptyScenario(processName, category = Category1)
 
-    Get(s"/processes/$processName/1?skipValidateAndResolve=true") ~> withAllPermissions() ~> applicationRoute ~> check {
+    Get(
+      s"/api/processes/$processName/1?skipValidateAndResolve=true"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
       processDetails.validationResult shouldBe empty
@@ -685,10 +686,10 @@ class ProcessesResourcesSpec
 
   test("perform idempotent process save") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess, category = Category1)
-    Get(s"/processes/${ProcessTestData.sampleScenario.name}") ~> withAllPermissions() ~> applicationRoute ~> check {
+    Get(s"/api/processes/${ProcessTestData.sampleScenario.name}") ~> withAllPermUser() ~> applicationRoute ~> check {
       val processHistoryBeforeDuplicatedWrite = responseAs[ScenarioWithDetails].history.value
       updateCanonicalProcessAndAssertSuccess(ProcessTestData.validProcess)
-      Get(s"/processes/${ProcessTestData.sampleScenario.name}") ~> withAllPermissions() ~> applicationRoute ~> check {
+      Get(s"/api/processes/${ProcessTestData.sampleScenario.name}") ~> withAllPermUser() ~> applicationRoute ~> check {
         val processHistoryAfterDuplicatedWrite = responseAs[ScenarioWithDetails].history.value
         processHistoryAfterDuplicatedWrite shouldBe processHistoryBeforeDuplicatedWrite
       }
@@ -697,18 +698,18 @@ class ProcessesResourcesSpec
 
   test("not authorize user with read permissions to modify node") {
     Put(
-      s"/processes/$Category1/$processName",
+      s"/api/processes/$Category1/$processName",
       ProcessTestData.validProcess.toJsonAsProcessToSave.toJsonRequestEntity()
-    ) ~> withReadPermissions() ~> applicationRoute ~> check {
+    ) ~> withReaderUser() ~> applicationRoute ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
 
     val modifiedParallelism = 123
     val props               = ProcessProperties(StreamMetaData(Some(modifiedParallelism)))
     Put(
-      s"/processes/$Category1/$processName",
+      s"/api/processes/$Category1/$processName",
       props.toJsonRequestEntity()
-    ) ~> withReadPermissions() ~> applicationRoute ~> check {
+    ) ~> withReaderUser() ~> applicationRoute ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
   }
@@ -798,11 +799,11 @@ class ProcessesResourcesSpec
   test("save new process with empty json") {
     val newProcessId = "tst1"
     Post(
-      s"/processes/$newProcessId/$Category1?isFragment=false"
-    ) ~> withReadWritePermissions() ~> applicationRoute ~> check {
+      s"/api/processes/$newProcessId/$Category1?isFragment=false"
+    ) ~> withWriterUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.Created
 
-      Get(s"/processes/$newProcessId") ~> withReadPermissions() ~> applicationRoute ~> check {
+      Get(s"/api/processes/$newProcessId") ~> withReaderUser() ~> applicationRoute ~> check {
         status shouldEqual StatusCodes.OK
         val loadedProcess = responseAs[ScenarioWithDetails]
         loadedProcess.processCategory shouldBe Category1.stringify
@@ -816,15 +817,15 @@ class ProcessesResourcesSpec
     saveProcess(ProcessName("p1"), scenarioGraphToSave, category = Category1) {
       status shouldEqual StatusCodes.OK
       Post(
-        s"/processes/$processName/$Category1?isFragment=false"
-      ) ~> withReadWritePermissions() ~> applicationRoute ~> check {
+        s"/api/processes/$processName/$Category1?isFragment=false"
+      ) ~> withWriterUser() ~> applicationRoute ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
     }
   }
 
   test("not allow to save process with category not allowed for user") {
-    Post(s"/processes/p11/abcd/${Streaming1.stringify}") ~> withReadWritePermissions() ~> applicationRoute ~> check {
+    Post(s"/api/processes/p11/abcd/${Streaming1.stringify}") ~> withWriterUser() ~> applicationRoute ~> check {
       // this one below does not work, but I cannot compose path and authorize directives in a right way
       // rejection shouldBe server.AuthorizationFailedRejection
       handled shouldBe false
@@ -837,7 +838,7 @@ class ProcessesResourcesSpec
 
     saveCanonicalProcess(ProcessTestData.validProcessWithName(firstProcessName), category = Category1) {
       saveCanonicalProcess(ProcessTestData.validProcessWithName(secondProcessName), category = Category1) {
-        Get("/processesDetails?skipValidateAndResolve=true") ~> withAllPermissions() ~> applicationRoute ~> check {
+        Get("/api/processesDetails?skipValidateAndResolve=true") ~> withAllPermUser() ~> applicationRoute ~> check {
           status shouldEqual StatusCodes.OK
           val processes = responseAs[List[ScenarioWithDetails]]
           processes should have size 2
@@ -853,7 +854,7 @@ class ProcessesResourcesSpec
     createArchivedExampleScenario(archivedProcessName, category = Category1)
     createEmptyFragment(ProcessName("fragment"), category = Category1)
 
-    Get(s"/processes/status") ~> withAllPermissions() ~> applicationRoute ~> check {
+    Get(s"/api/processes/status") ~> withAllPermUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val response = responseAs[Map[String, Json]]
       response.toList.size shouldBe 1
@@ -984,7 +985,7 @@ class ProcessesResourcesSpec
     futureFetchingScenarioRepository.fetchProcessId(processName).futureValue.get
 
   private def renameProcess(processName: ProcessName, newName: ProcessName)(callback: StatusCode => Any): Any =
-    Put(s"/processes/$processName/rename/$newName") ~> withAllPermissions() ~> applicationRoute ~> check {
+    Put(s"/api/processes/$processName/rename/$newName") ~> withAllPermUser() ~> applicationRoute ~> check {
       callback(status)
     }
 
@@ -998,20 +999,20 @@ class ProcessesResourcesSpec
     }
 
   private def getProcessToolbars(processName: ProcessName, isAdmin: Boolean = false): RouteTestResult =
-    Get(s"/processes/$processName/toolbars") ~> withPermissions(isAdmin) ~> applicationRoute
+    Get(s"/api/processes/$processName/toolbars") ~> withAllPermUserOrAdmin(isAdmin) ~> applicationRoute
 
   private def archiveProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
-    Post(s"/archive/$processName") ~> withReadWritePermissions() ~> applicationRoute ~> check {
+    Post(s"/api/archive/$processName") ~> withWriterUser() ~> applicationRoute ~> check {
       callback(status)
     }
 
   private def unArchiveProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
-    Post(s"/unarchive/$processName") ~> withReadWritePermissions() ~> applicationRoute ~> check {
+    Post(s"/api/unarchive/$processName") ~> withWriterUser() ~> applicationRoute ~> check {
       callback(status)
     }
 
   private def deleteProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
-    Delete(s"/processes/$processName") ~> withReadWritePermissions() ~> applicationRoute ~> check {
+    Delete(s"/api/processes/$processName") ~> withWriterUser() ~> applicationRoute ~> check {
       callback(status)
     }
 
@@ -1025,7 +1026,7 @@ class ProcessesResourcesSpec
   private def tryForScenarioStatus(processName: ProcessName, isAdmin: Boolean = false)(
       callback: (StatusCode, String) => Unit
   ): Unit =
-    Get(s"/processes/$processName/status") ~> withPermissions(isAdmin) ~> applicationRoute ~> check {
+    Get(s"/api/processes/$processName/status") ~> withAllPermUserOrAdmin(isAdmin) ~> applicationRoute ~> check {
       callback(status, responseAs[String])
     }
 
@@ -1034,9 +1035,9 @@ class ProcessesResourcesSpec
   ): Assertion = {
     implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[ScenarioWithDetails]] =
       FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[ScenarioWithDetails]]])
-    val url = query.createQueryParamsUrl("/processes")
+    val url = query.createQueryParamsUrl("/api/processes")
 
-    Get(url) ~> withPermissions(isAdmin) ~> applicationRoute ~> check {
+    Get(url) ~> withAllPermUserOrAdmin(isAdmin) ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       val processes = parseResponseToListJsonProcess(responseAs[String])
       responseAs[List[ScenarioWithDetails]] // just to test if decoder succeeds
@@ -1044,25 +1045,21 @@ class ProcessesResourcesSpec
     }
   }
 
-  private def withPermissions(isAdmin: Boolean) = {
+  private def withAllPermUserOrAdmin(isAdmin: Boolean) = {
     if (isAdmin) {
-      addCredentials(BasicHttpCredentials("admin", "admin"))
+      addBasicAuth("admin", "admin")
     } else {
-      withAllPermissions()
+      withAllPermUser()
     }
   }
 
-  private def withAllPermissions() = {
-    addCredentials(BasicHttpCredentials("allpermuser", "allpermuser"))
-  }
+  private def withAllPermUser() = addBasicAuth("allpermuser", "allpermuser")
 
-  private def withReadPermissions() = {
-    addCredentials(BasicHttpCredentials("reader", "reader"))
-  }
+  private def withReaderUser() = addBasicAuth("reader", "reader")
 
-  private def withReadWritePermissions() = {
-    addCredentials(BasicHttpCredentials("write", "write"))
-  }
+  private def withWriterUser() = addBasicAuth("writer", "writer")
+
+  private def addBasicAuth(name: String, secret: String) = addCredentials(BasicHttpCredentials(name, secret))
 
   private def parseResponseToListJsonProcess(response: String): List[ProcessJson] = {
     parser.decode[List[Json]](response).value.map(j => ProcessJson(j))
@@ -1071,10 +1068,9 @@ class ProcessesResourcesSpec
   private def forScenariosDetailsReturned(query: ScenarioQuery, isAdmin: Boolean = false)(
       callback: List[ScenarioWithDetails] => Assertion
   ): Assertion = {
-    import FailFastCirceSupport._
-    val url = query.createQueryParamsUrl("/processesDetails")
+    val url = query.createQueryParamsUrl("/api/processesDetails")
 
-    Get(url) ~> withPermissions(isAdmin) ~> applicationRoute ~> check {
+    Get(url) ~> withAllPermUserOrAdmin(isAdmin) ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.OK
       implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[ScenarioWithDetails]] =
         FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[ScenarioWithDetails]]])
@@ -1095,7 +1091,7 @@ class ProcessesResourcesSpec
   private def tryForScenarioReturned(processName: ProcessName, isAdmin: Boolean = false)(
       callback: (StatusCode, String) => Unit
   ): Unit =
-    Get(s"/processes/$processName") ~> withPermissions(isAdmin) ~> applicationRoute ~> check {
+    Get(s"/api/processes/$processName") ~> withAllPermUserOrAdmin(isAdmin) ~> applicationRoute ~> check {
       callback(status, responseAs[String])
     }
 
@@ -1103,10 +1099,10 @@ class ProcessesResourcesSpec
     ProcessJson(parser.decode[Json](response).value)
 
   private def getProcess(processName: ProcessName): RouteTestResult =
-    Get(s"/processes/$processName") ~> withReadPermissions() ~> applicationRoute
+    Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute
 
   private def getActivity(processName: ProcessName): RouteTestResult =
-    Get(s"/processes/$processName/activity") ~> withAllPermissions() ~> applicationRoute
+    Get(s"/api/processes/$processName/activity") ~> withAllPermUser() ~> applicationRoute
 
   private def saveCanonicalProcessAndAssertSuccess(process: CanonicalProcess, category: TestCategory): Assertion =
     saveCanonicalProcess(process, category) {
@@ -1143,7 +1139,7 @@ class ProcessesResourcesSpec
   private def doUpdateProcess(command: UpdateProcessCommand, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    Put(s"/processes/$name", command.toJsonRequestEntity()) ~> withAllPermissions() ~> applicationRoute ~> check {
+    Put(s"/api/processes/$name", command.toJsonRequestEntity()) ~> withAllPermUser() ~> applicationRoute ~> check {
       testCode
     }
 
@@ -1175,8 +1171,8 @@ class ProcessesResourcesSpec
       callback: StatusCode => Assertion
   ): Assertion =
     Post(
-      s"/processes/$processName/${category.stringify}?isFragment=$isFragment"
-    ) ~> withAllPermissions() ~> applicationRoute ~> check {
+      s"/api/processes/$processName/${category.stringify}?isFragment=$isFragment"
+    ) ~> withAllPermUser() ~> applicationRoute ~> check {
       callback(status)
     }
 
@@ -1187,6 +1183,7 @@ class ProcessesResourcesSpec
 
   private lazy val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
     TestFactory.newFutureFetchingScenarioRepository(testDbRef)
+
 }
 
 private object ProcessesQueryEnrichments {

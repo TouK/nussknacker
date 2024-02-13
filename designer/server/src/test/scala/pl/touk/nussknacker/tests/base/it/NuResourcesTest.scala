@@ -35,7 +35,7 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.tests.TestFactory._
 import pl.touk.nussknacker.tests._
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig
+import pl.touk.nussknacker.tests.config.{ConfigWithScalaVersion, WithSimplifiedDesignerConfig}
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Default
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}

@@ -6,17 +6,17 @@ import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.tests.base.it.{NuItTest2, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager2, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.tests.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
+import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager, WithSimplifiedDesignerConfig}
 
 import java.util.UUID
 
 class ScenarioActivityApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
-    with NuItTest2
+    with NuItTest
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
-    with WithMockableDeploymentManager2
+    with WithMockableDeploymentManager
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {

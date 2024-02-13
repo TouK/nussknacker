@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig}
-import pl.touk.nussknacker.tests.ConfigWithScalaVersion
+import pl.touk.nussknacker.tests.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import shapeless.syntax.typeable.typeableOps
 import sttp.client3.SttpBackend
@@ -24,6 +24,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
 
+// DEPRECATED!!! Use `WithMockableDeploymentManager` trait and `MockableDeploymentManager` instead
 object MockDeploymentManager {
   val savepointPath     = "savepoints/123-savepoint"
   val stopSavepointPath = "savepoints/246-stop-savepoint"

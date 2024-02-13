@@ -4,14 +4,19 @@ import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.tests.base.it.NuItTest2
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  PatientScalaFutures,
+  RestAssuredVerboseLogging
+}
+import pl.touk.nussknacker.tests.base.it.NuItTest
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig
 
 class UserApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
-      with NuItTest2
-      with WithRichDesignerConfig
+    with NuItTest
+    with WithRichDesignerConfig
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging

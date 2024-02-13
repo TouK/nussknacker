@@ -10,7 +10,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.test.{DefaultUniquePortProvider, WithTestHttpClientCreator}
-import pl.touk.nussknacker.tests.ConfigWithScalaVersion
+import pl.touk.nussknacker.tests.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.tests.utils.scalas.CatsTestExtensions._
 import pl.touk.nussknacker.ui.security.ssl.HttpsConnectionContextFactory.prepareSSLContext
 import pl.touk.nussknacker.ui.security.ssl.KeyStoreConfig

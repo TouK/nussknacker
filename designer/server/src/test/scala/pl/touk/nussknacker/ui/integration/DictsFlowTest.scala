@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.tests.TestProcessUtil.toJson
 import pl.touk.nussknacker.tests.base.it.NuItTest
+import pl.touk.nussknacker.tests.config.{ConfigWithScalaVersion, WithDesignerConfig}
 import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.ScenarioToJson
-import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
@@ -26,6 +26,7 @@ import java.util.UUID
 class DictsFlowTest
     extends AnyFunSuiteLike
     with NuItTest
+    with WithDesignerConfig
     with WithTestHttpClient
     with Matchers
     with OptionValues
@@ -37,7 +38,7 @@ class DictsFlowTest
   private val Key            = "foo"
   private val Label          = "Foo"
 
-  override def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
+  override def designerConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
   test("save process with expression using dicts and get it back") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"

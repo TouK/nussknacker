@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.tests
+package pl.touk.nussknacker.tests.config
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}

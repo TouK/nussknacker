@@ -13,10 +13,11 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingDat
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.tests.TestProcessUtil.{createFragmentEntity, createScenarioEntity}
+import pl.touk.nussknacker.tests.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.tests.mock.MockFetchingProcessRepository
-import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, ProcessTestData, TestFactory}
+import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError

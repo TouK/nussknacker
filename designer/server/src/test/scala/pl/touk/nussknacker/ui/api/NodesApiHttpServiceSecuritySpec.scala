@@ -5,17 +5,22 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.tests.base.it.{NuItTest2, WithRichConfigScenarioHelper}
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  PatientScalaFutures,
+  RestAssuredVerboseLogging
+}
+import pl.touk.nussknacker.tests.base.it.{NuItTest, WithRichConfigScenarioHelper}
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager2, WithRichDesignerConfig}
+import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
 
 class NodesApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
-      with NuItTest2
-      with WithRichDesignerConfig
-      with WithRichConfigScenarioHelper
-      with WithMockableDeploymentManager2
+    with NuItTest
+    with WithRichDesignerConfig
+    with WithRichConfigScenarioHelper
+    with WithMockableDeploymentManager
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging

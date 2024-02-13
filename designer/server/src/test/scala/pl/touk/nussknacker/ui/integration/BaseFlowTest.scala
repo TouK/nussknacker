@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.integration
 
-import com.typesafe.config.Config
 import io.circe.Json.{Null, arr, fromFields, fromString, obj}
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Json, JsonObject}
@@ -31,11 +30,12 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationResult
 }
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
+import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.TestProcessUtil.toJson
 import pl.touk.nussknacker.tests.base.it.NuItTest
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.tests.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
-import pl.touk.nussknacker.tests.{ConfigWithScalaVersion, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.{NodeValidationRequest, ScenarioValidationRequest}
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -53,6 +53,7 @@ import scala.util.Properties
 class BaseFlowTest
     extends AnyFunSuiteLike
     with NuItTest
+    with WithSimplifiedDesignerConfig
     with WithTestHttpClient
     with Matchers
     with OptionValues
@@ -65,14 +66,12 @@ class BaseFlowTest
   // currently we delete file in beforeAll, because it's used *also* in initialization...
   val dynamicServiceFile = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
-  override def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfig
-
   override def beforeAll(): Unit = {
     super.beforeAll()
     dynamicServiceFile.delete()
   }
 
-  override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     dynamicServiceFile.delete()
     super.afterAll()
   }

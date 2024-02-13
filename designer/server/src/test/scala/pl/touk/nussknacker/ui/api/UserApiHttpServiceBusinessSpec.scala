@@ -10,12 +10,12 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.tests.base.it.NuItTest2
+import pl.touk.nussknacker.tests.base.it.NuItTest
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig
 
 class UserApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
-    with NuItTest2
+    with NuItTest
     with WithSimplifiedDesignerConfig
     with NuRestAssureExtensions
     with NuRestAssureMatchers
