@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.spel.parser.LabelWithKeyExpressionParser
 
 object Validations {
 
@@ -108,10 +109,15 @@ object Validations {
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = definition.editor match {
     case Some(DictParameterEditor(dictId)) =>
-      dictRegistry
-        .labelByKey(dictId, parameter.expression.expression)
-        .map(_ => ())
-        .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, definition.name)))
+      LabelWithKeyExpressionParser
+        .extractKey(parameter.expression.expression)
+        .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, definition.name)))
+        .andThen(key =>
+          dictRegistry
+            .labelByKey(dictId, key)
+            .map(_ => ())
+            .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, definition.name)))
+        )
     case _ => Valid(())
   }
 

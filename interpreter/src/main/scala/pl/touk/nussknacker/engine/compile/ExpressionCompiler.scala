@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
-import pl.touk.nussknacker.engine.spel.parser.LiteralExpressionParser
+import pl.touk.nussknacker.engine.spel.parser.{LabelWithKeyExpressionParser, LiteralExpressionParser}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
@@ -81,7 +81,12 @@ object ExpressionCompiler {
       )
 
     val defaultParsers =
-      Seq(spelParser(SpelExpressionParser.Standard), spelParser(SpelExpressionParser.Template), LiteralExpressionParser)
+      Seq(
+        spelParser(SpelExpressionParser.Standard),
+        spelParser(SpelExpressionParser.Template),
+        LiteralExpressionParser,
+        LabelWithKeyExpressionParser
+      )
     val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
     val parsers    = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers, dictRegistry)

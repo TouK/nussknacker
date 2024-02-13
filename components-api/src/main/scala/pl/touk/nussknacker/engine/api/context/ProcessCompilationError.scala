@@ -338,6 +338,14 @@ object ProcessCompilationError {
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
+  final case class LabelWithKeyJsonParsingError(
+      labelWithKey: String,
+      message: String,
+      paramName: String,
+      nodeId: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
+
   final case class CustomNodeError(nodeId: String, message: String, paramName: Option[String])
       extends ProcessCompilationError
       with InASingleNode

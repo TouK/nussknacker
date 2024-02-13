@@ -65,9 +65,9 @@ class DictsFlowTest
         "customNode",
         "data",
         "serviceWithDictParameterEditor",
-        "RGBDict"     -> Expression(Expression.Language.Literal, "H000000"),
-        "BooleanDict" -> Expression(Expression.Language.Literal, "true"),
-        "LongDict"    -> Expression(Expression.Language.Literal, "-1500100900")
+        "RGBDict"     -> Expression.labelWithKey("Black", "H000000"),
+        "BooleanDict" -> Expression.labelWithKey("ON", "true"),
+        "LongDict"    -> Expression.labelWithKey("large (negative) number", "-1500100900")
       )
       .emptySink(EndNodeId, "dead-end-lite")
 

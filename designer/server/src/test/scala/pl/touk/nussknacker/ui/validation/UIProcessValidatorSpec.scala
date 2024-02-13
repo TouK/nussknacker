@@ -1047,7 +1047,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         Source("inID", SourceRef(existingSourceFactory, List())),
         Enricher(
           "custom",
-          ServiceRef(dictParameterEditorServiceId, List(NodeParameter("expression", Expression.literal("someKey")))),
+          ServiceRef(
+            dictParameterEditorServiceId,
+            List(NodeParameter("expression", Expression.labelWithKey("someLabel", "someKey")))
+          ),
           "out"
         ),
         Sink("out", SinkRef(existingSinkFactory, List()))
@@ -1082,7 +1085,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "custom",
           ServiceRef(
             dictParameterEditorServiceId,
-            List(NodeParameter("expression", Expression.literal("thisKeyDoesntExist")))
+            List(NodeParameter("expression", Expression.labelWithKey("someLabel", "thisKeyDoesntExist")))
           ),
           "out"
         ),
@@ -1120,7 +1123,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "custom",
           ServiceRef(
             dictParameterEditorServiceId,
-            List(NodeParameter("expression", Expression.literal("someKey")))
+            List(NodeParameter("expression", Expression.labelWithKey("someLabel", "someKey")))
           ),
           "out"
         ),

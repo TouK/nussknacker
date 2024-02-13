@@ -215,6 +215,12 @@ object PrettyValidationErrors {
           s"Dictionary $dictId possible labels: $possibleLabels",
           fieldName = Some(paramName)
         )
+      case LabelWithKeyJsonParsingError(labelWithKey, message, paramName, _) =>
+        node(
+          s"Error while parsing LabelWithKey expression: $labelWithKey",
+          message,
+          fieldName = Some(paramName)
+        )
     }
   }
 
