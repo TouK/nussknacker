@@ -13,7 +13,6 @@ import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.everit.json.schema.{Schema => EveritSchema}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategyProvider
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentId,
   DesignerWideComponentId
 }
-import pl.touk.nussknacker.engine.api.namespaces.{NamingStrategy, NamingStrategyProvider}
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{
   EmptyProcessConfigCreator,
   ProcessConfigCreator,
@@ -53,7 +53,7 @@ object LocalModelData {
       components,
       determineDesignerWideId,
       additionalConfigsFromProvider,
-      namingStrategy = namingStrategy.getOrElse(NamingStrategyProvider(inputConfig))
+      namingStrategy = namingStrategy.getOrElse(NamingStrategy.fromConfig(inputConfig))
     )
 
   class ExtractDefinitionFunImpl(

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.namespaces.{NamingStrategy, NamingStrategyProvider}
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 // TODO: Rename to ModelDependencies + rename config to modelConfig
 final case class ProcessObjectDependencies private (config: Config, namingStrategy: NamingStrategy) extends Serializable
@@ -9,7 +9,7 @@ final case class ProcessObjectDependencies private (config: Config, namingStrate
 object ProcessObjectDependencies {
 
   def withConfig(modelConfig: Config): ProcessObjectDependencies = {
-    ProcessObjectDependencies(modelConfig, NamingStrategyProvider(modelConfig))
+    ProcessObjectDependencies(modelConfig, NamingStrategy.fromConfig(modelConfig))
   }
 
 }

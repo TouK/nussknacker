@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.namespaces
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy.namespaceSeparator
 
 final case class NamingStrategy(namespace: Option[String]) {
@@ -25,18 +26,8 @@ final case class NamingStrategy(namespace: Option[String]) {
 
 object NamingStrategy {
   private val namespaceSeparator = "_"
-}
+  private val namespacePath      = "namespace"
 
-object NamingStrategyProvider {
-  private val NamespacePath = "namespace"
-
-  def apply(modelConfig: Config): NamingStrategy = {
-    val namespaceOpt = if (modelConfig.hasPath(NamespacePath)) {
-      Some(modelConfig.getString(NamespacePath))
-    } else {
-      None
-    }
-    NamingStrategy(namespaceOpt)
-  }
+  def fromConfig(modelConfig: Config): NamingStrategy = NamingStrategy(modelConfig.getAs[String](namespacePath))
 
 }
