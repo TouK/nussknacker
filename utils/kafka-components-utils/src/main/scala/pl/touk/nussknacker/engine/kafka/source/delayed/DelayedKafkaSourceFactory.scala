@@ -20,28 +20,28 @@ object DelayedKafkaSourceFactory {
   final val TimestampFieldParamName = "timestampField"
 
   // TODO: consider changing to lazy parameter and add the same parameter also in "not delayed" kafka sources
-  final val FallBackTimestampFieldParameter = Parameter
+  final val fallbackTimestampFieldParameter = Parameter
     .optional(TimestampFieldParamName, Typed[String])
     .copy(
       editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
     )
 
   def timestampFieldParameter(typingResult: Option[TypingResult]): Parameter = {
-
-    val editor = typingResult
+    val editorOpt = typingResult
       .collect { case TypedObjectTypingResult(fields, _, _) => fields.toList }
       .map(_.collect {
         case (paramName, typing) if TimestampUtils.supportedTimestampTypes.contains(typing) =>
           FixedExpressionValue(s"'${paramName}'", paramName)
       })
       .filter(_.nonEmpty)
+      .map(_.sortBy(_.label))
       .map(FixedValuesParameterEditor(_))
       .map(DualParameterEditor(_, DualEditorMode.SIMPLE))
       .orElse(Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW)))
 
     Parameter
       .optional(TimestampFieldParamName, Typed[String])
-      .copy(editor = editor)
+      .copy(editor = editorOpt)
   }
 
   def extractTimestampField(params: Params): String = params.extract[String](TimestampFieldParamName).getOrElse("")
