@@ -55,10 +55,14 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
   // Pass correct deploymentId
   private def fallbackDeploymentId = DeploymentId(UUID.randomUUID().toString)
 
-  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)
-      managerProcessStates.getOrDefault(name, prepareProcessState(defaultProcessStateStatus, fallbackDeploymentId))
+      WithDataFreshnessStatus.fresh(
+        managerProcessStates.getOrDefault(name, prepareProcessState(defaultProcessStateStatus, fallbackDeploymentId))
+      )
     }
   }
 
@@ -245,7 +249,11 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
 
 object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],

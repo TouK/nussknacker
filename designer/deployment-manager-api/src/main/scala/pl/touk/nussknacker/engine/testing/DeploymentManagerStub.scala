@@ -3,14 +3,7 @@ package pl.touk.nussknacker.engine.testing
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{
-  FixedExpressionValue,
-  FixedValuesParameterEditor,
-  FixedValuesValidator,
-  LiteralIntegerValidator,
-  MinimalNumberValidator,
-  StringParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -22,9 +15,10 @@ import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessState {
+class DeploymentManagerStub extends DeploymentManager {
 
   override def validate(
       processVersion: ProcessVersion,
@@ -78,8 +72,13 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
     Future.successful(processStateDefinitionManager.processState(StatusDetails(lastStateActionStatus, None)))
   }
 
-  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
-    Future.successful(List.empty)
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    Future.successful(
+      WithDataFreshnessStatus.fresh(List.empty)
+    )
+  }
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
     Future.successful(SavepointResult(""))
@@ -102,7 +101,11 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
 //Provider is registered via ServiceLoader, so it can be used e.g. to run simple docker configuration
 class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],

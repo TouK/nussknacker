@@ -8,6 +8,7 @@ import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -19,8 +20,8 @@ import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
 import skuber.{ConfigMap, Event, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
-import scala.jdk.CollectionConverters._
 
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -32,7 +33,8 @@ class BaseK8sDeploymentManagerTest
     with BeforeAndAfterAll {
   self: LazyLogging =>
 
-  protected implicit val system: ActorSystem = ActorSystem()
+  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+  protected implicit val system: ActorSystem                = ActorSystem()
 
   import system.dispatcher
 
@@ -114,14 +116,14 @@ class BaseK8sDeploymentManagerTest
       } finally {
         manager.cancel(version.processName, DeploymentData.systemUser).futureValue
         eventually {
-          manager.getFreshProcessStates(version.processName).futureValue shouldBe List.empty
+          manager.getProcessStates(version.processName).futureValue shouldBe List.empty
         }
       }
     }
 
-    def waitForRunning(version: ProcessVersion) = {
+    def waitForRunning(version: ProcessVersion): Assertion = {
       eventually {
-        val state = manager.getFreshProcessStates(version.processName).futureValue
+        val state = manager.getProcessStates(version.processName).map(_.value).futureValue
         state.flatMap(_.version) shouldBe List(version)
         state.map(_.status) shouldBe List(SimpleStateStatus.Running)
       }

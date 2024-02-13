@@ -8,15 +8,15 @@ import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{
   PreparingResourcesStatus,
   TestStatus
 }
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
@@ -32,7 +32,6 @@ import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     extends DeploymentManager
-    with AlwaysFreshProcessState
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
@@ -158,8 +157,11 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
       scenarioTestData: ScenarioTestData
   ): Future[TestProcess.TestResults] = ???
 
-  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
-    Future.successful(memory.get(name).toList)
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    Future.successful(WithDataFreshnessStatus.fresh(memory.get(name).toList))
+  }
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
     Future.successful(SavepointResult(""))
@@ -239,7 +241,11 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],

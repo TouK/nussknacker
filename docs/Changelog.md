@@ -1,5 +1,9 @@
 # Changelog
 
+1.13.0-esp (13 Feb 2024)
+* [#5522](https://github.com/TouK/nussknacker/pull/5522) Scenario status caching more often
+* [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) Scenario status caching more often
+
 1.13.0 (12 Jan 2024)
 -------------------------
 * [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service
@@ -45,7 +49,6 @@
 * [#5197](https://github.com/TouK/nussknacker/pull/5197) Improved accessing fields in records in expressions - fields can now be statically accessed using indexing
 * [#5312](https://github.com/TouK/nussknacker/pull/5312) Collect component clears context variables
 * [#5313](https://github.com/TouK/nussknacker/pull/5313) Added CountWhen and Average aggregations
-* [#5522](https://github.com/TouK/nussknacker/pull/5522) Scenario status caching more often
 
 1.12.5 (1 Dec 2023)
 ------------------------

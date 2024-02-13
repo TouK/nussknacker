@@ -34,20 +34,21 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    def fetchAndUpdateCache(): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+      val resultFuture = delegate.getProcessStates(name)
+      cache.put(name, resultFuture.map(_.value).toJava.toCompletableFuture)
+      resultFuture
+    }
+
     freshnessPolicy match {
       case DataFreshnessPolicy.Fresh =>
-        val resultFuture = delegate.getProcessStates(name)
-        cache.put(name, resultFuture.map(_.value).toJava.toCompletableFuture)
-        resultFuture
+        fetchAndUpdateCache()
       case DataFreshnessPolicy.CanBeCached =>
         Option(cache.getIfPresent(name))
-          .map(_.toScala.map(WithDataFreshnessStatus(_, cached = true)))
-          .getOrElse {
-            cache
-              .get(name, (_, _) => delegate.getProcessStates(name).map(_.value).toJava.toCompletableFuture)
-              .toScala
-              .map(WithDataFreshnessStatus(_, cached = false))
-          }
+          .map(_.toScala.map(WithDataFreshnessStatus.cached))
+          .getOrElse(
+            fetchAndUpdateCache()
+          ) // Data fetched from the delegate can also be cached, e.g. Flink's Cached API client.
     }
   }
 
@@ -109,43 +110,56 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL
 
 object CachingProcessStateDeploymentManager extends LazyLogging {
 
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  def wrapWithCachingIfNeeded(
+      delegate: DeploymentManager,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  ): DeploymentManager = {
 
-  val scenarioStateCachingConfigKey = "scenarioStateCaching"
-
-  def wrapWithCachingIfNeeded(delegate: DeploymentManager, config: Config): DeploymentManager = {
-    val cachingConfig =
-      config.getAs[ScenarioStateCachingConfig](scenarioStateCachingConfigKey).getOrElse(ScenarioStateCachingConfig())
-    if (cachingConfig.enabled) {
-      val cacheTTL = cachingConfig.cacheTTL
-        .getOrElse(
-          throw new IllegalArgumentException(
-            s"Invalid config: $this. If you want to enable processStateCaching, you have to define cacheTTL"
-          )
-        )
-      logger.debug(s"Wrapping DeploymentManager: $delegate with caching mechanism with TTL: $cacheTTL")
-      delegate match {
-        case postprocessing: PostprocessingProcessStatus =>
-          new CachingProcessStateDeploymentManager(delegate, cacheTTL) with PostprocessingProcessStatus {
-            override def postprocess(
-                idWithName: ProcessIdWithName,
-                statusDetailsList: List[StatusDetails]
-            ): Future[Option[ProcessAction]] =
-              postprocessing.postprocess(idWithName, statusDetailsList)
-          }
-        case _ =>
-          new CachingProcessStateDeploymentManager(delegate, cacheTTL)
+    scenarioStateCacheTTL
+      .map { cacheTTL =>
+        logger.debug(s"Wrapping DeploymentManager: $delegate with caching mechanism with TTL: $cacheTTL")
+        delegate match {
+          case postprocessing: PostprocessingProcessStatus =>
+            new CachingProcessStateDeploymentManager(delegate, cacheTTL) with PostprocessingProcessStatus {
+              override def postprocess(
+                  idWithName: ProcessIdWithName,
+                  statusDetailsList: List[StatusDetails]
+              ): Future[Option[ProcessAction]] =
+                postprocessing.postprocess(idWithName, statusDetailsList)
+            }
+          case _ =>
+            new CachingProcessStateDeploymentManager(delegate, cacheTTL)
+        }
       }
-    } else {
-      logger.debug(s"Skipping ProcessState caching for DeploymentManager: $delegate")
-      delegate
-    }
+      .getOrElse {
+        logger.debug(s"Skipping ProcessState caching for DeploymentManager: $delegate")
+        delegate
+      }
   }
 
 }
 
-final case class ScenarioStateCachingConfig(
-    enabled: Boolean = true,
-    cacheTTL: Option[FiniteDuration] = Some(10 seconds)
-)
+final case class ScenarioStateCachingConfig(enabled: Boolean, cacheTTL: Option[FiniteDuration])
+
+object ScenarioStateCachingConfig {
+
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+  private val ScenarioStateCachingConfigKey = "scenarioStateCaching"
+
+  val Default: ScenarioStateCachingConfig = ScenarioStateCachingConfig(enabled = true, Some(10 seconds))
+
+  def extractScenarioStateCacheTTL(config: Config): Option[FiniteDuration] = {
+    val cachingConfig = config.getAs[ScenarioStateCachingConfig](ScenarioStateCachingConfigKey).getOrElse(Default)
+
+    cachingConfig match {
+      case ScenarioStateCachingConfig(true, None) =>
+        throw new IllegalArgumentException(
+          s"Invalid config: $this. If you want to enable $ScenarioStateCachingConfigKey, you have to define cacheTTL."
+        )
+      case config => config.cacheTTL
+    }
+  }
+
+}

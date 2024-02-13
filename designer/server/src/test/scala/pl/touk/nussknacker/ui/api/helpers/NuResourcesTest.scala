@@ -55,6 +55,7 @@ import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 import slick.dbio.DBIOAction
 
 import java.net.URI
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
@@ -122,7 +123,11 @@ trait NuResourcesTest
   protected val deploymentManagerProvider: FlinkStreamingDeploymentManagerProvider =
     new FlinkStreamingDeploymentManagerProvider {
 
-      override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+      override def createDeploymentManager(
+          modelData: BaseModelData,
+          config: Config,
+          scenarioStateCacheTTL: Option[FiniteDuration]
+      )(
           implicit ec: ExecutionContext,
           actorSystem: ActorSystem,
           sttpBackend: SttpBackend[Future, Any],

@@ -17,11 +17,16 @@ import sttp.client3.SttpBackend
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
@@ -115,7 +120,7 @@ object MockableDeploymentManagerProvider {
         implicit freshnessPolicy: DataFreshnessPolicy
     ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
       val status = processesStates.get().getOrElse(name, SimpleStateStatus.NotDeployed)
-      Future.successful(WithDataFreshnessStatus(List(StatusDetails(status, None)), cached = false))
+      Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
     }
 
     override def close(): Unit = {}

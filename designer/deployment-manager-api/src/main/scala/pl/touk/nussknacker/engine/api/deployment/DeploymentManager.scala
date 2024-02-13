@@ -45,8 +45,8 @@ trait DeploymentManager extends AutoCloseable {
       canonicalProcess: CanonicalProcess
   ): Future[Unit]
 
-  // TODO: savepointPath is very flink specific, we should handle this mode via custom action
   /**
+    * TODO: savepointPath is very flink specific, we should handle this mode via custom action
     * We assume that validate was already called and was successful
     */
   def deploy(
@@ -77,6 +77,11 @@ trait DeploymentManager extends AutoCloseable {
     } yield stateWithFreshness
   }
 
+  /**
+    * We provide a special wrapper called WithDataFreshnessStatus to ensure that fetched data is restored
+    * from the cache or not. If you use any kind of cache in your DM implementation please wrap result data
+    * with WithDataFreshnessStatus.cached(data) in opposite situation use WithDataFreshnessStatus.fresh(data)
+    */
   def getProcessStates(name: ProcessName)(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[StatusDetails]]]
@@ -119,16 +124,5 @@ trait DeploymentManager extends AutoCloseable {
 trait PostprocessingProcessStatus { self: DeploymentManager =>
 
   def postprocess(idWithName: ProcessIdWithName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]]
-
-}
-
-trait AlwaysFreshProcessState { self: DeploymentManager =>
-
-  final override def getProcessStates(name: ProcessName)(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
-    getFreshProcessStates(name).map(WithDataFreshnessStatus(_, cached = false))
-
-  protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]]
 
 }

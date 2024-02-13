@@ -10,6 +10,7 @@ import org.scalatest.tags.Network
 import org.scalatest.time.{Seconds, Span}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentProvider
+import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -38,7 +39,8 @@ class K8sDeploymentManagerReqRespTest
     with EitherValuesDetailedMessage
     with LazyLogging {
 
-  private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+  private implicit val backend: SttpBackend[Identity, Any]  = HttpURLConnectionBackend()
 
   private val givenServicePort = 12345 // some random, remote port, we don't need to worry about collisions
 
@@ -167,7 +169,7 @@ class K8sDeploymentManagerReqRespTest
           )
           .futureValue
         eventually {
-          val state = f.manager.getFreshProcessStates(secondVersionInfo.processName).futureValue
+          val state = f.manager.getProcessStates(secondVersionInfo.processName).map(_.value).futureValue
           state.flatMap(_.version).map(_.versionId.value) shouldBe List(secondVersion)
           state.map(_.status) shouldBe List(SimpleStateStatus.Running)
         }
