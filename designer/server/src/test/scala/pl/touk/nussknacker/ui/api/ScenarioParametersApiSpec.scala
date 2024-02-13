@@ -10,12 +10,12 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLogging
 }
 import pl.touk.nussknacker.tests.base.it.NuItTest
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig
+import pl.touk.nussknacker.tests.config.{WithRichDesignerConfig, WithSimplifiedDesignerConfig}
 
 class ScenarioParametersApiSpec
     extends AnyFreeSpecLike
     with NuItTest
-    with WithSimplifiedDesignerConfig
+    with WithRichDesignerConfig
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging

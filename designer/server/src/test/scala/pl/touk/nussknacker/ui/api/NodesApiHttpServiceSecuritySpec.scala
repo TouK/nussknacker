@@ -13,6 +13,7 @@ import pl.touk.nussknacker.test.{
 }
 import pl.touk.nussknacker.tests.base.it.{NuItTest, WithRichConfigScenarioHelper}
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestProcessingType.Streaming1
 import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
 
 class NodesApiHttpServiceSecuritySpec
@@ -813,7 +814,7 @@ class NodesApiHttpServiceSecuritySpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/validate")
+            .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming1.stringify}/validate")
             .Then()
             .statusCode(200)
             .equalsJsonBody(
@@ -877,7 +878,7 @@ class NodesApiHttpServiceSecuritySpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/validate")
+            .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming1.stringify}/validate")
             .Then()
             .statusCode(200)
             .equalsJsonBody(s"""{
@@ -898,7 +899,7 @@ class NodesApiHttpServiceSecuritySpec
             .jsonBody(exampleParametersValidationRequestBody)
             .basicAuth("unknown-user", "wrong-password")
             .when()
-            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/validate")
+            .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming1.stringify}/validate")
             .Then()
             .statusCode(401)
             .body(equalTo("The supplied authentication is invalid"))
@@ -954,7 +955,7 @@ class NodesApiHttpServiceSecuritySpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
+            .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming1.stringify}/suggestions")
             .Then()
             .statusCode(200)
             .body("methodName[0]", equalTo("#input"))
@@ -976,7 +977,7 @@ class NodesApiHttpServiceSecuritySpec
                  |}""".stripMargin
             )
             .when()
-            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
+            .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming1.stringify}/suggestions")
             .Then()
             .statusCode(200)
             .body(equalTo("[]"))
@@ -988,7 +989,7 @@ class NodesApiHttpServiceSecuritySpec
             .jsonBody(exampleParametersSuggestionsRequestBody)
             .basicAuth("unknown-user", "wrong-password")
             .when()
-            .post(s"$nuDesignerHttpAddress/api/parameters/streaming/suggestions")
+            .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming1.stringify}/suggestions")
             .Then()
             .statusCode(401)
             .body(equalTo("The supplied authentication is invalid"))
