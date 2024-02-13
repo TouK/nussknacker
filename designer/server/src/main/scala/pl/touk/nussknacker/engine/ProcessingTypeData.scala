@@ -4,6 +4,7 @@ import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentStaticDefinition,
@@ -77,7 +78,8 @@ object ProcessingTypeData {
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
-    val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
+    val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(managerConfig)
+    val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig, scenarioStateCacheTTL)
     createProcessingTypeData(deploymentManagerProvider, manager, modelData, managerConfig, categoriesConfig)
   }
 

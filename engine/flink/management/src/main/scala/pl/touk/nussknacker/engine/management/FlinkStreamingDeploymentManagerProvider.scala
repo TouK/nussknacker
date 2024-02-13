@@ -69,7 +69,7 @@ object FlinkStreamingDeploymentManagerProvider {
     val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(typeConfig.deploymentConfig)
 
     new FlinkStreamingDeploymentManagerProvider()
-      .createDeploymentManager(ModelData(typeConfig), typeConfig.deploymentConfig)
+      .createDeploymentManager(ModelData(typeConfig), typeConfig.deploymentConfig, scenarioStateCacheTTL)
   }
 
 }
