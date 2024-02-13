@@ -133,7 +133,15 @@ class KafkaTransactionalScenarioInterpreter private[kafka] (
 
   // to override in tests...
   private[kafka] def createScenarioTaskRun(taskId: String): Task = {
-    new KafkaSingleScenarioTaskRun(taskId, scenario.metaData, context, interpreterConfig, interpreter, sourceMetrics)
+    new KafkaSingleScenarioTaskRun(
+      taskId,
+      scenario.metaData,
+      context,
+      interpreterConfig,
+      interpreter,
+      sourceMetrics,
+      modelData.namingStrategy
+    )
   }
 
   override def routes: Option[Route] = None

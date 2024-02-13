@@ -26,7 +26,9 @@ case class KafkaConfig(
     useStringForKey: Boolean = true,
     schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
     avroAsJsonSerialization: Option[Boolean] = None,
-    kafkaAddress: Option[String] = None
+    kafkaAddress: Option[String] = None,
+    // TODO: remove this feature flag in future release
+    useNamingStrategyForConsumerGroupId: Boolean = true
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(

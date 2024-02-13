@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
   ProcessingTypeDeploymentServiceStub
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager

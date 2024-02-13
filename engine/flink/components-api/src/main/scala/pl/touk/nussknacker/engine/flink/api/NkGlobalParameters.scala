@@ -6,6 +6,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 import _root_.java.util
 import scala.jdk.CollectionConverters._
@@ -16,7 +17,7 @@ case class NkGlobalParameters(
     buildInfo: String,
     processVersion: ProcessVersion,
     configParameters: Option[ConfigGlobalParameters],
-    namingParameters: Option[NamingParameters],
+    namespaceParameters: Option[NamespaceMetricsTags],
     additionalInformation: Map[String, String]
 ) extends GlobalJobParameters {
 
@@ -47,7 +48,25 @@ case class ConfigGlobalParameters(
     forceSyncInterpretationForSyncScenarioPart: Option[Boolean],
 )
 
-case class NamingParameters(tags: Map[String, String])
+case class NamespaceMetricsTags(tags: Map[String, String])
+
+object NamespaceMetricsTags {
+
+  private val originalNameTag = "originalProcessName"
+  private val namespaceTag    = "namespace"
+
+  def apply(scenarioName: String, namingStrategy: NamingStrategy): Option[NamespaceMetricsTags] = {
+    namingStrategy.namespace.map { namespace =>
+      NamespaceMetricsTags(
+        Map(
+          originalNameTag -> scenarioName,
+          namespaceTag    -> namespace
+        )
+      )
+    }
+  }
+
+}
 
 object NkGlobalParameters {
 
@@ -55,11 +74,11 @@ object NkGlobalParameters {
       buildInfo: String,
       processVersion: ProcessVersion,
       modelConfig: Config,
-      namingParameters: Option[NamingParameters],
+      namespaceTags: Option[NamespaceMetricsTags],
       additionalInformation: Map[String, String]
   ): NkGlobalParameters = {
     val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
-    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, namingParameters, additionalInformation)
+    NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, namespaceTags, additionalInformation)
   }
 
   def setInContext(ec: ExecutionConfig, globalParameters: NkGlobalParameters): Unit = {

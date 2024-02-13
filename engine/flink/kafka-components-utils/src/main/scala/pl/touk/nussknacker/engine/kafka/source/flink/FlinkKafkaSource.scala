@@ -11,6 +11,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
@@ -48,7 +49,8 @@ class FlinkKafkaSource[T](
     passedAssigner: Option[TimestampWatermarkHandler[T]],
     val formatter: RecordFormatter,
     testParametersInfo: KafkaTestParametersInfo,
-    overriddenConsumerGroup: Option[String] = None
+    overriddenConsumerGroup: Option[String] = None,
+    namingStrategy: NamingStrategy
 ) extends FlinkSource
     with FlinkIntermediateRawSource[T]
     with Serializable
@@ -63,9 +65,8 @@ class FlinkKafkaSource[T](
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    val consumerGroupId =
-      overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
-    val sourceFunction = flinkSourceFunction(consumerGroupId, flinkNodeContext)
+    val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
+    val sourceFunction  = flinkSourceFunction(consumerGroupId, flinkNodeContext)
 
     prepareSourceStream(env, flinkNodeContext, sourceFunction)
   }
@@ -127,6 +128,15 @@ class FlinkKafkaSource[T](
     deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams)))
   }
 
+  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
+    val baseName = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext))
+    if (kafkaConfig.useNamingStrategyForConsumerGroupId) {
+      namingStrategy.prepareName(baseName)
+    } else {
+      baseName
+    }
+  }
+
 }
 
 // TODO: Tricks like deserializationSchema.setExceptionHandlingData and FlinkKafkaConsumer overriding could be replaced by
@@ -171,14 +181,16 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
     formatter: RecordFormatter,
     override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-    testParametersInfo: KafkaTestParametersInfo
+    testParametersInfo: KafkaTestParametersInfo,
+    namingStrategy: NamingStrategy
 ) extends FlinkKafkaSource[ConsumerRecord[K, V]](
       preparedTopics,
       kafkaConfig,
       deserializationSchema,
       timestampAssigner,
       formatter,
-      testParametersInfo
+      testParametersInfo,
+      namingStrategy = namingStrategy
     ) {
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =

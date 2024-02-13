@@ -37,7 +37,8 @@ object FlinkStreamingDeploymentManagerProviderHelper {
       .createDeploymentManager(
         modelData,
         deploymentManagerDependencies,
-        typeConfig.deploymentConfig
+        typeConfig.deploymentConfig,
+        None
       )
       .valueOr(err => throw new IllegalStateException(s"Invalid Deployment Manager: ${err.toList.mkString(", ")}"))
   }
