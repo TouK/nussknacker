@@ -76,6 +76,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       * New, overloaded `createDeploymentManager` was added. In the new one most of the parameters were bundled into `DeploymentManagerDependencies` class
         which allows to easier pass these dependencies to delegates. Also, this method returns `ValidateNel[String, DeploymentManager]`.
         You can return errors that will be visible to users e.g. invalid configuration etc. The old one is deprecated - it will be removed in 1.15 version.
+  * [#5526](https://github.com/TouK/nussknacker/pull/5526) Refactored namespaces:
+    * Removed `ObjectNaming` SPI
+    * Removed logging when using naming strategy
+    * Replaced `ObjectNaming` with single `NamingStrategy` which prepares a name with a prefix from `namespace` key from 
+      `ModelConfig` or returns the original name if the value is not configured
+  * [#5526](https://github.com/TouK/nussknacker/pull/5526) Added namespacing of Kafka consumer group id in both engines.
+    If you have namespaces configured, the consumer group id will be prefixed with `namespace` key from model config - 
+    in that case a consumer group migration may be necessary for example to retain consumer offsets. For gradual 
+    migration, this behaviour can be disabled by setting `useNamingStrategyInConsumerGroups = false` in `KafkaConfig`.
+    Note that the `useNamingStrategyInConsumerGroups` flag is intended to be removed in the future.
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
