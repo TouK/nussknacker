@@ -12,14 +12,13 @@ import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.management.streaming.SampleProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -124,7 +123,7 @@ class ProcessesResourcesSpec
   test("spel template expression is validated properly") {
     createDeployedScenario(SampleSpelTemplateProcess.process, category = Category1)
 
-    Get(s"/processes/${SampleSpelTemplateProcess.processName}") ~> withReaderUser() ~> applicationRoute ~> check {
+    Get(s"/api/processes/${SampleSpelTemplateProcess.processName}") ~> withReaderUser() ~> applicationRoute ~> check {
       val newProcessDetails = responseAs[ScenarioWithDetails]
       newProcessDetails.processVersionId shouldBe VersionId.initialVersionId
 
@@ -540,30 +539,23 @@ class ProcessesResourcesSpec
   }
 
   test("save correct process json with ok status") {
-    val validProcess = ProcessTestData.validProcess
+    val validProcess = SampleProcess.kafkaProcess(ProcessName("valid"), "test")
     saveCanonicalProcess(validProcess, category = Category1) {
       status shouldEqual StatusCodes.OK
-      fetchScenario(validProcess.name).nodes.head.id shouldEqual validProcess.nodes.head.id
-      val ll = entityAs[ValidationResult] // todo: remove
-      entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe true
+      val fetchedScenario = fetchScenario(validProcess.name)
+      fetchedScenario.nodes.head.id shouldEqual validProcess.nodes.head.id
+      val validationResult = entityAs[ValidationResult]
+      validationResult.errors.invalidNodes shouldBe Map.empty
     }
   }
 
   test("update process with the same json should not create new version") {
-    val command = UpdateScenarioCommand(
-      scenarioGraph = ScenarioGraph(
-        properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
-        nodes = List.empty,
-        edges = List.empty
-      ),
-      comment = UpdateProcessComment(""),
-      forwardedUserName = None
-    )
+    val command = ProcessTestData.createEmptyUpdateProcessCommand(None)
 
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
 
-      doUpdateProcess(command) {
+      doUpdateProcess(command, processName) {
         forScenarioReturned(processName) { process =>
           process.history.map(_.size) shouldBe Some(1)
         }
@@ -896,7 +888,7 @@ class ProcessesResourcesSpec
   }
 
   test("fetching scenario toolbar definitions") {
-    val toolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(testConfig).getConfig(Category1.stringify)
+    val toolbarConfig = CategoriesScenarioToolbarsConfigParser.parse(designerConfig).getConfig(Category1.stringify)
     val id            = createEmptyScenario(processName, category = Category1)
 
     withProcessToolbars(processName) { toolbar =>
@@ -1131,7 +1123,7 @@ class ProcessesResourcesSpec
       testCode
     )
 
-  private def doUpdateProcess(command: UpdateScenarioCommand, name: ProcessName = ProcessTestData.sampleProcessName)(
+  private def doUpdateProcess(command: UpdateScenarioCommand, name: ProcessName)(
       testCode: => Assertion
   ): Assertion =
     Put(s"/api/processes/$name", command.toJsonRequestEntity()) ~> withAllPermUser() ~> applicationRoute ~> check {
@@ -1156,7 +1148,7 @@ class ProcessesResourcesSpec
       category: TestCategory,
       isFragment: Boolean
   )(testCode: => Assertion): Assertion = {
-    createProcessRequest(scenarioName, category, isFragment = true) { code =>
+    createProcessRequest(scenarioName, category, isFragment) { code =>
       code shouldBe StatusCodes.Created
       updateProcess(scenarioGraph, scenarioName)(testCode)
     }
@@ -1164,12 +1156,25 @@ class ProcessesResourcesSpec
 
   private def createProcessRequest(processName: ProcessName, category: TestCategory, isFragment: Boolean)(
       callback: StatusCode => Assertion
-  ): Assertion =
-    Post(
-      s"/api/processes/$processName/${category.stringify}?isFragment=$isFragment"
-    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+  ): Assertion = {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(category.stringify),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = isFragment,
+      forwardedUserName = None
+    )
+    Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUser() ~> applicationRoute ~> check {
       callback(status)
     }
+
+//    Post(
+//      s"/api/processes/$processName/${category.stringify}?isFragment=$isFragment"
+//    ) ~> withAllPermUser() ~> applicationRoute ~> check {
+//      callback(status)
+//    }
+  }
 
   private def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion

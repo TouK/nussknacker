@@ -338,8 +338,21 @@ object ProcessTestData {
   def createEmptyUpdateProcessCommand(
       comment: Option[UpdateProcessComment]
   ): UpdateScenarioCommand = {
+    val properties = ProcessProperties(
+      ProcessAdditionalFields(
+        description = None,
+        properties = Map(
+          "maxEvents"        -> "",
+          "parallelism"      -> "1",
+          "numberOfThreads"  -> "1",
+          "spillStateToDisk" -> "true",
+          "environment"      -> "test"
+        ),
+        metaDataType = "StreamMetaData"
+      )
+    )
     val scenarioGraph = ScenarioGraph(
-      properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
+      properties = properties,
       nodes = List.empty,
       edges = List.empty
     )
