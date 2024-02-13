@@ -1,8 +1,7 @@
 import React from "react";
 import { render, fireEvent, screen } from "@testing-library/react";
-import "@testing-library/jest-dom/extend-expect";
-import { CustomRadio } from "./AddProcessForm";
-import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
+import { CustomRadio } from "./CustomRadio";
+import { NuThemeProvider } from "../../containers/theme/nuThemeProvider";
 import { FormGroup } from "@mui/material";
 
 describe("CustomRadio component", () => {

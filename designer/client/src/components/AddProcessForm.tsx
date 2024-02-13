@@ -1,37 +1,31 @@
 import { css, cx } from "@emotion/css";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback } from "react";
 import { ChangeableValue } from "./ChangeableValue";
 import ValidationLabels from "./modals/ValidationLabels";
 import { NodeTable } from "./graph/node-modal/NodeDetailsContent/NodeTable";
 import { NodeInput, SelectNodeWithFocus } from "./withFocus";
-import { FieldError } from "./graph/node-modal/editors/Validators";
-import { FormControl, FormGroup, FormLabel, Link, Typography } from "@mui/material";
+import { getValidationErrorsForField } from "./graph/node-modal/editors/Validators";
+import { FormControl, FormGroup, FormHelperText, FormLabel, Link, Typography } from "@mui/material";
 import { Trans, useTranslation } from "react-i18next";
 import StreamingIcon from "../assets/img/streaming.svg";
 import RequestResponseIcon from "../assets/img/request-response.svg";
 import BatchIcon from "../assets/img/batch.svg";
 import { CustomRadio } from "./customRadio/CustomRadio";
-import HttpService, { ProcessingMode } from "../http/HttpService";
+import { ProcessingMode, ScenarioParametersCombination } from "../http/HttpService";
 import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
+import { NodeValidationError } from "../types";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
-    fieldErrors: FieldError[];
+    validationErrors: NodeValidationError[];
+    allCombinations: ScenarioParametersCombination[];
 }
 
-export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormProps): JSX.Element {
+export function AddProcessForm({ value, onChange, validationErrors, allCombinations }: AddProcessFormProps): JSX.Element {
     const { t } = useTranslation();
-    const [allCombinations, setAllCombinations] = useState([]);
     const onFieldChange = useCallback((field: keyof FormValue, next: string) => onChange({ ...value, [field]: next }), [onChange, value]);
     const { categories, engines, processingModes } = useProcessFormDataOptions({ allCombinations, value });
-
-    useEffect(() => {
-        HttpService.fetchScenarioParametersCombinations().then((response) => {
-            const combinations = response.data.combinations;
-            setAllCombinations(combinations);
-        });
-    }, []);
 
     return (
         <div
@@ -105,7 +99,7 @@ export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormP
                             value={value.processName}
                             onChange={(e) => onFieldChange("processName", e.target.value)}
                         />
-                        <ValidationLabels fieldErrors={fieldErrors} />
+                        <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processName")} />
                     </div>
                 </FormControl>
                 <FormControl>
@@ -161,6 +155,11 @@ export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormP
                                 ))}
                             </>
                         </SelectNodeWithFocus>
+                        {getValidationErrorsForField(validationErrors, "processEngine").map((engineError, index) => (
+                            <FormHelperText key={index} error>
+                                {engineError.message}
+                            </FormHelperText>
+                        ))}
                         <Typography component={"div"} variant={"overline"} mt={1}>
                             <Trans i18nKey={"addProcessForm.helperText.engine"}>
                                 To read more about engines,
