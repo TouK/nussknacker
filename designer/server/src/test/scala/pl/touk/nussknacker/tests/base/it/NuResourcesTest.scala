@@ -49,7 +49,12 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, ProcessingTypeDataConfigurationReader, ProcessingTypeDataProvider, ProcessingTypeDataReader}
+import pl.touk.nussknacker.ui.process.processingtypedata.{
+  DefaultProcessingTypeDeploymentService,
+  ProcessingTypeDataConfigurationReader,
+  ProcessingTypeDataProvider,
+  ProcessingTypeDataReader
+}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
@@ -86,8 +91,8 @@ trait NuResourcesTest
 
   protected val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
     newFutureFetchingScenarioRepository(
-    testDbRef
-  )
+      testDbRef
+    )
 
   protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(futureFetchingScenarioRepository)
 
@@ -364,13 +369,15 @@ trait NuResourcesTest
   protected def snapshot(processName: ProcessName): RouteTestResult =
     Post(s"/adminProcessManagement/snapshot/$processName") ~> withPermissions(
       deployRoute(),
-      Permission.Deploy, Permission.Read
+      Permission.Deploy,
+      Permission.Read
     )
 
   protected def stop(processName: ProcessName): RouteTestResult =
     Post(s"/adminProcessManagement/stop/$processName") ~> withPermissions(
       deployRoute(),
-      Permission.Deploy, Permission.Read
+      Permission.Deploy,
+      Permission.Read
     )
 
   protected def customAction(processName: ProcessName, reqPayload: CustomActionRequest): RouteTestResult =
@@ -385,7 +392,8 @@ trait NuResourcesTest
     )()
     Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
       deployRoute(),
-      Permission.Deploy, Permission.Read
+      Permission.Deploy,
+      Permission.Read
     )
   }
 
@@ -593,6 +601,77 @@ object CreateProcessResponse extends OptionValues {
 }
 
 final case class CreateProcessResponse(id: ProcessId, versionId: VersionId, processName: ProcessName)
+
+object ProcessesQueryEnrichments {
+
+  implicit class RichProcessesQuery(query: ScenarioQuery) {
+
+    def process(): ScenarioQuery =
+      query.copy(isFragment = Some(false))
+
+    def fragment(): ScenarioQuery =
+      query.copy(isFragment = Some(true))
+
+    def unarchived(): ScenarioQuery =
+      query.copy(isArchived = Some(false))
+
+    def archived(): ScenarioQuery =
+      query.copy(isArchived = Some(true))
+
+    def deployed(): ScenarioQuery =
+      query.copy(isDeployed = Some(true))
+
+    def notDeployed(): ScenarioQuery =
+      query.copy(isDeployed = Some(false))
+
+    def withNames(names: List[String]): ScenarioQuery =
+      query.copy(names = Some(names.map(ProcessName(_))))
+
+    def withCategories(categories: List[TestCategory]): ScenarioQuery =
+      withRawCategories(categories.map(_.stringify))
+
+    def withRawCategories(categories: List[String]): ScenarioQuery =
+      query.copy(categories = Some(categories))
+
+    def withProcessingTypes(processingTypes: List[TestProcessingType]): ScenarioQuery =
+      withRawProcessingTypes(processingTypes.map(_.stringify))
+
+    def withRawProcessingTypes(processingTypes: List[String]): ScenarioQuery =
+      query.copy(processingTypes = Some(processingTypes))
+
+    def createQueryParamsUrl(path: String): String = {
+      var url = s"$path?fake=true"
+
+      query.isArchived.foreach { isArchived =>
+        url += s"&isArchived=$isArchived"
+      }
+
+      query.isFragment.foreach { isFragment =>
+        url += s"&isFragment=$isFragment"
+      }
+
+      query.isDeployed.foreach { isDeployed =>
+        url += s"&isDeployed=$isDeployed"
+      }
+
+      query.categories.foreach { categories =>
+        url += s"&categories=${categories.mkString(",")}"
+      }
+
+      query.processingTypes.foreach { processingTypes =>
+        url += s"&processingTypes=${processingTypes.mkString(",")}"
+      }
+
+      query.names.foreach { names =>
+        url += s"&names=${names.mkString(",")}"
+      }
+
+      url
+    }
+
+  }
+
+}
 
 object TestResource {
 

@@ -25,7 +25,6 @@ class ComponentApiHttpServiceSecuritySpec
     with NuItTest2
     with WithRichDesignerConfig
     with WithRichConfigScenarioHelper
-    with WithMockableDeploymentManager2
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
