@@ -157,7 +157,7 @@ class DeploymentServiceSpec
       deploymentServiceWithCommentSettings
         .getProcessState(id)
         .futureValue
-        .status should not be SimpleStateStatus.DuringDeploy
+        .status should not be SimpleStateStatus.Running
 
       deploymentServiceWithCommentSettings
         .getProcessState(id)
