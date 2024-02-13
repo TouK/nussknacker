@@ -2,7 +2,11 @@ package pl.touk.nussknacker.engine.common.components
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  DefinedEagerParameter,
+  NodeDependencyValue,
+  SingleInputGenericNodeTransformation
+}
 import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData
 import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.Column
 import pl.touk.nussknacker.engine.api.definition._
@@ -79,7 +83,7 @@ object DecisionTable extends EagerService with SingleInputGenericNodeTransformat
     ).copy(
       isLazyParameter = true,
       additionalVariables = Map(
-        "DecisionTableRow" -> AdditionalVariableProvidedInRuntime(rowDataTypingResult(data.columnDefinitions))
+        "ROW" -> AdditionalVariableProvidedInRuntime(rowDataTypingResult(data.columnDefinitions))
       )
     )
 
@@ -115,7 +119,7 @@ object DecisionTable extends EagerService with SingleInputGenericNodeTransformat
       tabularData.rows
         .filter { row =>
           val m           = row.cells.map(c => (c.definition.name, c.value)).toMap.asJava
-          val newContext  = context.withVariables(Map("DecisionTableRow" -> m))
+          val newContext  = context.withVariables(Map("ROW" -> m))
           val (_, params) = evaluateParams(newContext)
           params("Expression").asInstanceOf[java.lang.Boolean]
         }
