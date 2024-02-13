@@ -39,7 +39,7 @@ trait WithRichConfigScenarioHelper {
   }
 
   def createArchivedExampleFragment(fragmentName: ProcessName, category: TestCategory): ProcessId = {
-    rawScenarioHelper.createDeployedExampleScenario(fragmentName, category.stringify, isFragment = true)
+    rawScenarioHelper.createArchivedExampleScenario(fragmentName, category.stringify, isFragment = true)
   }
 
   def createDeployedCanceledExampleScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {

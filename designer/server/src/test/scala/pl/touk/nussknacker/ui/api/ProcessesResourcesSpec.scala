@@ -286,7 +286,7 @@ class ProcessesResourcesSpec
   test("should return list of all processes and fragments") {
     createEmptyScenario(processName, category = Category1)
     createEmptyFragment(fragmentName, category = Category1)
-    createArchivedExampleScenario(processName, category = Category1)
+    createArchivedExampleScenario(archivedProcessName, category = Category1)
     createArchivedExampleFragment(archivedFragmentName, category = Category1)
 
     verifyListOfProcesses(
@@ -300,7 +300,7 @@ class ProcessesResourcesSpec
   test("return list of all fragments") {
     createEmptyScenario(processName, category = Category1)
     createEmptyFragment(fragmentName, category = Category1)
-    createArchivedExampleScenario(processName, category = Category1)
+    createArchivedExampleScenario(archivedProcessName, category = Category1)
     createArchivedExampleFragment(archivedFragmentName, category = Category1)
 
     verifyListOfProcesses(ScenarioQuery.empty.fragment(), List(fragmentName, archivedFragmentName))
@@ -311,7 +311,7 @@ class ProcessesResourcesSpec
   test("should return list of processes") {
     createEmptyScenario(processName, category = Category1)
     createEmptyFragment(fragmentName, category = Category1)
-    createArchivedExampleScenario(processName, category = Category1)
+    createArchivedExampleScenario(archivedProcessName, category = Category1)
     createArchivedExampleFragment(archivedFragmentName, category = Category1)
 
     verifyListOfProcesses(ScenarioQuery.empty.process(), List(processName, archivedProcessName))
@@ -540,12 +540,7 @@ class ProcessesResourcesSpec
   }
 
   test("save correct process json with ok status") {
-    val validProcess = ScenarioBuilder
-      .streaming("proc1")
-      .source("id", "input")
-      .filter("filter", "#input.enumValue == #enum['ONE']")
-      .processorEnd("proc2", "logService", "all" -> "#input")
-
+    val validProcess = ProcessTestData.validProcess
     saveCanonicalProcess(validProcess, category = Category1) {
       status shouldEqual StatusCodes.OK
       fetchScenario(validProcess.name).nodes.head.id shouldEqual validProcess.nodes.head.id
@@ -798,12 +793,13 @@ class ProcessesResourcesSpec
   }
 
   test("allow to delete fragment") {
-    createArchivedExampleFragment(processName, category = Category1)
+    val fragmentName = ProcessName("f1")
+    createArchivedExampleFragment(fragmentName, category = Category1)
 
-    deleteProcess(processName) { status =>
+    deleteProcess(fragmentName) { status =>
       status shouldEqual StatusCodes.OK
 
-      tryForScenarioReturned(processName) { (status, _) =>
+      tryForScenarioReturned(fragmentName) { (status, _) =>
         status shouldEqual StatusCodes.NotFound
       }
     }
@@ -824,8 +820,8 @@ class ProcessesResourcesSpec
   }
 
   test("not allow to save process if already exists") {
-    val scenarioGraphToSave = ProcessTestData.sampleScenarioGraph
-    saveProcess(ProcessName("p1"), scenarioGraphToSave, category = Category1) {
+    val processName = ProcessName("p1")
+    saveProcess(processName, ProcessTestData.sampleScenarioGraph, category = Category1) {
       status shouldEqual StatusCodes.OK
       createProcessRequest(processName, category = Category1, isFragment = false) { status =>
         status shouldEqual StatusCodes.BadRequest

@@ -138,8 +138,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragmentOneOut)
 
     val testMigration = new TestModelMigrations(
-      mapProcessingTypeDataProvider("Streaming" -> new ProcessModelMigrator(new TestMigrations(8))),
-      mapProcessingTypeDataProvider("Streaming" -> TestFactory.flinkProcessValidator)
+      mapProcessingTypeDataProvider("streaming" -> new ProcessModelMigrator(new TestMigrations(8))),
+      mapProcessingTypeDataProvider("streaming" -> TestFactory.flinkProcessValidator)
     )
 
     val process =
@@ -180,8 +180,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations =
     new TestModelMigrations(
-      mapProcessingTypeDataProvider("Streaming" -> new ProcessModelMigrator(testMigrations)),
-      mapProcessingTypeDataProvider("Streaming" -> flinkProcessValidator)
+      mapProcessingTypeDataProvider("streaming" -> new ProcessModelMigrator(testMigrations)),
+      mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator)
     )
 
 }

@@ -277,7 +277,7 @@ trait NuResourcesTest
       isFragment = false,
       forwardedUserName = None
     )
-    Post("/api/processes", command.toJsonRequestEntity()) ~> processesRouteWithAllPermissions ~> check {
+    Post("/processes", command.toJsonRequestEntity()) ~> processesRouteWithAllPermissions ~> check {
       callback(status)
     }
   }
@@ -295,7 +295,7 @@ trait NuResourcesTest
       isFragment = true,
       forwardedUserName = None
     )
-    Post("/api/processes", command.toJsonRequestEntity()) ~> processesRouteWithAllPermissions ~> check {
+    Post("/processes", command.toJsonRequestEntity()) ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(scenarioGraph, name)(testCode)
     }
