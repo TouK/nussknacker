@@ -15,15 +15,17 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.tests.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.tests.base.it.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
+import pl.touk.nussknacker.tests.base.it.{NuItTest2, WithRichConfigScenarioHelper}
+import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestProcessingType.Streaming1
+import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager2, WithRichDesignerConfig}
 
-class ComponentApiSpec
+class ComponentApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
-    with NuItTest
-    with WithMockableDeploymentManager
-    with NuTestScenarioManager
+    with NuItTest2
+    with WithRichDesignerConfig
+    with WithRichConfigScenarioHelper
+    with WithMockableDeploymentManager2
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
@@ -91,7 +93,7 @@ class ComponentApiSpec
           .emptySink("sink", "kafka")
 
         val componentId = DesignerWideComponentId.default(
-          processingType = Streaming.stringify,
+          processingType = Streaming1.stringify,
           componentId = ComponentId(ComponentType.Source, sourceComponentName)
         )
 

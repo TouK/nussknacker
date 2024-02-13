@@ -14,6 +14,10 @@ trait WithRichConfigScenarioHelper {
 
   private val rawScenarioHelper = new ScenarioHelper(testDbRef, designerConfig)
 
+  def createSavedScenario(scenario: CanonicalProcess, category: TestCategory): ProcessId = {
+    rawScenarioHelper.createSavedScenario(scenario, category.stringify, isFragment = false)
+  }
+
   def createDeployedScenario(scenario: CanonicalProcess, category: TestCategory): ProcessId = {
     rawScenarioHelper.createDeployedScenario(scenario, category.stringify, isFragment = false)
   }

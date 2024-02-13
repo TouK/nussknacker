@@ -15,6 +15,10 @@ trait WithSimplifiedConfigScenarioHelper {
   private val rawScenarioHelper = new ScenarioHelper(testDbRef, designerConfig)
   private val usedCategory      = TestCategory.Default
 
+  def createSavedScenario(scenario: CanonicalProcess): ProcessId = {
+    rawScenarioHelper.createSavedScenario(scenario, usedCategory.stringify, isFragment = false)
+  }
+
   def createDeployedScenario(scenario: CanonicalProcess): ProcessId = {
     rawScenarioHelper.createDeployedScenario(scenario, usedCategory.stringify, isFragment = false)
   }

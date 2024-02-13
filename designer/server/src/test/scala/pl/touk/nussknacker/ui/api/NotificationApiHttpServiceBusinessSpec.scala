@@ -11,14 +11,20 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.tests.base.it.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
+import pl.touk.nussknacker.tests.base.it.{
+  NuItTest,
+  NuItTest2,
+  WithMockableDeploymentManager,
+  WithSimplifiedConfigScenarioHelper
+}
+import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager2, WithSimplifiedDesignerConfig}
 
-class NotificationApiSpec
+class NotificationApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
-    with NuItTest
-    with WithMockableDeploymentManager
-    with NuTestScenarioManager
+    with NuItTest2
+    with WithSimplifiedDesignerConfig
+    with WithSimplifiedConfigScenarioHelper
+    with WithMockableDeploymentManager2
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
@@ -52,7 +58,7 @@ class NotificationApiSpec
 
         given()
           .applicationState {
-            createDeployedCanceledExampleScenario(scenarioName, category = Category1)
+            createDeployedCanceledExampleScenario(scenarioName)
           }
           .basicAuth("admin", "admin")
           .when()

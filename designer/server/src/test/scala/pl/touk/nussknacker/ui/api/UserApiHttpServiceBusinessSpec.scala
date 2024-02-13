@@ -10,13 +10,13 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.tests.base.it.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
+import pl.touk.nussknacker.tests.base.it.NuItTest2
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig
 
-class UserApiSpec
+class UserApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
-    with NuItTest
-    with WithMockableDeploymentManager
-    with NuTestScenarioManager
+    with NuItTest2
+    with WithSimplifiedDesignerConfig
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging

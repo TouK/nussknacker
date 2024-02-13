@@ -5,8 +5,6 @@ import akka.http.scaladsl.server
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import cats.instances.all._
-import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.LoneElement._
 import org.scalatest._
@@ -24,11 +22,10 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.tests.TestFactory.{withAllPermissions, withPermissions}
 import pl.touk.nussknacker.tests.base.it.{NuResourcesTest, StateJson}
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Default
 import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.ScenarioToJson
 import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.tests.{ProcessTestData, SampleSpelTemplateProcess, TestFactory}
+import pl.touk.nussknacker.tests.{ProcessTestData, SampleSpelTemplateProcess}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}

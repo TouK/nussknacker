@@ -11,14 +11,15 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.tests.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.tests.base.it.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
+import pl.touk.nussknacker.tests.base.it.{NuItTest2, WithSimplifiedConfigScenarioHelper}
+import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager2, WithSimplifiedDesignerConfig}
 
-class NodesApiSpec
+class NodesApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
-    with NuItTest
-    with WithMockableDeploymentManager
-    with NuTestScenarioManager
+    with NuItTest2
+    with WithSimplifiedDesignerConfig
+    with WithSimplifiedConfigScenarioHelper
+    with WithMockableDeploymentManager2
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
@@ -35,7 +36,7 @@ class NodesApiSpec
         "return additional info for node with expression in existing scenario" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -72,7 +73,7 @@ class NodesApiSpec
         "return no additional info for node without expression in existing scenario" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -114,7 +115,7 @@ class NodesApiSpec
         "forbid access" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .when()
             .basicAuth("unknown-user", "wrong-password")
@@ -131,7 +132,7 @@ class NodesApiSpec
         "validate correct node without errors" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -198,7 +199,7 @@ class NodesApiSpec
         "validate filter node when wrong parameter type is given" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -273,7 +274,7 @@ class NodesApiSpec
         "validate incorrect sink expression" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -406,7 +407,7 @@ class NodesApiSpec
         "validate node using dictionaries" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -458,7 +459,7 @@ class NodesApiSpec
         "validate node id" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -521,7 +522,7 @@ class NodesApiSpec
         "forbid access" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("unknown-user", "wrong-password")
             .jsonBody(exampleNodesValidationRequestBody)
@@ -541,7 +542,7 @@ class NodesApiSpec
         "return additional info for scenario properties" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -577,7 +578,7 @@ class NodesApiSpec
         "forbid access" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .jsonBody(examplePropertiesAdditionalInfoRequestBody)
             .basicAuth("unknown-user", "wrong-password")
@@ -594,7 +595,7 @@ class NodesApiSpec
         "validate properties" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -663,7 +664,7 @@ class NodesApiSpec
         "validate scenario id" in {
           given()
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .basicAuth("allpermuser", "allpermuser")
             .jsonBody(
@@ -741,7 +742,7 @@ class NodesApiSpec
         "forbid access" in {
           given
             .applicationState {
-              createSavedScenario(exampleScenario, category = Category1)
+              createSavedScenario(exampleScenario)
             }
             .jsonBody(examplePropertiesValidationRequestBody)
             .basicAuth("unknown-user", "wrong-password")
