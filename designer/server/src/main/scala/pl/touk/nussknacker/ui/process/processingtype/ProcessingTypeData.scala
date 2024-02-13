@@ -1,23 +1,17 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
-import akka.actor.ActorSystem
-import cats.implicits.catsSyntaxValidatedId
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProvider,
   DesignerWideComponentId,
   ScenarioPropertyConfig
 }
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, MetaDataInitializer, ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
-import sttp.client3.SttpBackend
-
-import scala.concurrent.{ExecutionContext, Future}
 
 final case class ProcessingTypeData private (
     processingType: ProcessingType,
@@ -55,14 +49,10 @@ object ProcessingTypeData {
   def createProcessingTypeData(
       processingType: ProcessingType,
       deploymentManagerProvider: DeploymentManagerProvider,
+      deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       processingTypeConfig: ProcessingTypeConfig,
       additionalUIConfigProvider: AdditionalUIConfigProvider
-  )(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
     val managerConfig                 = processingTypeConfig.deploymentConfig
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
@@ -70,6 +60,7 @@ object ProcessingTypeData {
     createProcessingTypeData(
       processingType,
       deploymentManagerProvider,
+      deploymentManagerDependencies,
       engineSetupName,
       ModelData(
         processingTypeConfig,
@@ -85,19 +76,22 @@ object ProcessingTypeData {
   def createProcessingTypeData(
       processingType: ProcessingType,
       deploymentManagerProvider: DeploymentManagerProvider,
+      deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       modelData: ModelData,
       managerConfig: Config,
       category: String
-  )(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
     val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(managerConfig)
     val deploymentData =
-      createDeploymentData(deploymentManagerProvider, engineSetupName, modelData, managerConfig, metaDataInitializer)
+      createDeploymentData(
+        deploymentManagerProvider,
+        deploymentManagerDependencies,
+        engineSetupName,
+        modelData,
+        managerConfig,
+        metaDataInitializer
+      )
 
     val designerModelData = createDesignerModelData(modelData, metaDataInitializer, processingType)
     ProcessingTypeData(
@@ -111,19 +105,14 @@ object ProcessingTypeData {
 
   private def createDeploymentData(
       deploymentManagerProvider: DeploymentManagerProvider,
+      deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       modelData: ModelData,
       managerConfig: Config,
       metaDataInitializer: MetaDataInitializer
-  )(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
   ) = {
-    // FIXME (next PRs): We should catch exceptions and translate them to list of errors
     val validDeploymentManager =
-      deploymentManagerProvider.createDeploymentManager(modelData, managerConfig).validNel[String]
+      deploymentManagerProvider.createDeploymentManager(modelData, deploymentManagerDependencies, managerConfig)
     val scenarioProperties =
       deploymentManagerProvider.scenarioPropertiesConfig(managerConfig) ++ modelData.modelConfig
         .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)

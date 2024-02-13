@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobStatus
-import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -14,16 +13,19 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkRestManager.JobDetails
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
-import sttp.client3._
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)(
-    implicit ec: ExecutionContext,
-    backend: SttpBackend[Future, Any],
-    deploymentService: ProcessingTypeDeploymentService
-) extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName)
+class FlinkRestManager(
+    config: FlinkConfig,
+    modelData: BaseModelData,
+    dependencies: DeploymentManagerDependencies,
+    mainClassName: String
+) extends FlinkDeploymentManager(modelData, dependencies, config.shouldVerifyBeforeDeploy, mainClassName)
     with LazyLogging {
+
+  import dependencies._
 
   private val modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
 

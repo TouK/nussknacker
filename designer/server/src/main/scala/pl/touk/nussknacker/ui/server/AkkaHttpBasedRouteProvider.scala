@@ -9,7 +9,6 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProvider,
   AdditionalUIConfigProviderFactory,
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, DeploymentManagerDependencies}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
@@ -101,11 +101,11 @@ class AkkaHttpBasedRouteProvider(
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
       typeToConfig <- prepareProcessingTypeData(
         config,
+        processingTypeDataStateFactory,
+        additionalUIConfigProvider,
         deploymentServiceSupplier,
         AllDeployedScenarioService(dbRef, _),
-        processingTypeDataStateFactory,
         sttpBackend,
-        additionalUIConfigProvider
       )
     } yield {
       val analyticsConfig = AnalyticsConfig(resolvedConfig)
@@ -497,24 +497,34 @@ class AkkaHttpBasedRouteProvider(
 
   private def prepareProcessingTypeData(
       designerConfig: ConfigWithUnresolvedVersion,
+      processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
       deploymentServiceSupplier: Supplier[DeploymentService],
       createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
-      processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
       sttpBackend: SttpBackend[Future, Any],
-      additionalUIConfigProvider: AdditionalUIConfigProvider
-  )(implicit executionContext: ExecutionContext): Resource[IO, ProcessingTypeDataReload] = {
-    implicit val sttpBackendImplicit: SttpBackend[Future, Any] = sttpBackend
+  ): Resource[IO, ProcessingTypeDataReload] = {
     Resource
       .make(
         acquire = IO(
-          new ProcessingTypeDataReload(() =>
+          new ProcessingTypeDataReload({ () =>
+            def getDeploymentManagerDependencies(processingType: ProcessingType) = {
+              DeploymentManagerDependencies(
+                new DefaultProcessingTypeDeploymentService(
+                  processingType,
+                  deploymentServiceSupplier.get(),
+                  createAllDeployedScenarioService(processingType)
+                ),
+                system.dispatcher,
+                system,
+                sttpBackend
+              )
+            }
             processingTypeDataStateFactory.create(
               designerConfig,
-              deploymentServiceSupplier,
-              createAllDeployedScenarioService,
+              getDeploymentManagerDependencies,
               additionalUIConfigProvider
             )
-          )
+          })
         )
       )(
         release = reload =>

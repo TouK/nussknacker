@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.ui.process
 
-import akka.actor.ActorSystem
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
@@ -12,29 +10,19 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFactory}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
-import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider, TestFactory}
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeData,
   ProcessingTypeDataProvider,
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
-import sttp.client3.SttpBackend
-import sttp.client3.akkahttp.AkkaHttpBackend
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits._
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
-
-  private implicit val actorSystem: ActorSystem              = ActorSystem(getClass.getSimpleName)
-  private implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(actorSystem)
-  private implicit val processingTypeDeploymentService: ProcessingTypeDeploymentService = null
 
   test("should fetch state definitions when definitions with the same name are unique") {
     val streamingProcessStateDefinitionManager =
@@ -199,17 +187,12 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   ): ProcessingTypeData = {
     ProcessingTypeData.createProcessingTypeData(
       processingType,
-      new FlinkStreamingDeploymentManagerProvider {
-        override def createDeploymentManager(modelData: BaseModelData, config: Config)(
-            implicit ec: ExecutionContext,
-            actorSystem: ActorSystem,
-            sttpBackend: SttpBackend[Future, Any],
-            deploymentService: ProcessingTypeDeploymentService
-        ): DeploymentManager =
-          new MockDeploymentManager() {
-            override def processStateDefinitionManager: ProcessStateDefinitionManager = stateDefinitionManager
-          }
-      },
+      new MockManagerProvider(
+        new MockDeploymentManager() {
+          override def processStateDefinitionManager: ProcessStateDefinitionManager = stateDefinitionManager
+        }
+      ),
+      TestFactory.deploymentManagerDependencies,
       EngineSetupName("mock"),
       LocalModelData(
         ConfigFactory.empty(),

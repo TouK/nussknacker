@@ -73,7 +73,7 @@ class PeriodicProcessServiceTest
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     val additionalData                = Map("testMap" -> "testValue")
 
-    implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(
+    val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(
       List.empty
     )
 
@@ -121,7 +121,8 @@ class PeriodicProcessServiceTest
         }
 
       },
-      Clock.systemDefaultZone()
+      Clock.systemDefaultZone(),
+      deploymentService
     )
 
   }

@@ -9,15 +9,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, EngineSetupName, ExternalDeploymentId}
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers._
@@ -93,7 +91,8 @@ class DeploymentServiceSpec
 
   private val deploymentService = createDeploymentService(None)
 
-  deploymentManager = new MockDeploymentManager(SimpleStateStatus.Running)(
+  deploymentManager = new MockDeploymentManager(
+    SimpleStateStatus.Running,
     new DefaultProcessingTypeDeploymentService(
       TestProcessingTypes.Streaming,
       deploymentService,

@@ -8,7 +8,7 @@ import org.scalatest.OptionValues
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -38,8 +38,7 @@ class K8sDeploymentManagerKafkaTest
     with EitherValuesDetailedMessage
     with LazyLogging {
 
-  private lazy val kafka                                   = new KafkaK8sSupport(k8s)
-  private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+  private lazy val kafka = new KafkaK8sSupport(k8s)
 
   test("deployment of kafka ping-pong") {
     val f = createKafkaFixture()
@@ -329,6 +328,7 @@ class K8sDeploymentManagerKafkaTest
           basicRequest
             .get(uri"http://localhost:$localPort")
             .send(backend)
+            .futureValue
             .body
             .toOption
             .get
@@ -375,13 +375,6 @@ class K8sDeploymentManagerKafkaTest
     List.empty
   )
 
-  private def prepareManager(
-      modelData: LocalModelData = modelData,
-      deployConfig: Config = kafkaDeployConfig
-  ): K8sDeploymentManager = {
-    new K8sDeploymentManager(modelData, K8sDeploymentManagerConfig.parse(deployConfig), deployConfig)
-  }
-
   lazy val defaultSchema = """{"type":"object","properties":{"message":{"type":"string"}}}"""
 
   private def createKafkaFixture(
@@ -419,6 +412,13 @@ class K8sDeploymentManagerKafkaTest
       scenario = scenario,
       version = version
     )
+  }
+
+  private def prepareManager(
+      modelData: LocalModelData = modelData,
+      deployConfig: Config = kafkaDeployConfig
+  ): K8sDeploymentManager = {
+    super.prepareManager(modelData, deployConfig)
   }
 
   private class KafkaTestFixture(

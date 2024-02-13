@@ -9,7 +9,7 @@ import { AddProcessForm, FormValue } from "./AddProcessForm";
 import { extendErrors, mandatoryValueValidator } from "./graph/node-modal/editors/Validators";
 import { useNavigate } from "react-router-dom";
 import { NodeValidationError } from "../types";
-import { chain, flow, isEmpty } from "lodash";
+import { flow, isEmpty } from "lodash";
 
 interface AddProcessDialogProps extends WindowContentProps {
     isFragment?: boolean;
@@ -49,7 +49,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
                     category: processCategory,
                     isFragment,
                     processingMode,
-                    engineSetupName: processEngine,
+                    engineSetupName: processEngine || undefined,
                 });
                 passProps.close();
                 navigate(visualizationUrl(processName));
