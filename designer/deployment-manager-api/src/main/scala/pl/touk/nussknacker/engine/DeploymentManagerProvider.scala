@@ -1,20 +1,16 @@
 package pl.touk.nussknacker.engine
 
-import akka.actor.ActorSystem
-import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.MetaDataInitializer.MetadataType
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.IdToTitleConverter
-import sttp.client3.SttpBackend
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
 
 // If you are adding a new DeploymentManagerProvider available in the public distribution, please remember
 // to add it's type to UsageStatisticsHtmlSnippet.knownDeploymentManagerTypes
@@ -25,27 +21,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
       dependencies: DeploymentManagerDependencies,
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
-  ): ValidatedNel[String, DeploymentManager] =
-    // TODO: remove default implementation after removing the legacy method below
-    valid(
-      createDeploymentManager(modelData, deploymentConfig, scenarioStateCacheTTL)(
-        dependencies.executionContext,
-        dependencies.actorSystem,
-        dependencies.sttpBackend,
-        dependencies.deploymentService
-      )
-    )
-
-  // Exceptions returned by this method won't cause designer's exit. Instead, they will be catched and messages will
-  // be shown to the user.
-  // TODO: This method is deprecated. It will be removed in 1.15 versions. It is not implemented by design, because for
-  //       a new DMs it won't be used - would be used version with DeploymentManagerDependencies
-  protected def createDeploymentManager(modelData: BaseModelData, config: Config, scenarioStateCacheTTL: Option[FiniteDuration])(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
-  ): DeploymentManager = ???
+  ): ValidatedNel[String, DeploymentManager]
 
   def metaDataInitializer(config: Config): MetaDataInitializer
 

@@ -76,15 +76,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       * New, overloaded `createDeploymentManager` was added. In the new one most of the parameters were bundled into `DeploymentManagerDependencies` class
         which allows to easier pass these dependencies to delegates. Also, this method returns `ValidateNel[String, DeploymentManager]`.
         You can return errors that will be visible to users e.g. invalid configuration etc. The old one is deprecated - it will be removed in 1.15 version.
-  * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) Scenario status caching more often:
-      * `DeploymentManager` related changes:
-          * Method `getProcessStates` signature was changed and now requires an implicit `freshnessPolicy: DataFreshnessPolicy`
-          * Trait `AlwaysFreshProcessState` and method `getFreshProcessStates` were removed, instead of it please
-            use `getProcessStates` with `DataFreshnessPolicy.Fresh`
-      * `DeploymentManagerProvider` related changes:
-          * Method `createDeploymentManager` signature was changed and now requires new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
-      * `FlinkStreamingRestManager` and `FlinkRestManager` related changes:
-          * Both managers require new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
+  * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) `DeploymentManager` related changes:
+      * Method `DeploymentManager.getProcessStates` signature was changed and now requires an implicit `freshnessPolicy: DataFreshnessPolicy`
+      * Trait `AlwaysFreshProcessState` and method `getFreshProcessStates` were removed, instead of it please use `getProcessStates` with `DataFreshnessPolicy.Fresh` policy
+      * Method `DeploymentManagerProvider.createDeploymentManager` signature was changed and now requires new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
+      * Managers `FlinkStreamingRestManager` and `FlinkRestManager` require new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
   * [#5526](https://github.com/TouK/nussknacker/pull/5526) Refactored namespaces:
       * Removed `ObjectNaming` SPI
       * Removed logging when using naming strategy
