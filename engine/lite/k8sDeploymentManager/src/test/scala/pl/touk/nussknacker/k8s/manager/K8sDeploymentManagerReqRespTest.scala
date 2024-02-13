@@ -27,6 +27,7 @@ import skuber.networking.v1.Ingress
 import skuber.{LabelSelector, ListResource, Service}
 import sttp.client3._
 
+import scala.concurrent.ExecutionContext.Implicits._
 import scala.jdk.CollectionConverters._
 import scala.language.reflectiveCalls
 import scala.util.Random

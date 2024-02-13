@@ -38,6 +38,7 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
         scenarioStateCacheTTL
       )
     )
+  }
 
   override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String = {
     val k8sConfig = K8sDeploymentManagerConfig.parse(config)

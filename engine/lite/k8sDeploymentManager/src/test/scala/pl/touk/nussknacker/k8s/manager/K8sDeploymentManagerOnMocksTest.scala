@@ -7,7 +7,6 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.Span.convertSpanToDuration
 import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessingTypeDeploymentServiceStub}
@@ -16,7 +15,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
 import skuber.api.Configuration
 import sttp.client3.testing.SttpBackendStub
-
+import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 
 class K8sDeploymentManagerOnMocksTest
@@ -28,7 +27,7 @@ class K8sDeploymentManagerOnMocksTest
     with OptionValues {
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-  private val system: ActorSystem = ActorSystem(getClass.getSimpleName)
+  private val system: ActorSystem                           = ActorSystem(getClass.getSimpleName)
 
   private var wireMockServer: WireMockServer = _
 
