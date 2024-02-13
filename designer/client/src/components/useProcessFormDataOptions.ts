@@ -1,6 +1,6 @@
 import { FormValue } from "./AddProcessForm";
 import { useMemo } from "react";
-import { groupBy, map, uniq } from "lodash";
+import { groupBy, map, some, uniq, uniqBy } from "lodash";
 import { ScenarioParametersCombination } from "../http/HttpService";
 
 const getFilteredValues = (allCombinations: ScenarioParametersCombination[], value: Partial<FormValue>) => {
@@ -52,5 +52,12 @@ export const useProcessFormDataOptions = ({ allCombinations, value }: Props) => 
         return uniq(map(filteredValues, "processingMode"));
     }, [allCombinations, value.processCategory, value.processEngine]);
 
-    return { processingModes, categories, engines };
+    const isEngineFieldVisible = useMemo(() => {
+        const groupedCombinations = groupBy(allCombinations, (combination) => `${combination.processingMode}-${combination.category}`);
+        const multipleEnginesSelectable = some(groupedCombinations, (group) => uniqBy(group, "engineSetupName").length > 1);
+
+        return multipleEnginesSelectable;
+    }, [allCombinations]);
+
+    return { processingModes, categories, engines, isEngineFieldVisible };
 };

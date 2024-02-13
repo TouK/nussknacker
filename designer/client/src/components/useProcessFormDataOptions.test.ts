@@ -68,6 +68,7 @@ describe("useProcessFormDataOptions", () => {
         expect(result.current).toEqual({
             categories: ["Category1", "Category2", "Default"],
             engines: ["Flink"],
+            isEngineFieldVisible: false,
             processingModes: ["Unbounded-Stream"],
         });
 
@@ -81,6 +82,7 @@ describe("useProcessFormDataOptions", () => {
         expect(result.current).toEqual({
             categories: ["Category1", "Category2", "Default", "DevelopmentTests", "Periodic", "StreamingLite", "StreamingLiteK8s"],
             engines: ["Flink"],
+            isEngineFieldVisible: false,
             processingModes: ["Unbounded-Stream"],
         });
 
@@ -103,6 +105,7 @@ describe("useProcessFormDataOptions", () => {
                 "StreamingLiteK8s",
             ],
             engines: ["Flink"],
+            isEngineFieldVisible: false,
             processingModes: ["Unbounded-Stream"],
         });
 
@@ -123,6 +126,7 @@ describe("useProcessFormDataOptions", () => {
                 "StreamingLiteK8s",
             ],
             engines: ["Lite Embedded", "Lite K8s", "Flink", "Development Tests", "Dev Periodic"],
+            isEngineFieldVisible: false,
             processingModes: ["Request-Response", "Unbounded-Stream"],
         });
 
@@ -135,7 +139,65 @@ describe("useProcessFormDataOptions", () => {
         expect(result.current).toEqual({
             categories: ["RequestResponse", "RequestResponseK8s"],
             engines: ["Lite Embedded", "Lite K8s"],
+            isEngineFieldVisible: false,
             processingModes: ["Request-Response", "Unbounded-Stream"],
+        });
+    });
+
+    it("should return isEngineFieldVisible true when for each category and processingMode combination, there is more than one engine", () => {
+        const jsonDataOneUnique: ScenarioParametersCombination[] = [
+            { processingMode: ProcessingMode.streaming, category: "Category1", engineSetupName: "Engine1" },
+            { processingMode: ProcessingMode.streaming, category: "Category2", engineSetupName: "Engine1" },
+            { processingMode: ProcessingMode.batch, category: "Category1", engineSetupName: "Engine1" },
+            { processingMode: ProcessingMode.batch, category: "Category1", engineSetupName: "Engine2" },
+        ];
+
+        const value: Record<string, string> = {
+            processingMode: "",
+            processCategory: "",
+            processEngine: "",
+        };
+
+        const { result } = renderHook(() =>
+            useProcessFormDataOptions({
+                allCombinations: jsonDataOneUnique,
+                value,
+            }),
+        );
+
+        expect(result.current).toEqual({
+            categories: ["Category1", "Category2"],
+            engines: ["Engine1", "Engine2"],
+            isEngineFieldVisible: true,
+            processingModes: ["Unbounded-Stream", "Bounded-Stream"],
+        });
+    });
+
+    it("should return isEngineFieldVisible false when for each category and processingMode combination, there is only one engine", () => {
+        const jsonDataOneUnique: ScenarioParametersCombination[] = [
+            { processingMode: ProcessingMode.streaming, category: "Category1", engineSetupName: "Engine1" },
+            { processingMode: ProcessingMode.streaming, category: "Category2", engineSetupName: "Engine1" },
+            { processingMode: ProcessingMode.batch, category: "Category1", engineSetupName: "Engine2" },
+        ];
+
+        const value: Record<string, string> = {
+            processingMode: "",
+            processCategory: "",
+            processEngine: "",
+        };
+
+        const { result } = renderHook(() =>
+            useProcessFormDataOptions({
+                allCombinations: jsonDataOneUnique,
+                value,
+            }),
+        );
+
+        expect(result.current).toEqual({
+            categories: ["Category1", "Category2"],
+            engines: ["Engine1", "Engine2"],
+            isEngineFieldVisible: false,
+            processingModes: ["Unbounded-Stream", "Bounded-Stream"],
         });
     });
 });

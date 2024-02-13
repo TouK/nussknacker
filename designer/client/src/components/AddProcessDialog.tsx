@@ -10,6 +10,7 @@ import { extendErrors, mandatoryValueValidator } from "./graph/node-modal/editor
 import { useNavigate } from "react-router-dom";
 import { NodeValidationError } from "../types";
 import { flow, isEmpty } from "lodash";
+import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
 
 interface AddProcessDialogProps extends WindowContentProps {
     isFragment?: boolean;
@@ -31,11 +32,12 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         description: "",
         typ: "",
     }));
+    const { categories, engines, processingModes, isEngineFieldVisible } = useProcessFormDataOptions({ allCombinations, value });
 
     const validationErrors = flow(
         (errors) => extendErrors(errors, value.processCategory, "processCategory", [mandatoryValueValidator]),
         (errors) => extendErrors(errors, value.processingMode, "processingMode", [mandatoryValueValidator]),
-        (errors) => extendErrors(errors, value.processEngine, "processEngine", [mandatoryValueValidator]),
+        (errors) => extendErrors(errors, value.processEngine, "processEngine", isEngineFieldVisible ? [mandatoryValueValidator] : []),
         (errors) => extendErrors([...errors, ...processNameFromBackend, ...engineErrors], value.processName, "processName", nameValidators),
     )(errors);
 
@@ -89,7 +91,14 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     }, []);
     return (
         <WindowContent buttons={buttons} {...passProps}>
-            <AddProcessForm value={value} onChange={onChange} validationErrors={validationErrors} allCombinations={allCombinations} />
+            <AddProcessForm
+                value={value}
+                onChange={onChange}
+                validationErrors={validationErrors}
+                categories={categories}
+                processingModes={processingModes}
+                engines={isEngineFieldVisible ? engines : undefined}
+            />
         </WindowContent>
     );
 }

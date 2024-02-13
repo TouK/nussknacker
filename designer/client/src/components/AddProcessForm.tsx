@@ -11,21 +11,28 @@ import StreamingIcon from "../assets/img/streaming.svg";
 import RequestResponseIcon from "../assets/img/request-response.svg";
 import BatchIcon from "../assets/img/batch.svg";
 import { CustomRadio } from "./customRadio/CustomRadio";
-import { ProcessingMode, ScenarioParametersCombination } from "../http/HttpService";
-import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
+import { ProcessingMode } from "../http/HttpService";
 import { NodeValidationError } from "../types";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
     validationErrors: NodeValidationError[];
-    allCombinations: ScenarioParametersCombination[];
+    categories: string[];
+    processingModes: ProcessingMode[];
+    engines: string[] | undefined;
 }
 
-export function AddProcessForm({ value, onChange, validationErrors, allCombinations }: AddProcessFormProps): JSX.Element {
+export function AddProcessForm({
+    value,
+    onChange,
+    validationErrors,
+    categories,
+    engines,
+    processingModes,
+}: AddProcessFormProps): JSX.Element {
     const { t } = useTranslation();
     const onFieldChange = useCallback((field: keyof FormValue, next: string) => onChange({ ...value, [field]: next }), [onChange, value]);
-    const { categories, engines, processingModes } = useProcessFormDataOptions({ allCombinations, value });
 
     return (
         <div
@@ -139,45 +146,47 @@ export function AddProcessForm({ value, onChange, validationErrors, allCombinati
                         </Typography>
                     </div>
                 </FormControl>
-                <FormControl>
-                    <FormLabel required>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
-                    <div className="node-value">
-                        <SelectNodeWithFocus
-                            id="processEngine"
-                            value={value.processEngine}
-                            onChange={(e) => {
-                                onFieldChange("processEngine", e.target.value);
-                            }}
-                        >
-                            <>
-                                <option value={""}></option>
-                                {engines.map((engine, index) => (
-                                    <option key={index} value={engine}>
-                                        {engine}
-                                    </option>
-                                ))}
-                            </>
-                        </SelectNodeWithFocus>
-                        {getValidationErrorsForField(validationErrors, "processEngine").map((engineError, index) => (
-                            <FormHelperText key={index} error>
-                                {engineError.message}
-                            </FormHelperText>
-                        ))}
-                        <Typography component={"div"} variant={"overline"} mt={1}>
-                            <Trans i18nKey={"addProcessForm.helperText.engine"}>
-                                To read more about engines,
-                                <Link
-                                    sx={{ cursor: "pointer", ml: 0.5 }}
-                                    href="https://nussknacker.io/documentation/about/engines"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    click here.
-                                </Link>
-                            </Trans>
-                        </Typography>
-                    </div>
-                </FormControl>
+                {engines && (
+                    <FormControl>
+                        <FormLabel required>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
+                        <div className="node-value">
+                            <SelectNodeWithFocus
+                                id="processEngine"
+                                value={value.processEngine}
+                                onChange={(e) => {
+                                    onFieldChange("processEngine", e.target.value);
+                                }}
+                            >
+                                <>
+                                    <option value={""}></option>
+                                    {engines.map((engine, index) => (
+                                        <option key={index} value={engine}>
+                                            {engine}
+                                        </option>
+                                    ))}
+                                </>
+                            </SelectNodeWithFocus>
+                            {getValidationErrorsForField(validationErrors, "processEngine").map((engineError, index) => (
+                                <FormHelperText key={index} error>
+                                    {engineError.message}
+                                </FormHelperText>
+                            ))}
+                            <Typography component={"div"} variant={"overline"} mt={1}>
+                                <Trans i18nKey={"addProcessForm.helperText.engine"}>
+                                    To read more about engines,
+                                    <Link
+                                        sx={{ cursor: "pointer", ml: 0.5 }}
+                                        href="https://nussknacker.io/documentation/about/engines"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        click here.
+                                    </Link>
+                                </Trans>
+                            </Typography>
+                        </div>
+                    </FormControl>
+                )}
             </NodeTable>
         </div>
     );
