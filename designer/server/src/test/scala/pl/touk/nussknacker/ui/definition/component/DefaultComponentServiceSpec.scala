@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.definition.component
 
-import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -9,7 +8,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
@@ -47,11 +45,8 @@ import pl.touk.nussknacker.ui.process.processingtype.{
 }
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import sttp.client3.SttpBackend
-import sttp.client3.akkahttp.AkkaHttpBackend
 
 import java.net.URI
-import scala.concurrent.Future
 
 class DefaultComponentServiceSpec
     extends AnyFlatSpec
@@ -64,10 +59,6 @@ class DefaultComponentServiceSpec
   import org.scalatest.prop.TableDrivenPropertyChecks._
 
   import scala.concurrent.ExecutionContext.Implicits.global
-
-  private implicit val actorSystem: ActorSystem              = ActorSystem(getClass.getSimpleName)
-  private implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(actorSystem)
-  private implicit val processingTypeDeploymentService: ProcessingTypeDeploymentService = null
 
   private val executionGroupName: ComponentGroupName  = ComponentGroupName("execution")
   private val responseGroupName: ComponentGroupName   = ComponentGroupName("response")
@@ -757,7 +748,8 @@ class DefaultComponentServiceSpec
       case (processingType, (modelData, category)) =>
         ProcessingTypeData.createProcessingTypeData(
           processingType,
-          MockManagerProvider,
+          new MockManagerProvider,
+          TestFactory.deploymentManagerDependencies,
           EngineSetupName("Mock"),
           modelData,
           ConfigFactory.empty(),

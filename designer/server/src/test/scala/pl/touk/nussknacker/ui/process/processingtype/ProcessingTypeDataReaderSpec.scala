@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
-import _root_.sttp.client3.SttpBackend
-import _root_.sttp.client3.akkahttp.AkkaHttpBackend
-import akka.actor.ActorSystem
 import cats.data.Validated.valid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
@@ -16,20 +13,12 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider}
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider, TestFactory}
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
-import pl.touk.nussknacker.ui.process.deployment.{AllDeployedScenarioService, DeploymentService}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
-import scala.concurrent.{ExecutionContext, Future}
-
 class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
-  implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
-  import system.dispatcher
-  implicit val sttpBackend: SttpBackend[Future, Any]         = AkkaHttpBackend.usingActorSystem(system)
-  val deploymentService: DeploymentService                   = null
-  val allDeployedScenarioService: AllDeployedScenarioService = null
 
   private val processingTypeBasicConfig =
     """deploymentConfig {
@@ -68,8 +57,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       StubbedProcessingTypeDataReader
         .loadProcessingTypeData(
           ConfigWithUnresolvedVersion(config),
-          deploymentService,
-          _ => allDeployedScenarioService,
+          _ => TestFactory.deploymentManagerDependencies,
           TestAdditionalUIConfigProvider
         )
     )
@@ -97,8 +85,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       StubbedProcessingTypeDataReader
         .loadProcessingTypeData(
           ConfigWithUnresolvedVersion(config),
-          deploymentService,
-          _ => allDeployedScenarioService,
+          _ => TestFactory.deploymentManagerDependencies,
           TestAdditionalUIConfigProvider
         )
     )
@@ -123,21 +110,15 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
     override protected def createDeploymentManagerProvider(
         typeConfig: ProcessingTypeConfig
-    ): DeploymentManagerProvider =
-      MockManagerProvider
+    ): DeploymentManagerProvider = new MockManagerProvider
 
     override protected def createProcessingTypeData(
         processingType: ProcessingType,
         processingTypeConfig: ProcessingTypeConfig,
         deploymentManagerProvider: DeploymentManagerProvider,
+        deploymentManagerDependencies: DeploymentManagerDependencies,
         engineSetupName: EngineSetupName,
-        deploymentService: DeploymentService,
-        createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
         additionalUIConfigProvider: AdditionalUIConfigProvider
-    )(
-        implicit ec: ExecutionContext,
-        actorSystem: ActorSystem,
-        sttpBackend: SttpBackend[Future, Any],
     ): ProcessingTypeData = {
       val modelData = LocalModelData(ConfigFactory.empty, List.empty)
       ProcessingTypeData(

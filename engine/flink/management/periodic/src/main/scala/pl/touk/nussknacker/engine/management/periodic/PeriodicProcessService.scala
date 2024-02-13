@@ -38,8 +38,9 @@ class PeriodicProcessService(
     deploymentRetryConfig: DeploymentRetryConfig,
     executionConfig: PeriodicExecutionConfig,
     processConfigEnricher: ProcessConfigEnricher,
-    clock: Clock
-)(implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
+    clock: Clock,
+    deploymentService: ProcessingTypeDeploymentService
+)(implicit ec: ExecutionContext)
     extends LazyLogging {
 
   import cats.syntax.all._

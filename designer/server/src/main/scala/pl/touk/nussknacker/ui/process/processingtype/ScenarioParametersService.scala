@@ -86,17 +86,19 @@ object ScenarioParametersService {
 
   def create(
       parametersWithEngineErrorsForProcessingType: Map[ProcessingType, ScenarioParametersWithEngineSetupErrors]
-  ): Validated[ParametersToProcessingTypeMappingAmbiguousException, ScenarioParametersService] = {
-    checkParametersToProcessingTypeMappingAmbiguity(parametersWithEngineErrorsForProcessingType).map { _ =>
-      val parametersForProcessingType = parametersWithEngineErrorsForProcessingType.mapValuesNow(_.parameters)
-      val engineSetupErrors           = deduplicateEngineSetupErrors(parametersWithEngineErrorsForProcessingType)
-      new ScenarioParametersService(parametersForProcessingType, engineSetupErrors)
-    }
+  ): Validated[ScenarioParametersConfigurationError, ScenarioParametersService] = {
+    checkParametersToProcessingTypeMappingAmbiguity(parametersWithEngineErrorsForProcessingType) andThen
+      (_ => checkProcessingModeCategoryWithInvalidEngineSetupsOnly(parametersWithEngineErrorsForProcessingType)) map {
+        _ =>
+          val parametersForProcessingType = parametersWithEngineErrorsForProcessingType.mapValuesNow(_.parameters)
+          val engineSetupErrors           = deduplicateEngineSetupErrors(parametersWithEngineErrorsForProcessingType)
+          new ScenarioParametersService(parametersForProcessingType, engineSetupErrors)
+      }
   }
 
   private def checkParametersToProcessingTypeMappingAmbiguity(
       parametersCombinations: Map[ProcessingType, ScenarioParametersWithEngineSetupErrors]
-  ): Validated[ParametersToProcessingTypeMappingAmbiguousException, Unit] = {
+  ): Validated[ScenarioParametersConfigurationError, Unit] = {
     val unambiguousParametersToProcessingTypeMappings = parametersCombinations.toList
       .map { case (processingType, parametersWithEngineErrors) =>
         parametersWithEngineErrors.parameters -> processingType
@@ -105,6 +107,32 @@ object ScenarioParametersService {
       .filter(_._2.size > 1)
     if (unambiguousParametersToProcessingTypeMappings.nonEmpty)
       invalid(ParametersToProcessingTypeMappingAmbiguousException(unambiguousParametersToProcessingTypeMappings))
+    else
+      valid(())
+  }
+
+  // We decided to report this situation as an error during application startup because:
+  // - On the FE side, we hide engine setup parameter when only one engine setup is available for all combinations of (processing mode, category)
+  // - We don't want to have a complex logic on the FE side for the case when the only one available engine setups has errors -
+  //   we can't just hide the engine setup parameter and report an error to the user
+  // - The root cause why exposure the engine setup errors for users is to easy run image with the Embedded engine and missing Flink's restUrl in the configuration
+  private def checkProcessingModeCategoryWithInvalidEngineSetupsOnly(
+      parametersCombinations: Map[ProcessingType, ScenarioParametersWithEngineSetupErrors]
+  ): Validated[ScenarioParametersConfigurationError, Unit] = {
+    val combinationsWithEngineSetupErrorsOnly = parametersCombinations.toList
+      .map { case (_, parametersWithEngineErrors) =>
+        (
+          parametersWithEngineErrors.parameters.processingMode,
+          parametersWithEngineErrors.parameters.category
+        ) -> parametersWithEngineErrors.engineSetupErrors
+      }
+      .toGroupedMap
+      .collect {
+        case (processingModeCategory, engineSetupErrors) if engineSetupErrors.forall(_.nonEmpty) =>
+          processingModeCategory -> engineSetupErrors.flatten
+      }
+    if (combinationsWithEngineSetupErrorsOnly.nonEmpty)
+      invalid(ProcessingModeCategoryWithInvalidEngineSetupsOnly(combinationsWithEngineSetupErrorsOnly))
     else
       valid(())
   }
@@ -125,10 +153,19 @@ object ScenarioParametersService {
 
 }
 
+sealed abstract class ScenarioParametersConfigurationError(message: String) extends Exception(message)
+
 final case class ParametersToProcessingTypeMappingAmbiguousException(
     unambiguousMapping: Map[ScenarioParameters, List[ProcessingType]]
-) extends IllegalStateException(
+) extends ScenarioParametersConfigurationError(
       s"These scenario parameters are configured for more than one scenario type, which is not allowed now: $unambiguousMapping"
+    )
+
+final case class ProcessingModeCategoryWithInvalidEngineSetupsOnly(
+    invalidParametersCombination: Map[(ProcessingMode, String), List[String]]
+) extends ScenarioParametersConfigurationError(
+      s"For the provided combinations of processing mode and category, only engine setups with errors are available: $invalidParametersCombination. " +
+        "Please fix the scenarioType configuration"
     )
 
 class ProcessingTypeNotFoundError(

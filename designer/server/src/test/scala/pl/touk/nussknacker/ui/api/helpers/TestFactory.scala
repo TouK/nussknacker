@@ -1,12 +1,15 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentServiceStub
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
@@ -30,6 +33,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import sttp.client3.testing.SttpBackendStub
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -111,6 +115,16 @@ object TestFactory extends TestPermissions {
   def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] = mapProcessingTypeDataProvider(
     TestProcessingTypes.Streaming -> new ScenarioResolver(sampleResolver, TestProcessingTypes.Streaming)
   )
+
+  val deploymentManagerDependencies: DeploymentManagerDependencies = {
+    val actorSystem = ActorSystem("TestFactory")
+    DeploymentManagerDependencies(
+      new ProcessingTypeDeploymentServiceStub(List.empty),
+      actorSystem.dispatcher,
+      actorSystem,
+      SttpBackendStub.asynchronousFuture
+    )
+  }
 
   def deploymentService() = new StubDeploymentService(Map.empty)
 
