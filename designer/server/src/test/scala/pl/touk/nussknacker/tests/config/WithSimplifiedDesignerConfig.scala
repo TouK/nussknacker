@@ -43,7 +43,7 @@ object WithSimplifiedDesignerConfig {
 
     def categoryBy(processingType: TestProcessingType): TestCategory = {
       processingType match {
-        case TestProcessingType.Streaming => TestCategory.Default
+        case TestProcessingType.Streaming => TestCategory.Category1
       }
     }
 
@@ -52,14 +52,14 @@ object WithSimplifiedDesignerConfig {
   sealed trait TestCategory extends EnumEntry
 
   object TestCategory extends Enum[TestCategory] {
-    case object Default extends TestCategory
+    case object Category1 extends TestCategory
 
     override val values = findValues
 
     implicit class CategoryStringify(category: TestCategory) {
 
       def stringify: String = category match {
-        case Default => "Default"
+        case Category1 => "Category1"
       }
 
     }

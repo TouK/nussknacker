@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.tests.TestProcessUtil.toJson
 import pl.touk.nussknacker.tests.base.it.NuItTest
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Default
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.tests.config.{ConfigWithScalaVersion, WithDesignerConfig}
 import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.ScenarioToJson
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
@@ -202,7 +202,7 @@ class DictsFlowTest
   private def createEmptyScenario(processName: ProcessName) = {
     val command = CreateScenarioCommand(
       name = processName,
-      category = Some(Default.stringify),
+      category = Some(Category1.stringify),
       processingMode = None,
       engineSetupName = None,
       isFragment = false,

@@ -30,7 +30,7 @@ import pl.touk.nussknacker.tests.TestFactory._
 import pl.touk.nussknacker.tests._
 import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.tests.base.it.ProcessesQueryEnrichments.RichProcessesQuery
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Default
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.tests.config.{ConfigWithScalaVersion, WithSimplifiedDesignerConfig}
@@ -187,7 +187,7 @@ trait NuResourcesTest
   override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   protected def createLoggedUser(id: String, name: String, permissions: Permission.Permission*): LoggedUser = {
-    LoggedUser(id, name, Map(Default.stringify -> permissions.toSet))
+    LoggedUser(id, name, Map(Category1.stringify -> permissions.toSet))
   }
 
   protected def createDBProcessService(deploymentService: DeploymentService): DBProcessService =
@@ -271,7 +271,7 @@ trait NuResourcesTest
   ): Assertion = {
     val command = CreateScenarioCommand(
       processName,
-      Some(Default.stringify),
+      Some(Category1.stringify),
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
@@ -285,7 +285,7 @@ trait NuResourcesTest
   protected def saveFragment(
       scenarioGraph: ScenarioGraph,
       name: ProcessName = ProcessTestData.sampleFragmentName,
-      category: String = Default.stringify
+      category: String = Category1.stringify
   )(testCode: => Assertion): Assertion = {
     val command = CreateScenarioCommand(
       name,
@@ -482,21 +482,21 @@ trait NuResourcesTest
       isFragment: Boolean = false,
   ): ProcessId = {
     val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName, isFragment)
-    saveAndGetId(emptyProcess, Default, isFragment).futureValue
+    saveAndGetId(emptyProcess, Category1, isFragment).futureValue
   }
 
   protected def createValidProcess(
       processName: ProcessName,
       isFragment: Boolean = false,
   ): ProcessId =
-    prepareValidProcess(processName, Default, isFragment).futureValue
+    prepareValidProcess(processName, Category1, isFragment).futureValue
 
   protected def createArchivedProcess(
       processName: ProcessName,
       isFragment: Boolean = false
   ): ProcessId = {
     (for {
-      id <- prepareValidProcess(processName, Default, isFragment)
+      id <- prepareValidProcess(processName, Category1, isFragment)
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = ProcessIdWithName(id, processName), isArchived = true),

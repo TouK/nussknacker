@@ -35,7 +35,7 @@ import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.TestProcessUtil.toJson
 import pl.touk.nussknacker.tests.base.it.NuItTest
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Default
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.tests.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
@@ -509,7 +509,7 @@ class BaseFlowTest
   private def createProcess(name: ProcessName) = {
     val createCommand = CreateScenarioCommand(
       name,
-      Some(Default.stringify),
+      Some(Category1.stringify),
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
@@ -517,7 +517,7 @@ class BaseFlowTest
     )
     val response = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processes/${name.value}/${Default.stringify}?isFragment=false")
+        .post(uri"$nuDesignerHttpAddress/api/processes/${name.value}/${Category1.stringify}?isFragment=false")
         .auth
         .basic("admin", "admin")
         .post(uri"$nuDesignerHttpAddress/api/processes")

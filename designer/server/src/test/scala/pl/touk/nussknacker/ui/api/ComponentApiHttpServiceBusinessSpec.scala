@@ -16,7 +16,7 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLogging
 }
 import pl.touk.nussknacker.tests.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Default
+import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager, WithSimplifiedDesignerConfig}
 
@@ -113,7 +113,7 @@ class ComponentApiHttpServiceBusinessSpec
                  |  "name": "$scenarioName",
                  |  "nodesUsagesData": [ { "nodeId": "source", "type": "ScenarioUsageData" } ],
                  |  "isFragment": false,
-                 |  "processCategory": "${Default.stringify}",
+                 |  "processCategory": "${Category1.stringify}",
                  |  "modificationDate": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{6}Z$$",
                  |  "modifiedAt": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{6}Z$$",
                  |  "modifiedBy": "admin",

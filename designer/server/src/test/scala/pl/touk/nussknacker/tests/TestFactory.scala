@@ -81,7 +81,7 @@ object TestFactory {
         ScenarioParametersWithEngineSetupErrors(
           ScenarioParameters(
             ProcessingMode.UnboundedStream,
-            TestCategory.Default.stringify,
+            TestCategory.Category1.stringify,
             EngineSetupName("Flink")
           ),
           List.empty
@@ -186,7 +186,7 @@ object TestFactory {
     LoggedUser(
       id,
       username,
-      Map(TestCategory.Default.stringify -> permissions.toSet),
+      Map(TestCategory.Category1.stringify -> permissions.toSet),
       globalPermissions = List("CustomFixedPermission")
     )
 
