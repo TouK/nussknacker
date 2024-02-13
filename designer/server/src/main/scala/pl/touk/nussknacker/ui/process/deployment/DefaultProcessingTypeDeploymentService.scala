@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   ProcessActionId,
   ProcessingTypeDeploymentService
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType}
 
 import scala.concurrent.{ExecutionContext, Future}
 
