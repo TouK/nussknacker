@@ -21,11 +21,6 @@ final case class FlinkConfig(
     jobConfigsCacheSize: Int = 1000,
 )
 
-object FlinkConfig {
-  // Keep it synchronize with FlinkConfig
-  val RestUrlPath = "restUrl"
-}
-
 final case class FlinkWaitForDuringDeployFinishedConfig(
     enabled: Boolean,
     maxChecks: Option[Int],
