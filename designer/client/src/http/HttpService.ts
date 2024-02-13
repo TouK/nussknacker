@@ -586,8 +586,8 @@ class HttpService {
 
     //This method will return *FAILED* promise if save/validation fails with e.g. 400 (fatal validation error)
 
-    createProcess(processName: string, processCategory: string, isFragment = false) {
-        const promise = api.post(`/processes/${encodeURIComponent(processName)}/${processCategory}?isFragment=${isFragment}`);
+    createProcess(data: { name: string; category: string; isFragment: boolean; processingMode: string; engineSetupName: string }) {
+        const promise = api.post(`/processes`, data);
         promise.catch((error) => {
             if (error?.response?.status != 400)
                 this.#addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true);

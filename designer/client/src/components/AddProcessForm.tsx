@@ -38,7 +38,7 @@ export function AddProcessForm({ value, onChange, validationErrors, allCombinati
         >
             <NodeTable>
                 <FormControl>
-                    <FormLabel>{t("addProcessForm.label.processingMode", "Processing mode")}</FormLabel>
+                    <FormLabel required>{t("addProcessForm.label.processingMode", "Processing mode")}</FormLabel>
                     <span className="node-value">
                         <FormGroup
                             row
@@ -75,6 +75,7 @@ export function AddProcessForm({ value, onChange, validationErrors, allCombinati
                                 active={value.processingMode === ProcessingMode.batch}
                             />
                         </FormGroup>
+                        <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processingMode")} />
                         <Typography component={"div"} variant={"overline"} mt={1}>
                             <Trans i18nKey={"addProcessForm.helperText.processingMode"}>
                                 Processing mode defines how scenario deployed on an engine interacts with the outside world. Click here to
@@ -91,7 +92,7 @@ export function AddProcessForm({ value, onChange, validationErrors, allCombinati
                     </span>
                 </FormControl>
                 <FormControl>
-                    <FormLabel>{t("addProcessForm.label.name", "Name")}</FormLabel>
+                    <FormLabel required>{t("addProcessForm.label.name", "Name")}</FormLabel>
                     <div className="node-value">
                         <NodeInput
                             type="text"
@@ -103,7 +104,7 @@ export function AddProcessForm({ value, onChange, validationErrors, allCombinati
                     </div>
                 </FormControl>
                 <FormControl>
-                    <FormLabel>{t("addProcessForm.label.category", "Category")}</FormLabel>
+                    <FormLabel required>{t("addProcessForm.label.category", "Category")}</FormLabel>
                     <div className="node-value">
                         <SelectNodeWithFocus
                             id="processCategory"
@@ -121,6 +122,8 @@ export function AddProcessForm({ value, onChange, validationErrors, allCombinati
                                 ))}
                             </>
                         </SelectNodeWithFocus>
+                        <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processCategory")} />
+
                         <Typography component={"div"} variant={"overline"} mt={1}>
                             <Trans i18nKey={"addProcessForm.helperText.category"}>
                                 To read more about categories,
@@ -137,7 +140,7 @@ export function AddProcessForm({ value, onChange, validationErrors, allCombinati
                     </div>
                 </FormControl>
                 <FormControl>
-                    <FormLabel>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
+                    <FormLabel required>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
                     <div className="node-value">
                         <SelectNodeWithFocus
                             id="processEngine"
