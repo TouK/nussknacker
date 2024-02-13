@@ -83,7 +83,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       `ModelConfig` or returns the original name if the value is not configured
   * [#5526](https://github.com/TouK/nussknacker/pull/5526) Added namespacing of Kafka consumer group id in both engines.
     If you have namespaces configured, the consumer group id will be prefixed with `namespace` key from model config - 
-    in that case a consumer group migration may be necessary for example to retain consumer offsets. 
+    in that case a consumer group migration may be necessary for example to retain consumer offsets. For gradual 
+    migration, this behaviour can be disabled by setting `useNamingStrategyInConsumerGroups = false` in `KafkaConfig`.
+    Note that the `useNamingStrategyInConsumerGroups` flag is intended to be removed in the future.
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:

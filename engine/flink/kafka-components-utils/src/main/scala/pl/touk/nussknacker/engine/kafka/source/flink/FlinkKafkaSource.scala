@@ -130,7 +130,11 @@ class FlinkKafkaSource[T](
 
   private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
     val baseName = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext))
-    namingStrategy.prepareName(baseName)
+    if (kafkaConfig.useNamingStrategyForConsumerGroupId) {
+      namingStrategy.prepareName(baseName)
+    } else {
+      baseName
+    }
   }
 
 }
