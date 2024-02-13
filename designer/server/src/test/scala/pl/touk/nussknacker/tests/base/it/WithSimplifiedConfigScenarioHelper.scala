@@ -24,11 +24,11 @@ trait WithSimplifiedConfigScenarioHelper {
   }
 
   def createDeployedExampleScenario(scenarioName: ProcessName): ProcessId = {
-    rawScenarioHelper.createDeployedExampleScenario(scenarioName, usedCategory.stringify)
+    rawScenarioHelper.createDeployedExampleScenario(scenarioName, usedCategory.stringify, isFragment = false)
   }
 
   def createDeployedCanceledExampleScenario(scenarioName: ProcessName): ProcessId = {
-    rawScenarioHelper.createDeployedCanceledExampleScenario(scenarioName, usedCategory.stringify)
+    rawScenarioHelper.createDeployedCanceledExampleScenario(scenarioName, usedCategory.stringify, isFragment = false)
   }
 
 }

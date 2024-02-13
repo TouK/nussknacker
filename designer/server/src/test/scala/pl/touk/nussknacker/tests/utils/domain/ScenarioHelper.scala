@@ -1,16 +1,21 @@
 package pl.touk.nussknacker.tests.utils.domain
 
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
+import pl.touk.nussknacker.engine.MetaDataInitializer
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.utils.scalas.FutureExtensions
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ValueWithPermission}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
@@ -35,17 +40,32 @@ private[tests] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implic
   private val futureFetchingScenarioRepository: DBFetchingProcessRepository[Future] =
     new DBFetchingProcessRepository[Future](dbRef, actionRepository) with BasicRepository
 
+  def createEmptyScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
+    val newProcessPreparer: NewProcessPreparer = new NewProcessPreparer(
+      MetaDataInitializer(
+        StreamMetaData.typeName,
+        Map(StreamMetaData.parallelismName -> "1", StreamMetaData.spillStateToDiskName -> "true")
+      ),
+      FlinkStreamingPropertiesConfig.properties
+    )
+    createSavedScenario(
+      newProcessPreparer.prepareEmptyProcess(scenarioName, isFragment = false),
+      category,
+      isFragment
+    )
+  }
+
   def createSavedScenario(
       scenario: CanonicalProcess,
       category: String,
-      isFragment: Boolean = false
+      isFragment: Boolean
   ): ProcessId = {
     saveAndGetId(scenario, category, isFragment).result()
   }
 
-  def createDeployedExampleScenario(scenarioName: ProcessName, category: String): ProcessId = {
+  def createDeployedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     (for {
-      id <- prepareValidScenario(scenarioName, category)
+      id <- prepareValidScenario(scenarioName, category, isFragment)
       _  <- prepareDeploy(id, processingTypeBy(category))
     } yield id).result()
   }
@@ -53,7 +73,7 @@ private[tests] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implic
   def createDeployedScenario(
       scenario: CanonicalProcess,
       category: String,
-      isFragment: Boolean = false
+      isFragment: Boolean
   ): ProcessId = {
     (for {
       id <- Future(createSavedScenario(scenario, category, isFragment))
@@ -61,11 +81,27 @@ private[tests] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implic
     } yield id).result()
   }
 
-  def createDeployedCanceledExampleScenario(scenarioName: ProcessName, category: String): ProcessId = {
+  def createDeployedCanceledExampleScenario(
+      scenarioName: ProcessName,
+      category: String,
+      isFragment: Boolean
+  ): ProcessId = {
     (for {
-      id <- prepareValidScenario(scenarioName, category)
+      id <- prepareValidScenario(scenarioName, category, isFragment)
       _  <- prepareDeploy(id, processingTypeBy(category))
       _  <- prepareCancel(id)
+    } yield id).result()
+  }
+
+  def createArchivedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
+    (for {
+      id <- prepareValidScenario(scenarioName, category, isFragment)
+      _ <- dbioRunner.runInTransaction(
+        DBIOAction.seq(
+          writeScenarioRepository.archive(processId = ProcessIdWithName(id, scenarioName), isArchived = true),
+          actionRepository.markProcessAsArchived(processId = id, VersionId(1))
+        )
+      )
     } yield id).result()
   }
 
@@ -94,10 +130,11 @@ private[tests] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implic
   private def prepareValidScenario(
       scenarioName: ProcessName,
       category: String,
+      isFragment: Boolean
   ): Future[ProcessId] = {
     val validScenario = ProcessTestData.sampleScenario
     val withNameSet   = validScenario.withProcessName(scenarioName)
-    saveAndGetId(withNameSet, category, isFragment = false)
+    saveAndGetId(withNameSet, category, isFragment)
   }
 
   private def saveAndGetId(

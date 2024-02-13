@@ -14,6 +14,14 @@ trait WithRichConfigScenarioHelper {
 
   private val rawScenarioHelper = new ScenarioHelper(testDbRef, designerConfig)
 
+  def createEmptyScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {
+    rawScenarioHelper.createEmptyScenario(scenarioName, category.stringify, isFragment = false)
+  }
+
+  def createEmptyFragment(fragmentName: ProcessName, category: TestCategory): ProcessId = {
+    rawScenarioHelper.createEmptyScenario(fragmentName, category.stringify, isFragment = false)
+  }
+
   def createSavedScenario(scenario: CanonicalProcess, category: TestCategory): ProcessId = {
     rawScenarioHelper.createSavedScenario(scenario, category.stringify, isFragment = false)
   }
@@ -23,11 +31,19 @@ trait WithRichConfigScenarioHelper {
   }
 
   def createDeployedExampleScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {
-    rawScenarioHelper.createDeployedExampleScenario(scenarioName, category.stringify)
+    rawScenarioHelper.createDeployedExampleScenario(scenarioName, category.stringify, isFragment = false)
+  }
+
+  def createArchivedExampleScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {
+    rawScenarioHelper.createArchivedExampleScenario(scenarioName, category.stringify, isFragment = false)
+  }
+
+  def createArchivedExampleFragment(fragmentName: ProcessName, category: TestCategory): ProcessId = {
+    rawScenarioHelper.createDeployedExampleScenario(fragmentName, category.stringify, isFragment = true)
   }
 
   def createDeployedCanceledExampleScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {
-    rawScenarioHelper.createDeployedCanceledExampleScenario(scenarioName, category.stringify)
+    rawScenarioHelper.createDeployedCanceledExampleScenario(scenarioName, category.stringify, isFragment = false)
   }
 
 }
