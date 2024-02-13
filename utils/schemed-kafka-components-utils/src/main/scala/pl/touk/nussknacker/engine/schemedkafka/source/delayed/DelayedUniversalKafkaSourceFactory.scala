@@ -94,8 +94,8 @@ class DelayedUniversalKafkaSourceFactory(
       ).map(_._2).toOption
 
       NextParameters(timestampFieldParameter(typingResultValidationResult) :: paramsDeterminedAfterSchema)
-    case TransformationStep((topicParamName, _) :: Nil, _) =>
-      NextParameters(parameters = FallBackTimestampFieldParameter :: paramsDeterminedAfterSchema)
+    case TransformationStep((topicParamName, _) :: (schemaVersionParamName, _) :: Nil, _) =>
+      NextParameters(parameters = fallbackTimestampFieldParameter :: paramsDeterminedAfterSchema)
   }
 
 }
