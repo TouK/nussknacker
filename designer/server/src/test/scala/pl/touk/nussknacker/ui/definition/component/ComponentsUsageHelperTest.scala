@@ -182,10 +182,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   private val processingTypeAndInfoToNonFragmentDesignerWideId =
-    (nonFragmentComponents(DesignerWideComponentId.default("Streaming", _)).map { component =>
-      ("Streaming", component.id) -> component.designerWideId
-    } ::: nonFragmentComponents(DesignerWideComponentId.default("Streaming2", _)).map { component =>
-      ("Streaming2", component.id) -> component.designerWideId
+    (nonFragmentComponents(DesignerWideComponentId.default("streaming", _)).map { component =>
+      ("streaming", component.id) -> component.designerWideId
+    } ::: nonFragmentComponents(DesignerWideComponentId.default("streaming2", _)).map { component =>
+      ("streaming2", component.id) -> component.designerWideId
     }).toMap
 
   test("should compute components usage count") {
@@ -397,10 +397,10 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   private def sid(componentType: ComponentType, id: String) =
-    DesignerWideComponentId.default("Streaming", ComponentId(componentType, id))
+    DesignerWideComponentId.default("streaming", ComponentId(componentType, id))
 
   private def fid(componentType: ComponentType, id: String) =
-    DesignerWideComponentId.default("Streaming2", ComponentId(componentType, id))
+    DesignerWideComponentId.default("streaming2", ComponentId(componentType, id))
 
   private def bid(componentId: ComponentId) = DesignerWideComponentId.forBuiltInComponent(componentId)
 

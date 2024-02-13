@@ -20,8 +20,6 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.tests.ProcessTestData
 import pl.touk.nussknacker.tests.TestFactory.withPermissions
 import pl.touk.nussknacker.tests.base.it.NuResourcesTest
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.tests.mock.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
@@ -37,10 +35,10 @@ class DefinitionResourcesSpec
     with Matchers
     with PatientScalaFutures
     with EitherValuesDetailedMessage
+    with OptionValues
     with BeforeAndAfterEach
     with BeforeAndAfterAll
-    with NuResourcesTest
-    with OptionValues {
+    with NuResourcesTest {
 
   private val definitionResources = new DefinitionResources(
     definitionsServices = testProcessingTypeDataProvider.mapValues { processingTypeData =>
@@ -277,8 +275,8 @@ class DefinitionResourcesSpec
     }
   }
 
-  private def getProcessDefinitionData(processingType: TestProcessingType = Streaming): RouteTestResult = {
-    getProcessDefinitionDataUsingRawProcessingType(processingType.stringify)
+  private def getProcessDefinitionData(processingType: String = "streaming"): RouteTestResult = {
+    getProcessDefinitionDataUsingRawProcessingType(processingType)
   }
 
   private def getProcessDefinitionDataUsingRawProcessingType(processingType: String) = {

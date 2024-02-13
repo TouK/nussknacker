@@ -74,7 +74,7 @@ class DeploymentServiceSpec
         new ProcessingTypeDataState[DeploymentManager, Nothing] {
 
           override def all: Map[ProcessingType, ValueWithRestriction[DeploymentManager]] = Map(
-            "Streaming" -> ValueWithRestriction.anyUser(deploymentManager)
+            "streaming" -> ValueWithRestriction.anyUser(deploymentManager)
           )
 
           override def getCombined: () => Nothing = noCombinedDataFun
@@ -93,9 +93,9 @@ class DeploymentServiceSpec
   deploymentManager = new MockDeploymentManager(
     SimpleStateStatus.Running,
     new DefaultProcessingTypeDeploymentService(
-      "Streaming",
+      "streaming",
       deploymentService,
-      AllDeployedScenarioService(testDbRef, "Streaming")
+      AllDeployedScenarioService(testDbRef, "streaming")
     )
   )
 
@@ -152,7 +152,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, actionId)    = prepareDeployedProcess(processName).dbioActionValues
 
-    deploymentService.markActionExecutionFinished("Streaming", actionId).futureValue
+    deploymentService.markActionExecutionFinished("streaming", actionId).futureValue
     eventually {
       val action =
         actionRepository.getFinishedProcessActions(processId.id, Some(Set(ProcessActionType.Deploy))).dbioActionValues
@@ -827,10 +827,10 @@ class DeploymentServiceSpec
       .source("source", ProcessTestData.existingSourceFactory)
       .emptySink("sink", ProcessTestData.existingSinkFactory)
     val action = CreateProcessAction(
-      processName,
-      "Category1",
-      canonicalProcess,
-      "Streaming",
+      processName = processName,
+      category = "Category1",
+      canonicalProcess = canonicalProcess,
+      processingType = "streaming",
       isFragment = false,
       forwardedUserName = None
     )
@@ -843,10 +843,10 @@ class DeploymentServiceSpec
       .emptySink("end", "end")
 
     val action = CreateProcessAction(
-      processName,
-      "Category1",
-      canonicalProcess,
-      "Streaming",
+      processName = processName,
+      category = "Category1",
+      canonicalProcess = canonicalProcess,
+      processingType = "streaming",
       isFragment = true,
       forwardedUserName = None
     )

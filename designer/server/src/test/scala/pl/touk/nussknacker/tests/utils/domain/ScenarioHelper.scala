@@ -60,14 +60,14 @@ private[tests] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implic
       category: String,
       isFragment: Boolean
   ): ProcessId = {
-    saveAndGetId(scenario, category, isFragment).result()
+    saveAndGetId(scenario, category, isFragment).waitForResult()
   }
 
   def createDeployedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
       _  <- prepareDeploy(id, processingTypeBy(category))
-    } yield id).result()
+    } yield id).waitForResult()
   }
 
   def createDeployedScenario(
@@ -78,7 +78,7 @@ private[tests] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implic
     (for {
       id <- Future(createSavedScenario(scenario, category, isFragment))
       _  <- prepareDeploy(id, processingTypeBy(category))
-    } yield id).result()
+    } yield id).waitForResult()
   }
 
   def createDeployedCanceledExampleScenario(
@@ -90,7 +90,7 @@ private[tests] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implic
       id <- prepareValidScenario(scenarioName, category, isFragment)
       _  <- prepareDeploy(id, processingTypeBy(category))
       _  <- prepareCancel(id)
-    } yield id).result()
+    } yield id).waitForResult()
   }
 
   def createArchivedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
@@ -102,7 +102,7 @@ private[tests] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implic
           actionRepository.markProcessAsArchived(processId = id, VersionId(1))
         )
       )
-    } yield id).result()
+    } yield id).waitForResult()
   }
 
   private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {

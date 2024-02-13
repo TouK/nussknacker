@@ -21,8 +21,6 @@ import pl.touk.nussknacker.tests.base.it.NuResourcesTest
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils
 
-import scala.language.higherKinds
-
 class ProcessesExportImportResourcesSpec
     extends AnyFunSuite
     with ScalatestRouteTest

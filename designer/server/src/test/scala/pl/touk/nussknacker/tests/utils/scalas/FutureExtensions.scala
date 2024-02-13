@@ -7,7 +7,7 @@ trait FutureExtensions {
 
   implicit class WaitFuture[T](f: Future[T]) {
 
-    def result(implicit timeout: FiniteDuration = 1 second): T = Await.result(f, timeout)
+    def waitForResult(implicit timeout: FiniteDuration = 1 second): T = Await.result(f, timeout)
   }
 
 }
