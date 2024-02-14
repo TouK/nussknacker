@@ -43,7 +43,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
   private val components = List(
     ComponentDefinition(
       "stringSource",
-      SourceFactory.noParam[String](new pl.touk.nussknacker.engine.api.process.Source {})
+      SourceFactory.noParamUnboundedStreamFactory[String](new pl.touk.nussknacker.engine.api.process.Source {})
     ),
     ComponentDefinition("service", new SomeService),
   )

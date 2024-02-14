@@ -30,10 +30,7 @@ export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetai
                 ...state,
                 [nodeId]: {
                     ...state[nodeId],
-                    validationErrors: validationData.validationErrors,
-                    parameters: validationData.parameters,
-                    expressionType: validationData.expressionType,
-                    validationPerformed: validationData.validationPerformed,
+                    ...validationData,
                 },
             };
         }

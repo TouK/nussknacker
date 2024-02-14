@@ -5,7 +5,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -28,7 +28,7 @@ object TestFlinkProcessCompilerDataFactory {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.objectNaming,
+      modelData.namingStrategy,
       ComponentUseCase.TestRuntime
     ) {
 

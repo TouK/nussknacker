@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -87,7 +87,7 @@ class UnionTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
 
 }
 
-object TypedSourceFactory extends SourceFactory {
+object TypedSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
   @MethodToInvoke
   def invoke(@ParamName("value") value: LazyParameter[AnyRef]): Source =

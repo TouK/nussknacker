@@ -22,7 +22,8 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   private def modelData: ModelData = ModelData(
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
     TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-    DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
+    DesignerWideComponentId.default(TestProcessingTypes.Streaming, _),
+    workingDirectoryOpt = None
   )
 
   private lazy val modelDataConfig = modelData.modelConfig

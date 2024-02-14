@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.sample.source
 import cats.data.ValidatedNel
 import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -15,7 +16,10 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
-object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
+object GenericSourceWithCustomVariablesSample
+    extends SourceFactory
+    with SingleInputGenericNodeTransformation[Source]
+    with UnboundedStreamComponent {
 
   private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 

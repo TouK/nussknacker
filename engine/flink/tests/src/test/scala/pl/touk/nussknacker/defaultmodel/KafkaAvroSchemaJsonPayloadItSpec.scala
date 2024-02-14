@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVer
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -76,13 +75,6 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
       result.timestamp shouldBe timeAgo
       result.message() shouldEqual parseJson(givenMatchingJsonSchemedObj)
     }
-  }
-
-  private def parseJson(str: String) = io.circe.parser.parse(str).toOption.get
-
-  private def sendAsJson(jsonString: String, topic: String, timestamp: java.lang.Long = null) = {
-    val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
-    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
   }
 
 }

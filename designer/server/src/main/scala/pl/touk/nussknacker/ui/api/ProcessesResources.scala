@@ -15,10 +15,10 @@ import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService.{
-  CreateProcessCommand,
+  CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
-  UpdateProcessCommand
+  UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
@@ -142,7 +142,7 @@ class ProcessesResources(
                 .withListenerNotifySideEffect(_ => OnDeleted(processId.id))
             }
           } ~ (put & canWrite(processId)) {
-            entity(as[UpdateProcessCommand]) { updateCommand =>
+            entity(as[UpdateScenarioCommand]) { updateCommand =>
               canOverrideUsername(processId.id, updateCommand.forwardedUserName)(ec, user) {
                 complete {
                   processService
@@ -192,6 +192,25 @@ class ProcessesResources(
               )
             }
         }
+      } ~ path("processes") {
+        post {
+          entity(as[CreateScenarioCommand]) { createCommand =>
+            complete {
+              processService
+                .createProcess(createCommand)
+                // Currently, we throw error but when we switch to Tapir, we would probably handle such a request validation errors more type-safety
+                .map(_.valueOr(err => throw err))
+                .withListenerNotifySideEffect(response => OnSaved(response.id, response.versionId))
+                .map(response =>
+                  HttpResponse(
+                    status = StatusCodes.Created,
+                    entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces)
+                  )
+                )
+            }
+          }
+        }
+        // TODO: This is the legacy API, it should be removed in 1.15
       } ~ path("processes" / ProcessNameSegment / Segment) { (processName, category) =>
         authorize(user.can(category, Permission.Write)) {
           optionalHeaderValue(RemoteUserName.extractFromHeader) { remoteUserName =>
@@ -201,8 +220,10 @@ class ProcessesResources(
                   complete {
                     processService
                       .createProcess(
-                        CreateProcessCommand(processName, category, isFragment, remoteUserName)
+                        CreateScenarioCommand(processName, Some(category), None, None, isFragment, remoteUserName)
                       )
+                      // Currently, we throw error but when we switch to Tapir, we would probably handle such a request validation errors more type-safety
+                      .map(_.valueOr(err => throw err))
                       .withListenerNotifySideEffect(response => OnSaved(response.id, response.versionId))
                       .map(response =>
                         HttpResponse(

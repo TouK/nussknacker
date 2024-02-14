@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 
 import scala.jdk.CollectionConverters._
 
@@ -100,7 +101,8 @@ class SingleGenericContextTransformationWrapper[T, ST](val javaDef: JavaGenericS
 class SourceFactoryGenericContextTransformationWrapper[ST](val javaDef: JavaSourceFactoryGenericTransformation[ST])
     extends SourceFactory
     with SingleInputGenericNodeTransformation[Source]
-    with GenericContextTransformationWrapper[Source, ValidationContext, DefinedSingleParameter, ST] {
+    with GenericContextTransformationWrapper[Source, ValidationContext, DefinedSingleParameter, ST]
+    with UnboundedStreamComponent {
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId

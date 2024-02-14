@@ -44,8 +44,8 @@ class DefinitionResourcesSpec
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val definitionResources = new DefinitionResources(
-    serviceProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
-      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.modelData)
+    definitionsServices = testProcessingTypeDataProvider.mapValues { processingTypeData =>
+      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.designerModelData.modelData)
 
       (
         DefinitionsService(

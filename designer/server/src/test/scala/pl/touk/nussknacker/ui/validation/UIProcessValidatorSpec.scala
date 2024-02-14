@@ -1806,7 +1806,7 @@ private object UIProcessValidatorSpec {
       execConfig: Config
   ): UIProcessValidator = {
     val modelDefinition = ModelDefinitionBuilder.empty
-      .withSource(sourceTypeName)
+      .withUnboundedStreamSource(sourceTypeName)
       .withSink(sinkTypeName)
       .build
 

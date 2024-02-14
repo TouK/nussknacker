@@ -36,7 +36,9 @@ private object testComponents {
   ): ComponentDefinition = {
     ComponentDefinition(
       TestScenarioRunner.testDataSource,
-      SourceFactory.noParamFromClassTag[T](new CollectionSource[T](data, timestampAssigner, Typed.apply[T]))
+      SourceFactory.noParamUnboundedStreamFromClassTag[T](
+        new CollectionSource[T](data, timestampAssigner, Typed.apply[T])
+      )
     )
   }
 
@@ -44,7 +46,9 @@ private object testComponents {
     implicit val typeInf: TypeInformation[Any] = TypeInformation.of(classOf[Any])
     ComponentDefinition(
       TestScenarioRunner.noopSource,
-      SourceFactory.noParamFromClassTag[Any](new CollectionSource[Any](List.empty, None, typing.Unknown))
+      SourceFactory.noParamUnboundedStreamFromClassTag[Any](
+        new CollectionSource[Any](List.empty, None, typing.Unknown)
+      )
     )
   }
 

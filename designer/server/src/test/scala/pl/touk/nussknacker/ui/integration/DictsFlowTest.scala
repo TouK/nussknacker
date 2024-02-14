@@ -16,6 +16,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
@@ -179,15 +180,9 @@ class DictsFlowTest
     val expressionUsingDictWithKey   = s"#DICT.$Key"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
 
-    val response1 = httpClient.send(
-      quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processes/${process.name}/Category1?isFragment=false")
-        .auth
-        .basic("admin", "admin")
-    )
-    response1.code shouldEqual StatusCode.Created
+    createEmptyScenario(process.name)
 
-    val response2 = httpClient.send(
+    val exportResponse = httpClient.send(
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processesExport/${process.name}")
         .contentType(MediaType.ApplicationJson)
@@ -195,8 +190,8 @@ class DictsFlowTest
         .auth
         .basic("admin", "admin")
     )
-    response2.code shouldEqual StatusCode.Ok
-    val returnedEndResultExpression = extractVariableExpressionFromProcessExportResponse(response2.bodyAsJson)
+    exportResponse.code shouldEqual StatusCode.Ok
+    val returnedEndResultExpression = extractVariableExpressionFromProcessExportResponse(exportResponse.bodyAsJson)
     returnedEndResultExpression shouldEqual expressionUsingDictWithKey
   }
 
@@ -271,9 +266,19 @@ class DictsFlowTest
   }
 
   private def createEmptyScenario(processName: ProcessName) = {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(TestCategories.Category1),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
     val response = httpClient.send(
       quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processes/$processName/Category1?isFragment=false")
+        .post(uri"$nuDesignerHttpAddress/api/processes")
+        .contentType(MediaType.ApplicationJson)
+        .body(command.asJson.spaces2)
         .auth
         .basic("admin", "admin")
     )

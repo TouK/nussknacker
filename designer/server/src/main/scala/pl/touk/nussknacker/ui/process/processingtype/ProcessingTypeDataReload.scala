@@ -1,7 +1,8 @@
-package pl.touk.nussknacker.ui.process.processingtypedata
+package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ProcessingTypeData}
+import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
@@ -28,7 +29,7 @@ class ProcessingTypeDataReload(
       new Object
     )
 
-  override private[processingtypedata] def state
+  override private[processingtype] def state
       : ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     synchronized {
       stateValue
@@ -42,7 +43,13 @@ class ProcessingTypeDataReload(
         s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted
             .mkString(", ")}] and identity [${beforeReload.stateIdentity}]"
       )
-      beforeReload.all.values.foreach(_.value.close())
+      beforeReload.all.values.foreach(
+        _.valueWithAllowedAccess(Permission.Read)(NussknackerInternalUser.instance)
+          .getOrElse(
+            throw new IllegalStateException("NussknackerInternalUser without read access to ProcessingTypeData")
+          )
+          .close()
+      )
       logger.info("Reloading processing type data...")
       stateValue = loadMethod()
       logger.info(

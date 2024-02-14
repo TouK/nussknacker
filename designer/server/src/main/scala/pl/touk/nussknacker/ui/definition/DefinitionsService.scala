@@ -8,12 +8,13 @@ import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentD
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioPropertyConfig}
 import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -104,10 +105,10 @@ object DefinitionsService {
       fragmentRepository: FragmentRepository
   )(implicit ec: ExecutionContext) =
     new DefinitionsService(
-      processingTypeData.modelData,
-      processingTypeData.staticDefinitionForDynamicComponents,
-      processingTypeData.scenarioPropertiesConfig,
-      processingTypeData.deploymentManager,
+      processingTypeData.designerModelData.modelData,
+      processingTypeData.designerModelData.staticDefinitionForDynamicComponents,
+      processingTypeData.deploymentData.scenarioPropertiesConfig,
+      processingTypeData.deploymentData.validDeploymentManagerOrStub,
       alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
       fragmentRepository

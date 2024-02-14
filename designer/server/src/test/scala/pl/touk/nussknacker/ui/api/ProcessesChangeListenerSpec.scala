@@ -29,17 +29,16 @@ class ProcessesChangeListenerSpec
 
   import TestCategories._
 
-  private val routeWithAllPermissions   = withAllPermissions(processesRoute)
-  private val routeWithAdminPermissions = withAdminPermissions(processesRoute)
-  implicit val loggedUser: LoggedUser   = LoggedUser("1", "lu", testCategory)
+  private val routeWithAllPermissions = withAllPermissions(processesRoute)
+  implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testCategory)
 
   private val processName = ProcessTestData.sampleScenario.name
 
   test("listen to process create") {
-    Post(
-      s"/processes/$processName/$Category1?isFragment=false"
-    ) ~> processesRouteWithAllPermissions ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
+    createProcessRequest(processName) { _ =>
+      eventually {
+        processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
+      }
     }
   }
 

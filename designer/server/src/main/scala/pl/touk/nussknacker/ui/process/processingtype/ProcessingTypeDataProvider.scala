@@ -1,10 +1,9 @@
-package pl.touk.nussknacker.ui.process.processingtypedata
+package pl.touk.nussknacker.ui.process.processingtype
 
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.process.processingtypedata.ValueAccessPermission.{AnyUser, UserWithAccessRightsToCategory}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.util.concurrent.atomic.AtomicReference
@@ -47,18 +46,14 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
     (k, v)
   }
 
-  private def allAuthorized(implicit user: LoggedUser): Map[ProcessingType, Option[Data]] = state.all.map {
-    case (k, ValueWithPermission(v, AnyUser)) => (k, Some(v))
-    case (k, ValueWithPermission(v, UserWithAccessRightsToCategory(category))) if user.can(category, Permission.Read) =>
-      (k, Some(v))
-    case (k, _) => (k, None)
-  }
+  private def allAuthorized(implicit user: LoggedUser): Map[ProcessingType, Option[Data]] =
+    state.all.mapValuesNow(_.valueWithAllowedAccess(Permission.Read))
 
   // TODO: We should return a generic type that can produce views for users with access rights to certain categories only.
   //       Thanks to that we will be sure that no sensitive data leak
   final def combined: CombinedData = state.getCombined()
 
-  private[processingtypedata] def state: ProcessingTypeDataState[Data, CombinedData]
+  private[processingtype] def state: ProcessingTypeDataState[Data, CombinedData]
 
   final def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] =
     new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CombinedData](this, _.mapValues(fun))
@@ -68,14 +63,14 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
 }
 
-private[processingtypedata] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
+private[processingtype] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
     observed: ProcessingTypeDataProvider[T, C],
     transformState: ProcessingTypeDataState[T, C] => ProcessingTypeDataState[TT, CC]
 ) extends ProcessingTypeDataProvider[TT, CC] {
 
   private val stateValue = new AtomicReference(transformState(observed.state))
 
-  override private[processingtypedata] def state: ProcessingTypeDataState[TT, CC] = {
+  override private[processingtype] def state: ProcessingTypeDataState[TT, CC] = {
     stateValue.updateAndGet { currentValue =>
       val currentObservedState = observed.state
       if (currentObservedState.stateIdentity != currentValue.stateIdentity) {
@@ -97,16 +92,16 @@ object ProcessingTypeDataProvider {
 
   def apply[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] =
     new ProcessingTypeDataProvider[T, C] {
-      override private[processingtypedata] def state: ProcessingTypeDataState[T, C] = stateValue
+      override private[processingtype] def state: ProcessingTypeDataState[T, C] = stateValue
     }
 
   def apply[T, C](
-      allValues: Map[ProcessingType, ValueWithPermission[T]],
+      allValues: Map[ProcessingType, ValueWithRestriction[T]],
       combinedValue: C
   ): ProcessingTypeDataProvider[T, C] =
     new ProcessingTypeDataProvider[T, C] {
 
-      override private[processingtypedata] val state: ProcessingTypeDataState[T, C] = ProcessingTypeDataState(
+      override private[processingtype] val state: ProcessingTypeDataState[T, C] = ProcessingTypeDataState(
         allValues,
         () => combinedValue,
         allValues
@@ -115,11 +110,11 @@ object ProcessingTypeDataProvider {
     }
 
   def withEmptyCombinedData[T](
-      allValues: Map[ProcessingType, ValueWithPermission[T]]
+      allValues: Map[ProcessingType, ValueWithRestriction[T]]
   ): ProcessingTypeDataProvider[T, Nothing] =
     new ProcessingTypeDataProvider[T, Nothing] {
 
-      override private[processingtypedata] val state: ProcessingTypeDataState[T, Nothing] = ProcessingTypeDataState(
+      override private[processingtype] val state: ProcessingTypeDataState[T, Nothing] = ProcessingTypeDataState(
         allValues,
         noCombinedDataFun,
         allValues
@@ -131,7 +126,7 @@ object ProcessingTypeDataProvider {
 
 // It keeps a state (Data and CombinedData) that is cached and restricted by ProcessingTypeDataProvider
 trait ProcessingTypeDataState[+Data, +CombinedData] {
-  def all: Map[ProcessingType, ValueWithPermission[Data]]
+  def all: Map[ProcessingType, ValueWithRestriction[Data]]
 
   // It returns function because we want to sometimes throw Exception instead of return value and we want to
   // transform values without touch combined part
@@ -154,33 +149,14 @@ trait ProcessingTypeDataState[+Data, +CombinedData] {
 object ProcessingTypeDataState {
 
   def apply[Data, CombinedData](
-      allValues: Map[ProcessingType, ValueWithPermission[Data]],
+      allValues: Map[ProcessingType, ValueWithRestriction[Data]],
       getCombinedValue: () => CombinedData,
       stateIdentityValue: Any
   ): ProcessingTypeDataState[Data, CombinedData] =
     new ProcessingTypeDataState[Data, CombinedData] {
-      override def all: Map[ProcessingType, ValueWithPermission[Data]] = allValues
-      override def getCombined: () => CombinedData                     = getCombinedValue
-      override def stateIdentity: Any                                  = stateIdentityValue
+      override def all: Map[ProcessingType, ValueWithRestriction[Data]] = allValues
+      override def getCombined: () => CombinedData                      = getCombinedValue
+      override def stateIdentity: Any                                   = stateIdentityValue
     }
 
-}
-
-final case class ValueWithPermission[+T](value: T, permission: ValueAccessPermission) {
-  def map[TT](fun: T => TT): ValueWithPermission[TT] = copy(value = fun(value))
-}
-
-object ValueWithPermission {
-  def anyUser[T](value: T): ValueWithPermission[T] = ValueWithPermission(value, AnyUser)
-  def userWithAccessRightsToCategory[T](value: T, category: String): ValueWithPermission[T] =
-    ValueWithPermission(value, UserWithAccessRightsToCategory(category))
-}
-
-sealed trait ValueAccessPermission
-
-object ValueAccessPermission {
-  // This permission is mainly to provide easier testing where we want to simulate simple setup without
-  // `ProcessingTypeData` reload, without category access control.
-  case object AnyUser                                               extends ValueAccessPermission
-  final case class UserWithAccessRightsToCategory(category: String) extends ValueAccessPermission
 }

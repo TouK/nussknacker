@@ -6,9 +6,8 @@ import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinition,
   ModelDefinitionExtractor,
@@ -26,9 +25,9 @@ import pl.touk.nussknacker.engine.modelconfig.{
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 import java.net.URL
+import java.nio.file.Path
 
 object ModelData extends LazyLogging {
 
@@ -43,11 +42,12 @@ object ModelData extends LazyLogging {
   def apply(
       processingTypeConfig: ProcessingTypeConfig,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      determineDesignerWideId: ComponentId => DesignerWideComponentId
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      workingDirectoryOpt: Option[Path]
   ): ModelData = {
     ModelData(
       processingTypeConfig.modelConfig,
-      ModelClassLoader(processingTypeConfig.classPath),
+      ModelClassLoader(processingTypeConfig.classPath, workingDirectoryOpt),
       Some(processingTypeConfig.category),
       determineDesignerWideId,
       additionalConfigsFromProvider
@@ -91,7 +91,7 @@ object ModelData extends LazyLogging {
   def duringExecution(inputConfig: Config): ModelData = {
     ClassLoaderModelData(
       _ => InputConfigDuringExecution(inputConfig),
-      ModelClassLoader(Nil),
+      ModelClassLoader(Nil, None),
       None,
       id => DesignerWideComponentId(id.toString),
       Map.empty
@@ -137,7 +137,7 @@ case class ClassLoaderModelData private (
     }
   }
 
-  override def objectNaming: ObjectNaming = ObjectNamingProvider(modelClassLoader.classLoader)
+  override val namingStrategy: NamingStrategy = NamingStrategy.fromConfig(modelConfig)
 
   override val extractModelDefinitionFun: ExtractDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category)
 
@@ -191,7 +191,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
     val modelDefinitions = withThisAsContextClassLoader {
       extractModelDefinitionFun(
         modelClassLoader.classLoader,
-        ProcessObjectDependencies(modelConfig, objectNaming),
+        ProcessObjectDependencies(modelConfig, namingStrategy),
         determineDesignerWideId,
         additionalConfigsFromProvider
       )

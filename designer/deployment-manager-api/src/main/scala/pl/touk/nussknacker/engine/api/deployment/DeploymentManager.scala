@@ -14,13 +14,14 @@ import scala.concurrent.Future
 trait DeploymentManagerInconsistentStateHandlerMixIn {
   self: DeploymentManager =>
 
-  final override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] =
-    getProcessStates(idWithName.name).map(_.map(statusDetails => {
-      val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetails)
-      processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
-    }))
+  final override def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetails: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState] = {
+    val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetails)
+    Future.successful(processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
+  }
 
   // This method is protected to make possible to override it with own logic handling different edge cases like
   // other state on engine than based on lastStateAction
@@ -44,8 +45,8 @@ trait DeploymentManager extends AutoCloseable {
       canonicalProcess: CanonicalProcess
   ): Future[Unit]
 
-  // TODO: savepointPath is very flink specific, we should handle this mode via custom action
   /**
+    * TODO: savepointPath is very flink specific, we should handle this mode via custom action
     * We assume that validate was already called and was successful
     */
   def deploy(
@@ -65,16 +66,34 @@ trait DeploymentManager extends AutoCloseable {
       scenarioTestData: ScenarioTestData
   ): Future[TestResults]
 
+  final def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[ProcessState]] = {
+    for {
+      statusDetailsWithFreshness <- getProcessStates(idWithName.name)
+      stateWithFreshness <- resolve(idWithName, statusDetailsWithFreshness.value, lastStateAction).map(state =>
+        statusDetailsWithFreshness.map(_ => state)
+      )
+    } yield stateWithFreshness
+  }
+
+  /**
+    * We provide a special wrapper called WithDataFreshnessStatus to ensure that fetched data is restored
+    * from the cache or not. If you use any kind of cache in your DM implementation please wrap result data
+    * with WithDataFreshnessStatus.cached(data) in opposite situation use WithDataFreshnessStatus.fresh(data)
+    */
   def getProcessStates(name: ProcessName)(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[StatusDetails]]]
 
   /**
-    * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
+    * Resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
-  def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]]
+  def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetails: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
@@ -97,24 +116,5 @@ trait DeploymentManager extends AutoCloseable {
       savepointDir: Option[String],
       user: User
   ): Future[SavepointResult]
-
-}
-
-// This is Flink-specific but we have to abstract over this, to keep PeriodicDeploymentManager loosely coupled with Flink
-// See comments in FlinkDeploymentManager
-trait PostprocessingProcessStatus { self: DeploymentManager =>
-
-  def postprocess(idWithName: ProcessIdWithName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]]
-
-}
-
-trait AlwaysFreshProcessState { self: DeploymentManager =>
-
-  final override def getProcessStates(name: ProcessName)(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
-    getFreshProcessStates(name).map(WithDataFreshnessStatus(_, cached = false))
-
-  protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]]
 
 }
