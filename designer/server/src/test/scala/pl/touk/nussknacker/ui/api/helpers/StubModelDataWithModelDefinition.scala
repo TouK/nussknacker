@@ -23,7 +23,8 @@ class StubModelDataWithModelDefinition(
 
   override def modelClassLoader: ModelClassLoader = ModelClassLoader.empty
 
-  override def modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader
+  override def modelConfigLoader: ModelConfigLoader =
+    new DefaultModelConfigLoader(skipComponentProvidersLoadedFromAppClassloader = false)
 
   override def namingStrategy: NamingStrategy = NamingStrategy(None)
 

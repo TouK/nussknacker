@@ -61,7 +61,8 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
           ConfigWithUnresolvedVersion(config),
           _ => TestFactory.deploymentManagerDependencies,
           TestAdditionalUIConfigProvider,
-          workingDirectoryOpt = None
+          workingDirectoryOpt = None,
+          skipComponentProvidersLoadedFromAppClassloader = false
         )
     )
     val scenarioTypes = provider
@@ -90,7 +91,8 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
           ConfigWithUnresolvedVersion(config),
           _ => TestFactory.deploymentManagerDependencies,
           TestAdditionalUIConfigProvider,
-          workingDirectoryOpt = None
+          workingDirectoryOpt = None,
+          skipComponentProvidersLoadedFromAppClassloader = false
         )
     )
 
@@ -123,7 +125,8 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         deploymentManagerDependencies: DeploymentManagerDependencies,
         engineSetupName: EngineSetupName,
         additionalUIConfigProvider: AdditionalUIConfigProvider,
-        workingDirectoryOpt: Option[Path]
+        workingDirectoryOpt: Option[Path],
+        skipComponentProvidersLoadedFromAppClassloader: Boolean
     ): ProcessingTypeData = {
       val modelData = LocalModelData(ConfigFactory.empty, List.empty)
       ProcessingTypeData(
