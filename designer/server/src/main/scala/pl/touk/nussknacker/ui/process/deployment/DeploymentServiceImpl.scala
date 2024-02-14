@@ -564,7 +564,7 @@ class DeploymentServiceImpl(
           params
         )
         customActionOpt = manager.customActions.find(_.name == actionName)
-        _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionReq))
+        _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
         _ = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
         invokeActionResult <- DBIOAction.from(manager.invokeCustomAction(actionReq, processDetails.json))
       } yield invokeActionResult
@@ -590,5 +590,5 @@ class DeploymentServiceImpl(
 
 private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")
 
-private case class CustomActionNonExisting(req: CustomActionRequest)
-    extends NotFoundError(s"${req.name.value} is not existing")
+private case class CustomActionNonExisting(actionName: ScenarioActionName)
+    extends NotFoundError(s"$actionName is not existing")

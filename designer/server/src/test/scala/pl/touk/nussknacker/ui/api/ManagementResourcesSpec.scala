@@ -418,7 +418,10 @@ class ManagementResourcesSpec
 
   test("execute valid custom action") {
     createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("hello")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("hello"))
+    ) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = true, msg = "Hi")
     }
@@ -426,7 +429,10 @@ class ManagementResourcesSpec
 
   test("execute non existing custom action") {
     createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("non-existing")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("non-existing"))
+    ) ~> check {
       status shouldBe StatusCodes.NotFound
       responseAs[String] shouldBe "non-existing is not existing"
     }
@@ -434,7 +440,10 @@ class ManagementResourcesSpec
 
   test("execute not implemented custom action") {
     createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("not-implemented")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("not-implemented"))
+    ) ~> check {
       status shouldBe StatusCodes.NotImplemented
       responseAs[String] shouldBe "an implementation is missing"
     }
@@ -442,7 +451,10 @@ class ManagementResourcesSpec
 
   test("execute custom action with not allowed process status") {
     createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("invalid-status")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("invalid-status"))
+    ) ~> check {
       // TODO: "conflict" is coherrent with "canceled process can't be canceled again" above, consider changing to Forbidden
       status shouldBe StatusCodes.Conflict
       responseAs[String] shouldBe "Action: invalid-status is not allowed in scenario (fooProcess) state: NOT_DEPLOYED, allowed actions: hello,not-implemented."
@@ -451,7 +463,10 @@ class ManagementResourcesSpec
 
   test("should return 403 when execute custom action on archived process") {
     createArchivedProcess(ProcessTestData.sampleProcessName)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("hello")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("hello"))
+    ) ~> check {
       // TODO: "conflict" is coherrent with "can't deploy fragment" above, consider changing to Forbidden
       status shouldBe StatusCodes.Conflict
     }
@@ -459,7 +474,10 @@ class ManagementResourcesSpec
 
   test("should return 403 when execute custom action on fragment") {
     createEmptyProcess(ProcessTestData.sampleProcessName, isFragment = true)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("hello")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("hello"))
+    ) ~> check {
       // TODO: "conflict" is coherrent with "can't deploy fragment" above, consider changing to Forbidden
       status shouldBe StatusCodes.Conflict
     }
