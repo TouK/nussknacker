@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import FixedExpressionValue.nullFixedValue
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
@@ -34,7 +35,7 @@ object KafkaUniversalComponentTransformer {
 
 trait KafkaUniversalComponentTransformer[T]
     extends SingleInputGenericNodeTransformation[T]
-    with WithCachedTopicsExistenceValidator {
+    with WithCachedTopicsExistenceValidator { self: Component =>
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
@@ -80,10 +81,7 @@ trait KafkaUniversalComponentTransformer[T]
           // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
           // TODO: add addNullOption feature flag to FixedValuesParameterEditor
           nullFixedValue +: topics
-            .flatMap(topic =>
-              modelDependencies.objectNaming
-                .decodeName(topic, modelDependencies.config, KafkaComponentsUtils.KafkaTopicUsageKey)
-            )
+            .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic))
             .sorted
             .map(v => FixedExpressionValue(s"'$v'", v))
         )

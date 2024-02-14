@@ -38,7 +38,7 @@ import pl.touk.nussknacker.engine.definition.component.dynamic.{
   FinalStateValue
 }
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -72,8 +72,8 @@ object NodeCompiler {
 }
 
 class NodeCompiler(
-    definitions: ModelDefinition[ComponentDefinitionWithImplementation],
-    fragmentDefinitionExtractor: FragmentCompleteDefinitionExtractor,
+    definitions: ModelDefinition,
+    fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor,
     expressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
     listeners: Seq[ProcessListener],
@@ -99,7 +99,7 @@ class NodeCompiler(
 
   private lazy val globalVariablesPreparer          = GlobalVariablesPreparer(expressionConfig)
   private implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
-  private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
+  private val expressionConfig: ExpressionConfigDefinition =
     definitions.expressionConfig
 
   private val parametersEvaluator =
@@ -140,8 +140,7 @@ class NodeCompiler(
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case frag @ FragmentInputDefinition(id, _, _) =>
-      val parameterDefinitions =
-        fragmentDefinitionExtractor.extractParametersDefinition(frag, contextWithOnlyGlobalVariables)
+      val parameterDefinitions                 = fragmentDefinitionExtractor.extractParametersDefinition(frag)
       val variables: Map[String, TypingResult] = parameterDefinitions.value.map(a => a.name -> a.typ).toMap
       val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
 
@@ -159,13 +158,30 @@ class NodeCompiler(
 
         // For default case, we creates source that support test with parameters
         case None =>
+          val validatorsCompilationResult = parameterDefinitions.value.flatMap { paramDef =>
+            paramDef.validators.map(v => expressionCompiler.compileValidator(v, paramDef.name, paramDef.typ))
+          }.sequence
+
           NodeCompilationResult(
             Map.empty,
             None,
             Valid(validationContext),
-            Valid(new FragmentSourceWithTestWithParametersSupportFactory(parameterDefinitions.value).createSource())
+            validatorsCompilationResult.andThen(_ =>
+              Valid(new FragmentSourceWithTestWithParametersSupportFactory(parameterDefinitions.value).createSource())
+            )
           )
       }
+
+      val fixedValuesErrors = frag.parameters
+        .map { param =>
+          FragmentParameterValidator.validateFixedExpressionValues(
+            param,
+            validationContext,
+            expressionCompiler
+          )
+        }
+        .sequence
+        .map(_ => ())
 
       val parameterNameValidation = validateParameterNames(parameterDefinitions.value)
 
@@ -181,7 +197,8 @@ class NodeCompiler(
       )
 
       val displayableErrors =
-        if (displayUniqueNameReliantErrors) parameterNameValidation |+| parameterExtractionValidation
+        if (displayUniqueNameReliantErrors)
+          parameterNameValidation |+| parameterExtractionValidation |+| fixedValuesErrors
         else parameterNameValidation
 
       compilationResult.copy(compiledObject = displayableErrors.andThen(_ => compilationResult.compiledObject))
@@ -199,7 +216,7 @@ class NodeCompiler(
     definitions.getComponent(ComponentType.CustomComponent, data.nodeType) match {
       case Some(componentDefinitionWithImpl)
           if ending && !componentDefinitionWithImpl.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
-        val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(nodeId.id)))
+        val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(Set(nodeId.id))))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
       case Some(componentDefinitionWithImpl) =>
         val default = defaultContextAfter(data, ending, ctx)
@@ -244,7 +261,7 @@ class NodeCompiler(
   ): NodeCompilationResult[List[CompiledParameter]] = {
 
     val ref            = fragmentInput.ref
-    val validParamDefs = fragmentDefinitionExtractor.extractParametersDefinition(fragmentInput, ctx)
+    val validParamDefs = fragmentDefinitionExtractor.extractParametersDefinition(fragmentInput)
 
     val childCtx = ctx.pushNewContext()
     val newCtx =
@@ -614,7 +631,7 @@ class NodeCompiler(
           parameters,
           branchParameters,
           outputVar,
-          dynamicDefinition.componentConfig
+          dynamicDefinition.parametersConfig
         )(
           singleCtx
         )
@@ -624,7 +641,7 @@ class NodeCompiler(
           parameters,
           branchParameters,
           outputVar,
-          dynamicDefinition.componentConfig
+          dynamicDefinition.parametersConfig
         )(
           joinCtx
         )

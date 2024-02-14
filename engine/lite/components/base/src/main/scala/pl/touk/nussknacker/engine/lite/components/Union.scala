@@ -1,16 +1,12 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import cats.Monad
-import cats.data.Validated
+import cats.data.{NonEmptyList, Validated}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.supertype.{
-  CommonSupertypeFinder,
-  NumberTypesPromotionStrategy,
-  SupertypeClassResolutionStrategy
-}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{
   CustomComponentContext,
@@ -23,8 +19,6 @@ import scala.language.higherKinds
 //TODO: unify definition with UnionTransformer
 object Union extends CustomStreamTransformer {
 
-  private val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)
-
   @MethodToInvoke
   def execute(
       @BranchParamName("Output expression") outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]],
@@ -33,11 +27,12 @@ object Union extends CustomStreamTransformer {
     ContextTransformation.join
       .definedBy { contexts =>
         val branchReturnTypes = outputExpressionByBranchId.values.map(_.returnType)
-        val unifiedReturnType = branchReturnTypes
-          .reduceOption[TypingResult] { case (left, right) =>
-            findSuperTypeCheckingAllFieldsMatchingForObjects(left, right)
+        val unifiedReturnType =
+          NonEmptyList.fromList(branchReturnTypes.toList).flatMap { case NonEmptyList(head, tail) =>
+            tail.foldLeft(Option(head)) { (acc, el) =>
+              acc.flatMap(findSuperTypeCheckingAllFieldsMatchingForObjects(_, el))
+            }
           }
-          .filterNot(_ == Typed.empty)
         unifiedReturnType
           .map(unionValidationContext(variableName, contexts, _))
           .getOrElse(
@@ -65,17 +60,20 @@ object Union extends CustomStreamTransformer {
   private def findSuperTypeCheckingAllFieldsMatchingForObjects(
       left: TypingResult,
       right: TypingResult
-  ): TypingResult = {
-    val result = superTypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
-    (left, right, result) match {
-      // normally (e.g. in ternary operator and equals) we are more lax in comparison of objects, but here we want to strictly check
-      // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
-      case (leftObj: TypedObjectTypingResult, rightObj: TypedObjectTypingResult, resultObj: TypedObjectTypingResult)
-          if resultObj.fields.keySet != leftObj.fields.keySet || resultObj.fields.keySet != rightObj.fields.keySet =>
-        Typed.empty
-      case _ =>
-        result
-    }
+  ): Option[TypingResult] = {
+    CommonSupertypeFinder.Intersection
+      .commonSupertypeOpt(left, right)
+      .flatMap { result =>
+        (left, right, result) match {
+          // normally (e.g. in equals) we are more lax in comparison of objects, but here we want to strictly check
+          // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
+          case (leftObj: TypedObjectTypingResult, rightObj: TypedObjectTypingResult, resultObj: TypedObjectTypingResult)
+              if resultObj.fields.keySet != leftObj.fields.keySet || resultObj.fields.keySet != rightObj.fields.keySet =>
+            None
+          case _ =>
+            Some(result)
+        }
+      }
   }
 
   private def unionValidationContext(

@@ -4,8 +4,8 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
@@ -49,7 +49,7 @@ class DBFetchingProcessRepositorySpec
   private var currentTime: Instant = Instant.now()
 
   private val actions =
-    DbProcessActionRepository.create(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+    new DbProcessActionRepository(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
   private val fetching = DBFetchingProcessRepository.createFutureRepository(testDbRef, actions)
 
@@ -256,8 +256,8 @@ class DBFetchingProcessRepositorySpec
     val latestDetails = fetchLatestProcessDetails[ScenarioComponentsUsages](processName)
     latestDetails.json shouldBe ScenarioComponentsUsages(
       Map(
-        ComponentInfo(ComponentType.Source, "source") -> List("source1"),
-        ComponentInfo(ComponentType.Sink, "sink")     -> List("sink1"),
+        ComponentId(ComponentType.Source, "source") -> List("source1"),
+        ComponentId(ComponentType.Sink, "sink")     -> List("sink1"),
       )
     )
 
@@ -270,8 +270,8 @@ class DBFetchingProcessRepositorySpec
 
     fetchLatestProcessDetails[ScenarioComponentsUsages](processName).json shouldBe ScenarioComponentsUsages(
       Map(
-        ComponentInfo(ComponentType.Source, "source")  -> List("source1"),
-        ComponentInfo(ComponentType.Sink, "otherSink") -> List("sink1"),
+        ComponentId(ComponentType.Source, "source")  -> List("source1"),
+        ComponentId(ComponentType.Sink, "otherSink") -> List("sink1"),
       )
     )
   }
@@ -319,10 +319,9 @@ class DBFetchingProcessRepositorySpec
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
       fetching
-        .fetchLatestProcessesDetails[DisplayableProcess](ScenarioQuery.unarchived)
+        .fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchived)
         .futureValue
         .filter(_.processId.value == processId.value)
-        .map(_.json)
         .map(_.name)
     }
   }

@@ -1,4 +1,4 @@
-import { ProcessAdditionalFields, ReturnedType } from "./process";
+import { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
 import { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
 
 type Type = "Properties" | "FragmentInput" | string;
@@ -63,7 +63,6 @@ export interface Expression {
 export type PropertiesType = NodeType & {
     type: "Properties";
     additionalFields: ProcessAdditionalFields;
-    isFragment?: boolean;
 };
 
 export type NodeId = NodeType["id"];

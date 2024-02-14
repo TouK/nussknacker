@@ -16,9 +16,10 @@ trait ValidDefinedSingleParameter { self: DefinedSingleParameter =>
 
 sealed trait DefinedBranchParameter extends BaseDefinedParameter {
 
-  def typeByBranchId: Map[String, TypingResult]
+  def expressionByBranchId: Map[String, TypingResult]
 
-  final override def returnType: TypingResult = Typed(typeByBranchId.values.toSet)
+  final override def returnType: TypingResult =
+    Typed.fromIterableOrUnknownIfEmpty(expressionByBranchId.values.map(_.withoutValue))
 
 }
 
@@ -30,8 +31,8 @@ case class DefinedEagerParameter(value: Any, returnType: TypingResult)
     extends DefinedSingleParameter
     with ValidDefinedSingleParameter
 
-case class DefinedLazyBranchParameter(typeByBranchId: Map[String, TypingResult]) extends DefinedBranchParameter
-case class DefinedEagerBranchParameter(value: Map[String, Any], typeByBranchId: Map[String, TypingResult])
+case class DefinedLazyBranchParameter(expressionByBranchId: Map[String, TypingResult]) extends DefinedBranchParameter
+case class DefinedEagerBranchParameter(value: Map[String, Any], expressionByBranchId: Map[String, TypingResult])
     extends DefinedBranchParameter
 
 //TODO: and for branch parameters??

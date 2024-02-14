@@ -1,11 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.defaultconfig
 
-import pl.touk.nussknacker.engine.api.component.{
-  BuiltInComponentInfo,
-  ComponentGroupName,
-  ComponentInfo,
-  SingleComponentConfig
-}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.definition.component._
 
 object DefaultComponentConfigDeterminer {
@@ -45,29 +40,39 @@ object DefaultComponentConfigDeterminer {
     )
   }
 
-  def forBuiltInComponent(info: ComponentInfo): SingleComponentConfig = {
-    val componentGroup = if (BuiltInComponentInfo.FragmentDefinitionComponents.contains(info)) {
+  def forBuiltInComponent(id: ComponentId): SingleComponentConfig = {
+    val componentGroup = if (BuiltInComponentId.FragmentDefinitionComponents.contains(id)) {
       DefaultsComponentGroupName.FragmentsDefinitionGroupName
     } else {
       DefaultsComponentGroupName.BaseGroupName
     }
     SingleComponentConfig(
       params = None,
-      Some(DefaultsComponentIcon.forBuiltInComponent(info)),
+      icon = Some(DefaultsComponentIcon.forBuiltInComponent(id)),
       // TODO: move from defaultModelConfig.conf to here + convention instead of code
       docsUrl = None,
       componentGroup = Some(componentGroup),
-      componentId = None
+      componentId = Some(DesignerWideComponentId.forBuiltInComponent(id))
     )
   }
 
-  def forFragment(docsUrl: Option[String]): SingleComponentConfig = SingleComponentConfig(
-    params = None,
-    Some(DefaultsComponentIcon.FragmentIcon),
-    docsUrl = docsUrl,
-    componentGroup = Some(DefaultsComponentGroupName.FragmentsGroupName),
-    componentId = None
-  )
+  // For fragments, we don't need to return SingleComponentConfig, because this config won't merged with anything else
+  // We can just return final, ComponentUiDefinition
+  def forFragment(
+      docsUrl: Option[String],
+      translateGroupName: ComponentGroupName => Option[ComponentGroupName],
+      designerWideId: DesignerWideComponentId,
+  ): ComponentUiDefinition = {
+    val originalGroupName = DefaultsComponentGroupName.FragmentsGroupName
+    ComponentUiDefinition(
+      originalGroupName = originalGroupName,
+      componentGroup = translateGroupName(originalGroupName)
+        .getOrElse(throw new IllegalStateException("Fragments can't be assigned to the null component group")),
+      icon = DefaultsComponentIcon.FragmentIcon,
+      docsUrl = docsUrl,
+      designerWideId = designerWideId
+    )
+  }
 
   private case class ComponentConfigData(componentGroup: ComponentGroupName, icon: String)
 

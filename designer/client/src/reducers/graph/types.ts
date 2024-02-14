@@ -1,6 +1,5 @@
 import { Layout } from "../../actions/nk";
-import { ProcessType } from "../../components/Process/types";
-import { Process } from "../../types";
+import { Scenario } from "../../components/Process/types";
 import { TestCapabilities, TestResults, TestFormParameters } from "../../common/TestResultUtils";
 
 export interface NodeCounts {
@@ -12,9 +11,8 @@ export interface NodeCounts {
 export type ProcessCounts = Record<string, NodeCounts>;
 
 export type GraphState = {
-    graphLoading: boolean;
-    fetchedProcessDetails?: ProcessType;
-    processToDisplay?: Process;
+    scenarioLoading: boolean;
+    scenario?: Scenario;
     selectionState?: string[];
     layout: Layout;
     testCapabilities?: TestCapabilities;

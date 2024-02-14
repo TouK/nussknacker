@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRe
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -26,9 +26,7 @@ class ScenarioPropertiesValidator(
 
   type PropertyConfig = Map[String, ScenarioPropertyConfig]
 
-  def validate(process: DisplayableProcess): ValidationResult = {
-    val scenarioProperties = process.properties.additionalFields.properties.toList
-
+  def validate(scenarioProperties: List[(String, String)]): ValidationResult = {
     val validated = (
       getConfiguredValidationsResults(scenarioPropertiesConfig, scenarioProperties),
       getMissingRequiredPropertyValidationResults(scenarioPropertiesConfig, scenarioProperties),

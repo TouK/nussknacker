@@ -1,31 +1,42 @@
-import React from "react";
-import { v4 as uuid4 } from "uuid";
-import { isEmpty } from "lodash";
-import { NodeValidationError } from "../../../types";
+import React, { useMemo } from "react";
+import { concat, isEmpty } from "lodash";
 import { Props } from "./Errors";
-import { NodeErrorsTips } from "./NodeErrorsTips";
+import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
+import i18next from "i18next";
 
-export const ErrorTips = ({ errors, showDetails, currentProcess }: Props) => {
-    const globalErrors = errors.globalErrors;
-    const nodeErrors = errors.invalidNodes;
-    const propertiesErrors = errors.processPropertiesErrors;
+export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {
+    const { globalErrors, processPropertiesErrors, invalidNodes } = errors;
 
-    const globalErrorsTips = (globalErrors: NodeValidationError[]) => <div>{globalErrors.map((error) => globalError(error, null))}</div>;
+    const invalidNodeIds = Object.keys(invalidNodes);
 
-    const globalError = (error: NodeValidationError, suffix) => (
-        <span key={uuid4()} title={error.description}>
-            {(suffix ? `${suffix}: ` : "") + error.message + (error.fieldName ? `(${error.fieldName})` : "")}
-        </span>
+    const globalErrorsLinkSections = useMemo(
+        () =>
+            globalErrors.map((error, index) =>
+                isEmpty(error.nodeIds) ? (
+                    <span key={index} title={error.error.description}>
+                        {error.error.message}
+                    </span>
+                ) : (
+                    <NodeErrorsLinkSection
+                        key={index}
+                        nodeIds={error.nodeIds}
+                        message={`${error.error.message}: `}
+                        showDetails={showDetails}
+                        scenario={scenario}
+                    />
+                ),
+            ),
+        [globalErrors, showDetails, scenario],
     );
 
-    return isEmpty(nodeErrors) && isEmpty(propertiesErrors) && isEmpty(globalErrors) ? null : (
+    return isEmpty(invalidNodes) && isEmpty(processPropertiesErrors) && isEmpty(globalErrors) ? null : (
         <div>
-            {globalErrorsTips(globalErrors)}
-            <NodeErrorsTips
-                propertiesErrors={errors.processPropertiesErrors}
-                nodeErrors={errors.invalidNodes}
+            {globalErrorsLinkSections}
+            <NodeErrorsLinkSection
+                nodeIds={concat(invalidNodeIds, isEmpty(processPropertiesErrors) ? [] : "properties")}
+                message={i18next.t("errors.errorsIn", "Errors in: ")}
                 showDetails={showDetails}
-                currentProcess={currentProcess}
+                scenario={scenario}
             />
         </div>
     );

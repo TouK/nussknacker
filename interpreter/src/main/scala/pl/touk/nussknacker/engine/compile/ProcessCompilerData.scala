@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
-import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
@@ -35,7 +35,7 @@ object ProcessCompilerData {
       nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
   ): ProcessCompilerData = {
     val servicesDefs = definitionWithTypes.modelDefinition.components
-      .filter(_._1.`type` == ComponentType.Service)
+      .filter(_.componentType == ComponentType.Service)
 
     val expressionCompiler = ExpressionCompiler.withOptimization(
       userCodeClassLoader,
@@ -43,15 +43,11 @@ object ProcessCompilerData {
       definitionWithTypes.modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions
     )
-    val fragmentDefinitionExtractor = FragmentCompleteDefinitionExtractor(
-      userCodeClassLoader,
-      expressionCompiler
-    )
 
     // for testing environment it's important to take classloader from user jar
     val nodeCompiler = new NodeCompiler(
       definitionWithTypes.modelDefinition,
-      fragmentDefinitionExtractor,
+      new FragmentParametersDefinitionExtractor(userCodeClassLoader),
       expressionCompiler,
       userCodeClassLoader,
       listeners,
@@ -59,17 +55,15 @@ object ProcessCompilerData {
       componentUseCase,
       nonServicesLazyParamStrategy
     )
-    val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
+    val subCompiler             = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
+    val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
     val processCompiler = new ProcessCompiler(
       userCodeClassLoader,
       subCompiler,
-      GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig),
+      globalVariablesPreparer,
       nodeCompiler,
       customProcessValidator
     )
-
-    val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
-
     val expressionEvaluator =
       ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
 
@@ -82,7 +76,7 @@ object ProcessCompilerData {
       expressionEvaluator,
       interpreter,
       listeners,
-      servicesDefs.map { case (info, servicesDef) => info.name -> servicesDef.implementation.asInstanceOf[Lifecycle] }
+      servicesDefs.map(service => service.name -> service.implementation.asInstanceOf[Lifecycle]).toMap
     )
 
   }

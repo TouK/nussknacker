@@ -1,19 +1,18 @@
 import React from "react";
-import { RootState } from "../../../../reducers/index";
+import { RootState } from "../../../../reducers";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { connect } from "react-redux";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
-import { getProcessToDisplay, getProcessVersionId } from "../../../../reducers/selectors/graph";
+import { getProcessVersionId, getScenarioGraph, getProcessName } from "../../../../reducers/selectors/graph";
 import { useTranslation } from "react-i18next";
 import Icon from "../../../../assets/img/toolbarButtons/JSON.svg";
 import { ToolbarButtonProps } from "../../types";
-import { withoutHackOfEmptyEdges } from "../../../graph/GraphPartialsInTS/EdgeUtils";
 import HttpService from "../../../../http/HttpService";
 
 type Props = StateProps & ToolbarButtonProps;
 
 function JSONButton(props: Props) {
-    const { processToDisplay, versionId, canExport, disabled } = props;
+    const { scenarioName, scenarioGraph, versionId, canExport, disabled } = props;
     const available = !disabled && canExport;
     const { t } = useTranslation();
 
@@ -23,8 +22,7 @@ function JSONButton(props: Props) {
             icon={<Icon />}
             disabled={!available}
             onClick={() => {
-                const noEmptyEdges = withoutHackOfEmptyEdges(processToDisplay);
-                HttpService.exportProcess(noEmptyEdges, versionId);
+                HttpService.exportProcess(scenarioName, scenarioGraph, versionId);
             }}
         />
     );
@@ -33,7 +31,8 @@ function JSONButton(props: Props) {
 const mapState = (state: RootState) => {
     return {
         versionId: getProcessVersionId(state),
-        processToDisplay: getProcessToDisplay(state),
+        scenarioName: getProcessName(state),
+        scenarioGraph: getScenarioGraph(state),
         canExport: ProcessUtils.canExport(state),
     };
 };

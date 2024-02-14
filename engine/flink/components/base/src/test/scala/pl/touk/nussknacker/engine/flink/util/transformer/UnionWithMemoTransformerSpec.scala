@@ -143,7 +143,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val processValidator = ProcessValidator.default(model)
-    val validationResult = processValidator.validate(process).result
+    val validationResult = processValidator.validate(process, isFragment = false).result
 
     val expectedMessage = s"""Input node can not be named "${UnionWithMemoTransformer.KeyField}""""
     validationResult should matchPattern {
@@ -195,7 +195,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val processValidator = ProcessValidator.default(model)
-    val validationResult = processValidator.validate(process).result
+    val validationResult = processValidator.validate(process, isFragment = false).result
 
     val expectedMessage = s"""Nodes "$BranchFooId", "$BranchBarId" have too similar names"""
     validationResult should matchPattern {
@@ -223,8 +223,8 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       fooRecordsSource: BlockingQueueSource[OneRecord],
       barRecordsSource: BlockingQueueSource[OneRecord]
   ): List[ComponentDefinition] = {
-    ComponentDefinition("start-foo", SourceFactory.noParam[OneRecord](fooRecordsSource)) ::
-      ComponentDefinition("start-bar", SourceFactory.noParam[OneRecord](barRecordsSource)) ::
+    ComponentDefinition("start-foo", SourceFactory.noParamUnboundedStreamFactory[OneRecord](fooRecordsSource)) ::
+      ComponentDefinition("start-bar", SourceFactory.noParamUnboundedStreamFactory[OneRecord](barRecordsSource)) ::
       FlinkBaseComponentProvider.Components
   }
 

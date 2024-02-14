@@ -1,4 +1,4 @@
-import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 import { EditableEditor } from "../../../../editors/EditableEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import AceEditor from "react-ace";
@@ -10,11 +10,12 @@ import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../..
 import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
 import HttpService from "../../../../../../../http/HttpService";
 import { useSelector } from "react-redux";
-import { getProcessToDisplay } from "../../../../../../../reducers/selectors/graph";
+import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
 import { GenericValidationRequest } from "../../../../../../../actions/nk/genericAction";
 import { debounce } from "lodash";
 import { EditorType } from "../../../../editors/expression/Editor";
 import { useSettings } from "../../SettingsProvider";
+import { Box, FormControl } from "@mui/material";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
@@ -137,7 +138,7 @@ export const UserDefinedListInput = ({
         },
     };
 
-    const { processingType } = useSelector(getProcessToDisplay);
+    const processingType = useSelector(getProcessingType);
     const temporaryItemName: FieldName = `$param.${name}.$fixedValuesListTemporaryItem`;
 
     const validateTemporaryListItem = useMemo(() => {
@@ -164,36 +165,38 @@ export const UserDefinedListInput = ({
     }, [processingType, temporaryItemName, temporaryListItemTyp]);
 
     return (
-        <SettingRow>
+        <FormControl>
             <SettingLabelStyled>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
-            <EditableEditor
-                validationLabelInfo={temporaryValuesTyping && "Typing..."}
-                expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
-                onValueChange={(value) => {
-                    setTemporaryListItem(value);
-                    setTemporaryValuesTyping(true);
-                    setTemporaryValueErrors([]);
-                    validateTemporaryListItem(value);
-                }}
-                variableTypes={variableTypes}
-                readOnly={readOnly}
-                ref={(ref: AceEditor | null) => {
-                    if (ref?.editor) {
-                        ref.editor.commands.addCommand(aceEditorEnterCommand);
-                    }
-                }}
-                param={{ editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
-                fieldErrors={getValidationErrorsForField(temporaryValueErrors, temporaryItemName)}
-                showValidation
-            />
-            {userDefinedListOptions?.length > 0 && (
-                <ListItems
-                    items={fixedValuesList}
-                    handleDelete={readOnly ? undefined : handleDeleteDefinedListItem}
-                    errors={errors}
-                    fieldName={`$param.${name}.$fixedValuesList`}
+            <Box width={"100%"} flex={1}>
+                <EditableEditor
+                    validationLabelInfo={temporaryValuesTyping && "Typing..."}
+                    expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
+                    onValueChange={(value) => {
+                        setTemporaryListItem(value);
+                        setTemporaryValuesTyping(true);
+                        setTemporaryValueErrors([]);
+                        validateTemporaryListItem(value);
+                    }}
+                    variableTypes={variableTypes}
+                    readOnly={readOnly}
+                    ref={(ref: AceEditor | null) => {
+                        if (ref?.editor) {
+                            ref.editor.commands.addCommand(aceEditorEnterCommand);
+                        }
+                    }}
+                    param={{ editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
+                    fieldErrors={getValidationErrorsForField(temporaryValueErrors, temporaryItemName)}
+                    showValidation
                 />
-            )}
-        </SettingRow>
+                {userDefinedListOptions?.length > 0 && (
+                    <ListItems
+                        items={fixedValuesList}
+                        handleDelete={readOnly ? undefined : handleDeleteDefinedListItem}
+                        errors={errors}
+                        fieldName={`$param.${name}.$fixedValuesList`}
+                    />
+                )}
+            </Box>
+        </FormControl>
     );
 };

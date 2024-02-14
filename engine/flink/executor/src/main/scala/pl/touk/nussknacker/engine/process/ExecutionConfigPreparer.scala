@@ -6,10 +6,10 @@ import io.circe.Encoder
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext, ObjectNaming}
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.flink.api.{NamingParameters, NkGlobalParameters}
+import pl.touk.nussknacker.engine.flink.api.{NamespaceMetricsTags, NkGlobalParameters}
 import pl.touk.nussknacker.engine.process.util.Serializers
 
 /**
@@ -46,23 +46,19 @@ object ExecutionConfigPreparer extends LazyLogging {
     }
   }
 
-  class ProcessSettingsPreparer(modelConfig: Config, objectNaming: ObjectNaming, buildInfo: String)
+  class ProcessSettingsPreparer(modelConfig: Config, namingStrategy: NamingStrategy, buildInfo: String)
       extends ExecutionConfigPreparer {
 
     override def prepareExecutionConfig(
         config: ExecutionConfig
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
-      val namingParameters = objectNaming
-        .objectNamingParameters(jobData.metaData.name.value, modelConfig, new NamingContext(FlinkUsageKey))
-        .map(p => NamingParameters(p.toTags))
-
       NkGlobalParameters.setInContext(
         config,
         NkGlobalParameters.create(
           buildInfo,
           jobData.processVersion,
           modelConfig,
-          namingParameters,
+          namespaceTags = NamespaceMetricsTags(jobData.metaData.name.value, namingStrategy),
           prepareMap(jobData.processVersion, deploymentData)
         )
       )
@@ -89,8 +85,8 @@ object ExecutionConfigPreparer extends LazyLogging {
   object ProcessSettingsPreparer {
 
     def apply(modelData: ModelData): ExecutionConfigPreparer = {
-      val buildInfo = Encoder[Map[String, String]].apply(modelData.configCreator.buildInfo()).spaces2
-      new ProcessSettingsPreparer(modelData.modelConfig, modelData.objectNaming, buildInfo)
+      val buildInfo = Encoder[Map[String, String]].apply(modelData.buildInfo).spaces2
+      new ProcessSettingsPreparer(modelData.modelConfig, modelData.namingStrategy, buildInfo)
     }
 
   }

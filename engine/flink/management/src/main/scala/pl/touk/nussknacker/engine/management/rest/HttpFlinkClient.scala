@@ -2,19 +2,18 @@ package pl.touk.nussknacker.engine.management.rest
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
-import pl.touk.nussknacker.engine.api.deployment.SavepointResult
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.management.{FlinkArgsEncodeHack, FlinkConfig}
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
-import sttp.client3.circe._
 import sttp.client3._
+import sttp.client3.circe._
 
 import java.io.File
 import java.util.concurrent.TimeoutException
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 
 class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext)
     extends FlinkClient
@@ -42,7 +41,6 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def uploadJar(jarFile: File): Future[String] = {
     logger.debug(s"Uploading new jar: ${jarFile.getAbsolutePath}")
-
     basicRequest
       .post(flinkUrl.addPath("jars", "upload"))
       .multipartBody(multipartFile("jarfile", jarFile).contentType("application/x-java-archive"))
@@ -54,7 +52,6 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
         new File(file.filename).getName
       }
       .recoverWith(recoverWithMessage("upload Nussnknacker jar to Flink"))
-
   }
 
   override def deleteJarIfExists(jarFileName: String): Future[Unit] = {
@@ -77,10 +74,12 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       .send(backend)
       .flatMap(handleUnitResponse("delete jar"))
       .recoverWith(recoverWithMessage("delete jar"))
-
   }
 
-  def findJobsByName(jobName: String): Future[List[JobOverview]] = {
+  def findJobsByName(
+      jobName: String
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[JobOverview]]] = {
+    logger.trace(s"Checking fetching scenario $jobName state")
     basicRequest
       .readTimeout(config.scenarioStateRequestTimeout)
       .get(flinkUrl.addPath("jobs", "overview"))
@@ -93,8 +92,8 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
           .sortBy(_.`last-modification`)
           .reverse
       }
+      .map(WithDataFreshnessStatus.fresh)
       .recoverWith(recoverWithMessage("retrieve Flink jobs"))
-
   }
 
   def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
@@ -212,7 +211,6 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
         })
         .recoverWith(recoverWithMessage("deploy scenario"))
     }
-
   }
 
   def getClusterOverview: Future[ClusterOverview] = {

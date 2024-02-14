@@ -28,11 +28,20 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
 
   def extractComponents(
       modelDependencies: ProcessObjectDependencies,
-      componentsUiConfig: ComponentsUiConfig
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+      componentsUiConfig: ComponentsUiConfig,
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): List[ComponentDefinitionWithImplementation] = {
     loadCorrectProviders(modelDependencies.config).toList
       .flatMap { case (_, (config, provider)) =>
-        extract(config, provider, modelDependencies, componentsUiConfig)
+        extract(
+          config,
+          provider,
+          modelDependencies,
+          componentsUiConfig,
+          determineDesignerWideId,
+          additionalConfigsFromProvider
+        )
       }
   }
 
@@ -110,15 +119,19 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
       config: ComponentProviderConfig,
       provider: ComponentProvider,
       modelDependencies: ProcessObjectDependencies,
-      componentsUiConfig: ComponentsUiConfig
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
+      componentsUiConfig: ComponentsUiConfig,
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): List[ComponentDefinitionWithImplementation] = {
     ComponentDefinitionWithImplementation.forList(
       provider.create(config.config, modelDependencies).map { inputComponentDefinition =>
         config.componentPrefix
           .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
           .getOrElse(inputComponentDefinition)
       },
-      componentsUiConfig
+      componentsUiConfig,
+      determineDesignerWideId,
+      additionalConfigsFromProvider
     )
   }
 

@@ -3,13 +3,15 @@ package pl.touk.nussknacker.engine.kafka.source
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchema, KafkaDeserializationSchemaFactory}
@@ -41,13 +43,14 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 ) extends SourceFactory
     with SingleInputGenericNodeTransformation[Source]
     with WithCachedTopicsExistenceValidator
-    with WithExplicitTypesToExtract {
+    with WithExplicitTypesToExtract
+    with UnboundedStreamComponent {
 
   protected val topicNameSeparator = ","
 
-  protected lazy val keyTypingResult: TypedClass = Typed.typedClass[K](implicitly[ClassTag[K]])
+  protected lazy val keyTypingResult: TypingResult = Typed(implicitly[ClassTag[K]].runtimeClass)
 
-  protected lazy val valueTypingResult: TypedClass = Typed.typedClass[V](implicitly[ClassTag[V]])
+  protected lazy val valueTypingResult: TypingResult = Typed(implicitly[ClassTag[V]].runtimeClass)
 
   // Node validation and compilation refers to ValidationContext, that returns TypingResult's of all variables returned by the source.
   // Variable suggestion uses DefinitionExtractor that requires proper type definitions for GenericNodeTransformation (which in general does not have a specified "returnType"):
@@ -56,7 +59,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   // Example:
   // - validation context indicates that #input is TypedClass(classOf(SampleProduct)), that is used by node compilation and validation
   // - definition extractor provides detailed definition of "pl.touk.nussknacker.engine.management.sample.dto.SampleProduct"
-  override def typesToExtract: List[TypedClass] =
+  override def typesToExtract: List[TypingResult] =
     List(keyTypingResult, valueTypingResult, Typed.typedClass[TimestampType])
 
   override type State = KafkaSourceFactoryState[K, V]
@@ -166,7 +169,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
       deserializationSchema,
       formatter,
       contextInitializer,
-      KafkaTestParametersInfo.empty
+      KafkaTestParametersInfo.empty,
+      modelDependencies.namingStrategy
     )
   }
 
@@ -217,7 +221,8 @@ object KafkaSourceFactory {
         deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
         formatter: RecordFormatter,
         contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-        testParametersInfo: KafkaTestParametersInfo
+        testParametersInfo: KafkaTestParametersInfo,
+        namingStrategy: NamingStrategy
     ): Source
 
   }

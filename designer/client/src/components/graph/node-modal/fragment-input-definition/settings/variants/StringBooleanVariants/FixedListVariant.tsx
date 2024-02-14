@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { FixedListParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 import InitialValue from "../fields/InitialValue";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
-import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
+import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
+import { FormControl } from "@mui/material";
 
 interface Props {
     item: FixedListParameterVariant;
@@ -54,7 +55,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 variableTypes={variableTypes}
                 fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$initialValue`)}
             />
-            <SettingRow>
+            <FormControl>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus
                     value={item.hintText}
@@ -63,7 +64,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                     disabled={readOnly}
                     className={"node-input"}
                 />
-            </SettingRow>
+            </FormControl>
         </>
     );
 };

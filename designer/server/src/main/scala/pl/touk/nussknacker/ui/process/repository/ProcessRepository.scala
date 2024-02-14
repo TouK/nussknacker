@@ -4,14 +4,13 @@ import akka.http.scaladsl.model.HttpHeader
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
@@ -43,8 +42,8 @@ object ProcessRepository {
 
   }
 
-  def create(dbRef: DbRef, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
-    new DBProcessRepository(dbRef, modelData.mapValues(_.migrations.version))
+  def create(dbRef: DbRef, migrations: ProcessingTypeDataProvider[ProcessMigrations, _]): DBProcessRepository =
+    new DBProcessRepository(dbRef, migrations.mapValues(_.version))
 
   final case class CreateProcessAction(
       processName: ProcessName,
@@ -56,12 +55,14 @@ object ProcessRepository {
   )
 
   final case class UpdateProcessAction(
-      id: ProcessId,
+      private val processId: ProcessId,
       canonicalProcess: CanonicalProcess,
       comment: Option[Comment],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName]
-  )
+  ) {
+    def id: ProcessIdWithName = ProcessIdWithName(processId, canonicalProcess.name)
+  }
 
   final case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
@@ -74,17 +75,15 @@ trait ProcessRepository[F[_]] {
 
   def updateProcess(action: UpdateProcessAction)(implicit loggedUser: LoggedUser): F[ProcessUpdated]
 
-  def updateCategory(processId: ProcessId, category: String)(implicit loggedUser: LoggedUser): F[Unit]
+  def archive(processId: ProcessIdWithName, isArchived: Boolean): F[Unit]
 
-  def archive(processId: ProcessId, isArchived: Boolean): F[Unit]
-
-  def deleteProcess(processId: ProcessId): F[Unit]
+  def deleteProcess(processId: ProcessIdWithName): F[Unit]
 
   def renameProcess(processId: ProcessIdWithName, newName: ProcessName)(implicit loggedUser: LoggedUser): F[Unit]
 
 }
 
-class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeDataProvider[Int, _])
+class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTypeDataProvider[Int, _])
     extends ProcessRepository[DB]
     with NuTables
     with LazyLogging
@@ -129,7 +128,7 @@ class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeData
             (insertNew += processToSave)
               .flatMap(entity =>
                 updateProcessInternal(
-                  entity.id,
+                  ProcessIdWithName(entity.id, entity.name),
                   action.canonicalProcess,
                   increaseVersionWhenJsonNotChanged = false,
                   userName = userName
@@ -165,14 +164,14 @@ class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeData
   }
 
   private def updateProcessInternal(
-      processId: ProcessId,
+      processId: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
       increaseVersionWhenJsonNotChanged: Boolean,
       userName: String
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
     def createProcessVersionEntityData(version: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
       id = version,
-      processId = processId,
+      processId = processId.id,
       json = Some(canonicalProcess),
       createDate = Timestamp.from(now),
       user = userName,
@@ -193,12 +192,12 @@ class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeData
           Some(createProcessVersionEntityData(VersionId.initialVersionId, processingType))
       }
 
-    logger.debug(s"Updating scenario $processId by user $userName")
+    logger.debug(s"Updating scenario ${processId.name} by user $userName")
     for {
-      maybeProcess <- processTableFilteredByUser.filter(_.id === processId).result.headOption
-      process = maybeProcess.getOrElse(throw ProcessNotFoundError(processId.value.toString))
-      latestProcessVersion <- fetchProcessLatestVersionsQuery(processId)(
-        ScenarioShapeFetchStrategy.FetchDisplayable
+      maybeProcess <- processTableFilteredByUser.filter(_.id === processId.id).result.headOption
+      process = maybeProcess.getOrElse(throw ProcessNotFoundError(processId.name))
+      latestProcessVersion <- fetchProcessLatestVersionsQuery(processId.id)(
+        ScenarioShapeFetchStrategy.FetchScenarioGraph
       ).result.headOption
       newProcessVersionOpt = versionToInsert(latestProcessVersion, process.processingType)
       _ <- newProcessVersionOpt.map(processVersionsTable += _).getOrElse(dbMonad.pure(0))
@@ -209,22 +208,15 @@ class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeData
     )
   }
 
-  def deleteProcess(processId: ProcessId): DB[Unit] =
-    processesTable.filter(_.id === processId).delete.map {
-      case 0 => throw ProcessNotFoundError(processId.value.toString)
+  def deleteProcess(processId: ProcessIdWithName): DB[Unit] =
+    processesTable.filter(_.id === processId.id).delete.map {
+      case 0 => throw ProcessNotFoundError(processId.name)
       case 1 => ()
     }
 
-  def archive(processId: ProcessId, isArchived: Boolean): DB[Unit] =
-    processesTable.filter(_.id === processId).map(_.isArchived).update(isArchived).map {
-      case 0 => throw ProcessNotFoundError(processId.value.toString)
-      case 1 => ()
-    }
-
-  // accessible only from initializing scripts so far
-  def updateCategory(processId: ProcessId, category: String)(implicit loggedUser: LoggedUser): DB[Unit] =
-    processesTable.filter(_.id === processId).map(_.processCategory).update(category).map {
-      case 0 => throw ProcessNotFoundError(processId.value.toString)
+  def archive(processId: ProcessIdWithName, isArchived: Boolean): DB[Unit] =
+    processesTable.filter(_.id === processId.id).map(_.isArchived).update(isArchived).map {
+      case 0 => throw ProcessNotFoundError(processId.name)
       case 1 => ()
     }
 

@@ -94,7 +94,7 @@ trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside {
         def checkMethods(getMethods: ClassDefinition => Map[String, List[MethodDefinition]]): Unit = {
           val methods        = getMethods(clazzDefinition)
           val decodedMethods = getMethods(decoded)
-          methods.keys shouldBe decodedMethods.keys
+          methods.keySet shouldBe decodedMethods.keySet
           methods.foreach { case (k, v) =>
             withClue(s"$clazz with method: $k does not match, ${v.asJson}, ${decodedMethods(k).asJson}: ") {
               v.map(simplifyMethodDefinition) should contain theSameElementsAs decodedMethods(k)
@@ -174,16 +174,17 @@ trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside {
           .getOrElse(json)
       }
     )
-    implicit val parameterD: Decoder[Parameter]                     = deriveConfiguredDecoder
-    implicit val methodTypeInfoD: Decoder[MethodTypeInfo]           = deriveConfiguredDecoder
-    implicit val staticMethodInfoD: Decoder[StaticMethodDefinition] = deriveConfiguredDecoder
-    implicit val functionalMethodInfoD: Decoder[FunctionalMethodDefinition] = (c: HCursor) =>
+    implicit val parameterD: Decoder[Parameter]                           = deriveConfiguredDecoder
+    implicit val methodTypeInfoD: Decoder[MethodTypeInfo]                 = deriveConfiguredDecoder
+    implicit val staticMethodDefinitionD: Decoder[StaticMethodDefinition] = deriveConfiguredDecoder
+    implicit val functionalMethodDefinitionD: Decoder[FunctionalMethodDefinition] = (c: HCursor) =>
       for {
         signatures  <- c.downField("signatures").as[NonEmptyList[MethodTypeInfo]]
         name        <- c.downField("name").as[String]
         description <- c.downField("description").as[Option[String]]
       } yield FunctionalMethodDefinition(null, signatures, name, description)
-    implicit val methodInfoD: Decoder[MethodDefinition]     = staticMethodInfoD.widen or functionalMethodInfoD.widen
+    implicit val methodDefinitionD: Decoder[MethodDefinition] =
+      staticMethodDefinitionD.widen or functionalMethodDefinitionD.widen
     implicit val typedClassD: Decoder[TypedClass]           = typingResultDecoder.map(_.asInstanceOf[TypedClass])
     implicit val classDefinitionD: Decoder[ClassDefinition] = deriveConfiguredDecoder
 

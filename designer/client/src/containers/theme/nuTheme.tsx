@@ -1,5 +1,14 @@
 import { tintPrimary } from "./helpers";
-import { createTheme } from "@mui/material";
+import { createTheme, Theme } from "@mui/material";
+
+declare module "@mui/material/FormHelperText" {
+    interface FormHelperTextPropsVariantOverrides {
+        largeMessage: true;
+    }
+    interface FormHelperTextOwnProps {
+        "data-testid"?: string;
+    }
+}
 
 declare module "@mui/material/styles" {
     // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -119,10 +128,20 @@ const custom = {
     },
 };
 
-const globalStyles = {
-    body: {
-        fontFamily: "Open Sans, Helvetica Neue ,Helvetica,Arial,sans-serif",
-    },
+const fontFamily = [
+    "Inter",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    '"Segoe UI"',
+    '"Helvetica Neue"',
+    "Arial",
+    "sans-serif",
+    '"Apple Color Emoji"',
+    '"Segoe UI Emoji"',
+    '"Segoe UI Symbol"',
+].join(",");
+
+const globalStyles = (theme: Theme) => ({
     "html, body": {
         margin: 0,
         padding: 0,
@@ -134,6 +153,7 @@ const globalStyles = {
         letterSpacing: "unset",
         WebkitFontSmoothing: "initial",
         lineHeight: 1.428571429,
+        fontFamily,
     },
     "input, button, select, textarea": {
         fontFamily: "inherit",
@@ -153,9 +173,6 @@ const globalStyles = {
             cursor: "pointer",
         },
     },
-    p: {
-        margin: "0 0 10px",
-    },
 
     hr: {
         marginTop: "20px",
@@ -163,23 +180,12 @@ const globalStyles = {
         border: 0,
         borderTop: `1px solid ${custom.colors.gallery}`,
     },
-    "h1, h1, h3, h4, h5, h6": {
-        fontFamily: "inherit",
-        fontWeight: 500,
-        lineHeight: 1.1,
-        color: "inherit",
-        marginTop: "20px",
-        marginBottom: "10px",
-    },
 
     a: {
         textDecoration: "none",
         ":hover": {
             textDecoration: "underline",
         },
-    },
-    "small, .small": {
-        fontSize: "85%",
     },
     ".hide": {
         display: "none",
@@ -241,6 +247,18 @@ const globalStyles = {
     ".notification-dismiss": {
         display: "none",
     },
+
+    // Styles joint-js elements
+    "#nk-graph-main text": {
+        ...theme.typography.body1,
+    },
+});
+
+const headerCommonStyle = {
+    fontWeight: 500,
+    lineHeight: 1.1,
+    marginTop: "20px",
+    marginBottom: "10px",
 };
 
 export const nuTheme = createTheme({
@@ -262,6 +280,28 @@ export const nuTheme = createTheme({
         background: {
             paper: colors.primaryBackground,
             default: colors.canvasBackground,
+        },
+    },
+    typography: {
+        fontFamily,
+        h1: { ...headerCommonStyle },
+        h2: { ...headerCommonStyle },
+        h3: { ...headerCommonStyle },
+        h4: { ...headerCommonStyle },
+        h5: { ...headerCommonStyle },
+        h6: { ...headerCommonStyle },
+        subtitle1: {
+            fontWeight: "bold",
+        },
+        subtitle2: {
+            fontWeight: "bold",
+        },
+        overline: {
+            fontSize: ".6875rem",
+            letterSpacing: "inherit",
+            lineHeight: "inherit",
+            textTransform: "inherit",
+            color: custom.colors.silverChalice,
         },
     },
     components: {
@@ -300,7 +340,44 @@ export const nuTheme = createTheme({
             },
         },
         MuiCssBaseline: {
-            styleOverrides: globalStyles,
+            styleOverrides: (theme) => globalStyles(theme),
+        },
+        MuiFormControl: {
+            styleOverrides: {
+                root: {
+                    display: "flex",
+                    flexDirection: "row",
+                    margin: "16px 0",
+                },
+            },
+        },
+        MuiFormLabel: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    ...theme.typography.body2,
+                    display: "flex",
+                    marginTop: "9px",
+                    color: custom.colors.canvasBackground,
+                    flexBasis: "20%",
+                    maxWidth: "20em",
+                    overflowWrap: "anywhere",
+                }),
+            },
+            defaultProps: {
+                focused: false,
+            },
+        },
+        MuiFormHelperText: {
+            styleOverrides: {
+                root: {
+                    marginLeft: 0,
+                    color: custom.colors.success,
+                },
+            },
+            variants: [{ props: { variant: "largeMessage" }, style: { fontSize: ".875rem" } }],
+            defaultProps: {
+                "data-testid": "form-helper-text",
+            },
         },
     },
     custom,

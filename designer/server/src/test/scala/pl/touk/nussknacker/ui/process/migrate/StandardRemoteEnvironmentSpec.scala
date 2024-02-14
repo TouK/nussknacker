@@ -10,7 +10,7 @@ import io.circe.parser
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -18,18 +18,24 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationResult
 }
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.validProcess
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{
+  sampleFragment,
+  sampleFragmentName,
+  sampleProcessName,
+  validProcess
+}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestFactory, TestProcessUtil}
-import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 class StandardRemoteEnvironmentSpec
     extends AnyFlatSpec
@@ -53,8 +59,10 @@ class StandardRemoteEnvironmentSpec
     override implicit val materializer: Materializer = Materializer(system)
 
     override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
-      mapProcessingTypeDataProvider(Streaming -> new TestMigrations(1, 2)),
-      TestFactory.processValidatorByProcessingType
+      mapProcessingTypeDataProvider(
+        TestProcessingTypes.Streaming -> new ProcessModelMigrator(new TestMigrations(1, 2))
+      ),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> flinkProcessValidator)
     )
 
   }
@@ -65,10 +73,10 @@ class StandardRemoteEnvironmentSpec
   }
 
   private def statefulEnvironment(
-      expectedProcessDetails: ScenarioWithDetails,
+      expectedProcessDetails: ScenarioWithDetailsForMigrations,
       expectedProcessCategory: String,
       initialRemoteProcessList: List[ProcessName],
-      onMigrate: Future[UpdateProcessCommand] => Unit
+      onMigrate: Future[UpdateScenarioCommand] => Unit
   ) = new MockRemoteEnvironment with TriedToAddProcess {
     private var remoteProcessList = initialRemoteProcessList
 
@@ -87,7 +95,7 @@ class StandardRemoteEnvironmentSpec
       }
 
       object Validation {
-        def unapply(arg: (String, HttpMethod)): Boolean = is("/processValidation", POST)
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processValidation/${expectedProcessDetails.name}", POST)
       }
 
       object UpdateProcess {
@@ -100,8 +108,8 @@ class StandardRemoteEnvironmentSpec
 
       object AddProcess {
         def unapply(arg: (String, HttpMethod)): Option[Boolean] = {
-          if (is(s"/processes/${expectedProcessDetails.name}/$expectedProcessCategory", POST)) {
-            uri.query().get("isFragment").map(_.toBoolean).orElse(Some(false))
+          if (is(s"/processes", POST)) {
+            parseBodyToJson(request).hcursor.downField("isFragment").as[Boolean].toOption
           } else {
             None
           }
@@ -111,8 +119,6 @@ class StandardRemoteEnvironmentSpec
 
       (uri.toString(), method) match {
         case Validation() =>
-          val requestJson = parseBodyToJson(request)
-          requestJson.hcursor.downField("category").as[String] shouldBe Right(expectedProcessCategory)
           Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
@@ -130,12 +136,12 @@ class StandardRemoteEnvironmentSpec
           triedToAddProcess = true
           addedFragment = Some(isFragment)
 
-          Marshal(ProcessTestData.validProcessDetails).to[RequestEntity].map { entity =>
+          Marshal(ProcessTestData.validScenarioDetailsForMigrations).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
 
         case UpdateProcess() if remoteProcessList contains expectedProcessDetails.name =>
-          onMigrate(Unmarshal(request).to[UpdateProcessCommand])
+          onMigrate(Unmarshal(request).to[UpdateScenarioCommand])
 
           Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
@@ -160,11 +166,11 @@ class StandardRemoteEnvironmentSpec
   }
 
   private def environmentForTestMigration(
-      processes: List[ScenarioWithDetails],
-      fragments: List[ScenarioWithDetails]
+      processes: List[ScenarioWithDetailsForMigrations],
+      fragments: List[ScenarioWithDetailsForMigrations]
   ) = new MockRemoteEnvironment {
 
-    private def allProcesses: List[ScenarioWithDetails] = processes ++ fragments
+    private def allProcesses: List[ScenarioWithDetailsForMigrations] = processes ++ fragments
 
     override protected def request(
         uri: Uri,
@@ -194,7 +200,7 @@ class StandardRemoteEnvironmentSpec
 
       (uri, method) match {
         case GetProcessesDetailsWithoutScenarioGraph() =>
-          Marshal(allProcesses.map(_.copy(json = None))).to[ResponseEntity].map { entity =>
+          Marshal(allProcesses.map(_.copy(scenarioGraph = None))).to[ResponseEntity].map { entity =>
             HttpResponse(entity = entity)
           }
         case GetProcessesDetails(names) =>
@@ -235,8 +241,10 @@ class StandardRemoteEnvironmentSpec
 
     whenReady(
       remoteEnvironment.migrate(
-        ProcessTestData.validDisplayableProcess,
-        ProcessTestData.validProcessDetails.processCategory
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.sampleProcessName,
+        ProcessTestData.sampleScenarioParameters,
+        isFragment = false
       )
     ) { result =>
       result.leftValue shouldBe MigrationValidationError(
@@ -252,8 +260,8 @@ class StandardRemoteEnvironmentSpec
 
   it should "not migrate existing scenario when archived on target environment" in {
 
-    var migrated: Option[Future[UpdateProcessCommand]] = None
-    val validArchivedProcess                           = ProcessTestData.archivedValidProcessDetails
+    var migrated: Option[Future[UpdateScenarioCommand]] = None
+    val validArchivedProcess                            = ProcessTestData.archivedValidScenarioDetailsForMigrations
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       validArchivedProcess,
       validArchivedProcess.processCategory,
@@ -262,8 +270,10 @@ class StandardRemoteEnvironmentSpec
     )
     whenReady(
       remoteEnvironment.migrate(
-        ProcessTestData.validDisplayableProcess,
-        ProcessTestData.validProcessDetails.processCategory
+        ProcessTestData.validScenarioGraph,
+        sampleProcessName,
+        ProcessTestData.sampleScenarioParameters,
+        isFragment = false
       )
     ) { result =>
       result.leftValue shouldBe MigrationToArchivedError(validProcess.name, remoteEnvironment.environmentId)
@@ -271,8 +281,8 @@ class StandardRemoteEnvironmentSpec
   }
 
   it should "handle spaces in scenario id" in {
-    val process =
-      TestProcessUtil.toDisplayable(ProcessTestData.validProcessWithName(ProcessName("a b c")))
+    val name          = ProcessName("a b c")
+    val scenarioGraph = ProcessTestData.validScenarioGraph
 
     val remoteEnvironment = new MockRemoteEnvironment {
 
@@ -283,7 +293,12 @@ class StandardRemoteEnvironmentSpec
           header: Seq[HttpHeader]
       ): Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/a") && method == HttpMethods.GET) {
-          Marshal(ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(displayableToProcess(process)))
+          Marshal(
+            ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
+              wrapGraphWithScenarioDetailsEntity(name, scenarioGraph),
+              ProcessTestData.sampleScenarioParameters
+            )
+          )
             .to[RequestEntity]
             .map { entity =>
               HttpResponse(StatusCodes.OK, entity = entity)
@@ -294,15 +309,15 @@ class StandardRemoteEnvironmentSpec
       }
     }
 
-    whenReady(remoteEnvironment.compare(process, None)) { result =>
+    whenReady(remoteEnvironment.compare(scenarioGraph, name, None)) { result =>
       result shouldBe Symbol("right")
     }
 
   }
 
   it should "handle non-ascii signs in scenario id" in {
-    val process =
-      TestProcessUtil.toDisplayable(ProcessTestData.validProcessWithName(ProcessName("łódź")))
+    val name          = ProcessName("łódź")
+    val scenarioGraph = ProcessTestData.validScenarioGraph
 
     val remoteEnvironment = new MockRemoteEnvironment {
 
@@ -313,7 +328,12 @@ class StandardRemoteEnvironmentSpec
           headers: Seq[HttpHeader]
       ): Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
-          Marshal(ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(displayableToProcess(process)))
+          Marshal(
+            ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(
+              wrapGraphWithScenarioDetailsEntity(name, scenarioGraph),
+              ProcessTestData.sampleScenarioParameters
+            )
+          )
             .to[RequestEntity]
             .map { entity =>
               HttpResponse(StatusCodes.OK, entity = entity)
@@ -323,25 +343,27 @@ class StandardRemoteEnvironmentSpec
         }
       }
     }
-    whenReady(remoteEnvironment.compare(process, None)) { result =>
+    whenReady(remoteEnvironment.compare(scenarioGraph, name, None)) { result =>
       result shouldBe Symbol("right")
     }
 
   }
 
   it should "migrate valid existing scenario" in {
-    var migrated: Option[Future[UpdateProcessCommand]] = None
+    var migrated: Option[Future[UpdateScenarioCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
-      ProcessTestData.validProcessDetails,
-      ProcessTestData.validProcessDetails.processCategory,
-      ProcessTestData.validDisplayableProcess.name :: Nil,
+      ProcessTestData.validScenarioDetailsForMigrations,
+      ProcessTestData.validScenarioDetailsForMigrations.processCategory,
+      sampleProcessName :: Nil,
       migrationFuture => migrated = Some(migrationFuture)
     )
 
     whenReady(
       remoteEnvironment.migrate(
-        ProcessTestData.validDisplayableProcess,
-        ProcessTestData.validProcessDetails.processCategory
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.validScenarioDetailsForMigrations.name,
+        ProcessTestData.sampleScenarioParameters,
+        ProcessTestData.validScenarioDetailsForMigrations.isFragment
       )
     ) { result =>
       result shouldBe Symbol("right")
@@ -353,23 +375,25 @@ class StandardRemoteEnvironmentSpec
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
-      processToSave.process shouldBe ProcessTestData.validDisplayableProcess
+      processToSave.scenarioGraph shouldBe ProcessTestData.validScenarioGraph
     }
   }
 
   it should "migrate valid non-existing scenario" in {
-    var migrated: Option[Future[UpdateProcessCommand]] = None
+    var migrated: Option[Future[UpdateScenarioCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
-      ProcessTestData.validProcessDetails,
-      ProcessTestData.validProcessDetails.processCategory,
+      ProcessTestData.validScenarioDetailsForMigrations,
+      ProcessTestData.validScenarioDetailsForMigrations.processCategory,
       Nil,
       migrationFuture => migrated = Some(migrationFuture)
     )
 
     whenReady(
       remoteEnvironment.migrate(
-        ProcessTestData.validDisplayableProcess,
-        ProcessTestData.validProcessDetails.processCategory
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.validScenarioDetailsForMigrations.name,
+        ProcessTestData.sampleScenarioParameters,
+        ProcessTestData.validScenarioDetailsForMigrations.isFragment
       )
     ) { result =>
       result shouldBe Symbol("right")
@@ -381,15 +405,15 @@ class StandardRemoteEnvironmentSpec
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
-      processToSave.process shouldBe ProcessTestData.validDisplayableProcess
+      processToSave.scenarioGraph shouldBe ProcessTestData.validScenarioGraph
     }
   }
 
   it should "migrate fragment" in {
-    val category                                       = TestCategories.Category1
-    var migrated: Option[Future[UpdateProcessCommand]] = None
-    val fragment                 = TestProcessUtil.toDisplayable(ProcessTestData.sampleFragment, category = category)
-    val validatedFragmentDetails = TestProcessUtil.wrapWithDetails(fragment)
+    val category                                        = TestCategories.Category1
+    var migrated: Option[Future[UpdateScenarioCommand]] = None
+    val fragment                 = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
+    val validatedFragmentDetails = TestProcessUtil.wrapWithDetailsForMigration(fragment, sampleFragmentName)
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       validatedFragmentDetails,
       expectedProcessCategory = category,
@@ -397,29 +421,41 @@ class StandardRemoteEnvironmentSpec
       onMigrate = migrationFuture => migrated = Some(migrationFuture)
     )
 
-    remoteEnvironment.migrate(fragment, category).futureValue shouldBe Symbol("right")
+    remoteEnvironment
+      .migrate(fragment, sampleFragmentName, ProcessTestData.sampleScenarioParameters, isFragment = true)
+      .futureValue shouldBe Symbol(
+      "right"
+    )
     migrated shouldBe Symbol("defined")
     remoteEnvironment.triedToAddProcess shouldBe true
     remoteEnvironment.addedFragment shouldBe Some(true)
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
-      processToSave.process shouldBe fragment
+      processToSave.scenarioGraph shouldBe fragment
     }
   }
 
   it should "test migration" in {
     val remoteEnvironment = environmentForTestMigration(
-      processes = ProcessTestData.validProcessDetails :: Nil,
-      fragments = TestProcessUtil.wrapWithDetails(toDisplayable(ProcessTestData.sampleFragment)) :: Nil
+      processes = ProcessTestData.validScenarioDetailsForMigrations :: Nil,
+      fragments = TestProcessUtil.wrapWithDetailsForMigration(
+        CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment),
+        sampleFragment.name
+      ) :: Nil
     )
 
-    val migrationResult = remoteEnvironment.testMigration().futureValue.rightValue
+    val migrationResult = remoteEnvironment
+      .testMigration(
+        batchingExecutionContext = ExecutionContext.global
+      )
+      .futureValue
+      .rightValue
 
     migrationResult should have size 2
     migrationResult.map(
       _.processName
-    ) should contain only (ProcessTestData.validProcessDetails.name, ProcessTestData.sampleFragment.name)
+    ) should contain only (ProcessTestData.validScenarioDetailsForMigrations.name, ProcessTestData.sampleFragment.name)
   }
 
 }

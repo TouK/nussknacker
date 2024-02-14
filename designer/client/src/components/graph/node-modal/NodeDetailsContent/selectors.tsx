@@ -1,5 +1,5 @@
 import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
-import { getProcessToDisplay } from "../../../../reducers/selectors/graph";
+import { getScenario, getScenarioGraph } from "../../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { RootState } from "../../../../reducers";
@@ -13,7 +13,7 @@ export const getScenarioPropertiesConfig = createSelector(
     getProcessDefinitionData,
     (s) => (s.scenarioPropertiesConfig || {}) as ScenarioPropertiesConfig,
 );
-const getNodeResults = createSelector(getProcessToDisplay, (process) => ProcessUtils.getNodeResults(process));
+const getNodeResults = createSelector(getScenario, (scenario) => ProcessUtils.getNodeResults(scenario));
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>
     ProcessUtils.findVariablesForBranches(nodeResults),
 );
@@ -47,8 +47,8 @@ export const getNodeExpressionType = createSelector(getExpressionType, getNodeTy
         fields: (type && "fields" in type && type.fields) || nodeTypingInfo(nodeId),
     };
 });
-export const getProcessProperties = createSelector(getProcessToDisplay, (s) => s.properties);
-export const getProcessName = createSelector(getProcessToDisplay, (s) => s.name);
+export const getProcessProperties = createSelector(getScenarioGraph, (s) => s.properties);
+export const getProcessName = createSelector(getScenario, (s) => s.name);
 export const getCurrentErrors = createSelector(
     getValidationPerformed,
     getValidationErrors,
@@ -70,10 +70,8 @@ export const getDynamicParameterDefinitions = createSelector(
     },
 );
 
-export const getFindAvailableVariables = createSelector(
-    getComponentsDefinition,
-    getProcessToDisplay,
-    (processDefinition, processToDisplay) => ProcessUtils.findAvailableVariables(processDefinition, processToDisplay),
+export const getFindAvailableVariables = createSelector(getComponentsDefinition, getScenario, (processDefinition, scenario) =>
+    ProcessUtils.findAvailableVariables(processDefinition, scenario),
 );
 export const getVariableTypes = createSelector(
     getNodeResults,

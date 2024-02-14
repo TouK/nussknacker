@@ -13,7 +13,7 @@ import org.springframework.core.convert.support.DefaultConversionService
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentInfo, ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentId, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
@@ -43,7 +43,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
   private val components = List(
     ComponentDefinition(
       "stringSource",
-      SourceFactory.noParam[String](new pl.touk.nussknacker.engine.api.process.Source {})
+      SourceFactory.noParamUnboundedStreamFactory[String](new pl.touk.nussknacker.engine.api.process.Source {})
     ),
     ComponentDefinition("service", new SomeService),
   )
@@ -75,7 +75,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       case Invalid(
             NonEmptyList(
               NuExceptionInfo(
-                Some(NodeComponentInfo("invoke-service", Some(ComponentInfo(ComponentType.Service, "service")))),
+                Some(NodeComponentInfo("invoke-service", Some(ComponentId(ComponentType.Service, "service")))),
                 ex,
                 _
               ),

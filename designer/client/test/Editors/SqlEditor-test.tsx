@@ -23,7 +23,7 @@ const store = mockStore({
             customActions: [],
         },
     },
-    graphReducer: { history: { present: [] }, processToDisplay: {} },
+    graphReducer: { history: { present: { scenario: { scenarioGraph: {} } } } },
 });
 
 describe(SqlEditor.name, () => {

@@ -244,10 +244,9 @@ object SpelExpressionParser extends LazyLogging {
     }
   }
 
-  // caching?
   def default(
       classLoader: ClassLoader,
-      expressionConfig: ExpressionConfigDefinition[_],
+      expressionConfig: ExpressionConfigDefinition,
       dictRegistry: DictRegistry,
       enableSpelForceCompile: Boolean,
       flavour: Flavour,

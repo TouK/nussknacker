@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import Creatable from "react-select/creatable";
 import { useUserSettings } from "../../common/userSettings";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { useTheme } from "@mui/material";
+import { Typography, useTheme } from "@mui/material";
 
 export function UserSettingsPanel(): JSX.Element {
     const { t } = useTranslation();
@@ -49,8 +49,8 @@ interface MultiValueLabelProps {
 const MultiValueLabel = ({ data, innerProps }: MultiValueLabelProps) => {
     const [, toggle] = useUserSettings();
     return (
-        <span onClick={() => toggle([data.label])} className={innerProps.className}>
+        <Typography variant={"subtitle2"} onClick={() => toggle([data.label])} className={innerProps.className}>
             {data.value ? "✅" : "⛔️"} {data.label}
-        </span>
+        </Typography>
     );
 };

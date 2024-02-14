@@ -4,14 +4,17 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.{
+  ExpressionConfigDefinition,
+  GlobalVariableDefinitionWithImplementation,
+  ObjectWithType
+}
 import pl.touk.nussknacker.engine.util.Implicits._
 
 class GlobalVariablesPreparer(
-    globalVariablesDefWithImpl: Map[String, MethodBasedComponentDefinitionWithImplementation],
+    globalVariablesDefWithImpl: Map[String, GlobalVariableDefinitionWithImplementation],
     hideMetaVariable: Boolean
 ) {
 
@@ -29,7 +32,7 @@ class GlobalVariablesPreparer(
   )
 
   def prepareGlobalVariables(metaData: MetaData): Map[String, ObjectWithType] = {
-    val globalVariablesWithType = globalVariablesDefWithImpl.mapValuesNow(toGlobalVariable(_, metaData))
+    val globalVariablesWithType = globalVariablesDefWithImpl.mapValuesNow(_.objectWithType(metaData))
     if (hideMetaVariable) {
       globalVariablesWithType
     } else {
@@ -38,7 +41,7 @@ class GlobalVariablesPreparer(
   }
 
   private def prepareGlobalVariablesTypes(scenarioPropertiesNames: Iterable[String]): Map[String, TypingResult] = {
-    val globalVariableTypes = globalVariablesDefWithImpl.mapValuesNow(toGlobalVariableType)
+    val globalVariableTypes = globalVariablesDefWithImpl.mapValuesNow(_.typ)
     if (hideMetaVariable) {
       globalVariableTypes
     } else {
@@ -48,54 +51,12 @@ class GlobalVariablesPreparer(
     }
   }
 
-  private def toGlobalVariable(
-      componentDefWithImpl: MethodBasedComponentDefinitionWithImplementation,
-      metaData: MetaData
-  ): ObjectWithType = {
-    componentDefWithImpl.implementation match {
-      case typedGlobalVariable: TypedGlobalVariable =>
-        ObjectWithType(typedGlobalVariable.value(metaData), typedGlobalVariable.returnType(metaData))
-      case _ =>
-        ObjectWithType(
-          componentDefWithImpl.implementation,
-          componentDefWithImpl.returnType
-            .getOrElse(
-              throw new IllegalStateException("Global variable with empty return type.")
-            )
-        )
-    }
-  }
-
-  private def toGlobalVariableType(
-      componentDefWithImpl: MethodBasedComponentDefinitionWithImplementation
-  ): TypingResult = {
-    componentDefWithImpl.implementation match {
-      case typedGlobalVariable: TypedGlobalVariable =>
-        typedGlobalVariable.initialReturnType
-      case _ =>
-        componentDefWithImpl.returnType.getOrElse(
-          throw new IllegalStateException("Global variable with empty return type.")
-        )
-    }
-  }
-
 }
 
 object GlobalVariablesPreparer {
 
-  def apply(
-      expressionDefinition: ExpressionConfigDefinition[ComponentDefinitionWithImplementation]
-  ): GlobalVariablesPreparer = {
-    // We have an assumption that GlobalVariables are handled by MethodBasedComponentDefinitionWithImplementation
-    // See GlobalVariableDefinitionExtractor
-    val methodBasedGlobalVariables = expressionDefinition.globalVariables.mapValuesNow {
-      case methodBased: MethodBasedComponentDefinitionWithImplementation => methodBased
-      case dynamic: DynamicComponentDefinitionWithImplementation =>
-        throw new IllegalStateException(s"Global variable represented as a dynamic component: $dynamic")
-    }
-    new GlobalVariablesPreparer(methodBasedGlobalVariables, expressionDefinition.hideMetaVariable)
+  def apply(expressionDefinition: ExpressionConfigDefinition): GlobalVariablesPreparer = {
+    new GlobalVariablesPreparer(expressionDefinition.globalVariables, expressionDefinition.hideMetaVariable)
   }
 
 }
-
-case class ObjectWithType(obj: Any, typ: TypingResult)

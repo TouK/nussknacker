@@ -4,8 +4,8 @@ import WarningIcon from "@mui/icons-material/Warning";
 import NodeUtils from "../graph/NodeUtils";
 import { groupBy } from "lodash";
 import { LinkStyled } from "./Styled";
-import { NodeType, Process } from "../../types";
-import { styled } from "@mui/material";
+import { NodeType, ScenarioGraph } from "../../types";
+import { styled, Typography } from "@mui/material";
 
 interface Warning {
     error: {
@@ -28,12 +28,12 @@ const StyledWarningIcon = styled(WarningIcon)(
 interface WarningsProps {
     warnings: Warning[];
     showDetails: (event: React.MouseEvent, node: NodeType) => void;
-    currentProcess: Process;
+    scenarioGraph: ScenarioGraph;
 }
 
 const headerMessageByWarningType = new Map([["DisabledNode", "Nodes disabled: "]]);
 
-const Warnings = ({ warnings, showDetails, currentProcess }: WarningsProps) => {
+const Warnings = ({ warnings, showDetails, scenarioGraph }: WarningsProps) => {
     const groupedByType = groupBy(warnings, (warning) => warning.error.typ);
     const separator = ", ";
 
@@ -43,17 +43,22 @@ const Warnings = ({ warnings, showDetails, currentProcess }: WarningsProps) => {
             <div>
                 {Object.entries(groupedByType).map(([warningType, warnings]) => (
                     <div key={uuid4()} title={warnings[0]?.error.description}>
-                        <span>{headerMessageByWarningType.get(warningType)}</span>
+                        <Typography component={"span"} variant={"body2"}>
+                            {headerMessageByWarningType.get(warningType)}
+                        </Typography>
                         <div style={{ display: "inline" }}>
                             {warnings.map((warning, index) => (
-                                <LinkStyled
+                                <Typography
+                                    variant={"body2"}
+                                    fontWeight={"bold"}
+                                    component={LinkStyled}
                                     key={uuid4()}
                                     to={""}
-                                    onClick={(event) => showDetails(event, NodeUtils.getNodeById(warning.key, currentProcess))}
+                                    onClick={(event) => showDetails(event, NodeUtils.getNodeById(warning.key, scenarioGraph))}
                                 >
-                                    <span>{warning.key}</span>
+                                    {warning.key}
                                     {index < warnings.length - 1 ? separator : null}
-                                </LinkStyled>
+                                </Typography>
                             ))}
                         </div>
                     </div>

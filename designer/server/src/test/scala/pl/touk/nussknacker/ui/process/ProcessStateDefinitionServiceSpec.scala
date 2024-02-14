@@ -3,26 +3,26 @@ package pl.touk.nussknacker.ui.process
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFactory}
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider}
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider, TestFactory}
+import pl.touk.nussknacker.ui.process.processingtype.{
+  ProcessingTypeData,
+  ProcessingTypeDataProvider,
+  ValueWithRestriction
+}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
-
-  private val categoryService = ConfigProcessCategoryService(
-    Map(Streaming -> Category1, Fraud -> Category2)
-  )
 
   test("should fetch state definitions when definitions with the same name are unique") {
     val streamingProcessStateDefinitionManager =
@@ -146,7 +146,13 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       createProcessingTypeDataMap(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
     val stateDefinitions = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
     val service = new ProcessStateDefinitionService(
-      ProcessingTypeDataProvider(Map.empty, (stateDefinitions, categoryService))
+      ProcessingTypeDataProvider(
+        Map(
+          Streaming -> ValueWithRestriction.userWithAccessRightsToAnyOfCategories(Category1, Set(Category1)),
+          Fraud     -> ValueWithRestriction.userWithAccessRightsToAnyOfCategories(Category2, Set(Category2))
+        ),
+        stateDefinitions
+      )
     )
     service.fetchStateDefinitions(user)
   }
@@ -162,28 +168,36 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   ): Map[ProcessingType, ProcessingTypeData] = {
     Map(
       Streaming -> createProcessingTypeData(
-        new MockDeploymentManager() {
-          override def processStateDefinitionManager: ProcessStateDefinitionManager = streaming
-        },
+        Streaming,
+        streaming,
         Category1
       ),
       Fraud -> createProcessingTypeData(
-        new MockDeploymentManager() {
-          override def processStateDefinitionManager: ProcessStateDefinitionManager = fraud
-        },
+        Fraud,
+        fraud,
         Category1
       ),
     )
   }
 
   private def createProcessingTypeData(
-      deploymentManager: DeploymentManager,
-      category: Category
+      processingType: ProcessingType,
+      stateDefinitionManager: ProcessStateDefinitionManager,
+      category: String
   ): ProcessingTypeData = {
     ProcessingTypeData.createProcessingTypeData(
-      MockManagerProvider,
-      deploymentManager,
-      LocalModelData(ConfigFactory.empty(), List.empty),
+      processingType,
+      new MockManagerProvider(
+        new MockDeploymentManager() {
+          override def processStateDefinitionManager: ProcessStateDefinitionManager = stateDefinitionManager
+        }
+      ),
+      TestFactory.deploymentManagerDependencies,
+      EngineSetupName("mock"),
+      LocalModelData(
+        ConfigFactory.empty(),
+        List(ComponentDefinition("source", SourceFactory.noParamUnboundedStreamFactory[Any](new Source {})))
+      ),
       ConfigFactory.empty(),
       category
     )

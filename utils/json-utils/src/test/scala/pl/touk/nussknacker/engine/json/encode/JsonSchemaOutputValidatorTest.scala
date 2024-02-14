@@ -35,14 +35,14 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
           classOf[java.util.Map[_, _]],
           List(
             typedClass[String],
-            TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String]))
+            Typed.record(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String]))
           )
         ),
         true
       ),
       (genericTypeClass(classOf[java.util.List[_]], List(typedClass[String])), false),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])), true),
-      (TypedObjectTypingResult(ListMap("foo" -> Unknown)), true), // not tested in functional tests
+      (Typed.record(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])), true),
+      (Typed.record(ListMap("foo" -> Unknown)), true), // not tested in functional tests
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
@@ -67,16 +67,16 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
       (
         genericTypeClass(
           classOf[java.util.Map[_, _]],
-          List(typedClass[String], TypedObjectTypingResult(ListMap("foo" -> Typed[String], "baz" -> Typed[String])))
+          List(typedClass[String], Typed.record(ListMap("foo" -> Typed[String], "baz" -> Typed[String])))
         ),
         false
       ),
       (
-        TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])),
+        Typed.record(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])),
         false
       ),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "baz" -> Typed[String])), true),
-      (TypedObjectTypingResult(ListMap("foo" -> Unknown)), false),
+      (Typed.record(ListMap("foo" -> Typed[String], "baz" -> Typed[String])), true),
+      (Typed.record(ListMap("foo" -> Unknown)), false),
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
@@ -100,13 +100,13 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
       (
         genericTypeClass(
           classOf[java.util.Map[_, _]],
-          List(typedClass[String], TypedObjectTypingResult(ListMap("foo" -> Typed[String], "baz" -> Typed[String])))
+          List(typedClass[String], Typed.record(ListMap("foo" -> Typed[String], "baz" -> Typed[String])))
         ),
         false
       ),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])), true),
+      (Typed.record(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])), true),
       (
-        TypedObjectTypingResult(
+        Typed.record(
           ListMap(
             "foo" -> Typed[String],
             "bar" -> Typed[Integer],
@@ -115,7 +115,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
         ),
         false
       ),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "baz" -> Typed[String])), true),
+      (Typed.record(ListMap("foo" -> Typed[String], "baz" -> Typed[String])), true),
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
@@ -141,11 +141,11 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
 
     val testData = Table(
       ("typing", "is valid for strict", "is valid for lax"),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer])), true, true),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[Integer])), false, false),
-      (TypedObjectTypingResult(ListMap("foo_int" -> Typed[String])), false, false),
-      (TypedObjectTypingResult(ListMap("foo_int" -> Unknown)), false, true),
-      (TypedObjectTypingResult(ListMap("foo" -> Unknown)), false, true),
+      (Typed.record(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer])), true, true),
+      (Typed.record(ListMap("foo" -> Typed[Integer])), false, false),
+      (Typed.record(ListMap("foo_int" -> Typed[String])), false, false),
+      (Typed.record(ListMap("foo_int" -> Unknown)), false, true),
+      (Typed.record(ListMap("foo" -> Unknown)), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Boolean])), false, false),
@@ -173,11 +173,11 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
 
     val testData = Table(
       ("typing", "is valid for strict", "is valid for lax"),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer])), true, true),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[Integer])), true, true),
-      (TypedObjectTypingResult(ListMap("foo_int" -> Typed[String])), false, false),
-      (TypedObjectTypingResult(ListMap("foo_int" -> Unknown)), false, true),
-      (TypedObjectTypingResult(ListMap("foo" -> Unknown)), true, true),
+      (Typed.record(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer])), true, true),
+      (Typed.record(ListMap("foo" -> Typed[Integer])), true, true),
+      (Typed.record(ListMap("foo_int" -> Typed[String])), false, false),
+      (Typed.record(ListMap("foo_int" -> Unknown)), false, true),
+      (Typed.record(ListMap("foo" -> Unknown)), true, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Boolean])), false, true),
@@ -214,17 +214,17 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     val testData = Table(
       ("typing", "is valid for strict", "is valid for lax"),
       (
-        TypedObjectTypingResult(
+        Typed.record(
           ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer], "booleanProperty" -> Typed[Boolean])
         ),
         true,
         true
       ),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer])), false, true),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[Integer])), false, false),
-      (TypedObjectTypingResult(ListMap("foo_int" -> Typed[String])), false, false),
-      (TypedObjectTypingResult(ListMap("foo_int" -> Unknown)), false, true),
-      (TypedObjectTypingResult(ListMap("foo" -> Unknown)), false, true),
+      (Typed.record(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer])), false, true),
+      (Typed.record(ListMap("foo" -> Typed[Integer])), false, false),
+      (Typed.record(ListMap("foo_int" -> Typed[String])), false, false),
+      (Typed.record(ListMap("foo_int" -> Unknown)), false, true),
+      (Typed.record(ListMap("foo" -> Unknown)), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Boolean])), false, true),
@@ -250,14 +250,14 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
 
     val testData = Table(
       ("typing", "is valid for strict", "is valid for lax"),
-      (TypedObjectTypingResult(ListMap("explicitProperty" -> Typed[String])), true, true),
-      (TypedObjectTypingResult(ListMap("explicitProperty" -> Typed[Integer])), false, false),
+      (Typed.record(ListMap("explicitProperty" -> Typed[String])), true, true),
+      (Typed.record(ListMap("explicitProperty" -> Typed[Integer])), false, false),
       (
-        TypedObjectTypingResult(ListMap("explicitProperty" -> Typed[String], "additionalProperty" -> Typed[String])),
+        Typed.record(ListMap("explicitProperty" -> Typed[String], "additionalProperty" -> Typed[String])),
         false,
         true
       ),
-      (TypedObjectTypingResult(ListMap[String, TypingResult]()), false, true),
+      (Typed.record(ListMap[String, TypingResult]()), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), false, false),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], Unknown)), false, true),
@@ -284,16 +284,16 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
 
     val testData = Table(
       ("typing", "is valid for strict", "is valid for lax"),
-      (TypedObjectTypingResult(ListMap("explicitRequiredProperty" -> Typed[String])), true, true),
-      (TypedObjectTypingResult(ListMap("explicitRequiredProperty" -> Typed[Integer])), false, false),
+      (Typed.record(ListMap("explicitRequiredProperty" -> Typed[String])), true, true),
+      (Typed.record(ListMap("explicitRequiredProperty" -> Typed[Integer])), false, false),
       (
-        TypedObjectTypingResult(
+        Typed.record(
           ListMap("explicitRequiredProperty" -> Typed[String], "additionalProperty" -> Typed[String])
         ),
         true,
         true
       ),
-      (TypedObjectTypingResult(ListMap[String, TypingResult]()), false, false),
+      (Typed.record(ListMap[String, TypingResult]()), false, false),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), false, false),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], Unknown)), false, true),
@@ -314,10 +314,10 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     def validate(typing: TypingResult) = new JsonSchemaOutputValidator(ValidationMode.strict)
       .validate(typing, emptyMapSchema)
 
-    validate(TypedObjectTypingResult(ListMap[String, TypingResult]())) shouldBe Symbol("valid")
-    validate(TypedObjectTypingResult(ListMap("stringProp" -> Typed[String]))) shouldBe Symbol("valid")
+    validate(Typed.record(ListMap[String, TypingResult]())) shouldBe Symbol("valid")
+    validate(Typed.record(ListMap("stringProp" -> Typed[String]))) shouldBe Symbol("valid")
     validate(
-      TypedObjectTypingResult(ListMap("someMap" -> TypedObjectTypingResult(ListMap("any" -> Typed[String]))))
+      Typed.record(ListMap("someMap" -> Typed.record(ListMap("any" -> Typed[String]))))
     ) shouldBe Symbol("valid")
 
   }

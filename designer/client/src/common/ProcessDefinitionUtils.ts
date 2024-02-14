@@ -1,9 +1,4 @@
-import { flatMap } from "lodash";
-import { Component, ComponentGroup, ProcessDefinitionData } from "../types";
-
-export function getFlatComponents(processDefinitionData: ProcessDefinitionData): Component[] {
-    return flatMap(processDefinitionData.componentGroups || [], (group) => group.components);
-}
+import { Component, ComponentGroup } from "../types";
 
 export function filterComponentsByLabel(filters: string[]): (componentGroup: ComponentGroup) => ComponentGroup {
     const predicate = ({ label }: Component) => filters.every((searchText) => label.toLowerCase().includes(searchText));

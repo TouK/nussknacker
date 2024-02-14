@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.component
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
@@ -28,8 +28,10 @@ object ComponentDefinitionExtractor {
 
   def extract(
       inputComponentDefinition: ComponentDefinition,
-      additionalConfigs: ComponentsUiConfig
-  ): Option[(String, ComponentDefinitionWithImplementation)] = {
+      additionalConfigs: ComponentsUiConfig,
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): Option[ComponentDefinitionWithImplementation] = {
     val configBasedOnDefinition = SingleComponentConfig.zero
       .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
     ComponentDefinitionExtractor
@@ -37,16 +39,19 @@ object ComponentDefinitionExtractor {
         inputComponentDefinition.name,
         inputComponentDefinition.component,
         configBasedOnDefinition,
-        additionalConfigs
+        additionalConfigs,
+        determineDesignerWideId,
+        additionalConfigsFromProvider
       )
-      .map(inputComponentDefinition.name -> _)
   }
 
   def extract(
       componentName: String,
       component: Component,
       configFromDefinition: SingleComponentConfig,
-      additionalConfigs: ComponentsUiConfig
+      additionalConfigs: ComponentsUiConfig,
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): Option[ComponentDefinitionWithImplementation] = {
     val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
       component match {
@@ -61,57 +66,79 @@ object ComponentDefinitionExtractor {
         case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
       }
 
-    val componentInfo = ComponentInfo(componentTypeSpecificData.componentType, componentName)
+    val componentId = ComponentId(componentTypeSpecificData.componentType, componentName)
 
-    def withConfigForNotDisabledComponent[T](
+    def additionalConfigFromProvider(overriddenDesignerWideId: Option[DesignerWideComponentId]) = {
+      val designerWideId = overriddenDesignerWideId.getOrElse(determineDesignerWideId(componentId))
+
+      additionalConfigsFromProvider
+        .get(designerWideId)
+        .map(ComponentAdditionalConfigConverter.toSingleComponentConfig)
+        .getOrElse(SingleComponentConfig.zero)
+        .copy(
+          componentId = Some(designerWideId)
+        )
+    }
+
+    def withUiDefinitionForNotDisabledComponent[T](
         returnType: Option[TypingResult]
-    )(f: ConfigWithOriginalGroupName => T): Option[T] = {
+    )(f: (ComponentUiDefinition, Map[String, ParameterConfig]) => T): Option[T] = {
       val defaultConfig =
         DefaultComponentConfigDeterminer.forNotBuiltInComponentType(componentTypeSpecificData, returnType.isDefined)
-      val configFromAdditional = additionalConfigs.getConfig(componentInfo)
-      val combinedConfig       = configFromAdditional |+| configFromDefinition |+| defaultConfig
-      translateGroupNameAndFilterOutDisabled(combinedConfig, additionalConfigs).map(f)
+      val configFromAdditional                    = additionalConfigs.getConfig(componentId)
+      val combinedConfigWithoutConfigFromProvider = configFromAdditional |+| configFromDefinition |+| defaultConfig
+      val designerWideId                          = combinedConfigWithoutConfigFromProvider.componentId
+      val finalCombinedConfig = additionalConfigFromProvider(designerWideId) |+| combinedConfigWithoutConfigFromProvider
+
+      filterOutDisabledAndComputeFinalUiDefinition(finalCombinedConfig, additionalConfigs.groupName).map(f.tupled)
     }
 
     (component match {
       case e: GenericNodeTransformation[_] =>
         val implementationInvoker = new DynamicComponentImplementationInvoker(e)
         Right(
-          withConfigForNotDisabledComponent(ToStaticComponentDefinitionTransformer.staticReturnType(e)) {
-            case ConfigWithOriginalGroupName(componentConfig, originalGroupName) =>
+          withUiDefinitionForNotDisabledComponent(DynamicComponentStaticDefinitionDeterminer.staticReturnType(e)) {
+            (uiDefinition, parametersConfig) =>
               DynamicComponentDefinitionWithImplementation(
+                componentName,
                 implementationInvoker,
                 e,
-                componentConfig,
-                originalGroupName,
-                componentTypeSpecificData
+                componentTypeSpecificData,
+                uiDefinition,
+                parametersConfig
               )
           }
         )
       case _ =>
-        val configCombinedForParameters =
-          additionalConfigs.getConfig(componentInfo) |+| configFromDefinition
+        // We skip defaultConfig here, it is not needed for parameters, and it would generate a cycle of dependency:
+        // method definition need parameters config, which need default config which need return type (for group determining)
+        // which need method definition
+        val combinedConfigWithoutConfigFromProvider =
+          additionalConfigs.getConfig(componentId) |+| configFromDefinition
+        val configFromProvider = additionalConfigFromProvider(combinedConfigWithoutConfigFromProvider.componentId)
+        val combinedConfigForParametersExtraction = configFromProvider |+| combinedConfigWithoutConfigFromProvider
+
         methodDefinitionExtractor
-          .extractMethodDefinition(component, findMainComponentMethod(component), configCombinedForParameters)
+          .extractMethodDefinition(
+            component,
+            findMainComponentMethod(component),
+            combinedConfigForParametersExtraction.params.getOrElse(Map.empty)
+          )
           .map { methodDef =>
             def notReturnAnything(typ: TypingResult) =
               Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
             val returnType = Option(methodDef.returnType).filterNot(notReturnAnything)
-            withConfigForNotDisabledComponent(returnType) {
-              case ConfigWithOriginalGroupName(componentConfig, originalGroupName) =>
-                val staticDefinition = ComponentStaticDefinition(
-                  methodDef.definedParameters,
-                  returnType,
-                  componentConfig,
-                  originalGroupName,
-                  componentTypeSpecificData
-                )
-                val implementationInvoker = extractImplementationInvoker(component, methodDef)
-                MethodBasedComponentDefinitionWithImplementation(
-                  implementationInvoker,
-                  component,
-                  staticDefinition
-                )
+            withUiDefinitionForNotDisabledComponent(returnType) { (uiDefinition, _) =>
+              val staticDefinition      = ComponentStaticDefinition(methodDef.definedParameters, returnType)
+              val implementationInvoker = extractImplementationInvoker(component, methodDef)
+              MethodBasedComponentDefinitionWithImplementation(
+                componentName,
+                implementationInvoker,
+                component,
+                componentTypeSpecificData,
+                staticDefinition,
+                uiDefinition
+              )
             }
           }
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
@@ -146,21 +173,29 @@ object ComponentDefinitionExtractor {
     }
   }
 
-  def translateGroupNameAndFilterOutDisabled(
-      config: SingleComponentConfig,
-      componentsUiConfig: ComponentsUiConfig
-  ): Option[ConfigWithOriginalGroupName] = {
-    val withMappedGroupName = config.copy(
-      componentGroup = componentsUiConfig.groupName(config.componentGroupUnsafe)
-    )
-    lazy val groupMappedToSpecialNullGroup = withMappedGroupName.componentGroup.isEmpty
-    if (withMappedGroupName.disabled || groupMappedToSpecialNullGroup) {
-      None
-    } else {
-      Some(ConfigWithOriginalGroupName(withMappedGroupName, config.componentGroupUnsafe))
+  def filterOutDisabledAndComputeFinalUiDefinition(
+      finalCombinedConfig: SingleComponentConfig,
+      translateGroupName: ComponentGroupName => Option[ComponentGroupName]
+  ): Option[(ComponentUiDefinition, Map[String, ParameterConfig])] = {
+    // At this stage, after combining all properties with default config, we are sure that some properties are defined
+    def getDefinedProperty[T](propertyName: String, getProperty: SingleComponentConfig => Option[T]) =
+      getProperty(finalCombinedConfig).getOrElse(
+        throw new IllegalStateException(s"Component's $propertyName not defined in $finalCombinedConfig")
+      )
+    val originalGroupName = getDefinedProperty("componentGroup", _.componentGroup)
+    val translatedGroupNameOpt = translateGroupName(
+      originalGroupName
+    ) // None mean the special "null" group which hides components that are in this group
+    translatedGroupNameOpt.filterNot(_ => finalCombinedConfig.disabled).map { translatedGroupName =>
+      val uiDefinition = ComponentUiDefinition(
+        originalGroupName,
+        translatedGroupName,
+        getDefinedProperty("icon", _.icon),
+        finalCombinedConfig.docsUrl,
+        getDefinedProperty("componentId", _.componentId),
+      )
+      (uiDefinition, finalCombinedConfig.params.getOrElse(Map.empty))
     }
   }
 
 }
-
-case class ConfigWithOriginalGroupName(config: SingleComponentConfig, originalGroupName: ComponentGroupName)

@@ -83,7 +83,7 @@ object SamplesComponent extends Serializable {
         Typed.fromDetailedType[java.util.List[Int]]
       )(TypeInformation.of(classOf[AnyRef]))
     }
-    SourceFactory.noParam(createSource, Typed.fromDetailedType[java.util.List[Int]])
+    SourceFactory.noParamUnboundedStreamFactory(createSource, Typed.fromDetailedType[java.util.List[Int]])
   }
 
 }

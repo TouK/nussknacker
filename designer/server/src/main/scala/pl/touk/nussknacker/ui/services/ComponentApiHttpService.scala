@@ -2,10 +2,9 @@ package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentApiEndpoints
-import pl.touk.nussknacker.ui.component.ComponentService
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
+import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
 import scala.concurrent.ExecutionContext
@@ -13,10 +12,9 @@ import scala.concurrent.ExecutionContext
 class ComponentApiHttpService(
     config: Config,
     authenticator: AuthenticationResources,
-    getProcessCategoryService: () => ProcessCategoryService,
     componentService: ComponentService
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, getProcessCategoryService, authenticator)
+    extends BaseHttpService(config, authenticator)
     with LazyLogging {
 
   private val componentApiEndpoints = new ComponentApiEndpoints(authenticator.authenticationMethod())
@@ -34,11 +32,11 @@ class ComponentApiHttpService(
   expose {
     componentApiEndpoints.componentUsageEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { user: LoggedUser => componentId: ComponentId =>
+      .serverLogic { user: LoggedUser => designerWideComponentId: DesignerWideComponentId =>
         componentService
-          .getComponentUsages(componentId)(user)
+          .getComponentUsages(designerWideComponentId)(user)
           .map {
-            case Left(_)      => businessError(s"Component $componentId not exist.")
+            case Left(_)      => businessError(s"Component $designerWideComponentId not exist.")
             case Right(value) => success(value)
           }
       }

@@ -8,7 +8,6 @@ import cats.syntax.traverse._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.NuDesignerError
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptio
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.{NuPathMatchers, ProcessComparator}
+import pl.touk.nussknacker.ui.util.{NuPathMatchers, ScenarioGraphComparator}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -58,7 +57,8 @@ class RemoteEnvironmentResources(
                 withProcess(
                   processIdWithName,
                   version,
-                  (process, _) => remoteEnvironment.compare(process, Some(otherVersion))
+                  details =>
+                    remoteEnvironment.compare(details.scenarioGraphUnsafe, processIdWithName.name, Some(otherVersion))
                 )
               }
             }
@@ -66,7 +66,17 @@ class RemoteEnvironmentResources(
         path(ProcessNameSegment / VersionIdSegment / "migrate") { (processName, version) =>
           (post & processId(processName)) { processIdWithName =>
             complete {
-              withProcess(processIdWithName, version, remoteEnvironment.migrate)
+              withProcess(
+                processIdWithName,
+                version,
+                details =>
+                  remoteEnvironment.migrate(
+                    details.scenarioGraphUnsafe,
+                    details.name,
+                    details.parameters,
+                    details.isFragment
+                  )
+              )
             }
           }
         } ~
@@ -83,7 +93,7 @@ class RemoteEnvironmentResources(
   private def compareProcesses(
       processes: List[ScenarioWithDetails]
   )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, EnvironmentComparisonResult]] = {
-    val results = Future.sequence(processes.map(p => compareOneProcess(p.scenarioGraphUnsafe)))
+    val results = Future.sequence(processes.map(compareOneProcess))
     results.map { comparisonResult =>
       comparisonResult
         .sequence[XError, ProcessDifference]
@@ -95,7 +105,7 @@ class RemoteEnvironmentResources(
   private def withProcess[T: Encoder](
       processIdWithName: ProcessIdWithName,
       version: VersionId,
-      fun: (DisplayableProcess, String) => Future[Either[NuDesignerError, T]]
+      fun: ScenarioWithDetails => Future[Either[NuDesignerError, T]]
   )(implicit user: LoggedUser) = {
     processService
       .getProcessWithDetails(
@@ -103,17 +113,17 @@ class RemoteEnvironmentResources(
         version,
         GetScenarioWithDetailsOptions.withsScenarioGraph
       )
-      .flatMap(details => fun(details.scenarioGraphUnsafe, details.processCategory))
+      .flatMap(fun)
       .map(NuDesignerErrorToHttp.toResponseEither[T])
   }
 
   private def compareOneProcess(
-      process: DisplayableProcess
+      scenarioWithDetails: ScenarioWithDetails
   )(implicit ec: ExecutionContext): Future[XError[ProcessDifference]] = {
-    remoteEnvironment.compare(process, None).map {
-      case Right(differences) => Right(ProcessDifference(process.name, presentOnOther = true, differences))
+    remoteEnvironment.compare(scenarioWithDetails.scenarioGraphUnsafe, scenarioWithDetails.name, None).map {
+      case Right(differences) => Right(ProcessDifference(scenarioWithDetails.name, presentOnOther = true, differences))
       case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) =>
-        Right(ProcessDifference(process.name, presentOnOther = false, Map()))
+        Right(ProcessDifference(scenarioWithDetails.name, presentOnOther = false, Map()))
       case Left(error) => Left(error)
     }
   }
@@ -126,7 +136,7 @@ class RemoteEnvironmentResources(
 @JsonCodec final case class ProcessDifference(
     name: ProcessName,
     presentOnOther: Boolean,
-    differences: Map[String, ProcessComparator.Difference]
+    differences: Map[String, ScenarioGraphComparator.Difference]
 ) {
 
   def areSame: Boolean = presentOnOther && differences.isEmpty

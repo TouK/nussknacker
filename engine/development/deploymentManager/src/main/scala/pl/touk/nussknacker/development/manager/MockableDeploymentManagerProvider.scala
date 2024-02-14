@@ -1,33 +1,39 @@
 package pl.touk.nussknacker.development.manager
 
-import akka.actor.ActorSystem
+import cats.data.Validated.valid
+import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
-import sttp.client3.SttpBackend
+import pl.touk.nussknacker.engine.{
+  BaseModelData,
+  DeploymentManagerDependencies,
+  DeploymentManagerProvider,
+  MetaDataInitializer
+}
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
-  ): DeploymentManager =
-    MockableDeploymentManager
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      deploymentManagerDependencies: DeploymentManagerDependencies,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  ): ValidatedNel[String, DeploymentManager] =
+    valid(MockableDeploymentManager)
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
@@ -91,16 +97,12 @@ object MockableDeploymentManagerProvider {
         scenarioTestData: ScenarioTestData
     ): Future[TestProcess.TestResults] = ???
 
-    override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-        implicit freshnessPolicy: DataFreshnessPolicy
-    ): Future[WithDataFreshnessStatus[ProcessState]] = {
-      Future {
-        val status = scenarioStatuses.get().getOrElse(idWithName.name.value, SimpleStateStatus.NotDeployed)
-        WithDataFreshnessStatus(
-          processStateDefinitionManager.processState(StatusDetails(status, None)),
-          cached = false
-        )
-      }
+    override def resolve(
+        idWithName: ProcessIdWithName,
+        statusDetails: List[StatusDetails],
+        lastStateAction: Option[ProcessAction]
+    ): Future[ProcessState] = {
+      Future.successful(processStateDefinitionManager.processState(statusDetails.head))
     }
 
     override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
@@ -114,13 +116,15 @@ object MockableDeploymentManagerProvider {
     override def invokeCustomAction(
         actionRequest: CustomActionRequest,
         canonicalProcess: CanonicalProcess
-    ): Future[Either[CustomActionError, CustomActionResult]] =
-      Future.successful(Left(CustomActionNotImplemented(actionRequest)))
+    ): Future[CustomActionResult] =
+      Future.failed(new NotImplementedError())
 
     override def getProcessStates(name: ProcessName)(
         implicit freshnessPolicy: DataFreshnessPolicy
-    ): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
-      Future.successful(WithDataFreshnessStatus(List.empty, cached = false))
+    ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+      val status = scenarioStatuses.get().getOrElse(name.value, SimpleStateStatus.NotDeployed)
+      Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
+    }
 
     override def close(): Unit = {}
   }

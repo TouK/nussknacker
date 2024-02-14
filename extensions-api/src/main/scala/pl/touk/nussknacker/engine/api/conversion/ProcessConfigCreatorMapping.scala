@@ -44,7 +44,6 @@ object ProcessConfigCreatorMapping {
           additionalClasses = jec.getAdditionalClasses.asScala.toList,
           languages = jec.getLanguages,
           optimizeCompilation = jec.isOptimizeCompilation,
-          strictTypeChecking = jec.isStrictTypeChecking,
           dictionaries = jec.getDictionaries.asScala.toMap,
           hideMetaVariable = jec.isHideMetaVariable,
           methodExecutionForUnknownAllowed = jec.isMethodExecutionForUnknownAllowed
@@ -66,6 +65,9 @@ object ProcessConfigCreatorMapping {
           jSettings.getExcludeClassPredicates.asScala.toSeq,
           jSettings.getExcludeClassMemberPredicates.asScala.toSeq,
           jSettings.getIncludeClassMemberPredicates.asScala.toSeq,
+          jSettings.getTypingFunctionRules.asScala.toSeq.map { entry =>
+            TypingFunctionRule(entry.getKey, entry.getValue)
+          },
           jSettings.getPropertyExtractionStrategy
         )
       }

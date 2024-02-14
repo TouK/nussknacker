@@ -6,8 +6,6 @@ import { alpha } from "../../containers/theme/helpers";
 export const LinkStyled = styled(Link)(
     ({ theme }) => `
     color: ${theme.custom.colors.warning};
-    font-weight: 600;
-    white-space: normal !important;
     &:hover {
         color: ${lighten(theme.custom.colors.warning, 0.25)};
     }

@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.engine.schemedkafka.source
 
-import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.Valid
+import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import io.circe.syntax._
 import io.confluent.kafka.schemaregistry.ParsedSchema
+import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -14,12 +16,11 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
+import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
@@ -27,25 +28,24 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.Universa
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 
-import scala.reflect.ClassTag
-
 /**
   * This is universal kafka source - it will handle both avro and json
   * TODO: Move it to some other module when json schema handling will be available
   */
-class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](
+class UniversalKafkaSourceFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
     val modelDependencies: ProcessObjectDependencies,
-    protected val implProvider: KafkaSourceImplFactory[K, V]
+    protected val implProvider: KafkaSourceImplFactory[Any, Any]
 ) extends SourceFactory
     with KafkaUniversalComponentTransformer[Source]
-    with WithExplicitTypesToExtract {
+    with WithExplicitTypesToExtract
+    with UnboundedStreamComponent {
 
-  override type State = UniversalKafkaSourceFactoryState[K, V]
+  override type State = UniversalKafkaSourceFactoryState
 
   override def typesToExtract: List[TypedClass] =
-    Typed.typedClassOpt[K].toList ::: Typed.typedClassOpt[V].toList ::: Typed.typedClass[TimestampType] :: Nil
+    Typed.typedClass[GenericRecord] :: Typed.typedClass[TimestampType] :: Nil
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -139,8 +139,8 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
       parameters: List[(String, DefinedParameter)],
       keyTypingResult: TypingResult,
       valueTypingResult: TypingResult
-  ): ContextInitializer[ConsumerRecord[K, V]] =
-    new KafkaContextInitializer[K, V](
+  ): ContextInitializer[ConsumerRecord[Any, Any]] =
+    new KafkaContextInitializer[Any, Any](
       OutputVariableNameDependency.extract(dependencies),
       keyTypingResult,
       valueTypingResult
@@ -164,13 +164,13 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
 
     // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
     val deserializationSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory
-      .create[K, V](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
+      .create[Any, Any](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
 
     // prepare KafkaDeserializationSchema based on given key and value schema (without schema evolution - we want format test-data exactly the same way, it was sent to kafka)
     val formatterSchema =
-      schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
+      schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[Any, Any](kafkaConfig, None, None)
     val recordFormatter =
-      schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
+      schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[Any, Any](kafkaConfig, formatterSchema)
     implProvider.createSource(
       params,
       dependencies,
@@ -180,7 +180,8 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
       deserializationSchema,
       recordFormatter,
       kafkaContextInitializer,
-      prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original)
+      prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original),
+      modelDependencies.namingStrategy
     )
   }
 
@@ -228,10 +229,10 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
 
 object UniversalKafkaSourceFactory {
 
-  case class UniversalKafkaSourceFactoryState[K, V](
+  case class UniversalKafkaSourceFactoryState(
       keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      contextInitializer: ContextInitializer[ConsumerRecord[K, V]]
+      contextInitializer: ContextInitializer[ConsumerRecord[Any, Any]]
   )
 
 }

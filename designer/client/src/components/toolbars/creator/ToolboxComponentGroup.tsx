@@ -6,6 +6,7 @@ import { getOpenedComponentGroups, getToolbarsConfigId } from "../../../reducers
 import { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
 import { cx } from "@emotion/css";
+import { Box, Typography } from "@mui/material";
 
 function isEmptyComponentGroup(componentGroup: ComponentGroup) {
     return componentGroup.components.length == 0;
@@ -49,9 +50,11 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
 
     const label = useMemo(
         () => (
-            <span className={"group-label"} onClick={highlighted ? toggleForceCollapsed : toggle}>
-                {name}
-            </span>
+            <Box display={"flex"} alignItems={"center"} width={"95%"} height={"100%"} onClick={highlighted ? toggleForceCollapsed : toggle}>
+                <Typography component={"span"} variant={"body2"}>
+                    {name}
+                </Typography>
+            </Box>
         ),
         [highlighted, name, toggle, toggleForceCollapsed],
     );
@@ -59,7 +62,7 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
     const elements = useMemo(
         () =>
             componentGroup.components.map((component) => (
-                <Tool nodeModel={component.node} label={component.label} key={component.type + component.label} highlights={highlights} />
+                <Tool nodeModel={component.node} label={component.label} key={component.componentId} highlights={highlights} />
             )),
         [highlights, componentGroup.components],
     );

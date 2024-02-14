@@ -1,27 +1,30 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessId
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetails}
+import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 object ScenarioWithDetailsConversions {
 
-  def fromEntity(details: ScenarioWithDetailsEntity[ValidatedDisplayableProcess]): ScenarioWithDetails =
-    fromEntityIgnoringGraphAndValidationResult(details).withScenarioGraphAndValidationResult(
-      details.json
-    )
+  def fromEntity(
+      details: ScenarioWithDetailsEntity[ScenarioGraphWithValidationResult],
+      parameters: ScenarioParameters
+  ): ScenarioWithDetails =
+    fromEntityIgnoringGraphAndValidationResult(details, parameters)
+      .withScenarioGraph(details.json.scenarioGraph)
+      .withValidationResult(details.json.validationResult)
 
   def fromEntityWithScenarioGraph(
-      details: ScenarioWithDetailsEntity[DisplayableProcess]
+      details: ScenarioWithDetailsEntity[ScenarioGraph],
+      parameters: ScenarioParameters
   ): ScenarioWithDetails =
-    fromEntityIgnoringGraphAndValidationResult(details).withScenarioGraphAndValidationResult(
-      ValidatedDisplayableProcess.withEmptyValidationResult(details.json)
-    )
+    fromEntityIgnoringGraphAndValidationResult(details, parameters).withScenarioGraph(details.json)
 
   def fromEntityIgnoringGraphAndValidationResult(
-      details: ScenarioWithDetailsEntity[_]
+      details: ScenarioWithDetailsEntity[_],
+      parameters: ScenarioParameters
   ): ScenarioWithDetails = {
     ScenarioWithDetails(
       name = details.name,
@@ -33,6 +36,8 @@ object ScenarioWithDetailsConversions {
       isFragment = details.isFragment,
       processingType = details.processingType,
       processCategory = details.processCategory,
+      processingMode = parameters.processingMode,
+      engineSetupName = parameters.engineSetupName,
       modificationDate = details.modificationDate,
       modifiedAt = details.modifiedAt,
       modifiedBy = details.modifiedBy,
@@ -42,7 +47,8 @@ object ScenarioWithDetailsConversions {
       lastDeployedAction = details.lastDeployedAction,
       lastStateAction = details.lastStateAction,
       lastAction = details.lastAction,
-      json = None,
+      scenarioGraph = None,
+      validationResult = None,
       history = details.history,
       modelVersion = details.modelVersion,
       state = None
@@ -54,10 +60,6 @@ object ScenarioWithDetailsConversions {
     // TODO: Instead of doing these conversions below, wee should pass around ScenarioWithDetails
     def toEntity: ScenarioWithDetailsEntity[Unit] = {
       toEntity(())
-    }
-
-    def toEntityWithScenarioGraphUnsafe: ScenarioWithDetailsEntity[DisplayableProcess] = {
-      toEntity(scenarioWithDetails.scenarioGraphAndValidationResultUnsafe.toDisplayable(scenarioWithDetails.name))
     }
 
     private def toEntity[T](prepareJson: => T): ScenarioWithDetailsEntity[T] = {

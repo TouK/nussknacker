@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import cats.syntax.semigroup._
 import cats.instances.all._
+import cats.syntax.semigroup._
 import pl.touk.nussknacker.security.Permission
 
 import scala.language.implicitConversions
 
 trait TestPermissions {
 
-  import TestPermissions._
   import TestCategories._
+  import TestPermissions._
 
   protected implicit def convertCategoryPermissionPairToCategorizedPermissionsMap(
       pair: (String, Permission.Value)

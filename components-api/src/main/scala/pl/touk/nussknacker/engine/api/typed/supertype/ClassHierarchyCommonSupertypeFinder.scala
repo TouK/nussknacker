@@ -21,10 +21,12 @@ import scala.collection.immutable.ListSet
 object ClassHierarchyCommonSupertypeFinder {
 
   private val IgnoredCommonInterfaces = Set[Class[_]](
-    classOf[Serializable],
-    classOf[Comparable[_]],
-    classOf[Cloneable],
-    classOf[Product]
+    classOf[java.io.Serializable],
+    classOf[java.lang.Comparable[_]],
+    classOf[java.lang.Cloneable],
+    classOf[scala.Serializable],
+    classOf[scala.Cloneable],
+    classOf[scala.Product],
   )
 
   def findCommonSupertypes(first: Class[_], sec: Class[_]): Set[Class[_]] = {
@@ -54,8 +56,9 @@ object ClassHierarchyCommonSupertypeFinder {
   }
 
   private def classesOnLowerLevel(classOnUpperLevel: Class[_]): ListSet[Class[_]] = {
-    ListSet.from(Option[Class[_]](classOnUpperLevel.getSuperclass).filterNot(_ == classOf[Object]).toList) ++
-      ListSet.from(classOnUpperLevel.getInterfaces.filterNot(IgnoredCommonInterfaces.contains))
+    val superClassOpt = Option[Class[_]](classOnUpperLevel.getSuperclass)
+    val interfaces    = ListSet.from(classOnUpperLevel.getInterfaces)
+    ListSet.from(superClassOpt.filterNot(_ == classOf[Object]).toList) ++ interfaces.diff(IgnoredCommonInterfaces)
   }
 
 }

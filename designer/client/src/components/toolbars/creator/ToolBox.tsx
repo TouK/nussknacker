@@ -27,6 +27,7 @@ const StyledToolbox = styled("div")(
             border: 1px solid ${alpha(theme.custom.colors.arsenic, 50)};
             cursor: pointer;
             display: flex;
+            align-items: center;
             padding: 0 5px;
             height: 28px;
             line-height: 28px;
@@ -84,10 +85,6 @@ const StyledToolbox = styled("div")(
             vertical-align: middle;
             margin-right: 5px;
             margin-bottom: 2px;
-        }
-
-        .group-label {
-            width: 95%;
         }
     `,
 );

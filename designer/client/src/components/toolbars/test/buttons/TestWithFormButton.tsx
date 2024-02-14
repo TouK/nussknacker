@@ -3,8 +3,9 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/test-with-form.svg";
 import {
+    getProcessingType,
     getProcessName,
-    getProcessToDisplay,
+    getScenarioGraph,
     getTestCapabilities,
     getTestParameters,
     isLatestProcessVersion,
@@ -33,7 +34,8 @@ function TestWithFormButton(props: Props) {
     const isRenamed = useSelector(isProcessRenamed);
     const testFormParameters: TestFormParameters[] = useSelector(getTestParameters);
     const scenarioName = useSelector(getProcessName);
-    const processToDisplay = useSelector(getProcessToDisplay);
+    const scenarioGraph = useSelector(getScenarioGraph);
+    const processingType = useSelector(getProcessingType);
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const dispatch = useDispatch();
 
@@ -95,19 +97,19 @@ function TestWithFormButton(props: Props) {
                 sourceId: selectedSource as string,
                 parameterExpressions: parameters,
             };
-            dispatch(testProcessWithParameters(scenarioName, request, processToDisplay));
+            dispatch(testProcessWithParameters(scenarioName, request, scenarioGraph));
         },
         [sourceParameters, selectedSource],
     );
 
     useEffect(() => {
         setAvailable(isAvailable());
-        if (isAvailable() && !isRenamed) dispatch(fetchTestFormParameters(processToDisplay));
-    }, [testCapabilities]);
+        if (isAvailable() && !isRenamed) dispatch(fetchTestFormParameters(scenarioName, scenarioGraph));
+    }, [scenarioName, scenarioGraph, testCapabilities]);
 
     useEffect(() => {
-        if (!isRenamed) dispatch(displayTestCapabilities(processToDisplay));
-    }, [processToDisplay, processIsLatestVersion]);
+        if (!isRenamed) dispatch(displayTestCapabilities(scenarioName, scenarioGraph));
+    }, [scenarioName, scenarioGraph, processIsLatestVersion]);
 
     //For now, we select first source and don't provide way to change it
     //Add support for multiple sources in next iteration (?)
@@ -119,7 +121,7 @@ function TestWithFormButton(props: Props) {
     useEffect(() => {
         setAction({
             variableTypes: variableTypes,
-            processingType: processToDisplay.processingType,
+            processingType,
             layout: {
                 name: "Test",
                 confirmText: "Test",

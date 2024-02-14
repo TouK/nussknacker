@@ -5,11 +5,11 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import { ProcessName } from "../../types";
+import { ProcessName } from "../Process/types";
 import { PromptContent, WindowKind } from "../../windowManager";
 import CommentInput from "../comment/CommentInput";
-import { ValidationLabel } from "../common/ValidationLabel";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
+import { FormHelperText, Typography } from "@mui/material";
 
 export type ToggleProcessActionModalData = {
     action: (processName: ProcessName, comment: string) => Promise<unknown>;
@@ -50,7 +50,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     return (
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark")}>
-                <h3>{props.data.title}</h3>
+                <Typography variant={"h3"}>{props.data.title}</Typography>
                 {displayWarnings && <ProcessDialogWarnings />}
                 <CommentInput
                     onChange={(e) => setComment(e.target.value)}
@@ -64,7 +64,9 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
                     )}
                     autoFocus
                 />
-                <ValidationLabel type="ERROR">{validationError}</ValidationLabel>
+                <FormHelperText title={validationError} error>
+                    {validationError}
+                </FormHelperText>
             </div>
         </PromptContent>
     );

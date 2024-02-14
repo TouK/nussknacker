@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import HttpService from "../../http/HttpService";
-import { getProcessName, getProcessToDisplay } from "../../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { PromptContent } from "../../windowManager";
 import {
@@ -18,11 +18,12 @@ import {
 import { NodeInput } from "../withFocus";
 import ValidationLabels from "./ValidationLabels";
 import { isEmpty } from "lodash";
+import { Typography } from "@mui/material";
 
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
     const processName = useSelector(getProcessName);
-    const processToDisplay = useSelector(getProcessToDisplay);
+    const scenarioGraph = useSelector(getScenarioGraph);
     const maxSize = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount;
 
     const [{ testSampleSize }, setState] = useState({
@@ -31,9 +32,9 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     });
 
     const confirmAction = useCallback(async () => {
-        await HttpService.generateTestData(processName, testSampleSize, processToDisplay);
+        await HttpService.generateTestData(processName, testSampleSize, scenarioGraph);
         props.close();
-    }, [processName, processToDisplay, props, testSampleSize]);
+    }, [processName, testSampleSize, scenarioGraph, props]);
 
     const validators = [literalIntegerValueValidator, minimalNumberValidator(0), maximalNumberValidator(maxSize), mandatoryValueValidator];
     const errors = extendErrors([], testSampleSize, "testData", validators);
@@ -50,7 +51,7 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     return (
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
-                <h3>{t("test-generate.title", "Generate test data")}</h3>
+                <Typography variant={"h3"}>{t("test-generate.title", "Generate test data")}</Typography>
                 <NodeInput
                     value={testSampleSize}
                     onChange={(event) => setState({ testSampleSize: event.target.value })}

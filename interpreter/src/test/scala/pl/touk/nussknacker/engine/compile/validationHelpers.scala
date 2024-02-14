@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
@@ -20,7 +21,7 @@ import scala.concurrent.Future
 
 object validationHelpers {
 
-  object SimpleStringSource extends SourceFactory {
+  object SimpleStringSource extends SourceFactory with UnboundedStreamComponent {
     @MethodToInvoke(returnType = classOf[String])
     def create(): api.process.Source = null
   }
@@ -78,7 +79,7 @@ object validationHelpers {
     ): ContextTransformation = {
       ContextTransformation
         .definedBy { context =>
-          val newType = TypedObjectTypingResult((1 to numberOfFields).map { i =>
+          val newType = Typed.record((1 to numberOfFields).map { i =>
             s"field$i" -> Typed[String]
           }.toMap)
           context.withVariable(variableName, newType, paramName = None)
@@ -100,7 +101,7 @@ object validationHelpers {
     ): JoinContextTransformation = {
       ContextTransformation.join
         .definedBy { contexts =>
-          val newType = TypedObjectTypingResult(contexts.toSeq.map { case (branchId, _) =>
+          val newType = Typed.record(contexts.toSeq.map { case (branchId, _) =>
             branchId -> valueByBranchId(branchId).returnType
           }.toMap)
           Valid(ValidationContext(Map(variableName -> newType)))
@@ -129,7 +130,7 @@ object validationHelpers {
           } else {
             val mainBranchContext = mainBranches.head._2
 
-            val newType = TypedObjectTypingResult(joinedBranches.map { case (branchId, _) =>
+            val newType = Typed.record(joinedBranches.map { case (branchId, _) =>
               branchId -> valueByBranchId(branchId).returnType
             })
 
@@ -270,7 +271,7 @@ object validationHelpers {
     override def nodeDependencies: List[NodeDependency] = List.empty
   }
 
-  class GenericParametersSource extends SourceFactory with GenericParameters[Source] {
+  class GenericParametersSource extends SourceFactory with GenericParameters[Source] with UnboundedStreamComponent {
 
     protected def outputParameters(
         context: ValidationContext,
@@ -300,7 +301,7 @@ object validationHelpers {
 
   }
 
-  class GenericParametersSourceNoTestSupport extends GenericParametersSource {
+  class GenericParametersSourceNoTestSupport extends GenericParametersSource with UnboundedStreamComponent {
 
     override def implementation(
         params: Map[String, Any],
@@ -314,7 +315,7 @@ object validationHelpers {
 
   }
 
-  class GenericParametersSourceNoGenerate extends GenericParametersSource {
+  class GenericParametersSourceNoGenerate extends GenericParametersSource with UnboundedStreamComponent {
 
     override def implementation(
         params: Map[String, Any],
@@ -329,7 +330,7 @@ object validationHelpers {
 
   }
 
-  class SourceWithTestParameters extends GenericParametersSource {
+  class SourceWithTestParameters extends GenericParametersSource with UnboundedStreamComponent {
 
     override def implementation(
         params: Map[String, Any],
@@ -446,7 +447,7 @@ object validationHelpers {
         inputContext: ValidationContext,
         outputVariable: Option[String]
     )(implicit nodeId: NodeId): FinalResults = {
-      val result = TypedObjectTypingResult(
+      val result = Typed.record(
         step.parameters.toMap.filterKeysNow(k => k != "par1" && k != "lazyPar1").map { case (k, v) =>
           k -> v.returnType
         }
@@ -463,7 +464,7 @@ object validationHelpers {
     protected def finalResult(context: ValidationContext, rest: List[(String, BaseDefinedParameter)], name: String)(
         implicit nodeId: NodeId
     ): this.FinalResults = {
-      val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType }.toMap)
+      val result = Typed.record(rest.map { case (k, v) => k -> v.returnType }.toMap)
       prepareFinalResultWithOptionalVariable(context, Some((name, result)), None)
     }
 
@@ -591,6 +592,16 @@ object validationHelpers {
     ): String = ""
 
     override def nodeDependencies: List[NodeDependency] = List.empty
+  }
+
+  object OptionalParameterService extends Service {
+
+    @MethodToInvoke
+    def method(
+        @ParamName("optionalParam")
+        optionalParam: Option[String],
+    ): Future[String] = ???
+
   }
 
 }

@@ -5,7 +5,7 @@ import React, { PropsWithChildren, useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAndDisplayProcessCounts } from "../../../actions/nk";
-import { getProcessName, getProcessToDisplay } from "../../../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph } from "../../../reducers/selectors/graph";
 import { WindowContent } from "../../../windowManager";
 import { PickerInput } from "./Picker";
 import { CalculateCountsForm } from "./CalculateCountsForm";
@@ -28,11 +28,11 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
     const [state, setState] = useState(initState);
     const processName = useSelector(getProcessName);
     const dispatch = useDispatch();
-    const processToDisplay = useSelector(getProcessToDisplay);
+    const scenarioGraph = useSelector(getScenarioGraph);
 
     const confirm = useCallback(async () => {
-        await dispatch(fetchAndDisplayProcessCounts(processName, moment(state.from), moment(state.to), processToDisplay));
-    }, [dispatch, processName, state.from, state.to, processToDisplay]);
+        await dispatch(fetchAndDisplayProcessCounts(processName, moment(state.from), moment(state.to), scenarioGraph));
+    }, [dispatch, processName, state.from, state.to, scenarioGraph]);
 
     const isStateValid = moment(state.from).isValid() && moment(state.to).isValid();
     const buttons: WindowButtonProps[] = useMemo(

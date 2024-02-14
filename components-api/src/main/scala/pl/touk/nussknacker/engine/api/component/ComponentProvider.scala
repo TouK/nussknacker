@@ -13,7 +13,29 @@ import pl.touk.nussknacker.engine.version.BuildInfo
   * Components are also in most cases only a factories for the "Executors" which process data streams so
   * in fact they need to be serializable.
   */
-trait Component extends Serializable
+trait Component extends Serializable {
+  // Returns allowed processing modes. In some case we can determine this set based on implementing classes
+  // like in Service case, but in other cases, Component class is only a factory that returns some other class
+  // and we don't know if this class allow given processing mode or not so the developer have to specify this
+  // by his/her own
+  def allowedProcessingModes: Option[Set[ProcessingMode]]
+}
+
+trait UnboundedStreamComponent { self: Component =>
+  override def allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.UnboundedStream))
+}
+
+trait BoundedStreamComponent { self: Component =>
+  override def allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.BoundedStream))
+}
+
+trait RequestResponseComponent { self: Component =>
+  override def allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.RequestResponse))
+}
+
+trait AllProcessingModesComponent { self: Component =>
+  override def allowedProcessingModes: Option[Set[ProcessingMode]] = None
+}
 
 object ComponentProviderConfig {
 

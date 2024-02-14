@@ -15,11 +15,13 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessU
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor}
+import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor, ProcessUncanonizationNodeError}
 import pl.touk.nussknacker.engine.canonize
 
 import scala.language.{higherKinds, reflectiveCalls}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+
+import scala.reflect.ClassTag
 
 case class CompilationResult[+Result](
     typing: Map[String, NodeTypingInfo],
@@ -72,22 +74,49 @@ object CompilationResult extends Applicative[CompilationResult] {
 
   }
 
-  private def fromUncanonizationError(err: canonize.ProcessUncanonizationError): ProcessUncanonizationError = {
-    err match {
+  private def fromUncanonizationErrors(
+      errors: NonEmptyList[canonize.ProcessUncanonizationError]
+  ): NonEmptyList[ProcessCompilationError] = {
+    def mapOne(e: canonize.ProcessUncanonizationError): ProcessUncanonizationError = e match {
       case canonize.EmptyProcess                => EmptyProcess
-      case canonize.InvalidRootNode(nodeId)     => InvalidRootNode(nodeId)
-      case canonize.InvalidTailOfBranch(nodeId) => InvalidTailOfBranch(nodeId)
+      case canonize.InvalidRootNode(nodeId)     => InvalidRootNode(Set(nodeId))
+      case canonize.InvalidTailOfBranch(nodeId) => InvalidTailOfBranch(Set(nodeId))
     }
+    def mergeErrors[T <: ProcessUncanonizationError: ClassTag](
+        collectedSoFar: NonEmptyList[ProcessUncanonizationError],
+        error: ProcessUncanonizationNodeError,
+        create: Set[String] => T
+    ): NonEmptyList[ProcessUncanonizationError] = {
+      val (matching, nonMatching) = collectedSoFar.toList.partition {
+        case _: T => true
+        case _    => false
+      }
+      matching match {
+        case Nil =>
+          NonEmptyList(mapOne(error), nonMatching)
+        case nonEmpty =>
+          NonEmptyList(create(nonEmpty.flatMap(_.nodeIds).toSet + error.nodeId), nonMatching)
+      }
+    }
+    errors.tail.foldLeft(NonEmptyList.one(mapOne(errors.head)))((acc, error) =>
+      error match {
+        case canonize.EmptyProcess => EmptyProcess :: acc
+        case invalidRoot: canonize.InvalidRootNode =>
+          mergeErrors(acc, invalidRoot, InvalidRootNode)
+        case invalidTail: canonize.InvalidTailOfBranch =>
+          mergeErrors(acc, invalidTail, InvalidTailOfBranch)
+      }
+    )
   }
 
   implicit def artificialExtractor[A]: MaybeArtificialExtractor[CompilationResult[A]] =
     (errors: List[canonize.ProcessUncanonizationError], rawValue: CompilationResult[A]) => {
       errors match {
         case Nil => rawValue
-        case e :: es =>
+        case head :: tail =>
           rawValue.copy(
             typing = rawValue.typing.filterKeysNow(key => !key.startsWith(MaybeArtificial.DummyObjectNamePrefix)),
-            result = Invalid(NonEmptyList.of(fromUncanonizationError(e), es.map(fromUncanonizationError): _*))
+            result = Invalid(fromUncanonizationErrors(NonEmptyList(head, tail)))
           )
       }
     }

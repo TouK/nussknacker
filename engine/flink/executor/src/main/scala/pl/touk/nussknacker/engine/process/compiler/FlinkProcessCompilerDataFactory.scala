@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
@@ -34,7 +34,7 @@ class FlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
-    objectNaming: ObjectNaming,
+    namingStrategy: NamingStrategy,
     componentUseCase: ComponentUseCase,
 ) extends Serializable {
 
@@ -45,7 +45,7 @@ class FlinkProcessCompilerDataFactory(
     modelData.configCreator,
     modelData.extractModelDefinitionFun,
     modelData.modelConfig,
-    modelData.objectNaming,
+    modelData.namingStrategy,
     componentUseCase = ComponentUseCase.EngineRuntime,
   )
 
@@ -61,7 +61,7 @@ class FlinkProcessCompilerDataFactory(
       usedNodes: UsedNodes,
       userCodeClassLoader: ClassLoader
   ): FlinkProcessCompilerData = {
-    val modelDependencies = ProcessObjectDependencies(modelConfig, objectNaming)
+    val modelDependencies = ProcessObjectDependencies.withConfig(modelConfig)
 
     // TODO: this should be somewhere else?
     val timeout = modelConfig.as[FiniteDuration]("timeout")
@@ -119,7 +119,13 @@ class FlinkProcessCompilerDataFactory(
   ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
     val modelDefinitionWithTypes = ModelDefinitionWithClasses(
-      extractModelDefinition(userCodeClassLoader, modelDependencies)
+      // additionalConfigsFromProvider aren't provided, as it's not needed to run the process on flink
+      extractModelDefinition(
+        userCodeClassLoader,
+        modelDependencies,
+        id => DesignerWideComponentId(id.toString),
+        Map.empty
+      )
     )
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(
       modelDefinitionWithTypes.modelDefinition.expressionConfig.dictionaries
@@ -135,9 +141,9 @@ class FlinkProcessCompilerDataFactory(
   }
 
   protected def adjustDefinitions(
-      originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+      originalModelDefinition: ModelDefinition,
       definitionContext: ComponentDefinitionContext
-  ): ModelDefinition[ComponentDefinitionWithImplementation] = originalModelDefinition
+  ): ModelDefinition = originalModelDefinition
 
   private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {
     // we are loading DictServicesFactory on TaskManager side. It may be tricky because of class loaders...
@@ -174,6 +180,6 @@ case class ComponentDefinitionContext(
     userCodeClassLoader: ClassLoader,
     // below are for purpose of TestDataPreparer
     dictRegistry: EngineDictRegistry,
-    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
+    expressionConfig: ExpressionConfigDefinition,
     classDefinitions: ClassDefinitionSet
 )

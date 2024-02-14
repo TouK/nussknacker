@@ -16,7 +16,8 @@ import { SelectNodeWithFocus } from "../withFocus";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { NodeType } from "../../types";
-import { CompareContainer, CompareModal, FormRow, VersionHeader } from "./Styled";
+import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
+import { FormControl, FormLabel } from "@mui/material";
 
 interface State {
     currentDiffId: string;
@@ -159,8 +160,8 @@ const VersionsForm = () => {
 
     return (
         <>
-            <FormRow>
-                <p>Version to compare</p>
+            <FormControl>
+                <FormLabel>Version to compare</FormLabel>
                 <SelectNodeWithFocus
                     autoFocus={true}
                     id="otherVersion"
@@ -174,11 +175,11 @@ const VersionsForm = () => {
                         .map((version) => createVersionElement(version))}
                     {state.remoteVersions.map((version) => createVersionElement(version, remotePrefix))}
                 </SelectNodeWithFocus>
-            </FormRow>
+            </FormControl>
             {state.otherVersion ? (
                 <div>
-                    <FormRow>
-                        <p>Difference to pick</p>
+                    <FormControl>
+                        <FormLabel>Difference to pick</FormLabel>
                         <SelectNodeWithFocus
                             id="differentVersion"
                             className="selectNode"
@@ -195,7 +196,7 @@ const VersionsForm = () => {
                                 );
                             })}
                         </SelectNodeWithFocus>
-                    </FormRow>
+                    </FormControl>
                     {state.currentDiffId ? printDiff(state.currentDiffId) : null}
                 </div>
             ) : null}

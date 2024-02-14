@@ -59,7 +59,8 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
     val processValidator = ProcessValidator.default(model)
 
-    val forEachResultValidationContext = processValidator.validate(testProcess).typing(forEachNodeResultId)
+    val forEachResultValidationContext =
+      processValidator.validate(testProcess, isFragment = false).typing(forEachNodeResultId)
     forEachResultValidationContext.inputValidationContext.get(forEachOutputVariableName) shouldBe Some(Typed[String])
   }
 
@@ -84,7 +85,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       .withValue("useTypingResultTypeInformation", fromAnyRef(true))
     val sourceComponent = ComponentDefinition(
       "start",
-      SourceFactory.noParam[TestRecord](
+      SourceFactory.noParamUnboundedStreamFactory[TestRecord](
         EmitWatermarkAfterEachElementCollectionSource
           .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
       )

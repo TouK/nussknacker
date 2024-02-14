@@ -6,7 +6,7 @@ import Date from "../common/Date";
 import { ProcessCommentsList, RemoveButton } from "./StyledComment";
 import { getFeatureSettings, getLoggedUser } from "../../reducers/selectors/settings";
 import { ListSeparator } from "../common/ListSeparator";
-import { Box } from "@mui/material";
+import { Typography } from "@mui/material";
 
 const getComments = (state) => state.processActivity?.comments || [];
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
@@ -28,10 +28,12 @@ export default function CommentsList({ deleteComment }: CommentsListProps) {
                 <div key={comment.id}>
                     <div style={{ width: "100%" }}>
                         <Date date={comment.createDate} />
-                        <Box
+                        <Typography
                             component={"span"}
+                            variant={"overline"}
+                            ml={0.5}
                             sx={(theme) => ({ color: theme.custom.colors.silverChalice })}
-                        >{`| v${comment.processVersionId} | ${comment.user}`}</Box>
+                        >{`| v${comment.processVersionId} | ${comment.user}`}</Typography>
                         {comment.user != loggedUser.id ? null : <RemoveButton onClick={() => deleteComment(comment)} />}
                     </div>
                     <CommentContent content={comment.content} commentSettings={commentSettings} />

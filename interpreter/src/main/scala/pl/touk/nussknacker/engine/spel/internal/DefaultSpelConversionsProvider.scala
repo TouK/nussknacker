@@ -7,11 +7,6 @@ import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.{StringConversion, stringConversions}
 
-import java.nio.charset.Charset
-import java.time._
-import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
-import java.util.{Currency, Locale, UUID}
-
 /**
   * This class creates SpEL's ConversionService. We don't use DefaultConversionService because it has some conversions
   * (mainly between similar types) that would cause ambiguity e.g. ObjectToObjectConverter. Also this default service
@@ -26,8 +21,8 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
     val service = new GenericConversionService
     service.addConverterFactory(new NumberToNumberConverterFactory())
 
-    stringConversions.foreach { case StringConversion(klass, conversion) =>
-      service.addConverter(classOf[String], klass, (source: String) => conversion(source))
+    stringConversions.foreach { case conversion @ StringConversion(convert) =>
+      service.addConverter(classOf[String], conversion.klass, (source: String) => convert(source))
     }
 
     // This is used only to prevent errors when calling function with

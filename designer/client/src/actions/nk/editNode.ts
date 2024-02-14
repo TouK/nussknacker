@@ -1,33 +1,34 @@
 import HttpService from "../../http/HttpService";
-import { Edge, NodeType, Process, ValidationResult } from "../../types";
+import { Edge, NodeType, ScenarioGraph, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
 import { displayProcessCounts } from "./displayProcessCounts";
+import { Scenario } from "../../components/Process/types";
 
 export type EditNodeAction = {
     type: "EDIT_NODE";
     before: NodeType;
     after: NodeType;
     validationResult: ValidationResult;
-    processAfterChange: $TodoType;
+    scenarioGraphAfterChange: ScenarioGraph;
 };
 export type RenameProcessAction = {
     type: "PROCESS_RENAME";
     name: string;
 };
 
-export function editNode(processBefore: Process, before: NodeType, after: NodeType, outputEdges?: Edge[]): ThunkAction {
+export function editNode(scenarioBefore: Scenario, before: NodeType, after: NodeType, outputEdges?: Edge[]): ThunkAction {
     return async (dispatch) => {
-        const process = await dispatch(calculateProcessAfterChange(processBefore, before, after, outputEdges));
-        const response = await HttpService.validateProcess(process);
+        const { processName, scenarioGraph } = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));
+        const response = await HttpService.validateProcess(scenarioBefore.name, processName, scenarioGraph);
         dispatch(displayProcessCounts({}));
 
         return dispatch({
             type: "EDIT_NODE",
-            before: before,
-            after: after,
+            before,
+            after,
             validationResult: response.data,
-            processAfterChange: process,
+            scenarioGraphAfterChange: scenarioGraph,
         });
     };
 }

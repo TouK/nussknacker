@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import cats.Traverse
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, ScenarioWithDetailsEntity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import scala.language.higherKinds
 
+import scala.language.higherKinds
 import scala.concurrent.{ExecutionContext, Future}
 
 class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends DeploymentService {
@@ -37,17 +38,7 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
       ec: ExecutionContext
   ): Future[Unit] = Future.successful(())
 
-  override def getDeployedScenarios(processingType: ProcessingType)(
-      implicit ec: ExecutionContext
-  ): Future[List[DeployedScenarioData]] =
-    Future.successful(List.empty)
-
   override def invalidateInProgressActions(): Unit = {}
-
-  override def markProcessFinishedIfLastActionDeploy(processingType: ProcessingType, processName: ProcessName)(
-      implicit ec: ExecutionContext
-  ): Future[Option[ProcessAction]] =
-    Future.successful(None)
 
   override def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(
       implicit ec: ExecutionContext
@@ -64,5 +55,20 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
   ): Future[F[ScenarioWithDetails]] = Future.successful(processTraverse)
+
+  override def invokeCustomAction(
+      actionName: String,
+      processIdWithName: ProcessIdWithName,
+      params: Map[String, String]
+  )(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[CustomActionResult] =
+    Future.successful(
+      CustomActionResult(
+        req = CustomActionRequest(actionName, ProcessVersion.empty, User(loggedUser.id, loggedUser.username), params),
+        msg = "stub response"
+      )
+    )
 
 }

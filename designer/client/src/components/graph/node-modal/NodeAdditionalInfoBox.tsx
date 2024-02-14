@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import HttpService from "../../../http/HttpService";
 import ReactMarkdown from "react-markdown/with-html";
 import { useDebounce } from "use-debounce";
@@ -51,19 +51,30 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
     //We don't use redux here since this additionalInfo is local to this component. We use debounce, as
     //we don't wat to query BE on each key pressed (we send node parameters to get additional data)
     const [debouncedNode] = useDebounce(node, 1000);
-    useEffect(() => {
-        let ignore = false;
-        if (processName) {
-            const nodeType = NodeUtils.nodeType(debouncedNode) === "Properties";
-            const promise = nodeType
-                ? HttpService.getPropertiesAdditionalInfo(processName, debouncedNode)
-                : HttpService.getNodeAdditionalInfo(processName, debouncedNode);
-            promise.then(({ data }) => ignore || setAdditionalInfo(data));
-        }
+
+    const getAdditionalInfo = useCallback((processName: string, debouncedNode: NodeType) => {
+        const controller = new AbortController();
+        const fetch = (node: NodeType) =>
+            NodeUtils.nodeIsProperties(node)
+                ? HttpService.getPropertiesAdditionalInfo(processName, node, controller)
+                : HttpService.getNodeAdditionalInfo(processName, node, controller);
+
+        fetch(debouncedNode).then((data) => {
+            // signal should cancel request, but for some reason it doesn't in dev
+            if (!controller.signal.aborted && data) {
+                setAdditionalInfo(data);
+            }
+        });
         return () => {
-            ignore = true;
+            controller.abort();
         };
-    }, [processName, debouncedNode]);
+    }, []);
+
+    useEffect(() => {
+        if (processName) {
+            return getAdditionalInfo(processName, debouncedNode);
+        }
+    }, [debouncedNode, getAdditionalInfo, processName]);
 
     if (!additionalInfo?.type) {
         return null;

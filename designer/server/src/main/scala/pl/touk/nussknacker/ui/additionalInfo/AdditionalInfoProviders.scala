@@ -7,14 +7,17 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData, _]) {
 
-  // TODO: do not load provider for each request...
+  // TODO: The AdditionalInfoProvider interface should be changed to the factory that creates AdditionalInfoProvider
+  //       based on the model config.
+  // TODO: We should move loading of these extensions into the class where we see how many designer side model
+  //       extensions do we have. See notice next to ModelData.migrations
   private val nodeProviders: ProcessingTypeDataProvider[Option[NodeData => Future[Option[AdditionalInfo]]], _] =
     typeToConfig.mapValues(pt =>
       ScalaServiceLoader

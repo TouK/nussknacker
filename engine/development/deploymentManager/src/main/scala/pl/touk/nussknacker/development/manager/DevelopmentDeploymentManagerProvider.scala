@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.development.manager
 
 import akka.actor.ActorSystem
+import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{
@@ -8,18 +9,22 @@ import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{
   PreparingResourcesStatus,
   TestStatus
 }
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
-import sttp.client3.SttpBackend
+import pl.touk.nussknacker.engine.{
+  BaseModelData,
+  DeploymentManagerDependencies,
+  DeploymentManagerProvider,
+  MetaDataInitializer
+}
 
 import java.net.URI
 import java.util.UUID
@@ -27,12 +32,11 @@ import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     extends DeploymentManager
-    with AlwaysFreshProcessState
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
@@ -158,8 +162,11 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
       scenarioTestData: ScenarioTestData
   ): Future[TestProcess.TestResults] = ???
 
-  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
-    Future.successful(memory.get(name).toList)
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    Future.successful(WithDataFreshnessStatus.fresh(memory.get(name).toList))
+  }
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
     Future.successful(SavepointResult(""))
@@ -172,29 +179,19 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(
-      customActions
-        .find(_.name.equals(actionRequest.name))
-        .map(customAction => {
-          val processName = actionRequest.processVersion.processName
-          val statusDetails =
-            memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
+  ): Future[CustomActionResult] = {
+    val processName = actionRequest.processVersion.processName
+    val statusOpt = customActionStatusMapping
+      .collectFirst { case (customAction, status) if customAction.name == actionRequest.name => status }
 
-          if (customAction.allowedStateStatusNames.contains(statusDetails.status.name)) {
-            customActionStatusMapping
-              .get(customAction)
-              .map { status =>
-                asyncChangeState(processName, status)
-                Right(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
-              }
-              .getOrElse(Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
-          } else {
-            Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name))
-          }
-        })
-        .getOrElse(Left(CustomActionNotImplemented(actionRequest)))
-    )
+    statusOpt match {
+      case Some(newStatus) =>
+        asyncChangeState(processName, newStatus)
+        Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
+      case _ =>
+        Future.failed(new NotImplementedError())
+    }
+  }
 
   override def close(): Unit = {}
 
@@ -239,13 +236,13 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
-  ): DeploymentManager =
-    new DevelopmentDeploymentManager(actorSystem)
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  ): ValidatedNel[String, DeploymentManager] =
+    Validated.valid(new DevelopmentDeploymentManager(dependencies.actorSystem))
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer

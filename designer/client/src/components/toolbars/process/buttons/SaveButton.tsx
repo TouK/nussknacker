@@ -4,11 +4,9 @@ import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/save.svg";
 import { getProcessName, getProcessUnsavedNewName, isProcessRenamed, isSaveDisabled } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
-import { useWindows } from "../../../../windowManager";
-import { WindowKind } from "../../../../windowManager/WindowKind";
+import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
-
 function SaveButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
     const { disabled } = props;

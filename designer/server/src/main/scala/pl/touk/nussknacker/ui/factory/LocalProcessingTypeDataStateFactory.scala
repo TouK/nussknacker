@@ -1,21 +1,19 @@
 package pl.touk.nussknacker.ui.factory
 
-import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  DefaultProcessingTypeDeploymentService,
+import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
+import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.toValueWithRestriction
+import pl.touk.nussknacker.ui.process.processingtype.{
+  CombinedProcessingTypeData,
+  ProcessingTypeData,
   ProcessingTypeDataState
 }
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel.{category, typeName}
-import _root_.sttp.client3.SttpBackend
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.toValueWithPermission
 
-import java.util.function.Supplier
-import scala.concurrent.{ExecutionContext, Future}
+import java.nio.file.Path
 
 class LocalProcessingTypeDataStateFactory(
     modelData: ModelData,
@@ -25,20 +23,24 @@ class LocalProcessingTypeDataStateFactory(
 
   override def create(
       designerConfig: ConfigWithUnresolvedVersion,
-      deploymentServiceSupplier: Supplier[DeploymentService]
-  )(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any]
+      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      workingDirectoryOpt: Option[Path]
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val deploymentService: DeploymentService = deploymentServiceSupplier.get()
-    implicit val processTypeDeploymentService: ProcessingTypeDeploymentService =
-      new DefaultProcessingTypeDeploymentService(typeName, deploymentService)
+    val deploymentManagerDependencies = getDeploymentManagerDependencies(typeName)
     val data =
-      ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig, category)
+      ProcessingTypeData.createProcessingTypeData(
+        typeName,
+        deploymentManagerProvider,
+        deploymentManagerDependencies,
+        deploymentManagerProvider.defaultEngineSetupName,
+        modelData,
+        managerConfig,
+        category,
+      )
     val processingTypes = Map(typeName -> data)
     val combinedData    = CombinedProcessingTypeData.create(processingTypes)
-    ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithPermission), () => combinedData, new Object)
+    ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), () => combinedData, new Object)
   }
 
 }

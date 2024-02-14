@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import akka.actor.ActorSystem
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, OptionValues, Suite}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
@@ -12,21 +10,11 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
-import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStreamingDeploymentManagerProvider}
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client3.SttpBackend
-
-import scala.concurrent.ExecutionContext.Implicits._
-import scala.concurrent.Future
+import pl.touk.nussknacker.engine.management.DockerTest
 
 trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { self: Suite =>
 
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-
-  private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
-  implicit val backend: SttpBackend[Future, Any] =
-    AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
-  implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
 
   protected var kafkaClient: KafkaClient = _
 
@@ -43,7 +31,7 @@ trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { s
   }
 
   protected lazy val deploymentManager: DeploymentManager =
-    FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(ConfigWithUnresolvedVersion(config))
+    FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(ConfigWithUnresolvedVersion(config))
 
   protected def deployProcessAndWaitIfRunning(
       process: CanonicalProcess,

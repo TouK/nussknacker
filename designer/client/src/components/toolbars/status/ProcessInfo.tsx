@@ -3,7 +3,7 @@ import i18next from "i18next";
 import { SwitchTransition } from "react-transition-group";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
-import { getFetchedProcessDetails, getProcessUnsavedNewName, isProcessRenamed } from "../../../reducers/selectors/graph";
+import { getScenario, getProcessUnsavedNewName, isProcessRenamed } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { getCustomActions } from "../../../reducers/selectors/settings";
 import { CssFade } from "../../CssFade";
@@ -13,24 +13,18 @@ import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
 import { ActionButton } from "../../toolbarSettings/buttons";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
-import {
-    PanelProcessInfo,
-    PanelProcessInfoIcon,
-    ProcessInfoDescription,
-    ProcessInfoText,
-    ProcessName,
-    ProcessRename,
-} from "./ProcessInfoComponents";
+import { PanelProcessInfo, PanelProcessInfoIcon, ProcessInfoText, ProcessName, ProcessRename } from "./ProcessInfoComponents";
+import { Typography } from "@mui/material";
 
 const ProcessInfo = memo(({ id, buttonsVariant, children }: ToolbarPanelProps) => {
-    const process = useSelector((state: RootState) => getFetchedProcessDetails(state));
+    const scenario = useSelector((state: RootState) => getScenario(state));
     const isRenamePending = useSelector((state: RootState) => isProcessRenamed(state));
     const unsavedNewName = useSelector((state: RootState) => getProcessUnsavedNewName(state));
     const processState = useSelector((state: RootState) => getProcessState(state));
     const customActions = useSelector((state: RootState) => getCustomActions(state));
 
-    const description = ProcessStateUtils.getStateDescription(process, processState);
-    const transitionKey = ProcessStateUtils.getTransitionKey(process, processState);
+    const description = ProcessStateUtils.getStateDescription(scenario, processState);
+    const transitionKey = ProcessStateUtils.getTransitionKey(scenario, processState);
     // TODO: better styling of process info toolbar in case of many custom actions
 
     return (
@@ -39,15 +33,15 @@ const ProcessInfo = memo(({ id, buttonsVariant, children }: ToolbarPanelProps) =
                 <CssFade key={transitionKey}>
                     <PanelProcessInfo>
                         <PanelProcessInfoIcon>
-                            <ProcessStateIcon process={process} processState={processState} />
+                            <ProcessStateIcon scenario={scenario} processState={processState} />
                         </PanelProcessInfoIcon>
                         <ProcessInfoText>
                             {isRenamePending ? (
-                                <ProcessRename title={process.name}>{unsavedNewName}*</ProcessRename>
+                                <ProcessRename title={scenario.name}>{unsavedNewName}*</ProcessRename>
                             ) : (
-                                <ProcessName>{process.name}</ProcessName>
+                                <ProcessName variant={"subtitle2"}>{scenario.name}</ProcessName>
                             )}
-                            <ProcessInfoDescription>{description}</ProcessInfoDescription>
+                            <Typography variant={"caption"}>{description}</Typography>
                         </ProcessInfoText>
                     </PanelProcessInfo>
                 </CssFade>

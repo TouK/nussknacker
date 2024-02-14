@@ -125,7 +125,7 @@ class PeriodicProcessServiceIntegrationTest
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     var failListener                  = false
 
-    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
+    val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
       List.empty
     )
 
@@ -147,7 +147,8 @@ class PeriodicProcessServiceIntegrationTest
         deploymentRetryConfig = deploymentRetryConfig,
         executionConfig = executionConfig,
         processConfigEnricher = ProcessConfigEnricher.identity,
-        clock = fixedClock(currentTime)
+        clock = fixedClock(currentTime),
+        deploymentService
       )
 
   }

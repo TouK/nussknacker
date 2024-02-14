@@ -2,8 +2,7 @@ import React from "react";
 import TestResultUtils, { NodeTestResults, StateForSelectTestResults } from "../../../../common/TestResultUtils";
 import { SelectNodeWithFocus } from "../../../withFocus";
 import { css, cx } from "@emotion/css";
-import { NodeRow } from "../NodeDetailsContent/NodeStyled";
-import { useTheme } from "@mui/material";
+import { FormControl, FormLabel, useTheme } from "@mui/material";
 
 export interface TestResultsSelectProps {
     results: NodeTestResults;
@@ -21,10 +20,9 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
     }
 
     return (
-        <NodeRow>
-            <div
+        <FormControl>
+            <FormLabel
                 className={cx(
-                    "node-label",
                     css({
                         "&&&&": {
                             color: theme.custom.colors.ok,
@@ -33,7 +31,7 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
                 )}
             >
                 Test case:
-            </div>
+            </FormLabel>
             <div className="node-value">
                 <SelectNodeWithFocus
                     className="node-input selectResults"
@@ -47,6 +45,6 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
                     ))}
                 </SelectNodeWithFocus>
             </div>
-        </NodeRow>
+        </FormControl>
     );
 }

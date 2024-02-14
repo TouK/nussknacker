@@ -4,17 +4,18 @@ import { RootState } from "../reducers";
 import { ActionTypes as UndoActionTypes } from "redux-undo";
 import { debounce } from "lodash";
 import HttpService from "../http/HttpService";
-import { getProcessToDisplayWithUnsavedName } from "../reducers/selectors/graph";
+import { getProcessName, getScenarioGraph, getUnsavedOrCurrentName } from "../reducers/selectors/graph";
 
 type ActionType = Action["type"];
 
-const debouncedValidate = debounce(
-    (dispatch: ThunkDispatch, getState: () => RootState) =>
-        HttpService.validateProcess(getProcessToDisplayWithUnsavedName(getState())).then(({ data }) =>
-            dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
-        ),
-    500,
-);
+const debouncedValidate = debounce((dispatch: ThunkDispatch, getState: () => RootState) => {
+    const scenarioName = getProcessName(getState());
+    const scenarioGraph = getScenarioGraph(getState());
+    const unsavedOrCurrentName = getUnsavedOrCurrentName(getState());
+    return HttpService.validateProcess(scenarioName, unsavedOrCurrentName, scenarioGraph).then(({ data }) =>
+        dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
+    );
+}, 500);
 
 export function nodeValidationMiddleware(
     validatedActions: ActionType[] = [],

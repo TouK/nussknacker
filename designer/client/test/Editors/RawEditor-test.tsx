@@ -21,7 +21,7 @@ const store = mockStore({
             defaultAsyncInterpretation: true,
         },
     },
-    graphReducer: { history: { present: [] }, processToDisplay: {} },
+    graphReducer: { history: { present: { scenario: { scenarioGraph: {} } } } },
 });
 
 describe(RawEditor.name, () => {

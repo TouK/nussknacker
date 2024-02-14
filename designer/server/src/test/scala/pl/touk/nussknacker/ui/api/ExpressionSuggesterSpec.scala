@@ -118,7 +118,7 @@ class ExpressionSuggesterSpec
     )
   )
 
-  private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
+  private val expressionConfig: ExpressionConfigDefinition =
     ModelDefinitionBuilder.empty
       .withGlobalVariable("util", new Util)
       .build
@@ -325,7 +325,7 @@ class ExpressionSuggesterSpec
     spelSuggestionsFor("#meta.") shouldBe List(
       ExpressionSuggestion("empty", Typed[Boolean], fromClass = true, None, Nil),
       suggestion("processName", Typed[String]),
-      suggestion("properties", TypedObjectTypingResult(Map("scenarioProperty" -> Typed[String]))),
+      suggestion("properties", Typed.record(Map("scenarioProperty" -> Typed[String]))),
     )
   }
 
@@ -489,7 +489,7 @@ class ExpressionSuggesterSpec
 
   test("should suggest #this in map selection") {
     spelSuggestionsFor("{abc: 1, def: 'xyz'}.![#this]", 0, "{abc: 1, def: 'xyz'}.![#this".length) shouldBe List(
-      suggestion("#this", TypedObjectTypingResult(ListMap("key" -> Typed[String], "value" -> Unknown))),
+      suggestion("#this", Typed.record(ListMap("key" -> Typed[String], "value" -> Unknown))),
     )
   }
 

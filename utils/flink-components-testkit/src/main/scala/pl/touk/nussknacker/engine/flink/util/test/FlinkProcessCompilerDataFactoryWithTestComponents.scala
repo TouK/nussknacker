@@ -4,10 +4,11 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.process.compiler.{
@@ -31,7 +32,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.objectNaming,
+      modelData.namingStrategy,
       componentUseCase,
       testExtensionsHolder,
       resultsCollectingListener
@@ -41,7 +42,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       creator: ProcessConfigCreator,
       extractModelDefinition: ExtractDefinitionFun,
       modelConfig: Config,
-      objectNaming: ObjectNaming,
+      namingStrategy: NamingStrategy,
       componentUseCase: ComponentUseCase,
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener,
@@ -50,16 +51,21 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       creator,
       extractModelDefinition,
       modelConfig,
-      objectNaming,
+      namingStrategy,
       componentUseCase,
     ) {
 
       override protected def adjustDefinitions(
-          originalModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation],
+          originalModelDefinition: ModelDefinition,
           definitionContext: ComponentDefinitionContext
-      ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+      ): ModelDefinition = {
         val testComponents =
-          ComponentDefinitionWithImplementation.forList(testExtensionsHolder.components, ComponentsUiConfig.Empty)
+          ComponentDefinitionWithImplementation.forList(
+            components = testExtensionsHolder.components,
+            additionalConfigs = ComponentsUiConfig.Empty,
+            determineDesignerWideId = id => DesignerWideComponentId(id.toString),
+            additionalConfigsFromProvider = Map.empty
+          )
 
         originalModelDefinition
           .withComponents(testComponents)
@@ -67,7 +73,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
             expressionConfig = originalModelDefinition.expressionConfig.copy(
               originalModelDefinition.expressionConfig.globalVariables ++
                 testExtensionsHolder.globalVariables.mapValuesNow(
-                  GlobalVariableDefinitionExtractor.extractDefinition
+                  GlobalVariableDefinitionWithImplementation(_)
                 )
             )
           )

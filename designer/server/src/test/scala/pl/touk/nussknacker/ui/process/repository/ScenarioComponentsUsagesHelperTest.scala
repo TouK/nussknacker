@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.repository
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{
@@ -34,13 +34,13 @@ class ScenarioComponentsUsagesHelperTest extends AnyFunSuite with Matchers {
     val usages = ScenarioComponentsUsagesHelper.compute(scenario)
 
     usages.value shouldBe Map(
-      ComponentInfo(ComponentType.Source, existingSourceFactory) -> List("source"),
-      BuiltInComponentInfo.Filter                                -> List("checkId", "checkId2"),
-      BuiltInComponentInfo.Variable                              -> List("var1"),
-      ComponentInfo(ComponentType.Fragment, "barfragment")       -> List("fragment1"),
-      BuiltInComponentInfo.Choice                                -> List("switch1"),
-      ComponentInfo(ComponentType.Sink, existingSinkFactory)     -> List("out1"),
-      ComponentInfo(ComponentType.Sink, existingSinkFactory2)    -> List("out2"),
+      ComponentId(ComponentType.Source, existingSourceFactory) -> List("source"),
+      BuiltInComponentId.Filter                                -> List("checkId", "checkId2"),
+      BuiltInComponentId.Variable                              -> List("var1"),
+      ComponentId(ComponentType.Fragment, "barfragment")       -> List("fragment1"),
+      BuiltInComponentId.Choice                                -> List("switch1"),
+      ComponentId(ComponentType.Sink, existingSinkFactory)     -> List("out1"),
+      ComponentId(ComponentType.Sink, existingSinkFactory2)    -> List("out2"),
     )
   }
 

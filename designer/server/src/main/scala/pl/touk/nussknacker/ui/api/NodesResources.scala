@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -23,7 +22,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidation
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareTypingResultDecoder}
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -84,15 +83,14 @@ class NodesResources(
           implicit val requestDecoder: Decoder[PropertiesValidationRequest] = preparePropertiesRequestDecoder(modelData)
           entity(as[PropertiesValidationRequest]) { request =>
             complete {
-              val scenario = DisplayableProcess(
-                request.name,
+              val scenarioGraph = ScenarioGraph(
                 ProcessProperties(request.additionalFields),
                 Nil,
-                Nil,
-                process.processingType,
-                process.processCategory
+                Nil
               )
-              val result = typeToProcessValidator.forTypeUnsafe(process.processingType).validate(scenario)
+              val result = typeToProcessValidator
+                .forTypeUnsafe(process.processingType)
+                .validate(scenarioGraph, request.name, process.isFragment)
               NodeValidationResult(
                 parameters = None,
                 expressionType = None,
@@ -185,7 +183,7 @@ object NodesResources {
 
 @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
     sourceParameters: TestSourceParameters,
-    displayableProcess: DisplayableProcess
+    scenarioGraph: ScenarioGraph
 )
 
 @JsonCodec(encodeOnly = true) final case class ParametersValidationResult(

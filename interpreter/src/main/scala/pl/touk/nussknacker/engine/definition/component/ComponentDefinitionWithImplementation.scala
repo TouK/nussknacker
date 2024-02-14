@@ -1,14 +1,17 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
-// This class represents component's definition and implementation.
-// Implementation part is in implementation field. It should be rarely used - instead we should extract information
-// into definition. Implementation should be mainly used via implementationInvoker which can be transformed
+// This class represents component's definition and implementation. It is used on the designer side for definitions
+// served to the FE and for validations. It is used on the runtime side for component's runtime execution and for stubbing.
+// Implementing component is in hte implementation field. It should be rarely used - instead, we should extract information
+// into definition. Runtime logic should be mainly used via implementationInvoker which can be transformed
 // (e.g.) for purpose of stubbing.
-// TODO: This class currently is used also for global variables. We should rather extract some other class for them
-trait ComponentDefinitionWithImplementation extends BaseComponentDefinition {
+trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   def implementationInvoker: ComponentImplementationInvoker
 
@@ -17,26 +20,84 @@ trait ComponentDefinitionWithImplementation extends BaseComponentDefinition {
       implementationInvoker: ComponentImplementationInvoker
   ): ComponentDefinitionWithImplementation
 
-  // TODO In should be of type Component, but currently this class is used also for global variables
-  def implementation: Any
+  def implementation: Component
 
   def componentTypeSpecificData: ComponentTypeSpecificData
 
+  // This field is used as a part of identifier so it is important that it should be stable.
+  // Currently it is used also for a label presented at the toolbox palette but we should probably extract another
+  // field (e.g. label) that will be in a more human friendly format`- see Parameter.name vs Parameter.label
+  def name: String
+
+  final def componentType: ComponentType = componentTypeSpecificData.componentType
+
+  final def id: ComponentId = ComponentId(componentType, name)
+
+  protected def uiDefinition: ComponentUiDefinition
+
+  final def designerWideId: DesignerWideComponentId = uiDefinition.designerWideId
+
+  final def componentGroup: ComponentGroupName = uiDefinition.componentGroup
+
+  final def originalGroupName: ComponentGroupName = uiDefinition.originalGroupName
+
+  final def icon: String = uiDefinition.icon
+
+  final def docsUrl: Option[String] = uiDefinition.docsUrl
+
+  override final def definedTypes: List[TypingResult] = {
+    val fromExplicitTypes = implementation match {
+      case explicit: WithExplicitTypesToExtract => explicit.typesToExtract
+      case _                                    => Nil
+    }
+    typesFromStaticDefinition ++ fromExplicitTypes
+  }
+
+  protected def typesFromStaticDefinition: List[TypingResult]
+
 }
+
+trait ObjectOperatingOnTypes {
+
+  def definedTypes: List[TypingResult]
+
+}
+
+final case class ComponentUiDefinition(
+    originalGroupName: ComponentGroupName,
+    componentGroup: ComponentGroupName,
+    icon: String,
+    docsUrl: Option[String],
+    designerWideId: DesignerWideComponentId
+)
 
 object ComponentDefinitionWithImplementation {
 
   def forList(
       components: List[ComponentDefinition],
-      additionalConfigs: ComponentsUiConfig
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
-    components.flatMap(ComponentDefinitionExtractor.extract(_, additionalConfigs))
+      additionalConfigs: ComponentsUiConfig,
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): List[ComponentDefinitionWithImplementation] = {
+    components.flatMap(
+      ComponentDefinitionExtractor.extract(_, additionalConfigs, determineDesignerWideId, additionalConfigsFromProvider)
+    )
   }
 
-  // This method is mainly for the tests purpose. It doesn't take into an account additionalConfigs provided from the model configuration
-  def withEmptyConfig(component: Component): ComponentDefinitionWithImplementation = {
+  /*  This method is mainly for the tests purpose. It doesn't take into an account:
+   *    - additionalConfigs from the model configuration
+   *    - additionalConfigsFromProvider provided by AdditionalUIConfigProvider
+   */
+  def withEmptyConfig(name: String, component: Component): ComponentDefinitionWithImplementation = {
     ComponentDefinitionExtractor
-      .extract("dumbName", component, SingleComponentConfig.zero, ComponentsUiConfig.Empty)
+      .extract(
+        name,
+        component,
+        SingleComponentConfig.zero,
+        ComponentsUiConfig.Empty,
+        id => DesignerWideComponentId(id.toString),
+        Map.empty
+      )
       .getOrElse(
         throw new IllegalStateException(
           s"ComponentDefinitionWithImplementation.withEmptyConfig returned None for: $component but component should be filtered for empty config"

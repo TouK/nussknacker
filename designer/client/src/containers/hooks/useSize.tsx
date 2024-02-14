@@ -1,4 +1,4 @@
-import React, { ForwardedRef, useCallback, useMemo } from "react";
+import { ForwardedRef, useCallback, useMemo } from "react";
 import useDimensions, { Options } from "react-cool-dimensions";
 
 (async () => {

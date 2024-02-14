@@ -2,18 +2,16 @@ package pl.touk.nussknacker.ui.process.repository
 
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, CommentEntityData, ProcessActionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
@@ -21,42 +19,32 @@ import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext
-import scala.language.higherKinds
 
 //TODO: Add missing methods: markProcessAsDeployed and markProcessAsCancelled
-trait ProcessActionRepository[F[_]] {
-  def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
-  def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
-  def getFinishedProcessAction(actionId: ProcessActionId)(implicit ec: ExecutionContext): F[Option[ProcessAction]]
+trait ProcessActionRepository {
+  def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): DB[_]
+  def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): DB[_]
+  def getFinishedProcessAction(actionId: ProcessActionId)(implicit ec: ExecutionContext): DB[Option[ProcessAction]]
 
   def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[Set[ProcessActionType]])(
       implicit ec: ExecutionContext
-  ): F[List[ProcessAction]]
+  ): DB[List[ProcessAction]]
 
   def getLastActionPerProcess(
       actionState: Set[ProcessActionState],
       actionTypesOpt: Option[Set[ProcessActionType]]
-  ): F[Map[ProcessId, ProcessAction]]
+  ): DB[Map[ProcessId, ProcessAction]]
 
 }
 
-object DbProcessActionRepository {
-
-  def create(dbRef: DbRef, modelData: ProcessingTypeDataProvider[ModelData, _])(
-      implicit ec: ExecutionContext
-  ): DbProcessActionRepository[DB] =
-    new DbProcessActionRepository[DB](dbRef, modelData.mapValues(_.configCreator.buildInfo())) with DbioRepository
-
-}
-
-abstract class DbProcessActionRepository[F[_]](
-    val dbRef: DbRef,
+class DbProcessActionRepository(
+    protected val dbRef: DbRef,
     buildInfos: ProcessingTypeDataProvider[Map[String, String], _]
 )(implicit ec: ExecutionContext)
-    extends Repository[F]
+    extends DbioRepository
     with NuTables
     with CommentActions
-    with ProcessActionRepository[F]
+    with ProcessActionRepository
     with LazyLogging {
 
   import profile.api._
@@ -66,7 +54,7 @@ abstract class DbProcessActionRepository[F[_]](
       actionType: ProcessActionType,
       processVersion: Option[VersionId],
       buildInfoProcessingType: Option[ProcessingType]
-  )(implicit user: LoggedUser): F[ProcessActionId] = {
+  )(implicit user: LoggedUser): DB[ProcessActionId] = {
     val now = Instant.now()
     run(
       insertAction(
@@ -94,7 +82,7 @@ abstract class DbProcessActionRepository[F[_]](
       performedAt: Instant,
       comment: Option[Comment],
       buildInfoProcessingType: Option[ProcessingType]
-  )(implicit user: LoggedUser): F[Unit] = {
+  )(implicit user: LoggedUser): DB[Unit] = {
     run(for {
       comment <- newCommentAction(processId, processVersion, comment)
       updated <- updateAction(actionId, ProcessActionState.Finished, Some(performedAt), None, comment.map(_.id))
@@ -128,7 +116,7 @@ abstract class DbProcessActionRepository[F[_]](
       performedAt: Instant,
       failureMessage: String,
       buildInfoProcessingType: Option[ProcessingType]
-  )(implicit user: LoggedUser): F[Unit] = {
+  )(implicit user: LoggedUser): DB[Unit] = {
     val failureMessageOpt = Option(failureMessage).map(_.take(1022)) // crop to not overflow column size)
     run(for {
       updated <- updateAction(actionId, ProcessActionState.Failed, Some(performedAt), failureMessageOpt, None)
@@ -153,7 +141,7 @@ abstract class DbProcessActionRepository[F[_]](
     } yield ())
   }
 
-  def markFinishedActionAsExecutionFinished(actionId: ProcessActionId): F[Boolean] = {
+  def markFinishedActionAsExecutionFinished(actionId: ProcessActionId): DB[Boolean] = {
     run(
       processActionsTable
         .filter(a => a.id === actionId && a.state === ProcessActionState.Finished)
@@ -163,18 +151,18 @@ abstract class DbProcessActionRepository[F[_]](
     )
   }
 
-  def removeAction(actionId: ProcessActionId): F[Unit] = {
+  def removeAction(actionId: ProcessActionId): DB[Unit] = {
     run(processActionsTable.filter(a => a.id === actionId).delete.map(_ => ()))
   }
 
   override def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(
       implicit user: LoggedUser
-  ): F[ProcessAction] =
+  ): DB[ProcessAction] =
     addInstantAction(processId, processVersion, ProcessActionType.Archive, None, None)
 
   override def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(
       implicit user: LoggedUser
-  ): F[ProcessAction] =
+  ): DB[ProcessAction] =
     addInstantAction(processId, processVersion, ProcessActionType.UnArchive, None, None)
 
   def addInstantAction(
@@ -183,7 +171,7 @@ abstract class DbProcessActionRepository[F[_]](
       actionType: ProcessActionType,
       comment: Option[Comment],
       buildInfoProcessingType: Option[ProcessingType]
-  )(implicit user: LoggedUser): F[ProcessAction] = {
+  )(implicit user: LoggedUser): DB[ProcessAction] = {
     val now = Instant.now()
     run(for {
       comment <- newCommentAction(processId, processVersion, comment)
@@ -252,11 +240,11 @@ abstract class DbProcessActionRepository[F[_]](
   }
 
   // we use "select for update where false" query syntax to lock the table - it is useful if you plan to insert something in a critical section
-  def lockActionsTable: F[Unit] = {
+  def lockActionsTable: DB[Unit] = {
     run(processActionsTable.filter(_ => false).forUpdate.result.map(_ => ()))
   }
 
-  def getInProgressActionTypes(processId: ProcessId): F[Set[ProcessActionType]] = {
+  def getInProgressActionTypes(processId: ProcessId): DB[Set[ProcessActionType]] = {
     val query = processActionsTable
       .filter(action => action.processId === processId && action.state === ProcessActionState.InProgress)
       .map(_.actionType)
@@ -266,7 +254,7 @@ abstract class DbProcessActionRepository[F[_]](
 
   def getInProgressActionTypes(
       allowedActionTypes: Set[ProcessActionType]
-  ): F[Map[ProcessId, Set[ProcessActionType]]] = {
+  ): DB[Map[ProcessId, Set[ProcessActionType]]] = {
     val query = processActionsTable
       .filter(action =>
         action.state === ProcessActionState.InProgress &&
@@ -286,7 +274,7 @@ abstract class DbProcessActionRepository[F[_]](
       possibleActionTypes: Set[ProcessActionType],
       possibleStates: Set[ProcessActionState],
       limit: Instant
-  ): F[Seq[(ProcessActionEntityData, ProcessName)]] = {
+  ): DB[Seq[(ProcessActionEntityData, ProcessName)]] = {
     run(
       processActionsTable
         .filter(a =>
@@ -304,14 +292,14 @@ abstract class DbProcessActionRepository[F[_]](
     )
   }
 
-  def deleteInProgressActions(): F[Unit] = {
+  def deleteInProgressActions(): DB[Unit] = {
     run(processActionsTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
   override def getLastActionPerProcess(
       actionState: Set[ProcessActionState],
       actionTypesOpt: Option[Set[ProcessActionType]]
-  ): F[Map[ProcessId, ProcessAction]] = {
+  ): DB[Map[ProcessId, ProcessAction]] = {
     val query = processActionsTable
       .filter(_.state.inSet(actionState))
       .groupBy(_.processId)
@@ -336,7 +324,7 @@ abstract class DbProcessActionRepository[F[_]](
 
   override def getFinishedProcessAction(
       actionId: ProcessActionId
-  )(implicit ec: ExecutionContext): F[Option[ProcessAction]] =
+  )(implicit ec: ExecutionContext): DB[Option[ProcessAction]] =
     run(
       processActionsTable
         .filter(a => a.id === actionId && a.state.inSet(ProcessActionState.FinishedStates))
@@ -349,7 +337,7 @@ abstract class DbProcessActionRepository[F[_]](
 
   override def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[Set[ProcessActionType]])(
       implicit ec: ExecutionContext
-  ): F[List[ProcessAction]] = {
+  ): DB[List[ProcessAction]] = {
     val query = processActionsTable
       .filter(p => p.processId === processId && p.state.inSet(ProcessActionState.FinishedStates))
       .joinLeft(commentsTable)

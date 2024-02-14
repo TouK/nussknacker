@@ -1,35 +1,39 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import cats.effect.unsafe.IORuntime
 import cats.instances.future._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.DeploymentManagerDependencies
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentServiceStub
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  ProcessingTypeDataConfigurationReader,
+import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
-  ValueWithPermission
+  ScenarioParametersService,
+  ScenarioParametersWithEngineSetupErrors,
+  ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, NewProcessPreparer, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import sttp.client3.testing.SttpBackendStub
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -77,6 +81,24 @@ object TestFactory extends TestPermissions {
   val processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _] =
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processResolver)
 
+  val scenarioParametersService: ScenarioParametersService = {
+    val combinations = Map(
+      TestProcessingTypes.Streaming ->
+        ScenarioParametersWithEngineSetupErrors(
+          ScenarioParameters(
+            ProcessingMode.UnboundedStream,
+            TestCategories.Category1,
+            EngineSetupName("Flink")
+          ),
+          List.empty
+        )
+    )
+    ScenarioParametersService.createUnsafe(combinations)
+  }
+
+  val scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService] =
+    ProcessingTypeDataProvider(Map.empty, scenarioParametersService)
+
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
 
   val posting = new ProcessPosting
@@ -90,7 +112,19 @@ object TestFactory extends TestPermissions {
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
 
-  def scenarioResolver = new ScenarioResolver(sampleResolver)
+  def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] = mapProcessingTypeDataProvider(
+    TestProcessingTypes.Streaming -> new ScenarioResolver(sampleResolver, TestProcessingTypes.Streaming)
+  )
+
+  val deploymentManagerDependencies: DeploymentManagerDependencies = {
+    val actorSystem = ActorSystem("TestFactory")
+    DeploymentManagerDependencies(
+      new ProcessingTypeDeploymentServiceStub(List.empty),
+      actorSystem.dispatcher,
+      actorSystem,
+      SttpBackendStub.asynchronousFuture
+    )
+  }
 
   def deploymentService() = new StubDeploymentService(Map.empty)
 
@@ -119,10 +153,10 @@ object TestFactory extends TestPermissions {
     new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
-    new DbProcessActionRepository[DB](dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
+    new DbProcessActionRepository(dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
       with DbioRepository
 
-  def newDummyActionRepository(): DbProcessActionRepository[DB] =
+  def newDummyActionRepository(): DbProcessActionRepository =
     newActionProcessRepository(dummyDbRef)
 
   def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef)
@@ -130,10 +164,16 @@ object TestFactory extends TestPermissions {
   def asAdmin(route: RouteWithUser): Route =
     route.securedRouteWithErrorHandling(adminUser())
 
-  def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.streamingTypeSpecificInitialData),
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties)
-  )
+  val newProcessPreparer: NewProcessPreparer =
+    new NewProcessPreparer(
+      ProcessTestData.streamingTypeSpecificInitialData,
+      FlinkStreamingPropertiesConfig.properties
+    )
+
+  val newProcessPreparerByProcessingType: ProcessingTypeDataProvider[NewProcessPreparer, _] =
+    mapProcessingTypeDataProvider(
+      TestProcessingTypes.Streaming -> newProcessPreparer
+    )
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
     route.securedRouteWithErrorHandling(user(permissions = permissions))
@@ -161,31 +201,13 @@ object TestFactory extends TestPermissions {
     LoggedUser(id, username, permissions, globalPermissions = List("CustomFixedPermission"))
 
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser =
-    LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
+    LoggedUser(id, username, Map.empty, isAdmin = true)
 
   def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
     ProcessingTypeDataProvider.withEmptyCombinedData(
-      Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
+      Map(data: _*).mapValuesNow(ValueWithRestriction.anyUser)
     )
   }
-
-  def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] =
-    ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
-
-  def createValidator(modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation]): ProcessValidator = {
-    ProcessValidator.default(
-      ModelDefinitionWithClasses(modelDefinition),
-      new SimpleDictRegistry(Map.empty),
-      CustomProcessValidatorLoader.emptyCustomProcessValidator
-    )
-  }
-
-  def createCategoryService(designerConfig: Config): ProcessCategoryService =
-    ConfigProcessCategoryService(
-      ProcessingTypeDataConfigurationReader
-        .readProcessingTypeConfig(ConfigWithUnresolvedVersion(designerConfig))
-        .mapValuesNow(_.category)
-    )
 
 }

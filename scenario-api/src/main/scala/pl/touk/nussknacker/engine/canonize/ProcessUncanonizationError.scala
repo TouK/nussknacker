@@ -4,6 +4,10 @@ sealed trait ProcessUncanonizationError
 
 object EmptyProcess extends ProcessUncanonizationError
 
-case class InvalidRootNode(nodeId: String) extends ProcessUncanonizationError
+sealed trait ProcessUncanonizationNodeError extends ProcessUncanonizationError {
+  def nodeId: String
+}
 
-case class InvalidTailOfBranch(nodeId: String) extends ProcessUncanonizationError
+case class InvalidRootNode(nodeId: String) extends ProcessUncanonizationNodeError
+
+case class InvalidTailOfBranch(nodeId: String) extends ProcessUncanonizationNodeError

@@ -3,9 +3,8 @@ import ExpressionField from "./editors/expression/ExpressionField";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
-import { NodeRow } from "./NodeDetailsContent/NodeStyled";
-import { BranchParameterRowStyled } from "../focusableStyled";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { FormControl, FormLabel } from "@mui/material";
 
 export interface BranchParametersProps {
     node: NodeType;
@@ -38,10 +37,8 @@ export default function BranchParameters({
             {branchParameters?.map((param) => {
                 const paramName = param.name;
                 return (
-                    <NodeRow key={paramName}>
-                        <div className="node-label" title={paramName}>
-                            {paramName}:
-                        </div>
+                    <FormControl key={paramName}>
+                        <FormLabel title={paramName}>{paramName}:</FormLabel>
                         <div className="node-value">
                             <div className="fieldsControl">
                                 {node.branchParameters.map((branchParameter, branchIndex) => {
@@ -62,31 +59,27 @@ export default function BranchParameters({
                                     }
 
                                     return (
-                                        <BranchParameterRowStyled key={`${paramName}-${branchId}`}>
-                                            <div className={"branch-param-label"}>{branchId}</div>
-                                            <div className={"branch-parameter-expr-container"}>
-                                                <ExpressionField
-                                                    fieldName={`${paramName} for branch ${branchId}`}
-                                                    fieldLabel={paramName}
-                                                    exprPath={expressionPath}
-                                                    isEditMode={isEditMode}
-                                                    editedNode={node}
-                                                    showValidation={showValidation}
-                                                    showSwitch={showSwitch}
-                                                    parameterDefinition={param}
-                                                    setNodeDataAt={setNodeDataAt}
-                                                    testResultsToShow={testResultsToShow}
-                                                    renderFieldLabel={() => false}
-                                                    variableTypes={variables}
-                                                    fieldErrors={getValidationErrorsForField(errors, paramName)}
-                                                />
-                                            </div>
-                                        </BranchParameterRowStyled>
+                                        <ExpressionField
+                                            key={`${paramName}-${branchId}`}
+                                            fieldName={`${paramName} for branch ${branchId}`}
+                                            fieldLabel={branchId}
+                                            exprPath={expressionPath}
+                                            isEditMode={isEditMode}
+                                            editedNode={node}
+                                            showValidation={showValidation}
+                                            showSwitch={showSwitch}
+                                            parameterDefinition={param}
+                                            setNodeDataAt={setNodeDataAt}
+                                            testResultsToShow={testResultsToShow}
+                                            renderFieldLabel={(paramName) => <FormLabel>{paramName}</FormLabel>}
+                                            variableTypes={variables}
+                                            fieldErrors={getValidationErrorsForField(errors, paramName)}
+                                        />
                                     );
                                 })}
                             </div>
                         </div>
-                    </NodeRow>
+                    </FormControl>
                 );
             })}
         </>

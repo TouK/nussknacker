@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.util.test
 
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency, WithExplicitTypesToExtract}
@@ -101,7 +101,8 @@ class LiteTestScenarioRunner(
 private[test] class SimpleSourceFactory(result: TypingResult)
     extends SourceFactory
     with SingleInputGenericNodeTransformation[Source]
-    with WithExplicitTypesToExtract {
+    with WithExplicitTypesToExtract
+    with UnboundedStreamComponent {
 
   override type State = Nothing
 
@@ -131,11 +132,7 @@ private[test] class SimpleSourceFactory(result: TypingResult)
 
   override def nodeDependencies: List[NodeDependency] = TypedNodeDependency[NodeId] :: Nil
 
-  override def typesToExtract: List[typing.TypedClass] = result match {
-    case result: typing.SingleTypingResult => List(result.objType)
-    case typing.TypedUnion(possibleTypes)  => possibleTypes.map(_.objType).toList
-    case typing.TypedNull | typing.Unknown => Nil
-  }
+  override def typesToExtract: List[typing.TypingResult] = List(result)
 
 }
 

@@ -4,14 +4,14 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
+import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
@@ -34,7 +34,7 @@ object Initialization {
 
     val operations: List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),
-      new AutomaticMigration(migrations, processRepository, fetchingRepository)
+      new AutomaticMigration(migrations.mapValues(new ProcessModelMigrator(_)), processRepository, fetchingRepository)
     )
 
     runOperationsTransactionally(db, operations)
@@ -84,16 +84,14 @@ class EnvironmentInsert(environmentName: String, dbRef: DbRef) extends InitialOp
 }
 
 class AutomaticMigration(
-    migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
+    migrators: ProcessingTypeDataProvider[ProcessModelMigrator, _],
     processRepository: DBProcessRepository,
     fetchingProcessRepository: DBFetchingProcessRepository[DB]
 ) extends InitialOperation {
 
-  private val migrator = new ProcessModelMigrator(migrations)
-
   def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     val results: DB[List[Unit]] = for {
-      allToMigrate <- fetchingProcessRepository.fetchLatestProcessesDetails[DisplayableProcess](
+      allToMigrate <- fetchingProcessRepository.fetchLatestProcessesDetails[ScenarioGraph](
         ScenarioQuery.unarchived
       )
       migrated <- allToMigrate.map(migrateOne).sequence[DB, Unit]
@@ -102,16 +100,17 @@ class AutomaticMigration(
   }
 
   private def migrateOne(
-      processDetails: ScenarioWithDetailsEntity[DisplayableProcess]
+      processDetails: ScenarioWithDetailsEntity[ScenarioGraph]
   )(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
-    // TODO: unsafe processId?
-    migrator
-      .migrateProcess(processDetails, skipEmptyMigrations = true)
-      .map(_.toUpdateAction(ProcessId(processDetails.processId.value))) match {
-      case Some(action) =>
-        processRepository.updateProcess(action).map(_ => ())
-      case None => DBIOAction.successful(())
-    }
+    DBIOAction
+      .sequenceOption(for {
+        migrator        <- migrators.forType(processDetails.processingType)
+        migrationResult <- migrator.migrateProcess(processDetails, skipEmptyMigrations = true)
+        updateAction = migrationResult.toUpdateAction(processDetails.processId)
+      } yield {
+        processRepository.updateProcess(updateAction)
+      })
+      .map(_ => ())
   }
 
 }
