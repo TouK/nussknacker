@@ -150,10 +150,10 @@ object SingleSideJoinTransformerSpec {
       mainRecordsSource: BlockingQueueSource[OneRecord],
       joinedRecords: List[OneRecord]
   ): List[ComponentDefinition] = {
-    ComponentDefinition("start-main", SourceFactory.noParam[OneRecord](mainRecordsSource)) ::
+    ComponentDefinition("start-main", SourceFactory.noParamUnboundedStreamFactory[OneRecord](mainRecordsSource)) ::
       ComponentDefinition(
         "start-joined",
-        SourceFactory.noParam[OneRecord](
+        SourceFactory.noParamUnboundedStreamFactory[OneRecord](
           EmitWatermarkAfterEachElementCollectionSource
             .create[OneRecord](joinedRecords, _.timestamp, Duration.ofHours(1))
         )

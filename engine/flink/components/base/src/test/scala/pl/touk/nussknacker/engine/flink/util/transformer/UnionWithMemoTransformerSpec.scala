@@ -223,8 +223,8 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       fooRecordsSource: BlockingQueueSource[OneRecord],
       barRecordsSource: BlockingQueueSource[OneRecord]
   ): List[ComponentDefinition] = {
-    ComponentDefinition("start-foo", SourceFactory.noParam[OneRecord](fooRecordsSource)) ::
-      ComponentDefinition("start-bar", SourceFactory.noParam[OneRecord](barRecordsSource)) ::
+    ComponentDefinition("start-foo", SourceFactory.noParamUnboundedStreamFactory[OneRecord](fooRecordsSource)) ::
+      ComponentDefinition("start-bar", SourceFactory.noParamUnboundedStreamFactory[OneRecord](barRecordsSource)) ::
       FlinkBaseComponentProvider.Components
   }
 

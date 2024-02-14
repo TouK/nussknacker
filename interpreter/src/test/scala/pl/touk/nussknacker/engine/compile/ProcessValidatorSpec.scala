@@ -50,9 +50,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     .withGlobalVariable("processHelper", ProcessHelper)
     .withService("sampleEnricher", Some(Typed[SimpleRecord]))
     .withService("withParamsService", Some(Typed[SimpleRecord]), Parameter[String]("par1"))
-    .withSource("source", Some(Typed[SimpleRecord]))
-    .withSource("sourceWithUnknown", Some(Unknown))
-    .withSource("sourceWithParam", Some(Typed[SimpleRecord]), Parameter[Any]("param"))
+    .withUnboundedStreamSource("source", Some(Typed[SimpleRecord]))
+    .withUnboundedStreamSource("sourceWithUnknown", Some(Unknown))
+    .withUnboundedStreamSource("sourceWithParam", Some(Typed[SimpleRecord]), Parameter[Any]("param"))
     .withSink("sink")
     .withSink("sinkWithLazyParam", Parameter[String]("lazyString").copy(isLazyParameter = true))
     .withCustom("customTransformer", Some(Typed[SimpleRecord]), nonEndingOneInputComponent)
@@ -140,7 +140,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   private val baseDefinition = baseDefinitionBuilder.build
 
   private val definitionWithTypedSourceBuilder =
-    baseDefinitionBuilder.withSource("typed-source", Some(Typed[SimpleRecord]))
+    baseDefinitionBuilder.withUnboundedStreamSource("typed-source", Some(Typed[SimpleRecord]))
 
   private val definitionWithTypedSource = definitionWithTypedSourceBuilder.build
 

@@ -3,18 +3,16 @@ package pl.touk.nussknacker.engine.management.periodic
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentId
 import pl.touk.nussknacker.engine.testmode.TestProcess
 
-import java.time.Instant
-import java.util.UUID
 import scala.concurrent.Future
 
-class DeploymentManagerStub extends BaseDeploymentManager with PostprocessingProcessStatus {
+class DeploymentManagerStub extends BaseDeploymentManager {
 
   var jobStatus: Option[StatusDetails] = None
 
@@ -49,45 +47,22 @@ class DeploymentManagerStub extends BaseDeploymentManager with PostprocessingPro
       scenarioTestData: ScenarioTestData
   ): Future[TestProcess.TestResults] = ???
 
-  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] =
+  override def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetails: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState] =
     Future.successful(
-      WithDataFreshnessStatus(
-        processStateDefinitionManager.processState(
-          jobStatus.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed, None))
-        ),
-        cached = false
+      processStateDefinitionManager.processState(
+        statusDetails.headOption.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed, None))
       )
     )
 
-  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
-    Future.successful(jobStatus.toList)
-
-  override def postprocess(
-      idWithName: ProcessIdWithName,
-      statusDetailsList: List[StatusDetails]
-  ): Future[Option[ProcessAction]] =
-    Future.successful(
-      statusDetailsList
-        .find(_.status == SimpleStateStatus.Finished)
-        .map(_ =>
-          ProcessAction(
-            id = ProcessActionId(UUID.randomUUID()),
-            processId = ProcessId(-234),
-            processVersionId = VersionId(-123),
-            user = "fooUser",
-            createdAt = Instant.ofEpochMilli(0),
-            performedAt = Instant.ofEpochMilli(0),
-            actionType = ProcessActionType.Cancel,
-            state = ProcessActionState.Finished,
-            failureMessage = None,
-            commentId = None,
-            comment = None,
-            buildInfo = Map.empty
-          )
-        )
-    )
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    Future.successful(WithDataFreshnessStatus.fresh(jobStatus.toList))
+  }
 
   override def validate(
       processVersion: ProcessVersion,

@@ -12,6 +12,8 @@
     </root>
 
     <logger name="pl.touk" level="INFO"/>
+<!--    <logger name="slick.jdbc.JdbcBackend.statement"  level="DEBUG" />-->
+<!--    <logger name="slick.jdbc.JdbcBackend.parameter"  level="DEBUG" />-->
     <logger name="org.flywaydb" level="INFO"/>
     <logger name="nu-test" level="INFO"/>
 

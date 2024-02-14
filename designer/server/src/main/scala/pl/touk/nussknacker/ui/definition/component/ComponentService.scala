@@ -17,9 +17,8 @@ import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.definition.component.DefaultComponentService.toComponentUsagesInScenario
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -121,7 +120,7 @@ class DefaultComponentService(
 
   private def createComponents(
       componentsDefinition: List[ComponentDefinitionWithImplementation],
-      category: Category,
+      category: String,
   ): List[ComponentListElement] = {
     componentsDefinition
       .map { definition =>
@@ -211,5 +210,5 @@ private final case class ComponentNotFoundError(designerWideComponentId: Designe
 
 case class ComponentServiceProcessingTypeData(
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
-    category: Category
+    category: String
 )

@@ -11,13 +11,12 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
@@ -38,13 +37,12 @@ class DBFetchingProcessRepositorySpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with WithHsqlDbTesting
-    with PatientScalaFutures
-    with TestPermissions {
+    with PatientScalaFutures {
 
   private val dbioRunner = DBIOActionRunner(testDbRef)
 
   private val writingRepo =
-    new DBProcessRepository(testDbRef, mapProcessingTypeDataProvider(Streaming -> 0)) {
+    new DBProcessRepository(testDbRef, mapProcessingTypeDataProvider("Streaming" -> 0)) {
       override protected def now: Instant = currentTime
     }
 
@@ -61,7 +59,7 @@ class DBFetchingProcessRepositorySpec
 
   test("fetch processes for category") {
 
-    def saveProcessForCategory(category: TestCategory) = {
+    def saveProcessForCategory(category: String) = {
       saveProcess(
         ScenarioBuilder
           .streaming(s"categorized-$category")
@@ -72,10 +70,14 @@ class DBFetchingProcessRepositorySpec
       )
     }
 
-    val c1Reader = TestFactory.user(permissions = Category1 -> Permission.Read)
+    val c1Reader = LoggedUser(
+      id = "1",
+      username = "user",
+      categoryPermissions = Map("Category1" -> Set(Permission.Read))
+    )
 
-    saveProcessForCategory(Category1)
-    saveProcessForCategory(Category2)
+    saveProcessForCategory("Category1")
+    saveProcessForCategory("Category2")
     val processes = fetching
       .fetchLatestProcessesDetails(ScenarioQuery(isArchived = Some(false)))(
         ScenarioShapeFetchStrategy.NotFetch,
@@ -300,14 +302,14 @@ class DBFetchingProcessRepositorySpec
   private def saveProcess(
       process: CanonicalProcess,
       now: Instant = Instant.now(),
-      category: TestCategory = Category1
+      category: String = "Category1"
   ) = {
     currentTime = now
     val action = CreateProcessAction(
       process.name,
-      category.stringify,
+      category,
       process,
-      Streaming.stringify,
+      "Streaming",
       isFragment = false,
       forwardedUserName = None
     )

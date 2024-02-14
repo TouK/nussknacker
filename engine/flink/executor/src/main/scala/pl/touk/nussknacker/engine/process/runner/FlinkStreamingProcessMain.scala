@@ -4,7 +4,6 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
@@ -30,8 +29,7 @@ object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnviron
     val registrar =
       FlinkProcessRegistrar(compilerFactory, FlinkJobConfig.parse(modelData.modelConfig), prepareExecutionConfig)
     registrar.register(env, process, processVersion, deploymentData)
-    val preparedName =
-      modelData.objectNaming.prepareName(process.name.value, modelData.modelConfig, new NamingContext(FlinkUsageKey))
+    val preparedName = modelData.namingStrategy.prepareName(process.name.value)
     env.execute(preparedName)
   }
 

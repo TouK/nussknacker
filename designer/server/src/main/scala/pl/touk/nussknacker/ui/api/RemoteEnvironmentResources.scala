@@ -73,7 +73,7 @@ class RemoteEnvironmentResources(
                   remoteEnvironment.migrate(
                     details.scenarioGraphUnsafe,
                     details.name,
-                    details.processCategory,
+                    details.parameters,
                     details.isFragment
                   )
               )

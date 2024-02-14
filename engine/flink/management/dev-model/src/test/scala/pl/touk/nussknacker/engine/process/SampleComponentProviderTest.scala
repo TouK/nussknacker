@@ -30,7 +30,7 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
     }
   }
 
-  private val modelData = ModelData(config, ModelClassLoader(List.empty), None)
+  private val modelData = ModelData(config, ModelClassLoader(List.empty, workingDirectoryOpt = None), category = None)
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()

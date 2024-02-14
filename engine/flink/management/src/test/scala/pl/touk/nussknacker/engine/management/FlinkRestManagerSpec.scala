@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
+import akka.actor.ActorSystem
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
@@ -8,7 +9,9 @@ import org.apache.flink.api.common.JobStatus
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -28,16 +31,17 @@ import java.net.NoRouteToHostException
 import java.util.concurrent.TimeoutException
 import java.util.{Collections, UUID}
 import scala.collection.mutable
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits._
 
 //TODO move some tests to FlinkHttpClientTest
 class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
-  import scala.concurrent.ExecutionContext.Implicits._
+  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
   // We don't test scenario's json here
-  private val config = FlinkConfig("http://test.pl", shouldVerifyBeforeDeploy = false)
+  private val defaultConfig = FlinkConfig("http://test.pl", shouldVerifyBeforeDeploy = false)
 
   private var statuses: List[JobOverview] = List()
 
@@ -90,49 +94,53 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     import scala.jdk.CollectionConverters._
     val history: mutable.Buffer[HistoryEntry] =
       Collections.synchronizedList(new java.util.ArrayList[HistoryEntry]()).asScala
-    val manager = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
-      val toReturn = (req.uri.path, req.method) match {
-        case (List("jobs", "overview"), Method.GET) =>
-          history.append(HistoryEntry("overview", None))
-          JobsResponse(statuses)
-        case (List("jobs", jobId, "config"), Method.GET) =>
-          history.append(HistoryEntry("config", Some(jobId)))
-          JobConfig(jobId, configs.getOrElse(jobId, ExecutionConfig(`job-parallelism` = 1, `user-config` = Map.empty)))
-        case (List("jobs", jobId), Method.PATCH) if acceptCancel =>
-          history.append(HistoryEntry("cancel", Some(jobId)))
-          ()
-        case (List("jobs", jobId, "savepoints"), Method.POST) if acceptSavepoint || acceptStop =>
-          val operation = req.body match {
-            case StringBody(s, _, _) if s.contains(""""cancel-job":true""") => "stop"
-            case _                                                          => "makeSavepoint"
-          }
-          history.append(HistoryEntry(operation, Some(jobId)))
-          SavepointTriggerResponse(`request-id` = savepointRequestId)
-        case (List("jobs", jobId, "savepoints", `savepointRequestId`), Method.GET) if acceptSavepoint || acceptStop =>
-          history.append(HistoryEntry("getSavepoints", Some(jobId)))
-          buildFinishedSavepointResponse(savepointPath)
-        case (List("jars"), Method.GET) =>
-          history.append(HistoryEntry("getJars", None))
-          JarsResponse(files = Some(Nil))
-        case (List("jars", `uploadedJarPath`, "run"), Method.POST) if acceptDeploy =>
-          history.append(HistoryEntry("runJar", None))
-          exceptionOnDeploy
-            // see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions
-            // TODO: can be make behaviour more robust?
-            .flatMap { ex => SttpClientException.defaultExceptionToSttpClientException(req, ex) }
-            .foreach(throw _)
-          RunResponse(returnedJobId)
-        case (List("jars", "upload"), Method.POST) if acceptDeploy =>
-          history.append(HistoryEntry("uploadJar", None))
-          UploadJarResponse(uploadedJarPath)
-        case (List("overview"), Method.GET) =>
-          ClusterOverview(1, `slots-available` = freeSlots)
-        case (List("jobmanager", "config"), Method.GET) =>
-          List()
-        case (unsupportedPath, unsupportedMethod) =>
-          throw new IllegalStateException(s"Unsupported method ${unsupportedMethod} for ${unsupportedPath}")
-      }
-      Response(Right(toReturn), statusCode)
+    val manager = createDeploymentManager(sttpBackend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
+      case req =>
+        val toReturn = (req.uri.path, req.method) match {
+          case (List("jobs", "overview"), Method.GET) =>
+            history.append(HistoryEntry("overview", None))
+            JobsResponse(statuses)
+          case (List("jobs", jobId, "config"), Method.GET) =>
+            history.append(HistoryEntry("config", Some(jobId)))
+            JobConfig(
+              jobId,
+              configs.getOrElse(jobId, ExecutionConfig(`job-parallelism` = 1, `user-config` = Map.empty))
+            )
+          case (List("jobs", jobId), Method.PATCH) if acceptCancel =>
+            history.append(HistoryEntry("cancel", Some(jobId)))
+            ()
+          case (List("jobs", jobId, "savepoints"), Method.POST) if acceptSavepoint || acceptStop =>
+            val operation = req.body match {
+              case StringBody(s, _, _) if s.contains(""""cancel-job":true""") => "stop"
+              case _                                                          => "makeSavepoint"
+            }
+            history.append(HistoryEntry(operation, Some(jobId)))
+            SavepointTriggerResponse(`request-id` = savepointRequestId)
+          case (List("jobs", jobId, "savepoints", `savepointRequestId`), Method.GET) if acceptSavepoint || acceptStop =>
+            history.append(HistoryEntry("getSavepoints", Some(jobId)))
+            buildFinishedSavepointResponse(savepointPath)
+          case (List("jars"), Method.GET) =>
+            history.append(HistoryEntry("getJars", None))
+            JarsResponse(files = Some(Nil))
+          case (List("jars", `uploadedJarPath`, "run"), Method.POST) if acceptDeploy =>
+            history.append(HistoryEntry("runJar", None))
+            exceptionOnDeploy
+              // see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions
+              // TODO: can be make behaviour more robust?
+              .flatMap { ex => SttpClientException.defaultExceptionToSttpClientException(req, ex) }
+              .foreach(throw _)
+            RunResponse(returnedJobId)
+          case (List("jars", "upload"), Method.POST) if acceptDeploy =>
+            history.append(HistoryEntry("uploadJar", None))
+            UploadJarResponse(uploadedJarPath)
+          case (List("overview"), Method.GET) =>
+            ClusterOverview(1, `slots-available` = freeSlots)
+          case (List("jobmanager", "config"), Method.GET) =>
+            List()
+          case (unsupportedPath, unsupportedMethod) =>
+            throw new IllegalStateException(s"Unsupported method ${unsupportedMethod} for ${unsupportedPath}")
+        }
+        Response(Right(toReturn), statusCode)
     })
     (manager, history)
   }
@@ -296,7 +304,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         ProblemStateStatus.MultipleJobsRunning,
@@ -316,7 +324,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         ProblemStateStatus.MultipleJobsRunning,
@@ -336,7 +344,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Running,
@@ -355,7 +363,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Finished,
@@ -375,7 +383,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager          = createManager(statuses)
-    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    val returnedStatuses = manager.getProcessStates(ProcessName("p1")).map(_.value).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
       StatusDetails(
         SimpleStateStatus.Restarting,
@@ -410,7 +418,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
 
     val manager = createManager(statuses)
-    manager.getFreshProcessStates(processName).futureValue shouldBe List(
+    manager.getProcessStates(processName).map(_.value).futureValue shouldBe List(
       StatusDetails(
         SimpleStateStatus.Finished,
         Some(DeploymentId(deploymentId)),
@@ -437,26 +445,23 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
           )
         )
       }
-      implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
-      implicit val deploymentService: ProcessingTypeDeploymentService =
-        new ProcessingTypeDeploymentServiceStub(List.empty)
-      val manager = new FlinkRestManager(
-        config = config.copy(restUrl = wireMockServer.baseUrl(), scenarioStateRequestTimeout = clientRequestTimeout),
-        modelData = LocalModelData(ConfigFactory.empty, List.empty),
-        mainClassName = "UNUSED"
+      val manager = createDeploymentManager(
+        config =
+          defaultConfig.copy(restUrl = wireMockServer.baseUrl(), scenarioStateRequestTimeout = clientRequestTimeout),
       )
 
       val durationLongerThanClientTimeout = clientRequestTimeout.plus(patienceConfig.timeout)
       stubWithFixedDelay(durationLongerThanClientTimeout)
       a[SttpClientException.TimeoutException] shouldBe thrownBy {
         manager
-          .getFreshProcessStates(ProcessName("p1"))
+          .getProcessStates(ProcessName("p1"))
           .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
       }
 
       stubWithFixedDelay(0.seconds)
       val resultWithoutDelay = manager
-        .getFreshProcessStates(ProcessName("p1"))
+        .getProcessStates(ProcessName("p1"))
+        .map(_.value)
         .futureValue(Timeout(durationLongerThanClientTimeout.plus(1 second)))
       resultWithoutDelay shouldEqual List.empty
     } finally {
@@ -464,14 +469,21 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     }
   }
 
-  private def createManagerWithBackend(backend: SttpBackend[Future, Any]): FlinkRestManager = {
-    implicit val b: SttpBackend[Future, Any] = backend
-    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
-      List.empty
+  private def createDeploymentManager(
+      config: FlinkConfig = defaultConfig,
+      sttpBackend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
+  ): FlinkRestManager = {
+    val deploymentManagerDependencies = DeploymentManagerDependencies(
+      new ProcessingTypeDeploymentServiceStub(List.empty),
+      ExecutionContext.global,
+      ActorSystem(getClass.getSimpleName),
+      sttpBackend
     )
     new FlinkRestManager(
       config = config,
+      ScenarioStateCachingConfig.Default.cacheTTL,
       modelData = LocalModelData(ConfigFactory.empty, List.empty),
+      deploymentManagerDependencies,
       mainClassName = "UNUSED"
     )
   }

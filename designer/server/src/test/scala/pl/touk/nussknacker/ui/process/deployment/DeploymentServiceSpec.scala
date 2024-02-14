@@ -10,30 +10,29 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider.noCombinedDataFun
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  DefaultProcessingTypeDeploymentService,
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
+import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
   ProcessingTypeDataState,
-  ValueWithPermission
+  ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction
 
 import java.util.UUID
@@ -52,7 +51,6 @@ class DeploymentServiceSpec
     with WithHsqlDbTesting
     with EitherValuesDetailedMessage {
 
-  import TestFactory._
   import VersionId._
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
@@ -75,8 +73,8 @@ class DeploymentServiceSpec
       override val state: ProcessingTypeDataState[DeploymentManager, Nothing] =
         new ProcessingTypeDataState[DeploymentManager, Nothing] {
 
-          override def all: Map[ProcessingType, ValueWithPermission[DeploymentManager]] = Map(
-            Streaming.stringify -> ValueWithPermission.anyUser(deploymentManager)
+          override def all: Map[ProcessingType, ValueWithRestriction[DeploymentManager]] = Map(
+            "streaming" -> ValueWithRestriction.anyUser(deploymentManager)
           )
 
           override def getCombined: () => Nothing = noCombinedDataFun
@@ -92,11 +90,12 @@ class DeploymentServiceSpec
 
   private val deploymentService = createDeploymentService(None)
 
-  deploymentManager = new MockDeploymentManager(SimpleStateStatus.Running)(
+  deploymentManager = new MockDeploymentManager(
+    SimpleStateStatus.Running,
     new DefaultProcessingTypeDeploymentService(
-      Streaming.stringify,
+      "streaming",
       deploymentService,
-      AllDeployedScenarioService(testDbRef, Streaming.stringify)
+      AllDeployedScenarioService(testDbRef, "streaming")
     )
   )
 
@@ -153,7 +152,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, actionId)    = prepareDeployedProcess(processName).dbioActionValues
 
-    deploymentService.markActionExecutionFinished(Streaming.stringify, actionId).futureValue
+    deploymentService.markActionExecutionFinished("streaming", actionId).futureValue
     eventually {
       val action =
         actionRepository.getFinishedProcessActions(processId.id, Some(Set(ProcessActionType.Deploy))).dbioActionValues
@@ -620,7 +619,10 @@ class DeploymentServiceSpec
     val processesDetailsWithState = deploymentService
       .enrichDetailsWithProcessState(
         processesDetails
-          .map(ScenarioWithDetailsConversions.fromEntityIgnoringGraphAndValidationResult)
+          .map(
+            ScenarioWithDetailsConversions
+              .fromEntityIgnoringGraphAndValidationResult(_, ProcessTestData.sampleScenarioParameters)
+          )
       )
       .futureValue
 
@@ -822,13 +824,13 @@ class DeploymentServiceSpec
     val canonicalProcess = parallelism
       .map(baseBuilder.parallelism)
       .getOrElse(baseBuilder)
-      .source("source", existingSourceFactory)
-      .emptySink("sink", existingSinkFactory)
+      .source("source", ProcessTestData.existingSourceFactory)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
     val action = CreateProcessAction(
-      processName,
-      Category1.stringify,
-      canonicalProcess,
-      Streaming.stringify,
+      processName = processName,
+      category = "Category1",
+      canonicalProcess = canonicalProcess,
+      processingType = "streaming",
       isFragment = false,
       forwardedUserName = None
     )
@@ -841,10 +843,10 @@ class DeploymentServiceSpec
       .emptySink("end", "end")
 
     val action = CreateProcessAction(
-      processName,
-      Category1.stringify,
-      canonicalProcess,
-      Streaming.stringify,
+      processName = processName,
+      category = "Category1",
+      canonicalProcess = canonicalProcess,
+      processingType = "streaming",
       isFragment = true,
       forwardedUserName = None
     )

@@ -21,15 +21,15 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestData.Categories.TestCategory.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.mock.MockDeploymentManager
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
-
-import java.time.Instant
 
 class ManagementResourcesSpec
     extends AnyFunSuite
@@ -72,7 +72,7 @@ class ManagementResourcesSpec
   }
 
   test("process during deploy cannot be deployed again") {
-    createDeployedExampleScenario(processName, category = Category1)
+    createDeployedExampleScenario(processName)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
       deployProcess(processName) ~> check {
@@ -82,7 +82,7 @@ class ManagementResourcesSpec
   }
 
   test("canceled process can't be canceled again") {
-    createDeployedCanceledExampleScenario(processName, category = Category1)
+    createDeployedCanceledExampleScenario(processName)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       cancelProcess(processName) ~> check {
@@ -157,7 +157,7 @@ class ManagementResourcesSpec
             ) shouldBe List(
               (
                 VersionId(2),
-                user().username,
+                TestFactory.user().username,
                 ProcessActionType.Cancel,
                 Some(secondCommentId),
                 Some(expectedStopComment),
@@ -165,7 +165,7 @@ class ManagementResourcesSpec
               ),
               (
                 VersionId(2),
-                user().username,
+                TestFactory.user().username,
                 ProcessActionType.Deploy,
                 Some(firstCommentId),
                 Some(expectedDeployComment),
@@ -242,7 +242,7 @@ class ManagementResourcesSpec
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
     Post(s"/processManagement/deploy/${ProcessTestData.sampleScenario.name}") ~> withPermissions(
       deployRoute(),
-      testPermissionWrite
+      Permission.Write
     ) ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }

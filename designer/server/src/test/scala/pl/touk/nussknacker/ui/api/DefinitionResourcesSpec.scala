@@ -15,16 +15,16 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
   DefinitionsService,
-  ScenarioPropertiesConfigFinalizer,
-  TestAdditionalUIConfigProvider
+  ScenarioPropertiesConfigFinalizer
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
@@ -35,14 +35,14 @@ class DefinitionResourcesSpec
     with Matchers
     with PatientScalaFutures
     with EitherValuesDetailedMessage
+    with OptionValues
     with BeforeAndAfterEach
     with BeforeAndAfterAll
-    with NuResourcesTest
-    with OptionValues {
+    with NuResourcesTest {
 
   private val definitionResources = new DefinitionResources(
-    serviceProvider = testProcessingTypeDataProvider.mapValues { processingTypeData =>
-      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.modelData)
+    definitionsServices = testProcessingTypeDataProvider.mapValues { processingTypeData =>
+      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.designerModelData.modelData)
       DefinitionsService(
         processingTypeData,
         modelDefinitionEnricher,
@@ -275,14 +275,14 @@ class DefinitionResourcesSpec
     }
   }
 
-  private def getProcessDefinitionData(processingType: TestProcessingType = Streaming): RouteTestResult = {
-    getProcessDefinitionDataUsingRawProcessingType(processingType.stringify)
+  private def getProcessDefinitionData(processingType: String = "streaming"): RouteTestResult = {
+    getProcessDefinitionDataUsingRawProcessingType(processingType)
   }
 
   private def getProcessDefinitionDataUsingRawProcessingType(processingType: String) = {
     Get(s"/processDefinitionData/$processingType?isFragment=false") ~> withPermissions(
       definitionResources,
-      testPermissionRead
+      Permission.Read
     )
   }
 

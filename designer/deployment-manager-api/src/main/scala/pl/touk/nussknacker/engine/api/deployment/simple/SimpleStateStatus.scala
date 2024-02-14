@@ -37,7 +37,7 @@ object SimpleStateStatus {
     val FailedToGet: ProblemStateStatus =
       ProblemStateStatus(s"Failed to get a state of the scenario.")
 
-    def shouldBeRunning(deployedVersionId: VersionId, user: String): ProblemStateStatus =
+    def shouldBeRunning(deployedVersionId: VersionId, user: String = "admin"): ProblemStateStatus =
       ProblemStateStatus(s"Scenario deployed in version $deployedVersionId by $user is not running.")
 
     def mismatchDeployedVersion(

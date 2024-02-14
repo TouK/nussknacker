@@ -31,7 +31,8 @@ class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfi
             id.name,
             BuiltInComponentSpecificData,
             ComponentStaticDefinition(List.empty, None),
-            uiDefinition
+            uiDefinition,
+            allowedProcessingModes = None // built-in components are available in every processing mode
           )
         }
     }

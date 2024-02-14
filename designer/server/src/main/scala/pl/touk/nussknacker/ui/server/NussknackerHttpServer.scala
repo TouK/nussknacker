@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.server
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.stream.Materializer
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import fr.davit.akka.http.metrics.core.HttpMetrics._
@@ -13,22 +12,24 @@ import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Supplier
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSystem, materializer: Materializer)
-    extends LazyLogging {
+class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSystem) extends LazyLogging {
 
   private implicit val systemImplicit: ActorSystem                = system
-  private implicit val materializerImplicit: Materializer         = materializer
   private implicit val executionContextImplicit: ExecutionContext = system.dispatcher
 
   def start(config: ConfigWithUnresolvedVersion, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
     for {
       route <- routeProvider.createRoute(config)
       _     <- createAkkaHttpBinding(config, route, metricRegistry)
-    } yield ()
+    } yield {
+      RouteInterceptor.set(route)
+    }
   }
 
   private def createAkkaHttpBinding(
@@ -106,4 +107,18 @@ class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSy
     new DropwizardRegistry(settings)(metricsRegistry)
   }
 
+}
+
+// HACK!!! This is awful solution, but it's done for a purpose ProcessesResourcesSpec. The spec will be rewritten with
+// RestAssured and the hack won't be needed any more. When it's done, we can remove it.
+object RouteInterceptor extends Supplier[Route] {
+
+  private val interceptedRoute: AtomicReference[Option[Route]] = new AtomicReference[Option[Route]](None)
+
+  override def get(): Route = interceptedRoute.get() match {
+    case Some(value) => value
+    case None        => throw new IllegalStateException("Route was not set")
+  }
+
+  def set(route: Route): Unit = interceptedRoute.set(Some(route))
 }

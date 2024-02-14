@@ -3,9 +3,11 @@ package pl.touk.nussknacker.engine.kafka.source
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -41,7 +43,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 ) extends SourceFactory
     with SingleInputGenericNodeTransformation[Source]
     with WithCachedTopicsExistenceValidator
-    with WithExplicitTypesToExtract {
+    with WithExplicitTypesToExtract
+    with UnboundedStreamComponent {
 
   protected val topicNameSeparator = ","
 
@@ -166,7 +169,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
       deserializationSchema,
       formatter,
       contextInitializer,
-      KafkaTestParametersInfo.empty
+      KafkaTestParametersInfo.empty,
+      modelDependencies.namingStrategy
     )
   }
 
@@ -217,7 +221,8 @@ object KafkaSourceFactory {
         deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
         formatter: RecordFormatter,
         contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-        testParametersInfo: KafkaTestParametersInfo
+        testParametersInfo: KafkaTestParametersInfo,
+        namingStrategy: NamingStrategy
     ): Source
 
   }

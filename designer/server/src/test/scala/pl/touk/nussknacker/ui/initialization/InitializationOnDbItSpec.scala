@@ -6,9 +6,9 @@ import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
+import pl.touk.nussknacker.test.base.db.{DbTesting, WithHsqlDbTesting, WithPostgresDbTesting, WithTestDb}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -27,11 +27,12 @@ abstract class InitializationOnDbItSpec
   this: DbTesting with WithTestDb =>
 
   import Initialization.nussknackerUser
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val processName = ProcessName("proc1")
 
-  private val migrations = mapProcessingTypeDataProvider(Streaming -> new TestMigrations(1, 2))
+  private val migrations = mapProcessingTypeDataProvider("streaming" -> new TestMigrations(1, 2))
 
   private lazy val repository = TestFactory.newFetchingProcessRepository(testDbRef)
 
@@ -79,7 +80,7 @@ abstract class InitializationOnDbItSpec
 
     val exception = intercept[RuntimeException](
       Initialization.init(
-        mapProcessingTypeDataProvider(Streaming -> new TestMigrations(1, 2, 5)),
+        mapProcessingTypeDataProvider("streaming" -> new TestMigrations(1, 2, 5)),
         testDbRef,
         repository,
         "env1"
@@ -101,7 +102,7 @@ abstract class InitializationOnDbItSpec
       processName = processName,
       category = "RTM",
       canonicalProcess = sampleCanonicalProcess(processName),
-      processingType = Streaming.stringify,
+      processingType = "streaming",
       isFragment = fragment,
       forwardedUserName = None
     )

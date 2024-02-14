@@ -78,7 +78,7 @@ class CachingProcessStateDeploymentManagerSpec
 
   }
 
-  private def prepareDMReturningRandomStates = {
+  private def prepareDMReturningRandomStates: DeploymentManager = {
     val delegate = mock[DeploymentManager]
     when(delegate.getProcessStates(any[ProcessName])(any[DataFreshnessPolicy])).thenAnswer { _: InvocationOnMock =>
       val randomState = StatusDetails(
@@ -86,7 +86,7 @@ class CachingProcessStateDeploymentManagerSpec
         deploymentId = None,
         externalDeploymentId = Some(ExternalDeploymentId(UUID.randomUUID().toString))
       )
-      Future.successful(WithDataFreshnessStatus(List(randomState), cached = false))
+      Future.successful(WithDataFreshnessStatus.fresh(List(randomState)))
     }
     delegate
   }

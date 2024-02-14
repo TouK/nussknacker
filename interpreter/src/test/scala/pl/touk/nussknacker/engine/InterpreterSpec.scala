@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidFragment
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -1039,7 +1039,7 @@ object InterpreterSpec {
     def invoke(@ParamName("expression") @NotBlank expr: String) = Future.successful(expr)
   }
 
-  object TransactionSource extends SourceFactory {
+  object TransactionSource extends SourceFactory with UnboundedStreamComponent {
 
     @MethodToInvoke(returnType = classOf[Transaction])
     def create(): api.process.Source = null

@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -21,9 +19,9 @@ import pl.touk.nussknacker.engine.management.periodic.service.{
   ProcessConfigEnricherFactory
 }
 import pl.touk.nussknacker.engine.testmode.TestProcess
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
-import sttp.client3.SttpBackend
 
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,13 +38,10 @@ object PeriodicDeploymentManager {
       modelData: BaseModelData,
       listenerFactory: PeriodicProcessListenerFactory,
       additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
-      customActionsProviderFactory: PeriodicCustomActionsProviderFactory
-  )(
-      implicit ec: ExecutionContext,
-      system: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
+      customActionsProviderFactory: PeriodicCustomActionsProviderFactory,
+      dependencies: DeploymentManagerDependencies
   ): PeriodicDeploymentManager = {
+    import dependencies._
 
     val clock = Clock.systemDefaultZone()
 
@@ -65,13 +60,14 @@ object PeriodicDeploymentManager {
       periodicBatchConfig.deploymentRetry,
       periodicBatchConfig.executionConfig,
       processConfigEnricher,
-      clock
+      clock,
+      dependencies.deploymentService
     )
-    val deploymentActor = system.actorOf(
+    val deploymentActor = dependencies.actorSystem.actorOf(
       DeploymentActor.props(service, periodicBatchConfig.deployInterval),
       s"periodic-${periodicBatchConfig.processingType}-deployer"
     )
-    val rescheduleFinishedActor = system.actorOf(
+    val rescheduleFinishedActor = dependencies.actorSystem.actorOf(
       RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval),
       s"periodic-${periodicBatchConfig.processingType}-rescheduler"
     )
@@ -80,8 +76,8 @@ object PeriodicDeploymentManager {
 
     val toClose = () => {
       runSafely(listener.close())
-      runSafely(system.stop(deploymentActor))
-      runSafely(system.stop(rescheduleFinishedActor))
+      runSafely(dependencies.actorSystem.stop(deploymentActor))
+      runSafely(dependencies.actorSystem.stop(rescheduleFinishedActor))
       runSafely(db.close())
     }
     new PeriodicDeploymentManager(
@@ -188,22 +184,21 @@ class PeriodicDeploymentManager private[periodic] (
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    throw new IllegalAccessException(
-      "PeriodicDeploymentManager.getProcessStates is not meant to be run directly - should be used getProcessState instead"
-    )
+    service.getStatusDetails(name).map(_.map(List(_)))
   }
 
-  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] = {
-    service.getStatusDetails(idWithName.name).map { statusesWithFreshness =>
-      statusesWithFreshness.map { cd =>
-        // TODO: add "real" presentation of deployments in GUI
-        val mergedStatus = processStateDefinitionManager
-          .processState(cd.copy(status = cd.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status))
-        mergedStatus.copy(tooltip = processStateDefinitionManager.statusTooltip(cd.status))
-      }
-    }
+  override def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetailsList: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState] = {
+    val statusDetails = statusDetailsList.head
+    // TODO: add "real" presentation of deployments in GUI
+    val mergedStatus = processStateDefinitionManager
+      .processState(
+        statusDetails.copy(status = statusDetails.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status)
+      )
+    Future.successful(mergedStatus.copy(tooltip = processStateDefinitionManager.statusTooltip(statusDetails.status)))
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =

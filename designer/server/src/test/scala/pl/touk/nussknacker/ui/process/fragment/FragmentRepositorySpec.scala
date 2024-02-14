@@ -6,12 +6,11 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.sampleFragmentName
-import pl.touk.nussknacker.ui.api.helpers.TestData.ProcessingTypes.TestProcessingType.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.sampleFragmentName
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-
-import scala.language.higherKinds
 
 class FragmentRepositorySpec
     extends AnyFlatSpec
@@ -22,10 +21,9 @@ class FragmentRepositorySpec
     with VeryPatientScalaFutures {
 
   it should "load fragments" in {
-    val sampleFragment =
-      CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
-    val sampleFragment2 =
-      CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment2)
+    val sampleFragment  = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
+    val sampleFragment2 = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment2)
+
     saveFragment(sampleFragment) {
       status shouldEqual StatusCodes.OK
     }
