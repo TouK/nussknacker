@@ -6,7 +6,8 @@ import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, Savepoint
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.management.{FlinkArgsEncodeHack, FlinkConfig}
-import pl.touk.nussknacker.engine.sttp.SttpJson
+import pl.touk.nussknacker.engine.sttp.HttpClientErrorHandler.logger
+import pl.touk.nussknacker.engine.sttp.{HttpClientError, SttpJson}
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
 import sttp.client3._
 import sttp.client3.circe._
@@ -92,10 +93,21 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
           .reverse
       }
       .map(WithDataFreshnessStatus.fresh)
-      .recoverWith {
-        logger.trace(s"Checking fetching scenario state $jobName with policy $freshnessPolicy")
-        recoverWithMessage("retrieve Flink jobs")
-      }
+      .recoverWith(recoverWithTrace(jobName, "retrieve Flink jobs"))
+  }
+
+  private object HttpFlinkClientErrorExtractor {
+    def unapply(t: Throwable): Option[HttpError[_]] = HttpError.find(t)
+  }
+
+  private def recoverWithTrace[T](jobName: String, action: String)(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): PartialFunction[Throwable, Future[T]] = {
+    // extract nested HttpError: it's most likely wrapped in SttpClientException
+    case HttpFlinkClientErrorExtractor(HttpError(body, status)) =>
+      logger.trace(s"Checking fetching scenario state $jobName with policy $freshnessPolicy")
+      logger.error(s"Failed to $action, status code: $status, errors: $body.")
+      Future.failed(HttpClientError(s"Failed to $action. Detailed error information in logs."))
   }
 
   def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
