@@ -2,15 +2,16 @@ package pl.touk.nussknacker.ui.api
 
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.tests.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
-
-import java.util.UUID
+import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.tests.config.{
+  WithMockableDeploymentManager,
+  WithRichConfigRestAssuredUsersExtensions,
+  WithRichDesignerConfig
+}
 
 class ScenarioActivityApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -18,38 +19,26 @@ class ScenarioActivityApiHttpServiceSecuritySpec
     with WithRichDesignerConfig
     with WithRichConfigScenarioHelper
     with WithMockableDeploymentManager
-    with NuRestAssureExtensions
+    with WithRichConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
 
-  import ScenarioActivitySpecAsserts._
-
-  private val exampleScenarioName = UUID.randomUUID().toString
-  private val commentContent      = "test message"
-  private val wrongScenarioName   = "wrongProcessName"
-  private val fileContent         = "very important content"
-  private val fileName            = "important_file.txt"
-
-  private val exampleScenario = ScenarioBuilder
-    .streaming(exampleScenarioName)
-    .source("sourceId", "barSource")
-    .emptySink("sinkId", "barSink")
-
-  private val otherExampleScenario = ScenarioBuilder
-    .streaming(UUID.randomUUID().toString)
-    .source("sourceId", "barSource")
-    .emptySink("sinkId", "barSink")
+  private val commentContent = "test message"
+  private val fileContent    = "very important content"
+  private val fileName       = "important_file.txt"
 
   "The scenario activity endpoint when" - {
     "authenticated should" - {
-      "return empty comments and attachment for existing process without them" in {
+      "return response for scenario in allowed category for the given user" in {
+        val allowedScenarioName = "s1"
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
           }
-          .basicAuth("reader", "reader")
           .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity")
+          .basicAuthLimitedReader()
+          .get(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/activity")
           .Then()
           .statusCode(200)
           .equalsJsonBody(
@@ -61,378 +50,263 @@ class ScenarioActivityApiHttpServiceSecuritySpec
                |""".stripMargin
           )
       }
-
-      "return 404 for no existing scenario" in {
-        given()
-          .basicAuth("reader", "reader")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/activity")
-          .Then()
-          .statusCode(404)
-          .equalsPlainBody(s"No scenario $wrongScenarioName found")
-      }
-    }
-
-    "not authenticated should" - {
-      "forbid access" in {
-        given()
-          .basicAuth("unknown-user", "wrong-password")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity")
-          .Then()
-          .statusCode(401)
-          .equalsPlainBody("The supplied authentication is invalid")
-      }
-
-      "forbid access for insufficient privileges" in {
+      "return forbidden for scenario in disallowed category for the given user" in {
+        val disallowedScenarioName = "s2"
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(disallowedScenarioName), category = Category2)
           }
-          .plainBody(commentContent)
-          .basicAuth("limitedReader", "limitedReader")
           .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity")
+          .basicAuthLimitedReader()
+          .get(s"$nuDesignerHttpAddress/api/processes/$disallowedScenarioName/activity")
           .Then()
           .statusCode(403)
           .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+    }
+    "not authenticated should" - {
+      "forbid access" in {
+        val scenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(scenarioName), category = Category1)
+          }
+          .when()
+          .basicAuthUnknownUser()
+          .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied authentication is invalid")
       }
     }
   }
 
   "The scenario add comment endpoint when" - {
     "authenticated should" - {
-      "add comment in existing scenario" in {
+      "allow to add comment in scenario in allowed category for the given user" in {
+        val allowedScenarioName = "s1"
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
           }
-          .plainBody(commentContent)
-          .basicAuth("writer", "writer")
           .when()
-          .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/comments")
+          .basicAuthLimitedWriter()
+          .plainBody(commentContent)
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/comments")
           .Then()
           .statusCode(200)
-          .verifyCommentExists(scenarioName = exampleScenarioName, commentContent = commentContent)
+          .equalsPlainBody("")
       }
-
-      "return 404 for no existing scenario" in {
+      "forbid to add comment in scenario in forbidden category for the given user" in {
+        val disallowedScenarioName = "s2"
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(disallowedScenarioName), category = Category2)
           }
           .plainBody(commentContent)
-          .basicAuth("writer", "writer")
+          .basicAuthLimitedReader()
           .when()
-          .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/comments")
-          .Then()
-          .statusCode(404)
-          .equalsPlainBody(s"No scenario $wrongScenarioName found")
-      }
-    }
-
-    "not authenticated should" - {
-      "forbid access for no authorization" in {
-        given()
-          .plainBody(commentContent)
-          .basicAuth("unknown-user", "wrong-password")
-          .when()
-          .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/comments")
-          .Then()
-          .statusCode(401)
-          .equalsPlainBody("The supplied authentication is invalid")
-      }
-
-      "forbid access for insufficient privileges" in {
-        given()
-          .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
-          }
-          .plainBody(commentContent)
-          .basicAuth("reader", "reader")
-          .when()
-          .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/comments")
+          .post(s"$nuDesignerHttpAddress/api/processes/$disallowedScenarioName/1/activity/comments")
           .Then()
           .statusCode(403)
           .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+    }
+    "not authenticated should" - {
+      "forbid access" in {
+        val scenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(scenarioName), category = Category1)
+          }
+          .when()
+          .basicAuthUnknownUser()
+          .plainBody(commentContent)
+          .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/comments")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied authentication is invalid")
       }
     }
   }
 
   "The scenario remove comment endpoint when" - {
     "authenticated should" - {
-      "remove comment in existing scenario" in {
+      "allow to remove comment in scenario in allowed category for the given user" in {
+        val allowedScenarioName = "s1"
         val commentId = given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
-            createComment(scenarioName = exampleScenarioName, commentContent = commentContent)
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+            createComment(scenarioName = allowedScenarioName, commentContent = commentContent)
           }
-          .basicAuth("reader", "reader")
           .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity")
+          .basicAuthLimitedReader()
+          .get(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/activity")
           .Then()
           .extractLong("comments[0].id")
 
         given()
-          .basicAuth("writer", "writer")
           .when()
-          .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comments/$commentId")
+          .basicAuthLimitedWriter()
+          .delete(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/activity/comments/$commentId")
           .Then()
           .statusCode(200)
-          .verifyEmptyCommentsAndAttachments(exampleScenarioName)
       }
-
-      "return 500 for no existing comment" in {
+      "forbid to remove comment in scenario in disallowed category for the given user" in {
+        val disallowedScenarioName = "s2"
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(disallowedScenarioName), category = Category2)
+            createComment(scenarioName = disallowedScenarioName, commentContent = commentContent)
           }
-          .basicAuth("writer", "writer")
+          .basicAuthLimitedReader()
           .when()
-          .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comments/1")
-          .Then()
-          .statusCode(500)
-          .equalsPlainBody("Unable to delete comment with id: 1")
-      }
-
-      "return 404 for no existing scenario" in {
-        given()
-          .basicAuth("writer", "writer")
-          .when()
-          .delete(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/activity/comments/1")
-          .Then()
-          .statusCode(404)
-          .equalsPlainBody(s"No scenario $wrongScenarioName found")
-      }
-    }
-
-    "not authenticated should" - {
-      "forbid access for no authorization" in {
-        given()
-          .basicAuth("unknown-user", "wrong-password")
-          .when()
-          .delete(s"$nuDesignerHttpAddress/api/processes/${exampleScenario.name}/activity/comments/1")
-          .Then()
-          .statusCode(401)
-          .equalsPlainBody("The supplied authentication is invalid")
-      }
-
-      "forbid access for insufficient privileges" in {
-        given()
-          .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
-          }
-          .basicAuth("reader", "reader")
-          .when()
-          .delete(s"$nuDesignerHttpAddress/api/processes/${exampleScenario.name}/activity/comments/1")
+          .delete(s"$nuDesignerHttpAddress/api/processes/$disallowedScenarioName/activity/comments/1")
           .Then()
           .statusCode(403)
           .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+    }
+    "not authenticated should" - {
+      "forbid access" in {
+        val scenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(scenarioName), category = Category1)
+          }
+          .when()
+          .basicAuthUnknownUser()
+          .delete(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity/comments/1")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied authentication is invalid")
       }
     }
   }
 
   "The scenario add attachment endpoint when" - {
     "authenticated should" - {
-      "add attachment to existing scenario" in {
+      "allow to add attachment in scenario in allowed category for the given user" in {
+        val allowedScenarioName = "s1"
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
           }
           .streamBody(fileContent = fileContent, fileName = fileName)
           .preemptiveBasicAuth("writer", "writer")
           .when()
-          .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/attachments")
           .Then()
           .statusCode(200)
-          .verifyAttachmentsExists(exampleScenarioName)
+          .equalsPlainBody("")
       }
-
-      "handle attachments with the same name" in {
-        val fileContent1 = "very important content1"
-        val fileContent2 = "very important content2"
+      "forbid to add attachment in scenario in disallowed category for the given user" in {
+        val disallowedScenarioName = "s2"
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
-            createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent1, fileName = fileName)
-            createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent2, fileName = fileName)
-          }
-          .preemptiveBasicAuth("reader", "reader")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity")
-          .Then()
-          .body(
-            matchJsonWithRegexValues(
-              s"""
-                 |{
-                 |  "comments": [],
-                 |  "attachments": [
-                 |    {
-                 |      "id": "${regexes.digitsRegex}",
-                 |      "processVersionId": 1,
-                 |      "fileName": "important_file.txt",
-                 |      "user": "writer",
-                 |      "createDate": "${regexes.zuluDateRegex}"
-                 |    },
-                 |    {
-                 |      "id": "${regexes.digitsRegex}",
-                 |      "processVersionId": 1,
-                 |      "fileName": "important_file.txt",
-                 |      "user": "writer",
-                 |      "createDate": "${regexes.zuluDateRegex}"
-                 |    }
-                 |  ]
-                 |}
-                 |""".stripMargin
-            )
-          )
-      }
-
-      "return 404 for no existing scenario" in {
-        given()
-          .streamBody(fileContent = fileContent, fileName = fileName)
-          .preemptiveBasicAuth("writer", "writer")
-          .when()
-          .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/attachments")
-          .Then()
-          .statusCode(404)
-          .equalsPlainBody(s"No scenario $wrongScenarioName found")
-      }
-    }
-
-    "not authenticated should" - {
-      "forbid access for no authorization" in {
-        given()
-          .streamBody(fileContent = "test", fileName = "test.xml")
-          .noAuth()
-          .when()
-          .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
-          .Then()
-          .statusCode(401)
-          .equalsPlainBody("The resource requires authentication, which was not supplied with the request")
-      }
-
-      "forbid access for insufficient privileges" in {
-        given()
-          .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(disallowedScenarioName), category = Category2)
           }
           .streamBody(fileContent = "test", fileName = "test.xml")
           .preemptiveBasicAuth("reader", "reader")
           .when()
-          .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
+          .post(s"$nuDesignerHttpAddress/api/processes/$disallowedScenarioName/1/activity/attachments")
           .Then()
           .statusCode(403)
           .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+    }
+    "not authenticated should" - {
+      "forbid access" in {
+        val scenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(scenarioName), category = Category1)
+          }
+          .when()
+          .basicAuthUnknownUser()
+          .streamBody(fileContent = "test", fileName = "test.xml")
+          .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/attachments")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied authentication is invalid")
       }
     }
   }
 
   "The scenario download attachment endpoint when" - {
     "authenticated should" - {
-      "download existing attachment" in {
+      "allow to download attachment in scenario in allowed category for the given user" in {
+        val allowedScenarioName = "s1"
         val attachmentId = given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
-            createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent)
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+            createAttachment(scenarioName = allowedScenarioName, fileContent = fileContent)
           }
-          .basicAuth("reader", "reader")
           .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity")
+          .basicAuthLimitedReader()
+          .get(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/activity")
           .Then()
           .extractLong("attachments[0].id")
 
         given()
-          .basicAuth("writer", "writer")
+          .basicAuthLimitedWriter()
           .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/attachments/$attachmentId")
+          .get(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/activity/attachments/$attachmentId")
           .Then()
           .statusCode(200)
           .equalsPlainBody(fileContent)
       }
-
-      "not return existing attachment not connected to the scenario" in {
-        val notRelevantScenarioId = given()
-          .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
-            createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent)
-          }
-          .basicAuth("reader", "reader")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity")
-          .Then()
-          .extractLong("attachments[0].id")
-
-        given()
-          .basicAuth("reader", "reader")
-          .applicationState {
-            createSavedScenario(otherExampleScenario, category = Category1)
-          }
-          .when()
-          .get(
-            s"$nuDesignerHttpAddress/api/processes/${otherExampleScenario.name}/activity/" +
-              s"attachments/$notRelevantScenarioId"
-          )
-          .Then()
-          .statusCode(200)
-          .equalsPlainBody("")
-      }
-
-      "return empty body for no existing attachment" in {
+      "forbid to download attachment in scenario in disallowed category for the given user" in {
+        val disallowedScenarioName = "s2"
         given()
           .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(disallowedScenarioName), category = Category2)
+            createAttachment(scenarioName = disallowedScenarioName, fileContent = fileContent)
           }
-          .basicAuth("writer", "writer")
           .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/attachments/1")
-          .Then()
-          .statusCode(200)
-          .equalsPlainBody("")
-      }
-
-      "return 404 for no existing scenario" in {
-        given()
-          .basicAuth("writer", "writer")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/activity/attachments/1")
-          .Then()
-          .statusCode(404)
-          .equalsPlainBody(s"No scenario $wrongScenarioName found")
-      }
-    }
-
-    "not authenticated should" - {
-      "forbid access for no authorization" in {
-        given()
-          .basicAuth("unknown-user", "wrong-password")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/attachments/1")
-          .Then()
-          .statusCode(401)
-          .equalsPlainBody("The supplied authentication is invalid")
-      }
-
-      "forbid access for insufficient privileges" in {
-        given()
-          .applicationState {
-            createSavedScenario(exampleScenario, category = Category1)
-          }
+          .basicAuthLimitedReader()
           .plainBody(commentContent)
-          .basicAuth("limitedReader", "limitedReader")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/attachments/1")
+          .get(s"$nuDesignerHttpAddress/api/processes/$disallowedScenarioName/activity/attachments/1")
           .Then()
           .statusCode(403)
           .equalsPlainBody("The supplied authentication is not authorized to access this resource")
       }
     }
+    "not authenticated should" - {
+      "forbid access" in {
+        val scenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(scenarioName), category = Category1)
+          }
+          .when()
+          .basicAuthUnknownUser()
+          .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity/attachments/1")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied authentication is invalid")
+      }
+    }
   }
+
+  private def exampleScenario(scenarioName: String) = ScenarioBuilder
+    .streaming(scenarioName)
+    .source("sourceId", "barSource")
+    .emptySink("sinkId", "barSink")
 
   private def createComment(scenarioName: String, commentContent: String): Unit = {
     given()
       .plainBody(commentContent)
-      .basicAuth("writer", "writer")
+      .basicAuthLimitedWriter()
       .when()
       .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/comments")
   }
@@ -447,91 +321,6 @@ class ScenarioActivityApiHttpServiceSecuritySpec
       .preemptiveBasicAuth("writer", "writer")
       .when()
       .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/attachments")
-  }
-
-  object ScenarioActivitySpecAsserts {
-
-    implicit class VerifyCommentExists[T <: ValidatableResponse](validatableResponse: T) {
-
-      def verifyCommentExists(scenarioName: String, commentContent: String): ValidatableResponse = {
-        given()
-          .basicAuth("reader", "reader")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
-          .Then()
-          .statusCode(200)
-          .body(
-            matchJsonWithRegexValues(
-              s"""
-                 |{
-                 |  "comments": [
-                 |    {
-                 |      "id": "${regexes.digitsRegex}",
-                 |      "processVersionId": 1,
-                 |      "content": "$commentContent",
-                 |      "user": "writer",
-                 |      "createDate": "${regexes.zuluDateRegex}"
-                 |    }
-                 |  ],
-                 |  "attachments": []
-                 |}
-                 |""".stripMargin
-            )
-          )
-      }
-
-    }
-
-    implicit class VerifyEmptyCommentsAndAttachments[T <: ValidatableResponse](validatableResponse: T) {
-
-      def verifyEmptyCommentsAndAttachments(scenarioName: String): ValidatableResponse = {
-        given()
-          .basicAuth("reader", "reader")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
-          .Then()
-          .equalsJsonBody(
-            s"""
-               |{
-               |  "comments": [],
-               |  "attachments": []
-               |}
-               |""".stripMargin
-          )
-      }
-
-    }
-
-    implicit class VerifyAttachmentsExists[T <: ValidatableResponse](validatableResponse: T) {
-
-      def verifyAttachmentsExists(scenarioName: String): ValidatableResponse = {
-        given()
-          .basicAuth("reader", "reader")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
-          .Then()
-          .body(
-            matchJsonWithRegexValues(
-              s"""
-                 |{
-                 |  "comments": [],
-                 |  "attachments": [
-                 |    {
-                 |      "id": "${regexes.digitsRegex}",
-                 |      "processVersionId": 1,
-                 |      "fileName": "important_file.txt",
-                 |      "user": "writer",
-                 |      "createDate": "${regexes.zuluDateRegex}"
-                 |    }
-                 |  ]
-                 |}
-                 |""".stripMargin
-            )
-          )
-      }
-
-    }
-
   }
 
 }
