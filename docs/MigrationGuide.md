@@ -68,28 +68,26 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     that can be mixed into the component
   * [#5474](https://github.com/TouK/nussknacker/pull/5474) Changes around new scenario metadata (aka "parameters"):
     * `ScenarioWithDetails`: added `processingMode` and `engineSetupName` fields
-  * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5521](https://github.com/TouK/nussknacker/pull/5521), [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) `DeploymentManager` related changes:
-    * `DeploymentManager.getProcessState(ProcessIdWithName, Option[ProcessAction])`
-      become final. You should implement `resolve` method instead. It does the same, only `List[StatusDetails]` are already determined.
-    * Method `DeploymentManager.getProcessStates` signature was changed and now requires an implicit `freshnessPolicy: DataFreshnessPolicy`
-    * `DeploymentManagerProvider` changes related with engine setup name and errors provided to user:
+  * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5521](https://github.com/TouK/nussknacker/pull/5521), [#5519](https://github.com/TouK/nussknacker/pull/5519) `DeploymentManager` API related changes:
+    * In the `DeploymentManager`:
+      * `DeploymentManager.getProcessState(ProcessIdWithName, Option[ProcessAction])`
+        become final. You should implement `resolve` method instead. It does the same, only `List[StatusDetails]` are already determined.
+      * Method `DeploymentManager.getProcessStates` signature was changed and now requires an implicit `freshnessPolicy: DataFreshnessPolicy`
+      * Trait `AlwaysFreshProcessState` and method `getFreshProcessStates` were removed, instead of it please use `getProcessStates` with `DataFreshnessPolicy.Fresh` policy
+      * Managers `FlinkStreamingRestManager` and `FlinkRestManager` require new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
+    * In the `DeploymentManagerProvider`:
       * New methods were added: `defaultEngineSetupName` and `engineSetupIdentity`. They have default implementations, you should consider to replace them by your own
       * New, overloaded `createDeploymentManager` was added. In the new one most of the parameters were bundled into `DeploymentManagerDependencies` class
         which allows to easier pass these dependencies to delegates. Also, this method returns `ValidateNel[String, DeploymentManager]`.
         You can return errors that will be visible to users e.g. invalid configuration etc. The old one is deleted.
       * Method `createDeploymentManager` signature was changed and now requires new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
-    * Trait `AlwaysFreshProcessState` and method `getFreshProcessStates` were removed, instead of it please use `getProcessStates` with `DataFreshnessPolicy.Fresh` policy
-    * Managers `FlinkStreamingRestManager` and `FlinkRestManager` require new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
   * [#5526](https://github.com/TouK/nussknacker/pull/5526) Refactored namespaces:
     * Removed `ObjectNaming` SPI
     * Removed logging when using naming strategy
     * Replaced `ObjectNaming` with single `NamingStrategy` which prepares a name with a prefix from `namespace` key from
       `ModelConfig` or returns the original name if the value is not configured
-  * [#5526](https://github.com/TouK/nussknacker/pull/5526) Added namespacing of Kafka consumer group id in both engines.
-    If you have namespaces configured, the consumer group id will be prefixed with `namespace` key from model config -
-    in that case a consumer group migration may be necessary for example to retain consumer offsets. For gradual
-    migration, this behaviour can be disabled by setting `useNamingStrategyInConsumerGroups = false` in `KafkaConfig`.
-    Note that the `useNamingStrategyInConsumerGroups` flag is intended to be removed in the future.
+  * [#5535](https://github.com/TouK/nussknacker/pull/5535) `ProcessingTypeConfig.classpath` contains now raw, `String` entries instead of `URL`.
+    The `String` to `URL` converting logic is now inside `ModelClassLoader.apply`
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
@@ -153,6 +151,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   The new mechanism leverage deployment id which was introduced in [#4462](https://github.com/TouK/nussknacker/pull/4462) in 1.11 version.
 * [#5474](https://github.com/TouK/nussknacker/pull/5474) The mechanism allowing migration between two environments uses by default the new,
   scenario creating API. In case when the secondary environment is in the version < 1.14, you should switch `secondaryEnvironment.useLegacyCreateScenarioApi` flag to on.
+* [#5526](https://github.com/TouK/nussknacker/pull/5526) Added namespacing of Kafka consumer group id in both engines.
+  If you have namespaces configured, the consumer group id will be prefixed with `namespace` key from model config -
+  in that case a consumer group migration may be necessary for example to retain consumer offsets. For gradual
+  migration, this behaviour can be disabled by setting `useNamingStrategyInConsumerGroups = false` in `KafkaConfig`.
+  Note that the `useNamingStrategyInConsumerGroups` flag is intended to be removed in the future.
 
 ## In version 1.13.1 (Not released yet)
 
