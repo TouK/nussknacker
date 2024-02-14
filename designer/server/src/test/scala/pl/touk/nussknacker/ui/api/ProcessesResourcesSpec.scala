@@ -17,8 +17,8 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.streaming.SampleProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -39,6 +39,7 @@ import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, Upd
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.server.RouteInterceptor
+import pl.touk.nussknacker.engine.spel.Implicits._
 
 import scala.concurrent.Future
 
@@ -539,7 +540,10 @@ class ProcessesResourcesSpec
   }
 
   test("save correct process json with ok status") {
-    val validProcess = SampleProcess.kafkaProcess(ProcessName("valid"), "test")
+    val validProcess = ScenarioBuilder
+      .streaming("valid")
+      .source("startProcess", "real-kafka", "Topic" -> s"'sometopic'")
+      .emptySink("end", "kafka-string", "Topic" -> s"'output'", "Value" -> "#input")
     saveCanonicalProcess(validProcess, category = Category1) {
       status shouldEqual StatusCodes.OK
       val fetchedScenario = fetchScenario(validProcess.name)
