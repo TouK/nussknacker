@@ -133,7 +133,8 @@ trait NuResourcesTest
     ModelData(
       processingTypeConfig,
       TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-      DesignerWideComponentId.default(processingType.stringify, _)
+      DesignerWideComponentId.default(processingType.stringify, _),
+      workingDirectoryOpt = None
     )
   }
 
@@ -145,7 +146,8 @@ trait NuResourcesTest
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig,
-        TestAdditionalUIConfigProvider
+        TestAdditionalUIConfigProvider,
+        workingDirectoryOpt = None
       )
     )
 
@@ -156,7 +158,8 @@ trait NuResourcesTest
       ProcessingTypeDataReader.loadProcessingTypeData(
         ConfigWithUnresolvedVersion(testConfig),
         _ => deploymentManagerDependencies,
-        TestAdditionalUIConfigProvider
+        TestAdditionalUIConfigProvider,
+        workingDirectoryOpt = None
       )
     )
 

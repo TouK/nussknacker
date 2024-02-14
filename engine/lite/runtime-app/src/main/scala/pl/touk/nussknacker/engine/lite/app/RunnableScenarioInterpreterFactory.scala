@@ -15,8 +15,6 @@ import pl.touk.nussknacker.engine.requestresponse.{RequestResponseConfig, Reques
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
-import java.net.URL
-
 object RunnableScenarioInterpreterFactory extends LazyLogging {
 
   def prepareScenarioInterpreter(
@@ -26,7 +24,11 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
       system: ActorSystem
   ): RunnableScenarioInterpreter = {
     val modelConfig: Config = runtimeConfig.getConfig("modelConfig")
-    val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")), category = None)
+    val modelData = ModelData(
+      modelConfig,
+      ModelClassLoader(modelConfig.as[List[String]]("classPath"), workingDirectoryOpt = None),
+      category = None
+    )
     val metricRegistry = prepareMetricRegistry(runtimeConfig)
     val preparer       = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
     // TODO Pass correct ProcessVersion and DeploymentData

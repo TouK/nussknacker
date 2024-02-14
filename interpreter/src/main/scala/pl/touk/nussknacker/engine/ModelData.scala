@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCr
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
 import java.net.URL
+import java.nio.file.Path
 
 object ModelData extends LazyLogging {
 
@@ -41,11 +42,12 @@ object ModelData extends LazyLogging {
   def apply(
       processingTypeConfig: ProcessingTypeConfig,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      determineDesignerWideId: ComponentId => DesignerWideComponentId
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      workingDirectoryOpt: Option[Path]
   ): ModelData = {
     ModelData(
       processingTypeConfig.modelConfig,
-      ModelClassLoader(processingTypeConfig.classPath),
+      ModelClassLoader(processingTypeConfig.classPath, workingDirectoryOpt),
       Some(processingTypeConfig.category),
       determineDesignerWideId,
       additionalConfigsFromProvider
@@ -89,7 +91,7 @@ object ModelData extends LazyLogging {
   def duringExecution(inputConfig: Config): ModelData = {
     ClassLoaderModelData(
       _ => InputConfigDuringExecution(inputConfig),
-      ModelClassLoader(Nil),
+      ModelClassLoader(Nil, None),
       None,
       id => DesignerWideComponentId(id.toString),
       Map.empty

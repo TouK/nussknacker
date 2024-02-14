@@ -40,7 +40,8 @@ class MockDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
         TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-        DesignerWideComponentId.default(Streaming.stringify, _)
+        DesignerWideComponentId.default(Streaming.stringify, _),
+        workingDirectoryOpt = None
       ),
       DeploymentManagerDependencies(
         deploymentService,
