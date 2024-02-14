@@ -5,7 +5,6 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestProcessingType.{Streaming1, Streaming2}
@@ -14,6 +13,7 @@ import pl.touk.nussknacker.test.config.{
   WithRichConfigRestAssuredUsersExtensions,
   WithRichDesignerConfig
 }
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 
 class NodesApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -116,6 +116,47 @@ class NodesApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and return additional info for node related to anonymous role category" in {
+        val allowedCategoryScenarioName = "s2"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(allowedCategoryScenarioName), category = Category2)
+          }
+          .when()
+          .noAuth()
+          .jsonBody(
+            s"""{
+               |  "id": "enricher",
+               |  "service": {
+               |    "id": "paramService",
+               |    "parameters": [
+               |      {
+               |        "name": "id",
+               |        "expression": {
+               |          "language": "spel",
+               |          "expression": "'a'"
+               |        }
+               |      }
+               |    ]
+               |  },
+               |  "output": "out",
+               |  "additionalFields": null,
+               |  "type": "Enricher"
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/nodes/$allowedCategoryScenarioName/additionalInfo")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""{
+               |  "content": "\\nSamples:\\n\\n| id  | value |\\n| --- | ----- |\\n| a   | generated |\\n| b   | not existent |\\n\\nResults for a can be found [here](http://touk.pl?id=a)\\n",
+               |  "type": "MarkdownAdditionalInfo"
+               |}""".stripMargin
+          )
       }
     }
   }
@@ -265,6 +306,77 @@ class NodesApiHttpServiceSecuritySpec
           .body(equalTo("The supplied authentication is invalid"))
       }
     }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and validate node related to anonymous role category" in {
+        val allowedCategoryScenarioName = "s2"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(allowedCategoryScenarioName), category = Category2)
+          }
+          .when()
+          .noAuth()
+          .jsonBody(
+            s"""{
+               |  "nodeData": {
+               |    "id": "id",
+               |    "expression": {
+               |      "language": "spel",
+               |      "expression": "#longValue > 1"
+               |    },
+               |    "isDisabled": null,
+               |    "additionalFields": null,
+               |    "type": "Filter"
+               |  },
+               |  "processProperties": {
+               |    "isFragment": false,
+               |    "additionalFields": {
+               |      "description": null,
+               |      "properties": {
+               |        "parallelism": "",
+               |        "spillStateToDisk": "true",
+               |        "useAsyncInterpretation": "",
+               |        "checkpointIntervalInSeconds": ""
+               |      },
+               |      "metaDataType": "StreamMetaData"
+               |    }
+               |  },
+               |  "variableTypes": {
+               |    "existButString": {
+               |      "display": "String",
+               |      "type": "TypedClass",
+               |      "refClazzName": "java.lang.String",
+               |      "params": []
+               |    },
+               |    "longValue": {
+               |      "display": "Long",
+               |      "type": "TypedClass",
+               |      "refClazzName": "java.lang.Long",
+               |      "params": []
+               |    }
+               |  },
+               |  "branchVariableTypes": null,
+               |  "outgoingEdges": null
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/nodes/$allowedCategoryScenarioName/validation")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""{
+               |  "parameters": null,
+               |  "expressionType": {
+               |    "display": "Boolean",
+               |    "type": "TypedClass",
+               |    "refClazzName": "java.lang.Boolean",
+               |    "params": []
+               |  },
+               |  "validationErrors": [],
+               |  "validationPerformed": true
+               |}""".stripMargin
+          )
+      }
+    }
   }
 
   "The endpoint for properties additional info when" - {
@@ -352,6 +464,44 @@ class NodesApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and return additional info of scenario related to anonymous role category" in {
+        val allowedCategoryScenarioName = "s2"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(allowedCategoryScenarioName), category = Category2)
+          }
+          .when()
+          .noAuth()
+          .jsonBody(
+            s"""{
+               |  "isFragment": false,
+               |  "additionalFields": {
+               |    "description": null,
+               |    "properties": {
+               |      "parallelism": "",
+               |      "checkpointIntervalInSeconds": "",
+               |      "numberOfThreads": "2",
+               |      "spillStateToDisk": "true",
+               |      "environment": "test",
+               |      "useAsyncInterpretation": ""
+               |    },
+               |    "metaDataType": "StreamMetaData"
+               |  }
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/properties/$allowedCategoryScenarioName/additionalInfo")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""{
+               |  "content": "2 threads will be used on environment 'test'",
+               |  "type": "MarkdownAdditionalInfo"
+               |}""".stripMargin
+          )
       }
     }
   }
@@ -476,6 +626,80 @@ class NodesApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and validate properties of scenario related to anonymous role category" in {
+        val allowedCategoryScenarioName = "s2"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(allowedCategoryScenarioName), category = Category2)
+          }
+          .when()
+          .noAuth()
+          .jsonBody(
+            s"""{
+               |  "additionalFields": {
+               |    "description": null,
+               |    "properties": {
+               |      "parallelism": "",
+               |      "checkpointIntervalInSeconds": "",
+               |      "numberOfThreads": "a",
+               |      "spillStateToDisk": "true",
+               |      "environment": "test",
+               |      "useAsyncInterpretation": ""
+               |    },
+               |    "metaDataType": "StreamMetaData"
+               |  },
+               |  "name": "test"
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/properties/$allowedCategoryScenarioName/validation")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(s"""{
+               |  "parameters": null,
+               |  "expressionType": null,
+               |  "validationErrors": [
+               |    {
+               |      "typ": "InvalidPropertyFixedValue",
+               |      "message": "Property numberOfThreads (Number of threads) has invalid value",
+               |      "description": "Expected one of 1, 2, got: a.",
+               |      "fieldName": "numberOfThreads",
+               |      "errorType": "SaveAllowed"
+               |    },
+               |    {
+               |      "typ": "UnknownProperty",
+               |      "message": "Unknown property parallelism",
+               |      "description": "Property parallelism is not known",
+               |      "fieldName": "parallelism",
+               |      "errorType": "SaveAllowed"
+               |    },
+               |    {
+               |      "typ": "UnknownProperty",
+               |      "message": "Unknown property checkpointIntervalInSeconds",
+               |      "description": "Property checkpointIntervalInSeconds is not known",
+               |      "fieldName": "checkpointIntervalInSeconds",
+               |      "errorType": "SaveAllowed"
+               |    },
+               |    {
+               |      "typ": "UnknownProperty",
+               |      "message": "Unknown property spillStateToDisk",
+               |      "description": "Property spillStateToDisk is not known",
+               |      "fieldName": "spillStateToDisk",
+               |      "errorType": "SaveAllowed"
+               |    },
+               |    {
+               |      "typ": "UnknownProperty",
+               |      "message": "Unknown property useAsyncInterpretation",
+               |      "description": "Property useAsyncInterpretation is not known",
+               |      "fieldName": "useAsyncInterpretation",
+               |      "errorType": "SaveAllowed"
+               |    }
+               |  ],
+               |  "validationPerformed": true
+               |}""".stripMargin)
       }
     }
   }
@@ -603,7 +827,7 @@ class NodesApiHttpServiceSecuritySpec
           .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming2.stringify}/validate")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The supplied user is not authorized to access this resource")
+          .equalsPlainBody("The supplied user [limitedReader] is not authorized to access this resource")
       }
     }
     "not authenticated should" - {
@@ -616,6 +840,72 @@ class NodesApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and validate parameter of scenario related to anonymous role category's processing type" in {
+        given()
+          .when()
+          .noAuth()
+          .jsonBody(
+            s"""{
+               |  "parameters": [
+               |    {
+               |      "name": "condition",
+               |      "typ": {
+               |        "display": "Boolean",
+               |        "type": "TypedClass",
+               |        "refClazzName": "java.lang.Boolean",
+               |        "params": []
+               |      },
+               |      "expression": {
+               |        "language": "spel",
+               |        "expression": "#input.amount > 2"
+               |      }
+               |    }
+               |  ],
+               |  "variableTypes": {
+               |    "input": {
+               |      "display": "Record{amount: Long(5)}",
+               |      "type": "TypedObjectTypingResult",
+               |      "fields": {
+               |        "amount": {
+               |          "value": 5,
+               |          "display": "Long(5)",
+               |          "type": "TypedObjectWithValue",
+               |          "refClazzName": "java.lang.Long",
+               |          "params": []
+               |        }
+               |      },
+               |      "refClazzName": "java.util.Map",
+               |      "params": [
+               |        {
+               |          "display": "String",
+               |          "type": "TypedClass",
+               |          "refClazzName": "java.lang.String",
+               |          "params": []
+               |        },
+               |        {
+               |          "value": 5,
+               |          "display": "Long(5)",
+               |          "type": "TypedObjectWithValue",
+               |          "refClazzName": "java.lang.Long",
+               |          "params": []
+               |        }
+               |      ]
+               |    }
+               |  }
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming2.stringify}/validate")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""{
+               |  "validationErrors": [],
+               |  "validationPerformed": true
+               |}""".stripMargin
+          )
       }
     }
   }
@@ -726,7 +1016,7 @@ class NodesApiHttpServiceSecuritySpec
           .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming2.stringify}/suggestions")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The supplied user is not authorized to access this resource")
+          .equalsPlainBody("The supplied user [limitedReader] is not authorized to access this resource")
       }
     }
     "not authenticated should" - {
@@ -739,6 +1029,61 @@ class NodesApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and do the suggestion in case of scenario related to anonymous role category's processing type" in {
+        given()
+          .when()
+          .noAuth()
+          .jsonBody(
+            s"""{
+               |  "expression": {
+               |    "language": "spel",
+               |    "expression": "#inpu"
+               |  },
+               |  "caretPosition2d": {
+               |    "row": 0,
+               |    "column": 5
+               |  },
+               |  "variableTypes": {
+               |    "input": {
+               |      "display": "Record{amount: Long(5)}",
+               |      "type": "TypedObjectTypingResult",
+               |      "fields": {
+               |        "amount": {
+               |          "value": 5,
+               |          "display": "Long(5)",
+               |          "type": "TypedObjectWithValue",
+               |          "refClazzName": "java.lang.Long",
+               |          "params": []
+               |        }
+               |      },
+               |      "refClazzName": "java.util.Map",
+               |      "params": [
+               |        {
+               |          "display": "String",
+               |          "type": "TypedClass",
+               |          "refClazzName": "java.lang.String",
+               |          "params": []
+               |        },
+               |        {
+               |          "value": 5,
+               |          "display": "Long(5)",
+               |          "type": "TypedObjectWithValue",
+               |          "refClazzName": "java.lang.Long",
+               |          "params": []
+               |        }
+               |      ]
+               |    }
+               |  }
+               |}""".stripMargin
+          )
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming2.stringify}/suggestions")
+          .Then()
+          .statusCode(200)
+          .body("methodName[0]", equalTo("#input"))
       }
     }
   }

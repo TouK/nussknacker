@@ -88,6 +88,22 @@ class ScenarioParametersApiHttpServiceSecuritySpec
           .statusCode(401)
       }
     }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and no parameters combination because of no write access" in {
+        given()
+          .when()
+          .noAuth()
+          .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            """{
+              |  "combinations": [],
+              |  "engineSetupErrors": {}
+              |}""".stripMargin
+          )
+      }
+    }
   }
 
 }

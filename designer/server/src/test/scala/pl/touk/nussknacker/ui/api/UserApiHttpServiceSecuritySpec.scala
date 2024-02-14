@@ -4,9 +4,9 @@ import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{WithRichConfigRestAssuredUsersExtensions, WithRichDesignerConfig}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 
 class UserApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -47,6 +47,26 @@ class UserApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and return anonymous user info" in {
+        given()
+          .when()
+          .noAuth()
+          .get(s"$nuDesignerHttpAddress/api/user")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(s"""{
+               |  "id": "anonymous",
+               |  "username": "anonymous",
+               |  "isAdmin": false,
+               |  "categories": [ "Category2" ],
+               |  "categoryPermissions": {
+               |      "Category2": [ "Read" ]
+               |    },
+               |  "globalPermissions": []
+               |}""".stripMargin)
       }
     }
   }
