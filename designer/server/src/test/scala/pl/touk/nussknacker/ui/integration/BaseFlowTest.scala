@@ -30,6 +30,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
+import pl.touk.nussknacker.test.base.it.NuItTest
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestCategories, TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.test.base.it.NuItTest
