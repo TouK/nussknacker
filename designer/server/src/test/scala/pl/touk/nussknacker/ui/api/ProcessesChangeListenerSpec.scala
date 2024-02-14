@@ -10,9 +10,9 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.ProcessTestData
-import pl.touk.nussknacker.tests.TestFactory.withAllPermissions
-import pl.touk.nussknacker.tests.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withAllPermissions
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 

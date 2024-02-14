@@ -20,11 +20,11 @@ import pl.touk.nussknacker.engine.definition.test.{
 }
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.tests.ProcessTestData
-import pl.touk.nussknacker.tests.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
-import pl.touk.nussknacker.tests.base.it.NuResourcesTest
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 
 class TestInfoResourcesSpec
     extends AnyFunSuite
@@ -36,7 +36,7 @@ class TestInfoResourcesSpec
     with EitherValuesDetailedMessage {
 
   private val scenarioGraph: ScenarioGraph = ProcessTestData.sampleScenarioGraph
-  private val testPermissionAll = List(Permission.Deploy, Permission.Read, Permission.Write)
+  private val testPermissionAll            = List(Permission.Deploy, Permission.Read, Permission.Write)
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 

@@ -11,9 +11,9 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.tests.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.tests.config.{
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithRichConfigRestAssuredUsersExtensions,
   WithRichDesignerConfig

@@ -22,13 +22,12 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.base.it._
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestProcessingType.{Streaming1, Streaming2}
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
-import pl.touk.nussknacker.tests.utils.scalas.AkkaHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.tests.{ProcessTestData, SampleSpelTemplateProcess, TestFactory}
+import pl.touk.nussknacker.test.base.it._
+import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestProcessingType.{Streaming1, Streaming2}
+import pl.touk.nussknacker.test.config.WithRichDesignerConfig.{TestCategory, TestProcessingType}
+import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
+import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
@@ -40,6 +39,7 @@ import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, T
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.server.RouteInterceptor
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 
 import scala.concurrent.Future
 
@@ -67,6 +67,8 @@ class ProcessesResourcesSpec
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
+  // TODO: when the spec is rewritten with RestAssured instead of Akka-http test kit, remember to remove
+  //       the RouteInterceptor and its usages
   private lazy val applicationRoute = RouteInterceptor.get()
 
   private val processName: ProcessName = ProcessTestData.sampleProcessName
@@ -122,9 +124,11 @@ class ProcessesResourcesSpec
   }
 
   test("spel template expression is validated properly") {
-    createDeployedScenario(SampleSpelTemplateProcess.process, category = Category1)
+    createDeployedScenario(ProcessTestData.sampleSpelTemplateProcess, category = Category1)
 
-    Get(s"/api/processes/${SampleSpelTemplateProcess.processName}") ~> withReaderUser() ~> applicationRoute ~> check {
+    Get(
+      s"/api/processes/${ProcessTestData.sampleSpelTemplateProcess.name.value}"
+    ) ~> withReaderUser() ~> applicationRoute ~> check {
       val newProcessDetails = responseAs[ScenarioWithDetails]
       newProcessDetails.processVersionId shouldBe VersionId.initialVersionId
 

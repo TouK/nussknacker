@@ -11,10 +11,10 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.TestFactory.mapProcessingTypeDataProvider
-import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory
-import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment

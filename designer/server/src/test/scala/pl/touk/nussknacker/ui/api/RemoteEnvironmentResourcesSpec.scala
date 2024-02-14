@@ -14,9 +14,9 @@ import pl.touk.nussknacker.engine.graph.node.Filter
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetailsForMigrations}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.tests.ProcessTestData
-import pl.touk.nussknacker.tests.TestFactory.withPermissions
-import pl.touk.nussknacker.tests.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.process.migrate.{
   RemoteEnvironment,

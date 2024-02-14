@@ -20,9 +20,9 @@ import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData,
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
-import pl.touk.nussknacker.tests.TestFactory
-import pl.touk.nussknacker.tests.TestProcessUtil.createFragmentEntity
-import pl.touk.nussknacker.tests.mock.{MockFetchingProcessRepository, MockManagerProvider}
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
+import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
+import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider

@@ -9,8 +9,8 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.tests.base.it.NuItTest
-import pl.touk.nussknacker.tests.config.{WithRichDesignerConfig, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.base.it.NuItTest
+import pl.touk.nussknacker.test.config.{WithRichDesignerConfig, WithSimplifiedDesignerConfig}
 
 class ScenarioParametersApiSpec
     extends AnyFreeSpecLike

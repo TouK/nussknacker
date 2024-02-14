@@ -6,8 +6,8 @@ import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.tests.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.{
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedConfigRestAssuredUsersExtensions,
   WithSimplifiedDesignerConfig

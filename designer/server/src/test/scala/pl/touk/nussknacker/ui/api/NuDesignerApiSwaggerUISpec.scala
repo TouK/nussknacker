@@ -5,8 +5,8 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.containsString
 import org.scalatest.freespec.AnyFreeSpec
 import pl.touk.nussknacker.test.RestAssuredVerboseLogging
-import pl.touk.nussknacker.tests.base.it.NuItTest
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig
+import pl.touk.nussknacker.test.base.it.NuItTest
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 
 class NuDesignerApiSwaggerUISpec
     extends AnyFreeSpec

@@ -17,11 +17,11 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.tests.TestFactory._
-import pl.touk.nussknacker.tests.base.db.WithHsqlDbTesting
-import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, TestProcessChangeListener}
-import pl.touk.nussknacker.tests.utils.scalas.DBIOActionValues
-import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.{

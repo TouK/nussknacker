@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.tests.TestFactory
-import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, MockManagerProvider, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics

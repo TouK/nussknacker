@@ -15,10 +15,10 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.tests.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.tests.config.{
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedConfigRestAssuredUsersExtensions,
   WithSimplifiedDesignerConfig

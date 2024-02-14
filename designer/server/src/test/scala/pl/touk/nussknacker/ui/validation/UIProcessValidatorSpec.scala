@@ -54,10 +54,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.tests.ProcessTestData.processValidator
-import pl.touk.nussknacker.tests.config.ConfigWithScalaVersion
-import pl.touk.nussknacker.tests.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
-import pl.touk.nussknacker.tests.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.processValidator
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}

@@ -11,8 +11,8 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.tests.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithSimplifiedDesignerConfig}
 
 class NotificationApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike

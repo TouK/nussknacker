@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFac
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.tests.TestFactory
-import pl.touk.nussknacker.tests.mock.{MockDeploymentManager, MockManagerProvider}
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
+import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeData,
   ProcessingTypeDataProvider,

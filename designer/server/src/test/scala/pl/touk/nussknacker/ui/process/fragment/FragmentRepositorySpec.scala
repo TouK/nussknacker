@@ -6,10 +6,10 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.tests.ProcessTestData.sampleFragmentName
-import pl.touk.nussknacker.tests.ProcessTestData
-import pl.touk.nussknacker.tests.base.it.NuResourcesTest
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.sampleFragmentName
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 class FragmentRepositorySpec

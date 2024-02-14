@@ -5,9 +5,9 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.tests.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.tests.config.{
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithRichConfigRestAssuredUsersExtensions,
   WithRichDesignerConfig

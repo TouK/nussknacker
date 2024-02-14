@@ -109,7 +109,8 @@ class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSy
 
 }
 
-// todo: describe
+// HACK!!! This is awful solution, but it's done for a purpose ProcessesResourcesSpec. The spec will be rewritten with
+// RestAssured and the hack won't be needed any more. When it's done, we can remove it.
 object RouteInterceptor extends Supplier[Route] {
 
   private val interceptedRoute: AtomicReference[Option[Route]] = new AtomicReference[Option[Route]](None)

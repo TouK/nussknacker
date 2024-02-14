@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.tests.TestFactory
+import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ScenarioParametersServiceTest

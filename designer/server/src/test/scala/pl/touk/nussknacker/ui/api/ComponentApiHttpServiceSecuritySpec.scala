@@ -15,10 +15,10 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.tests.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestProcessingType.Streaming1
-import pl.touk.nussknacker.tests.config.{WithRichConfigRestAssuredUsersExtensions, WithRichDesignerConfig}
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestProcessingType.Streaming1
+import pl.touk.nussknacker.test.config.{WithRichConfigRestAssuredUsersExtensions, WithRichDesignerConfig}
 
 class ComponentApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
