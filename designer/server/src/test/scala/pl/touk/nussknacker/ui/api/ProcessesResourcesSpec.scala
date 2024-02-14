@@ -26,7 +26,11 @@ import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.api.helpers.spel._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
-import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
+  CreatorPanel,
+  ProcessActionsPanel,
+  TipsPanel
+}
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
@@ -884,7 +888,7 @@ class ProcessesResourcesSpec
         List(),
         List(
           ToolbarPanel(
-            ProcessInfoPanel,
+            ProcessActionsPanel,
             None,
             None,
             Some(
