@@ -30,6 +30,14 @@ export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean):
                 ],
             },
             {
+                id: "process-actions-panel",
+                buttons: [
+                    { type: BuiltinButtonTypes.processSave },
+                    { type: BuiltinButtonTypes.processDeploy },
+                    { type: BuiltinButtonTypes.processCancel },
+                ],
+            },
+            {
                 id: "view-panel",
                 title: "view",
                 buttons: [

@@ -3,56 +3,60 @@ import i18next from "i18next";
 import { SwitchTransition } from "react-transition-group";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
-import { getScenario, getProcessUnsavedNewName, isProcessRenamed } from "../../../reducers/selectors/graph";
+import { getProcessUnsavedNewName, getScenario, isProcessRenamed } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
-import { getCustomActions } from "../../../reducers/selectors/settings";
 import { CssFade } from "../../CssFade";
 import ProcessStateIcon from "../../Process/ProcessStateIcon";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
-import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
-import { ActionButton } from "../../toolbarSettings/buttons";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
-import { PanelProcessInfo, PanelProcessInfoIcon, ProcessInfoText, ProcessName, ProcessRename } from "./ProcessInfoComponents";
+import { PanelProcessInfo, PanelProcessInfoIcon, ProcessInfoItemWrapper, ProcessName, ProcessRename } from "./ProcessInfoComponents";
 import { Typography } from "@mui/material";
+import BatchIcon from "../../../assets/img/batch.svg";
+import RequestResponseIcon from "../../../assets/img/request-response.svg";
+import StreamingIcon from "../../../assets/img/streaming.svg";
+import { ProcessingMode } from "../../../http/HttpService";
 
-const ProcessInfo = memo(({ id, buttonsVariant, children }: ToolbarPanelProps) => {
+const ProcessInfo = memo(({ id }: ToolbarPanelProps) => {
     const scenario = useSelector((state: RootState) => getScenario(state));
     const isRenamePending = useSelector((state: RootState) => isProcessRenamed(state));
     const unsavedNewName = useSelector((state: RootState) => getProcessUnsavedNewName(state));
     const processState = useSelector((state: RootState) => getProcessState(state));
-    const customActions = useSelector((state: RootState) => getCustomActions(state));
 
     const description = ProcessStateUtils.getStateDescription(scenario, processState);
     const transitionKey = ProcessStateUtils.getTransitionKey(scenario, processState);
-    // TODO: better styling of process info toolbar in case of many custom actions
+
+    const ProcessingModeIcon =
+        scenario.processingMode === ProcessingMode.streaming
+            ? StreamingIcon
+            : scenario.processingMode === ProcessingMode.batch
+            ? BatchIcon
+            : RequestResponseIcon;
 
     return (
-        <ToolbarWrapper title={i18next.t("panels.status.title", "Status")} id={id}>
+        <ToolbarWrapper title={i18next.t("panels.status.title", "Scenario details")} id={id}>
             <SwitchTransition>
                 <CssFade key={transitionKey}>
                     <PanelProcessInfo>
-                        <PanelProcessInfoIcon>
-                            <ProcessStateIcon scenario={scenario} processState={processState} />
-                        </PanelProcessInfoIcon>
-                        <ProcessInfoText>
+                        <ProcessInfoItemWrapper>
+                            <PanelProcessInfoIcon>
+                                <ProcessingModeIcon />
+                            </PanelProcessInfoIcon>
                             {isRenamePending ? (
                                 <ProcessRename title={scenario.name}>{unsavedNewName}*</ProcessRename>
                             ) : (
                                 <ProcessName variant={"subtitle2"}>{scenario.name}</ProcessName>
                             )}
+                        </ProcessInfoItemWrapper>
+                        <ProcessInfoItemWrapper>
+                            <PanelProcessInfoIcon>
+                                <ProcessStateIcon scenario={scenario} processState={processState} />
+                            </PanelProcessInfoIcon>
                             <Typography variant={"caption"}>{description}</Typography>
-                        </ProcessInfoText>
+                        </ProcessInfoItemWrapper>
                     </PanelProcessInfo>
                 </CssFade>
             </SwitchTransition>
-            <ToolbarButtons variant={buttonsVariant}>
-                {children}
-                {customActions.map((action) => (
-                    //TODO: to be replaced by toolbar config
-                    <ActionButton name={action.name} key={action.name} />
-                ))}
-            </ToolbarButtons>
         </ToolbarWrapper>
     );
 });

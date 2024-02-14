@@ -9,13 +9,14 @@ import ProcessInfo from "../toolbars/status/ProcessInfo";
 import { UserSettingsPanel } from "../toolbars/UserSettingsPanel";
 import { VersionsPanel } from "../toolbars/VersionsPanel";
 import loadable from "@loadable/component";
+import ProcessActions from "../toolbars/actions/ProcessActions";
 
 export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelProps>> = {
     DefaultPanel: DefaultToolbarPanel,
 
     // custom with buttons
     "process-info-panel": ProcessInfo,
-
+    "process-actions-panel": ProcessActions,
     // no buttons at all
     "tips-panel": TipsPanel,
     "creator-panel": CreatorPanel,

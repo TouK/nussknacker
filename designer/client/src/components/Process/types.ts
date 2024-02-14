@@ -1,6 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import { UnknownRecord, Instant } from "../../types/common";
 import { ScenarioGraph, ValidationResult } from "../../types";
+import { ProcessingMode } from "../../http/HttpService";
 
 export enum ActionType {
     Deploy = "DEPLOY",
@@ -56,6 +57,7 @@ export interface Scenario {
     scenarioGraph: ScenarioGraph;
     validationResult: ValidationResult;
     processingType: string;
+    processingMode: ProcessingMode;
 }
 
 export type ProcessName = Scenario["name"];

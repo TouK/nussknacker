@@ -130,6 +130,12 @@ export interface ExpressionSuggestionRequest {
     variableTypes: VariableTypes;
 }
 
+export enum ProcessingMode {
+    "streaming" = "Unbounded-Stream",
+    "requestResponse" = "Request-Response",
+    "batch" = "Bounded-Stream",
+}
+
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
