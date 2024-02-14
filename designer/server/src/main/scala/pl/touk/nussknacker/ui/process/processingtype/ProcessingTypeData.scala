@@ -10,6 +10,8 @@ import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfi
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
+import java.nio.file.Path
+
 final case class ProcessingTypeData private (
     processingType: ProcessingType,
     designerModelData: DesignerModelData,
@@ -49,7 +51,8 @@ object ProcessingTypeData {
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       processingTypeConfig: ProcessingTypeConfig,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      workingDirectoryOpt: Option[Path]
   ): ProcessingTypeData = {
     val managerConfig                 = processingTypeConfig.deploymentConfig
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
@@ -62,7 +65,8 @@ object ProcessingTypeData {
       ModelData(
         processingTypeConfig,
         additionalConfigsFromProvider,
-        DesignerWideComponentId.default(processingType, _)
+        DesignerWideComponentId.default(processingType, _),
+        workingDirectoryOpt
       ),
       managerConfig,
       processingTypeConfig.category
