@@ -10,15 +10,14 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.test.{
-  NuRestAssureExtensions,
-  NuRestAssureMatchers,
-  PatientScalaFutures,
-  RestAssuredVerboseLogging
-}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.tests.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.tests.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
+import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.tests.config.{
+  WithMockableDeploymentManager,
+  WithRichConfigRestAssuredUsersExtensions,
+  WithRichDesignerConfig
+}
 
 class AppApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -26,7 +25,7 @@ class AppApiHttpServiceSecuritySpec
     with WithRichDesignerConfig
     with WithRichConfigScenarioHelper
     with WithMockableDeploymentManager
-    with NuRestAssureExtensions
+    with WithRichConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
@@ -42,6 +41,8 @@ class AppApiHttpServiceSecuritySpec
           )
         }
         .when()
+        .auth()
+        .none()
         .get(s"$nuDesignerHttpAddress/api/app/healthCheck")
         .Then()
         .statusCode(200)
@@ -61,7 +62,7 @@ class AppApiHttpServiceSecuritySpec
         given()
           .applicationState {
             createDeployedExampleScenario(ProcessName("id1"), category = Category1)
-            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category2)
             createDeployedExampleScenario(ProcessName("id3"), category = Category1)
 
             MockableDeploymentManager.configure(
@@ -72,8 +73,8 @@ class AppApiHttpServiceSecuritySpec
               )
             )
           }
-          .basicAuth("reader", "reader")
           .when()
+          .basicAuthReader()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(500)
@@ -144,7 +145,7 @@ class AppApiHttpServiceSecuritySpec
             )
           }
           .when()
-          .basicAuth("reader", "reader")
+          .basicAuthReader()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(200)
@@ -174,7 +175,7 @@ class AppApiHttpServiceSecuritySpec
             )
           }
           .when()
-          .basicAuth("unknown-user", "wrong-password")
+          .basicAuthUnknownUser()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(401)
@@ -194,8 +195,8 @@ class AppApiHttpServiceSecuritySpec
               Map("id1" -> SimpleStateStatus.Running)
             )
           }
-          .basicAuth("reader", "reader")
           .when()
+          .basicAuthReader()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
           .statusCode(500)
@@ -211,9 +212,8 @@ class AppApiHttpServiceSecuritySpec
       }
       "return OK status and empty list of scenarios where there are no validation errors" in {
         given()
-          .applicationState {}
-          .basicAuth("reader", "reader")
           .when()
+          .basicAuthReader()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
           .statusCode(200)
@@ -245,7 +245,7 @@ class AppApiHttpServiceSecuritySpec
             )
           }
           .when()
-          .basicAuth("unknown-user", "wrong-password")
+          .basicAuthUnknownUser()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
           .statusCode(401)
@@ -296,8 +296,8 @@ class AppApiHttpServiceSecuritySpec
     "return config when" - {
       "user is an admin" in {
         given()
-          .basicAuth("admin", "admin")
           .when()
+          .basicAuthAdmin()
           .get(s"$nuDesignerHttpAddress/api/app/config")
           .Then()
           .statusCode(200)
@@ -307,8 +307,8 @@ class AppApiHttpServiceSecuritySpec
     "not return config when" - {
       "user is an admin" in {
         given()
-          .basicAuth("reader", "reader")
           .when()
+          .basicAuthReader()
           .get(s"$nuDesignerHttpAddress/api/app/config")
           .Then()
           .statusCode(403)
@@ -342,8 +342,8 @@ class AppApiHttpServiceSecuritySpec
               )
             )
           }
-          .basicAuth("reader", "reader")
           .when()
+          .basicAuthReader()
           .get(s"$nuDesignerHttpAddress/api/app/config/categoriesWithProcessingType")
           .Then()
           .statusCode(200)
@@ -374,7 +374,7 @@ class AppApiHttpServiceSecuritySpec
             )
           }
           .when()
-          .basicAuth("unknown-user", "wrong-password")
+          .basicAuthUnknownUser()
           .get(s"$nuDesignerHttpAddress/api/app/config/categoriesWithProcessingType")
           .Then()
           .statusCode(401)
@@ -400,8 +400,8 @@ class AppApiHttpServiceSecuritySpec
               )
             )
           }
-          .basicAuth("admin", "admin")
           .when()
+          .basicAuthAdmin()
           .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
           .Then()
           .statusCode(204)
@@ -424,7 +424,7 @@ class AppApiHttpServiceSecuritySpec
             )
           }
           .when()
-          .basicAuth("unknown-user", "wrong-password")
+          .basicAuthUnknownUser()
           .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
           .Then()
           .statusCode(401)
@@ -447,8 +447,8 @@ class AppApiHttpServiceSecuritySpec
               )
             )
           }
-          .basicAuth("reader", "reader")
           .when()
+          .basicAuthReader()
           .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
           .Then()
           .statusCode(403)

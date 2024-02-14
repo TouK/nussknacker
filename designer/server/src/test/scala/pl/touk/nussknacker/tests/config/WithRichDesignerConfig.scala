@@ -2,8 +2,10 @@ package pl.touk.nussknacker.tests.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 import enumeratum.{Enum, EnumEntry}
+import io.restassured.specification.RequestSpecification
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.test.NuRestAssureExtensions
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory
 import pl.touk.nussknacker.tests.utils.DesignerTestConfigValidator
 
@@ -80,6 +82,35 @@ object WithRichDesignerConfig {
         (processingType, TestProcessingType.categoryBy(processingType))
       }.toMap
 
+  }
+
+}
+
+trait WithRichConfigRestAssuredUsersExtensions extends NuRestAssureExtensions {
+  this: WithRichDesignerConfig =>
+
+  implicit class UsersBasicAuth[T <: RequestSpecification](requestSpecification: T) {
+
+    def basicAuthAdmin(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("admin", "admin")
+
+    def basicAuthReader(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("reader", "reader")
+
+    def basicAuthLimitedReader(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("limitedReader", "limitedReader")
+
+    def basicAuthWriter(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("writer", "writer")
+
+    def basicAuthLimitedWriter(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("limitedWriter", "limitedWriter")
+
+    def basicAuthAllPermUser(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("allpermuser", "allpermuser")
+
+    def basicAuthUnknownUser(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("unknownuser", "wrongcredentials")
   }
 
 }

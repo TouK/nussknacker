@@ -2,8 +2,10 @@ package pl.touk.nussknacker.tests.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 import enumeratum.{Enum, EnumEntry}
+import io.restassured.specification.RequestSpecification
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.test.NuRestAssureExtensions
 import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.tests.utils.DesignerTestConfigValidator
 
@@ -75,6 +77,23 @@ object WithSimplifiedDesignerConfig {
         (processingType, TestProcessingType.categoryBy(processingType))
       }.toMap
 
+  }
+
+}
+
+trait WithSimplifiedConfigRestAssuredUsersExtensions extends NuRestAssureExtensions {
+  this: WithSimplifiedDesignerConfig =>
+
+  implicit class UsersBasicAuth[T <: RequestSpecification](requestSpecification: T) {
+
+    def basicAuthAdmin(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("admin", "admin")
+
+    def basicAuthAllPermUser(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("allpermuser", "allpermuser")
+
+    def basicAuthUnknownUser(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("unknownuser", "wrongcredentials")
   }
 
 }

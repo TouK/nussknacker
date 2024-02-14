@@ -89,7 +89,7 @@ class ProcessesResourcesSpec
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.NotDeployed))
   }
 
-  test("/processes and /processesDetails should return lighter details without history versions") {
+  test("/api/processes and /api/processesDetails should return lighter details without history versions") {
     saveCanonicalProcess(ProcessTestData.validProcess, category = Category1) {
       forScenariosReturned(ScenarioQuery.empty) { processes =>
         every(processes.map(_.history)) shouldBe empty
