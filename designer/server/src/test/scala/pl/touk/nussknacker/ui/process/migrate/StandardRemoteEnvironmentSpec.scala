@@ -22,7 +22,6 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{sampleFragmentName
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
-import pl.touk.nussknacker.test.utils.scalas.FutureExtensions
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
@@ -40,7 +39,6 @@ class StandardRemoteEnvironmentSpec
     with PatientScalaFutures
     with FailFastCirceSupport
     with EitherValuesDetailedMessage
-    with FutureExtensions
     with BeforeAndAfterAll {
 
   implicit val system: ActorSystem = ActorSystem("nussknacker-designer")
@@ -281,7 +279,7 @@ class StandardRemoteEnvironmentSpec
       .testMigration(
         batchingExecutionContext = ExecutionContext.global
       )
-      .waitForResult(10 seconds)
+      .futureValueEnsuringInnerException(10 seconds)
       .rightValue
 
     migrationResult should have size 2
@@ -291,7 +289,7 @@ class StandardRemoteEnvironmentSpec
   }
 
   override protected def afterAll(): Unit = {
-    system.terminate().waitForResult()
+    system.terminate().futureValue
     super.afterAll()
   }
 
