@@ -710,15 +710,16 @@ lazy val flinkTests = (project in flink("tests"))
     }
   )
   .dependsOn(
-    defaultModel         % "test",
-    flinkExecutor        % "test",
-    flinkKafkaComponents % "test",
-    flinkBaseComponents  % "test",
-    flinkTestUtils       % "test",
-    kafkaTestUtils       % "test",
+    defaultModel           % "test",
+    flinkExecutor          % "test",
+    flinkKafkaComponents   % "test",
+    flinkBaseComponents    % "test",
+    flinkTestUtils         % "test",
+    kafkaTestUtils         % "test",
+    flinkComponentsTestkit % "test",
     // for local development
-    designer             % "test",
-    deploymentManagerApi % "test"
+    designer               % "test",
+    deploymentManagerApi   % "test"
   )
 
 lazy val defaultModel = (project in (file("defaultModel")))
