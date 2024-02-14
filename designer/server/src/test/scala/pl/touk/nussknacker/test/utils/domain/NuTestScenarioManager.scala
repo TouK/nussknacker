@@ -5,7 +5,12 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.test.base.db.WithTestDb
-import pl.touk.nussknacker.test.utils.domain.TestFactory.{newActionProcessRepository, newDBIOActionRunner, newFutureFetchingScenarioRepository, newWriteProcessRepository}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{
+  newActionProcessRepository,
+  newDBIOActionRunner,
+  newFutureFetchingScenarioRepository,
+  newWriteProcessRepository
+}
 import pl.touk.nussknacker.test.utils.domain.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._

@@ -73,7 +73,7 @@ class BaseFlowTest
     dynamicServiceFile.delete()
   }
 
-  override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     dynamicServiceFile.delete()
     super.afterAll()
   }

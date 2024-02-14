@@ -26,7 +26,7 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Tes
       .unsafeRunSync()
   }
 
-  override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     releaseAppResources.unsafeRunSync()
     super.afterAll()
   }

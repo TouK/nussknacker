@@ -384,7 +384,7 @@ object ProcessTestData {
   }
 
   private def endWithMessage: SubsequentNode = {
-    val idSuffix = "suffix"
+    val idSuffix   = "suffix"
     val endMessage = "#test #{#input} #test \n#{\"abc\".toString + {1,2,3}.toString + \"abc\"}\n#test\n#{\"ab{}c\"}"
 
     GraphBuilder
@@ -392,8 +392,9 @@ object ProcessTestData {
       .emptySink(
         "end" + idSuffix,
         "kafka-string",
-        TopicParamName -> spelTemplate("end.topic"),
+        TopicParamName     -> spelTemplate("end.topic"),
         SinkValueParamName -> spelTemplate("#output")
       )
   }
+
 }

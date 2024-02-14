@@ -17,8 +17,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestCategories, TestProcessUtil, TestProcessingTypes}
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
   sampleFragment,
   sampleFragmentName,
@@ -27,6 +25,8 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
 }
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil._
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestCategories, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -34,7 +34,6 @@ import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class StandardRemoteEnvironmentSpec
@@ -47,171 +46,6 @@ class StandardRemoteEnvironmentSpec
   implicit val system: ActorSystem = ActorSystem("nussknacker-designer")
 
   implicit val user: LoggedUser = LoggedUser("1", "test")
-
-  trait MockRemoteEnvironment extends StandardRemoteEnvironment {
-    override def environmentId = "testEnv"
-
-    def config: StandardRemoteEnvironmentConfig = StandardRemoteEnvironmentConfig(
-      uri = "http://localhost:8087/api",
-      batchSize = 100
-    )
-
-    override implicit val materializer: Materializer = Materializer(system)
-
-    override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
-      mapProcessingTypeDataProvider(
-        TestProcessingTypes.Streaming -> new ProcessModelMigrator(new TestMigrations(1, 2))
-      ),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> flinkProcessValidator)
-    )
-
-  }
-
-  private trait TriedToAddProcess {
-    var triedToAddProcess: Boolean     = false
-    var addedFragment: Option[Boolean] = None
-  }
-
-  private def statefulEnvironment(
-      expectedProcessDetails: ScenarioWithDetailsForMigrations,
-      expectedProcessCategory: String,
-      initialRemoteProcessList: List[ProcessName],
-      onMigrate: Future[UpdateScenarioCommand] => Unit
-  ) = new MockRemoteEnvironment with TriedToAddProcess {
-    private var remoteProcessList = initialRemoteProcessList
-
-    override protected def request(
-        uri: Uri,
-        method: HttpMethod,
-        request: MessageEntity,
-        header: Seq[HttpHeader]
-    ): Future[HttpResponse] = {
-      import HttpMethods._
-      import StatusCodes._
-
-      // helpers
-      def is(relative: String, m: HttpMethod): Boolean = {
-        uri.toString.startsWith(s"$baseUri$relative") && method == m
-      }
-
-      object Validation {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processValidation/${expectedProcessDetails.name}", POST)
-      }
-
-      object UpdateProcess {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.name}", PUT)
-      }
-
-      object CheckProcess {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.name}", GET)
-      }
-
-      object AddProcess {
-        def unapply(arg: (String, HttpMethod)): Option[Boolean] = {
-          if (is(s"/processes", POST)) {
-            parseBodyToJson(request).hcursor.downField("isFragment").as[Boolean].toOption
-          } else {
-            None
-          }
-        }
-      }
-      // end helpers
-
-      (uri.toString(), method) match {
-        case Validation() =>
-          Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
-            HttpResponse(OK, entity = entity)
-          }
-
-        case CheckProcess() if remoteProcessList contains expectedProcessDetails.name =>
-          Marshal(expectedProcessDetails).to[RequestEntity].map { entity =>
-            HttpResponse(OK, entity = entity)
-          }
-
-        case CheckProcess() =>
-          Future.successful(HttpResponse(NotFound))
-
-        case AddProcess(isFragment) =>
-          remoteProcessList = expectedProcessDetails.name :: remoteProcessList
-          triedToAddProcess = true
-          addedFragment = Some(isFragment)
-
-          Marshal(ProcessTestData.validScenarioDetailsForMigrations).to[RequestEntity].map { entity =>
-            HttpResponse(OK, entity = entity)
-          }
-
-        case UpdateProcess() if remoteProcessList contains expectedProcessDetails.name =>
-          onMigrate(Unmarshal(request).to[UpdateScenarioCommand])
-
-          Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
-            HttpResponse(OK, entity = entity)
-          }
-
-        case UpdateProcess() =>
-          Future.failed(new Exception("Scenario does not exist"))
-
-        case _ =>
-          throw new AssertionError(s"Not expected $uri")
-      }
-    }
-
-  }
-
-  private def parseBodyToJson(request: MessageEntity) = {
-    val stringBody = request match {
-      case HttpEntity.Strict(_, byteString) => byteString.decodeString(HttpCharsets.`UTF-8`.nioCharset())
-      case _                                => throw new IllegalStateException("Unhandled MessageEntity type")
-    }
-    parser.parse(stringBody).toOption.getOrElse(throw new IllegalStateException("Validation request should be a json"))
-  }
-
-  private def environmentForTestMigration(
-      processes: List[ScenarioWithDetailsForMigrations],
-      fragments: List[ScenarioWithDetailsForMigrations]
-  ) = new MockRemoteEnvironment {
-
-    private def allProcesses: List[ScenarioWithDetailsForMigrations] = processes ++ fragments
-
-    override protected def request(
-        uri: Uri,
-        method: HttpMethod,
-        request: MessageEntity,
-        header: Seq[HttpHeader]
-    ): Future[HttpResponse] = {
-      object GetProcessesDetailsWithoutScenarioGraph {
-        def unapply(arg: (Uri, HttpMethod)): Boolean = {
-          arg._1.toString() == s"$baseUri/processes?isArchived=false" && arg._2 == HttpMethods.GET
-        }
-      }
-
-      object GetProcessesDetails {
-        def unapply(arg: (Uri, HttpMethod)): Option[Set[ProcessName]] = {
-          val uri = arg._1
-          if (uri.toString().startsWith(s"$baseUri/processesDetails") && uri
-              .query()
-              .get("isArchived")
-              .contains("false") && arg._2 == HttpMethods.GET) {
-            uri.query().get("names").map(_.split(",").map(ProcessName(_)).toSet)
-          } else {
-            None
-          }
-        }
-      }
-
-      (uri, method) match {
-        case GetProcessesDetailsWithoutScenarioGraph() =>
-          Marshal(allProcesses.map(_.copy(scenarioGraph = None))).to[ResponseEntity].map { entity =>
-            HttpResponse(entity = entity)
-          }
-        case GetProcessesDetails(names) =>
-          Marshal(allProcesses.filter(p => names(p.name))).to[ResponseEntity].map { entity =>
-            HttpResponse(entity = entity)
-          }
-        case _ => throw new IllegalArgumentException()
-      }
-    }
-
-  }
 
   it should "not migrate not validating scenario" in {
 
@@ -456,6 +290,164 @@ class StandardRemoteEnvironmentSpec
     migrationResult.map(
       _.processName
     ) should contain only (ProcessTestData.validScenarioDetailsForMigrations.name, ProcessTestData.sampleFragment.name)
+  }
+
+  trait MockRemoteEnvironment extends StandardRemoteEnvironment {
+    override def environmentId = "testEnv"
+
+    def config: StandardRemoteEnvironmentConfig = StandardRemoteEnvironmentConfig(
+      uri = "http://localhost:8087/api",
+      batchSize = 100
+    )
+
+    override implicit val materializer: Materializer = Materializer(system)
+
+    override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
+      mapProcessingTypeDataProvider(
+        TestProcessingTypes.Streaming -> new ProcessModelMigrator(new TestMigrations(1, 2))
+      ),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> flinkProcessValidator)
+    )
+
+  }
+
+  private trait TriedToAddProcess {
+    var triedToAddProcess: Boolean     = false
+    var addedFragment: Option[Boolean] = None
+  }
+
+  private def statefulEnvironment(
+      expectedProcessDetails: ScenarioWithDetailsForMigrations,
+      expectedProcessCategory: String,
+      initialRemoteProcessList: List[ProcessName],
+      onMigrate: Future[UpdateScenarioCommand] => Unit
+  ) = new MockRemoteEnvironment with TriedToAddProcess {
+    private var remoteProcessList = initialRemoteProcessList
+
+    override protected def request(
+        uri: Uri,
+        method: HttpMethod,
+        request: MessageEntity,
+        header: Seq[HttpHeader]
+    ): Future[HttpResponse] = {
+      import HttpMethods._
+      import StatusCodes._
+      // helpers
+      def is(relative: String, m: HttpMethod): Boolean = {
+        uri.toString.startsWith(s"$baseUri$relative") && method == m
+      }
+
+      object Validation {
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processValidation/${expectedProcessDetails.name}", POST)
+      }
+
+      object UpdateProcess {
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.name}", PUT)
+      }
+
+      object CheckProcess {
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.name}", GET)
+      }
+
+      object AddProcess {
+        def unapply(arg: (String, HttpMethod)): Option[Boolean] = {
+          if (is(s"/processes", POST)) {
+            parseBodyToJson(request).hcursor.downField("isFragment").as[Boolean].toOption
+          } else {
+            None
+          }
+        }
+      }
+      // end helpers
+
+      (uri.toString(), method) match {
+        case Validation() =>
+          Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
+            HttpResponse(OK, entity = entity)
+          }
+        case CheckProcess() if remoteProcessList contains expectedProcessDetails.name =>
+          Marshal(expectedProcessDetails).to[RequestEntity].map { entity =>
+            HttpResponse(OK, entity = entity)
+          }
+        case CheckProcess() =>
+          Future.successful(HttpResponse(NotFound))
+        case AddProcess(isFragment) =>
+          remoteProcessList = expectedProcessDetails.name :: remoteProcessList
+          triedToAddProcess = true
+          addedFragment = Some(isFragment)
+
+          Marshal(ProcessTestData.validScenarioDetailsForMigrations).to[RequestEntity].map { entity =>
+            HttpResponse(OK, entity = entity)
+          }
+        case UpdateProcess() if remoteProcessList contains expectedProcessDetails.name =>
+          onMigrate(Unmarshal(request).to[UpdateScenarioCommand])
+
+          Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
+            HttpResponse(OK, entity = entity)
+          }
+        case UpdateProcess() =>
+          Future.failed(new Exception("Scenario does not exist"))
+        case _ =>
+          throw new AssertionError(s"Not expected $uri")
+      }
+    }
+
+  }
+
+  private def parseBodyToJson(request: MessageEntity) = {
+    val stringBody = request match {
+      case HttpEntity.Strict(_, byteString) => byteString.decodeString(HttpCharsets.`UTF-8`.nioCharset())
+      case _                                => throw new IllegalStateException("Unhandled MessageEntity type")
+    }
+    parser.parse(stringBody).toOption.getOrElse(throw new IllegalStateException("Validation request should be a json"))
+  }
+
+  private def environmentForTestMigration(
+      processes: List[ScenarioWithDetailsForMigrations],
+      fragments: List[ScenarioWithDetailsForMigrations]
+  ) = new MockRemoteEnvironment {
+
+    private def allProcesses: List[ScenarioWithDetailsForMigrations] = processes ++ fragments
+
+    override protected def request(
+        uri: Uri,
+        method: HttpMethod,
+        request: MessageEntity,
+        header: Seq[HttpHeader]
+    ): Future[HttpResponse] = {
+      object GetProcessesDetailsWithoutScenarioGraph {
+        def unapply(arg: (Uri, HttpMethod)): Boolean = {
+          arg._1.toString() == s"$baseUri/processes?isArchived=false" && arg._2 == HttpMethods.GET
+        }
+      }
+
+      object GetProcessesDetails {
+        def unapply(arg: (Uri, HttpMethod)): Option[Set[ProcessName]] = {
+          val uri = arg._1
+          if (uri.toString().startsWith(s"$baseUri/processesDetails") && uri
+              .query()
+              .get("isArchived")
+              .contains("false") && arg._2 == HttpMethods.GET) {
+            uri.query().get("names").map(_.split(",").map(ProcessName(_)).toSet)
+          } else {
+            None
+          }
+        }
+      }
+
+      (uri, method) match {
+        case GetProcessesDetailsWithoutScenarioGraph() =>
+          Marshal(allProcesses.map(_.copy(scenarioGraph = None))).to[ResponseEntity].map { entity =>
+            HttpResponse(entity = entity)
+          }
+        case GetProcessesDetails(names) =>
+          Marshal(allProcesses.filter(p => names(p.name))).to[ResponseEntity].map { entity =>
+            HttpResponse(entity = entity)
+          }
+        case _ => throw new IllegalArgumentException()
+      }
+    }
+
   }
 
 }
