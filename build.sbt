@@ -1970,7 +1970,8 @@ lazy val modules = List[ProjectReference](
   jsonUtils,
   liteComponentsTestkit,
   flinkComponentsTestkit,
-  mathUtils
+  mathUtils,
+  developmentTestsDeploymentManager
 )
 
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules

@@ -4,7 +4,12 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  ComponentId,
+  ComponentProvider,
+  DesignerWideComponentId
+}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
@@ -34,32 +39,16 @@ object ModelData extends LazyLogging {
     ) => ModelDefinition
 
   def apply(processingTypeConfig: ProcessingTypeConfig, dependencies: ModelDependencies): ModelData = {
-    ModelData(
-      processingTypeConfig.modelConfig,
-      ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt),
+    val modelClassLoader = ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt)
+    ClassLoaderModelData(
+      modelConfigLoader =>
+        modelConfigLoader
+          .resolveInputConfigDuringExecution(processingTypeConfig.modelConfig, modelClassLoader.classLoader),
+      modelClassLoader,
       Some(processingTypeConfig.category),
       dependencies.determineDesignerWideId,
       dependencies.additionalConfigsFromProvider,
-      dependencies.skipComponentProvidersLoadedFromAppClassloader
-    )
-  }
-
-  private def apply(
-      inputConfig: ConfigWithUnresolvedVersion,
-      modelClassLoader: ModelClassLoader,
-      category: Option[String],
-      determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      skipComponentProvidersLoadedFromAppClassloader: Boolean
-  ): ModelData = {
-    ClassLoaderModelData(
-      modelConfigLoader =>
-        modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
-      modelClassLoader,
-      category,
-      determineDesignerWideId,
-      additionalConfigsFromProvider,
-      skipComponentProvidersLoadedFromAppClassloader
+      dependencies.shouldIncludeComponentProvider
     )
   }
 
@@ -93,7 +82,7 @@ object ModelData extends LazyLogging {
       category = None,
       determineDesignerWideId = id => DesignerWideComponentId(id.toString),
       additionalConfigsFromProvider = Map.empty,
-      skipComponentProvidersLoadedFromAppClassloader = false
+      shouldIncludeComponentProvider = _ => true
     )
   }
 
@@ -111,7 +100,7 @@ case class ModelDependencies(
     // on the test classpath and CPs collide with other once with the same name.
     // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
     // add liteKafkaComponents (which are in test scope), see comment next to designer module
-    skipComponentProvidersLoadedFromAppClassloader: Boolean
+    shouldIncludeComponentProvider: ComponentProvider => Boolean
 )
 
 case class ClassLoaderModelData private (
@@ -120,7 +109,7 @@ case class ClassLoaderModelData private (
     override val category: Option[String],
     override val determineDesignerWideId: ComponentId => DesignerWideComponentId,
     override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-    skipComponentProvidersLoadedFromAppClassloader: Boolean
+    shouldIncludeComponentProvider: ComponentProvider => Boolean
 ) extends ModelData
     with LazyLogging {
 
@@ -131,7 +120,7 @@ case class ClassLoaderModelData private (
 
   override lazy val modelConfigLoader: ModelConfigLoader = {
     Multiplicity(ScalaServiceLoader.load[ModelConfigLoader](modelClassLoader.classLoader)) match {
-      case Empty()                => new DefaultModelConfigLoader(skipComponentProvidersLoadedFromAppClassloader)
+      case Empty()                => new DefaultModelConfigLoader(shouldIncludeComponentProvider)
       case One(modelConfigLoader) => modelConfigLoader
       case Many(moreThanOne) =>
         throw new IllegalArgumentException(s"More than one ModelConfigLoader instance found: $moreThanOne")
@@ -154,7 +143,7 @@ case class ClassLoaderModelData private (
   override val namingStrategy: NamingStrategy = NamingStrategy.fromConfig(modelConfig)
 
   override val extractModelDefinitionFun: ExtractDefinitionFun =
-    new ExtractDefinitionFunImpl(configCreator, category, skipComponentProvidersLoadedFromAppClassloader)
+    new ExtractDefinitionFunImpl(configCreator, category, shouldIncludeComponentProvider)
 
 }
 
@@ -163,7 +152,7 @@ object ClassLoaderModelData {
   class ExtractDefinitionFunImpl(
       configCreator: ProcessConfigCreator,
       category: Option[String],
-      skipComponentProvidersLoadedFromAppClassloader: Boolean
+      shouldIncludeComponentProvider: ComponentProvider => Boolean
   ) extends ExtractDefinitionFun
       with Serializable {
 
@@ -180,7 +169,7 @@ object ClassLoaderModelData {
         category,
         determineDesignerWideId,
         additionalConfigsFromProvider,
-        skipComponentProvidersLoadedFromAppClassloader
+        shouldIncludeComponentProvider
       )
     }
 

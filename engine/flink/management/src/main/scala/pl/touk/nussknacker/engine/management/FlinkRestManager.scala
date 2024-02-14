@@ -10,15 +10,15 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkRestManager.JobDetails
+import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
-import pl.touk.nussknacker.engine.management.rest.{CachedFlinkClient, FlinkClient, HttpFlinkClient}
+
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 
 class FlinkRestManager(
+    client: FlinkClient,
     config: FlinkConfig,
-    scenarioStateCacheTTL: Option[FiniteDuration],
     modelData: BaseModelData,
     dependencies: DeploymentManagerDependencies,
     mainClassName: String
@@ -28,20 +28,6 @@ class FlinkRestManager(
   import dependencies._
 
   private val modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
-
-  private val client: FlinkClient = {
-    val httpClient = new HttpFlinkClient(config)
-
-    scenarioStateCacheTTL
-      .map { cacheTTL =>
-        logger.debug(s"Wrapping FlinkRestManager's client: $httpClient with caching mechanism with TTL: $cacheTTL")
-        new CachedFlinkClient(httpClient, cacheTTL, config.jobConfigsCacheSize)
-      }
-      .getOrElse {
-        logger.debug(s"Skipping caching for FlinkRestManager's client: $httpClient")
-        httpClient
-      }
-  }
 
   private val slotsChecker = new FlinkSlotsChecker(client)
 

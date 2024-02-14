@@ -27,7 +27,7 @@ prepare_deployed_scenario() {
   NAME=$1
   SUFFIX=$2
 
-  echo "{\"name\": \"$NAME\", \"category\": \"Default\", \"isFragment\": false}" | curl --fail -u admin:admin -X POST -H "Content-type: application/json"  $DESIGNER_URL/api/processes -d @-
+  echo "{\"name\": \"$NAME\", \"category\": \"Default\", \"processingMode\": \"Unbounded-Stream\", \"engineSetupName\": \"Lite Embedded\", \"isFragment\": false}" | curl --fail -u admin:admin -X POST -H "Content-type: application/json"  $DESIGNER_URL/api/processes -d @-
   scenario_to_import=`cat test/data/scenario.json | sed s/##NAME##/$NAME/g | sed s/##SUFFIX##/$SUFFIX/g`
   scenario_to_update=`echo $scenario_to_import | curl --fail -u admin:admin -F process=@- $DESIGNER_URL/api/processes/import/$NAME | jq .scenarioGraph | (echo '{ "comment": "created by test", "scenarioGraph": '; cat; echo '}')`
   echo $scenario_to_update | curl --fail -u admin:admin -X PUT -H "Content-type: application/json" $DESIGNER_URL/api/processes/$NAME -d @-
