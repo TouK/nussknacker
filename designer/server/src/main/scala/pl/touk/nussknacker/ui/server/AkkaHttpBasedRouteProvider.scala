@@ -334,7 +334,7 @@ class AkkaHttpBasedRouteProvider(
                   new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
                   fragmentRepository
                 ),
-                processingTypeData.modelData.designerDictServices.dictQueryService
+                processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService
               )
             }
           ),
