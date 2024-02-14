@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory}
 import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
@@ -136,14 +136,12 @@ class AppApiHttpServiceSecuritySpec
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
           .statusCode(500)
-          .body(
-            equalsJson(
-              s"""{
-                 |  "status": "ERROR",
-                 |  "message": "Scenarios with validation errors",
-                 |  "processes": [ "id1" ]
-                 |}""".stripMargin
-            )
+          .equalsJsonBody(
+            s"""{
+               |  "status": "ERROR",
+               |  "message": "Scenarios with validation errors",
+               |  "processes": [ "id1" ]
+               |}""".stripMargin
           )
       }
     }
@@ -200,12 +198,7 @@ class AppApiHttpServiceSecuritySpec
                |      "generation-time": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}(?::\\\\d{2}\\\\.(?:\\\\d{9}|\\\\d{6}|\\\\d{3})|:\\\\d{2}|)$$"
                |    }
                |  },
-               |  "globalBuildInfo": {
-               |    "build-config-1": "1",
-               |    "build-config-2": "2"
-               |  },
-               |  "build-config-1": "1",
-               |  "build-config-2": "2"
+               |  "globalBuildInfo": null
                |}""".stripMargin
           )
         )
@@ -268,12 +261,10 @@ class AppApiHttpServiceSecuritySpec
           .get(s"$nuDesignerHttpAddress/api/app/config/categoriesWithProcessingType")
           .Then()
           .statusCode(200)
-          .body(
-            equalsJson(
-              s"""{
-                 |  "Category1": "streaming1"
-                 |}""".stripMargin
-            )
+          .equalsJsonBody(
+            s"""{
+               |  "Category1": "streaming1"
+               |}""".stripMargin
           )
       }
     }
@@ -377,13 +368,5 @@ class AppApiHttpServiceSecuritySpec
 
   override def designerConfig: Config = super.designerConfig
     .withValue("enableConfigEndpoint", fromAnyRef(true))
-    .withValue(
-      "globalBuildInfo",
-      ConfigFactory
-        .empty()
-        .withValue("build-config-1", fromAnyRef("1"))
-        .withValue("build-config-2", fromAnyRef("2"))
-        .root()
-    )
 
 }

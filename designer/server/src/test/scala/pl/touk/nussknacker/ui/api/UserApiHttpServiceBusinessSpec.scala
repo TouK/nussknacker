@@ -11,27 +11,30 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLogging
 }
 import pl.touk.nussknacker.tests.base.it.NuItTest
-import pl.touk.nussknacker.tests.config.WithSimplifiedDesignerConfig
+import pl.touk.nussknacker.tests.config.{
+  WithRichConfigRestAssuredUsersExtensions,
+  WithSimplifiedConfigRestAssuredUsersExtensions,
+  WithSimplifiedDesignerConfig
+}
 
 class UserApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithSimplifiedDesignerConfig
-    with NuRestAssureExtensions
+    with WithSimplifiedConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
 
-  "The endpoint for getting user info when" - {
-    "authenticated should" - {
-      "return user info" in {
-        given()
-          .basicAuth("allpermuser", "allpermuser")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/user")
-          .Then()
-          .statusCode(200)
-          .equalsJsonBody(s"""{
+  "The endpoint for getting user info should" - {
+    "return user info" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/user")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(s"""{
              |  "id": "allpermuser",
              |  "username": "allpermuser",
              |  "isAdmin": false,
@@ -41,48 +44,35 @@ class UserApiHttpServiceBusinessSpec
              |    },
              |  "globalPermissions": []
              |}""".stripMargin)
-      }
-      "return admin info" in {
-        given()
-          .basicAuth("admin", "admin")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/user")
-          .Then()
-          .statusCode(200)
-          .equalsJsonBody(s"""{
+    }
+    "return admin info" in {
+      given()
+        .when()
+        .basicAuthAdmin()
+        .get(s"$nuDesignerHttpAddress/api/user")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(s"""{
              |  "id": "admin",
              |  "username": "admin",
              |  "isAdmin": true,
-             |  "categories": [ "Category1", "Category2" ],
+             |  "categories": [ "Category1" ],
              |  "categoryPermissions": { },
              |  "globalPermissions": []
              |}""".stripMargin)
-      }
-      "return 405 when invalid HTTP method is passed" in {
-        given()
-          .basicAuth("admin", "admin")
-          .when()
-          .put(s"$nuDesignerHttpAddress/api/user")
-          .Then()
-          .statusCode(405)
-          .body(
-            equalTo(
-              s"Method Not Allowed"
-            )
-          )
-      }
     }
-    "not authenticated should" - {
-      "forbid access" in {
-        given()
-          .noAuth()
-          .when()
-          .basicAuth("unknown-user", "wrong-password")
-          .get(s"$nuDesignerHttpAddress/api/user")
-          .Then()
-          .statusCode(401)
-          .body(equalTo("The supplied authentication is invalid"))
-      }
+    "return 405 when invalid HTTP method is passed" in {
+      given()
+        .when()
+        .basicAuthAdmin()
+        .put(s"$nuDesignerHttpAddress/api/user")
+        .Then()
+        .statusCode(405)
+        .body(
+          equalTo(
+            s"Method Not Allowed"
+          )
+        )
     }
   }
 

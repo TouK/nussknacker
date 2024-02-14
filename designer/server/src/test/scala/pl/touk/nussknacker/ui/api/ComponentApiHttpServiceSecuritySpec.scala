@@ -16,15 +16,16 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLogging
 }
 import pl.touk.nussknacker.tests.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig
-import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.tests.config.WithRichDesignerConfig.TestProcessingType.Streaming1
+import pl.touk.nussknacker.tests.config.{WithRichConfigRestAssuredUsersExtensions, WithRichDesignerConfig}
 
 class ComponentApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithRichDesignerConfig
     with WithRichConfigScenarioHelper
+    with WithRichConfigRestAssuredUsersExtensions
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
@@ -33,22 +34,22 @@ class ComponentApiHttpServiceSecuritySpec
   "The endpoint for getting components when" - {
     "authenticated should" - {
       "return component list for current user" in {
-        val componentIdListForTestUser: List[String] =
+        val componentIds: List[String] =
           given()
-            .basicAuth("allpermuser", "allpermuser")
             .when()
+            .basicAuthLimitedReader()
             .get(s"$nuDesignerHttpAddress/api/components")
             .Then()
             .statusCode(200)
             .extractToStringsList("id")
 
-        componentIdListForTestUser.sorted should contain theSameElementsAs correctListForTestUser
+        componentIds.sorted should contain theSameElementsAs expectedComponentIdsForLimitedUser
       }
-      "return different component lists for users(allpermuser, admin)" in {
-        val componentIdListForTestUser: List[String] =
+      "return different component lists for admin & limitedreader users" in {
+        val componentIdsForAllPermUser: List[String] =
           given()
-            .basicAuth("allpermuser", "allpermuser")
             .when()
+            .basicAuthLimitedReader()
             .get(s"$nuDesignerHttpAddress/api/components")
             .Then()
             .statusCode(200)
@@ -56,23 +57,23 @@ class ComponentApiHttpServiceSecuritySpec
 
         val componentIdListForAdminUser: List[String] =
           given()
-            .basicAuth("admin", "admin")
             .when()
+            .basicAuthAdmin()
             .get(s"$nuDesignerHttpAddress/api/components")
             .Then()
             .statusCode(200)
             .extractToStringsList("id")
 
-        componentIdListForAdminUser.sorted should contain theSameElementsAs correctListForAdminUser
+        componentIdListForAdminUser.sorted should contain theSameElementsAs expectedComponentIdsForAdminUser
 
-        componentIdListForAdminUser.length > componentIdListForTestUser.length shouldBe true
+        componentIdListForAdminUser.length > componentIdsForAllPermUser.length shouldBe true
       }
     }
     "not authenticated should" - {
       "forbid access" in {
         given()
           .when()
-          .basicAuth("unknown-user", "wrong-password")
+          .basicAuthUnknownUser()
           .get(s"$nuDesignerHttpAddress/api/components")
           .Then()
           .statusCode(401)
@@ -83,7 +84,7 @@ class ComponentApiHttpServiceSecuritySpec
 
   "The endpoint for getting component usages when" - {
     "authenticated should" - {
-      "return component usages for existing component" in {
+      "return component usages when component is used in the allowed category for the given user" in {
         val scenarioName        = "test"
         val sourceComponentName = "kafka" // it's real component name from DevProcessConfigCreator
         val scenario = ScenarioBuilder
@@ -100,9 +101,9 @@ class ComponentApiHttpServiceSecuritySpec
           .applicationState {
             createSavedScenario(scenario, category = Category1)
           }
-          .basicAuth("admin", "admin")
-          .pathParam("componentId", componentId.value)
           .when()
+          .basicAuthLimitedReader()
+          .pathParam("componentId", componentId.value)
           .get(s"$nuDesignerHttpAddress/api/components/{componentId}/usages")
           .Then()
           .statusCode(200)
@@ -113,40 +114,40 @@ class ComponentApiHttpServiceSecuritySpec
                  |  "nodesUsagesData": [ { "nodeId": "source", "type": "ScenarioUsageData" } ],
                  |  "isFragment": false,
                  |  "processCategory": "$Category1",
-                 |  "modificationDate": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{6}Z$$",
-                 |  "modifiedAt": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{6}Z$$",
+                 |  "modificationDate": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{3,6}Z$$",
+                 |  "modifiedAt": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{3,6}Z$$",
                  |  "modifiedBy": "admin",
-                 |  "createdAt": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{6}Z$$",
+                 |  "createdAt": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{3,6}Z$$",
                  |  "createdBy": "admin",
                  |  "lastAction": null
                  |}]""".stripMargin
             )
           )
       }
-      "return 404 when component not exist" in {
-        val badComponentId: DesignerWideComponentId = DesignerWideComponentId("not-exist-component")
+      "return 404 when component is NOT used in the allowed category for the given user" in {
+        val scenarioName        = "test"
+        val sourceComponentName = "kafka" // it's real component name from DevProcessConfigCreator
+        val scenario = ScenarioBuilder
+          .streaming(scenarioName)
+          .source("source", sourceComponentName)
+          .emptySink("sink", "kafka")
+
+        val componentId = DesignerWideComponentId.default(
+          processingType = Streaming1.stringify,
+          componentId = ComponentId(ComponentType.Source, sourceComponentName)
+        )
 
         given()
-          .pathParam("componentId", badComponentId.value)
-          .basicAuth("admin", "admin")
+          .applicationState {
+            createSavedScenario(scenario, category = Category2)
+          }
           .when()
+          .basicAuthLimitedReader()
+          .pathParam("componentId", componentId.value)
           .get(s"$nuDesignerHttpAddress/api/components/{componentId}/usages")
           .Then()
           .statusCode(404)
-          .body(equalTo(s"Component ${badComponentId.value} not exist."))
-      }
-      "return 405 when invalid HTTP method is passed" in {
-        given()
-          .basicAuth("admin", "admin")
-          .when()
-          .put(s"$nuDesignerHttpAddress/api/components/id/usages")
-          .Then()
-          .statusCode(405)
-          .body(
-            equalTo(
-              s"Method Not Allowed"
-            )
-          )
+          .body(equalTo("Component streaming1-source-kafka not exist."))
       }
     }
     "not authenticated should" - {
@@ -162,7 +163,7 @@ class ComponentApiHttpServiceSecuritySpec
     }
   }
 
-  private lazy val correctListForTestUser: List[String] = List(
+  private lazy val expectedComponentIdsForLimitedUser: List[String] = List(
     "builtin-choice",
     "builtin-filter",
     "builtin-record-variable",
@@ -225,7 +226,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming1-source-sql-source"
   )
 
-  private lazy val correctListForAdminUser: List[String] = List(
+  private lazy val expectedComponentIdsForAdminUser: List[String] = List(
     "builtin-choice",
     "builtin-filter",
     "builtin-record-variable",
