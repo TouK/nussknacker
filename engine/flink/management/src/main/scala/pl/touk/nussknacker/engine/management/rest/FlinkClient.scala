@@ -1,12 +1,17 @@
 package pl.touk.nussknacker.engine.management.rest
 
+import cats.data.ValidatedNel
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, JobOverview}
+import sttp.client3.SttpBackend
 
 import java.io.File
-import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 
 trait FlinkClient {
 
@@ -34,5 +39,26 @@ trait FlinkClient {
       args: List[String],
       savepointPath: Option[String]
   ): Future[Option[ExternalDeploymentId]]
+
+}
+
+object FlinkClient extends LazyLogging {
+
+  def create(
+      config: FlinkConfig,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): ValidatedNel[String, FlinkClient] = {
+    HttpFlinkClient.create(config).map { httpClient =>
+      scenarioStateCacheTTL
+        .map { cacheTTL =>
+          logger.debug(s"Wrapping FlinkRestManager's client: $httpClient with caching mechanism with TTL: $cacheTTL")
+          new CachedFlinkClient(httpClient, cacheTTL, config.jobConfigsCacheSize)
+        }
+        .getOrElse {
+          logger.debug(s"Skipping caching for FlinkRestManager's client: $httpClient")
+          httpClient
+        }
+    }
+  }
 
 }

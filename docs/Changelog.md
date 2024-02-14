@@ -42,6 +42,9 @@
 * [#5505](https://github.com/TouK/nussknacker/pull/5505) Fix: anonymous user handling regression
 * [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
+* [#5537](https://github.com/TouK/nussknacker/pull/5537) [#5550](https://github.com/TouK/nussknacker/pull/5537) 
+  [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Processing mode and engine available in the GUI
+* [#5537](https://github.com/TouK/nussknacker/pull/5537) `DEFAULT_SCENARIO_TYPE` environment variable is not supported anymore 
 
 1.13.1 (Not released yet)
 ------------------------

@@ -778,7 +778,7 @@ In Nussknacker distribution there are preconfigured scenario types:
 - `streaming-lite-embedded` - using embedded Lite Deployment Manager in Streaming processing mode providing only stateless streaming components
 - `request-response-embedded` - use embedded Request-Response Deployment Manager, scenario logic is exposed as REST API, on additional HTTP port at Designer
 
-And one `Default` category using `streaming` by default (can be configured via `DEFAULT_SCENARIO_TYPE` environment variable)
+Every scenario type has `Default` category assigned
 
 See [example](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33)
 from development config for more complex examples.

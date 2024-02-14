@@ -1774,6 +1774,15 @@ lazy val designer = (project in file("designer/server"))
       .value,
     Test / test                      := (Test / test)
       .dependsOn(
+        // Most of deps below are required by ScenarioParametersServiceTest which tests default application.conf
+        defaultModel / Compile / assembly,
+        flinkBaseComponents / Compile / assembly,
+        flinkKafkaComponents / Compile / assembly,
+        liteBaseComponents / Compile / assembly,
+        liteKafkaComponents / Compile / assembly,
+        liteRequestResponseComponents / Compile / assembly,
+        openapiComponents / Compile / assembly,
+        sqlComponents / Compile / assembly,
         flinkDevModel / Compile / assembly,
         flinkExecutor / Compile / assembly
       )
@@ -1970,7 +1979,8 @@ lazy val modules = List[ProjectReference](
   jsonUtils,
   liteComponentsTestkit,
   flinkComponentsTestkit,
-  mathUtils
+  mathUtils,
+  developmentTestsDeploymentManager
 )
 
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules

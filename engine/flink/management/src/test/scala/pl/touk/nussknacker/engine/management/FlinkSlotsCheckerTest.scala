@@ -22,7 +22,7 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-  private val config = FlinkConfig("http://test.pl")
+  private val config = FlinkConfig(Some("http://test.pl"))
 
   private val availableSlotsCount = 1000
 
@@ -123,7 +123,7 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
 
   private def createSlotsCheckerWithBackend(backend: SttpBackend[Future, Any]): FlinkSlotsChecker = {
     implicit val b: SttpBackend[Future, Any] = backend
-    new FlinkSlotsChecker(new HttpFlinkClient(config))
+    new FlinkSlotsChecker(HttpFlinkClient.createUnsafe(config))
   }
 
   private def prepareCanonicalProcess(parallelism: Option[Int]) = {

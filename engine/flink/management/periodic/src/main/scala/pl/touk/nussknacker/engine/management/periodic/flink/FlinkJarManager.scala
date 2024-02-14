@@ -27,7 +27,7 @@ private[periodic] object FlinkJarManager {
       ec: ExecutionContext
   ): JarManager = {
     new FlinkJarManager(
-      flinkClient = new HttpFlinkClient(flinkConfig),
+      flinkClient = HttpFlinkClient.createUnsafe(flinkConfig),
       jarsDir = Paths.get(periodicBatchConfig.jarsDir),
       inputConfigDuringExecution = modelData.inputConfigDuringExecution,
       modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
