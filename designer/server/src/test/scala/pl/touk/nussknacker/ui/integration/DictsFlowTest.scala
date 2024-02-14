@@ -6,6 +6,7 @@ import io.circe.syntax.EncoderOps
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -42,6 +43,7 @@ class DictsFlowTest
   test("create scenario with DictParameterEditor, save it and test it") {
     val DictId = "rgb"
 
+    // Use dict suggestion endpoint
     val response1 = httpClient.send(
       quickRequest
         .get(
@@ -58,6 +60,7 @@ class DictsFlowTest
       )
     )
 
+    // Create and test process that uses DictParameterEditor parameters
     val process = ScenarioBuilder
       .streaming("processWithDictParameterEditor")
       .source("source", "csv-source-lite")
@@ -65,9 +68,9 @@ class DictsFlowTest
         "customNode",
         "data",
         "serviceWithDictParameterEditor",
-        "RGBDict"     -> Expression.labelWithKey("Black", "H000000"),
-        "BooleanDict" -> Expression.labelWithKey("ON", "true"),
-        "LongDict"    -> Expression.labelWithKey("large (negative) number", "-1500100900")
+        "RGBDict"     -> Expression.dictLabelWithKey("rgb", "Black", "H000000"),
+        "BooleanDict" -> Expression.dictLabelWithKey("boolean_dict", "OLD LABEL", "true"),
+        "LongDict"    -> Expression.dictLabelWithKey("long_dict", "large (negative) number", "-1500100900")
       )
       .emptySink(EndNodeId, "dead-end-lite")
 
@@ -79,6 +82,27 @@ class DictsFlowTest
          |BooleanDict: Some(true)""".stripMargin,
       variableToCheck = "data"
     )
+
+    // Check that label bound to dictId-key is updated in BE response
+    val response2 = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/processes/${process.name}")
+        .auth
+        .basic("admin", "admin")
+    )
+    response2.code shouldEqual StatusCode.Ok
+
+    response2.bodyAsJson.hcursor
+      .downField("scenarioGraph")
+      .downField("nodes")
+      .downAt(_.hcursor.get[String]("id").rightValue == "customNode")
+      .downField("service")
+      .downField("parameters")
+      .downAt(_.hcursor.get[String]("name").rightValue == "BooleanDict")
+      .downField("expression")
+      .downField("expression")
+      .as[String]
+      .rightValue shouldBe """{"dictId":"boolean_dict","label":"ON","key":"true"}""" // returns "ON" even though "OLD LABEL" was sent, because of ProcessDictSubstitutor
   }
 
   test("save process with expression using dicts and get it back") {

@@ -37,6 +37,7 @@ class DefinitionsService(
       val alignedComponentsDefinition =
         alignedComponentsDefinitionProvider
           .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
+
       val withStaticDefinition = alignedComponentsDefinition.map {
         case dynamic: DynamicComponentDefinitionWithImplementation =>
           val staticDefinition = staticDefinitionForDynamicComponents.getOrElse(
@@ -49,8 +50,10 @@ class DefinitionsService(
         case other =>
           throw new IllegalStateException(s"Unknown component representation: $other")
       }
+
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
         .finalizeScenarioProperties(scenarioPropertiesConfig)
+
       prepareUIDefinitions(
         withStaticDefinition,
         forFragment,

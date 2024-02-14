@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypedDict
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, ProcessNodesRewriter}
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor.KeyToLabelReplacingStrategy
 import pl.touk.nussknacker.engine.expression.{ExpressionSubstitutionsCollector, ExpressionSubstitutor}
+import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
+import pl.touk.nussknacker.engine.graph.expression.Expression.DictLabelWithKeyExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.{
@@ -19,6 +21,7 @@ import pl.touk.nussknacker.engine.spel.ast.{
   SpelSubstitutionsCollector,
   TypedTreeLevel
 }
+import pl.touk.nussknacker.engine.spel.parser.DictLabelWithKeyExpressionParser
 
 class ProcessDictSubstitutor(
     dictRegistry: DictRegistry,
@@ -31,26 +34,62 @@ class ProcessDictSubstitutor(
       processTypingInfo: Map[String, Map[String, ExpressionTypingInfo]]
   ): CanonicalProcess = {
     val rewriter = ProcessNodesRewriter.rewritingAllExpressions { exprIdWithMetadata => expr =>
-      val nodeExpressionId             = exprIdWithMetadata.expressionId
-      val nodeTypingInfo               = processTypingInfo.getOrElse(nodeExpressionId.nodeId.id, Map.empty)
-      val optionalExpressionTypingInfo = nodeTypingInfo.get(nodeExpressionId.expressionId)
-      val substitutedExpression = optionalExpressionTypingInfo
-        .flatMap(prepareSubstitutionsCollector(_, replacingStrategy))
-        .map { substitutionsCollector =>
-          val substitutions     = substitutionsCollector.collectSubstitutions(expr)
-          val afterSubstitution = ExpressionSubstitutor.substitute(expr.expression, substitutions)
-          if (substitutions.nonEmpty)
-            logger.debug(
-              s"Found ${substitutions.size} substitutions in expression: ${process.name} > ${nodeExpressionId.nodeId.id} > ${nodeExpressionId.expressionId}. " +
-                s"Expression: '${expr.expression}' replaced with '$afterSubstitution'"
-            )
-          afterSubstitution
-        }
-        .getOrElse(expr.expression)
-      expr.copy(expression = substitutedExpression)
+      val nodeExpressionId = exprIdWithMetadata.expressionId
+
+      if (expr.language == Expression.Language.DictLabelWithKey)
+        substituteDictLabelWithKeyExpression(process, expr, nodeExpressionId)
+      else
+        substituteExpression(process, processTypingInfo, expr, nodeExpressionId)
     }
 
     rewriter.rewriteProcess(process)
+  }
+
+  private def substituteDictLabelWithKeyExpression(
+      process: CanonicalProcess,
+      expr: Expression,
+      nodeExpressionId: NodeExpressionId
+  ) =
+    DictLabelWithKeyExpressionParser.parseDictLabelWithKeyExpression(expr.expression) match {
+      case Valid(DictLabelWithKeyExpression(dictId, oldLabel, key)) =>
+        val updatedLabel = dictRegistry.labelByKey(dictId, key) match {
+          case Valid(Some(resolvedLabel)) => resolvedLabel
+          case _                          => oldLabel
+        }
+
+        val afterSubstitution = Expression.dictLabelWithKey(dictId, updatedLabel, key)
+        if (oldLabel != updatedLabel)
+          logger.debug(
+            s"Updating label in LabelWithKey expression: ${process.name} > ${nodeExpressionId.nodeId.id} > ${nodeExpressionId.expressionId}. " +
+              s"Expression: '${expr.expression}' replaced with '${afterSubstitution.expression}'"
+          )
+
+        afterSubstitution
+      case _ => expr
+    }
+
+  private def substituteExpression(
+      process: CanonicalProcess,
+      processTypingInfo: Map[String, Map[String, ExpressionTypingInfo]],
+      expr: Expression,
+      nodeExpressionId: NodeExpressionId
+  ) = {
+    val nodeTypingInfo               = processTypingInfo.getOrElse(nodeExpressionId.nodeId.id, Map.empty)
+    val optionalExpressionTypingInfo = nodeTypingInfo.get(nodeExpressionId.expressionId)
+    val substitutedExpression = optionalExpressionTypingInfo
+      .flatMap(prepareSubstitutionsCollector(_, replacingStrategy))
+      .map { substitutionsCollector =>
+        val substitutions     = substitutionsCollector.collectSubstitutions(expr)
+        val afterSubstitution = ExpressionSubstitutor.substitute(expr.expression, substitutions)
+        if (substitutions.nonEmpty)
+          logger.debug(
+            s"Found ${substitutions.size} substitutions in expression: ${process.name} > ${nodeExpressionId.nodeId.id} > ${nodeExpressionId.expressionId}. " +
+              s"Expression: '${expr.expression}' replaced with '$afterSubstitution'"
+          )
+        afterSubstitution
+      }
+      .getOrElse(expr.expression)
+    expr.copy(expression = substitutedExpression)
   }
 
   def reversed: ProcessDictSubstitutor = new ProcessDictSubstitutor(

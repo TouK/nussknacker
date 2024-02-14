@@ -10,12 +10,12 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.DictLabelWithKeyExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.LabelWithKeyJsonParsingError
-import pl.touk.nussknacker.engine.spel.parser.LiteralExpressionParser.LiteralExpression
 
-object LabelWithKeyExpressionParser extends ExpressionParser {
+object DictLabelWithKeyExpressionParser extends ExpressionParser {
 
-  override def languageId: String = Expression.Language.LabelWithKey
+  override def languageId: String = Expression.Language.DictLabelWithKey
 
   override def parse(
       labelWithKey: String,
@@ -30,22 +30,20 @@ object LabelWithKeyExpressionParser extends ExpressionParser {
       labelWithKey: String,
       expectedType: TypingResult
   ): Validated[NonEmptyList[ExpressionParseError], CompiledExpression] = {
-    extractKey(labelWithKey).map(LiteralExpression)
+    parseDictLabelWithKeyExpression(labelWithKey).andThen(expr =>
+      LiteralExpressionParser.parseWithoutContextValidation(expr.key, expectedType)
+    )
   }
 
-  def extractKey(labelWithKey: String): Validated[NonEmptyList[LabelWithKeyJsonParsingError], String] =
+  def parseDictLabelWithKeyExpression(
+      labelWithKey: String
+  ): Validated[NonEmptyList[LabelWithKeyJsonParsingError], DictLabelWithKeyExpression] =
     parser.parse(labelWithKey) match {
       case Left(e) => invalidNel(LabelWithKeyJsonParsingError(labelWithKey, e.message))
       case Right(json) =>
-        json.hcursor.downField("key").as[String] match {
-          case Right(key) => Valid(key)
-          case Left(_) =>
-            invalidNel(
-              LabelWithKeyJsonParsingError(
-                labelWithKey,
-                s"LabelWithKey expression json doesn't contain key: $labelWithKey"
-              )
-            )
+        json.as[DictLabelWithKeyExpression] match {
+          case Right(expr) => Valid(expr)
+          case Left(e)     => invalidNel(LabelWithKeyJsonParsingError(labelWithKey, e.message))
         }
     }
 

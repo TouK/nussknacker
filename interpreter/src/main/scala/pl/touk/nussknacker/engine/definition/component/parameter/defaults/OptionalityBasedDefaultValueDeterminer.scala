@@ -11,7 +11,7 @@ protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefault
         .collect {
           case SpelTemplateParameterEditor => Expression.Language.SpelTemplate
           case SqlParameterEditor          => Expression.Language.SpelTemplate
-          case DictParameterEditor(_)      => Expression.Language.Literal
+          case DictParameterEditor(_)      => Expression.Language.DictLabelWithKey
         }
         .getOrElse(Expression.Language.Spel)
 

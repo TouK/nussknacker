@@ -961,7 +961,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         "customNode",
         "data",
         "dictParameterEditorService",
-        "param" -> Expression(Expression.Language.Literal, "someKey")
+        "param" -> Expression.dictLabelWithKey("someDictId", "someLabel", "someKey")
       )
       .buildSimpleVariable("result-end", resultVariable, "#data")
       .emptySink("end-end", "dummySink")

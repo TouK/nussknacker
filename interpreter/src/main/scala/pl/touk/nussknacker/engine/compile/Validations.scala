@@ -1,8 +1,12 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.NonEmptyList
-import cats.data.Validated.{Valid, valid}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, RedundantParameters}
+import cats.data.Validated.{Valid, invalidNel, valid}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  DictIdNotMatching,
+  MissingParameters,
+  RedundantParameters
+}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition.{DictParameterEditor, Parameter, Validator}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
@@ -11,7 +15,7 @@ import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.spel.parser.LabelWithKeyExpressionParser
+import pl.touk.nussknacker.engine.spel.parser.DictLabelWithKeyExpressionParser
 
 object Validations {
 
@@ -109,12 +113,18 @@ object Validations {
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = definition.editor match {
     case Some(DictParameterEditor(dictId)) =>
-      LabelWithKeyExpressionParser
-        .extractKey(parameter.expression.expression)
+      DictLabelWithKeyExpressionParser
+        .parseDictLabelWithKeyExpression(parameter.expression.expression)
         .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, definition.name)))
-        .andThen(key =>
+        .andThen(expr =>
+          if (expr.dictId != dictId)
+            invalidNel(DictIdNotMatching(dictId, expr.dictId, nodeId.id, definition.name))
+          else
+            Valid(expr)
+        )
+        .andThen(expr =>
           dictRegistry
-            .labelByKey(dictId, key)
+            .labelByKey(dictId, expr.key)
             .map(_ => ())
             .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, definition.name)))
         )
