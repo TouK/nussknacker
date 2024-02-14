@@ -211,6 +211,7 @@ const globalStyles = (theme: Theme) => ({
     ".ace_autocomplete .ace_line .ace_": {
         flex: "0 0 auto",
         overflow: "auto",
+        whiteSpace: "pre",
     },
     ".ace_defaultMethod, .ace_defaultMethod + .ace_completion-meta": {
         color: "#ffe1b9",
