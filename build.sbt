@@ -600,7 +600,8 @@ lazy val flinkDeploymentManager = (project in flink("management"))
         "com.softwaremill.retry" %% "retry"                          % "0.3.6",
         "com.dimafeng"           %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
         "com.dimafeng"           %% "testcontainers-scala-kafka"     % testContainersScalaV % "it,test",
-        "com.github.tomakehurst"  % "wiremock-jre8"                  % wireMockV            % Test
+        "com.github.tomakehurst"  % "wiremock-jre8"                  % wireMockV            % Test,
+        "org.scalatestplus"      %% "mockito-4-11"                   % scalaTestPlusV       % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
     // override scala-collection-compat from com.softwaremill.retry:retry

@@ -22,7 +22,8 @@ object FlinkStreamingDeploymentManagerProviderHelper {
     val modelData = ModelData(
       processingTypeConfig = typeConfig,
       additionalConfigsFromProvider = Map.empty,
-      determineDesignerWideId = id => DesignerWideComponentId(id.toString)
+      determineDesignerWideId = id => DesignerWideComponentId(id.toString),
+      workingDirectoryOpt = None
     )
     val actorSystem       = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")
     val backend           = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
@@ -37,7 +38,8 @@ object FlinkStreamingDeploymentManagerProviderHelper {
       .createDeploymentManager(
         modelData,
         deploymentManagerDependencies,
-        typeConfig.deploymentConfig
+        typeConfig.deploymentConfig,
+        None
       )
       .valueOr(err => throw new IllegalStateException(s"Invalid Deployment Manager: ${err.toList.mkString(", ")}"))
   }

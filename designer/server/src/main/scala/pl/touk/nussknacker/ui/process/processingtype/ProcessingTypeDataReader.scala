@@ -13,6 +13,8 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.{
   toValueWithRestriction
 }
 
+import java.nio.file.Path
+
 object ProcessingTypeDataReader extends ProcessingTypeDataReader {
 
   val selectedScenarioTypeConfigurationPath = "selectedScenarioType"
@@ -28,7 +30,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
   def loadProcessingTypeData(
       config: ConfigWithUnresolvedVersion,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      workingDirectoryOpt: Option[Path]
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
@@ -55,7 +58,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
           provider,
           getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),
-          additionalUIConfigProvider
+          additionalUIConfigProvider,
+          workingDirectoryOpt
         )
         processingType -> processingTypeData
       }
@@ -92,7 +96,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
       deploymentManagerProvider: DeploymentManagerProvider,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      workingDirectoryOpt: Option[Path]
   ): ProcessingTypeData = {
     logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
     ProcessingTypeData.createProcessingTypeData(
@@ -101,7 +106,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
       deploymentManagerDependencies,
       engineSetupName,
       processingTypeConfig,
-      additionalUIConfigProvider
+      additionalUIConfigProvider,
+      workingDirectoryOpt
     )
   }
 

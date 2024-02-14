@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  DesignerWideComponentId,
-  ScenarioPropertyConfig
-}
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, DesignerWideComponentId, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
+
+import java.nio.file.Path
 
 final case class ProcessingTypeData private (
     processingType: ProcessingType,
@@ -52,7 +51,8 @@ object ProcessingTypeData {
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       processingTypeConfig: ProcessingTypeConfig,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      workingDirectoryOpt: Option[Path]
   ): ProcessingTypeData = {
     val managerConfig                 = processingTypeConfig.deploymentConfig
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
@@ -65,7 +65,8 @@ object ProcessingTypeData {
       ModelData(
         processingTypeConfig,
         additionalConfigsFromProvider,
-        DesignerWideComponentId.default(processingType, _)
+        DesignerWideComponentId.default(processingType, _),
+        workingDirectoryOpt
       ),
       managerConfig,
       processingTypeConfig.category
@@ -111,11 +112,14 @@ object ProcessingTypeData {
       managerConfig: Config,
       metaDataInitializer: MetaDataInitializer
   ) = {
+    val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(managerConfig)
+
     val validDeploymentManager =
-      deploymentManagerProvider.createDeploymentManager(modelData, deploymentManagerDependencies, managerConfig)
+      deploymentManagerProvider.createDeploymentManager(modelData, deploymentManagerDependencies, managerConfig, scenarioStateCacheTTL)
     val scenarioProperties =
       deploymentManagerProvider.scenarioPropertiesConfig(managerConfig) ++ modelData.modelConfig
         .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
+
     DeploymentData(
       validDeploymentManager,
       metaDataInitializer,

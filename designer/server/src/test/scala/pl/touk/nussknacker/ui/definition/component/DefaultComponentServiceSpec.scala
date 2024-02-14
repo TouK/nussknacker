@@ -472,7 +472,8 @@ class DefaultComponentServiceSpec
     TestFactory.userWithCategoriesReadPermission(username = "fraudUser", categories = List(CategoryFraud))
 
   private val providerComponents =
-    new DynamicComponentProvider().create(ConfigFactory.empty, ProcessObjectDependencies.empty)
+    new DynamicComponentProvider()
+      .create(ConfigFactory.empty, ProcessObjectDependencies.withConfig(ConfigFactory.empty()))
 
   private val modelDataMap: Map[ProcessingType, (LocalModelData, String)] = Map(
     Streaming -> (LocalModelData(

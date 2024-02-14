@@ -39,7 +39,8 @@ class MockDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
         TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-        DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
+        DesignerWideComponentId.default(TestProcessingTypes.Streaming, _),
+        workingDirectoryOpt = None
       ),
       DeploymentManagerDependencies(
         deploymentService,
@@ -66,10 +67,14 @@ class MockDeploymentManager(
   // Pass correct deploymentId
   private def fallbackDeploymentId = DeploymentId(UUID.randomUUID().toString)
 
-  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)
-      managerProcessStates.getOrDefault(name, prepareProcessState(defaultProcessStateStatus, fallbackDeploymentId))
+      WithDataFreshnessStatus.fresh(
+        managerProcessStates.getOrDefault(name, prepareProcessState(defaultProcessStateStatus, fallbackDeploymentId))
+      )
     }
   }
 
@@ -258,7 +263,8 @@ class MockManagerProvider(deploymentManager: DeploymentManager = new MockDeploym
   override def createDeploymentManager(
       modelData: BaseModelData,
       deploymentManagerDependencies: DeploymentManagerDependencies,
-      deploymentConfig: Config
+      deploymentConfig: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] =
     valid(deploymentManager)
 

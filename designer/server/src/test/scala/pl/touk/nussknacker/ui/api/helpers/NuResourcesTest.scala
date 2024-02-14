@@ -52,6 +52,7 @@ import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils, NuPa
 import slick.dbio.DBIOAction
 
 import java.net.URI
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
@@ -118,7 +119,8 @@ trait NuResourcesTest
     ModelData(
       processingTypeConfig,
       TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-      DesignerWideComponentId.default(processingType, _)
+      DesignerWideComponentId.default(processingType, _),
+      workingDirectoryOpt = None
     )
   }
 
@@ -130,7 +132,8 @@ trait NuResourcesTest
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig,
-        TestAdditionalUIConfigProvider
+        TestAdditionalUIConfigProvider,
+        workingDirectoryOpt = None
       )
     )
 
@@ -141,7 +144,8 @@ trait NuResourcesTest
       ProcessingTypeDataReader.loadProcessingTypeData(
         ConfigWithUnresolvedVersion(testConfig),
         _ => deploymentManagerDependencies,
-        TestAdditionalUIConfigProvider
+        TestAdditionalUIConfigProvider,
+        workingDirectoryOpt = None
       )
     )
 

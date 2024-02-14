@@ -9,12 +9,9 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.{
-  BaseModelData,
-  DeploymentManagerDependencies,
-  DeploymentManagerProvider,
-  MetaDataInitializer
-}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, DeploymentManagerProvider, MetaDataInitializer}
+
+import scala.concurrent.duration.FiniteDuration
 
 class PeriodicDeploymentManagerProvider(
     delegate: DeploymentManagerProvider,
@@ -31,10 +28,11 @@ class PeriodicDeploymentManagerProvider(
   override def createDeploymentManager(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
-      config: Config
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
     logger.info("Creating periodic scenario manager")
-    delegate.createDeploymentManager(modelData, dependencies, config).map { delegateDeploymentManager =>
+    delegate.createDeploymentManager(modelData, dependencies, config, scenarioStateCacheTTL).map { delegateDeploymentManager =>
       import net.ceedubs.ficus.Ficus._
       import net.ceedubs.ficus.readers.ArbitraryTypeReader._
       val periodicBatchConfig = config.as[PeriodicBatchConfig]("deploymentManager")

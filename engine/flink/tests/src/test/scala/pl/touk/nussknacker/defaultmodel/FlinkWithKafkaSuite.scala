@@ -10,6 +10,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, schemaRegistryMockClient}
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
@@ -40,6 +41,8 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.test.{KafkaConfigProperties, WithConfig}
 
+import java.nio.charset.StandardCharsets
+
 abstract class FlinkWithKafkaSuite
     extends AnyFunSuite
     with FlinkSpec
@@ -61,7 +64,8 @@ abstract class FlinkWithKafkaSuite
       new MockFlinkKafkaComponentProvider()
         .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
         FlinkBaseComponentProvider.Components
-    val modelData = LocalModelData(config, components, configCreator = creator)
+    val modelData =
+      LocalModelData(config, components, configCreator = creator, namingStrategy = Some(NamingStrategy(Some("ns"))))
     registrar = FlinkProcessRegistrar(
       new FlinkProcessCompilerDataFactory(modelData),
       FlinkJobConfig.parse(modelData.modelConfig),
@@ -134,6 +138,11 @@ abstract class FlinkWithKafkaSuite
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
   }
 
+  protected def sendAsJson(jsonString: String, topic: String, timestamp: java.lang.Long = null) = {
+    val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
+    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
+  }
+
   protected def versionOptionParam(versionOption: SchemaVersionOption) =
     versionOption match {
       case LatestSchemaVersion            => s"'${SchemaVersionOption.LatestOptionName}'"
@@ -165,6 +174,8 @@ abstract class FlinkWithKafkaSuite
 
   protected def createAndRegisterTopicConfig(name: String, schema: ParsedSchema): TopicConfig =
     createAndRegisterTopicConfig(name, List(schema))
+
+  protected def parseJson(str: String) = io.circe.parser.parse(str).toOption.get
 }
 
 case class TopicConfig(input: String, output: String, schemas: List[ParsedSchema], isKey: Boolean)
