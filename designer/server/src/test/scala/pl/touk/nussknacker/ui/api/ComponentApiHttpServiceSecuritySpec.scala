@@ -154,7 +154,7 @@ class ComponentApiHttpServiceSecuritySpec
       "forbid access" in {
         given()
           .when()
-          .basicAuth("unknown-user", "wrong-password")
+          .basicAuthUnknownUser()
           .get(s"$nuDesignerHttpAddress/api/components/id/usages")
           .Then()
           .statusCode(401)

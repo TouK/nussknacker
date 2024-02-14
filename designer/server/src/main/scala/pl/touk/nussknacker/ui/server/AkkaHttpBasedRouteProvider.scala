@@ -279,7 +279,7 @@ class AkkaHttpBasedRouteProvider(
         ),
         new AkkaHttpBasedTapirStreamEndpointProvider()
       )
-      val scenarioParametersHttpService = new ScenarioParametersHttpService(
+      val scenarioParametersHttpService = new ScenarioParametersApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
         scenarioParametersService = typeToConfig.mapCombined(_.parametersService)

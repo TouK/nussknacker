@@ -13,7 +13,7 @@ class NuDesignerExposedApiHttpService(
     userApiHttpService: UserApiHttpService,
     notificationApiHttpService: NotificationApiHttpService,
     scenarioActivityApiHttpService: ScenarioActivityApiHttpService,
-    scenarioParametersHttpService: ScenarioParametersHttpService,
+    scenarioParametersHttpService: ScenarioParametersApiHttpService,
 ) {
 
   private val apiEndpoints =

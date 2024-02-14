@@ -3,30 +3,25 @@ package pl.touk.nussknacker.ui.api
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.test.{
-  NuRestAssureExtensions,
-  NuRestAssureMatchers,
-  PatientScalaFutures,
-  RestAssuredVerboseLogging
-}
 import pl.touk.nussknacker.test.base.it.NuItTest
-import pl.touk.nussknacker.test.config.{WithRichDesignerConfig, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.config.{WithRichConfigRestAssuredUsersExtensions, WithRichDesignerConfig}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 
-class ScenarioParametersApiSpec
+class ScenarioParametersApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithRichDesignerConfig
-    with NuRestAssureExtensions
+    with WithRichConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
 
   "The endpoint for getting scenario parameters combination when" - {
-    "authenticated with write access to all categories should" - {
-      "return scenario parameters combination for all categories" in {
+    "authenticated should" - {
+      "return scenario parameters combination for all categories for a user with access to all categories" in {
         given()
-          .basicAuth("admin", "admin")
           .when()
+          .basicAuthAdmin()
           .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
           .Then()
           .statusCode(200)
@@ -48,12 +43,10 @@ class ScenarioParametersApiSpec
                |}""".stripMargin
           )
       }
-    }
-    "authenticated with write access one category should" - {
-      "return scenario parameters combination only for a given category" in {
+      "return parameters combination for categories the user has a write access" in {
         given()
-          .basicAuth("allpermuser", "allpermuser")
           .when()
+          .basicAuthLimitedWriter()
           .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
           .Then()
           .statusCode(200)
@@ -70,12 +63,10 @@ class ScenarioParametersApiSpec
                |}""".stripMargin
           )
       }
-    }
-    "authenticated without write access to category should" - {
-      "return empty parameters combination" in {
+      "return no parameters combination for categories the user has NOT a write access" in {
         given()
-          .basicAuth("reader", "reader")
           .when()
+          .basicAuthLimitedReader()
           .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
           .Then()
           .statusCode(200)
@@ -87,10 +78,11 @@ class ScenarioParametersApiSpec
           )
       }
     }
-    "unauthenticated" - {
-      "return 401 status code" in {
+    "not authenticated should" - {
+      "forbid access" in {
         given()
           .when()
+          .basicAuthUnknownUser()
           .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
           .Then()
           .statusCode(401)

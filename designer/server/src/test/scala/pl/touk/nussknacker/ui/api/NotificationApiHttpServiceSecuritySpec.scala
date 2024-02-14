@@ -5,15 +5,14 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.test.{
-  NuRestAssureExtensions,
-  NuRestAssureMatchers,
-  PatientScalaFutures,
-  RestAssuredVerboseLogging
-}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
+import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.config.{
+  WithMockableDeploymentManager,
+  WithRichConfigRestAssuredUsersExtensions,
+  WithRichDesignerConfig
+}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 
 class NotificationApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -21,85 +20,32 @@ class NotificationApiHttpServiceSecuritySpec
     with WithRichDesignerConfig
     with WithRichConfigScenarioHelper
     with WithMockableDeploymentManager
-    with NuRestAssureExtensions
+    with WithRichConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
 
   "The endpoint for getting notifications when" - {
     "authenticated should" - {
-      "return empty list if no notifications are present" in {
-        given()
-          .basicAuth("admin", "admin")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/notifications")
-          .Then()
-          .statusCode(200)
-          .body(
-            equalTo("[]")
-          )
-      }
-      "return a list of notifications" in {
-        given()
-          .basicAuth("admin", "admin")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/notifications")
-          .Then()
-          .statusCode(200)
-          .body(
-            equalTo("[]")
-          )
-
-        val scenarioName = ProcessName("canceled-scenario-01")
-
+      "not see notification related to admin user's actions" in {
         given()
           .applicationState {
-            createDeployedCanceledExampleScenario(scenarioName, category = Category1)
+            createDeployedCanceledExampleScenario(ProcessName("canceled-scenario-01"), category = Category1)
+            createDeployedCanceledExampleScenario(ProcessName("canceled-scenario-02"), category = Category2)
           }
-          .basicAuth("admin", "admin")
           .when()
+          .basicAuthAllPermUser()
           .get(s"$nuDesignerHttpAddress/api/notifications")
           .Then()
           .statusCode(200)
-          .body(
-            matchJsonWithRegexValues(
-              s"""[{
-                 |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                 |  "scenarioName": "$scenarioName",
-                 |  "message": "Deployment finished",
-                 |  "type": null,
-                 |  "toRefresh": [ "versions", "activity", "state" ]
-                 |},
-                 |{
-                 |   "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                 |   "scenarioName": "$scenarioName",
-                 |   "message": "Cancel finished",
-                 |   "type": null,
-                 |   "toRefresh": [ "versions", "activity", "state" ]
-                 |}]""".stripMargin
-            )
-          )
-      }
-      "return 405 when invalid HTTP method is passed" in {
-        given()
-          .when()
-          .basicAuth("admin", "admin")
-          .put(s"$nuDesignerHttpAddress/api/notifications")
-          .Then()
-          .statusCode(405)
-          .body(
-            equalTo(
-              s"Method Not Allowed"
-            )
-          )
+          .equalsJsonBody("[]")
       }
     }
-
     "not authenticated should" - {
       "forbid access" in {
         given()
           .when()
-          .basicAuth("unknown-user", "wrong-password")
+          .basicAuthUnknownUser()
           .get(s"$nuDesignerHttpAddress/api/notification")
           .Then()
           .statusCode(401)

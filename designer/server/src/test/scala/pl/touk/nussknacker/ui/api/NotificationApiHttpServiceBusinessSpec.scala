@@ -5,14 +5,13 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.test.{
-  NuRestAssureExtensions,
-  NuRestAssureMatchers,
-  PatientScalaFutures,
-  RestAssuredVerboseLogging
-}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.config.{
+  WithMockableDeploymentManager,
+  WithSimplifiedConfigRestAssuredUsersExtensions,
+  WithSimplifiedDesignerConfig
+}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 
 class NotificationApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -20,90 +19,65 @@ class NotificationApiHttpServiceBusinessSpec
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with WithMockableDeploymentManager
-    with NuRestAssureExtensions
+    with WithSimplifiedConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
 
-  "The endpoint for getting notifications when" - {
-    "authenticated should" - {
-      "return empty list if no notifications are present" in {
-        given()
-          .basicAuth("admin", "admin")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/notifications")
-          .Then()
-          .statusCode(200)
-          .body(
-            equalTo("[]")
-          )
-      }
-      "return a list of notifications" in {
-        given()
-          .basicAuth("admin", "admin")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/notifications")
-          .Then()
-          .statusCode(200)
-          .body(
-            equalTo("[]")
-          )
-
-        val scenarioName = ProcessName("canceled-scenario-01")
-
-        given()
-          .applicationState {
-            createDeployedCanceledExampleScenario(scenarioName)
-          }
-          .basicAuth("admin", "admin")
-          .when()
-          .get(s"$nuDesignerHttpAddress/api/notifications")
-          .Then()
-          .statusCode(200)
-          .body(
-            matchJsonWithRegexValues(
-              s"""[{
-                 |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                 |  "scenarioName": "$scenarioName",
-                 |  "message": "Deployment finished",
-                 |  "type": null,
-                 |  "toRefresh": [ "versions", "activity", "state" ]
-                 |},
-                 |{
-                 |   "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                 |   "scenarioName": "$scenarioName",
-                 |   "message": "Cancel finished",
-                 |   "type": null,
-                 |   "toRefresh": [ "versions", "activity", "state" ]
-                 |}]""".stripMargin
-            )
-          )
-      }
-      "return 405 when invalid HTTP method is passed" in {
-        given()
-          .when()
-          .basicAuth("admin", "admin")
-          .put(s"$nuDesignerHttpAddress/api/notifications")
-          .Then()
-          .statusCode(405)
-          .body(
-            equalTo(
-              s"Method Not Allowed"
-            )
-          )
-      }
+  "The endpoint for getting notifications should" - {
+    "return empty list if no notifications are present" in {
+      given()
+        .when()
+        .basicAuthAdmin()
+        .get(s"$nuDesignerHttpAddress/api/notifications")
+        .Then()
+        .statusCode(200)
+        .body(
+          equalTo("[]")
+        )
     }
-
-    "not authenticated should" - {
-      "forbid access" in {
-        given()
-          .when()
-          .basicAuth("unknown-user", "wrong-password")
-          .get(s"$nuDesignerHttpAddress/api/notification")
-          .Then()
-          .statusCode(401)
-          .body(equalTo("The supplied authentication is invalid"))
-      }
+    "return a list of notifications" in {
+      val scenarioName = ProcessName("canceled-scenario-01")
+      given()
+        .applicationState {
+          createDeployedCanceledExampleScenario(scenarioName)
+        }
+        .when()
+        .basicAuthAdmin()
+        .get(s"$nuDesignerHttpAddress/api/notifications")
+        .Then()
+        .statusCode(200)
+        .body(
+          matchJsonWithRegexValues(
+            s"""[{
+               |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |  "scenarioName": "$scenarioName",
+               |  "message": "Deployment finished",
+               |  "type": null,
+               |  "toRefresh": [ "versions", "activity", "state" ]
+               |},
+               |{
+               |   "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+               |   "scenarioName": "$scenarioName",
+               |   "message": "Cancel finished",
+               |   "type": null,
+               |   "toRefresh": [ "versions", "activity", "state" ]
+               |}]""".stripMargin
+          )
+        )
+    }
+    "return 405 when an invalid HTTP method is passed" in {
+      given()
+        .when()
+        .basicAuthAdmin()
+        .put(s"$nuDesignerHttpAddress/api/notifications")
+        .Then()
+        .statusCode(405)
+        .body(
+          equalTo(
+            s"Method Not Allowed"
+          )
+        )
     }
   }
 
