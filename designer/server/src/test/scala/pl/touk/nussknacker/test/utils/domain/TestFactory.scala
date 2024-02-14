@@ -23,7 +23,12 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService, ScenarioParametersWithEngineSetupErrors, ValueWithRestriction}
+import pl.touk.nussknacker.ui.process.processingtype.{
+  ProcessingTypeDataProvider,
+  ScenarioParametersService,
+  ScenarioParametersWithEngineSetupErrors,
+  ValueWithRestriction
+}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver

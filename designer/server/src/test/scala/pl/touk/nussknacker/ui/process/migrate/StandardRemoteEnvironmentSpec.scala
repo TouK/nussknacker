@@ -18,12 +18,12 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{sampleFragmentName, sampleProcessName, validProcess}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
-import pl.touk.nussknacker.test.utils.scalas.FutureExtensions
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
+import pl.touk.nussknacker.test.utils.scalas.FutureExtensions
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -31,8 +31,8 @@ import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 class StandardRemoteEnvironmentSpec
     extends AnyFlatSpec

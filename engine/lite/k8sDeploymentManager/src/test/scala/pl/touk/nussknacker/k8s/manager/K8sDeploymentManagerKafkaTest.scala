@@ -40,7 +40,7 @@ class K8sDeploymentManagerKafkaTest
     with LazyLogging {
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-  private lazy val kafka = new KafkaK8sSupport(k8s)
+  private lazy val kafka                                    = new KafkaK8sSupport(k8s)
 
   test("deployment of kafka ping-pong") {
     val f = createKafkaFixture()
