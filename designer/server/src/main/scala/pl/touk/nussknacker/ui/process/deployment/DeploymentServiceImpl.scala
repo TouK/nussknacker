@@ -494,7 +494,9 @@ class DeploymentServiceImpl(
             value
           case CompletedByTimeout(value) =>
             logger
-              .warn(s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name}")
+              .warn(
+                s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name} with policy: $freshnessPolicy"
+              )
             value
         }
       }
