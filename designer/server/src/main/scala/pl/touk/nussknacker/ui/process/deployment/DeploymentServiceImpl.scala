@@ -493,7 +493,6 @@ class DeploymentServiceImpl(
           case CompletedNormally(value) =>
             value
           case CompletedByTimeout(value) =>
-            logger.trace(s"Checking fetching scenario state ${processIdWithName.name} with policy $freshnessPolicy")
             logger
               .warn(
                 s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name} with policy: $freshnessPolicy"
