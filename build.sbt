@@ -187,7 +187,7 @@ lazy val commonSettings =
         "-deprecation",
         "-encoding",
         "utf8",
-//        "-Xfatal-warnings",
+        "-Xfatal-warnings",
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
@@ -710,16 +710,15 @@ lazy val flinkTests = (project in flink("tests"))
     }
   )
   .dependsOn(
-    defaultModel           % "test",
-    flinkExecutor          % "test",
-    flinkKafkaComponents   % "test",
-    flinkBaseComponents    % "test",
-    flinkTestUtils         % "test",
-    kafkaTestUtils         % "test",
-    flinkComponentsTestkit % "test",
+    defaultModel         % "test",
+    flinkExecutor        % "test",
+    flinkKafkaComponents % "test",
+    flinkBaseComponents  % "test",
+    flinkTestUtils       % "test",
+    kafkaTestUtils       % "test",
     // for local development
-    designer               % "test",
-    deploymentManagerApi   % "test"
+    designer             % "test",
+    deploymentManagerApi % "test"
   )
 
 lazy val defaultModel = (project in (file("defaultModel")))
