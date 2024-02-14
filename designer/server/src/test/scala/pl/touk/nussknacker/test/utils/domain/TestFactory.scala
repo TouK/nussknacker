@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
@@ -23,7 +24,12 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService, ScenarioParametersWithEngineSetupErrors, ValueWithRestriction}
+import pl.touk.nussknacker.ui.process.processingtype.{
+  ProcessingTypeDataProvider,
+  ScenarioParametersService,
+  ScenarioParametersWithEngineSetupErrors,
+  ValueWithRestriction
+}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -191,7 +197,7 @@ object TestFactory {
   def mapProcessingTypeDataProvider[T](data: (String, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
     ProcessingTypeDataProvider.withEmptyCombinedData(
-      data.toMap.map { case (k, v) => (k, ValueWithRestriction.anyUser(v)) }
+      Map(data: _*).mapValuesNow(ValueWithRestriction.anyUser)
     )
   }
 

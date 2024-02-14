@@ -20,7 +20,6 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.higherKinds
 
 object MockFetchingProcessRepository {
 
