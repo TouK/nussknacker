@@ -17,16 +17,16 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestCategories, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
   sampleFragment,
   sampleFragmentName,
   sampleProcessName,
   validProcess
 }
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil._
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter

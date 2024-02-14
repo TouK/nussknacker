@@ -18,15 +18,11 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{
-  MockDeploymentManager,
-  ProcessTestData,
-  StubFragmentRepository,
-  TestProcessingTypes
-}
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.security.api.AdminUser
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

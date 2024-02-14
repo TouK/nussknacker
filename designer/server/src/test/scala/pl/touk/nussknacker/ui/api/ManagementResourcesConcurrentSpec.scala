@@ -9,7 +9,8 @@ import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 
 import scala.jdk.CollectionConverters._
 

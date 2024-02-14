@@ -19,19 +19,14 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
+import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, MockManagerProvider, TestFactory}
-import pl.touk.nussknacker.ui.component.ComponentModelData._
-import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
-import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
-import pl.touk.nussknacker.ui.component.{
-  ComponentFraudTestConfigCreator,
-  ComponentMarketingTestConfigCreator,
-  DynamicComponentProvider,
-  WronglyConfiguredConfigCreator
-}
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil._
+import pl.touk.nussknacker.test.utils.domain.TestProcessingTypes._
+import ComponentModelData._
+import ComponentTestProcessData._
+import DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider

@@ -9,15 +9,16 @@ import org.scalatest.matchers.must.Matchers.contain
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.utils.domain.NuTestScenarioManager
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.utils.domain.TestCategories.Category1
+import pl.touk.nussknacker.test.utils.domain.TestProcessingTypes.Streaming
 
 class ComponentApiSpec
     extends AnyFreeSpecLike

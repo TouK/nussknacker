@@ -22,8 +22,10 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.mock.MockDeploymentManager
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity

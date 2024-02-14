@@ -6,8 +6,9 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.sampleFragmentName
-import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.sampleFragmentName
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 import scala.language.higherKinds

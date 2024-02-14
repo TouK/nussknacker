@@ -6,7 +6,6 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.http.HttpStatus
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.LoneElement._
 import org.scalatest._
@@ -20,10 +19,10 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
-import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.api.helpers.spel._
+import pl.touk.nussknacker.test.base.it.{NuResourcesTest, StateJson}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
+import pl.touk.nussknacker.test.utils.domain.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
@@ -34,7 +33,6 @@ import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, T
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
-import scala.language.higherKinds
 
 /**
  * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb.
@@ -51,11 +49,10 @@ class ProcessesResourcesSpec
     with BeforeAndAfterAll
     with NuResourcesTest {
 
-  import ProcessesQueryEnrichments.RichProcessesQuery
-  import TestCategories._
   import io.circe._
   import io.circe.parser._
-  import io.circe.generic.auto._
+  import pl.touk.nussknacker.test.base.it.ProcessesQueryEnrichments.RichProcessesQuery
+  import pl.touk.nussknacker.test.utils.domain.TestCategories._
 
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
@@ -123,9 +120,9 @@ class ProcessesResourcesSpec
   }
 
   test("spel template expression is validated properly") {
-    createDeployedScenario(SampleSpelTemplateProcess.process)
+    createDeployedScenario(ProcessTestData.sampleSpelTemplateProcess)
 
-    Get(s"/processes/${SampleSpelTemplateProcess.processName}") ~> routeWithRead ~> check {
+    Get(s"/processes/${ProcessTestData.sampleSpelTemplateProcess.name.value}") ~> routeWithRead ~> check {
       val newProcessDetails = responseAs[ScenarioWithDetails]
       newProcessDetails.processVersionId shouldBe VersionId.initialVersionId
 

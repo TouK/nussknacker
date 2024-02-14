@@ -14,11 +14,13 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{existingSinkFactory, existingSourceFactory}
+import pl.touk.nussknacker.test.utils.domain.TestCategories.Category1
+import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.utils.domain.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
@@ -30,7 +32,6 @@ import pl.touk.nussknacker.ui.process.repository.{
   ScenarioWithDetailsEntity
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DBIOActionValues
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import java.time.temporal.ChronoUnit
