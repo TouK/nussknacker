@@ -82,10 +82,10 @@ class ComponentApiHttpServiceBusinessSpec
                |  "nodesUsagesData": [ { "nodeId": "source", "type": "ScenarioUsageData" } ],
                |  "isFragment": false,
                |  "processCategory": "${Category1.stringify}",
-               |  "modificationDate": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{3,6}Z$$",
-               |  "modifiedAt": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{3,6}Z$$",
+               |  "modificationDate": "${regexes.zuluDateRegex}",
+               |  "modifiedAt": "${regexes.zuluDateRegex}",
                |  "modifiedBy": "admin",
-               |  "createdAt": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{3,6}Z$$",
+               |  "createdAt": "${regexes.zuluDateRegex}",
                |  "createdBy": "admin",
                |  "lastAction": null
                |}]""".stripMargin
