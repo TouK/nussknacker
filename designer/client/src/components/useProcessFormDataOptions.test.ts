@@ -66,7 +66,44 @@ describe("useProcessFormDataOptions", () => {
         );
 
         expect(result.current).toEqual({
-            categories: ["Category1", "Category2", "Default"],
+            categories: [
+                {
+                    disabled: true,
+                    value: "RequestResponse",
+                },
+                {
+                    disabled: true,
+                    value: "RequestResponseK8s",
+                },
+                {
+                    disabled: false,
+                    value: "Category1",
+                },
+                {
+                    disabled: false,
+                    value: "Category2",
+                },
+                {
+                    disabled: false,
+                    value: "Default",
+                },
+                {
+                    disabled: true,
+                    value: "DevelopmentTests",
+                },
+                {
+                    disabled: true,
+                    value: "Periodic",
+                },
+                {
+                    disabled: true,
+                    value: "StreamingLite",
+                },
+                {
+                    disabled: true,
+                    value: "StreamingLiteK8s",
+                },
+            ],
             engines: ["Flink"],
             isEngineFieldVisible: false,
             processingModes: ["Unbounded-Stream"],
@@ -80,7 +117,44 @@ describe("useProcessFormDataOptions", () => {
         rerender();
 
         expect(result.current).toEqual({
-            categories: ["Category1", "Category2", "Default", "DevelopmentTests", "Periodic", "StreamingLite", "StreamingLiteK8s"],
+            categories: [
+                {
+                    disabled: true,
+                    value: "RequestResponse",
+                },
+                {
+                    disabled: true,
+                    value: "RequestResponseK8s",
+                },
+                {
+                    disabled: false,
+                    value: "Category1",
+                },
+                {
+                    disabled: false,
+                    value: "Category2",
+                },
+                {
+                    disabled: false,
+                    value: "Default",
+                },
+                {
+                    disabled: false,
+                    value: "DevelopmentTests",
+                },
+                {
+                    disabled: false,
+                    value: "Periodic",
+                },
+                {
+                    disabled: false,
+                    value: "StreamingLite",
+                },
+                {
+                    disabled: false,
+                    value: "StreamingLiteK8s",
+                },
+            ],
             engines: ["Flink"],
             isEngineFieldVisible: false,
             processingModes: ["Unbounded-Stream"],
@@ -94,15 +168,42 @@ describe("useProcessFormDataOptions", () => {
 
         expect(result.current).toEqual({
             categories: [
-                "RequestResponse",
-                "RequestResponseK8s",
-                "Category1",
-                "Category2",
-                "Default",
-                "DevelopmentTests",
-                "Periodic",
-                "StreamingLite",
-                "StreamingLiteK8s",
+                {
+                    disabled: false,
+                    value: "RequestResponse",
+                },
+                {
+                    disabled: false,
+                    value: "RequestResponseK8s",
+                },
+                {
+                    disabled: false,
+                    value: "Category1",
+                },
+                {
+                    disabled: false,
+                    value: "Category2",
+                },
+                {
+                    disabled: false,
+                    value: "Default",
+                },
+                {
+                    disabled: false,
+                    value: "DevelopmentTests",
+                },
+                {
+                    disabled: false,
+                    value: "Periodic",
+                },
+                {
+                    disabled: false,
+                    value: "StreamingLite",
+                },
+                {
+                    disabled: false,
+                    value: "StreamingLiteK8s",
+                },
             ],
             engines: ["Flink"],
             isEngineFieldVisible: false,
@@ -115,15 +216,42 @@ describe("useProcessFormDataOptions", () => {
 
         expect(result.current).toEqual({
             categories: [
-                "RequestResponse",
-                "RequestResponseK8s",
-                "Category1",
-                "Category2",
-                "Default",
-                "DevelopmentTests",
-                "Periodic",
-                "StreamingLite",
-                "StreamingLiteK8s",
+                {
+                    disabled: false,
+                    value: "RequestResponse",
+                },
+                {
+                    disabled: false,
+                    value: "RequestResponseK8s",
+                },
+                {
+                    disabled: false,
+                    value: "Category1",
+                },
+                {
+                    disabled: false,
+                    value: "Category2",
+                },
+                {
+                    disabled: false,
+                    value: "Default",
+                },
+                {
+                    disabled: false,
+                    value: "DevelopmentTests",
+                },
+                {
+                    disabled: false,
+                    value: "Periodic",
+                },
+                {
+                    disabled: false,
+                    value: "StreamingLite",
+                },
+                {
+                    disabled: false,
+                    value: "StreamingLiteK8s",
+                },
             ],
             engines: ["Lite Embedded", "Lite K8s", "Flink", "Development Tests", "Dev Periodic"],
             isEngineFieldVisible: false,
@@ -137,7 +265,44 @@ describe("useProcessFormDataOptions", () => {
         rerender();
 
         expect(result.current).toEqual({
-            categories: ["RequestResponse", "RequestResponseK8s"],
+            categories: [
+                {
+                    disabled: false,
+                    value: "RequestResponse",
+                },
+                {
+                    disabled: false,
+                    value: "RequestResponseK8s",
+                },
+                {
+                    disabled: true,
+                    value: "Category1",
+                },
+                {
+                    disabled: true,
+                    value: "Category2",
+                },
+                {
+                    disabled: true,
+                    value: "Default",
+                },
+                {
+                    disabled: true,
+                    value: "DevelopmentTests",
+                },
+                {
+                    disabled: true,
+                    value: "Periodic",
+                },
+                {
+                    disabled: true,
+                    value: "StreamingLite",
+                },
+                {
+                    disabled: true,
+                    value: "StreamingLiteK8s",
+                },
+            ],
             engines: ["Lite Embedded", "Lite K8s"],
             isEngineFieldVisible: false,
             processingModes: ["Request-Response", "Unbounded-Stream"],
@@ -166,7 +331,16 @@ describe("useProcessFormDataOptions", () => {
         );
 
         expect(result.current).toEqual({
-            categories: ["Category1", "Category2"],
+            categories: [
+                {
+                    disabled: false,
+                    value: "Category1",
+                },
+                {
+                    disabled: false,
+                    value: "Category2",
+                },
+            ],
             engines: ["Engine1", "Engine2"],
             isEngineFieldVisible: true,
             processingModes: ["Unbounded-Stream", "Bounded-Stream"],
@@ -194,7 +368,16 @@ describe("useProcessFormDataOptions", () => {
         );
 
         expect(result.current).toEqual({
-            categories: ["Category1", "Category2"],
+            categories: [
+                {
+                    disabled: false,
+                    value: "Category1",
+                },
+                {
+                    disabled: false,
+                    value: "Category2",
+                },
+            ],
             engines: ["Engine1", "Engine2"],
             isEngineFieldVisible: false,
             processingModes: ["Unbounded-Stream", "Bounded-Stream"],

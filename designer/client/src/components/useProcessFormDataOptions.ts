@@ -1,6 +1,6 @@
 import { FormValue } from "./AddProcessForm";
 import { useMemo } from "react";
-import { groupBy, map, some, uniq, uniqBy } from "lodash";
+import { every, groupBy, map, some, uniq, uniqBy } from "lodash";
 import { ScenarioParametersCombination } from "../http/HttpService";
 
 const getFilteredValues = (allCombinations: ScenarioParametersCombination[], value: Partial<FormValue>) => {
@@ -26,12 +26,21 @@ interface Props {
 
 export const useProcessFormDataOptions = ({ allCombinations, value }: Props) => {
     const categories = useMemo(() => {
-        const filteredValues = getFilteredValues(allCombinations, {
-            processingMode: value.processingMode,
-            processEngine: value.processEngine,
-        });
+        const allCategories = uniq(map(getFilteredValues(allCombinations, {}), "category"));
+        const availableCategories = uniq(
+            map(
+                getFilteredValues(allCombinations, {
+                    processingMode: value.processingMode,
+                    processEngine: value.processEngine,
+                }),
+                "category",
+            ),
+        );
 
-        return uniq(map(filteredValues, "category"));
+        return map(allCategories, (category) => ({
+            value: category,
+            disabled: every(availableCategories, (availableCategory) => availableCategory !== category),
+        }));
     }, [allCombinations, value.processEngine, value.processingMode]);
 
     const engines = useMemo(() => {

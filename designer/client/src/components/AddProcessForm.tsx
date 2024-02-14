@@ -13,12 +13,14 @@ import BatchIcon from "../assets/img/batch.svg";
 import { CustomRadio } from "./customRadio/CustomRadio";
 import { ProcessingMode } from "../http/HttpService";
 import { NodeValidationError } from "../types";
+import NodeTip from "./graph/node-modal/NodeTip";
+import InfoIcon from "@mui/icons-material/Info";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
     validationErrors: NodeValidationError[];
-    categories: string[];
+    categories: { value: string; disabled: boolean }[];
     processingModes: ProcessingMode[];
     engines: string[] | undefined;
 }
@@ -122,9 +124,9 @@ export function AddProcessForm({
                         >
                             <>
                                 <option value={""}></option>
-                                {categories.map((category, index) => (
-                                    <option key={index} value={category}>
-                                        {category}
+                                {categories.map(({ value, disabled }, index) => (
+                                    <option key={index} value={value} disabled={disabled}>
+                                        {value}
                                     </option>
                                 ))}
                             </>
