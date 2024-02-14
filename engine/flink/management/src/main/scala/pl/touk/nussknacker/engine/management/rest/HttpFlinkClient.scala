@@ -79,7 +79,6 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
   def findJobsByName(
       jobName: String
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[JobOverview]]] = {
-    logger.trace(s"Checking fetching scenario $jobName state")
     basicRequest
       .readTimeout(config.scenarioStateRequestTimeout)
       .get(flinkUrl.addPath("jobs", "overview"))
@@ -93,7 +92,10 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
           .reverse
       }
       .map(WithDataFreshnessStatus.fresh)
-      .recoverWith(recoverWithMessage("retrieve Flink jobs"))
+      .recoverWith {
+        logger.trace(s"Checking fetching scenario state $jobName with policy $freshnessPolicy")
+        recoverWithMessage("retrieve Flink jobs")
+      }
   }
 
   def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
