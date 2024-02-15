@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.integration
 
-import com.typesafe.config.Config
 import io.circe.Json.{Null, arr, fromFields, fromString, obj}
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Json, JsonObject}
@@ -11,8 +10,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -31,15 +30,21 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
+import pl.touk.nussknacker.test.base.it.NuItTest
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.{NodeValidationRequest, ScenarioValidationRequest}
-import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, SecurityHeadersSupport}
+import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
 import sttp.client3.circe.asJson
 import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{Header, MediaType, StatusCode}
@@ -52,6 +57,7 @@ import scala.util.Properties
 class BaseFlowTest
     extends AnyFunSuiteLike
     with NuItTest
+    with WithSimplifiedDesignerConfig
     with WithTestHttpClient
     with Matchers
     with OptionValues
@@ -64,14 +70,12 @@ class BaseFlowTest
   // currently we delete file in beforeAll, because it's used *also* in initialization...
   val dynamicServiceFile = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
-  override def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfig
-
   override def beforeAll(): Unit = {
     super.beforeAll()
     dynamicServiceFile.delete()
   }
 
-  override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     dynamicServiceFile.delete()
     super.afterAll()
   }
@@ -90,7 +94,7 @@ class BaseFlowTest
   test("ensure components definition is enriched with components config") {
     val response = httpClient.send(
       quickRequest
-        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/streaming?isFragment=false")
+        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}?isFragment=false")
         .auth
         .basic("admin", "admin")
     )
@@ -242,7 +246,7 @@ class BaseFlowTest
   test("ensure scenario properties config is properly applied") {
     val response = httpClient.send(
       quickRequest
-        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/streaming?isFragment=false")
+        .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}?isFragment=false")
         .auth
         .basic("admin", "admin")
     )
@@ -318,7 +322,7 @@ class BaseFlowTest
       quickRequest
         .put(uri"$nuDesignerHttpAddress/api/processes/$processId")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJsonAsProcessToSave(scenarioGraph).spaces2)
+        .body(scenarioGraph.toJsonAsProcessToSave.spaces2)
         .auth
         .basic("admin", "admin")
         .response(asJson[ValidationResult])
@@ -365,7 +369,7 @@ class BaseFlowTest
         .multipartBody(
           sttpPrepareMultiParts(
             "testData"      -> testDataContent,
-            "scenarioGraph" -> TestProcessUtil.toJson(process).noSpaces
+            "scenarioGraph" -> toJson(process).noSpaces
           )()
         )
         .auth
@@ -409,11 +413,11 @@ class BaseFlowTest
 
     def dynamicServiceParameters: Option[List[String]] = {
       val request = NodeValidationRequest(
-        Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)),
-        ProcessProperties(StreamMetaData()),
-        Map.empty,
-        None,
-        None
+        nodeData = Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)),
+        processProperties = ProcessProperties(StreamMetaData()),
+        variableTypes = Map.empty,
+        branchVariableTypes = None,
+        outgoingEdges = None
       )
 
       val response = httpClient.send(
@@ -435,7 +439,8 @@ class BaseFlowTest
     val beforeReload2 = generationTime
     beforeReload shouldBe beforeReload2
     // process without errors - no parameter required
-    saveProcess(processWithService()).errors shouldBe ValidationErrors.success
+    val saveProcessResult = saveProcess(processWithService())
+    saveProcessResult.errors shouldBe ValidationErrors.success
     val dynamicServiceParametersBeforeReload = dynamicServiceParameters
     val testDataContent                      = """{"sourceId":"start","record":"field1|field2"}"""
 
@@ -504,14 +509,16 @@ class BaseFlowTest
   private def createProcess(name: ProcessName) = {
     val createCommand = CreateScenarioCommand(
       name,
-      Some(TestCategories.Category1),
+      Some(Category1.stringify),
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
       forwardedUserName = None
     )
     val response = httpClient.send(
-      quickRequest.auth
+      quickRequest
+        .post(uri"$nuDesignerHttpAddress/api/processes/${name.value}/${Category1.stringify}?isFragment=false")
+        .auth
         .basic("admin", "admin")
         .post(uri"$nuDesignerHttpAddress/api/processes")
         .contentType(MediaType.ApplicationJson)
@@ -527,7 +534,7 @@ class BaseFlowTest
         .basic("admin", "admin")
         .put(uri"$nuDesignerHttpAddress/api/processes/$processId")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJsonAsProcessToSave(process).spaces2)
+        .body(process.toJsonAsProcessToSave.spaces2)
         .response(asJson[ValidationResult])
     )
     response.code shouldEqual StatusCode.Ok
