@@ -9,12 +9,14 @@ import pl.touk.nussknacker.security.AesCrypter
 import sttp.capabilities
 import sttp.capabilities.akka.AkkaStreams
 import sttp.model.StatusCode
+import sttp.monad.MonadError
 import sttp.tapir.EndpointIO.Header
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.akkahttp.{AkkaHttpServerInterpreter, AkkaHttpServerOptions}
 import sttp.tapir.server.interceptor._
 import sttp.tapir.server.interceptor.decodefailure.DefaultDecodeFailureHandler
 import sttp.tapir.server.interceptor.exception.{ExceptionContext, ExceptionHandler}
+import sttp.tapir.server.interceptor.reject.RejectHandler
 import sttp.tapir.server.model.ValuedEndpointOutput
 import sttp.tapir.{DecodeResult, statusCode, stringBody}
 
@@ -27,7 +29,7 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(anonymousAccessEnabled: Boolea
 
   override def toRoute(ses: List[ServerEndpoint[AkkaStreams with capabilities.WebSockets, Future]]): Route = {
     if (anonymousAccessEnabled) {
-      super.toRoute(ses).withAnonymousAccessFallbackOnMissingCredentials()
+      super.toRoute(ses) // .withAnonymousAccessFallbackOnMissingCredentials()
     } else {
       super.toRoute(ses)
     }
@@ -40,6 +42,13 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(anonymousAccessEnabled: Boolea
     AkkaHttpServerOptions.customiseInterceptors
       .decodeFailureHandler(customDecodeFailureHandler)
       .exceptionHandler(customExceptionHandler)
+      .rejectHandler(new RejectHandler[Future] {
+
+        override def apply(
+            failure: RequestResult.Failure
+        )(implicit monad: MonadError[Future]): Future[Option[ValuedEndpointOutput[_]]] = ???
+
+      })
       .options
 
   private lazy val customDecodeFailureHandler = {
