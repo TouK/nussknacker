@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
-import pl.touk.nussknacker.test.utils.domain.TestProcessingTypes
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import shapeless.syntax.typeable.typeableOps
 import sttp.client3.testing.SttpBackendStub
 
@@ -26,6 +26,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
 
+// DEPRECATED!!! Use `WithMockableDeploymentManager` trait and `MockableDeploymentManager` instead
 object MockDeploymentManager {
   val savepointPath     = "savepoints/123-savepoint"
   val stopSavepointPath = "savepoints/246-stop-savepoint"
@@ -39,7 +40,7 @@ class MockDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
         TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-        DesignerWideComponentId.default(TestProcessingTypes.Streaming, _),
+        DesignerWideComponentId.default(Streaming.stringify, _),
         workingDirectoryOpt = None,
         skipComponentProvidersLoadedFromAppClassloader = false
       ),

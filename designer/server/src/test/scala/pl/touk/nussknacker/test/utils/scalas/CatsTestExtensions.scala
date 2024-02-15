@@ -3,9 +3,9 @@ package pl.touk.nussknacker.test.utils.scalas
 import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}
 
-object CatsTestExtensions {
+trait CatsTestExtensions {
 
-  implicit class IOBasedResourceRun[T](val resource: Resource[IO, T]) extends AnyVal {
+  implicit class IOBasedResourceRun[T](val resource: Resource[IO, T]) {
 
     def run(): T = {
       resource.use(value => IO.pure(value)).unsafeRunSync()
@@ -15,3 +15,5 @@ object CatsTestExtensions {
 
   def eval[T](resource: Resource[IO, T]): T = resource.run()
 }
+
+object CatsTestExtensions extends CatsTestExtensions

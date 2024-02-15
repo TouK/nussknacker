@@ -8,10 +8,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withAllPermissions
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -26,10 +27,8 @@ class ProcessesChangeListenerSpec
     with BeforeAndAfterAll
     with NuResourcesTest {
 
-  import pl.touk.nussknacker.test.utils.domain.TestCategories._
-
   private val routeWithAllPermissions = withAllPermissions(processesRoute)
-  implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testCategory)
+  implicit val loggedUser: LoggedUser = createLoggedUser("1", "lu", Permission.ALL_PERMISSIONS.toSeq: _*)
 
   private val processName = ProcessTestData.sampleScenario.name
 

@@ -184,8 +184,7 @@ users: [
 rules: [
   {
     role: "Admin"
-    isAdmin: true,
-    categories: ["RequestResponseCategory1"]
+    isAdmin: true
   },
   {
     role: "UserWithAdminTab"

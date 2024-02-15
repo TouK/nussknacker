@@ -18,9 +18,10 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.security.api.AdminUser
 
@@ -262,14 +263,14 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
   }
 
   private def prepareDefinitions(model: ModelData, fragmentScenarios: List[CanonicalProcess]) = {
-    val processingType = TestProcessingTypes.Streaming
+    val processingType = Streaming
 
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         Some(_),
-        DesignerWideComponentId.default(processingType, _)
+        DesignerWideComponentId.default(processingType.stringify, _)
       ),
       model.modelDefinition
     )
@@ -281,9 +282,9 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       deploymentManager = new MockDeploymentManager,
       alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
-        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType),
-      fragmentRepository = new StubFragmentRepository(Map(processingType -> fragmentScenarios))
-    ).prepareUIDefinitions(processingType, forFragment = false)(AdminUser("admin", "admin")).futureValue
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType.stringify),
+      fragmentRepository = new StubFragmentRepository(Map(processingType.stringify -> fragmentScenarios))
+    ).prepareUIDefinitions(processingType.stringify, forFragment = false)(AdminUser("admin", "admin")).futureValue
   }
 
 }

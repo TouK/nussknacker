@@ -19,18 +19,17 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
 import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
-import pl.touk.nussknacker.test.utils.domain.TestProcessUtil._
-import pl.touk.nussknacker.test.utils.domain.TestProcessingTypes._
-import ComponentModelData._
-import ComponentTestProcessData._
-import DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
+import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.process.DBProcessService
+import pl.touk.nussknacker.ui.definition.component.ComponentTestProcessData._
+import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeData,
@@ -338,7 +337,7 @@ class DefaultComponentServiceSpec
   private val fragmentMarketingComponents: List[ComponentListElement] = {
     val cat                     = CategoryMarketing
     val componentId             = ComponentId(Fragment, cat)
-    val designerWideComponentId = cid(Streaming, componentId)
+    val designerWideComponentId = cid(ProcessingTypeStreaming, componentId)
     val icon                    = DefaultsComponentIcon.fromComponentId(componentId, None)
     val links                   = createLinks(designerWideComponentId, componentId)
     List(ComponentListElement(designerWideComponentId, cat, icon, Fragment, FragmentsGroupName, List(cat), links, 0))
@@ -347,7 +346,7 @@ class DefaultComponentServiceSpec
   private val fragmentFraudComponents: List[ComponentListElement] = {
     val cat                     = CategoryFraud
     val componentId             = ComponentId(Fragment, cat)
-    val designerWideComponentId = cid(Fraud, componentId)
+    val designerWideComponentId = cid(ProcessingTypeFraud, componentId)
     val links                   = createLinks(designerWideComponentId, componentId)
     List(
       ComponentListElement(
@@ -372,7 +371,14 @@ class DefaultComponentServiceSpec
       componentGroupName: ComponentGroupName,
       designerWideComponentId: Option[DesignerWideComponentId] = None
   )(implicit user: LoggedUser) =
-    createComponent(Streaming, componentId, icon, componentGroupName, List(CategoryMarketing), designerWideComponentId)
+    createComponent(
+      ProcessingTypeStreaming,
+      componentId,
+      icon,
+      componentGroupName,
+      List(CategoryMarketing),
+      designerWideComponentId
+    )
 
   private def fraudComponent(
       componentId: ComponentId,
@@ -380,7 +386,14 @@ class DefaultComponentServiceSpec
       componentGroupName: ComponentGroupName,
       designerWideComponentId: Option[DesignerWideComponentId] = None
   )(implicit user: LoggedUser) =
-    createComponent(Fraud, componentId, icon, componentGroupName, List(CategoryFraud), designerWideComponentId)
+    createComponent(
+      ProcessingTypeFraud,
+      componentId,
+      icon,
+      componentGroupName,
+      List(CategoryFraud),
+      designerWideComponentId
+    )
 
   private def createComponent(
       processingType: String,
@@ -458,31 +471,35 @@ class DefaultComponentServiceSpec
 
   private lazy val admin = TestFactory.adminUser()
 
-  private val marketingUser = TestFactory.userWithCategoriesReadPermission(
+  private val marketingUser = LoggedUser(
+    id = "1",
     username = "marketingUser",
-    categories = List(CategoryMarketing)
+    categoryPermissions = Map(CategoryMarketing -> Set(Permission.Read))
   )
 
-  private val fraudUser =
-    TestFactory.userWithCategoriesReadPermission(username = "fraudUser", categories = List(CategoryFraud))
+  private val fraudUser = LoggedUser(
+    id = "1",
+    username = "fraudUser",
+    categoryPermissions = Map(CategoryFraud -> Set(Permission.Read))
+  )
 
   private val providerComponents =
     new DynamicComponentProvider()
       .create(ConfigFactory.empty, ProcessObjectDependencies.withConfig(ConfigFactory.empty()))
 
   private val modelDataMap: Map[ProcessingType, (LocalModelData, String)] = Map(
-    Streaming -> (LocalModelData(
+    ProcessingTypeStreaming -> (LocalModelData(
       streamingConfig,
       providerComponents,
       ComponentMarketingTestConfigCreator,
-      determineDesignerWideId = DesignerWideComponentId.default(Streaming, _)
+      determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeStreaming, _)
     ),
     CategoryMarketing),
-    Fraud -> (LocalModelData(
+    ProcessingTypeFraud -> (LocalModelData(
       fraudConfig,
       providerComponents,
       ComponentFraudTestConfigCreator,
-      determineDesignerWideId = DesignerWideComponentId.default(Fraud, _)
+      determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeFraud, _)
     ),
     CategoryFraud)
   )
@@ -568,17 +585,17 @@ class DefaultComponentServiceSpec
   it should "throws exception when components are wrong configured" in {
     import pl.touk.nussknacker.ui.definition.component.WrongConfigurationAttribute._
     val badModelDataMap = Map(
-      Streaming -> (LocalModelData(
+      ProcessingTypeStreaming -> (LocalModelData(
         streamingConfig,
         providerComponents,
         ComponentMarketingTestConfigCreator,
-        determineDesignerWideId = DesignerWideComponentId.default(Streaming, _)
+        determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeStreaming, _)
       ), CategoryMarketing),
-      Fraud -> (LocalModelData(
+      ProcessingTypeFraud -> (LocalModelData(
         wrongConfig,
         providerComponents,
         WronglyConfiguredConfigCreator,
-        determineDesignerWideId = DesignerWideComponentId.default(Fraud, _)
+        determineDesignerWideId = DesignerWideComponentId.default(ProcessingTypeFraud, _)
       ), CategoryFraud)
     )
 
@@ -644,10 +661,10 @@ class DefaultComponentServiceSpec
       FraudFragment
     )
 
-    val fraudNotSharedSourceComponentId      = cid(Fraud, ComponentId(Source, NotSharedSourceName))
-    val fraudCustomerDataEnricherComponentId = cid(Fraud, ComponentId(Service, CustomerDataEnricherName))
+    val fraudNotSharedSourceComponentId      = cid(ProcessingTypeFraud, ComponentId(Source, NotSharedSourceName))
+    val fraudCustomerDataEnricherComponentId = cid(ProcessingTypeFraud, ComponentId(Service, CustomerDataEnricherName))
     val sharedSourceComponentId = DesignerWideComponentId(SharedSourceName) // it's shared id - merged at configs file
-    val fragmentComponentId     = cid(Fraud, ComponentId(Fragment, FraudFragmentName.value))
+    val fragmentComponentId     = cid(ProcessingTypeFraud, ComponentId(Fragment, FraudFragmentName.value))
     val filterComponentId       = bid(BuiltInComponentId.Filter)
 
     val componentService = prepareService(modelDataMap, processes, List(FraudFragment))
