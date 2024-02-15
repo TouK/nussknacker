@@ -72,7 +72,7 @@ class AppApiHttpServiceSecuritySpec
               Map(
                 "id1" -> ProblemStateStatus.FailedToGet,
                 "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)),
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
               )
             )
           }
@@ -102,7 +102,7 @@ class AppApiHttpServiceSecuritySpec
               Map(
                 "id1" -> ProblemStateStatus.FailedToGet,
                 "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)),
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
               )
             )
           }
@@ -157,7 +157,7 @@ class AppApiHttpServiceSecuritySpec
               Map(
                 "id1" -> ProblemStateStatus.FailedToGet,
                 "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)),
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
               )
             )
           }
@@ -252,7 +252,7 @@ class AppApiHttpServiceSecuritySpec
               Map(
                 "id1" -> ProblemStateStatus.FailedToGet,
                 "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)),
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
               )
             )
           }
@@ -280,7 +280,7 @@ class AppApiHttpServiceSecuritySpec
               Map(
                 "id1" -> ProblemStateStatus.FailedToGet,
                 "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)),
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
               )
             )
           }
@@ -307,7 +307,7 @@ class AppApiHttpServiceSecuritySpec
               Map(
                 "id1" -> ProblemStateStatus.FailedToGet,
                 "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)),
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
               )
             )
           }
@@ -328,7 +328,7 @@ class AppApiHttpServiceSecuritySpec
               Map(
                 "id1" -> ProblemStateStatus.FailedToGet,
                 "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)),
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
               )
             )
           }
@@ -352,7 +352,7 @@ class AppApiHttpServiceSecuritySpec
               Map(
                 "id1" -> ProblemStateStatus.FailedToGet,
                 "id2" -> SimpleStateStatus.Running,
-                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)),
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
               )
             )
           }
