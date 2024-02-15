@@ -4,13 +4,15 @@ import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
 
 /**
- * Trait allowing the provision of UI configuration for components and scenario properties, without requiring a model reload.
+ * Trait allowing the provision of UI configuration for components and scenario properties.
  */
 trait AdditionalUIConfigProvider extends Serializable {
 
+  // Takes effect after model reload.
   def getAllForProcessingType(processingType: String): Map[DesignerWideComponentId, ComponentAdditionalConfig]
 
-  // `ScenarioPropertyConfig.validators` does nothing (only usage goes to createUIScenarioPropertyConfig)
+  // `ScenarioPropertyConfig.validators` currently does nothing (only usage goes to createUIScenarioPropertyConfig)
+  // Takes effect immediately (doesn't require model reload).
   def getScenarioPropertiesUIConfigs(processingType: String): Map[String, ScenarioPropertyConfig]
 
 }
