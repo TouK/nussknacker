@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 
 import scala.jdk.CollectionConverters._
-import scala.language.higherKinds
 
 object CollectTransformer extends CustomStreamTransformer {
 
@@ -47,7 +46,7 @@ class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[
     // TODO: this lazy val is tricky - we should instead assign ContextIdGenerator in open, but we don't have nodeId in open
     lazy val contextIdGenerator = runtimeContext.contextIdGenerator(context.nodeId)
     (inputCtx: DataBatch) =>
-      val outputList = inputCtx.map(inputExpression.evaluate).asJava
+      val outputList = inputCtx.map(inputExpression.evaluator).asJava
       continuation(
         DataBatch(
           Context(contextIdGenerator.nextContextId()).withVariable(outputVariable, outputList) :: Nil

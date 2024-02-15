@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, Co
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
-import pl.touk.nussknacker.engine.compile.nodecompilation.PostponedEvaluatorLazyParameterDeps
+import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreatorDeps
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -60,7 +60,7 @@ class FlinkProcessCompilerData(
 
   def interpreter: Interpreter = compilerData.interpreter
 
-  def lazyParameterDeps: PostponedEvaluatorLazyParameterDeps = PostponedEvaluatorLazyParameterDeps(
+  def lazyParameterDeps: EvaluableLazyParameterCreatorDeps = new EvaluableLazyParameterCreatorDeps(
     compilerData.expressionCompiler,
     compilerData.expressionEvaluator,
     metaData

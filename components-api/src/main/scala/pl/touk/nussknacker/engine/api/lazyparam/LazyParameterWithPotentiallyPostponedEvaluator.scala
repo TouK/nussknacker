@@ -3,75 +3,53 @@ package pl.touk.nussknacker.engine.api.lazyparam
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
 
-/**
-  * Purpose of this trait is to hide the fact, that the real implementation of LazyParameter can has postponed
-  * evaluator's creation.
-  */
-trait LazyParameterWithPotentiallyPostponedEvaluator[+T <: AnyRef] extends LazyParameter[T] {
-
-  override def evaluate(context: Context): T = prepareEvaluator(EmptyParameterDeps)(context)
-
-  def prepareEvaluator(deps: LazyParameterDeps): Context => T
-
-}
-
 private[api] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](
-    arg1: LazyParameterWithPotentiallyPostponedEvaluator[T],
-    arg2: LazyParameterWithPotentiallyPostponedEvaluator[Y]
-) extends LazyParameterWithPotentiallyPostponedEvaluator[(T, Y)] {
+    arg1: LazyParameter[T],
+    arg2: LazyParameter[Y]
+) extends LazyParameter[(T, Y)] {
 
   override def returnType: TypingResult = Typed.genericTypeClass[(T, Y)](List(arg1.returnType, arg2.returnType))
 
-  override def prepareEvaluator(lpi: LazyParameterDeps): Context => (T, Y) = {
-    val arg1Interpreter = arg1.prepareEvaluator(lpi)
-    val arg2Interpreter = arg2.prepareEvaluator(lpi)
-    ctx: Context =>
-      val arg1Value = arg1Interpreter(ctx)
-      val arg2Value = arg2Interpreter(ctx)
-      (arg1Value, arg2Value)
+  override def evaluator: Context => (T, Y) = {
+    val arg1Evaluator = arg1.evaluator
+    val arg2Evaluator = arg2.evaluator
+    ctx: Context => (arg1Evaluator(ctx), arg2Evaluator(ctx))
   }
 
 }
 
 private[api] case class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](
-    args: List[LazyParameterWithPotentiallyPostponedEvaluator[T]],
+    args: List[LazyParameter[T]],
     wrapResult: List[T] => Y,
     wrapReturnType: List[TypingResult] => TypingResult
-) extends LazyParameterWithPotentiallyPostponedEvaluator[Y] {
+) extends LazyParameter[Y] {
 
   override def returnType: TypingResult =
     wrapReturnType(args.map(_.returnType))
 
-  override def prepareEvaluator(lpi: LazyParameterDeps): Context => Y = {
-    val argsInterpreters = args.map(_.prepareEvaluator(lpi))
-    ctx: Context => wrapResult(argsInterpreters.map(_(ctx)))
+  override def evaluator: Context => Y = {
+    val argsEvaluators = args.map(_.evaluator)
+    ctx: Context => wrapResult(argsEvaluators.map(_.apply(ctx)))
   }
 
 }
 
 private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
-    arg: LazyParameterWithPotentiallyPostponedEvaluator[T],
+    arg: LazyParameter[T],
     fun: T => Y,
     transformTypingResult: TypingResult => TypingResult
-) extends LazyParameterWithPotentiallyPostponedEvaluator[Y] {
+) extends LazyParameter[Y] {
 
   override def returnType: TypingResult = transformTypingResult(arg.returnType)
 
-  override def prepareEvaluator(lpi: LazyParameterDeps): Context => Y = {
-    val argInterpreter = arg.prepareEvaluator(lpi)
-    ctx: Context => fun(argInterpreter(ctx))
+  override def evaluator: Context => Y = {
+    val argEvaluator = arg.evaluator
+    ctx: Context => fun(argEvaluator.apply(ctx))
   }
 
 }
 
-private[api] case class FixedLazyParameter[T <: AnyRef](value: T, returnType: TypingResult)
-    extends LazyParameterWithPotentiallyPostponedEvaluator[T] {
+private[api] case class FixedLazyParameter[T <: AnyRef](value: T, returnType: TypingResult) extends LazyParameter[T] {
 
-  override def prepareEvaluator(deps: LazyParameterDeps): Context => T =
-    _ => value
-
+  override def evaluator: Context => T = _ => value
 }
-
-trait LazyParameterDeps
-
-case object EmptyParameterDeps extends LazyParameterDeps

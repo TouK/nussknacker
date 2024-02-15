@@ -131,7 +131,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
           componentUseCase: ComponentUseCase
       ): Future[String] = {
         collector.collect(s"test-service-$value", Option(MockedValued)) {
-          Future.successful(value.evaluate(context))
+          Future.successful(value.evaluator.apply(context))
         }
       }
 

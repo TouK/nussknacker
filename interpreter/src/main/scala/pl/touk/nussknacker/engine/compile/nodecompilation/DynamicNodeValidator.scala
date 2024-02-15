@@ -5,7 +5,7 @@ import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -73,7 +73,7 @@ class DynamicNodeValidator(
     ): ValidatedNel[ProcessCompilationError, TransformationResult] = {
       val transformationStep = component.TransformationStep(
         evaluatedSoFar
-          // unfortunatelly, this cast is needed as we have no easy way to statically check if Parameter definitions
+          // unfortunately, this cast is needed as we have no easy way to statically check if Parameter definitions
           // are branch or not...
           .map(a => (a._1.name, a._2.asInstanceOf[component.DefinedParameter])),
         stateForFar

@@ -32,7 +32,7 @@ class ForEachTransformerComponent(elements: LazyParameter[java.util.Collection[A
       context: CustomComponentContext[F]
   ): DataBatch => F[ResultType[Result]] = { batch =>
     continuation(DataBatch(batch.value.flatMap { ctx =>
-      val partsToRun = elements.evaluate(ctx)
+      val partsToRun = elements.evaluator.apply(ctx)
       partsToRun.asScala.toList.zipWithIndex.map { case (partToRun, index) =>
         ctx.withVariable(outputVariable, partToRun).appendIdSuffix(index.toString)
       }

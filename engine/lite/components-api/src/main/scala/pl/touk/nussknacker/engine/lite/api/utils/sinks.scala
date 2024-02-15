@@ -51,7 +51,7 @@ object sinks {
           implicitly[Monad[F]].pure(
             // FIXME: figure out how to pass componentName here
             withErrors(context, Some(ComponentId(ComponentType.Sink, "unknown")), ctx) {
-              response.evaluate(ctx)
+              response.evaluator.apply(ctx)
             }
           )
       )

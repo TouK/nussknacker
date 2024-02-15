@@ -3,12 +3,10 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.lazyparam.{LazyParameterDeps, LazyParameterWithPotentiallyPostponedEvaluator}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -44,9 +42,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       Typed.genericTypeClass[(AnyRef, AnyRef)](List(Typed.fromDetailedType[Integer], Typed.fromDetailedType[String]))
     tupled.returnType shouldEqual expectedType
 
-    val lazyParameterInterpreter = prepareInterpreter
-    val fun                      = lazyParameterInterpreter.syncInterpretationFunction(tupled)
-    val result                   = fun(Context(""))
+    val result = tupled.evaluator.apply(Context(""))
 
     result shouldEqual (123, "foo")
   }
@@ -56,20 +52,18 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
   ) = {
 
     var invoked = 0
-    val evalParameter = new LazyParameterWithPotentiallyPostponedEvaluator[Integer] {
-      override def prepareEvaluator(
-          deps: LazyParameterDeps
-      ): Context => Integer = {
+    val evalParameter = new LazyParameter[Integer] {
+
+      override def returnType: typing.TypingResult = Typed[Integer]
+
+      override def evaluator: Context => Integer = {
         invoked += 1
         _ => 123
       }
-
-      override def returnType: typing.TypingResult = Typed[Integer]
     }
 
-    val mappedParam              = transform(evalParameter)
-    val lazyParameterInterpreter = prepareInterpreter
-    val fun                      = lazyParameterInterpreter.syncInterpretationFunction(mappedParam)
+    val mappedParam = transform(evalParameter)
+    val fun         = mappedParam.evaluator
     fun(Context(""))
     fun(Context(""))
 
@@ -100,7 +94,9 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
     new DefaultLazyParameterInterpreter(lazyInterpreterDeps)
   }
 
-  def prepareLazyParameterDeps(definitionWithTypes: ModelDefinitionWithClasses): PostponedEvaluatorLazyParameterDeps = {
+  private def prepareLazyParameterDeps(
+      definitionWithTypes: ModelDefinitionWithClasses
+  ): EvaluableLazyParameterCreatorDeps = {
     import definitionWithTypes.modelDefinition
     val expressionEvaluator =
       ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(modelDefinition.expressionConfig))
@@ -110,7 +106,11 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions
     )
-    PostponedEvaluatorLazyParameterDeps(expressionCompiler, expressionEvaluator, MetaData("proc1", StreamMetaData()))
+    new EvaluableLazyParameterCreatorDeps(
+      expressionCompiler,
+      expressionEvaluator,
+      MetaData("proc1", StreamMetaData())
+    )
   }
 
 }

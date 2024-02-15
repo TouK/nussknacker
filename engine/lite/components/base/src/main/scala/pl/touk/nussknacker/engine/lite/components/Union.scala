@@ -46,7 +46,7 @@ object Union extends CustomStreamTransformer {
         ): JoinDataBatch => F[ResultType[Result]] = { (inputs: JoinDataBatch) =>
           {
             val contextWithNewValue = inputs.value.map { case (branchId, branchContext) =>
-              val branchNewValue = outputExpressionByBranchId(branchId.value).evaluate(branchContext)
+              val branchNewValue = outputExpressionByBranchId(branchId.value).evaluator(branchContext)
               branchContext.clearUserVariables
                 .withVariable(variableName, branchNewValue)
                 .appendIdSuffix(branchId.value)
