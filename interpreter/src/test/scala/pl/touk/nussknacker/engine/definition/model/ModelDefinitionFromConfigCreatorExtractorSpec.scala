@@ -199,7 +199,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   }
 
   private def modelDefinitionWithTypes(category: Option[String]) = {
-    val modelConfig = new DefaultModelConfigLoader()
+    val modelConfig = new DefaultModelConfigLoader(skipComponentProvidersLoadedFromAppClassloader = false)
       .resolveConfig(InputConfigDuringExecution(ConfigFactory.empty()), getClass.getClassLoader)
     val modelDefinition = ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(
       TestCreator,
