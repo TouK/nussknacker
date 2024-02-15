@@ -3,7 +3,7 @@ package pl.touk.nussknacker.test.mock
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.test.utils.domain.TestProcessingTypes
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -57,13 +57,13 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
   override def getAllForProcessingType(
       processingType: String
   ): Map[DesignerWideComponentId, ComponentAdditionalConfig] =
-    if (processingType == TestProcessingTypes.Streaming)
+    if (processingType == Streaming.stringify)
       componentAdditionalConfigMap
     else
       Map.empty
 
   override def getScenarioPropertiesUIConfigs(processingType: String): Map[String, ScenarioPropertyConfig] =
-    if (processingType == TestProcessingTypes.Streaming)
+    if (processingType == Streaming.stringify)
       scenarioPropertyConfigOverride
     else
       Map.empty

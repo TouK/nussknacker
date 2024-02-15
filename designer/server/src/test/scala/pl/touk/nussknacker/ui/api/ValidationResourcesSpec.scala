@@ -12,9 +12,9 @@ import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionVa
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -24,10 +24,13 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessingTypes}
-import pl.touk.nussknacker.test.utils.domain.TestFactory._
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
@@ -46,8 +49,8 @@ class ValidationResourcesSpec
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val processValidatorByProcessingType = mapProcessingTypeDataProvider(
-    TestProcessingTypes.Streaming -> new UIProcessResolver(
-      processValidator.withScenarioPropertiesConfig(
+    Streaming.stringify -> new UIProcessResolver(
+      TestFactory.processValidator.withScenarioPropertiesConfig(
         Map(
           "requiredStringProperty" -> ScenarioPropertyConfig(
             None,
@@ -57,8 +60,8 @@ class ValidationResourcesSpec
           ),
           "numberOfThreads" -> ScenarioPropertyConfig(
             None,
-            Some(FixedValuesParameterEditor(possibleValues)),
-            Some(List(FixedValuesValidator(possibleValues))),
+            Some(FixedValuesParameterEditor(TestFactory.possibleValues)),
+            Some(List(FixedValuesValidator(TestFactory.possibleValues))),
             None
           ),
           "maxEvents" -> ScenarioPropertyConfig(
@@ -78,7 +81,7 @@ class ValidationResourcesSpec
       processService,
       processValidatorByProcessingType
     ),
-    testPermissionRead
+    Permission.Read
   )
 
   it should "find errors in a bad scenario" in {
@@ -259,7 +262,7 @@ class ValidationResourcesSpec
     val request = ScenarioValidationRequest(name, scenarioGraph)
     Post(
       Uri(path = Path.Empty / "processValidation" / name.value),
-      posting.toRequestEntity(request)
+      request.toJsonRequestEntity()
     ) ~> route ~> check {
       testCode
     }

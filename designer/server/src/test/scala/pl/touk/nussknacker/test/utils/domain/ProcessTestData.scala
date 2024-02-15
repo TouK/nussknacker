@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetailsForMigrations}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
@@ -116,15 +117,15 @@ object ProcessTestData {
       .build
 
   def processValidator: UIProcessValidator = new UIProcessValidator(
-    TestProcessingTypes.Streaming,
-    ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition())),
-    Map.empty,
-    List.empty,
-    new FragmentResolver(new StubFragmentRepository(Map.empty))
+    processingType = Streaming.stringify,
+    validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition())),
+    scenarioProperties = Map.empty,
+    additionalValidators = List.empty,
+    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
 
   val sampleScenarioParameters: ScenarioParameters =
-    ScenarioParameters(ProcessingMode.UnboundedStream, TestCategories.Category1, EngineSetupName("Stub Engine"))
+    ScenarioParameters(ProcessingMode.UnboundedStream, "Category1", EngineSetupName("Stub Engine"))
 
   val sampleProcessName: ProcessName = ProcessName("fooProcess")
 
@@ -338,8 +339,21 @@ object ProcessTestData {
   def createEmptyUpdateProcessCommand(
       comment: Option[UpdateProcessComment]
   ): UpdateScenarioCommand = {
+    val properties = ProcessProperties(
+      ProcessAdditionalFields(
+        description = None,
+        properties = Map(
+          "maxEvents"        -> "",
+          "parallelism"      -> "1",
+          "numberOfThreads"  -> "1",
+          "spillStateToDisk" -> "true",
+          "environment"      -> "test"
+        ),
+        metaDataType = "StreamMetaData"
+      )
+    )
     val scenarioGraph = ScenarioGraph(
-      properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
+      properties = properties,
       nodes = List.empty,
       edges = List.empty
     )

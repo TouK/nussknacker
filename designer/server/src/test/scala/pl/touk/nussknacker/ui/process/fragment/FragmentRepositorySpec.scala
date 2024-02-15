@@ -6,12 +6,11 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.test.base.it.NuResourcesTest
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.sampleFragmentName
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-
-import scala.language.higherKinds
 
 class FragmentRepositorySpec
     extends AnyFlatSpec
@@ -22,10 +21,9 @@ class FragmentRepositorySpec
     with VeryPatientScalaFutures {
 
   it should "load fragments" in {
-    val sampleFragment =
-      CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
-    val sampleFragment2 =
-      CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment2)
+    val sampleFragment  = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
+    val sampleFragment2 = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment2)
+
     saveFragment(sampleFragment) {
       status shouldEqual StatusCodes.OK
     }
@@ -33,7 +31,7 @@ class FragmentRepositorySpec
       status shouldEqual StatusCodes.OK
     }
 
-    fragmentRepository.fetchLatestFragments(TestProcessingTypes.Streaming)(adminUser).futureValue shouldBe List(
+    fragmentRepository.fetchLatestFragments(Streaming.stringify)(adminUser).futureValue shouldBe List(
       ProcessTestData.sampleFragment2
     )
   }

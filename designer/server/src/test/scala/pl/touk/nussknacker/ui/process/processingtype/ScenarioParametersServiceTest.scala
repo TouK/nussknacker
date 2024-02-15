@@ -121,7 +121,11 @@ class ScenarioParametersServiceTest
     val writeAccessEngineSetupName = EngineSetupName("writeAccessEngine")
     val noAccessEngineSetupName    = EngineSetupName("noAccessEngine")
     val noErrorEngineSetupName     = EngineSetupName("noErrorsEngine")
-    implicit val user: LoggedUser  = TestFactory.user(permissions = Map(writeAccessCategory -> Set(Permission.Write)))
+    implicit val user: LoggedUser = LoggedUser(
+      id = "1",
+      username = "user",
+      categoryPermissions = Map(writeAccessCategory -> Set(Permission.Write))
+    )
 
     val setupErrors = ScenarioParametersService
       .create(
@@ -158,7 +162,11 @@ class ScenarioParametersServiceTest
     val noAccessCategory                          = "noAccessCategory"
     val engineSetupNameUsedForMoreThanOneCategory = EngineSetupName("foo")
     val noErrorEngineSetupName                    = EngineSetupName("noErrorsEngine")
-    implicit val user: LoggedUser = TestFactory.user(permissions = Map(writeAccessCategory -> Set(Permission.Write)))
+    implicit val user: LoggedUser = LoggedUser(
+      id = "1",
+      username = "user",
+      categoryPermissions = Map(writeAccessCategory -> Set(Permission.Write))
+    )
 
     val setupErrors = ScenarioParametersService
       .create(

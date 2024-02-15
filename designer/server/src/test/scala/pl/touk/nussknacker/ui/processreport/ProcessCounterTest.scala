@@ -12,7 +12,7 @@ import pl.touk.nussknacker.test.mock.StubFragmentRepository
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
-//numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
+//numbers & processes in this test can be totally incorrect and unrealistic, as processCounter does not care
 //about actual values, only assigns them to nodes
 class ProcessCounterTest extends AnyFunSuite with Matchers {
 
