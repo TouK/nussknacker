@@ -8,7 +8,12 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
 import pl.touk.nussknacker.engine.management.periodic.{CronSchedulePropertyExtractor, PeriodicDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.management.{FlinkStreamingDeploymentManagerProvider, FlinkStreamingPropertiesConfig}
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, DeploymentManagerProvider, MetaDataInitializer}
+import pl.touk.nussknacker.engine.{
+  BaseModelData,
+  DeploymentManagerDependencies,
+  DeploymentManagerProvider,
+  MetaDataInitializer
+}
 
 import scala.concurrent.duration.FiniteDuration
 

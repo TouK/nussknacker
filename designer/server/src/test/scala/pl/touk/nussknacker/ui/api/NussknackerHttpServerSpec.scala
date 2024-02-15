@@ -9,12 +9,12 @@ import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.{DefaultUniquePortProvider, WithTestHttpClientCreator}
 import pl.touk.nussknacker.ui.security.ssl.HttpsConnectionContextFactory.prepareSSLContext
 import pl.touk.nussknacker.ui.security.ssl.KeyStoreConfig
 import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, RouteProvider}
-import pl.touk.nussknacker.ui.util.CatsTestExtensions._
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.utils.scalas.CatsTestExtensions._
 import sttp.client3.{UriContext, basicRequest}
 import sttp.model.StatusCode
 

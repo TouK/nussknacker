@@ -8,10 +8,7 @@ import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  ProcessingTypeDeploymentServiceStub
-}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -42,7 +39,7 @@ class BaseK8sDeploymentManagerTest
   self: LazyLogging =>
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-  private implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
+  private implicit val system: ActorSystem                  = ActorSystem(getClass.getSimpleName)
   import system.dispatcher
   protected val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
 

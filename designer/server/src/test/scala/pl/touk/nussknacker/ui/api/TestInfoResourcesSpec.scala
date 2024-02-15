@@ -18,9 +18,10 @@ import pl.touk.nussknacker.engine.definition.test.{
   TestInfoProvider,
   TestingCapabilities
 }
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
-import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
 
 class TestInfoResourcesSpec
     extends AnyFunSuite

@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.UriUtils
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil
 import pl.touk.nussknacker.ui.config.scenariotoolbar._
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 

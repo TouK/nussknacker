@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.{Filter, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.ui.api.helpers.StubFragmentRepository
+import pl.touk.nussknacker.test.mock.StubFragmentRepository
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
