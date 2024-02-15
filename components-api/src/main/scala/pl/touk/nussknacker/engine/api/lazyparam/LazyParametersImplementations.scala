@@ -8,9 +8,9 @@ private[api] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](
     arg2: LazyParameter[Y]
 ) extends LazyParameter[(T, Y)] {
 
-  override def returnType: TypingResult = Typed.genericTypeClass[(T, Y)](List(arg1.returnType, arg2.returnType))
+  override val returnType: TypingResult = Typed.genericTypeClass[(T, Y)](List(arg1.returnType, arg2.returnType))
 
-  override def evaluator: Context => (T, Y) = {
+  override val evaluator: Context => (T, Y) = {
     val arg1Evaluator = arg1.evaluator
     val arg2Evaluator = arg2.evaluator
     ctx: Context => (arg1Evaluator(ctx), arg2Evaluator(ctx))
@@ -24,10 +24,10 @@ private[api] case class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](
     wrapReturnType: List[TypingResult] => TypingResult
 ) extends LazyParameter[Y] {
 
-  override def returnType: TypingResult =
+  override val returnType: TypingResult =
     wrapReturnType(args.map(_.returnType))
 
-  override def evaluator: Context => Y = {
+  override val evaluator: Context => Y = {
     val argsEvaluators = args.map(_.evaluator)
     ctx: Context => wrapResult(argsEvaluators.map(_.apply(ctx)))
   }
@@ -40,9 +40,9 @@ private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
     transformTypingResult: TypingResult => TypingResult
 ) extends LazyParameter[Y] {
 
-  override def returnType: TypingResult = transformTypingResult(arg.returnType)
+  override val returnType: TypingResult = transformTypingResult(arg.returnType)
 
-  override def evaluator: Context => Y = {
+  override val evaluator: Context => Y = {
     val argEvaluator = arg.evaluator
     ctx: Context => fun(argEvaluator.apply(ctx))
   }
@@ -51,5 +51,5 @@ private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
 
 private[api] case class FixedLazyParameter[T <: AnyRef](value: T, returnType: TypingResult) extends LazyParameter[T] {
 
-  override def evaluator: Context => T = _ => value
+  override val evaluator: Context => T = _ => value
 }

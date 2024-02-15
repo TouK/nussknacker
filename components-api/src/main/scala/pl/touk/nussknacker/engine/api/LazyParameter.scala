@@ -19,6 +19,7 @@ import scala.reflect.runtime.universe.TypeTag
 trait LazyParameter[+T <: AnyRef] {
 
   def evaluator: Context => T
+//  def evaluate(context: Context): T
 
   // type of parameter, derived from expression. Can be used for dependent types, see PreviousValueTransformer
   def returnType: TypingResult

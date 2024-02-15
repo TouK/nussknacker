@@ -12,9 +12,9 @@ class EvaluableLazyParameter[T <: AnyRef](
     metaData: MetaData
 ) extends LazyParameter[T] {
 
-  override def returnType: TypingResult = compiledParameter.typingInfo.typingResult
+  override val returnType: TypingResult = compiledParameter.typingInfo.typingResult
 
-  override def evaluator: Context => T = { ctx: Context =>
+  override val evaluator: Context => T = { ctx: Context =>
     expressionEvaluator
       .evaluateParameter(compiledParameter, ctx)(nodeId, metaData)
       .value

@@ -22,7 +22,7 @@ final case class EvaluableLazyParameterCreator[T <: AnyRef](
     )
   }
 
-  override def returnType: TypingResult = typedExpression.returnType
+  override val returnType: TypingResult = typedExpression.returnType
 
   override def evaluator: Context => T =
     throw new IllegalStateException(
