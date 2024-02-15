@@ -9,7 +9,6 @@ import { FormControl, FormGroup, FormHelperText, FormLabel, Link, Typography } f
 import { Trans, useTranslation } from "react-i18next";
 import StreamingIcon from "../assets/img/streaming.svg";
 import RequestResponseIcon from "../assets/img/request-response.svg";
-import BatchIcon from "../assets/img/batch.svg";
 import { CustomRadio } from "./customRadio/CustomRadio";
 import { ProcessingMode } from "../http/HttpService";
 import { NodeValidationError } from "../types";
@@ -74,13 +73,14 @@ export function AddProcessForm({
                                 Icon={RequestResponseIcon}
                                 active={value.processingMode === ProcessingMode.requestResponse}
                             />
-                            <CustomRadio
-                                disabled={processingModes.every((processingMode) => processingMode !== ProcessingMode.batch)}
-                                label={t("addProcessForm.label.batch", "Batch")}
-                                value={ProcessingMode.batch}
-                                Icon={BatchIcon}
-                                active={value.processingMode === ProcessingMode.batch}
-                            />
+                            {/*TODO: Uncomment it when batch processing mode ready*/}
+                            {/*<CustomRadio*/}
+                            {/*    disabled={processingModes.every((processingMode) => processingMode !== ProcessingMode.batch)}*/}
+                            {/*    label={t("addProcessForm.label.batch", "Batch")}*/}
+                            {/*    value={ProcessingMode.batch}*/}
+                            {/*    Icon={BatchIcon}*/}
+                            {/*    active={value.processingMode === ProcessingMode.batch}*/}
+                            {/*/>*/}
                         </FormGroup>
                         <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processingMode")} />
                         <Typography component={"div"} variant={"overline"} mt={1}>

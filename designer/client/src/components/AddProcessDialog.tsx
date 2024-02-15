@@ -33,7 +33,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         typ: "",
     }));
     const { categories, engines, processingModes, isEngineFieldVisible } = useProcessFormDataOptions({ allCombinations, value });
-
+    const [isFormSubmitted, setIsFormSubmitted] = useState<boolean>(false);
     const validationErrors = flow(
         (errors) => extendErrors(errors, value.processCategory, "processCategory", [mandatoryValueValidator]),
         (errors) => extendErrors(errors, value.processingMode, "processingMode", [mandatoryValueValidator]),
@@ -70,9 +70,19 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => passProps.close() },
-            { title: t("dialog.button.create", "create"), action: () => createProcess(), disabled: !isEmpty(validationErrors) },
+            {
+                title: t("dialog.button.create", "create"),
+                action: async () => {
+                    if (!isEmpty(validationErrors) && !isFormSubmitted) {
+                        setIsFormSubmitted(true);
+                        return;
+                    }
+                    createProcess();
+                },
+                disabled: !isEmpty(validationErrors) && isFormSubmitted,
+            },
         ],
-        [createProcess, validationErrors, passProps, t],
+        [createProcess, isFormSubmitted, passProps, t, validationErrors],
     );
 
     const onChange = (value: FormValue) => {
@@ -94,7 +104,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
             <AddProcessForm
                 value={value}
                 onChange={onChange}
-                validationErrors={validationErrors}
+                validationErrors={isFormSubmitted ? validationErrors : []}
                 categories={categories}
                 processingModes={processingModes}
                 engines={isEngineFieldVisible ? engines : undefined}
