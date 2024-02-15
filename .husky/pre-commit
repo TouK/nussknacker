@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+set -eu
 
 if git diff --cached --name-only --diff-filter=ACM | grep --max-count=1 -E "^designer/(client|submodules)/" > /dev/null; then
   (cd designer/ && ./formatStagedFrontendFiles.sh)

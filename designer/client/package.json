@@ -1,42 +1,7 @@
 {
     "name": "nussknacker-designer-client",
-    "version": "0.0.0",
     "description": "Nussknacker designer - client",
-    "main": "server.js",
-    "license": "UNLICENSED",
-    "private": true,
-    "scripts": {
-        "postinstall": "patch-package",
-        "prebuild": "i18next '!(node_modules|cypress|dist|test)/**/*.{js,ts,tsx}'",
-        "build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress",
-        "build-bundle-analyzer": "NODE_ENV=bundleReport webpack --mode production --profile --json > stats.json",
-        "clean": "rm -rf dist",
-        "clean-build": "npm run clean && npm run build",
-        "check-types": "tsc",
-        "lint": "eslint --fix .",
-        "svgo": "svgo --folder src --recursive",
-        "check": "npm run check-types && npm run lint -- . --rule 'i18next/no-literal-string: warn'",
-        "@comment translations json has higher priority than default labels in code, so we remove them before each start script, to make development faster": "",
-        "clean-translations": "rm -rf ./translations/*",
-        "start": "npm run clean-translations && BACKEND_DOMAIN=http://localhost:${BE_PORT:-8080} webpack serve",
-        "start-prod": "BACKEND_DOMAIN=http://localhost:${BE_PORT:-8080} node server.js",
-        "start:backend-docker": "npm run clean-translations && (! wait-on -t 250 tcp:localhost:${BE_PORT:-8080} 2> /dev/null || (echo \"Port: ${BE_PORT:-8080} already in use!\" && exit 1)) && start-server-and-test backend:docker http-get://localhost:${BE_PORT:-8080}/static/main.html start",
-        "start:backend-remote": "npm run clean-translations && webpack serve",
-        "start:backend-staging": "BACKEND_DOMAIN=https://staging.nussknacker.io npm run start:backend-remote",
-        "start:backend-demo": "BACKEND_DOMAIN=https://demo.nussknacker.io npm run start:backend-remote",
-        "backend:docker": "docker run -i -p ${BE_PORT:-8080}:8080 -e CONFIG_FORCE_usageStatisticsReports_enabled=false -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf -v `readlink -f ../../nussknacker-dist/src/universal/conf/dev-application.conf`:/opt/nussknacker/conf/dev-application.conf --pull ${DOCKER_PULL_OPTION:=always} -P touk/nussknacker:${NUSSKNACKER_VERSION:=staging-latest}",
-        "pretest": "npm run check",
-        "test:unit": "jest --reporters=default --reporters=jest-junit",
-        "test:e2e": "cypress run",
-        "test:e2e:dev": "cypress open",
-        "test:e2e:linux": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3000",
-        "@comment script versions updating image snapshots": "",
-        "test:e2e:linux:update": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client -e CYPRESS_SNAPSHOT_UPDATE=true cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3000",
-        "coverage": "npx merge-cypress-jest-coverage",
-        "commit": "lint-staged",
-        "make-types": "make-federated-types --outputDir ./.federated-types",
-        "prepare": "cd ../.. && husky install"
-    },
+    "version": "0.0.0",
     "dependencies": {
         "@emotion/css": "11.11.2",
         "@emotion/react": "11.11.1",
@@ -237,11 +202,17 @@
         "webpack-remote-types-plugin": "0.2.7",
         "xss": "1.0.10"
     },
-    "@comment lint-staged": "We add svgo preprocessing as a pre-commit hook to avoid surprise that someone based on global style classes from svgo that won't be available anymore after preprocessing",
+    "engines": {
+        "node": ">=20.10.0",
+        "npm": ">=10.2.3"
+    },
+    "license": "UNLICENSED",
     "lint-staged": {
         "*.{js,jsx,ts,tsx}": "eslint --cache --fix --rule 'i18next/no-literal-string: warn'",
-        "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
+        "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write",
+        "**/package.json": "syncpack-format"
     },
+    "main": "server.js",
     "nyc": {
         "report-dir": "cypress-coverage",
         "reporter": [
@@ -249,8 +220,37 @@
             "json"
         ]
     },
-    "engines": {
-        "node": ">=20.10.0",
-        "npm": ">=10.2.3"
+    "private": true,
+    "scripts": {
+        "postinstall": "patch-package",
+        "prebuild": "i18next '!(node_modules|cypress|dist|test)/**/*.{js,ts,tsx}'",
+        "build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress",
+        "build-bundle-analyzer": "NODE_ENV=bundleReport webpack --mode production --profile --json > stats.json",
+        "clean": "rm -rf dist",
+        "clean-build": "npm run clean && npm run build",
+        "check-types": "tsc",
+        "lint": "eslint --fix .",
+        "svgo": "svgo --folder src --recursive",
+        "check": "npm run check-types && npm run lint -- . --rule 'i18next/no-literal-string: warn'",
+        "@comment translations json has higher priority than default labels in code, so we remove them before each start script, to make development faster": "",
+        "clean-translations": "rm -rf ./translations/*",
+        "start": "npm run clean-translations && BACKEND_DOMAIN=http://localhost:${BE_PORT:-8080} webpack serve",
+        "start-prod": "BACKEND_DOMAIN=http://localhost:${BE_PORT:-8080} node server.js",
+        "start:backend-docker": "npm run clean-translations && (! wait-on -t 250 tcp:localhost:${BE_PORT:-8080} 2> /dev/null || (echo \"Port: ${BE_PORT:-8080} already in use!\" && exit 1)) && start-server-and-test backend:docker http-get://localhost:${BE_PORT:-8080}/static/main.html start",
+        "start:backend-remote": "npm run clean-translations && webpack serve",
+        "start:backend-staging": "BACKEND_DOMAIN=https://staging.nussknacker.io npm run start:backend-remote",
+        "start:backend-demo": "BACKEND_DOMAIN=https://demo.nussknacker.io npm run start:backend-remote",
+        "backend:docker": "docker run -i -p ${BE_PORT:-8080}:8080 -e CONFIG_FORCE_usageStatisticsReports_enabled=false -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf -v `readlink -f ../../nussknacker-dist/src/universal/conf/dev-application.conf`:/opt/nussknacker/conf/dev-application.conf --pull ${DOCKER_PULL_OPTION:=always} -P touk/nussknacker:${NUSSKNACKER_VERSION:=staging-latest}",
+        "pretest": "npm run check",
+        "test:unit": "jest --reporters=default --reporters=jest-junit",
+        "test:e2e": "cypress run",
+        "test:e2e:dev": "cypress open",
+        "test:e2e:linux": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3000",
+        "@comment script versions updating image snapshots": "",
+        "test:e2e:linux:update": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client -e CYPRESS_SNAPSHOT_UPDATE=true cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3000",
+        "coverage": "npx merge-cypress-jest-coverage",
+        "commit": "lint-staged",
+        "make-types": "make-federated-types --outputDir ./.federated-types",
+        "prepare": "cd ../.. && husky install"
     }
 }

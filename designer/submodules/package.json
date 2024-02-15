@@ -72,7 +72,8 @@
     "license": "ISC",
     "lint-staged": {
         "*.{js,jsx,ts,tsx}": "eslint --cache --fix",
-        "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
+        "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write",
+        "**/package.json": "syncpack-format"
     },
     "main": "index.js",
     "private": true,
