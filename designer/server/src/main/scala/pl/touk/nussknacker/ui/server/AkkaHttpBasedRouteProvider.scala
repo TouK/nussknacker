@@ -391,7 +391,7 @@ class AkkaHttpBasedRouteProvider(
 
       val akkaHttpServerInterpreter = {
         import system.dispatcher
-        new NuAkkaHttpServerInterpreterForTapirPurposes(authenticationResources.isInstanceOf[AnonymousAccess])
+        new NuAkkaHttpServerInterpreterForTapirPurposes()
       }
 
       createAppRoute(

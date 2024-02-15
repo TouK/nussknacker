@@ -69,6 +69,16 @@ class UserApiHttpServiceSecuritySpec
                |}""".stripMargin)
       }
     }
+    "anonymous user credentials are passed directly should not authenticate the request" in {
+      given()
+        .when()
+        .basicAuth("anonymous", "anonymous")
+        .basicAuthUnknownUser()
+        .get(s"$nuDesignerHttpAddress/api/user")
+        .Then()
+        .statusCode(401)
+        .body(equalTo("The supplied authentication is invalid"))
+    }
   }
 
 }

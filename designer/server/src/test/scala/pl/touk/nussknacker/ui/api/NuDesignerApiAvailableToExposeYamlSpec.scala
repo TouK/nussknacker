@@ -5,12 +5,13 @@ import org.reflections.util.ConfigurationBuilder
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
-import pl.touk.nussknacker.security.{AuthCredentials, NoOpCrypter}
+import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.ui.security.api.AnonymousAccess
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
-import sttp.tapir.{Endpoint, EndpointInput, Mapping, auth}
+import sttp.tapir.{Endpoint, EndpointInput, auth}
 
 import java.lang.reflect.{Method, Modifier}
 import scala.jdk.CollectionConverters._
@@ -64,12 +65,8 @@ object NuDesignerApiAvailableToExpose {
 
   private def createInstanceOf(clazz: Class[_ <: BaseEndpointDefinitions]) = {
     val basicAuth = auth
-      .basic[String]()
-      .map {
-        Mapping.from[String, AuthCredentials](AuthCredentials.fromStringToPassedAuthCredentials)(
-          _.stringify(NoOpCrypter)
-        )
-      }
+      .basic[Option[String]]()
+      .map { AnonymousAccess.optionalStringToAuthCredentialsMapping(false) }
 
     Try(clazz.getConstructor(classOf[EndpointInput[AuthCredentials]]))
       .map(_.newInstance(basicAuth))

@@ -13,16 +13,19 @@ import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api._
 import sttp.client3.SttpBackend
-import sttp.model.headers.WWWAuthenticateChallenge
+import sttp.model.HeaderNames
+import sttp.model.headers.{AuthenticationScheme, WWWAuthenticateChallenge}
+import sttp.tapir.EndpointInput.AuthType
 import sttp.tapir._
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2AuthenticationResources(
     override val name: String,
     realm: String,
     service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData],
-    configuration: OAuth2Configuration
+    override val configuration: OAuth2Configuration
 )(implicit executionContext: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
     extends AuthenticationResources
     with Directives
@@ -31,9 +34,9 @@ class OAuth2AuthenticationResources(
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
-  private val authenticator = OAuth2Authenticator(service)
+  override type CONFIG = OAuth2Configuration
 
-  override protected val anonymousUserRole: Option[String] = configuration.anonymousUserRole
+  private val authenticator = OAuth2Authenticator(service)
 
   override protected def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
     SecurityDirectives.authenticateOAuth2Async(
@@ -46,14 +49,20 @@ class OAuth2AuthenticationResources(
     authenticator.authenticate(credentials.value)
   }
 
-  override protected def rawAuthCredentialsMethod: EndpointInput[String] = {
-    auth.oauth2
-      .authorizationCode(
-        authorizationUrl = configuration.authorizeUrl.map(_.toString),
-        // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
-        // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
-        tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
-        challenge = WWWAuthenticateChallenge.bearer(realm)
+  override protected def rawAuthCredentialsMethod: EndpointInput[Option[String]] = {
+    EndpointInput
+      .Auth[Option[String], AuthType.OAuth2](
+        header[Option[String]](HeaderNames.Authorization).map(stringPrefixWithSpace(AuthenticationScheme.Bearer.name)),
+        WWWAuthenticateChallenge.bearer(realm),
+        EndpointInput.AuthType.OAuth2(
+          authorizationUrl = configuration.authorizeUrl.map(_.toString),
+          // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
+          // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
+          tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
+          scopes = ListMap.empty,
+          refreshUrl = None
+        ),
+        EndpointInput.AuthInfo.Empty
       )
   }
 
@@ -142,6 +151,26 @@ class OAuth2AuthenticationResources(
       status = StatusCodes.BadRequest,
       entity = HttpEntity(ContentTypes.`application/json`, Encoder.encodeMap[String, String].apply(entity).spaces2)
     )
+  }
+
+  private def stringPrefixWithSpace(prefix: String): Mapping[Option[String], Option[String]] =
+    Mapping
+      .fromDecode[Option[String], Option[String]] {
+        case Some(value) => removePrefix(value, prefix).map(Some(_))
+        case None        => DecodeResult.Value(None)
+      } {
+        _.map(value => s"$prefix$value")
+      }
+
+  private def removePrefix(value: String, prefix: String) = {
+    if (value.toLowerCase.startsWith(prefix.toLowerCase)) {
+      DecodeResult.Value(value.substring(prefix.length))
+    } else {
+      DecodeResult.Error(
+        value,
+        new IllegalArgumentException(s"Cannot remove $prefix, because the value doesn't start with it")
+      )
+    }
   }
 
 }

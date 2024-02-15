@@ -5,21 +5,21 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
-import pl.touk.nussknacker.security.{AesCrypter, AuthCredentials, Crypter, NoOpCrypter}
+import pl.touk.nussknacker.ui.security.api.AnonymousAccess.optionalStringToAuthCredentialsMapping
 import sttp.client3.SttpBackend
-import sttp.tapir.{EndpointInput, Mapping}
+import sttp.tapir.{DecodeResult, EndpointInput, Mapping}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthenticationResources extends Directives with FailFastCirceSupport {
+
+  type CONFIG <: AuthenticationConfiguration
   def name: String
+  def configuration: CONFIG
 
   protected def frontendStrategySettings: FrontendStrategySettings
-
-  protected def rawAuthCredentialsMethod: EndpointInput[String]
-
-  protected def authCredentialsCrypter: Crypter = NoOpCrypter
 
   // TODO: deprecated
   // The `authenticationMethod` & `authenticate(authCredentials: AuthCredentials)` are equivalent for the below one.
@@ -33,14 +33,7 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
 
   def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]
 
-  def authenticationMethod(): EndpointInput[AuthCredentials] = {
-    rawAuthCredentialsMethod
-      .map(
-        Mapping.from[String, AuthCredentials](AuthCredentials.fromStringToPassedAuthCredentials)(
-          _.stringify(authCredentialsCrypter)
-        )
-      )
-  }
+  def authenticationMethod(): EndpointInput[AuthCredentials]
 
   final lazy val routeWithPathPrefix: Route =
     pathPrefix("authentication" / name.toLowerCase()) {
@@ -74,35 +67,14 @@ object AuthenticationResources {
 trait AnonymousAccess extends Directives {
   this: AuthenticationResources =>
 
-  protected def anonymousUserRole: Option[String]
-
   protected def authenticateReally(): AuthenticationDirective[AuthenticatedUser]
+
+  protected def rawAuthCredentialsMethod: EndpointInput[Option[String]]
 
   protected def authenticateReally(credentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]]
 
-  override protected final val authCredentialsCrypter: Crypter = AesCrypter
-
-  override def authenticationMethod(): EndpointInput[AuthCredentials] = {
-    anonymousUserRole match {
-      case Some(_) =>
-        // In WithAnonymousAccessFallback the encrypted password of the anonymous user is added as an Authorization
-        // header credentials. Here, using the same crypter, is decrypted and AuthCredentials object is created.
-        // The crypter is used to prevent the anonymous credentials from being used for explicit authentication
-        // (by passing the credentials with the credentials with the HTTP request).
-        rawAuthCredentialsMethod
-          .map(
-            Mapping.from[String, AuthCredentials](
-              AuthCredentials.fromStringToAuthCredentials(_, authCredentialsCrypter)
-            )(_.stringify(authCredentialsCrypter))
-          )
-      case None =>
-        rawAuthCredentialsMethod
-          .map(
-            Mapping.from[String, AuthCredentials](AuthCredentials.fromStringToPassedAuthCredentials)(
-              _.stringify(NoOpCrypter)
-            )
-          )
-    }
+  override final def authenticationMethod(): EndpointInput[AuthCredentials] = {
+    rawAuthCredentialsMethod.map(optionalStringToAuthCredentialsMapping(configuration.anonymousUserRole.isDefined))
   }
 
   override final def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
@@ -110,14 +82,14 @@ trait AnonymousAccess extends Directives {
       case credentials @ AuthCredentials.PassedAuthCredentials(_) =>
         authenticateReally(credentials)
       case AuthCredentials.AnonymousAccess =>
-        Future.successful(Some(AuthenticatedUser.createAnonymousUser(anonymousUserRole.toSet)))
+        Future.successful(Some(AuthenticatedUser.createAnonymousUser(configuration.anonymousUserRole.toSet)))
     }
   }
 
   override final def authenticate(): Directive1[AuthenticatedUser] = {
-    anonymousUserRole match {
-      case Some(_) =>
-        authenticateOrPermitAnonymously(AuthenticatedUser.createAnonymousUser(anonymousUserRole.toSet))
+    configuration.anonymousUserRole match {
+      case Some(role) =>
+        authenticateOrPermitAnonymously(AuthenticatedUser.createAnonymousUser(Set(role)))
       case None =>
         authenticateReally()
     }
@@ -143,5 +115,24 @@ trait AnonymousAccess extends Directives {
       )
     )
   }
+
+}
+
+object AnonymousAccess {
+
+  def optionalStringToAuthCredentialsMapping(
+      anonymousAccessEnabled: Boolean
+  ): Mapping[Option[String], AuthCredentials] =
+    Mapping
+      .fromDecode[Option[String], AuthCredentials] {
+        case Some(value) => DecodeResult.Value(AuthCredentials.PassedAuthCredentials(value))
+        case None if anonymousAccessEnabled =>
+          DecodeResult.Value(AuthCredentials.AnonymousAccess)
+        case None =>
+          DecodeResult.Missing
+      } {
+        case AuthCredentials.PassedAuthCredentials(credentials) => Some(credentials)
+        case AuthCredentials.AnonymousAccess                    => None
+      }
 
 }

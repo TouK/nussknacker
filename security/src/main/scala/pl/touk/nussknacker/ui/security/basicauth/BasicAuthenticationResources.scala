@@ -11,17 +11,17 @@ import scala.concurrent.{ExecutionContext, Future}
 class BasicAuthenticationResources(
     override val name: String,
     realm: String,
-    configuration: BasicAuthenticationConfiguration
+    override val configuration: BasicAuthenticationConfiguration
 )(
     implicit executionContext: ExecutionContext
 ) extends AuthenticationResources
     with AnonymousAccess {
 
+  override type CONFIG = BasicAuthenticationConfiguration
+
   private val authenticator = BasicHttpAuthenticator(configuration)
 
   override protected val frontendStrategySettings: FrontendStrategySettings = FrontendStrategySettings.Browser
-
-  override protected val anonymousUserRole: Option[String] = configuration.anonymousUserRole
 
   override protected def authenticateReally(): AuthenticationDirective[AuthenticatedUser] =
     SecurityDirectives.authenticateBasicAsync(
@@ -33,8 +33,8 @@ class BasicAuthenticationResources(
     authenticator.authenticate(credentials)
   }
 
-  override protected def rawAuthCredentialsMethod: EndpointInput[String] = {
-    auth.basic[String](WWWAuthenticateChallenge.basic.realm(realm))
+  override protected def rawAuthCredentialsMethod: EndpointInput[Option[String]] = {
+    auth.basic[Option[String]](WWWAuthenticateChallenge.basic.realm(realm))
   }
 
 }
