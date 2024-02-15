@@ -17,15 +17,10 @@
  */
 package pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass
 
-import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.typeutils.CompositeTypeSerializerUtil.delegateCompatibilityCheckToNewSnapshot
-import org.apache.flink.api.common.typeutils.TypeSerializerConfigSnapshot.SelfResolvingTypeSerializer
 import org.apache.flink.api.common.typeutils._
-import org.apache.flink.api.java.typeutils.runtime.TupleSerializerConfigSnapshot
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer.lookupConstructor
 
-import java.io.ObjectInputStream
-import scala.jdk.CollectionConverters._
+import java.io.{ObjectInputStream, ObjectStreamClass}
 import scala.reflect.runtime.universe
 
 /**
@@ -38,8 +33,7 @@ import scala.reflect.runtime.universe
 class ScalaCaseClassSerializer[T <: Product](
     clazz: Class[T],
     scalaFieldSerializers: Array[TypeSerializer[_]]
-) extends CaseClassSerializer[T](clazz, scalaFieldSerializers)
-    with SelfResolvingTypeSerializer[T] {
+) extends CaseClassSerializer[T](clazz, scalaFieldSerializers) {
 
   @transient
   private var constructor = lookupConstructor(clazz)
@@ -52,29 +46,11 @@ class ScalaCaseClassSerializer[T <: Product](
     new ScalaCaseClassSerializerSnapshot[T](this)
   }
 
-  @silent override def resolveSchemaCompatibilityViaRedirectingToNewSnapshotClass(
-      s: TypeSerializerConfigSnapshot[T]
-  ): TypeSerializerSchemaCompatibility[T] = {
-
-    require(s.isInstanceOf[TupleSerializerConfigSnapshot[_]])
-
-    val configSnapshot = s.asInstanceOf[TupleSerializerConfigSnapshot[T]]
-    val nestedSnapshots = configSnapshot.getNestedSerializersAndConfigs.asScala
-      .map(t => t.f1)
-      .toArray
-
-    val newCompositeSnapshot =
-      new ScalaCaseClassSerializerSnapshot[T](configSnapshot.getTupleClass)
-
-    delegateCompatibilityCheckToNewSnapshot(
-      this,
-      newCompositeSnapshot,
-      nestedSnapshots: _*
-    )
-  }
-
+  /**
+   * This method is required as long as java.io.ObjectStreamClass is used for serialization.
+   * Look for {@link ObjectStreamClass#invokeReadObject(Object, ObjectInputStream) }
+   **/
   private def readObject(in: ObjectInputStream): Unit = {
-    // this should be removed once we make sure that serializer are no long java serialized.
     in.defaultReadObject()
     constructor = lookupConstructor(clazz)
   }
