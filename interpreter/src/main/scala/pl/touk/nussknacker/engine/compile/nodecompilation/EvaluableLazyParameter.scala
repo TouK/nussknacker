@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import pl.touk.nussknacker.engine.api.LazyParameter.Evaluate
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
@@ -14,7 +15,7 @@ class EvaluableLazyParameter[T <: AnyRef](
 
   override val returnType: TypingResult = compiledParameter.typingInfo.typingResult
 
-  override val evaluate: Context => T = { ctx: Context =>
+  override val evaluate: Evaluate[T] = { ctx: Context =>
     expressionEvaluator
       .evaluateParameter(compiledParameter, ctx)(nodeId, metaData)
       .value

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.api.common.functions.RuntimeContext
+import pl.touk.nussknacker.engine.api.LazyParameter.Evaluate
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ToEvaluateFunctionConverter}
 import pl.touk.nussknacker.engine.compile.nodecompilation.DefaultToEvaluateFunctionConverter
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -17,7 +18,7 @@ class ToEvaluateFunctionConverterWithLifecycle(runtimeContext: RuntimeContext, c
     compilerData.close(Nil)
   }
 
-  override def toEvaluateFunction[T <: AnyRef](parameter: LazyParameter[T]): Context => T =
+  override def toEvaluateFunction[T <: AnyRef](parameter: LazyParameter[T]): Evaluate[T] =
     delegate.toEvaluateFunction[T](parameter)
 
 }

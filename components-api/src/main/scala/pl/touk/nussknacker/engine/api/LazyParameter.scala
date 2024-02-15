@@ -39,7 +39,7 @@ trait LazyParameter[+T <: AnyRef] {
 
 object LazyParameter {
 
-  type Evaluate[T] = Context => T
+  type Evaluate[+T] = Context => T
 
   // Sequence requires wrapping of evaluation result and result type because we don't want to use heterogeneous lists
   def sequence[T <: AnyRef, Y <: AnyRef](
@@ -51,10 +51,10 @@ object LazyParameter {
 
   // Name must be other then pure because scala can't recognize which overloaded method was used
   def pureFromDetailedType[T <: AnyRef: TypeTag](value: T): LazyParameter[T] =
-    FixedLazyParameter(value, Typed.fromDetailedType[T])
+    new FixedLazyParameter(value, Typed.fromDetailedType[T])
 
   def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T] =
-    FixedLazyParameter(value, valueTypingResult)
+    new FixedLazyParameter(value, valueTypingResult)
 
 }
 

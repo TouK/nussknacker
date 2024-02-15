@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import pl.touk.nussknacker.engine.api.LazyParameter.Evaluate
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -24,7 +25,7 @@ final case class EvaluableLazyParameterCreator[T <: AnyRef](
 
   override val returnType: TypingResult = typedExpression.returnType
 
-  override def evaluate: Context => T =
+  override def evaluate: Evaluate[T] =
     throw new IllegalStateException(
       s"[${classOf[EvaluableLazyParameterCreator[_]].getName}] doesn't provide evaluator"
     ) // todo: better msg
@@ -35,11 +36,11 @@ class EvaluableLazyParameterCreatorDeps(
     val expressionCompiler: ExpressionCompiler,
     val expressionEvaluator: ExpressionEvaluator,
     val metaData: MetaData
-)
+) extends Serializable
 
 class DefaultToEvaluateFunctionConverter(deps: EvaluableLazyParameterCreatorDeps) extends ToEvaluateFunctionConverter {
 
-  override def toEvaluateFunction[T <: AnyRef](lazyParameter: LazyParameter[T]): Context => T = {
+  override def toEvaluateFunction[T <: AnyRef](lazyParameter: LazyParameter[T]): Evaluate[T] = {
     // it's important that it's (...): (Context => T)
     // and not e.g. (...)(Context) => T as we want to be sure when body is evaluated (in particular expression compilation)!
     val newLazyParam = lazyParameter match {

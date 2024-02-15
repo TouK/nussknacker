@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.api.process
 import org.apache.flink.api.common.functions._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.LazyParameter.Evaluate
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
@@ -83,7 +84,7 @@ trait OneParamLazyParameterFunction[T <: AnyRef] extends LazyParameterInterprete
 
   protected def parameter: LazyParameter[T]
 
-  private var _evaluateParameter: Context => T = _
+  private var _evaluateParameter: Evaluate[T] = _
 
   protected def evaluateParameter(ctx: Context): T =
     _evaluateParameter(ctx)

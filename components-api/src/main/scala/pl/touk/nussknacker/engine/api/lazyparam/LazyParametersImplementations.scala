@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.lazyparam
 
+import pl.touk.nussknacker.engine.api.LazyParameter.Evaluate
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
 
@@ -10,7 +11,7 @@ private[api] class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](
 
   override val returnType: TypingResult = Typed.genericTypeClass[(T, Y)](List(arg1.returnType, arg2.returnType))
 
-  override val evaluate: Context => (T, Y) = {
+  override val evaluate: Evaluate[(T, Y)] = {
     val arg1Evaluator = arg1.evaluate
     val arg2Evaluator = arg2.evaluate
     ctx: Context => (arg1Evaluator(ctx), arg2Evaluator(ctx))
@@ -27,7 +28,7 @@ private[api] class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](
   override val returnType: TypingResult =
     wrapReturnType(args.map(_.returnType))
 
-  override val evaluate: Context => Y = {
+  override val evaluate: Evaluate[Y] = {
     val argsEvaluators = args.map(_.evaluate)
     ctx: Context => wrapResult(argsEvaluators.map(_.apply(ctx)))
   }
@@ -42,7 +43,7 @@ private[api] class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
 
   override val returnType: TypingResult = transformTypingResult(arg.returnType)
 
-  override val evaluate: Context => Y = {
+  override val evaluate: Evaluate[Y] = {
     val argEvaluator = arg.evaluate
     ctx: Context => fun(argEvaluator.apply(ctx))
   }
@@ -52,5 +53,5 @@ private[api] class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
 private[api] class FixedLazyParameter[T <: AnyRef](value: T, override val returnType: TypingResult)
     extends LazyParameter[T] {
 
-  override val evaluate: Context => T = _ => value
+  override val evaluate: Evaluate[T] = _ => value
 }
