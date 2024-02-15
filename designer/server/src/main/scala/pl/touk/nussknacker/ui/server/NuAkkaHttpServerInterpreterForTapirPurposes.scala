@@ -42,13 +42,6 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(anonymousAccessEnabled: Boolea
     AkkaHttpServerOptions.customiseInterceptors
       .decodeFailureHandler(customDecodeFailureHandler)
       .exceptionHandler(customExceptionHandler)
-      .rejectHandler(new RejectHandler[Future] {
-
-        override def apply(
-            failure: RequestResult.Failure
-        )(implicit monad: MonadError[Future]): Future[Option[ValuedEndpointOutput[_]]] = ???
-
-      })
       .options
 
   private lazy val customDecodeFailureHandler = {
