@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.{Context, NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.{Parameter, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
@@ -29,7 +30,8 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: RecordFormatter,
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-      testParametersInfo: KafkaTestParametersInfo
+      testParametersInfo: KafkaTestParametersInfo,
+      namingStrategy: NamingStrategy
   ): Source = {
     new LiteKafkaSourceImpl(
       contextInitializer,

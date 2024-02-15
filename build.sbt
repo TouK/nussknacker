@@ -600,7 +600,8 @@ lazy val flinkDeploymentManager = (project in flink("management"))
         "com.softwaremill.retry" %% "retry"                          % "0.3.6",
         "com.dimafeng"           %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
         "com.dimafeng"           %% "testcontainers-scala-kafka"     % testContainersScalaV % "it,test",
-        "com.github.tomakehurst"  % "wiremock-jre8"                  % wireMockV            % Test
+        "com.github.tomakehurst"  % "wiremock-jre8"                  % wireMockV            % Test,
+        "org.scalatestplus"      %% "mockito-4-11"                   % scalaTestPlusV       % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
@@ -1851,17 +1852,18 @@ lazy val designer = (project in file("designer/server"))
     restmodel,
     listenerApi,
     testUtils                         % "test",
-    // TODO: this is unfortunately needed to run without too much hassle NussknackerApp from Intellij...
-    // provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
-    // otherwise it is (wrongly) added to classpath when running Designer from Idea
+    // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
+    // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
+    // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes
+    // that are also load added their test dependencies on the classpath by the Idea. It causes that
+    // UniversalKafkaSourceFactory is loaded from app classloader and GenericRecord which is defined in typesToExtract
+    // is missing from this classloader
     flinkDeploymentManager            % "provided",
     liteEmbeddedDeploymentManager     % "provided",
     liteK8sDeploymentManager          % "provided",
-    kafkaUtils                        % "provided",
-    schemedKafkaComponentsUtils       % "provided",
-    requestResponseRuntime            % "provided",
     developmentTestsDeploymentManager % "provided",
     devPeriodicDM                     % "provided",
+    schemedKafkaComponentsUtils       % "provided",
   )
 
 /*

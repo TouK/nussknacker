@@ -522,7 +522,9 @@ class AkkaHttpBasedRouteProvider(
             processingTypeDataStateFactory.create(
               designerConfig,
               getDeploymentManagerDependencies,
-              additionalUIConfigProvider
+              additionalUIConfigProvider,
+              workingDirectoryOpt = None, // we use the default working directory
+              skipComponentProvidersLoadedFromAppClassloader = false
             )
           })
         )

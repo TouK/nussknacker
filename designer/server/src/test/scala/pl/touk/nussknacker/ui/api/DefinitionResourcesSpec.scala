@@ -17,14 +17,15 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
   DefinitionsService,
-  ScenarioPropertiesConfigFinalizer,
-  TestAdditionalUIConfigProvider
+  ScenarioPropertiesConfigFinalizer
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 

@@ -12,7 +12,7 @@ class DefaultClassDiscoveryTest extends ClassDiscoveryBaseTest {
     val config = ConfigFactory.parseString("config {}")
     val components =
       FlinkBaseComponentProvider.Components :::
-        new FlinkKafkaComponentProvider().create(config, ProcessObjectDependencies.empty)
+        new FlinkKafkaComponentProvider().create(config, ProcessObjectDependencies.withConfig(ConfigFactory.empty()))
 
     LocalModelData(config, components, configCreator = new DefaultConfigCreator)
   }

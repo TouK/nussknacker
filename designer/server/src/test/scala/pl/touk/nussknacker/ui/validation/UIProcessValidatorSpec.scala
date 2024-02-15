@@ -55,19 +55,20 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.possibleValues
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
+import pl.touk.nussknacker.test.utils.domain.{TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.possibleValues
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
 class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks with OptionValues {
 
-  import ProcessTestData._
+  import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
   import UIProcessValidatorSpec._
   import spel.Implicits._
 
@@ -1534,7 +1535,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
 private object UIProcessValidatorSpec {
 
-  import ProcessTestData._
+  import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
   private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
   val sourceTypeName: String = "processSource"
@@ -1716,11 +1717,11 @@ private object UIProcessValidatorSpec {
       .build
 
     new UIProcessValidator(
-      TestProcessingTypes.Streaming,
-      ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition, execConfig)),
-      FlinkStreamingPropertiesConfig.properties,
-      List(SampleCustomProcessValidator),
-      new FragmentResolver(
+      processingType = TestProcessingTypes.Streaming,
+      validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition, execConfig)),
+      scenarioProperties = FlinkStreamingPropertiesConfig.properties,
+      additionalValidators = List(SampleCustomProcessValidator),
+      fragmentResolver = new FragmentResolver(
         new StubFragmentRepository(
           fragmentsByProcessingType.mapValuesNow(List(_))
         )

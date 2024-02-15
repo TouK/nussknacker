@@ -12,9 +12,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFac
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider, TestFactory}
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
+import pl.touk.nussknacker.test.utils.domain.TestCategories.{Category1, Category2}
+import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.utils.domain.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeData,
   ProcessingTypeDataProvider,

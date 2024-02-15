@@ -16,6 +16,8 @@ import pl.touk.nussknacker.engine.{
   MetaDataInitializer
 }
 
+import scala.concurrent.duration.FiniteDuration
+
 class PeriodicDeploymentManagerProvider(
     delegate: DeploymentManagerProvider,
     schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
@@ -31,27 +33,29 @@ class PeriodicDeploymentManagerProvider(
   override def createDeploymentManager(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
-      config: Config
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
     logger.info("Creating periodic scenario manager")
-    delegate.createDeploymentManager(modelData, dependencies, config).map { delegateDeploymentManager =>
-      import net.ceedubs.ficus.Ficus._
-      import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-      val periodicBatchConfig = config.as[PeriodicBatchConfig]("deploymentManager")
-      val flinkConfig         = config.rootAs[FlinkConfig]
-      PeriodicDeploymentManager(
-        delegate = delegateDeploymentManager,
-        schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
-        processConfigEnricherFactory = processConfigEnricherFactory,
-        periodicBatchConfig = periodicBatchConfig,
-        flinkConfig = flinkConfig,
-        originalConfig = config,
-        modelData = modelData,
-        listenerFactory,
-        additionalDeploymentDataProvider,
-        customActionsProviderFactory,
-        dependencies
-      )
+    delegate.createDeploymentManager(modelData, dependencies, config, scenarioStateCacheTTL).map {
+      delegateDeploymentManager =>
+        import net.ceedubs.ficus.Ficus._
+        import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+        val periodicBatchConfig = config.as[PeriodicBatchConfig]("deploymentManager")
+        val flinkConfig         = config.rootAs[FlinkConfig]
+        PeriodicDeploymentManager(
+          delegate = delegateDeploymentManager,
+          schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
+          processConfigEnricherFactory = processConfigEnricherFactory,
+          periodicBatchConfig = periodicBatchConfig,
+          flinkConfig = flinkConfig,
+          originalConfig = config,
+          modelData = modelData,
+          listenerFactory,
+          additionalDeploymentDataProvider,
+          customActionsProviderFactory,
+          dependencies
+        )
     }
 
   }

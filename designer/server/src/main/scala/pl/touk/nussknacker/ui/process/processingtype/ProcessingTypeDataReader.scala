@@ -13,6 +13,8 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.{
   toValueWithRestriction
 }
 
+import java.nio.file.Path
+
 object ProcessingTypeDataReader extends ProcessingTypeDataReader {
 
   val selectedScenarioTypeConfigurationPath = "selectedScenarioType"
@@ -28,7 +30,13 @@ trait ProcessingTypeDataReader extends LazyLogging {
   def loadProcessingTypeData(
       config: ConfigWithUnresolvedVersion,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      workingDirectoryOpt: Option[Path],
+      // This property is for easier testing when for some reason, some jars with ComponentProvider are
+      // on the test classpath and CPs collide with other once with the same name.
+      // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
+      // add liteKafkaComponents (which are in test scope), see comment next to designer module
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
@@ -55,7 +63,9 @@ trait ProcessingTypeDataReader extends LazyLogging {
           provider,
           getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),
-          additionalUIConfigProvider
+          additionalUIConfigProvider,
+          workingDirectoryOpt,
+          skipComponentProvidersLoadedFromAppClassloader
         )
         processingType -> processingTypeData
       }
@@ -92,7 +102,9 @@ trait ProcessingTypeDataReader extends LazyLogging {
       deploymentManagerProvider: DeploymentManagerProvider,
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      workingDirectoryOpt: Option[Path],
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ProcessingTypeData = {
     logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
     ProcessingTypeData.createProcessingTypeData(
@@ -101,7 +113,9 @@ trait ProcessingTypeDataReader extends LazyLogging {
       deploymentManagerDependencies,
       engineSetupName,
       processingTypeConfig,
-      additionalUIConfigProvider
+      additionalUIConfigProvider,
+      workingDirectoryOpt,
+      skipComponentProvidersLoadedFromAppClassloader
     )
   }
 

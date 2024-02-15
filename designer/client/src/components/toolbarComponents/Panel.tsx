@@ -11,7 +11,7 @@ export const PanelHeader = styled("div")(({ theme }) => ({
     background: `var(${__panelBorder})`,
     color: `var(${__panelHeaderText})`,
     justifyContent: "space-between",
-    padding: theme.spacing(0, 1),
+    padding: theme.spacing(0.25, 0.5),
     flexGrow: 0,
     ":focus": {
         background: theme.palette.action.focus,

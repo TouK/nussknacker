@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
@@ -59,7 +60,8 @@ class RequestResponseEmbeddedDeploymentManagerTest
           .empty()
           .withValue("mode", fromAnyRef("request-response"))
           .withValue("http.port", fromAnyRef(port))
-          .withValue("http.interface", fromAnyRef("localhost"))
+          .withValue("http.interface", fromAnyRef("localhost")),
+        ScenarioStateCachingConfig.Default.cacheTTL
       )
       .validValue
     FixtureParam(manager, modelData, port)

@@ -5,8 +5,9 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.utils.domain.NuTestScenarioManager
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 import java.util.UUID
 
