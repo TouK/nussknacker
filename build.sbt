@@ -1734,6 +1734,7 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
     componentsUtils    % Provided
   )
 
+// TODO: check if any flink-table / connector / format dependencies' scope can be limited
 lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev-table"))
   .settings(commonSettings)
   .settings(assemblyNoScala("flinkTable.jar"): _*)
@@ -1742,11 +1743,13 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
     name := "nussknacker-flink-table-components",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-table"                 % flinkV % "provided, test",
-        "org.apache.flink" % "flink-table-api-java"        % flinkV % "provided, test",
-        "org.apache.flink" % "flink-table-api-java-bridge" % flinkV % "provided, test",
-        "org.apache.flink" % "flink-table-planner-loader"  % flinkV % "provided, test",
-        "org.apache.flink" % "flink-table-runtime"         % flinkV % "provided, test"
+        "org.apache.flink" % "flink-table"                 % flinkV,
+        "org.apache.flink" % "flink-table-api-java"        % flinkV,
+        "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
+        "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
+        "org.apache.flink" % "flink-table-runtime"         % flinkV,
+        "org.apache.flink" % "flink-connector-kafka"       % flinkV,
+        "org.apache.flink" % "flink-json"                  % flinkV
       )
     }
   )

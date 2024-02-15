@@ -10,7 +10,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, schemaRegistryMockClient}
-import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
@@ -58,14 +58,17 @@ abstract class FlinkWithKafkaSuite
   protected lazy val valueSerializer             = new KafkaAvroSerializer(schemaRegistryMockClient)
   protected lazy val valueDeserializer           = new KafkaAvroDeserializer(schemaRegistryMockClient)
 
+  protected lazy val additionalComponents: List[ComponentDefinition] = Nil
+
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val components =
       new MockFlinkKafkaComponentProvider()
         .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
-        FlinkBaseComponentProvider.Components
+        FlinkBaseComponentProvider.Components :::
+        additionalComponents
     val modelData =
-      LocalModelData(config, components, configCreator = creator, namingStrategy = Some(NamingStrategy(Some("ns"))))
+      LocalModelData(config, components, configCreator = creator)
     registrar = FlinkProcessRegistrar(
       new FlinkProcessCompilerDataFactory(modelData),
       FlinkJobConfig.parse(modelData.modelConfig),

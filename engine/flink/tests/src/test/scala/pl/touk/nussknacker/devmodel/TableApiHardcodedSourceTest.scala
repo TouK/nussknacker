@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.table.TableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.HardcodedSourceTableComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
@@ -30,7 +30,7 @@ class TableApiHardcodedSourceTest extends AnyFunSuite with FlinkSpec with Matche
     val listener = initializeListener
     val model = LocalModelData(
       ConfigFactory.empty(),
-      FlinkBaseComponentProvider.Components ::: TableComponentProvider.ConfigIndependentComponents,
+      FlinkBaseComponentProvider.Components ::: HardcodedSourceTableComponentProvider.ConfigIndependentComponents,
       configCreator = new ConfigCreatorWithCollectingListener(listener),
     )
 

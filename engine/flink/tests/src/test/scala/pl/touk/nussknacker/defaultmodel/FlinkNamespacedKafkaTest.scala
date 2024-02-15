@@ -75,7 +75,6 @@ class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
           .take(1)
           .map(_.message())
           .toList
-      processed.size shouldBe 1
       processed.head shouldBe parseJson(record)
     }
   }
