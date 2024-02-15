@@ -8,6 +8,9 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 
+// This class looks like a LazyParameter but actually it's not - it's a creator of the LazyParameter.
+// It's Flink specific. And should not be evaluated directly. See the `evaluate` method implementation and
+// DefaultToEvaluateFunctionConverter class.
 final case class EvaluableLazyParameterCreator[T <: AnyRef](
     nodeId: NodeId,
     parameterDef: definition.Parameter,
@@ -27,8 +30,8 @@ final case class EvaluableLazyParameterCreator[T <: AnyRef](
 
   override def evaluate: Evaluate[T] =
     throw new IllegalStateException(
-      s"[${classOf[EvaluableLazyParameterCreator[_]].getName}] doesn't provide evaluator"
-    ) // todo: better msg
+      s"[${classOf[EvaluableLazyParameterCreator[_]].getName}] looks like a LazyParameter, but actually it's a creator of [${classOf[EvaluableLazyParameter[T]].getName}] instance. It cannot be evaluated directly!"
+    )
 
 }
 
@@ -36,7 +39,7 @@ class EvaluableLazyParameterCreatorDeps(
     val expressionCompiler: ExpressionCompiler,
     val expressionEvaluator: ExpressionEvaluator,
     val metaData: MetaData
-) extends Serializable
+)
 
 class DefaultToEvaluateFunctionConverter(deps: EvaluableLazyParameterCreatorDeps) extends ToEvaluateFunctionConverter {
 
