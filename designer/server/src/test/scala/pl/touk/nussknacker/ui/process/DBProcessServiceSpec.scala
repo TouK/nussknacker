@@ -11,16 +11,17 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.mock.MockFetchingProcessRepository
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
-import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -28,8 +29,8 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
   import io.circe.syntax._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-  import pl.touk.nussknacker.ui.api.helpers.TestCategories._
-  import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+  import pl.touk.nussknacker.test.utils.domain.TestCategories._
+  import pl.touk.nussknacker.test.utils.domain.TestProcessUtil._
 
   // These users were created based on categories configuration at designer.conf
   private val adminUser = TestFactory.adminUser()

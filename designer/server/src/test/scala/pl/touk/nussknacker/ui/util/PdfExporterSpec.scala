@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.util.ResourceLoader
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessUtil}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Comment, ProcessActivity}
 

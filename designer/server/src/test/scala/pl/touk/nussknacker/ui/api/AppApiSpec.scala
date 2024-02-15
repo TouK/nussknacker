@@ -10,13 +10,14 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.utils.domain.NuTestScenarioManager
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
 
 class AppApiSpec
     extends AnyFreeSpecLike

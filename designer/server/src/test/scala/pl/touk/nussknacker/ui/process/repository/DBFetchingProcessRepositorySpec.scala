@@ -5,15 +5,15 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment

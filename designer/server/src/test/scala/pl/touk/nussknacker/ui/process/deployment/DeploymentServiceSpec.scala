@@ -16,9 +16,12 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.{
@@ -30,7 +33,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcess
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction
 
 import java.util.UUID
@@ -49,9 +51,9 @@ class DeploymentServiceSpec
     with WithHsqlDbTesting
     with EitherValuesDetailedMessage {
 
-  import TestCategories._
-  import TestFactory._
-  import TestProcessingTypes._
+  import pl.touk.nussknacker.test.utils.domain.TestCategories._
+  import pl.touk.nussknacker.test.utils.domain.TestFactory._
+  import pl.touk.nussknacker.test.utils.domain.TestProcessingTypes._
   import VersionId._
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh

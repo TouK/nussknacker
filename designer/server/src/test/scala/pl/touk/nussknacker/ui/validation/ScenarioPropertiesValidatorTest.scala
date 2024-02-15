@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
