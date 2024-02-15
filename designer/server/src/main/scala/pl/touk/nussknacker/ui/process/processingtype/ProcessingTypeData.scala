@@ -15,6 +15,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 import java.nio.file.Path
+import scala.util.control.NonFatal
 
 final case class ProcessingTypeData private (
     processingType: ProcessingType,
@@ -56,25 +57,35 @@ object ProcessingTypeData {
       engineSetupName: EngineSetupName,
       processingTypeConfig: ProcessingTypeConfig,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      workingDirectoryOpt: Option[Path]
+      workingDirectoryOpt: Option[Path],
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ProcessingTypeData = {
-    val managerConfig                 = processingTypeConfig.deploymentConfig
-    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
+    try {
+      val managerConfig                 = processingTypeConfig.deploymentConfig
+      val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
 
-    createProcessingTypeData(
-      processingType,
-      deploymentManagerProvider,
-      deploymentManagerDependencies,
-      engineSetupName,
-      ModelData(
-        processingTypeConfig,
-        additionalConfigsFromProvider,
-        DesignerWideComponentId.default(processingType, _),
-        workingDirectoryOpt
-      ),
-      managerConfig,
-      processingTypeConfig.category
-    )
+      createProcessingTypeData(
+        processingType,
+        deploymentManagerProvider,
+        deploymentManagerDependencies,
+        engineSetupName,
+        ModelData(
+          processingTypeConfig,
+          additionalConfigsFromProvider,
+          DesignerWideComponentId.default(processingType, _),
+          workingDirectoryOpt,
+          skipComponentProvidersLoadedFromAppClassloader
+        ),
+        managerConfig,
+        processingTypeConfig.category
+      )
+    } catch {
+      case NonFatal(ex) =>
+        throw new IllegalArgumentException(
+          s"Error during creation of processing type data for processing type [$processingType]",
+          ex
+        )
+    }
   }
 
   // It is extracted mostly for easier testing and LocalNussknackerWithSingleModel

@@ -31,7 +31,12 @@ trait ProcessingTypeDataReader extends LazyLogging {
       config: ConfigWithUnresolvedVersion,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      workingDirectoryOpt: Option[Path]
+      workingDirectoryOpt: Option[Path],
+      // This property is for easier testing when for some reason, some jars with ComponentProvider are
+      // on the test classpath and CPs collide with other once with the same name.
+      // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
+      // add liteKafkaComponents (which are in test scope), see comment next to designer module
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
@@ -59,7 +64,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
           getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),
           additionalUIConfigProvider,
-          workingDirectoryOpt
+          workingDirectoryOpt,
+          skipComponentProvidersLoadedFromAppClassloader
         )
         processingType -> processingTypeData
       }
@@ -97,7 +103,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      workingDirectoryOpt: Option[Path]
+      workingDirectoryOpt: Option[Path],
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ProcessingTypeData = {
     logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
     ProcessingTypeData.createProcessingTypeData(
@@ -107,7 +114,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
       engineSetupName,
       processingTypeConfig,
       additionalUIConfigProvider,
-      workingDirectoryOpt
+      workingDirectoryOpt,
+      skipComponentProvidersLoadedFromAppClassloader
     )
   }
 
