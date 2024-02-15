@@ -36,10 +36,26 @@ export const CustomRadio = forwardRef(({ label, value, Icon, disabled, active }:
                     {label}
                 </Typography>
                 {active && (
-                    <CheckCircleIcon
-                        sx={(theme) => ({ position: "absolute", top: theme.spacing(-1.25), right: theme.spacing(-1.25) })}
-                        color={"primary"}
-                    />
+                    <>
+                        <Box
+                            sx={(theme) => ({
+                                backgroundColor: theme.custom.colors.primaryBackground,
+                                position: "absolute",
+                                top: theme.spacing(-1.25),
+                                right: theme.spacing(-1.25),
+                                width: "1em",
+                                height: "1em",
+                            })}
+                        />
+                        <CheckCircleIcon
+                            sx={(theme) => ({
+                                position: "absolute",
+                                top: theme.spacing(-1.25),
+                                right: theme.spacing(-1.25),
+                            })}
+                            color={"primary"}
+                        />
+                    </>
                 )}
             </Paper>
         </Box>

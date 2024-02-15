@@ -13,8 +13,6 @@ import BatchIcon from "../assets/img/batch.svg";
 import { CustomRadio } from "./customRadio/CustomRadio";
 import { ProcessingMode } from "../http/HttpService";
 import { NodeValidationError } from "../types";
-import NodeTip from "./graph/node-modal/NodeTip";
-import InfoIcon from "@mui/icons-material/Info";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
