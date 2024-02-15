@@ -12,17 +12,31 @@ object ComponentsFromProvidersExtractor {
 
   val componentConfigPath = "components"
 
-  def apply(classLoader: ClassLoader): ComponentsFromProvidersExtractor = {
-    ComponentsFromProvidersExtractor(classLoader, NussknackerVersion.current)
+  def apply(
+      classLoader: ClassLoader,
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
+  ): ComponentsFromProvidersExtractor = {
+    new ComponentsFromProvidersExtractor(
+      classLoader,
+      skipComponentProvidersLoadedFromAppClassloader,
+      NussknackerVersion.current
+    )
   }
 
 }
 
-case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
+class ComponentsFromProvidersExtractor(
+    classLoader: ClassLoader,
+    skipComponentProvidersLoadedFromAppClassloader: Boolean,
+    nussknackerVersion: NussknackerVersion
+) {
 
   private lazy val providers: Map[String, List[ComponentProvider]] = {
     ScalaServiceLoader
-      .load[ComponentProvider](classLoader)
+      .load[ComponentProvider](
+        classLoader,
+        skipClassesLoadedFromAppClassloader = skipComponentProvidersLoadedFromAppClassloader
+      )
       .groupBy(_.providerName)
   }
 

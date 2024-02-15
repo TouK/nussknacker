@@ -135,7 +135,8 @@ trait NuResourcesTest
       processingTypeConfig,
       TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
       DesignerWideComponentId.default(processingType.stringify, _),
-      workingDirectoryOpt = None
+      workingDirectoryOpt = None,
+      skipComponentProvidersLoadedFromAppClassloader = false
     )
   }
 
@@ -148,7 +149,8 @@ trait NuResourcesTest
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig,
         TestAdditionalUIConfigProvider,
-        workingDirectoryOpt = None
+        workingDirectoryOpt = None,
+        skipComponentProvidersLoadedFromAppClassloader = false
       )
     )
 
@@ -160,7 +162,8 @@ trait NuResourcesTest
         ConfigWithUnresolvedVersion(testConfig),
         _ => deploymentManagerDependencies,
         TestAdditionalUIConfigProvider,
-        workingDirectoryOpt = None
+        workingDirectoryOpt = None,
+        skipComponentProvidersLoadedFromAppClassloader = false
       )
     )
 

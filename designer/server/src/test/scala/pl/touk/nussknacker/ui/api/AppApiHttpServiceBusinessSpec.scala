@@ -66,7 +66,7 @@ class AppApiHttpServiceBusinessSpec
             Map(
               "id1" -> ProblemStateStatus.FailedToGet,
               "id2" -> SimpleStateStatus.Running,
-              "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)),
+              "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
             )
           )
         }
@@ -90,7 +90,7 @@ class AppApiHttpServiceBusinessSpec
           createDeployedExampleScenario(ProcessName("id2"))
 
           MockableDeploymentManager.configure(
-            Map("id2" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)))
+            Map("id2" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"))
           )
         }
         .when()
@@ -255,7 +255,7 @@ class AppApiHttpServiceBusinessSpec
             Map(
               "id1" -> ProblemStateStatus.FailedToGet,
               "id2" -> SimpleStateStatus.Running,
-              "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L)),
+              "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
             )
           )
         }
