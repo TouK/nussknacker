@@ -87,8 +87,8 @@ trait AnonymousAccess extends Directives {
       case Some(_) =>
         // In WithAnonymousAccessFallback the encrypted password of the anonymous user is added as an Authorization
         // header credentials. Here, using the same crypter, is decrypted and AuthCredentials object is created.
-        // The crypter is used to don't allow to use the anonymous credentials to authenticate explicitly (by passing
-        // the credentials with the HTTP request).
+        // The crypter is used to prevent the anonymous credentials from being used for explicit authentication
+        // (by passing the credentials with the credentials with the HTTP request).
         rawAuthCredentialsMethod
           .map(
             Mapping.from[String, AuthCredentials](
