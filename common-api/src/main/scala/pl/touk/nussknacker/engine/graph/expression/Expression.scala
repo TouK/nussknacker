@@ -11,7 +11,7 @@ object Expression {
   object Language {
     val Spel             = "spel"
     val SpelTemplate     = "spelTemplate"
-    val Literal          = "literal" // TODO remove if not needed?
+    val Literal          = "literal"
     val DictLabelWithKey = "dictLabelWithKey"
   }
 

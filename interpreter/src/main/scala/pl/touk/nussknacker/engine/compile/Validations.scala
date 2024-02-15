@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 }
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition.{DictParameterEditor, Parameter, Validator}
-import pl.touk.nussknacker.engine.api.dict.DictRegistry
+import pl.touk.nussknacker.engine.api.dict.{DictRegistry, EngineDictRegistry}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
@@ -123,10 +123,16 @@ object Validations {
             Valid(expr)
         )
         .andThen(expr =>
-          dictRegistry
-            .labelByKey(dictId, expr.key)
-            .map(_ => ())
-            .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, definition.name)))
+          dictRegistry match {
+            case _: EngineDictRegistry =>
+              // no need to validate it on Engine side, this allows EngineDictRegistry to be lighter (not having to contain dictionaries only used by DictParameterEditors)
+              Valid(())
+            case _ =>
+              dictRegistry
+                .labelByKey(dictId, expr.key)
+                .map(_ => ())
+                .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, definition.name)))
+          }
         )
     case _ => Valid(())
   }
