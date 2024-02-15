@@ -13,23 +13,20 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{
-  BaseModelData,
-  DeploymentManagerDependencies,
-  DeploymentManagerProvider,
-  MetaDataInitializer
-}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, DeploymentManagerProvider, MetaDataInitializer}
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createDeploymentManager(
       modelData: BaseModelData,
       deploymentManagerDependencies: DeploymentManagerDependencies,
-      config: Config
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] =
     valid(MockableDeploymentManager)
 
@@ -121,7 +118,7 @@ object MockableDeploymentManagerProvider {
         implicit freshnessPolicy: DataFreshnessPolicy
     ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
       val status = scenarioStatuses.get().getOrElse(name.value, SimpleStateStatus.NotDeployed)
-      Future.successful(WithDataFreshnessStatus(List(StatusDetails(status, None)), cached = false))
+      Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
     }
 
     override def close(): Unit = {}

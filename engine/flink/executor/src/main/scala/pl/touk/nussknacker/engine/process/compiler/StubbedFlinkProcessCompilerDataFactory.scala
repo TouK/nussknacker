@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
@@ -28,13 +28,13 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
-    objectNaming: ObjectNaming,
+    namingStrategy: NamingStrategy,
     componentUseCase: ComponentUseCase
 ) extends FlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       modelConfig,
-      objectNaming,
+      namingStrategy,
       componentUseCase,
     ) {
 

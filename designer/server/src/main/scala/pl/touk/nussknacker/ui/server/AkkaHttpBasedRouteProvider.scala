@@ -279,7 +279,7 @@ class AkkaHttpBasedRouteProvider(
         ),
         new AkkaHttpBasedTapirStreamEndpointProvider()
       )
-      val scenarioParametersHttpService = new ScenarioParametersHttpService(
+      val scenarioParametersHttpService = new ScenarioParametersApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
         scenarioParametersService = typeToConfig.mapCombined(_.parametersService)
@@ -522,7 +522,9 @@ class AkkaHttpBasedRouteProvider(
             processingTypeDataStateFactory.create(
               designerConfig,
               getDeploymentManagerDependencies,
-              additionalUIConfigProvider
+              additionalUIConfigProvider,
+              workingDirectoryOpt = None, // we use the default working directory
+              skipComponentProvidersLoadedFromAppClassloader = false
             )
           })
         )

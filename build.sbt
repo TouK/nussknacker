@@ -284,7 +284,7 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV             = "1.16.3"
+val flinkV             = "1.17.2"
 val flinkCommonsLang3V = "3.12.0"
 val flinkCommonsTextV  = "1.10.0"
 val flinkCommonsIOV    = "2.11.0"
@@ -600,7 +600,8 @@ lazy val flinkDeploymentManager = (project in flink("management"))
         "com.softwaremill.retry" %% "retry"                          % "0.3.6",
         "com.dimafeng"           %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
         "com.dimafeng"           %% "testcontainers-scala-kafka"     % testContainersScalaV % "it,test",
-        "com.github.tomakehurst"  % "wiremock-jre8"                  % wireMockV            % Test
+        "com.github.tomakehurst"  % "wiremock-jre8"                  % wireMockV            % Test,
+        "org.scalatestplus"      %% "mockito-4-11"                   % scalaTestPlusV       % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
@@ -710,15 +711,16 @@ lazy val flinkTests = (project in flink("tests"))
     }
   )
   .dependsOn(
-    defaultModel         % "test",
-    flinkExecutor        % "test",
-    flinkKafkaComponents % "test",
-    flinkBaseComponents  % "test",
-    flinkTestUtils       % "test",
-    kafkaTestUtils       % "test",
+    defaultModel           % "test",
+    flinkExecutor          % "test",
+    flinkKafkaComponents   % "test",
+    flinkBaseComponents    % "test",
+    flinkTestUtils         % "test",
+    kafkaTestUtils         % "test",
+    flinkComponentsTestkit % "test",
     // for local development
-    designer             % "test",
-    deploymentManagerApi % "test"
+    designer               % "test",
+    deploymentManagerApi   % "test"
   )
 
 lazy val defaultModel = (project in (file("defaultModel")))
@@ -1851,17 +1853,18 @@ lazy val designer = (project in file("designer/server"))
     restmodel,
     listenerApi,
     testUtils                         % "test",
-    // TODO: this is unfortunately needed to run without too much hassle NussknackerApp from Intellij...
-    // provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
-    // otherwise it is (wrongly) added to classpath when running Designer from Idea
+    // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
+    // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
+    // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes
+    // that are also load added their test dependencies on the classpath by the Idea. It causes that
+    // UniversalKafkaSourceFactory is loaded from app classloader and GenericRecord which is defined in typesToExtract
+    // is missing from this classloader
     flinkDeploymentManager            % "provided",
     liteEmbeddedDeploymentManager     % "provided",
     liteK8sDeploymentManager          % "provided",
-    kafkaUtils                        % "provided",
-    schemedKafkaComponentsUtils       % "provided",
-    requestResponseRuntime            % "provided",
     developmentTestsDeploymentManager % "provided",
     devPeriodicDM                     % "provided",
+    schemedKafkaComponentsUtils       % "provided",
   )
 
 /*

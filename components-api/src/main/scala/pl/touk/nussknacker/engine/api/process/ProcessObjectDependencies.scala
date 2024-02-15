@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.api.process
 
-import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 
 // TODO: Rename to ModelDependencies + rename config to modelConfig
-case class ProcessObjectDependencies(config: Config, objectNaming: ObjectNaming) extends Serializable
+final case class ProcessObjectDependencies private (config: Config, namingStrategy: NamingStrategy) extends Serializable
 
 object ProcessObjectDependencies {
-  def empty: ProcessObjectDependencies = withConfig(ConfigFactory.empty())
 
-  def withConfig(config: Config): ProcessObjectDependencies =
-    ProcessObjectDependencies(config, ObjectNaming.OriginalNames)
+  def withConfig(modelConfig: Config): ProcessObjectDependencies = {
+    ProcessObjectDependencies(modelConfig, NamingStrategy.fromConfig(modelConfig))
+  }
+
 }

@@ -17,8 +17,11 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.{
@@ -30,7 +33,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcess
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction
 
 import java.util.UUID
@@ -49,9 +51,6 @@ class DeploymentServiceSpec
     with WithHsqlDbTesting
     with EitherValuesDetailedMessage {
 
-  import TestCategories._
-  import TestFactory._
-  import TestProcessingTypes._
   import VersionId._
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
@@ -75,7 +74,7 @@ class DeploymentServiceSpec
         new ProcessingTypeDataState[DeploymentManager, Nothing] {
 
           override def all: Map[ProcessingType, ValueWithRestriction[DeploymentManager]] = Map(
-            TestProcessingTypes.Streaming -> ValueWithRestriction.anyUser(deploymentManager)
+            "streaming" -> ValueWithRestriction.anyUser(deploymentManager)
           )
 
           override def getCombined: () => Nothing = noCombinedDataFun
@@ -94,9 +93,9 @@ class DeploymentServiceSpec
   deploymentManager = new MockDeploymentManager(
     SimpleStateStatus.Running,
     new DefaultProcessingTypeDeploymentService(
-      TestProcessingTypes.Streaming,
+      "streaming",
       deploymentService,
-      AllDeployedScenarioService(testDbRef, TestProcessingTypes.Streaming)
+      AllDeployedScenarioService(testDbRef, "streaming")
     )
   )
 
@@ -153,7 +152,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, actionId)    = prepareDeployedProcess(processName).dbioActionValues
 
-    deploymentService.markActionExecutionFinished(Streaming, actionId).futureValue
+    deploymentService.markActionExecutionFinished("streaming", actionId).futureValue
     eventually {
       val action =
         actionRepository.getFinishedProcessActions(processId.id, Some(Set(ProcessActionType.Deploy))).dbioActionValues
@@ -825,13 +824,13 @@ class DeploymentServiceSpec
     val canonicalProcess = parallelism
       .map(baseBuilder.parallelism)
       .getOrElse(baseBuilder)
-      .source("source", existingSourceFactory)
-      .emptySink("sink", existingSinkFactory)
+      .source("source", ProcessTestData.existingSourceFactory)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
     val action = CreateProcessAction(
-      processName,
-      Category1,
-      canonicalProcess,
-      Streaming,
+      processName = processName,
+      category = "Category1",
+      canonicalProcess = canonicalProcess,
+      processingType = "streaming",
       isFragment = false,
       forwardedUserName = None
     )
@@ -844,10 +843,10 @@ class DeploymentServiceSpec
       .emptySink("end", "end")
 
     val action = CreateProcessAction(
-      processName,
-      Category1,
-      canonicalProcess,
-      Streaming,
+      processName = processName,
+      category = "Category1",
+      canonicalProcess = canonicalProcess,
+      processingType = "streaming",
       isFragment = true,
       forwardedUserName = None
     )

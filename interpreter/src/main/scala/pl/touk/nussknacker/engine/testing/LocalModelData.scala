@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{
   ComponentId,
   DesignerWideComponentId
 }
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{
   EmptyProcessConfigCreator,
   ProcessConfigCreator,
@@ -37,11 +37,12 @@ object LocalModelData {
       configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator,
       category: Option[String] = None,
       migrations: ProcessMigrations = ProcessMigrations.empty,
-      modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
+      modelConfigLoader: ModelConfigLoader =
+        new DefaultModelConfigLoader(skipComponentProvidersLoadedFromAppClassloader = false),
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
-      objectNaming: ObjectNaming = ObjectNaming.OriginalNames,
       determineDesignerWideId: ComponentId => DesignerWideComponentId = DesignerWideComponentId.default("streaming", _),
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
+      namingStrategy: Option[NamingStrategy] = None
   ): LocalModelData =
     new LocalModelData(
       InputConfigDuringExecution(inputConfig),
@@ -50,10 +51,10 @@ object LocalModelData {
       configCreator,
       migrations,
       modelClassLoader,
-      objectNaming,
       components,
       determineDesignerWideId,
-      additionalConfigsFromProvider
+      additionalConfigsFromProvider,
+      namingStrategy = namingStrategy.getOrElse(NamingStrategy.fromConfig(inputConfig))
     )
 
   class ExtractDefinitionFunImpl(
@@ -100,10 +101,10 @@ case class LocalModelData(
     configCreator: ProcessConfigCreator,
     migrations: ProcessMigrations,
     modelClassLoader: ModelClassLoader,
-    objectNaming: ObjectNaming,
     components: List[ComponentDefinition],
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
-    additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    namingStrategy: NamingStrategy
 ) extends ModelData {
 
   override val extractModelDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category, components)
