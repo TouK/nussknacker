@@ -125,7 +125,7 @@ object sample {
         .getOrElse(throw new IllegalArgumentException("No capability!"))
       (ctx: Context) =>
         convert(State((current: Map[String, Double]) => {
-          val newValue = current.getOrElse(name, 0d) + value.evaluator.apply(ctx)
+          val newValue = current.getOrElse(name, 0d) + value.evaluate(ctx)
           (current + (name -> newValue), ctx.withVariable(outputVar, newValue))
         }))
     }

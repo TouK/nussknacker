@@ -36,7 +36,7 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
 
     val value = new LazyParameter[AnyRef] {
       override def returnType: typing.TypingResult = Typed[java.lang.Long]
-      override def evaluator: Context => AnyRef    = ???
+      override def evaluate: Context => AnyRef     = ???
     }
 
     val parameterValues = Map("a" -> value, "b.c" -> value)
@@ -58,7 +58,7 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
     val longSchema = SchemaBuilder.builder().longType()
     val value = new LazyParameter[AnyRef] {
       override def returnType: typing.TypingResult = Typed[java.lang.Long]
-      override def evaluator: Context => AnyRef    = ???
+      override def evaluate: Context => AnyRef     = ???
     }
     val parameterValues = Map(SinkValueParamName -> value)
     val sinkParam       = AvroSchemaBasedParameter(longSchema, Set.empty).valueOr(e => fail(e.toString))

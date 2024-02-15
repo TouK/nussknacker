@@ -14,7 +14,7 @@ class EvaluableLazyParameter[T <: AnyRef](
 
   override val returnType: TypingResult = compiledParameter.typingInfo.typingResult
 
-  override val evaluator: Context => T = { ctx: Context =>
+  override val evaluate: Context => T = { ctx: Context =>
     expressionEvaluator
       .evaluateParameter(compiledParameter, ctx)(nodeId, metaData)
       .value

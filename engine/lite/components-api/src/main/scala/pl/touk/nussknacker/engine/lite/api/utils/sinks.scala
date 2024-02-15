@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteSink}
 import pl.touk.nussknacker.engine.lite.api.utils.errors.withErrors
+import scala.language.higherKinds
 
 object sinks {
 
@@ -51,7 +52,7 @@ object sinks {
           implicitly[Monad[F]].pure(
             // FIXME: figure out how to pass componentName here
             withErrors(context, Some(ComponentId(ComponentType.Sink, "unknown")), ctx) {
-              response.evaluator.apply(ctx)
+              response.evaluate(ctx)
             }
           )
       )

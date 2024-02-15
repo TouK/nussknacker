@@ -226,7 +226,7 @@ class CustomExtractor(outputVariableName: String, expression: LazyParameter[AnyR
       context: CustomComponentContext[F]
   ): DataBatch => F[ResultType[Result]] = { (ctxs: DataBatch) =>
     {
-      val exprResults = ctxs.map(ctx => ctx.withVariable(outputVariableName, expression.evaluator.apply(ctx)))
+      val exprResults = ctxs.map(ctx => ctx.withVariable(outputVariableName, expression.evaluate(ctx)))
       continuation(DataBatch(exprResults))
     }
   }
@@ -248,7 +248,7 @@ class CustomFilter(filterExpression: LazyParameter[java.lang.Boolean]) extends S
       continuation: DataBatch => F[ResultType[Result]],
       context: CustomComponentContext[F]
   ): Context => F[ResultType[Result]] = { (ctx: Context) =>
-    if (filterExpression.evaluator.apply(ctx)) continuation(DataBatch(ctx)) else continuation(DataBatch())
+    if (filterExpression.evaluate(ctx)) continuation(DataBatch(ctx)) else continuation(DataBatch())
   }
 
 }

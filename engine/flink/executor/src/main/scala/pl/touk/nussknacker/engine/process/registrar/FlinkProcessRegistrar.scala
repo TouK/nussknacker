@@ -106,9 +106,9 @@ class FlinkProcessRegistrar(
 
   protected def createInterpreter(
       compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData
-  ): RuntimeContext => LazyParameterInterpreterWithLifecycle =
+  ): RuntimeContext => ToEvaluateFunctionConverterWithLifecycle =
     (runtimeContext: RuntimeContext) =>
-      new LazyParameterInterpreterWithLifecycle(
+      new ToEvaluateFunctionConverterWithLifecycle(
         runtimeContext,
         compilerDataForClassloader(runtimeContext.getUserCodeClassLoader)
       )

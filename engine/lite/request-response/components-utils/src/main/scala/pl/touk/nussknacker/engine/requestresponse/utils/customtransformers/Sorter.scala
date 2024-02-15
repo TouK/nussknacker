@@ -40,8 +40,8 @@ object Sorter extends CustomStreamTransformer {
           // TODO: this lazy val is tricky - we should instead assign ContextIdGenerator in open, but we don't have nodeId in open
           lazy val contextIdGenerator = runtimeContext.contextIdGenerator(context.nodeId)
           (inputCtx: DataBatch) =>
-            val ranks        = inputCtx.map(rank.evaluator)
-            val outputs      = inputCtx.map(output.evaluator)
+            val ranks        = inputCtx.map(rank.evaluate)
+            val outputs      = inputCtx.map(output.evaluate)
             val listWithRank = ranks.zip(outputs)
             val finalList    = listWithRank.sortBy(_._1.doubleValue()).reverse.take(maxCount).map(_._2).asJava
             val sorted =

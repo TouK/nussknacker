@@ -24,7 +24,7 @@ final case class EvaluableLazyParameterCreator[T <: AnyRef](
 
   override val returnType: TypingResult = typedExpression.returnType
 
-  override def evaluator: Context => T =
+  override def evaluate: Context => T =
     throw new IllegalStateException(
       s"[${classOf[EvaluableLazyParameterCreator[_]].getName}] doesn't provide evaluator"
     ) // todo: better msg
@@ -37,16 +37,16 @@ class EvaluableLazyParameterCreatorDeps(
     val metaData: MetaData
 )
 
-class DefaultLazyParameterInterpreter(deps: EvaluableLazyParameterCreatorDeps) extends LazyParameterInterpreter {
+class DefaultToEvaluateFunctionConverter(deps: EvaluableLazyParameterCreatorDeps) extends ToEvaluateFunctionConverter {
 
-  override def syncInterpretationFunction[T <: AnyRef](lazyParameter: LazyParameter[T]): Context => T = {
+  override def toEvaluateFunction[T <: AnyRef](lazyParameter: LazyParameter[T]): Context => T = {
     // it's important that it's (...): (Context => T)
     // and not e.g. (...)(Context) => T as we want to be sure when body is evaluated (in particular expression compilation)!
     val newLazyParam = lazyParameter match {
       case e: EvaluableLazyParameterCreator[T] => e.create(deps)
       case _ => throw new IllegalArgumentException(s"LazyParameter $lazyParameter is not supported")
     }
-    v1: Context => newLazyParam.evaluator.apply(v1)
+    v1: Context => newLazyParam.evaluate(v1)
   }
 
 }

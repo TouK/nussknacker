@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 class FlinkLazyParameterFunctionHelper(
     val exceptionComponentInfo: NodeComponentInfo,
     val exceptionHandler: RuntimeContext => ExceptionHandler,
-    val createInterpreter: RuntimeContext => LazyParameterInterpreter with AutoCloseable
+    val createInterpreter: RuntimeContext => ToEvaluateFunctionConverter with AutoCloseable
 ) extends Serializable {
 
   /*
@@ -90,7 +90,7 @@ trait OneParamLazyParameterFunction[T <: AnyRef] extends LazyParameterInterprete
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    _evaluateParameter = lazyParameterInterpreter.syncInterpretationFunction(parameter)
+    _evaluateParameter = lazyParameterInterpreter.toEvaluateFunction(parameter)
   }
 
 }
@@ -104,7 +104,7 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
 
   protected def lazyParameterHelper: FlinkLazyParameterFunctionHelper
 
-  protected var lazyParameterInterpreter: LazyParameterInterpreter with AutoCloseable = _
+  protected var lazyParameterInterpreter: ToEvaluateFunctionConverter with AutoCloseable = _
 
   protected var exceptionHandler: ExceptionHandler = _
 
