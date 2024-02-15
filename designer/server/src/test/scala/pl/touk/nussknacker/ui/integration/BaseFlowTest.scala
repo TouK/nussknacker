@@ -31,15 +31,17 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
+import pl.touk.nussknacker.test.base.it.NuItTest
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestCategories, TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.{NodeValidationRequest, ScenarioValidationRequest}
-import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, SecurityHeadersSupport}
+import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
 import sttp.client3.circe.asJson
 import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{Header, MediaType, StatusCode}
@@ -71,7 +73,7 @@ class BaseFlowTest
     dynamicServiceFile.delete()
   }
 
-  override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     dynamicServiceFile.delete()
     super.afterAll()
   }

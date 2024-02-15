@@ -1,25 +1,16 @@
 package pl.touk.nussknacker.engine.util.loader
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.NamedServiceProvider
+import pl.touk.nussknacker.engine.util.Implicits.RichStringList
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
+import java.net.URLClassLoader
 import java.util.ServiceLoader
 import scala.reflect.ClassTag
 
-object ScalaServiceLoader {
+object ScalaServiceLoader extends LazyLogging {
   import scala.jdk.CollectionConverters._
-
-  def load[T](classLoader: ClassLoader)(implicit classTag: ClassTag[T]): List[T] = {
-    val claz: Class[T] = toClass(classTag)
-    ServiceLoader
-      .load(claz, classLoader)
-      .asScala
-      .toList
-  }
-
-  private def toClass[T](implicit classTag: ClassTag[T]): Class[T] = {
-    classTag.runtimeClass.asInstanceOf[Class[T]]
-  }
 
   def loadClass[T](classLoader: ClassLoader)(createDefault: => T)(implicit classTag: ClassTag[T]): T =
     chooseClass[T](createDefault, load[T](classLoader))
@@ -49,6 +40,39 @@ object ScalaServiceLoader {
           s"More than one $className with name '$name' found: ${more.map(_.getClass).mkString(", ")}"
         )
     }
+  }
+
+  def load[T](classLoader: ClassLoader, skipClassesLoadedFromAppClassloader: Boolean = false)(
+      implicit classTag: ClassTag[T]
+  ): List[T] = {
+    val interface: Class[T] = toClass(classTag)
+    val loadedClasses = ServiceLoader
+      .load(interface, classLoader)
+      .asScala
+      .toList
+      .filterNot(cl => skipClassesLoadedFromAppClassloader && cl.getClass.getClassLoader.getName == "app")
+    logLoadedClassesAndClassloaders(interface, loadedClasses)
+    loadedClasses
+  }
+
+  private def logLoadedClassesAndClassloaders(interface: Class[_], loadedClasses: List[_]): Unit = {
+    logger.debug(
+      loadedClasses
+        .map { cl =>
+          val classLoader = cl.getClass.getClassLoader match {
+            case urlCL: URLClassLoader =>
+              s"${urlCL.getURLs.map(_.toString).toList.mkCommaSeparatedStringWithPotentialEllipsis(10)})"
+            case other =>
+              s"${other.getName}"
+          }
+          s"\n  ${cl.getClass.getName} loaded with classloader $classLoader"
+        }
+        .mkString(s"Classes loaded for the ${interface.getName} interface: ", ", ", "")
+    )
+  }
+
+  private def toClass[T](implicit classTag: ClassTag[T]): Class[T] = {
+    classTag.runtimeClass.asInstanceOf[Class[T]]
   }
 
 }

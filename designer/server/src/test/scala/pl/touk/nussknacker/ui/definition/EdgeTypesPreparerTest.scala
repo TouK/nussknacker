@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, Fragm
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.definition.UINodeEdges
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessingTypes}
 
 class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 

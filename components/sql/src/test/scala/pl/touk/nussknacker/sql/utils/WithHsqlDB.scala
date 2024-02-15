@@ -39,7 +39,7 @@ trait WithHsqlDB {
     }
   }
 
-  override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     Option(conn).foreach(_.close())
   }
 

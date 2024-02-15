@@ -19,10 +19,11 @@ import pl.touk.nussknacker.restmodel.scenariodetails.{
   ScenarioWithDetailsForMigrations
 }
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
-import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
+import pl.touk.nussknacker.test.utils.domain.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.process.migrate.{
   RemoteEnvironment,
   RemoteEnvironmentCommunicationError,

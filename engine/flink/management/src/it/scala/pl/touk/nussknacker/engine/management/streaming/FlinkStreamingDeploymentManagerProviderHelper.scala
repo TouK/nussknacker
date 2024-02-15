@@ -23,7 +23,8 @@ object FlinkStreamingDeploymentManagerProviderHelper {
       processingTypeConfig = typeConfig,
       additionalConfigsFromProvider = Map.empty,
       determineDesignerWideId = id => DesignerWideComponentId(id.toString),
-      workingDirectoryOpt = None
+      workingDirectoryOpt = None,
+      skipComponentProvidersLoadedFromAppClassloader = false
     )
     val actorSystem       = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")
     val backend           = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())

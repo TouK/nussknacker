@@ -37,7 +37,8 @@ object LocalModelData {
       configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator,
       category: Option[String] = None,
       migrations: ProcessMigrations = ProcessMigrations.empty,
-      modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
+      modelConfigLoader: ModelConfigLoader =
+        new DefaultModelConfigLoader(skipComponentProvidersLoadedFromAppClassloader = false),
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
       determineDesignerWideId: ComponentId => DesignerWideComponentId = DesignerWideComponentId.default("streaming", _),
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
