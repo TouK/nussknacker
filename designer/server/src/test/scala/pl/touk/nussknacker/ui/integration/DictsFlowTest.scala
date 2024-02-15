@@ -11,8 +11,10 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.base.it.NuItTest
-import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
-import pl.touk.nussknacker.test.utils.domain.{TestCategories, TestFactory, TestProcessUtil}
+import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.ScenarioToJson
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
@@ -26,6 +28,7 @@ import java.util.UUID
 class DictsFlowTest
     extends AnyFunSuiteLike
     with NuItTest
+    with WithDesignerConfig
     with WithTestHttpClient
     with Matchers
     with OptionValues
@@ -37,7 +40,7 @@ class DictsFlowTest
   private val Key            = "foo"
   private val Label          = "Foo"
 
-  override def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
+  override def designerConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
   test("save process with expression using dicts and get it back") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"
@@ -119,7 +122,7 @@ class DictsFlowTest
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processesExport/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(TestProcessUtil.toJson(process).noSpaces)
+        .body(toJson(process).noSpaces)
         .auth
         .basic("admin", "admin")
     )
@@ -142,7 +145,7 @@ class DictsFlowTest
         .multipartBody(
           sttpPrepareMultiParts(
             "testData"      -> """{"sourceId":"source","record":"field1|field2"}""",
-            "scenarioGraph" -> TestProcessUtil.toJson(process).noSpaces
+            "scenarioGraph" -> toJson(process).noSpaces
           )()
         )
         .auth
@@ -198,8 +201,8 @@ class DictsFlowTest
 
   private def createEmptyScenario(processName: ProcessName) = {
     val command = CreateScenarioCommand(
-      processName,
-      Some(TestCategories.Category1),
+      name = processName,
+      category = Some(Category1.stringify),
       processingMode = None,
       engineSetupName = None,
       isFragment = false,
@@ -221,7 +224,7 @@ class DictsFlowTest
       quickRequest
         .put(uri"$nuDesignerHttpAddress/api/processes/${process.name}")
         .contentType(MediaType.ApplicationJson)
-        .body(TestFactory.posting.toJsonAsProcessToSave(process).spaces2)
+        .body(process.toJsonAsProcessToSave.spaces2)
         .auth
         .basic("admin", "admin")
     )

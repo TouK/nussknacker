@@ -176,7 +176,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
     val fragment         = createProcess("fragment", "Category1", isFragment = true, isArchived = false)
     val archivedFragment = createProcess("archived-fragment", "Category1", isFragment = true, isArchived = true)
     val processCategory2 = createProcess("process2", "Category2", isFragment = false, isArchived = false)
-    val processCategory3 = createProcess("process3", "Category3", isFragment = false, isArchived = false)
 
     val testingData = Table(
       "process",
@@ -184,8 +183,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
       archivedProcess,
       fragment,
       archivedFragment,
-      processCategory2,
-      processCategory3
+      processCategory2
     )
 
     forAll(testingData) { (process: ScenarioWithDetailsEntity[_]) =>

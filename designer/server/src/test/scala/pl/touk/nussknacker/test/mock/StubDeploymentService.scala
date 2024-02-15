@@ -11,6 +11,9 @@ import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, ScenarioWit
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.higherKinds
+
+import scala.language.higherKinds
 
 import scala.language.higherKinds
 

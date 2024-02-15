@@ -8,14 +8,14 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.ScenarioParametersEndpoints.Dtos.ScenarioParametersCombinationWithEngineErrors
+import pl.touk.nussknacker.ui.api.ScenarioParametersApiEndpoints.Dtos.ScenarioParametersCombinationWithEngineErrors
 import sttp.model.StatusCode.Ok
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 
-class ScenarioParametersEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
+class ScenarioParametersApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   lazy val scenarioParametersCombinationsEndpoint
       : SecuredEndpoint[Unit, Unit, ScenarioParametersCombinationWithEngineErrors, Any] =
@@ -58,7 +58,7 @@ class ScenarioParametersEndpoints(auth: EndpointInput[AuthCredentials]) extends 
 
 }
 
-object ScenarioParametersEndpoints {
+object ScenarioParametersApiEndpoints {
 
   object Dtos {
 

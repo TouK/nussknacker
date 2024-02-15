@@ -22,13 +22,12 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestPermissions, TestProcessingTypes}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, component}
 
 class ComponentGroupsPreparerSpec
     extends AnyFunSuite
     with Matchers
-    with TestPermissions
     with OptionValues
     with ValidatedValuesDetailedMessage {
 
@@ -189,7 +188,7 @@ class ComponentGroupsPreparerSpec
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         Some(_),
-        DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
+        DesignerWideComponentId.default("Streaming", _)
       ),
       modelDefinition,
     )

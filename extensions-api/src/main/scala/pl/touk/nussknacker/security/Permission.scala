@@ -10,5 +10,5 @@ object Permission extends Enumeration {
   val Demo             = Value("Demo")
   val OverrideUsername = Value("OverrideUsername") // Used for migration username forwarding
 
-  final val ALL_PERMISSIONS: Set[security.Permission.Value] = Set(Read, Write, Deploy, Demo, OverrideUsername)
+  final val ALL_PERMISSIONS: Set[security.Permission.Permission] = Set(Read, Write, Deploy, Demo, OverrideUsername)
 }

@@ -7,6 +7,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.parser
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -17,15 +18,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
-import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
-  sampleFragment,
-  sampleFragmentName,
-  sampleProcessName,
-  validProcess
-}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{sampleFragmentName, sampleProcessName, validProcess}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
-import pl.touk.nussknacker.test.utils.domain.TestProcessUtil._
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestCategories, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
@@ -34,6 +30,7 @@ import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class StandardRemoteEnvironmentSpec
@@ -41,11 +38,11 @@ class StandardRemoteEnvironmentSpec
     with Matchers
     with PatientScalaFutures
     with FailFastCirceSupport
-    with EitherValuesDetailedMessage {
+    with EitherValuesDetailedMessage
+    with BeforeAndAfterAll {
 
   implicit val system: ActorSystem = ActorSystem("nussknacker-designer")
-
-  implicit val user: LoggedUser = LoggedUser("1", "test")
+  implicit val user: LoggedUser    = LoggedUser("1", "test")
 
   it should "not migrate not validating scenario" in {
 
@@ -244,13 +241,12 @@ class StandardRemoteEnvironmentSpec
   }
 
   it should "migrate fragment" in {
-    val category                                        = TestCategories.Category1
     var migrated: Option[Future[UpdateScenarioCommand]] = None
     val fragment                 = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
     val validatedFragmentDetails = TestProcessUtil.wrapWithDetailsForMigration(fragment, sampleFragmentName)
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       validatedFragmentDetails,
-      expectedProcessCategory = category,
+      expectedProcessCategory = "Category1",
       initialRemoteProcessList = Nil,
       onMigrate = migrationFuture => migrated = Some(migrationFuture)
     )
@@ -275,7 +271,7 @@ class StandardRemoteEnvironmentSpec
       processes = ProcessTestData.validScenarioDetailsForMigrations :: Nil,
       fragments = TestProcessUtil.wrapWithDetailsForMigration(
         CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment),
-        sampleFragment.name
+        ProcessTestData.sampleFragment.name
       ) :: Nil
     )
 
@@ -283,13 +279,18 @@ class StandardRemoteEnvironmentSpec
       .testMigration(
         batchingExecutionContext = ExecutionContext.global
       )
-      .futureValue
+      .futureValueEnsuringInnerException(10 seconds)
       .rightValue
 
     migrationResult should have size 2
     migrationResult.map(
       _.processName
     ) should contain only (ProcessTestData.validScenarioDetailsForMigrations.name, ProcessTestData.sampleFragment.name)
+  }
+
+  override protected def afterAll(): Unit = {
+    system.terminate().futureValue
+    super.afterAll()
   }
 
   trait MockRemoteEnvironment extends StandardRemoteEnvironment {
@@ -304,9 +305,9 @@ class StandardRemoteEnvironmentSpec
 
     override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
       mapProcessingTypeDataProvider(
-        TestProcessingTypes.Streaming -> new ProcessModelMigrator(new TestMigrations(1, 2))
+        "streaming" -> new ProcessModelMigrator(new TestMigrations(1, 2))
       ),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> flinkProcessValidator)
+      mapProcessingTypeDataProvider("streaming" -> flinkProcessValidator)
     )
 
   }
