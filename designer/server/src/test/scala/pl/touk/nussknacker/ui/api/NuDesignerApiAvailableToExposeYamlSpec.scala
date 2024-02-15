@@ -63,8 +63,11 @@ object NuDesignerApiAvailableToExpose {
   }
 
   private def createInstanceOf(clazz: Class[_ <: BaseEndpointDefinitions]) = {
+    val basicAuth = auth
+      .basic[AuthCredentials]()
+
     Try(clazz.getConstructor(classOf[EndpointInput[AuthCredentials]]))
-      .map(_.newInstance(auth.basic[AuthCredentials]()))
+      .map(_.newInstance(basicAuth))
       .orElse {
         Try(clazz.getDeclaredConstructor())
           .map(_.newInstance())

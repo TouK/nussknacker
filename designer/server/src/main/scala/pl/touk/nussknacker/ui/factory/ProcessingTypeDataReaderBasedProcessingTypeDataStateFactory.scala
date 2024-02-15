@@ -18,13 +18,15 @@ object ProcessingTypeDataReaderBasedProcessingTypeDataStateFactory extends Proce
       designerConfig: ConfigWithUnresolvedVersion,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      workingDirectoryOpt: Option[Path]
+      workingDirectoryOpt: Option[Path],
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     ProcessingTypeDataReader.loadProcessingTypeData(
       designerConfig,
       getDeploymentManagerDependencies,
       additionalUIConfigProvider,
-      workingDirectoryOpt
+      workingDirectoryOpt,
+      skipComponentProvidersLoadedFromAppClassloader
     )
   }
 

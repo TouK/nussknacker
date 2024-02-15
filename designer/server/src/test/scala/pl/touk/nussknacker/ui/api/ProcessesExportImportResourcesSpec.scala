@@ -15,12 +15,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{asAdmin, processResolverByProcessingType, withAllPermissions}
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils
-
-import scala.language.higherKinds
 
 class ProcessesExportImportResourcesSpec
     extends AnyFunSuite
@@ -39,16 +38,15 @@ class ProcessesExportImportResourcesSpec
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val processesExportResources =
-    new ProcessesExportResources(
-      futureFetchingScenarioRepository,
-      processService,
-      processActivityRepository,
-      processResolverByProcessingType
-    )
+  private val processesExportResources = new ProcessesExportResources(
+    futureFetchingScenarioRepository,
+    processService,
+    processActivityRepository,
+    processResolverByProcessingType
+  )
 
-  private val routeWithAllPermissions =
-    withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
+  private val routeWithAllPermissions = withAllPermissions(processesExportResources) ~
+    withAllPermissions(processesRoute)
   private val adminRoute = asAdmin(processesExportResources) ~ asAdmin(processesRoute)
 
   test("export process from scenarioGraph") {
