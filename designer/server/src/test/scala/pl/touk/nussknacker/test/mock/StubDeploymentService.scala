@@ -15,6 +15,8 @@ import scala.language.higherKinds
 
 import scala.language.higherKinds
 
+import scala.language.higherKinds
+
 class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends DeploymentService {
 
   override def getProcessState(
