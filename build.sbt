@@ -284,7 +284,7 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV             = "1.16.3"
+val flinkV             = "1.17.2"
 val flinkCommonsLang3V = "3.12.0"
 val flinkCommonsTextV  = "1.10.0"
 val flinkCommonsIOV    = "2.11.0"
@@ -711,15 +711,16 @@ lazy val flinkTests = (project in flink("tests"))
     }
   )
   .dependsOn(
-    defaultModel         % "test",
-    flinkExecutor        % "test",
-    flinkKafkaComponents % "test",
-    flinkBaseComponents  % "test",
-    flinkTestUtils       % "test",
-    kafkaTestUtils       % "test",
+    defaultModel           % "test",
+    flinkExecutor          % "test",
+    flinkKafkaComponents   % "test",
+    flinkBaseComponents    % "test",
+    flinkTestUtils         % "test",
+    kafkaTestUtils         % "test",
+    flinkComponentsTestkit % "test",
     // for local development
-    designer             % "test",
-    deploymentManagerApi % "test"
+    designer               % "test",
+    deploymentManagerApi   % "test"
   )
 
 lazy val defaultModel = (project in (file("defaultModel")))
