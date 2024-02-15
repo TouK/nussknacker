@@ -39,6 +39,7 @@
   * Added authorization check for listing activities and downloading attachments in scenario activity API
   * Fixed the ability to download an unrelated attachment from a given scenario
 * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) Scenario status caching more often
+* [#5552](https://github.com/TouK/nussknacker/pull/5552) Bumped Flink to 1.17.2
 
 1.13.1 (Not released yet)
 ------------------------
