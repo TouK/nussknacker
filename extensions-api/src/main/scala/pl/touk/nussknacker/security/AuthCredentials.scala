@@ -48,7 +48,7 @@ object AuthCredentials {
 
 }
 
-trait Crypter {
+sealed trait Crypter {
   def encrypt(value: String): String
   def decrypt(value: String): Try[String]
 }
