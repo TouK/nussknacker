@@ -37,9 +37,12 @@ class TableApiHardcodedSourceDebugTest extends AnyFunSuite with FlinkSpec with M
 
     val results = collectTestResults(model, scenario, listener)
       .nodeResults(resultNodeId)
-      .map(c => c.get[Int]("input"))
+      .map(c => c.get[Map[String, Any]]("input"))
 
-    results should contain theSameElementsAs List(Some(1), Some(2))
+    results shouldBe List(
+      Some(java.util.Map.of("someString", "ABC", "someInt", 1)),
+      Some(java.util.Map.of("someString", "DEF", "someInt", 2))
+    )
   }
 
   private def runProcess(model: LocalModelData, testProcess: CanonicalProcess): Unit = {
