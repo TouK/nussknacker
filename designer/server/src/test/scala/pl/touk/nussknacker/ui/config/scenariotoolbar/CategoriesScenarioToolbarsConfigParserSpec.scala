@@ -62,7 +62,7 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
         ToolbarPanelConfig(
           ProcessActionsPanel,
           None,
-          Some("Process Info"),
+          Some("Process Actions"),
           None,
           Some(
             List(
@@ -101,7 +101,7 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
         ToolbarPanelConfig(
           ProcessActionsPanel,
           None,
-          Some("Process Info Right"),
+          Some("Process Actions Right"),
           Some(Small),
           Some(
             List(
