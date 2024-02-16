@@ -32,9 +32,9 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
-    val invoker = service.implementation(Map.empty, dependencies = Nil, Some(state))
+    val invoker = service.implementation(Map("arg1" -> 1), dependencies = Nil, Some(state))
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
-    val resultF = invoker.invokeService(Context.withInitialId.withVariables(Map("arg1" -> 1)))
+    val resultF = invoker.invokeService(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
@@ -58,9 +58,9 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(Nil),
       strategy = UpdateResultStrategy
     )
-    val invoker = service.implementation(Map.empty, dependencies = Nil, Some(state))
+    val invoker = service.implementation(Map("arg1" -> 1), dependencies = Nil, Some(state))
     returnType(service, state).display shouldBe "Integer"
-    val resultF = invoker.invokeService(Context.withInitialId.withVariables(Map("arg1" -> 1)))
+    val resultF = invoker.invokeService(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]
     result shouldBe 1
     val queryResultSet = conn.prepareStatement("SELECT * FROM persons WHERE id = 1").executeQuery()

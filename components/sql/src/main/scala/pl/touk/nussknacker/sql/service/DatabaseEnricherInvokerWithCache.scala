@@ -24,7 +24,7 @@ class DatabaseEnricherInvokerWithCache(
     argsCount: Int,
     tableDef: TableDefinition,
     strategy: QueryResultStrategy,
-    queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
+    queryArgumentsExtractor: (Int, Map[String, Any], Context) => QueryArguments,
     cacheTTL: Duration,
     override val returnType: typing.TypingResult,
     override val getConnection: () => Connection,
@@ -58,7 +58,7 @@ class DatabaseEnricherInvokerWithCache(
       componentUseCase: ComponentUseCase
   ): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {
-      val queryArguments = queryArgumentsExtractor(argsCount, params)
+      val queryArguments = queryArgumentsExtractor(argsCount, params, context)
       val cacheKey       = CacheKey(query, queryArguments)
 
       cache

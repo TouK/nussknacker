@@ -18,7 +18,7 @@ class DatabaseEnricherInvoker(
     argsCount: Int,
     tableDef: TableDefinition,
     strategy: QueryResultStrategy,
-    queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
+    queryArgumentsExtractor: (Int, Map[String, Any], Context) => QueryArguments,
     val returnType: typing.TypingResult,
     val getConnection: () => Connection,
     val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
@@ -38,7 +38,7 @@ class DatabaseEnricherInvoker(
       componentUseCase: ComponentUseCase
   ): Future[queryExecutor.QueryResult] =
     getTimeMeasurement().measuring {
-      queryDatabase(queryArgumentsExtractor(argsCount, params))
+      queryDatabase(queryArgumentsExtractor(argsCount, params, context))
     }
 
   protected def queryDatabase(
