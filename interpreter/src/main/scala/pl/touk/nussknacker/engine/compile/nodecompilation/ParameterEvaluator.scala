@@ -61,11 +61,11 @@ class ParameterEvaluator(
       definition: ParameterDef
   )(implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
 
-    val additionaldefinitions = definition.additionalVariables.collect {
+    val additionalDefinitions = definition.additionalVariables.collect {
       case (name, AdditionalVariableWithFixedValue(value, _)) =>
         name -> value
     }
-    val augumentedCtx = contextToUse.withVariables(additionaldefinitions)
+    val augumentedCtx = contextToUse.withVariables(additionalDefinitions)
 
     param.typedValue match {
       case e: TypedExpression if !definition.branchParam =>
@@ -92,10 +92,11 @@ class ParameterEvaluator(
           processMetaData
         )
       case PostponedEvaluatorLazyParameterStrategy =>
-        EvaluableLazyParameterCreator(
+        new EvaluableLazyParameterCreator(
           nodeId,
           definition,
-          exprValue
+          graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
+          exprValue.returnType
         )
     }
   }
