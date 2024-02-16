@@ -1740,11 +1740,11 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     libraryDependencies ++= {
       Seq(
 //        TODO local: make the flink code thats provided by flink provided scope
-        "org.scalatest"    %% "scalatest"                   % scalaTestV % Test,
-        "org.apache.flink"  % "flink-table"                 % flinkV     % Provided,
-        "org.apache.flink"  % "flink-table-api-java"        % flinkV     % Provided,
-        "org.apache.flink"  % "flink-table-api-java-bridge" % flinkV     % Provided,
-        "org.apache.flink" %% "flink-table-planner"         % flinkV     % Provided
+        "org.scalatest"   %% "scalatest"                   % scalaTestV % Test,
+        "org.apache.flink" % "flink-table"                 % flinkV     % Provided,
+        "org.apache.flink" % "flink-table-api-java"        % flinkV     % Provided,
+        "org.apache.flink" % "flink-table-api-java-bridge" % flinkV     % Provided,
+        "org.apache.flink" % "flink-table-planner_2.12"    % flinkV     % Provided
       )
     }
   )
