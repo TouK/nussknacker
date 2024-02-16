@@ -363,7 +363,7 @@ class PeriodicProcessService(
     // TODO: set status before deployment?
     val id = deployment.id
     val deploymentData = DeploymentData(
-      DeploymentId(id.value.toString),
+      DeploymentId(id.toString),
       DeploymentData.systemUser,
       additionalDeploymentDataProvider.prepareAdditionalData(deployment)
     )
