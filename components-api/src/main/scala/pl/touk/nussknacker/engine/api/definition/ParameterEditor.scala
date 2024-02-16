@@ -75,7 +75,7 @@ case object CronParameterEditor extends SimpleParameterEditor
     extends SimpleParameterEditor
 
 @JsonCodec case class DictParameterEditor(
-    dictId: String
+    dictId: String // dictId must be present in ExpressionConfigDefinition.dictionaries
 ) extends SimpleParameterEditor
 
 @JsonCodec case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode)
