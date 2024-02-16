@@ -6,6 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -19,17 +20,17 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
-import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
 import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.createFragmentEntity
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, ValidatedValuesDetailedMessage}
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
-import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.definition.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
+import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeData,
@@ -487,7 +488,7 @@ class DefaultComponentServiceSpec
     new DynamicComponentProvider()
       .create(ConfigFactory.empty, ProcessObjectDependencies.withConfig(ConfigFactory.empty()))
 
-  private val modelDataMap: Map[ProcessingType, (LocalModelData, String)] = Map(
+  private val modelDataMap: Map[ProcessingType, (ModelData, String)] = Map(
     ProcessingTypeStreaming -> (LocalModelData(
       streamingConfig,
       providerComponents,
@@ -740,7 +741,7 @@ class DefaultComponentServiceSpec
   }
 
   private def prepareService(
-      modelDataMap: Map[ProcessingType, (LocalModelData, String)],
+      modelDataMap: Map[ProcessingType, (ModelData, String)],
       scenarios: List[ScenarioWithDetailsEntity[ScenarioGraph]],
       fragments: List[ScenarioWithDetailsEntity[ScenarioGraph]]
   ): ComponentService = {
@@ -755,18 +756,18 @@ class DefaultComponentServiceSpec
   }
 
   private def prepareProcessingTypeDataProvider(
-      modelDataMap: Map[ProcessingType, (LocalModelData, String)]
+      modelDataMap: Map[ProcessingType, (ModelData, String)]
   ): ProcessingTypeDataProvider[ComponentServiceProcessingTypeData, ScenarioParametersService] = {
     val processingTypeDataMap: Map[ProcessingType, ProcessingTypeData] = modelDataMap.transform {
       case (processingType, (modelData, category)) =>
         ProcessingTypeData.createProcessingTypeData(
           processingType,
+          modelData,
           new MockManagerProvider,
           TestFactory.deploymentManagerDependencies,
           EngineSetupName("Mock"),
-          modelData,
-          ConfigFactory.empty(),
-          category
+          deploymentConfig = ConfigFactory.empty(),
+          category = category
         )
     }
 

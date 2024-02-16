@@ -12,6 +12,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProvider,
   AdditionalUIConfigProviderFactory,
+  DesignerWideComponentId,
   EmptyAdditionalUIConfigProviderFactory
 }
 import pl.touk.nussknacker.engine.api.process.ProcessingType
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
@@ -520,12 +521,19 @@ class AkkaHttpBasedRouteProvider(
                 sttpBackend
               )
             }
+            def getModelDependencies(processingType: ProcessingType) = {
+              val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
+              ModelDependencies(
+                additionalConfigsFromProvider,
+                DesignerWideComponentId.default(processingType, _),
+                workingDirectoryOpt = None, // we use the default working directory
+                skipComponentProvidersLoadedFromAppClassloader = false
+              )
+            }
             processingTypeDataStateFactory.create(
               designerConfig,
+              getModelDependencies,
               getDeploymentManagerDependencies,
-              additionalUIConfigProvider,
-              workingDirectoryOpt = None, // we use the default working directory
-              skipComponentProvidersLoadedFromAppClassloader = false
             )
           })
         )

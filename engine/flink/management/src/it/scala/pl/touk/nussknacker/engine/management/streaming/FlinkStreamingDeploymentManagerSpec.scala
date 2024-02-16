@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.streaming
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -215,10 +215,12 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   test("extract scenario definition") {
     val modelData = ModelData(
       processingTypeConfig = processingTypeConfig,
-      additionalConfigsFromProvider = Map.empty,
-      determineDesignerWideId = id => DesignerWideComponentId(id.toString),
-      workingDirectoryOpt = None,
-      skipComponentProvidersLoadedFromAppClassloader = false
+      ModelDependencies(
+        additionalConfigsFromProvider = Map.empty,
+        determineDesignerWideId = id => DesignerWideComponentId(id.toString),
+        workingDirectoryOpt = None,
+        skipComponentProvidersLoadedFromAppClassloader = false
+      )
     )
     val definition = modelData.modelDefinition
     definition.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))

@@ -188,19 +188,19 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   ): ProcessingTypeData = {
     ProcessingTypeData.createProcessingTypeData(
       processingType,
+      LocalModelData(
+        ConfigFactory.empty(),
+        List(ComponentDefinition("source", SourceFactory.noParamUnboundedStreamFactory[Any](new Source {})))
+      ),
       new MockManagerProvider(
         new MockDeploymentManager() {
           override def processStateDefinitionManager: ProcessStateDefinitionManager = stateDefinitionManager
         }
       ),
       TestFactory.deploymentManagerDependencies,
-      EngineSetupName("mock"),
-      LocalModelData(
-        ConfigFactory.empty(),
-        List(ComponentDefinition("source", SourceFactory.noParamUnboundedStreamFactory[Any](new Source {})))
-      ),
-      ConfigFactory.empty(),
-      category
+      deploymentConfig = ConfigFactory.empty(),
+      engineSetupName = EngineSetupName("mock"),
+      category = category
     )
   }
 

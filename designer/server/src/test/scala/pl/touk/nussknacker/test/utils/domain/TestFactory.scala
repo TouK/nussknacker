@@ -6,19 +6,19 @@ import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.DeploymentManagerDependencies
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentServiceStub
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.test.mock.{StubDeploymentService, StubFragmentRepository}
+import pl.touk.nussknacker.test.mock.{StubDeploymentService, StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
@@ -108,6 +108,14 @@ object TestFactory {
   def scenarioResolverByProcessingType: ProcessingTypeDataProvider[ScenarioResolver, _] = mapProcessingTypeDataProvider(
     Streaming.stringify -> new ScenarioResolver(sampleResolver, Streaming.stringify)
   )
+
+  val modelDependencies: ModelDependencies =
+    ModelDependencies(
+      TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
+      componentId => DesignerWideComponentId(componentId.toString),
+      workingDirectoryOpt = None,
+      skipComponentProvidersLoadedFromAppClassloader = false
+    )
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = {
     val actorSystem = ActorSystem("TestFactory")
