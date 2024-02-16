@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.{
   ConfigWithUnresolvedVersion,
   DeploymentManagerDependencies,
   ModelData,
+  ModelDependencies,
   ProcessingTypeConfig
 }
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
@@ -21,10 +22,12 @@ object FlinkStreamingDeploymentManagerProviderHelper {
     val typeConfig = ProcessingTypeConfig.read(processingTypeConfig)
     val modelData = ModelData(
       processingTypeConfig = typeConfig,
-      additionalConfigsFromProvider = Map.empty,
-      determineDesignerWideId = id => DesignerWideComponentId(id.toString),
-      workingDirectoryOpt = None,
-      skipComponentProvidersLoadedFromAppClassloader = false
+      ModelDependencies(
+        additionalConfigsFromProvider = Map.empty,
+        determineDesignerWideId = id => DesignerWideComponentId(id.toString),
+        workingDirectoryOpt = None,
+        skipComponentProvidersLoadedFromAppClassloader = false
+      )
     )
     val actorSystem       = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")
     val backend           = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
