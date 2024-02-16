@@ -2,6 +2,7 @@
 
 1.14.0 (Not released yet)
 -------------------------
+* [#5552](https://github.com/TouK/nussknacker/pull/5552) Bumped Flink to 1.17.2
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) Libraries bump:
   * Flink: 1.16.2 -> 1.16.3
   * Cats Effect: 2.5.5 -> 3.5.2
@@ -39,7 +40,6 @@
   * Added authorization check for listing activities and downloading attachments in scenario activity API
   * Fixed the ability to download an unrelated attachment from a given scenario
 * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) Scenario status caching more often
-* [#5552](https://github.com/TouK/nussknacker/pull/5552) Bumped Flink to 1.17.2
 
 1.13.1 (Not released yet)
 ------------------------
