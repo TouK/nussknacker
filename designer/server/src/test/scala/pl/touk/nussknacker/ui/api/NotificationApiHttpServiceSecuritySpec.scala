@@ -52,6 +52,21 @@ class NotificationApiHttpServiceSecuritySpec
           .body(equalTo("The supplied authentication is invalid"))
       }
     }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and return no notifications" in {
+        given()
+          .applicationState {
+            createDeployedCanceledExampleScenario(ProcessName("canceled-scenario-01"), category = Category1)
+            createDeployedCanceledExampleScenario(ProcessName("canceled-scenario-02"), category = Category2)
+          }
+          .when()
+          .noAuth()
+          .get(s"$nuDesignerHttpAddress/api/notifications")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody("[]")
+      }
+    }
   }
 
 }

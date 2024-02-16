@@ -21,6 +21,7 @@ abstract class BaseHttpService(
   type LogicResult[BUSINESS_ERROR, RESULT] = Either[Either[BUSINESS_ERROR, SecurityError], RESULT]
 
   private val allServerEndpoints = new AtomicReference(List.empty[NoRequirementServerEndpoint])
+  private val authConfigRules    = AuthenticationConfiguration.getRules(config)
 
   protected def expose(serverEndpoint: NoRequirementServerEndpoint): Unit = {
     allServerEndpoints
@@ -54,12 +55,7 @@ abstract class BaseHttpService(
       .authenticate(credentials)
       .map {
         case Some(user) if user.roles.nonEmpty =>
-          success(
-            LoggedUser(
-              authenticatedUser = user,
-              rules = AuthenticationConfiguration.getRules(config)
-            )
-          )
+          success(LoggedUser(user, authConfigRules))
         case Some(_) =>
           securityError(AuthorizationError)
         case None =>
