@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, SchemaDefinition, TableDefinition}
@@ -62,9 +62,10 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
   import DatabaseLookupEnricher._
 
-  override protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments =
-    (argsCount: Int, params: Map[String, Any]) =>
-      QueryArguments(QueryArgument(index = 1, value = params(KeyValueParamName)) :: Nil)
+  override protected val queryArgumentsExtractor: (Int, Map[String, Any], Context) => QueryArguments =
+    (_: Int, params: Map[String, Any], context: Context) => {
+      QueryArguments(QueryArgument(index = 1, value = extractOrEvaluate(params, KeyValueParamName, context)) :: Nil)
+    }
 
   override protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -135,5 +136,12 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
       tableParamStep(context, dependencies) orElse
       keyColumnParamStep(context, dependencies) orElse
       finalStep(context, dependencies)
+
+  private def extractOrEvaluate(params: Map[String, Any], paramName: String, context: Context) = {
+    params(paramName) match {
+      case lp: LazyParameter[_] => lp.evaluate(context)
+      case other                => other
+    }
+  }
 
 }

@@ -27,7 +27,7 @@ private[nodecompilation] class MethodBasedServiceInvoker(
       .invokeMethod(
         evaluator(context),
         outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
-        additional = Seq(ec, collector, metaData, nodeId, ContextId(context.id), componentUseCase)
+        additional = Seq(ec, collector, metaData, nodeId, context, ContextId(context.id), componentUseCase)
       )
       .asInstanceOf[Future[AnyRef]]
   }

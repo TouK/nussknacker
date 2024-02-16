@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.sql.db.query._
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, DbParameterMetaData, SqlDialect, TableDefinition}
+import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.KeyValueParamName
 
 import java.sql.{SQLException, SQLSyntaxErrorException}
 import java.time.Duration
@@ -82,12 +83,11 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   protected lazy val sqlDialect                       = new SqlDialect(dbMetaDataProvider.getDialectMetaData)
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
 
-  protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments =
-    (argsCount: Int, params: Map[String, Any]) => {
+  protected val queryArgumentsExtractor: (Int, Map[String, Any], Context) => QueryArguments =
+    (argsCount: Int, params: Map[String, Any], context: Context) => {
       QueryArguments(
         (1 to argsCount).map { argNo =>
-          val paramName = s"$ArgPrefix$argNo"
-          QueryArgument(index = argNo, value = params(paramName))
+          QueryArgument(index = argNo, value = extractOrEvaluate(params, s"$ArgPrefix$argNo", context))
         }.toList
       )
     }
@@ -260,5 +260,12 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
 
   private def extractOptional[T](params: Map[String, Any], paramName: String): Option[T] =
     params.get(paramName).flatMap(Option(_)).map(_.asInstanceOf[T])
+
+  private def extractOrEvaluate(params: Map[String, Any], paramName: String, context: Context) = {
+    params(paramName) match {
+      case lp: LazyParameter[_] => lp.evaluate(context)
+      case other                => other
+    }
+  }
 
 }
