@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -10,7 +12,6 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.api.component.{
-  BoundedStreamComponent,
   ComponentDefinition,
   ComponentProvider,
   NussknackerVersion,
@@ -25,8 +26,13 @@ import pl.touk.nussknacker.engine.api.process.{
   SourceFactory
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.util.transformer.ExperimentalTableSource.{
+  FlinkContextInitializingFunction,
+  T,
+  contextInitializer
+}
 
 class TableApiComponentProvider extends ComponentProvider {
 
@@ -57,48 +63,55 @@ object TableApiComponentProvider {
 
 }
 
-object ExperimentalTableSource extends SourceFactory with BoundedStreamComponent {
+object ExperimentalTableSource extends SourceFactory with UnboundedStreamComponent {
 
   @MethodToInvoke
   def invoke(): Source = {
-    new FlinkSource {
-      override def sourceStream(
-          env: StreamExecutionEnvironment,
-          flinkNodeContext: FlinkCustomNodeContext
-      ): DataStream[Context] = {
-        val tableEnv = StreamTableEnvironment.create(env);
+    new CustomSource()
+  }
 
-        val table = tableEnv.fromValues(
-          row(1, "ABC"),
-          row(2, "DEF")
+  class CustomSource extends FlinkSource with ReturningType {
+
+    override def sourceStream(
+        env: StreamExecutionEnvironment,
+        flinkNodeContext: FlinkCustomNodeContext
+    ): DataStream[Context] = {
+      val tableEnv = StreamTableEnvironment.create(env);
+
+      val table = tableEnv.fromValues(
+        row(1, "ABC"),
+        row(2, "DEF")
+      )
+
+      val rowStream: DataStream[Row] = tableEnv.toDataStream(table)
+
+      val mappedToSchemaStream = rowStream.map(r => r.getFieldAs[T](0))
+
+      val contextStream =
+        mappedToSchemaStream.map(
+          new FlinkContextInitializingFunction(
+            contextInitializer,
+            flinkNodeContext.nodeId,
+            flinkNodeContext.convertToEngineRuntimeContext
+          ),
+          flinkNodeContext.contextTypeInfo
         )
 
-        val rowStream: DataStream[Row] = tableEnv.toDataStream(table)
+      contextStream.print()
 
-        val mappedToSchemaStream = rowStream.map(r => r.getFieldAs[T](0))
-
-        val contextStream =
-          mappedToSchemaStream.map(
-            new FlinkContextInitializingFunction(
-              contextInitializer,
-              flinkNodeContext.nodeId,
-              flinkNodeContext.convertToEngineRuntimeContext
-            ),
-            flinkNodeContext.contextTypeInfo
-          )
-
-        contextStream.print()
-
-        contextStream
-      }
+      contextStream
     }
+
+    // This gets displayed in FE suggestions
+    override def returnType: typing.TypingResult = typeinfo
   }
 
   // TODO local: type has to be calculated dynamically or based on schema
   type T = Int
 
   // TODO local: this context initialization was copied from kafka source - check this
-  private val contextInitializer: ContextInitializer[T] = new BasicContextInitializer[T](Unknown)
+  private val contextInitializer: ContextInitializer[T] = new BasicContextInitializer[T](typing.Typed[T])
+  private val typeinfo                                  = typing.Typed[T]
 
   class FlinkContextInitializingFunction[T](
       contextInitializer: ContextInitializer[T],
