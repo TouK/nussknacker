@@ -1,21 +1,14 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.NonEmptyList
-import cats.data.Validated.{Valid, invalidNel, valid}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  DictIdNotMatching,
-  MissingParameters,
-  RedundantParameters
-}
+import cats.data.Validated.valid
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, RedundantParameters}
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.definition.{DictParameterEditor, Parameter, Validator}
-import pl.touk.nussknacker.engine.api.dict.{DictRegistry, EngineDictRegistry}
+import pl.touk.nussknacker.engine.api.definition.{Parameter, Validator}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.spel.parser.DictLabelWithKeyExpressionParser
 
 object Validations {
 
@@ -93,48 +86,6 @@ object Validations {
       }
       .sequence
       .map(_ => parameter)
-  }
-
-  def validateDictEditorParameters(
-      parameters: List[NodeParameter],
-      paramDefMap: Map[String, Parameter],
-      dictRegistry: DictRegistry
-  )(
-      implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, Unit] =
-    parameters
-      .flatMap { param =>
-        paramDefMap.get(param.name).map(definition => validateDictParameter(definition, param, dictRegistry))
-      }
-      .sequence
-      .map(_ => ())
-
-  private def validateDictParameter(definition: Parameter, parameter: NodeParameter, dictRegistry: DictRegistry)(
-      implicit nodeId: NodeId
-  ): ValidatedNel[PartSubGraphCompilationError, Unit] = definition.editor match {
-    case Some(DictParameterEditor(dictId)) =>
-      DictLabelWithKeyExpressionParser
-        .parseDictLabelWithKeyExpression(parameter.expression.expression)
-        .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, definition.name)))
-        .andThen(expr =>
-          if (expr.dictId != dictId)
-            invalidNel(DictIdNotMatching(dictId, expr.dictId, nodeId.id, definition.name))
-          else
-            Valid(expr)
-        )
-        .andThen(expr =>
-          dictRegistry match {
-            case _: EngineDictRegistry =>
-              // no need to validate it on Engine side, this allows EngineDictRegistry to be lighter (not having to contain dictionaries only used by DictParameterEditors)
-              Valid(())
-            case _ =>
-              dictRegistry
-                .labelByKey(dictId, expr.key)
-                .map(_ => ())
-                .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, definition.name)))
-          }
-        )
-    case _ => Valid(())
   }
 
 }

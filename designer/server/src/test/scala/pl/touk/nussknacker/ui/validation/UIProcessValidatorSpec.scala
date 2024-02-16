@@ -1041,14 +1041,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  private def procesWithDictParameterEditorService(dictId: String, key: String) = createGraph(
+  private def procesWithDictParameterEditorService(key: String) = createGraph(
     List(
       Source("inID", SourceRef(existingSourceFactory, List())),
       Enricher(
         "custom",
         ServiceRef(
           dictParameterEditorServiceId,
-          List(NodeParameter("expression", Expression.dictLabelWithKey(dictId, "someLabel", key)))
+          List(NodeParameter("expression", Expression.dictKeyWithLabel(key, Some("someLabel"))))
         ),
         "out"
       ),
@@ -1058,7 +1058,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   )
 
   test("checks for unknown dictId in DictParameterEditor") {
-    val process = procesWithDictParameterEditorService("someDictId", "someKey")
+    val process = procesWithDictParameterEditorService("someKey")
 
     val result = processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false)
 
@@ -1079,30 +1079,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("checks for not matching dictIds between DictParameterEditor and DictLabelWithKey expression") {
-    val process = procesWithDictParameterEditorService("someOtherDictId", "someKey")
-
-    val result = processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false)
-
-    result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("custom") should matchPattern {
-      case Some(
-            List(
-              NodeValidationError(
-                "DictIdNotMatching",
-                _,
-                "Definition dict id: 'someDictId', expression dict id: 'someOtherDictId'",
-                Some("expression"),
-                NodeValidationErrorType.SaveAllowed
-              )
-            )
-          ) =>
-    }
-    result.warnings shouldBe ValidationWarnings.success
-  }
-
   test("checks for unknown key in DictParameterEditor") {
-    val process = procesWithDictParameterEditorService("someDictId", "thisKeyDoesntExist")
+    val process = procesWithDictParameterEditorService("thisKeyDoesntExist")
 
     val result = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map.empty))
@@ -1126,7 +1104,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("validate DictParameterEditor happy path") {
-    val process = procesWithDictParameterEditorService("someDictId", "someKey")
+    val process = procesWithDictParameterEditorService("someKey")
 
     val result = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))

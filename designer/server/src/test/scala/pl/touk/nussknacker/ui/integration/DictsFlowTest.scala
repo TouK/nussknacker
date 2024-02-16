@@ -69,9 +69,9 @@ class DictsFlowTest
         "customNode",
         "data",
         "serviceWithDictParameterEditor",
-        "RGBDict"     -> Expression.dictLabelWithKey("rgb", "Black", "H000000"),
-        "BooleanDict" -> Expression.dictLabelWithKey("boolean_dict", "OLD LABEL", "true"),
-        "LongDict"    -> Expression.dictLabelWithKey("long_dict", "large (negative) number", "-1500100900")
+        "RGBDict"     -> Expression.dictKeyWithLabel("H000000", Some("Black")),
+        "BooleanDict" -> Expression.dictKeyWithLabel("true", Some("OLD LABEL")),
+        "LongDict"    -> Expression.dictKeyWithLabel("-1500100900", Some("large (negative) number"))
       )
       .emptySink(EndNodeId, "dead-end-lite")
 
@@ -103,7 +103,7 @@ class DictsFlowTest
       .downField("expression")
       .downField("expression")
       .as[String]
-      .rightValue shouldBe """{"dictId":"boolean_dict","label":"ON","key":"true"}""" // returns "ON" even though "OLD LABEL" was sent, because of ProcessDictSubstitutor
+      .rightValue shouldBe """{"key":"true","label":"ON"}""" // returns "ON" even though "OLD LABEL" was sent, because of ProcessDictSubstitutor
   }
 
   test("save process with expression using dicts and get it back") {

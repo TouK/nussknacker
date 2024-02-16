@@ -248,13 +248,13 @@ object SpelExpressionParseError {
 
   case class ExpressionCompilationError(message: String) extends ExpressionParseError
 
-  case class LabelWithKeyJsonParsingError(labelWithKey: String, message: String) extends ExpressionParseError {
+  case class KeyWithLabelExpressionParsingError(keyWithLabel: String, message: String) extends ExpressionParseError {
 
     def toProcessCompilationError(
         nodeId: String,
         paramName: String
-    ): ProcessCompilationError.LabelWithKeyJsonParsingError =
-      ProcessCompilationError.LabelWithKeyJsonParsingError(labelWithKey, message, nodeId, paramName)
+    ): ProcessCompilationError.KeyWithLabelExpressionParsingError =
+      ProcessCompilationError.KeyWithLabelExpressionParsingError(keyWithLabel, message, nodeId, paramName)
 
   }
 

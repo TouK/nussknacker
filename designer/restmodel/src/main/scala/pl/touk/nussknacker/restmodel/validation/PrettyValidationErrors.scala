@@ -203,12 +203,6 @@ object PrettyValidationErrors {
           s"Dictionary not declared: $dictId",
           fieldName = Some(paramName)
         )
-      case DictIdNotMatching(editorDictId, expressionDictId, _, paramName) =>
-        node(
-          s"Dict id not matching between parameter definition and given expression",
-          s"Definition dict id: '$editorDictId', expression dict id: '$expressionDictId'",
-          fieldName = Some(paramName)
-        )
       case DictEntryWithKeyNotExists(dictId, key, possibleKeys, _, paramName) =>
         node(
           s"Dictionary $dictId doesn't contain entry with key: $key",
@@ -221,9 +215,9 @@ object PrettyValidationErrors {
           s"Dictionary $dictId possible labels: $possibleLabels",
           fieldName = Some(paramName)
         )
-      case LabelWithKeyJsonParsingError(labelWithKey, message, paramName, _) =>
+      case KeyWithLabelExpressionParsingError(keyWithLabel, message, paramName, _) =>
         node(
-          s"Error while parsing LabelWithKey expression: $labelWithKey",
+          s"Error while parsing KeyWithLabel expression: $keyWithLabel",
           message,
           fieldName = Some(paramName)
         )

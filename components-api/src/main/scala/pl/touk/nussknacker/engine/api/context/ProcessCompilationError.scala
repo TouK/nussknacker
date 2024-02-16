@@ -320,10 +320,6 @@ object ProcessCompilationError {
       extends PartSubGraphCompilationError
       with InASingleNode
 
-  final case class DictIdNotMatching(editorDictId: String, expressionDictId: String, nodeId: String, paramName: String)
-      extends PartSubGraphCompilationError
-      with InASingleNode
-
   final case class DictEntryWithLabelNotExists(
       dictId: String,
       label: String,
@@ -342,8 +338,8 @@ object ProcessCompilationError {
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
-  final case class LabelWithKeyJsonParsingError(
-      labelWithKey: String,
+  final case class KeyWithLabelExpressionParsingError(
+      keyWithLabel: String,
       message: String,
       paramName: String,
       nodeId: String
