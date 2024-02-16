@@ -1,12 +1,68 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
+import org.apache.avro.Schema
+import org.scalatest.LoneElement
+import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.definition.{
+  DualParameterEditor,
+  FixedExpressionValue,
+  FixedValuesParameterEditor,
+  StringParameterEditor
+}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.compile.FragmentResolver
+import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 
-class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec extends DelayedUniversalKafkaSourceIntegrationMixinSpec {
+class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
+    extends DelayedUniversalKafkaSourceIntegrationMixinSpec
+    with LoneElement {
+
+  test("timestampField editor should be set to simple if schema does not contain eligible fields") {
+    val timestampFieldParameter =
+      prepareTestForTimestampField("simple-topic-without-timestamp-fields", FullNameV1.schema)
+
+    timestampFieldParameter.editor shouldBe Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
+  }
+
+  test("timestampField editor should contain long field") {
+    val timestampFieldParameter =
+      prepareTestForTimestampField("simple-topic-with-single-timestamp-fields", LongFieldV1.schema)
+
+    timestampFieldParameter.editor shouldBe Some(
+      DualParameterEditor(
+        FixedValuesParameterEditor(
+          List(
+            FixedExpressionValue("", ""),
+            FixedExpressionValue("'field'", "field")
+          )
+        ),
+        DualEditorMode.SIMPLE
+      )
+    )
+  }
+
+  test("timestampField editor should contain all eligible fields") {
+    val timestampFieldParameter =
+      prepareTestForTimestampField("simple-topic-with-multiple-timestamp-fields", PaymentDate.schema)
+
+    timestampFieldParameter.editor shouldBe Some(
+      DualParameterEditor(
+        FixedValuesParameterEditor(
+          List(
+            FixedExpressionValue("", ""),
+            FixedExpressionValue("'dateTime'", "dateTime"),
+            FixedExpressionValue("'vat'", "vat")
+          )
+        ),
+        DualEditorMode.SIMPLE
+      )
+    )
+  }
 
   test("properly process data using kafka-generic-delayed source") {
     val topicConfig = createAndRegisterTopicConfig("simple-topic-with-long-field", LongFieldV1.schema)
@@ -84,6 +140,22 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec extends DelayedUnive
     }.getMessage should include(
       "LowerThanRequiredParameter(This field value has to be a number greater than or equal to 0,Please fill field with proper number,delayInMillis,start)"
     )
+  }
+
+  private def prepareTestForTimestampField(topicName: String, schema: Schema) = {
+    val topicConfig   = createAndRegisterTopicConfig(topicName, schema)
+    val process       = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "1L")
+    val nodeValidator = new NodeDataValidator(modelData)
+
+    val result = nodeValidator.validate(
+      process.nodes.head.data,
+      ValidationContext(),
+      Map.empty,
+      List.empty,
+      FragmentResolver(_ => None)
+    )(process.metaData)
+
+    result.asInstanceOf[ValidationPerformed].parameters.getOrElse(Nil).filter(_.name == "timestampField").loneElement
   }
 
   private def runAndVerify(topicConfig: TopicConfig, process: CanonicalProcess, givenObj: AnyRef): Unit = {

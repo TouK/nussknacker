@@ -35,6 +35,7 @@ object DelayedKafkaSourceFactory {
       })
       .filter(_.nonEmpty)
       .map(_.sortBy(_.label))
+      .map(FixedExpressionValue("", "") :: _)
       .map(FixedValuesParameterEditor(_))
       .map(DualParameterEditor(_, DualEditorMode.SIMPLE))
       .orElse(Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW)))

@@ -1,18 +1,22 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.delayed
 
+import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SchemaVersionParamName
+import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
-
-import scala.reflect.ClassTag
+import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
+import pl.touk.nussknacker.engine.schemedkafka.source.delayed.DelayedUniversalKafkaSourceFactory.DelayedUniversalKafkaSourceFactoryState
 
 class DelayedUniversalKafkaSourceFactory(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
@@ -46,17 +50,12 @@ class DelayedUniversalKafkaSourceFactory(
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
           (TimestampFieldParamName, DefinedEagerParameter(field, _)) ::
           (DelayParameterName, DefinedEagerParameter(delay, _)) :: Nil,
-          _
+          Some(DelayedUniversalKafkaSourceFactoryState(valueValidationResult))
         ) =>
       val preparedTopic = prepareTopic(topic)
-      val versionOption = parseVersionOption(version)
-      val valueValidationResult = determineSchemaAndType(
-        prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
-        Some(SchemaVersionParamName)
-      )
 
       valueValidationResult match {
-        case Valid((valueRuntimeSchema, typingResult)) =>
+        case Valid((_, typingResult)) =>
           val timestampValidationErrors =
             Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, typingResult)).getOrElse(Nil)
           prepareSourceFinalResults(
@@ -88,14 +87,28 @@ class DelayedUniversalKafkaSourceFactory(
         ) =>
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
-      val typingResultValidationResult = determineSchemaAndType(
+      val valueValidationResult = determineSchemaAndType(
         prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
         Some(SchemaVersionParamName)
-      ).map(_._2).toOption
+      )
 
-      NextParameters(timestampFieldParameter(typingResultValidationResult) :: paramsDeterminedAfterSchema)
+      NextParameters(
+        timestampFieldParameter(valueValidationResult.map(_._2).toOption) :: paramsDeterminedAfterSchema,
+        state = Some(DelayedUniversalKafkaSourceFactoryState(valueValidationResult))
+      )
     case TransformationStep((topicParamName, _) :: (schemaVersionParamName, _) :: Nil, _) =>
       NextParameters(parameters = fallbackTimestampFieldParameter :: paramsDeterminedAfterSchema)
   }
+
+}
+
+object DelayedUniversalKafkaSourceFactory {
+
+  case class DelayedUniversalKafkaSourceFactoryState(
+      schemaValidationResults: Validated[
+        ProcessCompilationError,
+        (Option[RuntimeSchemaData[ParsedSchema]], typing.TypingResult)
+      ]
+  ) extends UniversalKafkaSourceFactoryState
 
 }

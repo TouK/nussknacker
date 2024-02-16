@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
-import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
+import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 
 /**
@@ -110,7 +110,7 @@ class UniversalKafkaSourceFactory(
     (keyValidationResult, valueValidationResult) match {
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
-        val finalState       = UniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
+        val finalState = FinalUniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
         FinalResults.forValidation(context, errors, Some(finalState))(finalInitializer.validationContext)
       case _ =>
         prepareSourceFinalErrors(
@@ -156,7 +156,7 @@ class UniversalKafkaSourceFactory(
     implicit val nodeId: NodeId = TypedNodeDependency[NodeId].extract(dependencies)
 
     val preparedTopic = extractPreparedTopic(params)
-    val UniversalKafkaSourceFactoryState(
+    val FinalUniversalKafkaSourceFactoryState(
       keySchemaDataUsedInRuntime,
       valueSchemaUsedInRuntime,
       kafkaContextInitializer
@@ -229,10 +229,12 @@ class UniversalKafkaSourceFactory(
 
 object UniversalKafkaSourceFactory {
 
-  case class UniversalKafkaSourceFactoryState(
+  trait UniversalKafkaSourceFactoryState
+
+  case class FinalUniversalKafkaSourceFactoryState(
       keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       contextInitializer: ContextInitializer[ConsumerRecord[Any, Any]]
-  )
+  ) extends UniversalKafkaSourceFactoryState
 
 }
