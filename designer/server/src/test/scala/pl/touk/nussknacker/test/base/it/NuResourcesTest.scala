@@ -130,10 +130,13 @@ trait NuResourcesTest
   private def createModelData(processingType: TestProcessingType) = {
     ModelData(
       processingTypeConfig,
-      TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-      DesignerWideComponentId.default(processingType.stringify, _),
-      workingDirectoryOpt = None,
-      skipComponentProvidersLoadedFromAppClassloader = false
+      modelDependencies
+//      ModelDependencies(
+//        TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
+//        DesignerWideComponentId.default(processingType.stringify, _),
+//        workingDirectoryOpt = None,
+//        skipComponentProvidersLoadedFromAppClassloader = false
+//      )
     )
   }
 

@@ -13,9 +13,16 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{
+  BaseModelData,
+  DeploymentManagerDependencies,
+  ModelData,
+  ModelDependencies,
+  ProcessingTypeConfig
+}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.utils.domain.TestFactory
 import shapeless.syntax.typeable.typeableOps
 import sttp.client3.testing.SttpBackendStub
 
@@ -39,10 +46,13 @@ class MockDeploymentManager(
 ) extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
-        TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-        DesignerWideComponentId.default(Streaming.stringify, _),
-        workingDirectoryOpt = None,
-        skipComponentProvidersLoadedFromAppClassloader = false
+        TestFactory.modelDependencies
+//        ModelDependencies(
+//          TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
+//          DesignerWideComponentId.default(Streaming.stringify, _),
+//          workingDirectoryOpt = None,
+//          skipComponentProvidersLoadedFromAppClassloader = false
+//        )
       ),
       DeploymentManagerDependencies(
         deploymentService,

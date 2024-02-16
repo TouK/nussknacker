@@ -4,15 +4,10 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  ComponentAdditionalConfig,
-  ComponentId,
-  DesignerWideComponentId
-}
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinition,
   ModelDefinitionExtractor,
@@ -20,13 +15,7 @@ import pl.touk.nussknacker.engine.definition.model.{
 }
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.engine.modelconfig.{
-  ComponentsUiConfig,
-  ComponentsUiConfigParser,
-  DefaultModelConfigLoader,
-  InputConfigDuringExecution,
-  ModelConfigLoader
-}
+import pl.touk.nussknacker.engine.modelconfig._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -43,24 +32,6 @@ object ModelData extends LazyLogging {
         ComponentId => DesignerWideComponentId,
         Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ) => ModelDefinition
-
-  // FIXME: Remove
-  def apply(
-      processingTypeConfig: ProcessingTypeConfig,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      workingDirectoryOpt: Option[Path],
-      skipComponentProvidersLoadedFromAppClassloader: Boolean
-  ): ModelData = {
-    ModelData(
-      processingTypeConfig.modelConfig,
-      ModelClassLoader(processingTypeConfig.classPath, workingDirectoryOpt),
-      Some(processingTypeConfig.category),
-      determineDesignerWideId,
-      additionalConfigsFromProvider,
-      skipComponentProvidersLoadedFromAppClassloader
-    )
-  }
 
   def apply(processingTypeConfig: ProcessingTypeConfig, dependencies: ModelDependencies): ModelData = {
     ModelData(
