@@ -28,7 +28,8 @@ class DatabaseEnricherInvokerWithCache(
     cacheTTL: Duration,
     override val returnType: typing.TypingResult,
     override val getConnection: () => Connection,
-    override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement
+    override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
+    params: Map[String, Any]
 ) extends DatabaseEnricherInvoker(
       query,
       argsCount,
@@ -37,8 +38,10 @@ class DatabaseEnricherInvokerWithCache(
       queryArgumentsExtractor,
       returnType,
       getConnection,
-      getTimeMeasurement
+      getTimeMeasurement,
+      params
     ) {
+
   import DatabaseEnricherInvokerWithCache._
 
   // TODO: cache size
@@ -49,7 +52,7 @@ class DatabaseEnricherInvokerWithCache(
 
   import scala.compat.java8.FutureConverters._
 
-  override def invokeService(context: Context, params: Map[String, Any])(
+  override def invokeService(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase

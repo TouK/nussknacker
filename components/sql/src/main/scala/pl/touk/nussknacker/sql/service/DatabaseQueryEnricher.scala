@@ -240,7 +240,8 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
           cacheTTL,
           state.outputType,
           () => dataSource.getConnection(),
-          () => timeMeasurement
+          () => timeMeasurement,
+          params
         )
       case None =>
         new DatabaseEnricherInvoker(
@@ -251,7 +252,8 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
           queryArgumentsExtractor,
           state.outputType,
           () => dataSource.getConnection(),
-          () => timeMeasurement
+          () => timeMeasurement,
+          params
         )
     }
   }

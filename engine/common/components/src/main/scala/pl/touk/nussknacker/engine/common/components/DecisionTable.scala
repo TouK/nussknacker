@@ -61,7 +61,8 @@ object DecisionTable extends EagerService with SingleInputGenericNodeTransformat
       finalState: Option[Unit]
   ): ServiceInvoker =
     new DecisionTableComponentLogic(
-      params(decisionTableParameterName).asInstanceOf[TabularTypedData]
+      params(decisionTableParameterName).asInstanceOf[TabularTypedData],
+      params(filterDecisionTableExpressionParameterName).asInstanceOf[LazyParameter[java.lang.Boolean]]
     )
 
   private lazy val decisionTableParameterName = "Basic Decision Table"
@@ -100,28 +101,27 @@ object DecisionTable extends EagerService with SingleInputGenericNodeTransformat
 
   private class DecisionTableComponentLogic(
       tabularData: TabularTypedData,
+      expression: LazyParameter[java.lang.Boolean]
   ) extends ServiceInvoker {
 
-    override def invokeService(context: Context, params: Map[String, Any])(
+    override def invokeService(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         componentUseCase: ComponentUseCase
     ): Future[Any] = Future {
-      filterRows(tabularData, context, params)
+      filterRows(tabularData, context)
     }
 
     private def filterRows(
         tabularData: TabularTypedData,
-        context: Context,
-        params: Map[String, Any]
+        context: Context
     ): java.util.List[java.util.Map[String, Any]] = {
       tabularData.rows
         .filter { row =>
           val m          = row.cells.map(c => (c.definition.name, c.value)).toMap.asJava
           val newContext = context.withVariables(Map("ROW" -> m))
-//          val (_, params) = evaluateParams(newContext)
-//          params("Expression").asInstanceOf[java.lang.Boolean]
-          ???
+          val result     = expression.evaluate(newContext)
+          result
         }
         .map { row =>
           row.cells.map(c => c.definition.name -> c.value).toMap // todo: are we sure keys are unique

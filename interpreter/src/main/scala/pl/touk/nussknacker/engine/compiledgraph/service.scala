@@ -34,12 +34,11 @@ object service {
         componentUseCase: ComponentUseCase
     ): (Map[String, AnyRef], Future[Any]) = {
 
-      val (_, preparedParams) = expressionEvaluator.evaluateParameters(parameters, ctx)
-      val contextId           = ContextId(ctx.id)
-      val collector           = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
+      val contextId = ContextId(ctx.id)
+      val collector = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
       (
-        preparedParams,
-        invoker.invokeService(ctx, preparedParams)(
+        Map.empty, // todo: to remove
+        invoker.invokeService(ctx)(
           serviceExecutionContext.executionContext,
           collector,
           componentUseCase

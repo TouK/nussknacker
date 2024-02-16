@@ -39,13 +39,13 @@ class CustomValidatedService extends EagerService {
       varName,
       returnType,
       new ServiceInvoker {
-        override def invokeService(context: Context, params: Map[String, Any])(
+        override def invokeService(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
         ): Future[Any] = {
           Future.successful(
-            s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age"
+            s"name: ${fields.evaluate(context).get("name")}, age: $age"
           )
         }
       }
