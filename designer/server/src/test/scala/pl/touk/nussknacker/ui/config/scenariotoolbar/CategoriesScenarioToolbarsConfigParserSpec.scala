@@ -60,7 +60,7 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       Nil,
       List(
         ToolbarPanelConfig(
-          ProcessInfoPanel,
+          ProcessActionsPanel,
           None,
           Some("Process Info"),
           None,
@@ -99,7 +99,7 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       Nil,
       List(
         ToolbarPanelConfig(
-          ProcessInfoPanel,
+          ProcessActionsPanel,
           None,
           Some("Process Info Right"),
           Some(Small),
@@ -150,7 +150,7 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
         |  ]
         |},
         |"MissingButtonsError" {
-        |  id: "button1" 
+        |  id: "button1"
         |  type: "buttons-panel"
         |  title: "Buttons Info"
         |},
