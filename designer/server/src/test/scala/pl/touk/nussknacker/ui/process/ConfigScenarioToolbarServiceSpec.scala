@@ -212,7 +212,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(
             ToolbarPanel(
               ProcessActionsPanel,
-              Some(s"Process Info ${process.name}"),
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -267,7 +267,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(
             ToolbarPanel(
               ProcessActionsPanel,
-              Some(s"Process Info ${process.name}"),
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -312,7 +312,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(
             ToolbarPanel(
               ProcessActionsPanel,
-              Some(s"Process Info ${process.name}"),
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -378,7 +378,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(
             ToolbarPanel(
               ProcessActionsPanel,
-              Some(s"Process Info ${process.name}"),
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -432,7 +432,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(
             ToolbarPanel(
               ProcessActionsPanel,
-              Some(s"Process Info ${process.name}"),
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -486,7 +486,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           List(
             ToolbarPanel(
               ProcessActionsPanel,
-              Some(s"Process Info ${process.name}"),
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
