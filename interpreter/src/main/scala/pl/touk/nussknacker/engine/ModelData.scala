@@ -43,14 +43,16 @@ object ModelData extends LazyLogging {
       processingTypeConfig: ProcessingTypeConfig,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      workingDirectoryOpt: Option[Path]
+      workingDirectoryOpt: Option[Path],
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ModelData = {
     ModelData(
       processingTypeConfig.modelConfig,
       ModelClassLoader(processingTypeConfig.classPath, workingDirectoryOpt),
       Some(processingTypeConfig.category),
       determineDesignerWideId,
-      additionalConfigsFromProvider
+      additionalConfigsFromProvider,
+      skipComponentProvidersLoadedFromAppClassloader
     )
   }
 
@@ -65,16 +67,18 @@ object ModelData extends LazyLogging {
       modelClassLoader = modelClassLoader,
       category = category,
       determineDesignerWideId = id => DesignerWideComponentId(id.toString),
-      additionalConfigsFromProvider = Map.empty
+      additionalConfigsFromProvider = Map.empty,
+      skipComponentProvidersLoadedFromAppClassloader = false
     )
   }
 
-  def apply(
+  private def apply(
       inputConfig: ConfigWithUnresolvedVersion,
       modelClassLoader: ModelClassLoader,
       category: Option[String],
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ModelData = {
     logger.debug("Loading model data from: " + modelClassLoader)
     ClassLoaderModelData(
@@ -83,7 +87,8 @@ object ModelData extends LazyLogging {
       modelClassLoader,
       category,
       determineDesignerWideId,
-      additionalConfigsFromProvider
+      additionalConfigsFromProvider,
+      skipComponentProvidersLoadedFromAppClassloader
     )
   }
 
@@ -94,7 +99,8 @@ object ModelData extends LazyLogging {
       ModelClassLoader(Nil, None),
       None,
       id => DesignerWideComponentId(id.toString),
-      Map.empty
+      Map.empty,
+      skipComponentProvidersLoadedFromAppClassloader = false
     )
   }
 
@@ -109,7 +115,8 @@ case class ClassLoaderModelData private (
     modelClassLoader: ModelClassLoader,
     override val category: Option[String],
     override val determineDesignerWideId: ComponentId => DesignerWideComponentId,
-    override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    skipComponentProvidersLoadedFromAppClassloader: Boolean
 ) extends ModelData {
 
   // this is not lazy, to be able to detect if creator can be created...
@@ -117,7 +124,7 @@ case class ClassLoaderModelData private (
 
   override lazy val modelConfigLoader: ModelConfigLoader = {
     Multiplicity(ScalaServiceLoader.load[ModelConfigLoader](modelClassLoader.classLoader)) match {
-      case Empty()                => new DefaultModelConfigLoader
+      case Empty()                => new DefaultModelConfigLoader(skipComponentProvidersLoadedFromAppClassloader)
       case One(modelConfigLoader) => modelConfigLoader
       case Many(moreThanOne) =>
         throw new IllegalArgumentException(s"More than one ModelConfigLoader instance found: $moreThanOne")
@@ -139,14 +146,18 @@ case class ClassLoaderModelData private (
 
   override val namingStrategy: NamingStrategy = NamingStrategy.fromConfig(modelConfig)
 
-  override val extractModelDefinitionFun: ExtractDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category)
+  override val extractModelDefinitionFun: ExtractDefinitionFun =
+    new ExtractDefinitionFunImpl(configCreator, category, skipComponentProvidersLoadedFromAppClassloader)
 
 }
 
 object ClassLoaderModelData {
 
-  class ExtractDefinitionFunImpl(configCreator: ProcessConfigCreator, category: Option[String])
-      extends ExtractDefinitionFun
+  class ExtractDefinitionFunImpl(
+      configCreator: ProcessConfigCreator,
+      category: Option[String],
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
+  ) extends ExtractDefinitionFun
       with Serializable {
 
     override def apply(
@@ -161,7 +172,8 @@ object ClassLoaderModelData {
         modelDependencies,
         category,
         determineDesignerWideId,
-        additionalConfigsFromProvider
+        additionalConfigsFromProvider,
+        skipComponentProvidersLoadedFromAppClassloader
       )
     }
 

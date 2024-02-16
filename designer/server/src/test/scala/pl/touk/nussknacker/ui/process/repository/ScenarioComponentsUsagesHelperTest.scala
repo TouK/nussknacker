@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.node.Case
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
   existingSinkFactory,
   existingSinkFactory2,
   existingSourceFactory

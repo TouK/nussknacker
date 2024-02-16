@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Json, parser}
 import org.scalatest.funspec.AnyFunSpec
@@ -11,20 +10,21 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValuesProvided
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
   DefinitionsService,
-  ScenarioPropertiesConfigFinalizer,
-  TestAdditionalUIConfigProvider
+  ScenarioPropertiesConfigFinalizer
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
@@ -35,13 +35,10 @@ class DefinitionResourcesSpec
     with Matchers
     with PatientScalaFutures
     with EitherValuesDetailedMessage
+    with OptionValues
     with BeforeAndAfterEach
     with BeforeAndAfterAll
-    with NuResourcesTest
-    with OptionValues {
-
-  private implicit final val string: FromEntityUnmarshaller[String] =
-    Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+    with NuResourcesTest {
 
   private val definitionResources = new DefinitionResources(
     definitionsServices = testProcessingTypeDataProvider.mapValues { processingTypeData =>
@@ -60,7 +57,7 @@ class DefinitionResourcesSpec
   )
 
   it("should handle missing scenario type") {
-    getProcessDefinitionData(processingType = "not-existing-processing-type") ~> check {
+    getProcessDefinitionDataUsingRawProcessingType(processingType = "not-existing-processing-type") ~> check {
       status shouldBe StatusCodes.NotFound
     }
   }
@@ -282,12 +279,14 @@ class DefinitionResourcesSpec
     }
   }
 
-  private def getProcessDefinitionData(
-      processingType: ProcessingType = TestProcessingTypes.Streaming
-  ): RouteTestResult = {
+  private def getProcessDefinitionData(processingType: String = "streaming"): RouteTestResult = {
+    getProcessDefinitionDataUsingRawProcessingType(processingType)
+  }
+
+  private def getProcessDefinitionDataUsingRawProcessingType(processingType: String) = {
     Get(s"/processDefinitionData/$processingType?isFragment=false") ~> withPermissions(
       definitionResources,
-      testPermissionRead
+      Permission.Read
     )
   }
 

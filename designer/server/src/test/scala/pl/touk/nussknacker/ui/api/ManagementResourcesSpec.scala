@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -21,14 +21,15 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.mock.MockDeploymentManager
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
-
-import java.time.Instant
 
 class ManagementResourcesSpec
     extends AnyFunSuite
@@ -97,7 +98,7 @@ class ManagementResourcesSpec
       deployProcess(processName) ~> check {
         status shouldBe StatusCodes.Conflict
         responseAs[String] shouldBe ProcessIllegalAction
-          .archived(ProcessActionType.Deploy.toString, processName)
+          .archived(ScenarioActionName(ProcessActionType.Deploy), processName)
           .message
       }
     }
@@ -108,7 +109,9 @@ class ManagementResourcesSpec
 
     deployProcess(processName) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy.toString, processName).message
+      responseAs[String] shouldBe ProcessIllegalAction
+        .fragment(ScenarioActionName(ProcessActionType.Deploy), processName)
+        .message
     }
   }
 
@@ -117,7 +120,9 @@ class ManagementResourcesSpec
 
     deployProcess(processName) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy.toString, processName).message
+      responseAs[String] shouldBe ProcessIllegalAction
+        .fragment(ScenarioActionName(ProcessActionType.Deploy), processName)
+        .message
     }
   }
 
@@ -151,13 +156,12 @@ class ManagementResourcesSpec
             processesRoute
           ) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
-            val curTime           = Instant.now()
             deploymentHistory.map(a =>
               (a.processVersionId, a.user, a.actionType, a.commentId, a.comment, a.buildInfo)
             ) shouldBe List(
               (
                 VersionId(2),
-                user().username,
+                TestFactory.user().username,
                 ProcessActionType.Cancel,
                 Some(secondCommentId),
                 Some(expectedStopComment),
@@ -165,7 +169,7 @@ class ManagementResourcesSpec
               ),
               (
                 VersionId(2),
-                user().username,
+                TestFactory.user().username,
                 ProcessActionType.Deploy,
                 Some(firstCommentId),
                 Some(expectedDeployComment),
@@ -242,7 +246,7 @@ class ManagementResourcesSpec
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
     Post(s"/processManagement/deploy/${ProcessTestData.sampleScenario.name}") ~> withPermissions(
       deployRoute(),
-      testPermissionWrite
+      Permission.Write
     ) ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
@@ -414,7 +418,10 @@ class ManagementResourcesSpec
 
   test("execute valid custom action") {
     createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("hello")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("hello"))
+    ) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = true, msg = "Hi")
     }
@@ -422,7 +429,10 @@ class ManagementResourcesSpec
 
   test("execute non existing custom action") {
     createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("non-existing")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("non-existing"))
+    ) ~> check {
       status shouldBe StatusCodes.NotFound
       responseAs[String] shouldBe "non-existing is not existing"
     }
@@ -430,7 +440,10 @@ class ManagementResourcesSpec
 
   test("execute not implemented custom action") {
     createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("not-implemented")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("not-implemented"))
+    ) ~> check {
       status shouldBe StatusCodes.NotImplemented
       responseAs[String] shouldBe "an implementation is missing"
     }
@@ -438,7 +451,10 @@ class ManagementResourcesSpec
 
   test("execute custom action with not allowed process status") {
     createEmptyProcess(ProcessTestData.sampleProcessName)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("invalid-status")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("invalid-status"))
+    ) ~> check {
       // TODO: "conflict" is coherrent with "canceled process can't be canceled again" above, consider changing to Forbidden
       status shouldBe StatusCodes.Conflict
       responseAs[String] shouldBe "Action: invalid-status is not allowed in scenario (fooProcess) state: NOT_DEPLOYED, allowed actions: hello,not-implemented."
@@ -447,7 +463,10 @@ class ManagementResourcesSpec
 
   test("should return 403 when execute custom action on archived process") {
     createArchivedProcess(ProcessTestData.sampleProcessName)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("hello")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("hello"))
+    ) ~> check {
       // TODO: "conflict" is coherrent with "can't deploy fragment" above, consider changing to Forbidden
       status shouldBe StatusCodes.Conflict
     }
@@ -455,7 +474,10 @@ class ManagementResourcesSpec
 
   test("should return 403 when execute custom action on fragment") {
     createEmptyProcess(ProcessTestData.sampleProcessName, isFragment = true)
-    customAction(ProcessTestData.sampleProcessName, CustomActionRequest("hello")) ~> check {
+    customAction(
+      ProcessTestData.sampleProcessName,
+      CustomActionRequest(ScenarioActionName("hello"))
+    ) ~> check {
       // TODO: "conflict" is coherrent with "can't deploy fragment" above, consider changing to Forbidden
       status shouldBe StatusCodes.Conflict
     }

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
@@ -18,6 +19,7 @@ import java.util.UUID
     createdAt: Instant,
     // We use process action only for finished/execution finished actions so performedAt is always defined
     performedAt: Instant,
+    // TODO: switch ProcessActionType to ScenarioActionName
     actionType: ProcessActionType,
     state: ProcessActionState,
     failureMessage: Option[String],
@@ -67,4 +69,18 @@ object ProcessActionState extends Enumeration {
   val ExecutionFinished: Value = Value("EXECUTION_FINISHED")
 
   val FinishedStates: Set[ProcessActionState] = Set(Finished, ExecutionFinished)
+}
+
+final case class ScenarioActionName(value: String) extends AnyVal {
+  override def toString: String = value
+}
+
+object ScenarioActionName {
+
+  implicit val encoder: Encoder[ScenarioActionName] = deriveUnwrappedEncoder
+  implicit val decoder: Decoder[ScenarioActionName] = deriveUnwrappedDecoder
+
+  // TODO: Temporary action type to name mapping to handle alignment of ProcessAction and CustomAction.
+  //   Probably obsolete when a consistent api is introduced.
+  def apply(actionType: ProcessActionType): ScenarioActionName = new ScenarioActionName(actionType.toString)
 }

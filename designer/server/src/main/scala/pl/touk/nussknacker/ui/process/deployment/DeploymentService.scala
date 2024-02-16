@@ -40,7 +40,11 @@ trait DeploymentService extends ProcessStateService {
       implicit ec: ExecutionContext
   ): Future[Option[ProcessAction]]
 
-  def invokeCustomAction(actionName: String, processIdWithName: ProcessIdWithName, params: Map[String, String])(
+  def invokeCustomAction(
+      actionName: ScenarioActionName,
+      processIdWithName: ProcessIdWithName,
+      params: Map[String, String]
+  )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[CustomActionResult]

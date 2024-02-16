@@ -30,7 +30,7 @@ trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithH
     super.beforeAll()
   }
 
-  override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     service.close()
     super.afterAll()
   }

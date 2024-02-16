@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.functional
 
 import org.apache.flink.configuration.{ConfigConstants, Configuration, MetricOptions}
 import org.apache.flink.metrics._
-import org.apache.flink.metrics.reporter.MetricReporter
+import org.apache.flink.metrics.reporter.{MetricReporter, MetricReporterFactory}
 import org.apache.flink.runtime.metrics.scope.ScopeFormat
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
@@ -10,11 +10,13 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import java.util.Properties
+
 object TestReporterUtil {
 
   def configWithTestMetrics(name: String, c: Configuration = new Configuration()): Configuration = {
     c.setString(MetricOptions.REPORTERS_LIST, "test")
-    c.setString(ConfigConstants.METRICS_REPORTER_PREFIX + "test.class", classOf[TestReporter].getName)
+    c.setString(ConfigConstants.METRICS_REPORTER_PREFIX + "test.factory.class", classOf[TestReporterFactory].getName)
     c.setString(ConfigConstants.METRICS_REPORTER_PREFIX + "test.name", name)
     c
   }
@@ -68,4 +70,12 @@ class TestReporter extends MetricReporter with CharacterFilter {
   }
 
   override def filterCharacters(input: String): String = input
+}
+
+class TestReporterFactory extends MetricReporterFactory {
+
+  def createMetricReporter(properties: Properties): TestReporter = {
+    new TestReporter()
+  }
+
 }

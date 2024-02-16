@@ -164,7 +164,7 @@ class DeploymentServiceImpl(
     for {
       processDetailsOpt <- dbioRunner.run(processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id))
       processDetails    <- dbioRunner.run(existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name)))
-      _                          = checkIfCanPerformActionOnProcess(actionType.toString, processDetails)
+      _                          = checkIfCanPerformActionOnProcess(ScenarioActionName(actionType), processDetails)
       versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
       buildInfoProcessIngType    = getBuildInfoProcessingType(processDetails)
       // We wrap only in progress action adding to avoid long transactions and potential deadlocks
@@ -201,7 +201,7 @@ class DeploymentServiceImpl(
   }
 
   private def checkIfCanPerformActionOnProcess[PS: ScenarioShapeFetchStrategy](
-      actionName: String,
+      actionName: ScenarioActionName,
       processDetails: ScenarioWithDetailsEntity[PS]
   ): Unit = {
     if (processDetails.isArchived) {
@@ -218,7 +218,7 @@ class DeploymentServiceImpl(
   ): Unit = {
     if (!ps.allowedActions.contains(actionType)) {
       logger.debug(s"Action: $actionType on process: ${processDetails.name} not allowed in ${ps.status} state")
-      throw ProcessIllegalAction(actionType.toString, processDetails.name, ps)
+      throw ProcessIllegalAction(ScenarioActionName(actionType), processDetails.name, ps)
     }
   }
 
@@ -538,7 +538,7 @@ class DeploymentServiceImpl(
   //       - see those actions in the actions table
   //       - send notifications about finished/failed custom actions
   override def invokeCustomAction(
-      actionName: String,
+      actionName: ScenarioActionName,
       processIdWithName: ProcessIdWithName,
       params: Map[String, String]
   )(
@@ -564,7 +564,7 @@ class DeploymentServiceImpl(
           params
         )
         customActionOpt = manager.customActions.find(_.name == actionName)
-        _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionReq))
+        _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
         _ = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
         invokeActionResult <- DBIOAction.from(manager.invokeCustomAction(actionReq, processDetails.json))
       } yield invokeActionResult
@@ -572,7 +572,7 @@ class DeploymentServiceImpl(
   }
 
   private def checkIfCanPerformCustomActionInState[PS: ScenarioShapeFetchStrategy](
-      actionName: String,
+      actionName: ScenarioActionName,
       processDetails: ScenarioWithDetailsEntity[PS],
       ps: ProcessState,
       manager: DeploymentManager
@@ -590,5 +590,5 @@ class DeploymentServiceImpl(
 
 private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")
 
-private case class CustomActionNonExisting(req: CustomActionRequest)
-    extends NotFoundError(s"${req.name} is not existing")
+private case class CustomActionNonExisting(actionName: ScenarioActionName)
+    extends NotFoundError(s"$actionName is not existing")

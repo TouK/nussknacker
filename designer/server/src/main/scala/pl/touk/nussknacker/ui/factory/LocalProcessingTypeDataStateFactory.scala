@@ -25,7 +25,8 @@ class LocalProcessingTypeDataStateFactory(
       designerConfig: ConfigWithUnresolvedVersion,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      workingDirectoryOpt: Option[Path]
+      workingDirectoryOpt: Option[Path],
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val deploymentManagerDependencies = getDeploymentManagerDependencies(typeName)
     val data =

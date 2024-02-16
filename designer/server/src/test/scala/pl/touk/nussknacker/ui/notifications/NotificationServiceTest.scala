@@ -15,10 +15,9 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
@@ -30,7 +29,6 @@ import pl.touk.nussknacker.ui.process.repository.{
   ScenarioWithDetailsEntity
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DBIOActionValues
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import java.time.temporal.ChronoUnit
@@ -134,7 +132,9 @@ class NotificationServiceTest
     notificationsAfterDeploy should have length 1
     val deployNotificationId = notificationsAfterDeploy.head.id
 
-    deploymentService.markActionExecutionFinished(Streaming, passedDeploymentId.value.toActionIdOpt.value).futureValue
+    deploymentService
+      .markActionExecutionFinished("Streaming", passedDeploymentId.value.toActionIdOpt.value)
+      .futureValue
     val notificationAfterExecutionFinished = notificationService.notifications(user, global).futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id
     notificationAfterExecutionFinished should have length 1
@@ -184,14 +184,14 @@ class NotificationServiceTest
   private def saveSampleProcess(processName: ProcessName) = {
     val sampleScenario = ScenarioBuilder
       .streaming(processName.value)
-      .source("source", existingSourceFactory)
-      .emptySink("sink", existingSinkFactory)
+      .source("source", ProcessTestData.existingSourceFactory)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
     val action =
       CreateProcessAction(
-        processName,
-        Category1,
-        sampleScenario,
-        Streaming,
+        processName = processName,
+        category = "Default",
+        canonicalProcess = sampleScenario,
+        processingType = "Streaming",
         isFragment = false,
         forwardedUserName = None
       )
