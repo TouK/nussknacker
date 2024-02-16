@@ -19,15 +19,17 @@ object DelayedKafkaSourceFactory {
 
   final val TimestampFieldParamName = "timestampField"
 
-  // TODO: consider changing to lazy parameter and add the same parameter also in "not delayed" kafka sources
   final val fallbackTimestampFieldParameter = Parameter
     .optional(TimestampFieldParamName, Typed[String])
     .copy(
       editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
     )
 
-  def timestampFieldParameter(typingResult: Option[TypingResult]): Parameter = {
-    val editorOpt = typingResult
+  // TODO this is simple way to provide better UX for timestampField usage. But probably instead of taking this further
+  // one should try to allow using spel expression here. As it requires some changes in SourceFunction for Kafka, it must wait
+  // until sources will be migrated to non-deprecated Source APi.
+  def timestampFieldParameter(kafkaRecordValueType: Option[TypingResult]): Parameter = {
+    val editorOpt = kafkaRecordValueType
       .collect { case TypedObjectTypingResult(fields, _, _) => fields.toList }
       .map(_.collect {
         case (paramName, typing) if TimestampUtils.supportedTimestampTypes.contains(typing) =>
