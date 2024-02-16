@@ -53,8 +53,8 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
         // Services are created within Interpreter so for every engine, lazy parameters can be evaluable. Other component types
         // (Sources, Sinks and CustomComponent) have engine specific logic around lazy parameters.
         // For Flink, they need to be Serializable (PostponedEvaluatorLazyParameterStrategy)
-        case service: Service => LazyParameterCreationStrategy.default
-        case other            => nonServicesLazyParamStrategy
+        case _: Service => LazyParameterCreationStrategy.default
+        case _          => nonServicesLazyParamStrategy
       }
     val paramsMap = params.map { case (tp, p) =>
       p.name -> parameterEvaluator.prepareParameter(tp, p)._1

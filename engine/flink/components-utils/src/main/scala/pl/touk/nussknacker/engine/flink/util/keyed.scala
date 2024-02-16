@@ -44,13 +44,13 @@ object keyed {
       extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]]
       with LazyParameterInterpreterFunction {
 
-    protected implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
+    protected implicit def lazyParameterInterpreterImpl: ToEvaluateFunctionConverter = lazyParameterInterpreter
 
     protected def prepareInterpreter(
         key: LazyParameter[OutputKey],
         value: LazyParameter[OutputValue]
     ): Context => KeyedValue[OutputKey, OutputValue] = {
-      lazyParameterInterpreter.syncInterpretationFunction(
+      lazyParameterInterpreter.toEvaluateFunction(
         key.product(value).map(tuple => KeyedValue(tuple._1, tuple._2))
       )
     }
@@ -105,9 +105,9 @@ object keyed {
   ) extends RichFlatMapFunction[Context, ValueWithContext[String]]
       with LazyParameterInterpreterFunction {
 
-    protected implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
+    protected implicit def lazyParameterInterpreterImpl: ToEvaluateFunctionConverter = lazyParameterInterpreter
 
-    private lazy val interpreter = lazyParameterInterpreter.syncInterpretationFunction(key.map(transformKey))
+    private lazy val interpreter = lazyParameterInterpreter.toEvaluateFunction(key.map(transformKey))
 
     protected def interpret(ctx: Context): String = interpreter(ctx)
 

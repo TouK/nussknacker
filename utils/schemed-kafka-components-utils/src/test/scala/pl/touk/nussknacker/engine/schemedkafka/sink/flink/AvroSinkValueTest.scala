@@ -35,8 +35,8 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
       .endRecord()
 
     val value = new LazyParameter[AnyRef] {
-      override def returnType: typing.TypingResult    = Typed[java.lang.Long]
-      override def evaluate(context: Context): AnyRef = ???
+      override def returnType: typing.TypingResult = Typed[java.lang.Long]
+      override def evaluate: Context => AnyRef     = ???
     }
 
     val parameterValues = Map("a" -> value, "b.c" -> value)
@@ -47,19 +47,18 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
       .applyUnsafe(sinkParam, parameterValues)
       .asInstanceOf[SinkRecordValue]
       .fields
-      .toMap
 
     fields("a").asInstanceOf[SinkSingleValue].value shouldBe value
 
-    val b: Map[String, SinkValue] = fields("b").asInstanceOf[SinkRecordValue].fields.toMap
+    val b: Map[String, SinkValue] = fields("b").asInstanceOf[SinkRecordValue].fields
     b("c").asInstanceOf[SinkSingleValue].value shouldBe value
   }
 
   test("sink params to SinkSingleValue") {
     val longSchema = SchemaBuilder.builder().longType()
     val value = new LazyParameter[AnyRef] {
-      override def returnType: typing.TypingResult    = Typed[java.lang.Long]
-      override def evaluate(context: Context): AnyRef = ???
+      override def returnType: typing.TypingResult = Typed[java.lang.Long]
+      override def evaluate: Context => AnyRef     = ???
     }
     val parameterValues = Map(SinkValueParamName -> value)
     val sinkParam       = AvroSchemaBasedParameter(longSchema, Set.empty).valueOr(e => fail(e.toString))

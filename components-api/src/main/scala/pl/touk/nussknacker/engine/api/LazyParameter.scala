@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.LazyParameter.Evaluate
 import pl.touk.nussknacker.engine.api.lazyparam._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
@@ -18,34 +19,27 @@ import scala.reflect.runtime.universe.TypeTag
 // TODO: rename to TypedFunction
 trait LazyParameter[+T <: AnyRef] {
 
-  def evaluate(context: Context): T
+  def evaluate: Evaluate[T]
 
   // type of parameter, derived from expression. Can be used for dependent types, see PreviousValueTransformer
   def returnType: TypingResult
 
   // we provide only applicative operation, monad is tricky to implement (see CompilerLazyParameterInterpreter.createInterpreter)
   // we use product and not ap here, because it's more convenient to handle returnType computations
-  def product[B <: AnyRef](fb: LazyParameter[B]): LazyParameter[(T, B)] = {
-    ProductLazyParameter(
-      this.asInstanceOf[LazyParameterWithPotentiallyPostponedEvaluator[T]],
-      fb.asInstanceOf[LazyParameterWithPotentiallyPostponedEvaluator[B]]
-    )
-  }
+  def product[B <: AnyRef](fb: LazyParameter[B]): LazyParameter[(T, B)] = new ProductLazyParameter(this, fb)
 
   def map[Y <: AnyRef: TypeTag](fun: T => Y): LazyParameter[Y] =
     map(fun, _ => Typed.fromDetailedType[Y])
 
   // unfortunately, we cannot assert that TypingResult represents Y somehow...
   def map[Y <: AnyRef](fun: T => Y, transformTypingResult: TypingResult => TypingResult): LazyParameter[Y] =
-    new MappedLazyParameter[T, Y](
-      this.asInstanceOf[LazyParameterWithPotentiallyPostponedEvaluator[T]],
-      fun,
-      transformTypingResult
-    )
+    new MappedLazyParameter[T, Y](this, fun, transformTypingResult)
 
 }
 
 object LazyParameter {
+
+  type Evaluate[+T] = Context => T
 
   // Sequence requires wrapping of evaluation result and result type because we don't want to use heterogeneous lists
   def sequence[T <: AnyRef, Y <: AnyRef](
@@ -53,28 +47,22 @@ object LazyParameter {
       wrapResult: List[T] => Y,
       wrapReturnType: List[TypingResult] => TypingResult
   ): LazyParameter[Y] =
-    SequenceLazyParameter(
-      fa.map(_.asInstanceOf[LazyParameterWithPotentiallyPostponedEvaluator[T]]),
-      wrapResult,
-      wrapReturnType
-    )
+    new SequenceLazyParameter(fa, wrapResult, wrapReturnType)
 
   // Name must be other then pure because scala can't recognize which overloaded method was used
   def pureFromDetailedType[T <: AnyRef: TypeTag](value: T): LazyParameter[T] =
-    FixedLazyParameter(value, Typed.fromDetailedType[T])
+    new FixedLazyParameter(value, Typed.fromDetailedType[T])
 
   def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T] =
-    FixedLazyParameter(value, valueTypingResult)
+    new FixedLazyParameter(value, valueTypingResult)
 
 }
 
 // This class is Flink-specific. It allows to evaluate value of lazy parameter in case when LazyParameter isn't
 // a ready to evaluation function. In Flink case, LazyParameters are passed into Flink's operators so they
 // need to be Serializable. Because of that they can't hold heavy objects like ExpressionCompiler or ExpressionEvaluator
-// TODO: Rename ToEvaluableFunctionConverter
-trait LazyParameterInterpreter {
+trait ToEvaluateFunctionConverter {
 
-  // TODO: Rename toEvaluableFunction
-  def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]): Context => T
+  def toEvaluateFunction[T <: AnyRef](parameter: LazyParameter[T]): Evaluate[T]
 
 }

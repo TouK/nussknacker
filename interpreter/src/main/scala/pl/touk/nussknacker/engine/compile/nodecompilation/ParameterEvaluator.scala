@@ -92,11 +92,10 @@ class ParameterEvaluator(
           processMetaData
         )
       case PostponedEvaluatorLazyParameterStrategy =>
-        PostponedEvaluatorLazyParameter(
+        EvaluableLazyParameterCreator(
           nodeId,
           definition,
-          graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
-          exprValue.returnType
+          exprValue
         )
     }
   }
