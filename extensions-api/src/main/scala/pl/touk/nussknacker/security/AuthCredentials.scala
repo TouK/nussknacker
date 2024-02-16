@@ -1,3 +1,10 @@
 package pl.touk.nussknacker.security
 
-final case class AuthCredentials(value: String) extends AnyVal
+sealed trait AuthCredentials
+
+object AuthCredentials {
+
+  final case class PassedAuthCredentials(value: String) extends AuthCredentials
+  case object AnonymousAccess                           extends AuthCredentials
+
+}

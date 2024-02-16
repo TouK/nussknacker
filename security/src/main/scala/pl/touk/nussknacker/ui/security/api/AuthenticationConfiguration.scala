@@ -11,7 +11,9 @@ trait AuthenticationConfiguration {
   def name: String
   def usersFile: URI
 
-  val userConfig: Config = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader)
+  def anonymousUserRole: Option[String]
+
+  lazy val userConfig: Config = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader)
 
   lazy val users: List[ConfigUser] = AuthenticationConfiguration
     .getUsers(userConfig)

@@ -27,6 +27,8 @@ describe("Processes list", () => {
             .should("be.visible")
             .click();
         cy.get("#newProcessName", { timeout: 30000 }).type(this.processName);
+        cy.contains(/request-response/i).click();
+        cy.get("#processCategory").select(2);
         cy.contains(/^create$/i)
             .should("be.enabled")
             .click();

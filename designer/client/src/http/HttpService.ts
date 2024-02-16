@@ -136,6 +136,17 @@ export enum ProcessingMode {
     "batch" = "Bounded-Stream",
 }
 
+export interface ScenarioParametersCombination {
+    processingMode: ProcessingMode;
+    category: string;
+    engineSetupName: string;
+}
+
+export interface ScenarioParametersCombinations {
+    combinations: ScenarioParametersCombination[];
+    engineSetupErrors: Record<string, string[]>;
+}
+
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
@@ -575,8 +586,8 @@ class HttpService {
 
     //This method will return *FAILED* promise if save/validation fails with e.g. 400 (fatal validation error)
 
-    createProcess(processName: string, processCategory: string, isFragment = false) {
-        const promise = api.post(`/processes/${encodeURIComponent(processName)}/${processCategory}?isFragment=${isFragment}`);
+    createProcess(data: { name: string; category: string; isFragment: boolean; processingMode: string; engineSetupName: string }) {
+        const promise = api.post(`/processes`, data);
         promise.catch((error) => {
             if (error?.response?.status != 400)
                 this.#addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true);
@@ -675,6 +686,10 @@ class HttpService {
 
     fetchAuthenticationSettings(authenticationProvider: string) {
         return api.get<AuthenticationSettings>(`/authentication/${authenticationProvider.toLowerCase()}/settings`);
+    }
+
+    fetchScenarioParametersCombinations() {
+        return api.get<ScenarioParametersCombinations>(`/scenarioParametersCombinations`);
     }
 
     #addInfo(message: string) {

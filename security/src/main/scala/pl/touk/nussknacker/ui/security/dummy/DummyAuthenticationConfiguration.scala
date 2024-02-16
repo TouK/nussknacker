@@ -3,6 +3,8 @@ package pl.touk.nussknacker.ui.security.dummy
 import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
+import java.net.URI
+
 object DummyAuthenticationConfiguration {
 
   import AuthenticationConfiguration._
@@ -13,4 +15,12 @@ object DummyAuthenticationConfiguration {
     config.as[DummyAuthenticationConfiguration](authenticationConfigPath)
 }
 
-final case class DummyAuthenticationConfiguration(anonymousUserRole: String)
+final case class DummyAuthenticationConfiguration(override val anonymousUserRole: Option[String])
+    extends AuthenticationConfiguration {
+  override val name: String = "Dummy"
+
+  override def usersFile: URI = throw new IllegalStateException(
+    "There is no users file in case of Dummy authentication"
+  )
+
+}
