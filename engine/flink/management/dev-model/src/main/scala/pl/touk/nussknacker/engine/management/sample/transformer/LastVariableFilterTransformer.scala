@@ -59,7 +59,7 @@ object LastVariableFilterTransformer
   ): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(groupByParameter.parameter :: valueParameter.parameter :: Nil)
     case TransformationStep((_, _) :: (`valueParameterName`, DefinedLazyParameter(expr)) :: Nil, _) =>
-      NextParameters(conditionParameter(expr.returnType) :: Nil)
+      NextParameters(conditionParameter(expr) :: Nil)
     // if we cannot determine value, we'll assume it's type is Unknown
     case TransformationStep((_, _) :: (`valueParameterName`, FailedToDefineParameter) :: Nil, _) =>
       NextParameters(conditionParameter(Unknown) :: Nil)

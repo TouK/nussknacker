@@ -57,7 +57,6 @@ object TabularDataDefinitionParser extends ExpressionParser {
       expectedType: typing.TypingResult
   ) = TypedExpression(
     createTabularDataDefinitionExpression(tabularTypedData, anOriginal),
-    expectedType,
     new ExpressionTypingInfo {
       override def typingResult: typing.TypingResult = expectedType
     }

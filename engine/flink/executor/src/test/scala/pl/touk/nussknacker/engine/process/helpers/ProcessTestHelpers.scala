@@ -98,7 +98,7 @@ object ProcessTestHelpers extends Serializable {
 
 object ProcessTestHelpersConfigCreator extends EmptyProcessConfigCreator {
   override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-    List(CountingNodesListener)
+    List(CountingNodesListener, new LifecycleCheckingListener)
 
   override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val dictId  = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])

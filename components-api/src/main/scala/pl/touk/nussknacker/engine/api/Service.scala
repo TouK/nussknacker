@@ -34,17 +34,10 @@ abstract class EagerService extends Service
 
 trait ServiceInvoker {
 
-//  def invokeService(params: Map[String, Any])(
-//      implicit ec: ExecutionContext,
-//      collector: InvocationCollectors.ServiceInvocationCollector,
-//      contextId: ContextId,
-//      componentUseCase: ComponentUseCase
-//  ): Future[Any]
-
-  def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+  // TODO: Remove params, we already have them in GenericNodeTransformation.implementation and in method based parameters
+  def invokeService(context: Context, params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
-      context: Context,
       componentUseCase: ComponentUseCase
   ): Future[Any]
 

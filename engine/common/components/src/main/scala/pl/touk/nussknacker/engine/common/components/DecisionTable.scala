@@ -102,26 +102,26 @@ object DecisionTable extends EagerService with SingleInputGenericNodeTransformat
       tabularData: TabularTypedData,
   ) extends ServiceInvoker {
 
-    override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+    override def invokeService(context: Context, params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        context: Context,
         componentUseCase: ComponentUseCase
-    ): Future[Any] = Future.successful {
-      filterRows(tabularData, evaluateParams, context)
+    ): Future[Any] = Future {
+      filterRows(tabularData, context, params)
     }
 
     private def filterRows(
         tabularData: TabularTypedData,
-        evaluateParams: Context => (Context, Map[String, Any]),
-        context: Context
+        context: Context,
+        params: Map[String, Any]
     ): java.util.List[java.util.Map[String, Any]] = {
       tabularData.rows
         .filter { row =>
-          val m           = row.cells.map(c => (c.definition.name, c.value)).toMap.asJava
-          val newContext  = context.withVariables(Map("ROW" -> m))
-          val (_, params) = evaluateParams(newContext)
-          params("Expression").asInstanceOf[java.lang.Boolean]
+          val m          = row.cells.map(c => (c.definition.name, c.value)).toMap.asJava
+          val newContext = context.withVariables(Map("ROW" -> m))
+//          val (_, params) = evaluateParams(newContext)
+//          params("Expression").asInstanceOf[java.lang.Boolean]
+          ???
         }
         .map { row =>
           row.cells.map(c => c.definition.name -> c.value).toMap // todo: are we sure keys are unique

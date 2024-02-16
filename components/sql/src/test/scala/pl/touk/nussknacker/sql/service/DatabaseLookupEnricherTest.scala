@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.OutputVariableNameValue
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
@@ -44,14 +44,14 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
     )
     val invoker = service.implementation(Map(), dependencies = Nil, Some(state))
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
-    val resultF = invoker.invokeService(ctx => (ctx, Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)))
+    val resultF = invoker.invokeService(Context.withInitialId, Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = invoker.invokeService(ctx => (ctx, Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)))
+    val resultF2 = invoker.invokeService(Context.withInitialId, Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
     val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))

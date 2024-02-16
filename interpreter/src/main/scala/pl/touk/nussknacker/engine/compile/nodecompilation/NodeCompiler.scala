@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel}
-import cats.implicits.{toTraverseOps, _}
+import cats.implicits._
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
@@ -41,7 +41,6 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.expression._
@@ -76,8 +75,10 @@ class NodeCompiler(
     fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor,
     expressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
+    listeners: Seq[ProcessListener],
     resultCollector: ResultCollector,
-    componentUseCase: ComponentUseCase
+    componentUseCase: ComponentUseCase,
+    nonServicesLazyParamStrategy: LazyParameterCreationStrategy
 ) {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
@@ -86,8 +87,10 @@ class NodeCompiler(
       fragmentDefinitionExtractor,
       expressionCompiler.withExpressionParsers(modify),
       classLoader,
+      listeners,
       resultCollector,
-      componentUseCase
+      componentUseCase,
+      nonServicesLazyParamStrategy
     )
   }
 
@@ -98,10 +101,9 @@ class NodeCompiler(
   private val expressionConfig: ExpressionConfigDefinition =
     definitions.expressionConfig
 
-  private val expressionEvaluator =
-    ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
-  private val parametersEvaluator = new ParameterEvaluator(expressionEvaluator)
-  private val factory             = new ComponentExecutorFactory(parametersEvaluator)
+  private val parametersEvaluator =
+    new ParameterEvaluator(globalVariablesPreparer, listeners)
+  private val factory = new ComponentExecutorFactory(parametersEvaluator)
   private val dynamicNodeValidator =
     new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator)
   private val builtInNodeCompiler = new BuiltInNodeCompiler(expressionCompiler)
@@ -566,14 +568,15 @@ class NodeCompiler(
             compiledParameters,
             outputVariableNameOpt,
             additionalDependencies,
-            componentUseCase
+            componentUseCase,
+            nonServicesLazyParamStrategy
           )
           .map { componentExecutor =>
             val typingInfo = compiledParameters.flatMap {
-              case (TypedParameter(name, TypedExpression(_, _, typingInfo)), _) =>
+              case (TypedParameter(name, TypedExpression(_, typingInfo)), _) =>
                 List(name -> typingInfo)
               case (TypedParameter(paramName, TypedExpressionMap(valueByBranch)), _) =>
-                valueByBranch.map { case (branch, TypedExpression(_, _, typingInfo)) =>
+                valueByBranch.map { case (branch, TypedExpression(_, typingInfo)) =>
                   val expressionId = branchParameterExpressionId(paramName, branch)
                   expressionId -> typingInfo
                 }

@@ -23,13 +23,11 @@ object TestService extends EagerService {
   @MethodToInvoke
   def invoke(@ParamName("param") value: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
 
-    override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+    override def invokeService(context: Context, params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
-        context: Context,
         componentUseCase: ComponentUseCase
     ): Future[String] = {
-      val params = evaluateParams(context)._2
       collector.collect(s"test-service-$value", Option(MockedValued)) {
         Future.successful(params("param").asInstanceOf[String])
       }

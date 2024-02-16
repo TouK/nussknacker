@@ -18,8 +18,8 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private implicit val metadata: MetaData                 = MetaData("proc1", StreamMetaData())
-  private implicit val ctx: Context                       = Context("", Map.empty)
   private implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
+  private val context: Context                            = Context.withInitialId
 
   private val nodeId           = NodeId("id")
   private val jobData: JobData = JobData(metadata, ProcessVersion.empty)
@@ -29,7 +29,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig("foo", mock)
     val invoker    = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
 
-    whenReady(invoker.invokeService(ctx => (ctx, Map("foo" -> "aa", "bar" -> 1)))) { _ =>
+    whenReady(invoker.invokeService(context, Map("foo" -> "aa", "bar" -> 1))) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
     }
   }
@@ -40,7 +40,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
     val invoker    = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
 
     intercept[IllegalArgumentException](
-      invoker.invokeService(ctx => (ctx, Map("foo" -> "aa", "bar" -> "terefere")))
+      invoker.invokeService(context, Map("foo" -> "aa", "bar" -> "terefere"))
     ).getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String): argument type mismatch"""
   }
 

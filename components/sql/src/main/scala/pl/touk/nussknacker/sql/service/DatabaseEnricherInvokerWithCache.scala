@@ -49,14 +49,12 @@ class DatabaseEnricherInvokerWithCache(
 
   import scala.compat.java8.FutureConverters._
 
-  override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+  override def invokeService(context: Context, params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      context: Context,
       componentUseCase: ComponentUseCase
   ): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {
-      val params         = evaluateParams(context)._2
       val queryArguments = queryArgumentsExtractor(argsCount, params)
       val cacheKey       = CacheKey(query, queryArguments)
 

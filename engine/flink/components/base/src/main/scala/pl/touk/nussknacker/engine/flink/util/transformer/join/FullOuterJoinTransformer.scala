@@ -87,7 +87,7 @@ class FullOuterJoinTransformer(
           val validatedAggregatorReturnTypes = aggregatorByBranchId
             .map { case (id, agg) =>
               agg
-                .computeOutputType(aggregateByByBranchId(id).returnType)
+                .computeOutputType(aggregateByByBranchId(id))
                 .leftMap(x => {
                   val branchParamId = ParameterNaming.getNameForBranchParameter(AggregateByParam.parameter, id)
                   NonEmptyList.one(CustomNodeError(x, Some(branchParamId)))

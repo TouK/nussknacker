@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
-import org.apache.flink.api.common.functions.{RuntimeContext, _}
+import org.apache.flink.api.common.functions._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.LazyParameter.Evaluate
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 class FlinkLazyParameterFunctionHelper(
     val exceptionComponentInfo: NodeComponentInfo,
     val exceptionHandler: RuntimeContext => ExceptionHandler,
-    val createInterpreter: RuntimeContext => LazyParameterInterpreter
+    val createInterpreter: RuntimeContext => ToEvaluateFunctionConverter with AutoCloseable
 ) extends Serializable {
 
   /*
@@ -83,14 +84,14 @@ trait OneParamLazyParameterFunction[T <: AnyRef] extends LazyParameterInterprete
 
   protected def parameter: LazyParameter[T]
 
-  private var _evaluateParameter: Context => T = _
+  private var _evaluateParameter: Evaluate[T] = _
 
   protected def evaluateParameter(ctx: Context): T =
     _evaluateParameter(ctx)
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    _evaluateParameter = lazyParameterInterpreter.syncInterpretationFunction(parameter)
+    _evaluateParameter = lazyParameterInterpreter.toEvaluateFunction(parameter)
   }
 
 }
@@ -104,7 +105,7 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
 
   protected def lazyParameterHelper: FlinkLazyParameterFunctionHelper
 
-  protected var lazyParameterInterpreter: LazyParameterInterpreter = _
+  protected var lazyParameterInterpreter: ToEvaluateFunctionConverter with AutoCloseable = _
 
   protected var exceptionHandler: ExceptionHandler = _
 

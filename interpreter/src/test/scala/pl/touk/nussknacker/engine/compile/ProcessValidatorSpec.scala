@@ -1691,10 +1691,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition))),
         new ServiceInvoker {
 
-          override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+          override def invokeService(context: Context, params: Map[String, Any])(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              context: Context,
               componentUseCase: ComponentUseCase
           ): Future[Any] = Future.successful(null)
 
@@ -1728,10 +1727,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         metaData: MetaData
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+      override def invokeService(context: Context, params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          context: Context,
           componentUseCase: ComponentUseCase
       ): Future[Any] = Future.successful(null)
 
@@ -1777,17 +1775,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         variableName,
         returnType,
         new ServiceInvoker {
-          override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+          override def invokeService(context: Context, params: Map[String, Any])(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              context: Context,
               componentUseCase: ComponentUseCase
-          ): Future[Any] = {
-            val params = evaluateParams(context)._2
+          ): Future[Any] =
             Future.successful(
               s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age"
             )
-          }
         }
       )
     }

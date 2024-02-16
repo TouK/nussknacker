@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDe
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
+import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,10 +35,10 @@ class SampleComponentProvider extends ComponentProvider {
 
 case class SampleProvidedComponent(param: String) extends EagerServiceWithStaticParametersAndReturnType {
 
-  override def invoke(evaluateParams: Context => (Context, Map[String, Any]))(
+  override def invoke(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
-      context: Context,
+      contextId: ContextId,
       metaData: MetaData,
       componentUseCase: ComponentUseCase
   ): Future[Any] = {

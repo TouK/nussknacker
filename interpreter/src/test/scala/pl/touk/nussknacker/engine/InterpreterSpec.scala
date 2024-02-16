@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpressi
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -1053,14 +1054,14 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(evaluateParams: Context => (Context, Map[String, Any]))(
+    override def invoke(params: Map[String, Any])(
         implicit ec: ExecutionContext,
-        collector: InvocationCollectors.ServiceInvocationCollector,
-        context: Context,
+        collector: ServiceInvocationCollector,
+        contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
-    ): Future[AnyRef] = {
-      Future.successful(evaluateParams(context)._2.head._2.toString)
+    ): Future[Any] = {
+      Future.successful(params.head._2.toString)
     }
 
   }
@@ -1075,14 +1076,13 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(evaluateParams: Context => (Context, Map[String, Any]))(
+    override def invoke(params: Map[String, Any])(
         implicit ec: ExecutionContext,
-        collector: InvocationCollectors.ServiceInvocationCollector,
-        context: Context,
+        collector: ServiceInvocationCollector,
+        contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
-    ): Future[AnyRef] = {
-      val params = evaluateParams(context)._2
+    ): Future[Any] = {
       Future.successful(params.head._2.toString)
     }
 
@@ -1098,7 +1098,7 @@ object InterpreterSpec {
         expectedType: typing.TypingResult
     ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
       parseWithoutContextValidation(original, expectedType).map(
-        TypedExpression(_, Typed[String], LiteralExpressionTypingInfo(typing.Unknown))
+        TypedExpression(_, LiteralExpressionTypingInfo(typing.Unknown))
       )
 
     override def parseWithoutContextValidation(
@@ -1129,10 +1129,9 @@ object InterpreterSpec {
         param: String
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+      override def invokeService(context: Context, params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          context: Context,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
         Future.successful(param)
@@ -1157,13 +1156,11 @@ object InterpreterSpec {
         lazyOne.returnType, {
           if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
           new ServiceInvoker {
-            override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+            override def invokeService(context: Context, params: Map[String, Any])(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
-                context: Context,
                 componentUseCase: ComponentUseCase
             ): Future[AnyRef] = {
-              val params = evaluateParams(context)._2
               Future.successful(params("lazy").asInstanceOf[AnyRef])
             }
           }
@@ -1193,7 +1190,7 @@ object InterpreterSpec {
             _
           ) if value == otherName =>
         FinalResults.forValidation(context)(
-          _.withVariable(OutputVariableNameDependency.extract(dependencies), expression.returnType, None)
+          _.withVariable(OutputVariableNameDependency.extract(dependencies), expression, None)
         )
     }
 
@@ -1206,14 +1203,12 @@ object InterpreterSpec {
       val paramName = staticParam.extractValue(params)
 
       new ServiceInvoker {
-        override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+        override def invokeService(context: Context, params: Map[String, Any])(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
-            context: Context,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
-          val localParams = evaluateParams(context)._2
-          Future.successful(localParams(paramName).asInstanceOf[AnyRef])
+          Future.successful(params(paramName).asInstanceOf[AnyRef])
         }
       }
     }

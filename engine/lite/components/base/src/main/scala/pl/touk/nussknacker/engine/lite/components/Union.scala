@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{
   JoinDataBatch,
   LiteJoinCustomComponent
 }
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.language.higherKinds
 
@@ -44,12 +43,10 @@ object Union extends CustomStreamTransformer {
         override def createTransformation[F[_]: Monad, Result](
             continuation: DataBatch => F[ResultType[Result]],
             context: CustomComponentContext[F]
-        ): JoinDataBatch => F[ResultType[Result]] = {
-          val interpreterByBranchId =
-            outputExpressionByBranchId.mapValuesNow(context.interpreter.syncInterpretationFunction)
-          (inputs: JoinDataBatch) => {
+        ): JoinDataBatch => F[ResultType[Result]] = { (inputs: JoinDataBatch) =>
+          {
             val contextWithNewValue = inputs.value.map { case (branchId, branchContext) =>
-              val branchNewValue = interpreterByBranchId(branchId.value)(branchContext)
+              val branchNewValue = outputExpressionByBranchId(branchId.value).evaluate(branchContext)
               branchContext.clearUserVariables
                 .withVariable(variableName, branchNewValue)
                 .appendIdSuffix(branchId.value)

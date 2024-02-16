@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, UpdateResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
@@ -33,14 +34,14 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
     )
     val invoker = service.implementation(Map.empty, dependencies = Nil, Some(state))
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
-    val resultF = invoker.invokeService(ctx => (ctx, Map("arg1" -> 1)))
+    val resultF = invoker.invokeService(Context.withInitialId, Map("arg1" -> 1))
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = invoker.invokeService(ctx => (ctx, Map("arg1" -> 1)))
+    val resultF2 = invoker.invokeService(Context.withInitialId, Map("arg1" -> 1))
     val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
@@ -59,7 +60,7 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
     )
     val invoker = service.implementation(Map.empty, dependencies = Nil, Some(state))
     returnType(service, state).display shouldBe "Integer"
-    val resultF = invoker.invokeService(ctx => (ctx, Map("arg1" -> 1)))
+    val resultF = invoker.invokeService(Context.withInitialId, Map("arg1" -> 1))
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]
     result shouldBe 1
     val queryResultSet = conn.prepareStatement("SELECT * FROM persons WHERE id = 1").executeQuery()

@@ -5,8 +5,8 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
-import pl.touk.nussknacker.engine.compile.nodecompilation.ParameterEvaluator
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Service}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, ParameterEvaluator}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 
@@ -19,15 +19,20 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       compiledParameters: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
       additionalDependencies: Seq[AnyRef],
-      componentUseCase: ComponentUseCase
-  )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ComponentExecutor] = {
+      componentUseCase: ComponentUseCase,
+      nonServicesLazyParamStrategy: LazyParameterCreationStrategy
+  )(
+      implicit nodeId: NodeId,
+      metaData: MetaData
+  ): ValidatedNel[ProcessCompilationError, ComponentExecutor] = {
     NodeValidationExceptionHandler.handleExceptions {
       doCreateComponentExecutor[ComponentExecutor](
         componentDefWithImpl,
         compiledParameters,
         outputVariableNameOpt,
         additionalDependencies,
-        componentUseCase
+        componentUseCase,
+        nonServicesLazyParamStrategy
       )
     }
   }
@@ -37,8 +42,20 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       params: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef],
-      componentUseCase: ComponentUseCase
-  )(implicit processMetaData: MetaData, nodeId: NodeId): ComponentExecutor = {
+      componentUseCase: ComponentUseCase,
+      nonServicesLazyParamStrategy: LazyParameterCreationStrategy
+  )(
+      implicit processMetaData: MetaData,
+      nodeId: NodeId
+  ): ComponentExecutor = {
+    implicit val lazyParameterCreationStrategy: LazyParameterCreationStrategy =
+      componentDefWithImpl.implementation match {
+        // Services are created within Interpreter so for every engine, lazy parameters can be evaluable. Other component types
+        // (Sources, Sinks and CustomComponent) have engine specific logic around lazy parameters.
+        // For Flink, they need to be Serializable (PostponedEvaluatorLazyParameterStrategy)
+        case _: Service => LazyParameterCreationStrategy.default
+        case _          => nonServicesLazyParamStrategy
+      }
     val paramsMap = params.map { case (tp, p) =>
       p.name -> parameterEvaluator.prepareParameter(tp, p)._1
     }.toMap

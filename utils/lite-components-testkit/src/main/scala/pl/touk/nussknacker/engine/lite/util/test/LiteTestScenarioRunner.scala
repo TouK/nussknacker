@@ -142,7 +142,10 @@ private[test] class SimpleSourceFactory(result: TypingResult)
 private[test] object SimpleSinkFactory extends SinkFactory {
 
   @MethodToInvoke
-  def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] = (_: LazyParameterInterpreter) =>
-    value
+  def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] = {
+    new LazyParamSink[AnyRef] {
+      override def prepareResponse: LazyParameter[AnyRef] = value
+    }
+  }
 
 }

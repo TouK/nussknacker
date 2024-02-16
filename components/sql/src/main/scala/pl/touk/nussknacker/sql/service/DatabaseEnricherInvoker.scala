@@ -31,13 +31,11 @@ class DatabaseEnricherInvoker(
     case UpdateResultStrategy => new UpdateQueryExecutor()
   }
 
-  override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+  override def invokeService(context: Context, params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      context: Context,
       componentUseCase: ComponentUseCase
   ): Future[queryExecutor.QueryResult] = {
-    val params = evaluateParams(context)._2
     getTimeMeasurement().measuring {
       queryDatabase(queryArgumentsExtractor(argsCount, params))
     }

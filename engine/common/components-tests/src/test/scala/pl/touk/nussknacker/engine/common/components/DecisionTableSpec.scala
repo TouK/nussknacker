@@ -27,7 +27,7 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
       new DecisionTableComponentProvider()
         .create(
           ConfigFactory.empty(),
-          ProcessObjectDependencies.empty
+          ProcessObjectDependencies.withConfig(ConfigFactory.empty())
         )
     }
     .build()
@@ -41,7 +41,8 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
         "dtResult",
         "decision-table",
         "Basic Decision Table" -> decisionTableJson,
-        "Expression"           -> "#ROW['B'] == 'foo' && #ROW['C'] != null",
+//        "Expression"           -> "#ROW['B'] == 'foo' && #ROW['C'] != null",
+        "Expression" -> "#ROW['B'] == 'foo'",
       )
       .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#dtResult")
 

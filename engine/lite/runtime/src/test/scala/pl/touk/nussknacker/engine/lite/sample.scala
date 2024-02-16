@@ -120,13 +120,12 @@ object sample {
     override def createStateTransformation[F[_]: Monad](
         context: CustomComponentContext[F]
     ): Context => F[Context] = {
-      val interpreter = context.interpreter.syncInterpretationFunction(value)
       val convert = context.capabilityTransformer
         .transform[StateType]
         .getOrElse(throw new IllegalArgumentException("No capability!"))
       (ctx: Context) =>
         convert(State((current: Map[String, Double]) => {
-          val newValue = current.getOrElse(name, 0d) + interpreter(ctx)
+          val newValue = current.getOrElse(name, 0d) + value.evaluate(ctx)
           (current + (name -> newValue), ctx.withVariable(outputVar, newValue))
         }))
     }
@@ -257,8 +256,11 @@ object sample {
   object SimpleSinkFactory extends SinkFactory {
 
     @MethodToInvoke
-    def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] =
-      (_: LazyParameterInterpreter) => value
+    def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] = {
+      new LazyParamSink[AnyRef] {
+        override def prepareResponse: LazyParameter[AnyRef] = value
+      }
+    }
 
   }
 

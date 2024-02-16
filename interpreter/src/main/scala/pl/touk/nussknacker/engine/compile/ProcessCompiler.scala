@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.FragmentValidator.validateUniqueFragmentOutputNames
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
@@ -344,8 +344,10 @@ object ProcessValidator {
       new FragmentParametersDefinitionExtractor(classLoader),
       expressionCompiler,
       classLoader,
+      Seq.empty,
       PreventInvocationCollector,
-      ComponentUseCase.Validation
+      ComponentUseCase.Validation,
+      nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
     )
     val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     new ProcessCompiler(
