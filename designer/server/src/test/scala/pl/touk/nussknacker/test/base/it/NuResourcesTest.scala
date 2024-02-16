@@ -16,7 +16,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
-import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
@@ -26,20 +25,14 @@ import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
-import pl.touk.nussknacker.test.utils.domain.TestFactory._
-import pl.touk.nussknacker.test._
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.ProcessesQueryEnrichments.RichProcessesQuery
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithSimplifiedDesignerConfig}
-import pl.touk.nussknacker.test.mock.{
-  MockDeploymentManager,
-  MockManagerProvider,
-  TestAdditionalUIConfigProvider,
-  TestProcessChangeListener
-}
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestProcessChangeListener}
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
@@ -65,9 +58,7 @@ import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
 import java.net.URI
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
@@ -130,27 +121,18 @@ trait NuResourcesTest
   protected val deploymentManagerProvider: DeploymentManagerProvider =
     new MockManagerProvider(deploymentManager)
 
-  private def createModelData(processingType: TestProcessingType) = {
-    ModelData(
-      processingTypeConfig,
-      TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-      DesignerWideComponentId.default(processingType.stringify, _),
-      workingDirectoryOpt = None,
-      skipComponentProvidersLoadedFromAppClassloader = false
-    )
-  }
+  private val modelData = ModelData(processingTypeConfig, modelDependencies)
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
       Streaming.stringify -> ProcessingTypeData.createProcessingTypeData(
         Streaming.stringify,
+        modelData,
         deploymentManagerProvider,
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
-        processingTypeConfig,
-        TestAdditionalUIConfigProvider,
-        workingDirectoryOpt = None,
-        skipComponentProvidersLoadedFromAppClassloader = false
+        processingTypeConfig.deploymentConfig,
+        processingTypeConfig.category
       )
     )
 
@@ -160,10 +142,8 @@ trait NuResourcesTest
     ProcessingTypeDataProvider(
       ProcessingTypeDataReader.loadProcessingTypeData(
         ConfigWithUnresolvedVersion(testConfig),
+        _ => modelDependencies,
         _ => deploymentManagerDependencies,
-        TestAdditionalUIConfigProvider,
-        workingDirectoryOpt = None,
-        skipComponentProvidersLoadedFromAppClassloader = false
       )
     )
 
@@ -171,7 +151,7 @@ trait NuResourcesTest
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
     mapProcessingTypeDataProvider(
-      Streaming.stringify -> createScenarioTestService(createModelData(Streaming))
+      Streaming.stringify -> createScenarioTestService(modelData)
     )
 
   protected val configProcessToolbarService =
