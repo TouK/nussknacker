@@ -19,16 +19,21 @@ Things to consider in future changes:
  */
 
 case class CustomAction(
-    name: String,
+    name: ScenarioActionName,
     // We cannot use "engine.api.deployment.StateStatus" because it can be implemented as a class containing nonconstant attributes
-    allowedStateStatusNames: List[String],
+    allowedStateStatusNames: List[StateStatus.StatusName],
     parameters: List[CustomActionParameter] = Nil,
     icon: Option[URI] = None
 )
 
-//TODO: validators?
+//TODO: validators, defaultValue, hint, labelOpt?
 case class CustomActionParameter(name: String, editor: ParameterEditor)
 
-case class CustomActionRequest(name: String, processVersion: ProcessVersion, user: User, params: Map[String, String])
+case class CustomActionRequest(
+    name: ScenarioActionName,
+    processVersion: ProcessVersion,
+    user: User,
+    params: Map[String, String]
+)
 
 case class CustomActionResult(req: CustomActionRequest, msg: String)

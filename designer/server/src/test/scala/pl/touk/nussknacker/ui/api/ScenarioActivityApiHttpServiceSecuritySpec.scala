@@ -80,6 +80,29 @@ class ScenarioActivityApiHttpServiceSecuritySpec
           .equalsPlainBody("The supplied authentication is invalid")
       }
     }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and return response for scenario related to anonymous role category" in {
+        val allowedScenarioName = "s2"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category2)
+          }
+          .when()
+          .noAuth()
+          .get(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/activity")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""
+               |{
+               |  "comments": [],
+               |  "attachments": []
+               |}
+               |""".stripMargin
+          )
+      }
+    }
   }
 
   "The scenario add comment endpoint when" - {
@@ -107,9 +130,24 @@ class ScenarioActivityApiHttpServiceSecuritySpec
             createSavedScenario(exampleScenario(disallowedScenarioName), category = Category2)
           }
           .plainBody(commentContent)
-          .basicAuthLimitedReader()
+          .basicAuthLimitedWriter()
           .when()
           .post(s"$nuDesignerHttpAddress/api/processes/$disallowedScenarioName/1/activity/comments")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+      "forbid to add comment in scenario because of no writer permission" in {
+        val allowedScenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+          }
+          .plainBody(commentContent)
+          .basicAuthLimitedReader()
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/comments")
           .Then()
           .statusCode(403)
           .equalsPlainBody("The supplied authentication is not authorized to access this resource")
@@ -129,6 +167,23 @@ class ScenarioActivityApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .equalsPlainBody("The supplied authentication is invalid")
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and forbid to add a comment because of writer permission" in {
+        val allowedScenarioName = "s2"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category2)
+          }
+          .plainBody(commentContent)
+          .noAuth()
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/comments")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
       }
     }
   }
@@ -164,9 +219,24 @@ class ScenarioActivityApiHttpServiceSecuritySpec
             createSavedScenario(exampleScenario(disallowedScenarioName), category = Category2)
             createComment(scenarioName = disallowedScenarioName, commentContent = commentContent)
           }
-          .basicAuthLimitedReader()
+          .basicAuthLimitedWriter()
           .when()
           .delete(s"$nuDesignerHttpAddress/api/processes/$disallowedScenarioName/activity/comments/1")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+      "forbid to remove comment in scenario because of no writer permission" in {
+        val allowedScenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+            createComment(scenarioName = allowedScenarioName, commentContent = commentContent)
+          }
+          .basicAuthLimitedReader()
+          .when()
+          .delete(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/activity/comments/1")
           .Then()
           .statusCode(403)
           .equalsPlainBody("The supplied authentication is not authorized to access this resource")
@@ -187,11 +257,28 @@ class ScenarioActivityApiHttpServiceSecuritySpec
           .equalsPlainBody("The supplied authentication is invalid")
       }
     }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and forbid to delete a comment because of writer permission" in {
+        val allowedScenarioName = "s2"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category2)
+            createComment(scenarioName = allowedScenarioName, commentContent = commentContent)
+          }
+          .basicAuthLimitedReader()
+          .when()
+          .delete(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/activity/comments/1")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+    }
   }
 
-  "The scenario add attachment endpoint when" - {
+  "The scenario add an attachment endpoint when" - {
     "authenticated should" - {
-      "allow to add attachment in scenario in allowed category for the given user" in {
+      "allow to add an attachment in scenario in allowed category for the given user" in {
         val allowedScenarioName = "s1"
         given()
           .applicationState {
@@ -199,14 +286,14 @@ class ScenarioActivityApiHttpServiceSecuritySpec
             createSavedScenario(exampleScenario("s2"), category = Category2)
           }
           .streamBody(fileContent = fileContent, fileName = fileName)
-          .preemptiveBasicAuth("writer", "writer")
+          .basicAuthLimitedWriter()
           .when()
           .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/attachments")
           .Then()
           .statusCode(200)
           .equalsPlainBody("")
       }
-      "forbid to add attachment in scenario in disallowed category for the given user" in {
+      "forbid to add an attachment in scenario in disallowed category for the given user" in {
         val disallowedScenarioName = "s2"
         given()
           .applicationState {
@@ -214,9 +301,24 @@ class ScenarioActivityApiHttpServiceSecuritySpec
             createSavedScenario(exampleScenario(disallowedScenarioName), category = Category2)
           }
           .streamBody(fileContent = "test", fileName = "test.xml")
-          .preemptiveBasicAuth("reader", "reader")
+          .basicAuthLimitedWriter()
           .when()
           .post(s"$nuDesignerHttpAddress/api/processes/$disallowedScenarioName/1/activity/attachments")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+      "forbid to add an attachment in scenario because of no writer permission" in {
+        val allowedScenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+          }
+          .streamBody(fileContent = "test", fileName = "test.xml")
+          .basicAuthLimitedReader()
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/attachments")
           .Then()
           .statusCode(403)
           .equalsPlainBody("The supplied authentication is not authorized to access this resource")
@@ -236,6 +338,23 @@ class ScenarioActivityApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .equalsPlainBody("The supplied authentication is invalid")
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and forbid to add an attachment because of writer permission" in {
+        val allowedScenarioName = "s2"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category2)
+          }
+          .streamBody(fileContent = "test", fileName = "test.xml")
+          .basicAuthLimitedReader()
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/attachments")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
       }
     }
   }
@@ -296,6 +415,30 @@ class ScenarioActivityApiHttpServiceSecuritySpec
           .equalsPlainBody("The supplied authentication is invalid")
       }
     }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and download attachment for scenario related to anonymous role category" in {
+        val allowedScenarioName = "s2"
+        val attachmentId = given()
+          .applicationState {
+            createSavedScenario(exampleScenario("s1"), category = Category1)
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category2)
+            createAttachment(scenarioName = allowedScenarioName, fileContent = fileContent)
+          }
+          .when()
+          .noAuth()
+          .get(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/activity")
+          .Then()
+          .extractLong("attachments[0].id")
+
+        given()
+          .when()
+          .noAuth()
+          .get(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/activity/attachments/$attachmentId")
+          .Then()
+          .statusCode(200)
+          .equalsPlainBody(fileContent)
+      }
+    }
   }
 
   private def exampleScenario(scenarioName: String) = ScenarioBuilder
@@ -306,7 +449,7 @@ class ScenarioActivityApiHttpServiceSecuritySpec
   private def createComment(scenarioName: String, commentContent: String): Unit = {
     given()
       .plainBody(commentContent)
-      .basicAuthLimitedWriter()
+      .basicAuthAdmin()
       .when()
       .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/comments")
   }
@@ -318,7 +461,7 @@ class ScenarioActivityApiHttpServiceSecuritySpec
   ): Unit = {
     given()
       .streamBody(fileContent = fileContent, fileName = fileName)
-      .preemptiveBasicAuth("writer", "writer")
+      .basicAuthAdmin()
       .when()
       .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/attachments")
   }

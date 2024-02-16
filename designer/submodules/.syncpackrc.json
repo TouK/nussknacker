@@ -1,0 +1,8 @@
+{
+  "$import": "../client/.syncpackrc.json",
+  "source": [
+    "package.json",
+    "packages/*/package.json",
+    "../client/package.json"
+  ]
+}

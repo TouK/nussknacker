@@ -88,6 +88,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       `ModelConfig` or returns the original name if the value is not configured
   * [#5535](https://github.com/TouK/nussknacker/pull/5535) `ProcessingTypeConfig.classpath` contains now raw, `String` entries instead of `URL`.
     The `String` to `URL` converting logic is now inside `ModelClassLoader.apply`
+* [#5505](https://github.com/TouK/nussknacker/pull/5505) anonymous access functionality for Tapir-based API 
+  * `AuthenticationResources` & `AnonymousAccess` traits were changed to be able to introduce anonymous access feature
+  * `AuthCredentials` class was changed too
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
