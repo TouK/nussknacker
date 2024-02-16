@@ -16,7 +16,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
-import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
@@ -32,12 +31,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithSimplifiedDesignerConfig}
-import pl.touk.nussknacker.test.mock.{
-  MockDeploymentManager,
-  MockManagerProvider,
-  TestAdditionalUIConfigProvider,
-  TestProcessChangeListener
-}
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
@@ -127,24 +121,13 @@ trait NuResourcesTest
   protected val deploymentManagerProvider: DeploymentManagerProvider =
     new MockManagerProvider(deploymentManager)
 
-  private def createModelData(processingType: TestProcessingType) = {
-    ModelData(
-      processingTypeConfig,
-      modelDependencies
-//      ModelDependencies(
-//        TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
-//        DesignerWideComponentId.default(processingType.stringify, _),
-//        workingDirectoryOpt = None,
-//        skipComponentProvidersLoadedFromAppClassloader = false
-//      )
-    )
-  }
+  private val modelData = ModelData(processingTypeConfig, modelDependencies)
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
       Streaming.stringify -> ProcessingTypeData.createProcessingTypeData(
         Streaming.stringify,
-        ModelData(processingTypeConfig, modelDependencies),
+        modelData,
         deploymentManagerProvider,
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
@@ -168,7 +151,7 @@ trait NuResourcesTest
 
   protected val scenarioTestServiceByProcessingType: ProcessingTypeDataProvider[ScenarioTestService, _] =
     mapProcessingTypeDataProvider(
-      Streaming.stringify -> createScenarioTestService(createModelData(Streaming))
+      Streaming.stringify -> createScenarioTestService(modelData)
     )
 
   protected val configProcessToolbarService =
