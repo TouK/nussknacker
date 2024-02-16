@@ -679,10 +679,7 @@ class NodeCompiler(
 
       val serviceRef = computedParameters.map { params =>
         // todo: do it better
-        val evaluator: Context => Map[String, Any] = (ctx: Context) => {
-          // todo: global vars?
-          params.map(p => p.name -> p.expression.evaluate(ctx, Map.empty)).toMap
-        }
+        val evaluator = (ctx: Context) => parametersEvaluator.evaluate(params, ctx)(nodeId, metaData)
         compiledgraph.service.ServiceRef(
           n.id,
           new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod, evaluator),

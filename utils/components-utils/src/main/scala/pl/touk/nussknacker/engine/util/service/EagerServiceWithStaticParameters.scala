@@ -47,6 +47,7 @@ trait EagerServiceWithStaticParameters
 
   def serviceImplementation(
       eagerParameters: Map[String, Any],
+      lazyParameters: Map[String, LazyParameter[AnyRef]],
       typingResult: TypingResult,
       metaData: MetaData
   ): ServiceInvoker
@@ -77,7 +78,8 @@ trait EagerServiceWithStaticParameters
       finalState: Option[TypingResult]
   ): ServiceInvoker = {
     serviceImplementation(
-      params.filterNot(_._2.isInstanceOf[LazyParameter[_]]),
+      params.filterNot { case (_, param) => param.isInstanceOf[LazyParameter[_]] },
+      params.collect { case (name, param: LazyParameter[AnyRef]) => (name, param) },
       finalState.getOrElse(Unknown),
       metaData.extract(dependencies)
     )
@@ -105,6 +107,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
 
   override def serviceImplementation(
       eagerParameters: Map[String, Any],
+      lazyParameters: Map[String, LazyParameter[AnyRef]],
       typingResult: TypingResult,
       metaData: MetaData
   ): ServiceInvoker = {
@@ -117,7 +120,8 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
         implicit val contextId: ContextId = ContextId(context.id)
-        invoke(eagerParameters)
+        val evaluatedLazyParameters       = lazyParameters.map { case (name, value) => (name, value.evaluate(context)) }
+        invoke(eagerParameters ++ evaluatedLazyParameters)
       }
 
     }
