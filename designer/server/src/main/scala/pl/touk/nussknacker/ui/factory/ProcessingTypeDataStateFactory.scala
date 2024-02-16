@@ -9,12 +9,16 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataState
 }
 
+import java.nio.file.Path
+
 trait ProcessingTypeDataStateFactory {
 
   def create(
       designerConfig: ConfigWithUnresolvedVersion,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      workingDirectoryOpt: Option[Path],
+      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]
 
 }

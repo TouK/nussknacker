@@ -41,9 +41,11 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
     }, [isCollapsible]);
 
     return children ? (
-        <Panel expanded={!isCollapsedLocal} color={color} width={sidebarWidth}>
+        <Panel className={"background"} expanded={!isCollapsedLocal} color={color} width={sidebarWidth}>
             <PanelHeader {...handlerProps} onClick={() => toggleCollapsed()} onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}>
-                <Typography variant={"caption"}>{title}</Typography>
+                <Typography textTransform={"uppercase"} variant={"overline"}>
+                    {title}
+                </Typography>
                 {isCollapsible && (
                     <IconWrapper>
                         <StyledCollapseIcon collapsed={isCollapsedLocal} />

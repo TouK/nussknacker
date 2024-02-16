@@ -139,7 +139,7 @@ export const styledScrollTogglePanelWrapper = (theme: Theme) => css`
     }
 
     .right {
-        .draggable.background {
+        .draggable .background {
             border-bottom-left-radius: 3px;
             border-top-left-radius: 3px;
         }

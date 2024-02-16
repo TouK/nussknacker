@@ -22,7 +22,7 @@ class OpenAPIComponentProviderTest extends AnyFunSuite with Matchers {
       .withValue("namePattern", fromAnyRef("p.*Service"))
 
     val resolved = provider.resolveConfigForExecution(config)
-    val services = provider.create(resolved, ProcessObjectDependencies.empty)
+    val services = provider.create(resolved, ProcessObjectDependencies.withConfig(ConfigFactory.empty()))
 
     services.map(_.name).toSet shouldBe Set("postService")
   }

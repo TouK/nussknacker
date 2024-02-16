@@ -1,11 +1,11 @@
-import React, { PropsWithChildren, useCallback, useRef } from "react";
-import { Truncate } from "./truncate";
 import { Visibility } from "@mui/icons-material";
 import { Box, Popover, PopoverOrigin, Stack, styled, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, PopupState, usePopupState } from "material-ui-popup-state/hooks";
+import React, { PropsWithChildren, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { alpha } from "@mui/material/styles";
+import { Truncate } from "./truncate";
 
 const paperProps = {
     sx: {
@@ -57,7 +57,7 @@ const Truncator = ({
 }) => {
     const { t } = useTranslation();
     return (
-        <TruncateButton {...bindTrigger(popupState)}>
+        <TruncateButton {...bindTrigger(popupState)} className="truncator">
             <Visibility sx={{ fontSize: "18px", color: "rgb(224, 224, 224)" }} />
             <Typography sx={{ mx: "4px", fontSize: "13px" }}>
                 {itemsCount === hiddenItemsCount
@@ -87,10 +87,8 @@ export function TruncateWrapper({ children }: PropsWithChildren<GridRenderCellPa
                 spacing={0.5}
                 component={Truncate}
                 renderTruncator={renderTruncator}
-                itemClassName="item"
-                truncatorClassName="truncator"
                 sx={{
-                    "&& .item:nth-of-type(1)": {
+                    "&& li:nth-of-type(1)": {
                         marginLeft: 0,
                     },
                 }}

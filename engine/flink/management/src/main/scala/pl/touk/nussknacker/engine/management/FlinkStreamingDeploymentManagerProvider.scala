@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploy
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
 
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -23,14 +24,15 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
   override def createDeploymentManager(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
-      deploymentConfig: Config
+      deploymentConfig: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
     // TODO: validate parameter
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
     valid(
       CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
-        new FlinkStreamingRestManager(flinkConfig, modelData, dependencies),
-        deploymentConfig
+        new FlinkStreamingRestManager(flinkConfig, scenarioStateCacheTTL, modelData, dependencies),
+        scenarioStateCacheTTL
       )
     )
   }

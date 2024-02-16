@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithImplementation
@@ -32,7 +32,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.objectNaming,
+      modelData.namingStrategy,
       componentUseCase,
       testExtensionsHolder,
       resultsCollectingListener
@@ -42,7 +42,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       creator: ProcessConfigCreator,
       extractModelDefinition: ExtractDefinitionFun,
       modelConfig: Config,
-      objectNaming: ObjectNaming,
+      namingStrategy: NamingStrategy,
       componentUseCase: ComponentUseCase,
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener,
@@ -51,7 +51,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       creator,
       extractModelDefinition,
       modelConfig,
-      objectNaming,
+      namingStrategy,
       componentUseCase,
     ) {
 

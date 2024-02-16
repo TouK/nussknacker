@@ -12,11 +12,13 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider, TestFactory}
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
+
+import java.nio.file.Path
 
 class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
@@ -58,7 +60,9 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         .loadProcessingTypeData(
           ConfigWithUnresolvedVersion(config),
           _ => TestFactory.deploymentManagerDependencies,
-          TestAdditionalUIConfigProvider
+          TestAdditionalUIConfigProvider,
+          workingDirectoryOpt = None,
+          skipComponentProvidersLoadedFromAppClassloader = false
         )
     )
     val scenarioTypes = provider
@@ -86,7 +90,9 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         .loadProcessingTypeData(
           ConfigWithUnresolvedVersion(config),
           _ => TestFactory.deploymentManagerDependencies,
-          TestAdditionalUIConfigProvider
+          TestAdditionalUIConfigProvider,
+          workingDirectoryOpt = None,
+          skipComponentProvidersLoadedFromAppClassloader = false
         )
     )
 
@@ -118,7 +124,9 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         deploymentManagerProvider: DeploymentManagerProvider,
         deploymentManagerDependencies: DeploymentManagerDependencies,
         engineSetupName: EngineSetupName,
-        additionalUIConfigProvider: AdditionalUIConfigProvider
+        additionalUIConfigProvider: AdditionalUIConfigProvider,
+        workingDirectoryOpt: Option[Path],
+        skipComponentProvidersLoadedFromAppClassloader: Boolean
     ): ProcessingTypeData = {
       val modelData = LocalModelData(ConfigFactory.empty, List.empty)
       ProcessingTypeData(

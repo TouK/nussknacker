@@ -92,6 +92,7 @@ paths:
                 type: string
               example: Component {id} not exist.
       security:
+      - {}
       - httpAuth: []
   /api/components:
     get:
@@ -147,6 +148,7 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
       security:
+      - {}
       - httpAuth: []
   /api/app/healthCheck:
     get:
@@ -247,6 +249,7 @@ paths:
                     - process1
                     - process2
       security:
+      - {}
       - httpAuth: []
   /api/app/healthCheck/process/validation:
     get:
@@ -303,6 +306,7 @@ paths:
                     - process2
                     - process3
       security:
+      - {}
       - httpAuth: []
   /api/app/processingtype/reload:
     post:
@@ -335,6 +339,7 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
       security:
+      - {}
       - httpAuth: []
   /api/app/config:
     get:
@@ -384,6 +389,7 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
       security:
+      - {}
       - httpAuth: []
   /api/app/config/categoriesWithProcessingType:
     get:
@@ -426,6 +432,7 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
       security:
+      - {}
       - httpAuth: []
   /api/notifications:
     get:
@@ -475,6 +482,7 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
       security:
+      - {}
       - httpAuth: []
   /api/processes/{scenarioName}/{versionId}/activity/comments:
     post:
@@ -542,6 +550,7 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
       security:
+      - {}
       - httpAuth: []
   /api/processes/{scenarioName}/activity/comments/{commentId}:
     delete:
@@ -612,6 +621,7 @@ paths:
                   summary: 'Unable to delete comment with id: {commentId}'
                   value: 'Unable to delete comment with id: 1'
       security:
+      - {}
       - httpAuth: []
   /api/processes/{scenarioName}/activity:
     get:
@@ -680,6 +690,7 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
       security:
+      - {}
       - httpAuth: []
   /api/scenarioParametersCombinations:
     get:
@@ -733,6 +744,7 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
       security:
+      - {}
       - httpAuth: []
   /api/user:
     get:
@@ -793,6 +805,7 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
       security:
+      - {}
       - httpAuth: []
 components:
   schemas:

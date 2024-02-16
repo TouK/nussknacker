@@ -54,6 +54,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{
+  AnonymousAccess,
   AuthenticationConfiguration,
   AuthenticationResources,
   LoggedUser,
@@ -82,11 +83,6 @@ class AkkaHttpBasedRouteProvider(
     extends RouteProvider[Route]
     with Directives
     with LazyLogging {
-
-  private val akkaHttpServerInterpreter = {
-    import system.dispatcher
-    new NuAkkaHttpServerInterpreterForTapirPurposes()
-  }
 
   override def createRoute(config: ConfigWithUnresolvedVersion): Resource[IO, Route] = {
     import system.dispatcher
@@ -279,7 +275,7 @@ class AkkaHttpBasedRouteProvider(
         ),
         new AkkaHttpBasedTapirStreamEndpointProvider()
       )
-      val scenarioParametersHttpService = new ScenarioParametersHttpService(
+      val scenarioParametersHttpService = new ScenarioParametersApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
         scenarioParametersService = typeToConfig.mapCombined(_.parametersService)
@@ -393,6 +389,11 @@ class AkkaHttpBasedRouteProvider(
           scenarioParametersHttpService,
         )
 
+      val akkaHttpServerInterpreter = {
+        import system.dispatcher
+        new NuAkkaHttpServerInterpreterForTapirPurposes()
+      }
+
       createAppRoute(
         resolvedConfig = resolvedConfig,
         authenticationResources = authenticationResources,
@@ -438,8 +439,8 @@ class AkkaHttpBasedRouteProvider(
           webResources.route
         } ~ pathPrefix("api") {
           apiResourcesWithoutAuthentication.reduce(_ ~ _)
-        } ~ authenticationResources.authenticate() { authenticatedUser =>
-          pathPrefix("api") {
+        } ~ pathPrefix("api") {
+          authenticationResources.authenticate() { authenticatedUser =>
             authorize(authenticatedUser.roles.nonEmpty) {
               val loggedUser = LoggedUser(
                 authenticatedUser = authenticatedUser,
@@ -522,7 +523,9 @@ class AkkaHttpBasedRouteProvider(
             processingTypeDataStateFactory.create(
               designerConfig,
               getDeploymentManagerDependencies,
-              additionalUIConfigProvider
+              additionalUIConfigProvider,
+              workingDirectoryOpt = None, // we use the default working directory
+              skipComponentProvidersLoadedFromAppClassloader = false
             )
           })
         )

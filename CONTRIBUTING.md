@@ -211,6 +211,18 @@ To run them you should have configured one of authentication options described h
 https://github.com/Azure/azure-sdk-for-java/wiki/Azure-Identity-Examples#authenticating-with-defaultazurecredential e.g. Intellij plugin, Azure CLI or environment variables.
 Tests connect to schema registry registered in Event Hubs Namespace from AZURE_EVENT_HUBS_NAMESPACE environment variable (by default nu-cloud).
 
+### Using logs in tests
+
+We have a dedicated module with test extensions (`testUtils`) which contains `logback-test.xml` with things like:
+- Some loggers that are too verbose on INFO level, have decreased level (e.g. in kafka, zk)
+- Some loggers that are too silent on INFO level, have increased level (e.g. in flink)
+- Some loggers use environment variables to determine level e.g. NUSSKNACKER_LOG_LEVEL. You can leverage configurations
+  templates in Idea to globally set level to the desired level for all tests runned from Idea.
+
+Default levels are prepared for work with CI - they are not too verbose to not hit the limit of logs, but for local use
+it is convenient to increase levels by environment variables.
+Please don't add a custom `logback-test.xml` to any module. Instead, reuse the existing configuration from `testUtils`.
+
 ### Code conventions
 
 #### Java interoperability

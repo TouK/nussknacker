@@ -5,8 +5,11 @@ import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{
+  AfterRunningActionName,
   AfterRunningStatus,
+  PreparingResourcesActionName,
   PreparingResourcesStatus,
+  TestActionName,
   TestStatus
 }
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -37,7 +40,6 @@ import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     extends DeploymentManager
-    with AlwaysFreshProcessState
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
@@ -50,11 +52,11 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
 
-  private val customActionAfterRunning = CustomAction(AfterRunningStatus.name, List(Running.name))
+  private val customActionAfterRunning = CustomAction(AfterRunningActionName, List(Running.name))
   private val customActionPreparingResources =
-    CustomAction(PreparingResourcesStatus.name, List(NotDeployed.name, Canceled.name))
+    CustomAction(PreparingResourcesActionName, List(NotDeployed.name, Canceled.name))
   private val customActionTest =
-    CustomAction(TestStatus.name, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
+    CustomAction(TestActionName, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
 
   private val customActionStatusMapping = Map(
     customActionAfterRunning       -> AfterRunningStatus,
@@ -163,8 +165,11 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
       scenarioTestData: ScenarioTestData
   ): Future[TestProcess.TestResults] = ???
 
-  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
-    Future.successful(memory.get(name).toList)
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    Future.successful(WithDataFreshnessStatus.fresh(memory.get(name).toList))
+  }
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
     Future.successful(SavepointResult(""))
@@ -237,7 +242,8 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
   override def createDeploymentManager(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
-      config: Config
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] =
     Validated.valid(new DevelopmentDeploymentManager(dependencies.actorSystem))
 

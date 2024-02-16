@@ -15,7 +15,7 @@ class BasicAuthenticationProvider extends AuthenticationProvider {
       classLoader: ClassLoader
   )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): AuthenticationResources = {
     val configuration = BasicAuthenticationConfiguration.create(config)
-    new BasicAuthenticationResources(realm, configuration)
+    new BasicAuthenticationResources(name, realm, configuration)
   }
 
 }

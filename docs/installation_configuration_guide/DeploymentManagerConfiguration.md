@@ -24,12 +24,12 @@ deploymentConfig {
 
 ## Kubernetes native Lite engine configuration
 
-Please check high level [Lite engine description](https://nussknacker.io/documentation/about/engines/LiteArchitecture/#scenario-deployment) before proceeding to configuration details. 
+Please check high level [Lite engine description](https://nussknacker.io/documentation/about/engines/LiteArchitecture/#scenario-deployment) before proceeding to configuration details.
 
 Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you have to configure `.kube/config` properly.
 
 Except the `servicePort` configuration option, all remaining configuration options apply to
-both `streaming` and `request-response` processing modes. 
+both `streaming` and `request-response` processing modes.
 
 The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can use Helm values override mechanism to supply your own values for these [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). As the the result of the Helm template rendering "classic" Nussknacker configuration file will be generated.
 
@@ -194,7 +194,7 @@ modelConfig {
 
 ### Configuring replicas count
 
-Replicas count is configured under `scalingConfig` configuration key. 
+Replicas count is configured under `scalingConfig` configuration key.
 &nbsp;
 
 ​In the **Request-Response** processing mode you can affect the count of scenario pods (replicas) by setting
@@ -296,15 +296,16 @@ Deployment Manager of type `lite-embedded` has the following configuration optio
 
 Deployment Manager of type `flinkStreaming` has the following configuration options:
 
-| Parameter                           | Type     | Default value | Description                                                                                                                                                                                                                                 |
-|-------------------------------------|----------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| restUrl                             | string   |               | The only required parameter, REST API endpoint of the Flink cluster                                                                                                                                                                         |
-| jobManagerTimeout                   | duration | 1 minute      | Timeout for communication with FLink cluster. Consider extending if e.g. you have long savepoint times etc.                                                                                                                                 |
-| shouldVerifyBeforeDeploy            | boolean  | true          | By default, before redeployment of scenario with state from savepoint, verification of savepoint compatibility is performed. There are some cases when it can be too time consuming or not possible. Use this flag to disable it.           |
-| shouldCheckAvailableSlots           | boolean  | true          | When set to true, Nussknacker checks if there are free slots to run new job. This check should be disabled on Flink Kubernetes Native deployments, where Taskmanager is started on demand.                                                  |
+| Parameter                           | Type     | Default value | Description                                                                                                                                                                                                                                |
+|-------------------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| restUrl                             | string   |               | The only required parameter, REST API endpoint of the Flink cluster                                                                                                                                                                        |
+| jobManagerTimeout                   | duration | 1 minute      | Timeout for communication with FLink cluster. Consider extending if e.g. you have long savepoint times etc.                                                                                                                                |
+| shouldVerifyBeforeDeploy            | boolean  | true          | By default, before redeployment of scenario with state from savepoint, verification of savepoint compatibility is performed. There are some cases when it can be too time consuming or not possible. Use this flag to disable it.          |
+| shouldCheckAvailableSlots           | boolean  | true          | When set to true, Nussknacker checks if there are free slots to run new job. This check should be disabled on Flink Kubernetes Native deployments, where Taskmanager is started on demand.                                                 |
 | waitForDuringDeployFinish.enabled   | boolean  | true          | When set to true, after Flink job execution, we check if tasks were successfully started on TaskMangers, before marking version as deployed. Otherwise version is marked as deployed immediately after successful response from JobManager. |
-| waitForDuringDeployFinish.maxChecks | boolean  | 180           | It works when `waitForDuringDeployFinish.enabled` option is set to `true`. This parameter describe how many times we should check if tasks were successfully started on TaskMangers before notifying about deployment failure.              |
-| waitForDuringDeployFinish.delay     | boolean  | 1 second      | It works when `waitForDuringDeployFinish.enabled` option is set to `true`. This parameter describe how long should be delay between checks.                                                                                                 |
-| scenarioStateCaching.enabled        | boolean  | true          | Enables scenario state caching in scenario list view                                                                                                                                                                                        |
-| scenarioStateCaching.cacheTTL       | duration | 10 seconds    | TimeToLeave for scenario state cache entries                                                                                                                                                                                                |
-| scenarioStateRequestTimeout         | duration | 3 seconds     | Request timeout for fetching scenario state from Flink                                                                                                                                                                                      |
+| waitForDuringDeployFinish.maxChecks | boolean  | 180           | It works when `waitForDuringDeployFinish.enabled` option is set to `true`. This parameter describe how many times we should check if tasks were successfully started on TaskMangers before notifying about deployment failure.             |
+| waitForDuringDeployFinish.delay     | boolean  | 1 second      | It works when `waitForDuringDeployFinish.enabled` option is set to `true`. This parameter describe how long should be delay between checks.                                                                                                |
+| scenarioStateCaching.enabled        | boolean  | true          | Enables scenario state caching in scenario list view                                                                                                                                                                                       |
+| scenarioStateCaching.cacheTTL       | duration | 10 seconds    | TimeToLeave for scenario state cache entries                                                                                                                                                                                               |
+| scenarioStateRequestTimeout         | duration | 3 seconds     | Request timeout for fetching scenario state from Flink                                                                                                                                                                                     |
+| jobConfigsCacheSize                 | int      | 1000          | Maximum number of cached job configuration elements.                                                                                                                                                                                       |

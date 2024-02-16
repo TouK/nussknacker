@@ -47,7 +47,6 @@ If you want to implement own `DeploymentManager`, you should implement this inte
   - [SerializersRegistrar](https://github.com/TouK/nussknacker/blob/staging/engine/flink/extensions-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/serialization/SerializersRegistrar.scala)
   - [FlinkCompatibilityProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/executor/src/main/scala/pl/touk/nussknacker/engine/process/FlinkCompatibilityProvider.scala)
 - [CustomParameterValidator](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/definition/ParameterValidator.scala)
-- [ObjectNaming](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/namespaces/ObjectNaming.scala)
 - [ToJsonEncoder](https://github.com/TouK/nussknacker/blob/staging/common-api/src/main/scala/pl/touk/nussknacker/engine/util/json/ToJsonEncoder.scala)
 - [WithExceptionExtractor](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/api/exception/WithExceptionExtractor.scala)
 - [ModelConfigLoader](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/modelconfig/ModelConfigLoader.scala)
