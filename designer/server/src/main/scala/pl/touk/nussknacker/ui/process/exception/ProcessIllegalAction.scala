@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.exception
 
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ScenarioActionName, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.IllegalOperationError
 
@@ -9,27 +9,28 @@ final case class ProcessIllegalAction(message: String) extends IllegalOperationE
 object ProcessIllegalAction {
 
   def apply(
-      actionName: String,
+      actionName: ScenarioActionName,
       processName: ProcessName,
       state: ProcessState
   ): ProcessIllegalAction =
-    apply(actionName, processName, state.status.name, state.allowedActions.map(_.toString))
+    apply(actionName, processName, state.status.name, state.allowedActions.map(ScenarioActionName(_)))
 
   def apply(
-      actionName: String,
+      actionName: ScenarioActionName,
       processName: ProcessName,
       statusName: StateStatus.StatusName,
-      allowedActions: List[String]
+      allowedActions: List[ScenarioActionName]
   ): ProcessIllegalAction =
     ProcessIllegalAction(
       s"Action: $actionName is not allowed in scenario ($processName) state: ${statusName}, allowed actions: ${allowedActions
+          .map(_.value)
           .mkString(",")}."
     )
 
-  def archived(actionName: String, processName: ProcessName): ProcessIllegalAction =
+  def archived(actionName: ScenarioActionName, processName: ProcessName): ProcessIllegalAction =
     ProcessIllegalAction(s"Forbidden action: $actionName for archived scenario: $processName.")
 
-  def fragment(actionName: String, processName: ProcessName): ProcessIllegalAction =
+  def fragment(actionName: ScenarioActionName, processName: ProcessName): ProcessIllegalAction =
     ProcessIllegalAction(s"Forbidden action: $actionName for fragment: $processName.")
 
 }

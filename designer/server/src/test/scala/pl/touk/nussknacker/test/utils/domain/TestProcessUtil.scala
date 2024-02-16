@@ -15,7 +15,6 @@ import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-
 import java.time.Instant
 import java.util.UUID
 import scala.util.Random

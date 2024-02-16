@@ -13,10 +13,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
-import scala.language.higherKinds
-
-import scala.language.higherKinds
-
 class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends DeploymentService {
 
   override def getProcessState(
@@ -60,7 +56,7 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   ): Future[F[ScenarioWithDetails]] = Future.successful(processTraverse)
 
   override def invokeCustomAction(
-      actionName: String,
+      actionName: ScenarioActionName,
       processIdWithName: ProcessIdWithName,
       params: Map[String, String]
   )(
