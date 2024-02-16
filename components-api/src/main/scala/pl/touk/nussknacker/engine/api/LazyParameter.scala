@@ -25,7 +25,8 @@ trait LazyParameter[+T <: AnyRef] extends Serializable {
 
   // we provide only applicative operation, monad is tricky to implement (see CompilerLazyParameterInterpreter.createInterpreter)
   // we use product and not ap here, because it's more convenient to handle returnType computations
-  def product[B <: AnyRef](fb: LazyParameter[B]): LazyParameter[(T, B)] = new ProductLazyParameter(this, fb)
+  def product[B <: AnyRef](fb: LazyParameter[B]): LazyParameter[(T, B)] =
+    new ProductLazyParameter(this, fb)
 
   def map[Y <: AnyRef: TypeTag](fun: T => Y): LazyParameter[Y] =
     map(fun, _ => Typed.fromDetailedType[Y])
@@ -55,17 +56,15 @@ object LazyParameter {
   def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T] =
     new FixedLazyParameter(value, valueTypingResult)
 
-  def product[T <: AnyRef, Y <: AnyRef](arg1: LazyParameter[T], arg2: LazyParameter[Y]): LazyParameter[(T, Y)] = {
+  def product[T <: AnyRef, Y <: AnyRef](arg1: LazyParameter[T], arg2: LazyParameter[Y]): LazyParameter[(T, Y)] =
     new ProductLazyParameter(arg1, arg2)
-  }
 
   def mapped[T <: AnyRef, Y <: AnyRef](
       lazyParameter: LazyParameter[T],
       fun: T => Y,
       transformTypingResult: TypingResult => TypingResult
-  ): LazyParameter[Y] = {
+  ): LazyParameter[Y] =
     new MappedLazyParameter[T, Y](lazyParameter, fun, transformTypingResult)
-  }
 
   trait CustomLazyParameter[+T <: AnyRef] extends LazyParameter[T]
 

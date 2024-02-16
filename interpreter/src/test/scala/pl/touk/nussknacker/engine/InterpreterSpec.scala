@@ -424,7 +424,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           id: String,
           context: Context,
           processMetaData: MetaData,
-          params: Map[String, Any],
           result: Try[Any]
       ): Unit = {
         serviceResults = serviceResults + (id -> result)
@@ -1208,7 +1207,8 @@ object InterpreterSpec {
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
-          Future.successful(params(paramName).asInstanceOf[AnyRef])
+          val staticParam = params(paramName).asInstanceOf[LazyParameter[AnyRef]]
+          Future.successful(staticParam.evaluate(context))
         }
       }
     }

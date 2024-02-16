@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
@@ -1723,6 +1723,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     override def serviceImplementation(
         eagerParameters: Map[String, Any],
+        lazyParameters: Map[String, LazyParameter[AnyRef]],
         typingResult: TypingResult,
         metaData: MetaData
     ): ServiceInvoker = new ServiceInvoker {

@@ -39,6 +39,15 @@ class ParameterEvaluator(
     }
   }
 
+  def evaluate(
+      parameters: Iterable[CompiledParameter],
+      context: Context
+  )(implicit nodeId: NodeId, metaData: MetaData): Map[String, AnyRef] = {
+    parameters
+      .map(p => p.name -> runtimeExpressionEvaluator.evaluateParameter(p, context).value)
+      .toMap
+  }
+
   private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(
       implicit processMetaData: MetaData,
       nodeId: NodeId,

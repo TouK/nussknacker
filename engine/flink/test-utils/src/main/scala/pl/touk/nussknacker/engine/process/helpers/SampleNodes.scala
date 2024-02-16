@@ -1069,24 +1069,24 @@ object SampleNodes {
       closed = true
     }
 
-    override def nodeEntered(nodeId: ProcessingType, context: Context, processMetaData: MetaData): Unit =
+    override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit =
       checkValidState("nodeEntered")
 
     override def endEncountered(
-        nodeId: ProcessingType,
-        ref: ProcessingType,
+        nodeId: String,
+        ref: String,
         context: Context,
         processMetaData: MetaData
     ): Unit =
       checkValidState("endEncountered")
 
-    override def deadEndEncountered(lastNodeId: ProcessingType, context: Context, processMetaData: MetaData): Unit =
+    override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit =
       checkValidState("deadEndEncountered")
 
     override def expressionEvaluated(
-        nodeId: ProcessingType,
-        expressionId: ProcessingType,
-        expression: ProcessingType,
+        nodeId: String,
+        expressionId: String,
+        expression: String,
         context: Context,
         processMetaData: MetaData,
         result: Any
@@ -1094,11 +1094,10 @@ object SampleNodes {
       checkValidState("expressionEvaluated")
 
     override def serviceInvoked(
-        nodeId: ProcessingType,
-        id: ProcessingType,
+        nodeId: String,
+        id: String,
         context: Context,
         processMetaData: MetaData,
-        params: Map[ProcessingType, Any],
         result: Try[Any]
     ): Unit =
       checkValidState("serviceInvoked")
