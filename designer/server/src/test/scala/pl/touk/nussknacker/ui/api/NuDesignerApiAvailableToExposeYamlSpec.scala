@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.ui.security.api.AnonymousAccess
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
@@ -64,7 +65,8 @@ object NuDesignerApiAvailableToExpose {
 
   private def createInstanceOf(clazz: Class[_ <: BaseEndpointDefinitions]) = {
     val basicAuth = auth
-      .basic[AuthCredentials]()
+      .basic[Option[String]]()
+      .map { AnonymousAccess.optionalStringToAuthCredentialsMapping(false) }
 
     Try(clazz.getConstructor(classOf[EndpointInput[AuthCredentials]]))
       .map(_.newInstance(basicAuth))
