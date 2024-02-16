@@ -24,8 +24,7 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
     parameterDef: definition.Parameter,
     expression: Expression,
     override val returnType: TypingResult
-) extends CustomLazyParameter[T]
-    with Serializable {
+) extends CustomLazyParameter[T] {
 
   def create(deps: EvaluableLazyParameterCreatorDeps): EvaluableLazyParameter[T] = {
     createEvaluableLazyParameter(deps)
