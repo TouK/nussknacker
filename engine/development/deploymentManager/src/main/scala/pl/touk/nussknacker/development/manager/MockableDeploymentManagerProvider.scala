@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.{
 }
 
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 

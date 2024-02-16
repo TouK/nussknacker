@@ -114,6 +114,36 @@ class AppApiHttpServiceSecuritySpec
           .body(equalTo("The supplied authentication is invalid"))
       }
     }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and show all processes related to anonymous role category" in {
+        given()
+          .applicationState {
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category2)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category2)
+
+            MockableDeploymentManager.configure(
+              Map(
+                "id1" -> SimpleStateStatus.ProblemStateStatus.Failed,
+                "id2" -> SimpleStateStatus.ProblemStateStatus.Failed,
+                "id3" -> SimpleStateStatus.ProblemStateStatus.Failed
+              )
+            )
+          }
+          .when()
+          .noAuth()
+          .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
+          .Then()
+          .statusCode(500)
+          .equalsJsonBody(
+            s"""{
+               |  "status": "ERROR",
+               |  "message": "Scenarios with status PROBLEM",
+               |  "processes": [ "id2", "id3" ]
+               |}""".stripMargin
+          )
+      }
+    }
   }
 
   "The scenario validation health check endpoint when" - {
@@ -126,8 +156,8 @@ class AppApiHttpServiceSecuritySpec
 
             MockableDeploymentManager.configure(
               Map(
-                "id1" -> SimpleStateStatus.Running,
-                "id2" -> SimpleStateStatus.Running
+                "id1" -> SimpleStateStatus.NotDeployed,
+                "id2" -> SimpleStateStatus.NotDeployed
               )
             )
           }
@@ -167,6 +197,34 @@ class AppApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and show all with validation errors related to anonymous role category" in {
+        given()
+          .applicationState {
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category2)
+
+            MockableDeploymentManager.configure(
+              Map(
+                "id1" -> SimpleStateStatus.NotDeployed,
+                "id2" -> SimpleStateStatus.NotDeployed
+              )
+            )
+          }
+          .when()
+          .noAuth()
+          .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
+          .Then()
+          .statusCode(500)
+          .equalsJsonBody(
+            s"""{
+               |  "status": "ERROR",
+               |  "message": "Scenarios with validation errors",
+               |  "processes": [ "id2" ]
+               |}""".stripMargin
+          )
       }
     }
   }
@@ -237,6 +295,17 @@ class AppApiHttpServiceSecuritySpec
           .body(equalTo("The supplied authentication is invalid"))
       }
     }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and forbid access" in {
+        given()
+          .when()
+          .noAuth()
+          .get(s"$nuDesignerHttpAddress/api/app/config")
+          .Then()
+          .statusCode(403)
+          .body(equalTo("The supplied authentication is not authorized to access this resource"))
+      }
+    }
   }
 
   "The user's categories and processing types info endpoint when" - {
@@ -290,6 +359,34 @@ class AppApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and show all categories and processing related to anonymous role category" in {
+        given()
+          .applicationState {
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category2)
+
+            MockableDeploymentManager.configure(
+              Map(
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+              )
+            )
+          }
+          .when()
+          .noAuth()
+          .get(s"$nuDesignerHttpAddress/api/app/config/categoriesWithProcessingType")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""{
+               |  "Category2": "streaming2"
+               |}""".stripMargin
+          )
       }
     }
   }
@@ -362,6 +459,30 @@ class AppApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+    "no credentials were passed should" - {
+      "authenticate as anonymous and forbid access" in {
+        given()
+          .applicationState {
+            createDeployedExampleScenario(ProcessName("id1"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id2"), category = Category1)
+            createDeployedExampleScenario(ProcessName("id3"), category = Category2)
+
+            MockableDeploymentManager.configure(
+              Map(
+                "id1" -> ProblemStateStatus.FailedToGet,
+                "id2" -> SimpleStateStatus.Running,
+                "id3" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"),
+              )
+            )
+          }
+          .when()
+          .noAuth()
+          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .Then()
+          .statusCode(403)
+          .body(equalTo("The supplied authentication is not authorized to access this resource"))
       }
     }
   }
