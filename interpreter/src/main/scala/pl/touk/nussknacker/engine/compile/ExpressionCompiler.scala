@@ -225,8 +225,11 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
               case _ =>
                 dictRegistry
                   .labelByKey(dictId, expr.key)
-                  .map(labelOpt => Expression.dictKeyWithLabel(expr.key, labelOpt))
                   .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, paramName)))
+                  .andThen {
+                    case Some(label) => Valid(Expression.dictKeyWithLabel(expr.key, Some(label)))
+                    case None => invalidNel(DictLabelByKeyResolutionFailed(dictId, expr.key, nodeId.id, paramName))
+                  }
             }
           )
       case _ => Valid(expression)

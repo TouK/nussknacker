@@ -338,6 +338,14 @@ object ProcessCompilationError {
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
+  final case class DictLabelByKeyResolutionFailed(
+      dictId: String,
+      key: String,
+      nodeId: String,
+      paramName: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
+
   final case class KeyWithLabelExpressionParsingError(
       keyWithLabel: String,
       message: String,

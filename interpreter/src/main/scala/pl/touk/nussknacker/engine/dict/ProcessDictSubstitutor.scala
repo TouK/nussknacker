@@ -43,10 +43,10 @@ class ProcessDictSubstitutor(
       val optionalExpressionTypingInfo = nodeTypingInfo.get(nodeExpressionId.expressionId)
 
       if (expr.language == Expression.Language.DictKeyWithLabel) {
-        if (!isReverse)
-          removeLabelFromDictKeyExpression(expr) // no need to keep label in BE
+        if (isReverse)
+          addLabelToDictKeyExpression(process, expr, optionalExpressionTypingInfo, nodeExpressionId)
         else
-          addLabelToDictKeyExpression(process, optionalExpressionTypingInfo, nodeExpressionId)
+          removeLabelFromDictKeyExpression(process, expr, nodeExpressionId) // no need to keep label in BE
       } else
         substituteExpression(process, expr, optionalExpressionTypingInfo, nodeExpressionId)
     }
@@ -54,26 +54,34 @@ class ProcessDictSubstitutor(
     rewriter.rewriteProcess(process)
   }
 
-  private def removeLabelFromDictKeyExpression(expr: Expression) =
+  private def removeLabelFromDictKeyExpression(
+      process: CanonicalProcess,
+      expr: Expression,
+      nodeExpressionId: NodeExpressionId
+  ) =
     DictKeyWithLabelExpressionParser
       .parseDictKeyWithLabelExpression(expr.expression)
       .map(expr => Expression.dictKeyWithLabel(expr.key, None))
-      .leftMap(e => throw new IllegalStateException(s"Errors parsing DictKeyWithLabel expression: $expr: $e"))
-      .toOption
-      .get
+      .valueOr(parsingError =>
+        throw new IllegalStateException(
+          s"Errors parsing DictKeyWithLabel expression: ${process.name} -> $nodeExpressionId: $expr. Errors: $parsingError"
+        )
+      )
 
   private def addLabelToDictKeyExpression(
       process: CanonicalProcess,
+      expr: Expression,
       optionalExpressionTypingInfo: Option[ExpressionTypingInfo],
       nodeExpressionId: NodeExpressionId
   ) =
     optionalExpressionTypingInfo match {
-      case Some(DictKeyWithLabelExpressionTypingInfo(key, label, _)) => Expression.dictKeyWithLabel(key, label)
-      case _ =>
-        throw new IllegalStateException(
-          s"Typing info of DictKeyWithLabel expression $nodeExpressionId in process ${process.name} " +
-            s"must be Some(DictKeyWithLabelExpressionTypingInfo), instead got: $optionalExpressionTypingInfo"
+      case Some(DictKeyWithLabelExpressionTypingInfo(key, label)) =>
+        Expression.dictKeyWithLabel(key, label)
+      case _ => // can happen if the expression isn't compiled successfully (and so it's TypingInfo isn't available)
+        logger.debug(
+          s"Failed to resolve label for DictKeyWithLabel expression ${process.name} -> $nodeExpressionId: $expr"
         )
+        expr // returns with label: null
     }
 
   private def substituteExpression(

@@ -14,8 +14,9 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.DictKeyWithLabelExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.KeyWithLabelExpressionParsingError
 
-case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String], typingResult: TypingResult)
-    extends ExpressionTypingInfo
+case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String]) extends ExpressionTypingInfo {
+  override def typingResult: TypingResult = typing.Unknown
+}
 
 object DictKeyWithLabelExpressionParser extends ExpressionParser {
 
@@ -30,7 +31,7 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
       TypedExpression(
         CompiledDictKeyExpression(expr.key),
         Typed[String],
-        DictKeyWithLabelExpressionTypingInfo(expr.key, expr.label, typing.Unknown)
+        DictKeyWithLabelExpressionTypingInfo(expr.key, expr.label)
       )
     )
 

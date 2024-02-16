@@ -19,7 +19,12 @@ object Expression {
   def spelTemplate(expression: String): Expression = Expression(Language.SpelTemplate, expression)
 
   @JsonCodec
-  case class DictKeyWithLabelExpression(key: String, label: Option[String])
+  case class DictKeyWithLabelExpression(
+      key: String,
+      label: Option[
+        String
+      ] // label is optional as there is no reason to keep in on BE side, it's resolved for FE in ProcessDictSubstitutor
+  )
 
   def dictKeyWithLabel(key: String, label: Option[String]): Expression = Expression(
     Language.DictKeyWithLabel,

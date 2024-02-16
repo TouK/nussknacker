@@ -215,6 +215,12 @@ object PrettyValidationErrors {
           s"Dictionary $dictId possible labels: $possibleLabels",
           fieldName = Some(paramName)
         )
+      case DictLabelByKeyResolutionFailed(dictId, key, _, paramName) =>
+        node(
+          s"Failed to resolve label for key: $key in dict: $dictId",
+          s"Dict registry doesn't support fetching of label for dictId: $dictId",
+          fieldName = Some(paramName)
+        )
       case KeyWithLabelExpressionParsingError(keyWithLabel, message, paramName, _) =>
         node(
           s"Error while parsing KeyWithLabel expression: $keyWithLabel",
