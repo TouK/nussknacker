@@ -678,13 +678,12 @@ class NodeCompiler(
       }
 
       val serviceRef = computedParameters.map { params =>
-        // todo: do it better
-        val evaluator = (ctx: Context) => parametersEvaluator.evaluate(params, ctx)(nodeId, metaData)
+        val evaluateParams: Context => Map[String, AnyRef] = parametersEvaluator.evaluate(params, _)(nodeId, metaData)
         compiledgraph.service.ServiceRef(
-          n.id,
-          new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod, evaluator),
-          params,
-          resultCollector
+          id = n.id,
+          invoker = new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod, evaluateParams),
+          parameters = params,
+          resultCollector = resultCollector
         )
       }
       val nodeTypingInfo = computedParameters.map(_.map(p => p.name -> p.typingInfo).toMap).getOrElse(Map.empty)

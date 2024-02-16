@@ -91,7 +91,7 @@ trait OneParamLazyParameterFunction[T <: AnyRef] extends LazyParameterInterprete
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    _evaluateParameter = lazyParameterInterpreter.toEvaluateFunction(parameter)
+    _evaluateParameter = toEvaluateFunctionConverter.toEvaluateFunction(parameter)
   }
 
 }
@@ -105,20 +105,20 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
 
   protected def lazyParameterHelper: FlinkLazyParameterFunctionHelper
 
-  protected var lazyParameterInterpreter: ToEvaluateFunctionConverter with AutoCloseable = _
+  protected var toEvaluateFunctionConverter: ToEvaluateFunctionConverter with AutoCloseable = _
 
   protected var exceptionHandler: ExceptionHandler = _
 
   override def close(): Unit = {
-    if (lazyParameterInterpreter != null)
-      lazyParameterInterpreter.close()
+    if (toEvaluateFunctionConverter != null)
+      toEvaluateFunctionConverter.close()
     if (exceptionHandler != null)
       exceptionHandler.close()
   }
 
   // TODO: how can we make sure this will invoke super.open(...) (can't do it directly...)
   override def open(parameters: Configuration): Unit = {
-    lazyParameterInterpreter = lazyParameterHelper.createInterpreter(getRuntimeContext)
+    toEvaluateFunctionConverter = lazyParameterHelper.createInterpreter(getRuntimeContext)
     exceptionHandler = lazyParameterHelper.exceptionHandler(getRuntimeContext)
   }
 
