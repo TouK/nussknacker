@@ -425,7 +425,7 @@ describe("Process", () => {
             });
     });
 
-    it.only("should open more scenario details", () => {
+    it("should open more scenario details", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
         cy.viewport(1500, 800);
         cy.layoutScenario();

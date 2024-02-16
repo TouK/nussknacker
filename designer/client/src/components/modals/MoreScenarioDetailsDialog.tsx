@@ -9,17 +9,9 @@ import moment from "moment";
 import i18next from "i18next";
 import { capitalize, startCase } from "lodash";
 
-const ItemWrapperStyled = styled("div")`
-    display: grid;
-    grid-auto-columns: minmax(0, 1fr);
-    grid-auto-flow: column;
-`;
+const ItemWrapperStyled = styled("div")({ display: "grid", gridAutoColumns: "minmax(0, 1fr)", gridAutoFlow: "column" });
 
-const ItemLabelStyled = styled(Typography)`
-    display: flex;
-    justify-content: flex-end;
-    margin-right: 8px;
-`;
+const ItemLabelStyled = styled(Typography)({ display: "flex", justifyContent: "flex-end", marginRight: "8px" });
 
 ItemLabelStyled.defaultProps = {
     variant: "subtitle2",
