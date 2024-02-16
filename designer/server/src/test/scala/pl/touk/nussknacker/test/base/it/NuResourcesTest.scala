@@ -26,8 +26,6 @@ import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
-import pl.touk.nussknacker.test.utils.domain.TestFactory._
-import pl.touk.nussknacker.test._
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.ProcessesQueryEnrichments.RichProcessesQuery
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
@@ -40,6 +38,7 @@ import pl.touk.nussknacker.test.mock.{
   TestAdditionalUIConfigProvider,
   TestProcessChangeListener
 }
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
@@ -65,9 +64,7 @@ import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
 import java.net.URI
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
@@ -144,13 +141,12 @@ trait NuResourcesTest
     mapProcessingTypeDataProvider(
       Streaming.stringify -> ProcessingTypeData.createProcessingTypeData(
         Streaming.stringify,
+        ModelData(processingTypeConfig, modelDependencies),
         deploymentManagerProvider,
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
-        processingTypeConfig,
-        TestAdditionalUIConfigProvider,
-        workingDirectoryOpt = None,
-        skipComponentProvidersLoadedFromAppClassloader = false
+        processingTypeConfig.deploymentConfig,
+        processingTypeConfig.category
       )
     )
 
@@ -160,10 +156,8 @@ trait NuResourcesTest
     ProcessingTypeDataProvider(
       ProcessingTypeDataReader.loadProcessingTypeData(
         ConfigWithUnresolvedVersion(testConfig),
+        _ => modelDependencies,
         _ => deploymentManagerDependencies,
-        TestAdditionalUIConfigProvider,
-        workingDirectoryOpt = None,
-        skipComponentProvidersLoadedFromAppClassloader = false
       )
     )
 

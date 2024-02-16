@@ -4,10 +4,15 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  AdditionalUIConfigProvider,
+  ComponentAdditionalConfig,
+  ComponentId,
+  DesignerWideComponentId
+}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinition,
   ModelDefinitionExtractor,
@@ -39,6 +44,7 @@ object ModelData extends LazyLogging {
         Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ) => ModelDefinition
 
+  // FIXME: Remove
   def apply(
       processingTypeConfig: ProcessingTypeConfig,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
@@ -53,6 +59,17 @@ object ModelData extends LazyLogging {
       determineDesignerWideId,
       additionalConfigsFromProvider,
       skipComponentProvidersLoadedFromAppClassloader
+    )
+  }
+
+  def apply(processingTypeConfig: ProcessingTypeConfig, dependencies: ModelDependencies): ModelData = {
+    ModelData(
+      processingTypeConfig.modelConfig,
+      ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt),
+      Some(processingTypeConfig.category),
+      dependencies.determineDesignerWideId,
+      dependencies.additionalConfigsFromProvider,
+      dependencies.skipComponentProvidersLoadedFromAppClassloader
     )
   }
 
@@ -109,6 +126,17 @@ object ModelData extends LazyLogging {
   }
 
 }
+
+case class ModelDependencies(
+    additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    determineDesignerWideId: ComponentId => DesignerWideComponentId,
+    workingDirectoryOpt: Option[Path],
+    // This property is for easier testing when for some reason, some jars with ComponentProvider are
+    // on the test classpath and CPs collide with other once with the same name.
+    // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
+    // add liteKafkaComponents (which are in test scope), see comment next to designer module
+    skipComponentProvidersLoadedFromAppClassloader: Boolean
+)
 
 case class ClassLoaderModelData private (
     private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
