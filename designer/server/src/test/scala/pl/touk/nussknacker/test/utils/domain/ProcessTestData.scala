@@ -141,11 +141,11 @@ object ProcessTestData {
   )
 
   def processValidatorWithDicts(dictionaries: Map[String, DictDefinition]): UIProcessValidator = new UIProcessValidator(
-    TestProcessingTypes.Streaming,
-    ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinitionWithDicts(dictionaries))),
-    Map.empty,
-    List.empty,
-    new FragmentResolver(new StubFragmentRepository(Map.empty))
+    processingType = Streaming.stringify,
+    validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinitionWithDicts(dictionaries))),
+    scenarioProperties = Map.empty,
+    additionalValidators = List.empty,
+    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
 
   val sampleScenarioParameters: ScenarioParameters =

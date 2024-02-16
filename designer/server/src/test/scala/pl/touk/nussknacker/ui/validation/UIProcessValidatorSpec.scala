@@ -55,7 +55,14 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.test.utils.domain.ProcessTestData.processValidator
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
+  dictParameterEditorServiceId,
+  existingSinkFactory,
+  existingSourceFactory,
+  processValidator,
+  processValidatorWithDicts,
+  sampleProcessName
+}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
