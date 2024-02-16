@@ -6,19 +6,17 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
-
-import java.nio.file.Path
 
 class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
@@ -59,10 +57,8 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       StubbedProcessingTypeDataReader
         .loadProcessingTypeData(
           ConfigWithUnresolvedVersion(config),
+          _ => TestFactory.modelDependencies,
           _ => TestFactory.deploymentManagerDependencies,
-          TestAdditionalUIConfigProvider,
-          workingDirectoryOpt = None,
-          skipComponentProvidersLoadedFromAppClassloader = false
         )
     )
     val scenarioTypes = provider
@@ -89,10 +85,8 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       StubbedProcessingTypeDataReader
         .loadProcessingTypeData(
           ConfigWithUnresolvedVersion(config),
-          _ => TestFactory.deploymentManagerDependencies,
-          TestAdditionalUIConfigProvider,
-          workingDirectoryOpt = None,
-          skipComponentProvidersLoadedFromAppClassloader = false
+          _ => TestFactory.modelDependencies,
+          _ => TestFactory.deploymentManagerDependencies
         )
     )
 
@@ -121,12 +115,10 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
     override protected def createProcessingTypeData(
         processingType: ProcessingType,
         processingTypeConfig: ProcessingTypeConfig,
+        modelDependencies: ModelDependencies,
         deploymentManagerProvider: DeploymentManagerProvider,
         deploymentManagerDependencies: DeploymentManagerDependencies,
-        engineSetupName: EngineSetupName,
-        additionalUIConfigProvider: AdditionalUIConfigProvider,
-        workingDirectoryOpt: Option[Path],
-        skipComponentProvidersLoadedFromAppClassloader: Boolean
+        engineSetupName: EngineSetupName
     ): ProcessingTypeData = {
       val modelData = LocalModelData(ConfigFactory.empty, List.empty)
       ProcessingTypeData(
@@ -137,7 +129,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
           MetaDataInitializer(StreamMetaData.typeName),
           Map.empty,
           List.empty,
-          EngineSetupName("Test engine")
+          engineSetupName
         ),
         processingTypeConfig.category,
         ProcessingTypeUsageStatistics(None, None),

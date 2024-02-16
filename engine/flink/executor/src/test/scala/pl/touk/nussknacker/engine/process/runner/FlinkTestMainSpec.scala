@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelData, spel}
 
 import java.util.{Date, UUID}
@@ -644,7 +643,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))
 
     // We need to set context loader to avoid forking in sbt
-    val modelData = ModelData(config, ModelClassLoader.empty, None)
+    val modelData = ModelData.duringFlinkExecution(config)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration())
     }

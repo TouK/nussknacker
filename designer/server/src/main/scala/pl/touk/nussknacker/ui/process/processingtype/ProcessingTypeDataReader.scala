@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.processingtype
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -12,8 +11,6 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.{
   selectedScenarioTypeConfigurationPath,
   toValueWithRestriction
 }
-
-import java.nio.file.Path
 
 object ProcessingTypeDataReader extends ProcessingTypeDataReader {
 
@@ -29,14 +26,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
   def loadProcessingTypeData(
       config: ConfigWithUnresolvedVersion,
+      getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
-      additionalUIConfigProvider: AdditionalUIConfigProvider,
-      workingDirectoryOpt: Option[Path],
-      // This property is for easier testing when for some reason, some jars with ComponentProvider are
-      // on the test classpath and CPs collide with other once with the same name.
-      // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
-      // add liteKafkaComponents (which are in test scope), see comment next to designer module
-      skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
@@ -56,16 +47,15 @@ trait ProcessingTypeDataReader extends LazyLogging {
     val engineSetupNames =
       ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
     val processingTypesData = providerWithNameInputData
-      .map { case (processingType, (typeConfig, provider, _)) =>
+      .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
+        logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
         val processingTypeData = createProcessingTypeData(
           processingType,
-          typeConfig,
-          provider,
+          processingTypeConfig,
+          getModelDependencies(processingType),
+          deploymentManagerProvider,
           getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),
-          additionalUIConfigProvider,
-          workingDirectoryOpt,
-          skipComponentProvidersLoadedFromAppClassloader
         )
         processingType -> processingTypeData
       }
@@ -99,23 +89,19 @@ trait ProcessingTypeDataReader extends LazyLogging {
   protected def createProcessingTypeData(
       processingType: ProcessingType,
       processingTypeConfig: ProcessingTypeConfig,
+      modelDependencies: ModelDependencies,
       deploymentManagerProvider: DeploymentManagerProvider,
       deploymentManagerDependencies: DeploymentManagerDependencies,
-      engineSetupName: EngineSetupName,
-      additionalUIConfigProvider: AdditionalUIConfigProvider,
-      workingDirectoryOpt: Option[Path],
-      skipComponentProvidersLoadedFromAppClassloader: Boolean
+      engineSetupName: EngineSetupName
   ): ProcessingTypeData = {
-    logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
     ProcessingTypeData.createProcessingTypeData(
       processingType,
+      ModelData(processingTypeConfig, modelDependencies),
       deploymentManagerProvider,
       deploymentManagerDependencies,
       engineSetupName,
-      processingTypeConfig,
-      additionalUIConfigProvider,
-      workingDirectoryOpt,
-      skipComponentProvidersLoadedFromAppClassloader
+      processingTypeConfig.deploymentConfig,
+      processingTypeConfig.category
     )
   }
 

@@ -23,7 +23,7 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       val processVersion = parseProcessVersion(args(1))
       val deploymentData = parseDeploymentData(args(2))
       val config: Config = readConfigFromArgs(args)
-      val modelData      = ModelData.duringExecution(config)
+      val modelData      = ModelData.duringFlinkExecution(config)
       val env            = getExecutionEnvironment
       runProcess(
         env,

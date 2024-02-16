@@ -15,13 +15,7 @@ import pl.touk.nussknacker.engine.definition.model.{
 }
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.engine.modelconfig.{
-  ComponentsUiConfig,
-  ComponentsUiConfigParser,
-  DefaultModelConfigLoader,
-  InputConfigDuringExecution,
-  ModelConfigLoader
-}
+import pl.touk.nussknacker.engine.modelconfig._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -39,36 +33,14 @@ object ModelData extends LazyLogging {
         Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ) => ModelDefinition
 
-  def apply(
-      processingTypeConfig: ProcessingTypeConfig,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      workingDirectoryOpt: Option[Path],
-      skipComponentProvidersLoadedFromAppClassloader: Boolean
-  ): ModelData = {
+  def apply(processingTypeConfig: ProcessingTypeConfig, dependencies: ModelDependencies): ModelData = {
     ModelData(
       processingTypeConfig.modelConfig,
-      ModelClassLoader(processingTypeConfig.classPath, workingDirectoryOpt),
+      ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt),
       Some(processingTypeConfig.category),
-      determineDesignerWideId,
-      additionalConfigsFromProvider,
-      skipComponentProvidersLoadedFromAppClassloader
-    )
-  }
-
-  // On the runtime side, we get only model config, not the whole processing type config,
-  // so we don't have category, processingType and additionalConfigsFromProvider
-  // But it is not a big deal, because scenario was already validated before deploy, so we already check that
-  // we don't use not allowed components for a given category
-  // and that the scenario doesn't violate validators introduced by additionalConfigsFromProvider
-  def apply(inputConfig: Config, modelClassLoader: ModelClassLoader, category: Option[String]): ModelData = {
-    ModelData(
-      inputConfig = ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig),
-      modelClassLoader = modelClassLoader,
-      category = category,
-      determineDesignerWideId = id => DesignerWideComponentId(id.toString),
-      additionalConfigsFromProvider = Map.empty,
-      skipComponentProvidersLoadedFromAppClassloader = false
+      dependencies.determineDesignerWideId,
+      dependencies.additionalConfigsFromProvider,
+      dependencies.skipComponentProvidersLoadedFromAppClassloader
     )
   }
 
@@ -80,7 +52,6 @@ object ModelData extends LazyLogging {
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       skipComponentProvidersLoadedFromAppClassloader: Boolean
   ): ModelData = {
-    logger.debug("Loading model data from: " + modelClassLoader)
     ClassLoaderModelData(
       modelConfigLoader =>
         modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
@@ -93,13 +64,35 @@ object ModelData extends LazyLogging {
   }
 
   // Used on Flink, where we start already with resolved config so we should not resolve it twice.
-  def duringExecution(inputConfig: Config): ModelData = {
+  // Also a classloader is correct so we don't need to build the new one
+  // This tiny method is Flink specific so probably the interpreter module is not the best one
+  // but it is very convenient to keep in near normal, duringExecution method
+  def duringFlinkExecution(inputConfig: Config): ModelData = {
+    duringExecution(inputConfig, ModelClassLoader.empty, resolveConfigs = false)
+  }
+
+  // On the runtime side, we get only model config, not the whole processing type config,
+  // so we don't have category, processingType and additionalConfigsFromProvider
+  // But it is not a big deal, because scenario was already validated before deploy, so we already check that
+  // we don't use not allowed components for a given category
+  // and that the scenario doesn't violate validators introduced by additionalConfigsFromProvider
+  def duringExecution(inputConfig: Config, modelClassLoader: ModelClassLoader, resolveConfigs: Boolean): ModelData = {
+    def resolveInputConfigDuringExecution(modelConfigLoader: ModelConfigLoader): InputConfigDuringExecution = {
+      if (resolveConfigs) {
+        modelConfigLoader.resolveInputConfigDuringExecution(
+          ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig),
+          modelClassLoader.classLoader
+        )
+      } else {
+        InputConfigDuringExecution(inputConfig)
+      }
+    }
     ClassLoaderModelData(
-      _ => InputConfigDuringExecution(inputConfig),
-      ModelClassLoader(Nil, None),
-      None,
-      id => DesignerWideComponentId(id.toString),
-      Map.empty,
+      resolveInputConfigDuringExecution = resolveInputConfigDuringExecution,
+      modelClassLoader = modelClassLoader,
+      category = None,
+      determineDesignerWideId = id => DesignerWideComponentId(id.toString),
+      additionalConfigsFromProvider = Map.empty,
       skipComponentProvidersLoadedFromAppClassloader = false
     )
   }
@@ -110,6 +103,17 @@ object ModelData extends LazyLogging {
 
 }
 
+case class ModelDependencies(
+    additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    determineDesignerWideId: ComponentId => DesignerWideComponentId,
+    workingDirectoryOpt: Option[Path],
+    // This property is for easier testing when for some reason, some jars with ComponentProvider are
+    // on the test classpath and CPs collide with other once with the same name.
+    // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
+    // add liteKafkaComponents (which are in test scope), see comment next to designer module
+    skipComponentProvidersLoadedFromAppClassloader: Boolean
+)
+
 case class ClassLoaderModelData private (
     private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
     modelClassLoader: ModelClassLoader,
@@ -117,7 +121,10 @@ case class ClassLoaderModelData private (
     override val determineDesignerWideId: ComponentId => DesignerWideComponentId,
     override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     skipComponentProvidersLoadedFromAppClassloader: Boolean
-) extends ModelData {
+) extends ModelData
+    with LazyLogging {
+
+  logger.debug("Loading model data from: " + modelClassLoader)
 
   // this is not lazy, to be able to detect if creator can be created...
   override val configCreator: ProcessConfigCreator = ProcessConfigCreatorLoader.justOne(modelClassLoader.classLoader)
