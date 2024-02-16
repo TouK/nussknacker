@@ -21,7 +21,8 @@ class DatabaseEnricherInvoker(
     queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
     val returnType: typing.TypingResult,
     val getConnection: () => Connection,
-    val getTimeMeasurement: () => AsyncExecutionTimeMeasurement
+    val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
+    params: Map[String, Any],
 ) extends ServiceInvoker
     with WithDBConnectionPool {
 
@@ -31,7 +32,7 @@ class DatabaseEnricherInvoker(
     case UpdateResultStrategy => new UpdateQueryExecutor()
   }
 
-  override def invokeService(context: Context, params: Map[String, Any])(
+  override def invokeService(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase

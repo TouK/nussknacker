@@ -27,9 +27,9 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   it should "invoke service method with declared parameters as scala params" in {
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig("foo", mock)
-    val invoker    = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
+    val invoker = new MethodBasedServiceInvoker(metadata, nodeId, None, definition, _ => Map("foo" -> "aa", "bar" -> 1))
 
-    whenReady(invoker.invokeService(context, Map("foo" -> "aa", "bar" -> 1))) { _ =>
+    whenReady(invoker.invokeService(context)) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
     }
   }
@@ -37,10 +37,11 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   it should "throw excpetion with nice message when parameters do not match" in {
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig("foo", mock)
-    val invoker    = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
+    val invoker =
+      new MethodBasedServiceInvoker(metadata, nodeId, None, definition, _ => Map("foo" -> "aa", "bar" -> "terefere"))
 
     intercept[IllegalArgumentException](
-      invoker.invokeService(context, Map("foo" -> "aa", "bar" -> "terefere"))
+      invoker.invokeService(context)
     ).getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String): argument type mismatch"""
   }
 

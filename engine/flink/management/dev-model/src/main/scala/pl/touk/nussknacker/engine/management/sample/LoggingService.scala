@@ -26,18 +26,18 @@ object LoggingService extends EagerService {
         (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
       )
 
-      override def invokeService(context: Context, params: Map[String, Any])(
+      override def invokeService(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
-        val message = params("message").asInstanceOf[String]
+        val msg = message.evaluate(context)
         level match {
-          case Level.TRACE => logger.trace(message)
-          case Level.DEBUG => logger.debug(message)
-          case Level.INFO  => logger.info(message)
-          case Level.WARN  => logger.warn(message)
-          case Level.ERROR => logger.error(message)
+          case Level.TRACE => logger.trace(msg)
+          case Level.DEBUG => logger.debug(msg)
+          case Level.INFO  => logger.info(msg)
+          case Level.WARN  => logger.warn(msg)
+          case Level.ERROR => logger.error(msg)
         }
         Future.successful(())
       }

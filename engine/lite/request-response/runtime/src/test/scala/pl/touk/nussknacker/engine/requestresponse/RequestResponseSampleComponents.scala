@@ -153,7 +153,7 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
       Typed[Response],
       synchronized {
         val newI: ServiceInvoker with WithLifecycle = new ServiceInvoker with WithLifecycle {
-          override def invokeService(context: Context, params: Map[String, Any])(
+          override def invokeService(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
               componentUseCase: ComponentUseCase
@@ -177,12 +177,12 @@ object CollectingEagerService extends EagerService {
       @ParamName("dynamic") dynamic: LazyParameter[String]
   ): ServiceInvoker = new ServiceInvoker {
 
-    override def invokeService(context: Context, params: Map[String, Any])(
+    override def invokeService(context: Context)(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         componentUseCase: ComponentUseCase
     ): Future[Any] = {
-      collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
+      collector.collect(s"static-$static-dynamic-${dynamic.evaluate(context)}", Option(())) {
         Future.successful(())
       }
     }

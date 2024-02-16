@@ -44,15 +44,17 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
     )
     val invoker = service.implementation(Map(), dependencies = Nil, Some(state))
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
-    val resultF = invoker.invokeService(Context.withInitialId, Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
-    val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
+    val resultF =
+      invoker.invokeService(Context.withInitialId.withVariables(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)))
+    val result = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = invoker.invokeService(Context.withInitialId, Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
-    val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
+    val resultF2 =
+      invoker.invokeService(Context.withInitialId.withVariables(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)))
+    val result2 = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
     )

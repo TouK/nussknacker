@@ -125,7 +125,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
     @MethodToInvoke
     def invoke(@ParamName("param") value: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(context: Context, params: Map[String, Any])(
+      override def invokeService(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
           componentUseCase: ComponentUseCase

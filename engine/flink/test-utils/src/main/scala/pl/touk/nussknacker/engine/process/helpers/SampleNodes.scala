@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
@@ -41,7 +41,7 @@ import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
 import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
@@ -208,7 +208,7 @@ object SampleNodes {
     @MethodToInvoke
     def invoke(@ParamName("name") name: String): ServiceInvoker = synchronized {
       val newI = new ServiceInvoker with WithLifecycle {
-        override def invokeService(context: Context, params: Map[String, Any])(
+        override def invokeService(context: Context)(
             implicit ec: ExecutionContext,
             collector: ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
@@ -234,12 +234,12 @@ object SampleNodes {
         @ParamName("dynamic") dynamic: LazyParameter[String]
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(context: Context, params: Map[String, Any])(
+      override def invokeService(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
-        collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
+        collector.collect(s"static-$static-dynamic-${dynamic.evaluate(context)}", Option(())) {
           Future.successful(())
         }
       }
@@ -444,13 +444,13 @@ object SampleNodes {
         outputVar,
         returnType,
         new ServiceInvoker {
-          override def invokeService(context: Context, params: Map[String, Any])(
+          override def invokeService(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
               componentUseCase: ComponentUseCase
           ): Future[Any] = {
             val result = (1 to count)
-              .map(_ => definition.asScala.map(_ -> params("toFill").asInstanceOf[String]).toMap)
+              .map(_ => definition.asScala.map(_ -> toFill.evaluate(context)).toMap)
               .map(TypedMap(_))
               .toList
               .asJava
