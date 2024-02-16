@@ -46,9 +46,10 @@ export interface Scenario {
     isLatestVersion: boolean;
     processCategory: string;
     processType: string;
-    modificationDate: Instant;
+    modificationDate: Instant; // Deprecated
     modifiedBy: string;
     createdAt: Instant;
+    modifiedAt: Instant;
     createdBy: string;
     lastAction?: ProcessActionType;
     lastDeployedAction?: ProcessActionType;
@@ -58,6 +59,7 @@ export interface Scenario {
     validationResult: ValidationResult;
     processingType: string;
     processingMode: ProcessingMode;
+    engineSetupName: string;
 }
 
 export type ProcessName = Scenario["name"];

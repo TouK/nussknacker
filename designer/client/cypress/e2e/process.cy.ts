@@ -424,4 +424,15 @@ describe("Process", () => {
                 });
             });
     });
+
+    it.only("should open more scenario details", () => {
+        cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
+        cy.viewport(1500, 800);
+        cy.layoutScenario();
+
+        cy.contains("a", "More scenario details").click();
+        cy.get("[data-testid=window]").matchImage({
+            maxDiffThreshold: 0.02,
+        });
+    });
 });

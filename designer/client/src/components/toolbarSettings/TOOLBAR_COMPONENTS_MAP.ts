@@ -5,7 +5,7 @@ import { AttachmentsPanel } from "../toolbars/AttachmentsPanel";
 import { CommentsPanel } from "../comment/CommentsPanel";
 import { CreatorPanel } from "../toolbars/creator/CreatorPanel";
 import { DefaultToolbarPanel, ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
-import ProcessInfo from "../toolbars/status/ProcessInfo";
+import ScenarioDetails from "../toolbars/scenarioDetails/ScenarioDetails";
 import { UserSettingsPanel } from "../toolbars/UserSettingsPanel";
 import { VersionsPanel } from "../toolbars/VersionsPanel";
 import loadable from "@loadable/component";
@@ -15,7 +15,7 @@ export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelPr
     DefaultPanel: DefaultToolbarPanel,
 
     // custom with buttons
-    "process-info-panel": ProcessInfo,
+    "process-info-panel": ScenarioDetails,
     "process-actions-panel": ProcessActions,
     // no buttons at all
     "tips-panel": TipsPanel,
