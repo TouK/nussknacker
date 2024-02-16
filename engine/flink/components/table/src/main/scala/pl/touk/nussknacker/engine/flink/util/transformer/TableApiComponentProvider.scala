@@ -13,7 +13,8 @@ import pl.touk.nussknacker.engine.api.component.{
   BoundedStreamComponent,
   ComponentDefinition,
   ComponentProvider,
-  NussknackerVersion
+  NussknackerVersion,
+  UnboundedStreamComponent
 }
 import pl.touk.nussknacker.engine.api.process.{
   BasicContextInitializer,
@@ -39,7 +40,8 @@ class TableApiComponentProvider extends ComponentProvider {
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
-  override def isAutoLoaded: Boolean = false
+  // TODO local: for local experiments
+  override def isAutoLoaded: Boolean = true
 
 }
 
