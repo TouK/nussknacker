@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matchers {
 
@@ -29,7 +30,7 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
     }
   }
 
-  private val modelData = ModelData.duringFlinkExecution(config)
+  private val modelData = ModelData.duringExecution(config, ModelClassLoader.empty, resolveConfigs = true)
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
