@@ -17,7 +17,7 @@ import scala.reflect.runtime.universe.TypeTag
   *          primitive types from generic parameters
   */
 // TODO: rename to TypedFunction
-trait LazyParameter[+T <: AnyRef] {
+trait LazyParameter[+T <: AnyRef] extends Serializable {
 
   def evaluate: Evaluate[T]
 

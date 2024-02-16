@@ -35,7 +35,7 @@ final case class EvaluableLazyParameterCreator[T <: AnyRef](
 
 }
 
-class EvaluableLazyParameterCreatorDeps(
+case class EvaluableLazyParameterCreatorDeps(
     val expressionCompiler: ExpressionCompiler,
     val expressionEvaluator: ExpressionEvaluator,
     val metaData: MetaData

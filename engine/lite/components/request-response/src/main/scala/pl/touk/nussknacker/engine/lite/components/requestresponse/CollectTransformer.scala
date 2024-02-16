@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 
 import scala.jdk.CollectionConverters._
+import scala.language.higherKinds
 
 object CollectTransformer extends CustomStreamTransformer {
 
