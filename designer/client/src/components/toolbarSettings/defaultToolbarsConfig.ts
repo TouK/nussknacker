@@ -22,12 +22,7 @@ export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean):
         id: "a7334f9b-87aa-43d4-82ce-a9ac9dd3e5dc",
         [ToolbarsSide.TopRight]: [
             {
-                id: "process-info-panel",
-                buttons: [
-                    { type: BuiltinButtonTypes.processSave },
-                    { type: BuiltinButtonTypes.processDeploy },
-                    { type: BuiltinButtonTypes.processCancel },
-                ],
+                id: "process-info-panel"
             },
             {
                 id: "process-actions-panel",

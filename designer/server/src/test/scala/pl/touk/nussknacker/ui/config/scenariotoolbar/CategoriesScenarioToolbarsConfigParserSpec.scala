@@ -21,8 +21,8 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       |    ]
       |    topRight: [
       |      {
-      |        type: "process-info-panel"
-      |        title: "Process Info"
+      |        type: "process-actions-panel"
+      |        title: "Process Actions"
       |        buttons: [
       |          { type: "process-save", icon: "/assets/buttons/save.svg", name: "save", disabled: { archived: true } }
       |          { type: "process-deploy" }
@@ -36,8 +36,8 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       |      uuid: 58f1acff-d864-4d66-9f86-0fa7319f7043
       |      topRight: [
       |        {
-      |          type: "process-info-panel"
-      |          title: "Process Info Right"
+      |          type: "process-actions-panel"
+      |          title: "Process Actions Right"
       |          buttonsVariant: "small"
       |          buttons: [
       |            { type: "process-save" }
@@ -129,22 +129,22 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
     val configMap = ConfigFactory
       .parseString("""
         |"MissingUrlError" {
-        |  type: "process-info-panel"
-        |  title: "Process Info"
+        |  type: "process-actions-panel"
+        |  title: "Process Actions"
         |  buttons: [
         |   { type: "custom-link", name: "metrics", icon: "/assets/buttons/metrics.svg" }
         |  ]
         |},
         |"MissingNameError" {
-        |  type: "process-info-panel"
-        |  title: "Process Info"
+        |  type: "process-actions-panel"
+        |  title: "Process Actions"
         |  buttons: [
         |   { type: "custom-link", url: "/metrics", icon: "/assets/buttons/metrics.svg" }
         |  ]
         |},
         |"RedundantUrlError" {
-        |  type: "process-info-panel"
-        |  title: "Process Info"
+        |  type: "process-actions-panel"
+        |  title: "Process Actions"
         |  buttons: [
         |    { type: "process-save", title: "metrics", icon: "/assets/buttons/save.svg", url: "no-url" }
         |  ]
