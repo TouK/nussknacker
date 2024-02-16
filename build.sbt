@@ -464,6 +464,7 @@ componentArtifacts := {
   List(
     (flinkBaseComponents / assembly).value           -> "components/flink/flinkBase.jar",
     (flinkKafkaComponents / assembly).value          -> "components/flink/flinkKafka.jar",
+    (flinkTableApiComponents / assembly).value       -> "components/flink/flinkTableApi.jar",
     (liteBaseComponents / assembly).value            -> "components/lite/liteBase.jar",
     (liteKafkaComponents / assembly).value           -> "components/lite/liteKafka.jar",
     (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
@@ -582,7 +583,8 @@ lazy val flinkDeploymentManager = (project in flink("management"))
         flinkDevModel / Compile / assembly,
         flinkDevModelJava / Compile / assembly,
         flinkBaseComponents / Compile / assembly,
-        flinkKafkaComponents / Compile / assembly
+        flinkKafkaComponents / Compile / assembly,
+        flinkTableApiComponents / Compile / assembly
       )
       .value,
     // flink cannot run tests and deployment concurrently
@@ -1697,7 +1699,7 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
 // TODO local: clean this up
 lazy val flinkTableApiComponents = (project in flink("components/table"))
   .settings(commonSettings)
-  .settings(assemblyNoScala("flinkTable.jar"): _*)
+  .settings(assemblyNoScala("flinkTableApi.jar"): _*)
   .settings(publishAssemblySettings: _*)
   .settings(
     name := "nussknacker-flink-table-components",
@@ -1981,6 +1983,7 @@ lazy val modules = List[ProjectReference](
   flinkBaseComponents,
   flinkBaseComponentsTests,
   flinkKafkaComponents,
+  flinkTableApiComponents,
   liteComponentsApi,
   liteEngineKafkaComponentsApi,
   liteEngineRuntime,
