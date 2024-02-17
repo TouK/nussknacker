@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLo
 // The situation is different for non-eager Services where Component is an Executor, so invokeMethod is run for each request
 class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends LazyLogging {
 
-  def createComponentExecutor[LOGIC](
+  def executeComponentLogic[LOGIC_EXECUTION_RESULT](
       component: ComponentDefinitionWithLogic,
       compiledParameters: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
@@ -24,9 +24,9 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
   )(
       implicit nodeId: NodeId,
       metaData: MetaData
-  ): ValidatedNel[ProcessCompilationError, LOGIC] = {
+  ): ValidatedNel[ProcessCompilationError, LOGIC_EXECUTION_RESULT] = {
     NodeValidationExceptionHandler.handleExceptions {
-      doCreateComponentExecutor[LOGIC](
+      doExecuteComponentLogic[LOGIC_EXECUTION_RESULT](
         component,
         compiledParameters,
         outputVariableNameOpt,
@@ -37,7 +37,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
     }
   }
 
-  private def doCreateComponentExecutor[LOGIC](
+  private def doExecuteComponentLogic[LOGIC_EXECUTION_RESULT](
       componentDefinition: ComponentDefinitionWithLogic,
       params: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
@@ -47,7 +47,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
   )(
       implicit processMetaData: MetaData,
       nodeId: NodeId
-  ): LOGIC = {
+  ): LOGIC_EXECUTION_RESULT = {
     implicit val lazyParameterCreationStrategy: LazyParameterCreationStrategy =
       componentDefinition.component match {
         // Services are created within Interpreter so for every engine, lazy parameters can be evaluable. Other component types
@@ -61,7 +61,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
     )
     componentDefinition.componentLogic
       .run(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional)
-      .asInstanceOf[LOGIC]
+      .asInstanceOf[LOGIC_EXECUTION_RESULT]
   }
 
 }

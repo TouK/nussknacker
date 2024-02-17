@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.context.transformation.{JoinDynamicCompone
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{
   Expression => CompiledExpression,
-  ExpressionParser,
   ExpressionTypingInfo,
   TypedExpression,
   TypedExpressionMap
@@ -557,7 +556,7 @@ class NodeCompiler(
       )
       .andThen { compiledParameters =>
         factory
-          .createComponentExecutor[ComponentExecutor](
+          .executeComponentLogic[ComponentExecutor](
             componentDefinition,
             compiledParameters,
             outputVariableNameOpt,

@@ -112,7 +112,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
       FinalResults(context, errors, Some(state))
   }
 
-  override def createComponentLogic(
+  override def runComponentLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]

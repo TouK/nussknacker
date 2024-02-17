@@ -663,7 +663,7 @@ object SampleNodes {
       }
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -703,7 +703,7 @@ object SampleNodes {
         .valueOr(errors => FinalResults(context, errors.toList))
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -770,7 +770,7 @@ object SampleNodes {
       FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), Typed[String]))
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -840,7 +840,7 @@ object SampleNodes {
         FinalResults.forValidation(context)(customContextInitializer.validationContext)
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -904,7 +904,7 @@ object SampleNodes {
       case TransformationStep(("value", _) :: ("type", _) :: ("version", _) :: Nil, None)     => FinalResults(context)
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]

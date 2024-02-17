@@ -36,7 +36,7 @@ sealed trait DynamicComponent[T] extends Component {
       implicit nodeId: NodeId
   ): ContextTransformationDefinition
 
-  def createComponentLogic(
+  def runComponentLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

@@ -200,7 +200,7 @@ class UniversalKafkaSinkFactory(
       rawEditorParameterStep(context) orElse
       valueEditorParamStep(context)
 
-  override def createComponentLogic(
+  override def runComponentLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]
