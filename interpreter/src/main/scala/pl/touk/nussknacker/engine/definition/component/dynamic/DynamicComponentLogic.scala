@@ -29,9 +29,7 @@ class DynamicComponentLogic(obj: DynamicComponent[_]) extends ComponentLogic {
       case other => throw new IllegalArgumentException(s"Cannot handle dependency $other")
     }
     val finalStateValue = additional
-      .collectFirst { case FinalStateValue(value) =>
-        value
-      }
+      .collectFirst { case FinalStateValue(value) => value }
       .getOrElse(throw new IllegalArgumentException("Final state not passed to invokeMethod"))
     // we assume parameters were already validated!
     obj.runComponentLogic(params, additionalParams, finalStateValue.asInstanceOf[Option[obj.State]])

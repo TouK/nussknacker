@@ -56,7 +56,7 @@ trait DynamicComponentWrapper[T, VC, PAR, ST] { self: DynamicComponent[T] =>
 
   def javaDef: JavaDynamicComponent[T, VC, PAR, ST]
 
-  override def createComponentLogic(
+  override def runComponentLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
@@ -71,7 +71,7 @@ trait DynamicComponentWrapper[T, VC, PAR, ST] { self: DynamicComponent[T] =>
 
 }
 
-class SimpleInputDynamicComponentWrapper[T, ST](val javaDef: JavaSingleInputDynamicComponent[T, ST])
+class SingleInputDynamicComponentWrapper[T, ST](val javaDef: JavaSingleInputDynamicComponent[T, ST])
     extends CustomStreamTransformer
     with SingleInputDynamicComponent[T]
     with DynamicComponentWrapper[T, ValidationContext, DefinedSingleParameter, ST] {
