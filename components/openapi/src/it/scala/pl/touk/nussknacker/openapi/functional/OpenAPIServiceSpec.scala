@@ -67,7 +67,7 @@ class OpenAPIServiceSpec
   }
 
   test("service returns customers") { service =>
-    implicit val contextId = ContextId("1")
+    implicit val contextId: ContextId = ContextId("1")
     val valueWithChosenFields =
       service.invoke(Map("customer_id" -> "10")).futureValue.asInstanceOf[TypedMap].asScala
     valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")

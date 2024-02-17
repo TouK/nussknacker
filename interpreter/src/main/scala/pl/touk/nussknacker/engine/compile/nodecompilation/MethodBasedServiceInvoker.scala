@@ -14,7 +14,7 @@ private[nodecompilation] class MethodBasedServiceInvoker(
     nodeId: NodeId,
     outputVariableNameOpt: Option[OutputVar],
     componentDefWithImpl: ComponentDefinitionWithImplementation,
-    evaluator: Context => Map[String, Any] // todo: do it better
+    parametersProvider: Context => Map[String, Any]
 ) extends ServiceInvoker
     with LazyLogging {
 
@@ -25,7 +25,7 @@ private[nodecompilation] class MethodBasedServiceInvoker(
   ): Future[AnyRef] = {
     componentDefWithImpl.implementationInvoker
       .invokeMethod(
-        evaluator(context),
+        parametersProvider(context),
         outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
         additional = Seq(ec, collector, metaData, nodeId, context, ContextId(context.id), componentUseCase)
       )

@@ -77,9 +77,9 @@ class TransformStateFunction[T](
   override protected def stateDescriptor: ValueStateDescriptor[GenericState] =
     new ValueStateDescriptor[GenericState]("state", classOf[GenericState])
 
-  private lazy val evaluateTransformWhen = lazyParameterInterpreter.toEvaluateFunction(transformWhenParam)
+  private lazy val evaluateTransformWhen = toEvaluateFunctionConverter.toEvaluateFunction(transformWhenParam)
 
-  private lazy val evaluateNewValue = lazyParameterInterpreter.toEvaluateFunction(newValueParam)
+  private lazy val evaluateNewValue = toEvaluateFunctionConverter.toEvaluateFunction(newValueParam)
 
   override def processElement(
       keyWithContext: ValueWithContext[T],

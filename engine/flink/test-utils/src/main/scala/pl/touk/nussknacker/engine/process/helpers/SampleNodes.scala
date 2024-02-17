@@ -97,10 +97,10 @@ object SampleNodes {
       with LazyParameterInterpreterFunction {
 
     @transient lazy val end1Interpreter: Context => AnyRef =
-      lazyParameterInterpreter.toEvaluateFunction(valueByBranchId("end1"))
+      toEvaluateFunctionConverter.toEvaluateFunction(valueByBranchId("end1"))
 
     @transient lazy val end2Interpreter: Context => AnyRef =
-      lazyParameterInterpreter.toEvaluateFunction(valueByBranchId("end2"))
+      toEvaluateFunctionConverter.toEvaluateFunction(valueByBranchId("end2"))
 
     override def flatMap1(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
       val joinContext = ctx.appendIdSuffix("end1")
