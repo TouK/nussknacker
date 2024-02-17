@@ -90,7 +90,7 @@ object ProcessTestHelpers extends Serializable {
     ComponentDefinition("transformWithNullable", TransformerWithNullableParam),
     ComponentDefinition("optionalEndingCustom", new OptionalEndingCustom(optionalEndingCustomResultsHolder)),
     ComponentDefinition("genericParametersNode", GenericParametersNode),
-    ComponentDefinition("nodePassingStateToImplementation", NodePassingStateToImplementation),
+    ComponentDefinition("nodePassingStateToImplementation", NodePassingStateToRuntimeLogic),
   )
 
 }

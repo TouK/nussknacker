@@ -118,7 +118,7 @@ object NotBlankParameter {
 // model their will be determined - see StandardParameterEnrichment and label method
 // Also some fields like scalaOptionParameter and javaOptionalParameter are only necessary in the method-based
 // component's context, so it could be removed from the API
-// TODO: extract Parameter class in the domain model (see ComponentDefinitionWithImplementation and belongings)
+// TODO: extract Parameter class in the domain model (see ComponentWithRuntimeLogicFactory and belongings)
 case class Parameter(
     name: String,
     typ: TypingResult,

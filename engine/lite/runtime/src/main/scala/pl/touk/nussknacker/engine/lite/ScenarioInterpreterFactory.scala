@@ -111,11 +111,11 @@ object ScenarioInterpreterFactory {
     parts.foldLeft(Map.empty[String, Any]) { (acc, part) =>
       part match {
         case source: SourcePart =>
-          acc + (source.id -> source.obj) ++ extractComponents(source.nextParts)
+          acc + (source.id -> source.runtimeLogic) ++ extractComponents(source.nextParts)
         case custom: CustomNodePart =>
           acc + (custom.id -> custom.transformer) ++ extractComponents(custom.nextParts)
         case sink: SinkPart =>
-          acc + (sink.id -> sink.obj)
+          acc + (sink.id -> sink.runtimeLogic)
       }
     }
   }
@@ -127,7 +127,7 @@ object ScenarioInterpreterFactory {
   private case class ScenarioInterpreterImpl[F[_], Input, Res <: AnyRef](
       sources: Map[SourceId, Source],
       sinkTypes: Map[NodeId, TypingResult],
-      private val invoker: ScenarioInterpreterType[F, Input],
+      private val runtimeLogic: ScenarioInterpreterType[F, Input],
       private val lifecycle: Seq[Lifecycle],
       private val modelData: ModelData
   )(implicit monad: Monad[F])
@@ -136,7 +136,7 @@ object ScenarioInterpreterFactory {
 
     def invoke(contexts: ScenarioInputBatch[Input]): F[ResultType[EndResult[Res]]] =
       modelData.withThisAsContextClassLoader {
-        invoker(contexts).map { result =>
+        runtimeLogic(contexts).map { result =>
           result.map(_.map {
             case e: EndPartResult[Res @unchecked] => EndResult(NodeId(e.nodeId), e.context, e.result)
             case other => throw new IllegalArgumentException(s"Should not happen, $other left in results")
@@ -372,8 +372,8 @@ object ScenarioInterpreterFactory {
     private def compileSource(
         sourcePart: SourcePart
     ): ValidatedNel[ProcessCompilationError, Input => ValidatedNel[ErrorType, Context]] = {
-      val SourcePart(sourceObj, node, _, _, _) = sourcePart
-      val validatedSource = (sourceObj, node.data) match {
+      val SourcePart(runtimeLogic, node, _, _, _) = sourcePart
+      val validatedSource = (runtimeLogic, node.data) match {
         case (s: LiteSource[Input @unchecked], _) => Valid(s)
         // Used only in fragment testing, when FragmentInputDefinition is available
         case (_: Source, fragmentInputDef: FragmentInputDefinition)
@@ -391,7 +391,7 @@ object ScenarioInterpreterFactory {
         new LiteSource[Input] {
 
           override def createTransformation[F[_]: Monad](
-              evaluateLazyParameter: CustomComponentContext[F]
+              context: CustomComponentContext[F]
           ): Input => ValidatedNel[ErrorType, Context] = { input =>
             Valid(Context(fragmentInputDef.id, input.asInstanceOf[Map[String, Any]], None))
           }

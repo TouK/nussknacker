@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.{ConversionsProvider, SpelExpressionExclud
 // TODO: We should get rid of this. Most of these fields should be parsed from configuration instead of keeping in code
 //       globalVariables and dictionaries should be moved into dedicated services loaded by ServiceLoader
 final case class ExpressionConfigDefinition(
-    globalVariables: Map[String, GlobalVariableDefinitionWithImplementation],
+    globalVariables: Map[String, GlobalVariableDefinitionWithValue],
     globalImports: List[String],
     additionalClasses: List[Class[_]],
     languages: LanguageConfiguration,

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithDefinition
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -17,7 +17,7 @@ class AlignedComponentsDefinitionProvider(
   def getAlignedComponentsWithBuiltInComponentsAndFragments(
       forFragment: Boolean,
       fragments: List[CanonicalProcess],
-  ): List[ComponentDefinitionWithImplementation] = {
+  ): List[ComponentWithDefinition] = {
     val filteredModel = if (forFragment) {
       modelDefinition
         .filterComponents(_.componentType != ComponentType.Source)
@@ -40,7 +40,7 @@ class AlignedComponentsDefinitionProvider(
 
   private def extractFragmentComponents(
       fragmentsScenarios: List[CanonicalProcess],
-  ): List[ComponentDefinitionWithImplementation] =
+  ): List[ComponentWithDefinition] =
     for {
       scenario   <- fragmentsScenarios
       definition <- fragmentComponentDefinitionExtractor.extractFragmentComponentDefinition(scenario).toOption

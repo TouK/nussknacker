@@ -4,7 +4,7 @@ import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.component.{ComponentId, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithDefinition
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
   ComponentListElement,
@@ -119,7 +119,7 @@ class DefaultComponentService(
   }
 
   private def createComponents(
-      componentsDefinition: List[ComponentDefinitionWithImplementation],
+      componentsDefinition: List[ComponentWithDefinition],
       category: String,
   ): List[ComponentListElement] = {
     componentsDefinition
@@ -171,7 +171,7 @@ class DefaultComponentService(
 
   private def createComponentLinks(
       designerWideId: DesignerWideComponentId,
-      component: ComponentDefinitionWithImplementation
+      component: ComponentWithDefinition
   ): List[ComponentLink] = {
     val componentLinks = componentLinksConfig
       .filter(_.isAvailable(component.componentType))

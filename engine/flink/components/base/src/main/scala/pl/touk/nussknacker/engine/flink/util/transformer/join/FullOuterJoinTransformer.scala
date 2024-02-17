@@ -112,7 +112,7 @@ class FullOuterJoinTransformer(
       )
   }
 
-  override def implementation(
+  override def createRuntimeLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

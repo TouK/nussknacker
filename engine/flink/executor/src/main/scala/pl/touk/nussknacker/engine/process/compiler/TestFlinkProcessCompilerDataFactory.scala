@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithDefinition
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
@@ -40,10 +40,10 @@ object TestFlinkProcessCompilerDataFactory {
       }
 
       override protected def prepareSourceFactory(
-          sourceFactory: ComponentDefinitionWithImplementation,
+          sourceFactory: ComponentWithDefinition,
           context: ComponentDefinitionContext
-      ): ComponentDefinitionWithImplementation = {
-        sourceFactory.withImplementationInvoker(new StubbedComponentImplementationInvoker(sourceFactory) {
+      ): ComponentWithDefinition = {
+        sourceFactory.withRuntimeLogicFactory(new StubbedComponentRuntimeLogicFactory(sourceFactory) {
           private lazy val sourcePreparer = new StubbedSourcePreparer(
             new TestDataPreparer(
               context.userCodeClassLoader,
@@ -55,12 +55,12 @@ object TestFlinkProcessCompilerDataFactory {
             scenarioTestData
           )
 
-          override def handleInvoke(
-              originalSource: Any,
+          override def transformRuntimeLogic(
+              runtimeLogic: Any,
               typingResult: TypingResult,
               nodeId: NodeId
           ): Any = {
-            originalSource match {
+            runtimeLogic match {
               case sourceWithTestSupport: Source with FlinkSourceTestSupport[Object @unchecked] =>
                 sourcePreparer.prepareStubbedSource(sourceWithTestSupport, typingResult, nodeId)
               case _ =>
@@ -71,9 +71,9 @@ object TestFlinkProcessCompilerDataFactory {
       }
 
       override protected def prepareService(
-          service: ComponentDefinitionWithImplementation,
+          service: ComponentWithDefinition,
           context: ComponentDefinitionContext
-      ): ComponentDefinitionWithImplementation = service
+      ): ComponentWithDefinition = service
 
       override protected def exceptionHandler(
           metaData: MetaData,

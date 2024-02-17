@@ -4,25 +4,25 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.transformation.DynamicComponent
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  ComponentImplementationInvoker,
+  ComponentRuntimeLogicFactory,
   ComponentTypeSpecificData,
-  ComponentUiDefinition
+  ComponentUiDefinition,
+  ComponentWithDefinition
 }
 
-final case class DynamicComponentDefinitionWithImplementation(
+final case class DynamicComponentWithDefinition(
     override val name: String,
-    override val implementationInvoker: ComponentImplementationInvoker,
-    override val implementation: DynamicComponent[_],
+    override val runtimeLogicFactory: ComponentRuntimeLogicFactory,
+    override val component: DynamicComponent[_],
     override val componentTypeSpecificData: ComponentTypeSpecificData,
     override protected val uiDefinition: ComponentUiDefinition,
     parametersConfig: Map[String, ParameterConfig]
-) extends ComponentDefinitionWithImplementation {
+) extends ComponentWithDefinition {
 
-  override def withImplementationInvoker(
-      invoker: ComponentImplementationInvoker
-  ): ComponentDefinitionWithImplementation =
-    copy(implementationInvoker = invoker)
+  override def withRuntimeLogicFactory(
+      runtimeLogicFactory: ComponentRuntimeLogicFactory
+  ): ComponentWithDefinition =
+    copy(runtimeLogicFactory = runtimeLogicFactory)
 
   override protected def typesFromStaticDefinition: List[TypingResult] = List.empty
 

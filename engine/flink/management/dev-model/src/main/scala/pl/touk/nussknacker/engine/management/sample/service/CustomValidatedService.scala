@@ -38,8 +38,8 @@ class CustomValidatedService extends EagerService {
     EnricherContextTransformation(
       varName,
       returnType,
-      new ServiceInvoker {
-        override def invoke(context: Context)(
+      new ServiceRuntimeLogic {
+        override def apply(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase

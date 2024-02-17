@@ -7,11 +7,11 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   TypedNodeDependencyValue
 }
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, TypedNodeDependency}
-import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker
+import pl.touk.nussknacker.engine.definition.component.ComponentRuntimeLogicFactory
 
-class DynamicComponentImplementationInvoker(obj: DynamicComponent[_]) extends ComponentImplementationInvoker {
+class DynamicComponentRuntimeLogicFactory(obj: DynamicComponent[_]) extends ComponentRuntimeLogicFactory {
 
-  override def invokeMethod(
+  override def createRuntimeLogic(
       params: Params,
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef]
@@ -32,7 +32,7 @@ class DynamicComponentImplementationInvoker(obj: DynamicComponent[_]) extends Co
       .collectFirst { case FinalStateValue(value) => value }
       .getOrElse(throw new IllegalArgumentException("Final state not passed to invokeMethod"))
     // we assume parameters were already validated!
-    obj.implementation(params, additionalParams, finalStateValue.asInstanceOf[Option[obj.State]])
+    obj.createRuntimeLogic(params, additionalParams, finalStateValue.asInstanceOf[Option[obj.State]])
   }
 
 }

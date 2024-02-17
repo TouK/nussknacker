@@ -54,7 +54,7 @@ object LiteBaseComponentProvider {
 object DeadEndSink extends LiteSink[Nothing] {
 
   override def createTransformation[F[_]: Monad](
-      evaluateLazyParameter: customComponentTypes.CustomComponentContext[F]
+      context: customComponentTypes.CustomComponentContext[F]
   ): (typing.TypingResult, commonTypes.DataBatch => F[ResultType[(Context, Nothing)]]) =
     (typing.Unknown, _ => implicitly[Monad[F]].pure(Writer.value(List.empty)))
 

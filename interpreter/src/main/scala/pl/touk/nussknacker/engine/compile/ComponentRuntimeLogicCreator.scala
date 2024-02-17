@@ -8,14 +8,14 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params, Service}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, ParameterEvaluator}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithDefinition
 
-// This class helps to create an Executor using Component. Most Components are just a factories that creates "Executors".
-// The situation is different for non-eager Services where Component is an Executor, so invokeMethod is run for each request
-class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends LazyLogging {
+// This class helps to create an RuntimeLogic using Component. Most Components are just a factories that creates RuntimeLogic.
+// The situation is different for non-eager Services where Component is an RuntimeLogic, so invokeMethod is run for each request
+class ComponentRuntimeLogicCreator(parameterEvaluator: ParameterEvaluator) extends LazyLogging {
 
-  def createComponentExecutor[ComponentExecutor](
-      component: ComponentDefinitionWithImplementation,
+  def createRuntimeLogic[RuntimeLogic](
+      component: ComponentWithDefinition,
       compiledParameters: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
       additionalDependencies: Seq[AnyRef],
@@ -24,9 +24,9 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
   )(
       implicit nodeId: NodeId,
       metaData: MetaData
-  ): ValidatedNel[ProcessCompilationError, ComponentExecutor] = {
+  ): ValidatedNel[ProcessCompilationError, RuntimeLogic] = {
     NodeValidationExceptionHandler.handleExceptions {
-      doCreateComponentExecutor[ComponentExecutor](
+      doCreateRuntimeLogic[RuntimeLogic](
         component,
         compiledParameters,
         outputVariableNameOpt,
@@ -37,8 +37,8 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
     }
   }
 
-  private def doCreateComponentExecutor[ComponentExecutor](
-      componentDefinition: ComponentDefinitionWithImplementation,
+  private def doCreateRuntimeLogic[RuntimeLogic](
+      componentDefinition: ComponentWithDefinition,
       params: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef],
@@ -47,9 +47,9 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
   )(
       implicit processMetaData: MetaData,
       nodeId: NodeId
-  ): ComponentExecutor = {
+  ): RuntimeLogic = {
     implicit val lazyParameterCreationStrategy: LazyParameterCreationStrategy =
-      componentDefinition.implementation match {
+      componentDefinition.component match {
         // Services are created within Interpreter so for every engine, lazy parameters can be evaluable. Other component types
         // (Sources, Sinks and CustomComponent) have engine specific logic around lazy parameters.
         // For Flink, they need to be Serializable (PostponedEvaluatorLazyParameterStrategy)
@@ -59,9 +59,13 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
     val paramsMap = Params(
       params.map { case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1 }.toMap
     )
-    componentDefinition.implementationInvoker
-      .invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional)
-      .asInstanceOf[ComponentExecutor]
+    componentDefinition.runtimeLogicFactory
+      .createRuntimeLogic(
+        paramsMap,
+        outputVariableNameOpt,
+        Seq(processMetaData, nodeId, componentUseCase) ++ additional
+      )
+      .asInstanceOf[RuntimeLogic]
   }
 
 }

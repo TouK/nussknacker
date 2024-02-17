@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
-  DynamicComponentDefinitionWithImplementation,
-  DynamicComponentImplementationInvoker
+  DynamicComponentRuntimeLogicFactory,
+  DynamicComponentWithDefinition
 }
 import pl.touk.nussknacker.engine.definition.component.methodbased.{
-  MethodBasedComponentDefinitionWithImplementation,
-  MethodBasedComponentImplementationInvoker,
+  MethodBasedComponentRuntimeLogicFactory,
+  MethodBasedComponentWithDefinition,
   MethodDefinition,
   MethodDefinitionExtractor
 }
@@ -31,7 +31,7 @@ object ComponentDefinitionExtractor {
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): Option[ComponentDefinitionWithImplementation] = {
+  ): Option[ComponentWithDefinition] = {
     val configBasedOnDefinition = SingleComponentConfig.zero
       .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
     ComponentDefinitionExtractor
@@ -52,7 +52,7 @@ object ComponentDefinitionExtractor {
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): Option[ComponentDefinitionWithImplementation] = {
+  ): Option[ComponentWithDefinition] = {
     val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
       component match {
         case _: SourceFactory => (MethodDefinitionExtractor.Source, SourceSpecificData)
@@ -95,14 +95,14 @@ object ComponentDefinitionExtractor {
 
     (component match {
       case e: DynamicComponent[_] =>
-        val invoker = new DynamicComponentImplementationInvoker(e)
+        val runtimeLogicFactory = new DynamicComponentRuntimeLogicFactory(e)
         Right(
           withUiDefinitionForNotDisabledComponent(DynamicComponentStaticDefinitionDeterminer.staticReturnType(e)) {
             (uiDefinition, parametersConfig) =>
-              DynamicComponentDefinitionWithImplementation(
+              DynamicComponentWithDefinition(
                 name = componentName,
-                implementationInvoker = invoker,
-                implementation = e,
+                runtimeLogicFactory = runtimeLogicFactory,
+                component = e,
                 componentTypeSpecificData = componentTypeSpecificData,
                 uiDefinition = uiDefinition,
                 parametersConfig = parametersConfig
@@ -129,12 +129,12 @@ object ComponentDefinitionExtractor {
               Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
             val returnType = Option(methodDef.returnType).filterNot(notReturnAnything)
             withUiDefinitionForNotDisabledComponent(returnType) { (uiDefinition, _) =>
-              val staticDefinition = ComponentStaticDefinition(methodDef.definedParameters, returnType)
-              val invoker          = extractComponentImplementationInvoker(component, methodDef)
-              MethodBasedComponentDefinitionWithImplementation(
+              val staticDefinition    = ComponentStaticDefinition(methodDef.definedParameters, returnType)
+              val runtimeLogicFactory = extractRuntimeLogicFactory(component, methodDef)
+              MethodBasedComponentWithDefinition(
                 name = componentName,
-                implementationInvoker = invoker,
-                implementation = component,
+                runtimeLogicFactory = runtimeLogicFactory,
+                component = component,
                 componentTypeSpecificData = componentTypeSpecificData,
                 staticDefinition = staticDefinition,
                 uiDefinition = uiDefinition
@@ -145,17 +145,17 @@ object ComponentDefinitionExtractor {
 
   }
 
-  private def extractComponentImplementationInvoker(
+  private def extractRuntimeLogicFactory(
       component: Component,
       methodDef: MethodDefinition
-  ): ComponentImplementationInvoker = {
-    val invoker = new MethodBasedComponentImplementationInvoker(component, methodDef)
+  ): ComponentRuntimeLogicFactory = {
+    val runtimeLogicFactory = new MethodBasedComponentRuntimeLogicFactory(component, methodDef)
     if (component.isInstanceOf[Service] && classOf[CompletionStage[_]].isAssignableFrom(methodDef.runtimeClass)) {
-      invoker.transformResult { completionStage =>
+      runtimeLogicFactory.transformResult { completionStage =>
         FutureConverters.toScala(completionStage.asInstanceOf[CompletionStage[_]])
       }
     } else {
-      invoker
+      runtimeLogicFactory
     }
   }
 

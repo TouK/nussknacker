@@ -12,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object UnionReturnObjectService extends EagerServiceWithStaticParametersAndReturnType {
 
-  override def invoke(params: Params)(
+  override def apply(params: Params)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       contextId: ContextId,

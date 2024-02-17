@@ -228,7 +228,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
 
     validate(CustomNode("tst1", None, "doNotExist", Nil), ValidationContext()) should matchPattern {
-      case ValidationPerformed((_: MissingCustomNodeExecutor) :: Nil, _, _) =>
+      case ValidationPerformed((_: MissingCustomComponent) :: Nil, _, _) =>
     }
   }
 

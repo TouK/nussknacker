@@ -90,9 +90,9 @@ object ExpressionCompiler {
 
 class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictRegistry: DictRegistry) {
 
-  // used only for services and fragments - in places where component is an Executor instead of a factory
-  // that creates Executor
-  def compileExecutorComponentNodeParameters(
+  // used only for services and fragments - in places where component is an RuntimeLogic instead of a factory
+  // that creates RuntimeLogic
+  def compileRuntimeLogicComponentNodeParameters(
       parameterDefinitions: List[Parameter],
       nodeParameters: List[NodeParameter],
       ctx: ValidationContext
@@ -114,7 +114,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
     })
   }
 
-  // used for most cases during node compilation - for all components that are factories of Executors
+  // used for most cases during node compilation - for all components that are factories of RuntimeLogic
   def compileNodeParameters(
       parameterDefinitions: List[Parameter],
       nodeParameters: List[NodeParameter],

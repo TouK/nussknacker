@@ -13,10 +13,10 @@ import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Language
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentWithDefinition
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
-  GlobalVariableDefinitionWithImplementation
+  GlobalVariableDefinitionWithValue
 }
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.emptyExpressionConfig
@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 final case class ModelDefinitionBuilder(
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
-    components: List[ComponentDefinitionWithImplementation],
+    components: List[ComponentWithDefinition],
     globalVariables: Map[String, AnyRef],
     private val groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
 ) {
@@ -174,7 +174,7 @@ final case class ModelDefinitionBuilder(
         groupName => groupNameMapping.getOrElse(groupName, Some(groupName))
       )
       .map { case (uiDefinition, _) =>
-        MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+        MethodBasedComponentWithDefinition.withNullRuntimeLogic(
           name,
           componentTypeSpecificData,
           staticDefinition,
@@ -189,8 +189,8 @@ final case class ModelDefinitionBuilder(
   }
 
   def build: ModelDefinition = {
-    val globalVariablesDefinition: Map[String, GlobalVariableDefinitionWithImplementation] =
-      globalVariables.mapValuesNow(GlobalVariableDefinitionWithImplementation(_))
+    val globalVariablesDefinition: Map[String, GlobalVariableDefinitionWithValue] =
+      globalVariables.mapValuesNow(GlobalVariableDefinitionWithValue(_))
     ModelDefinition(
       components,
       emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
@@ -215,7 +215,7 @@ object ModelDefinitionBuilder {
 
   val emptyExpressionConfig: ExpressionConfigDefinition =
     ExpressionConfigDefinition(
-      Map.empty[String, GlobalVariableDefinitionWithImplementation],
+      Map.empty[String, GlobalVariableDefinitionWithValue],
       List.empty,
       defaultAdditionalClasses,
       languages = LanguageConfiguration.default,

@@ -244,9 +244,9 @@ protected trait ProcessCompilerBase {
       .map2(
         CompilationResult(nodeTypingInfo, compiledNode),
         CompilationResult(validatedNextCtx)
-      ) { (nodeInvoker, nextCtx) =>
+      ) { (nodeRuntimeLogic, nextCtx) =>
         compiledgraph.part.CustomNodePart(
-          nodeInvoker,
+          nodeRuntimeLogic,
           node,
           ctx,
           nextCtx,
@@ -279,10 +279,10 @@ protected trait ProcessCompilerBase {
         nextPartsValidation,
         compileParts(part.nextParts, typesForParts),
         CompilationResult(validatedNextCtx)
-      ) { (nodeInvoker, _, nextPartsCompiled, nextCtx) =>
+      ) { (nodeRuntimeLogic, _, nextPartsCompiled, nextCtx) =>
         // TODO: what should be passed for joins here?
         compiledgraph.part.CustomNodePart(
-          nodeInvoker,
+          nodeRuntimeLogic,
           node,
           ctx.left.getOrElse(ValidationContext.empty),
           nextCtx,

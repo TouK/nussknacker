@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, typing}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithValue
 
 class GlobalVariablesPreparerTest extends AnyFunSuite with Matchers {
 
@@ -13,14 +13,14 @@ class GlobalVariablesPreparerTest extends AnyFunSuite with Matchers {
     val metaData = MetaData("test", StreamMetaData())
     val varsWithMethodDef = Map(
       "typedVar" ->
-        GlobalVariableDefinitionWithImplementation(TestTypedGlobalVariable)
+        GlobalVariableDefinitionWithValue(TestTypedGlobalVariable)
     )
 
     val varsWithType =
       new GlobalVariablesPreparer(varsWithMethodDef, hideMetaVariable = true).prepareGlobalVariables(metaData)
 
     val varWithType = varsWithType("typedVar")
-    varWithType.obj shouldBe 1
+    varWithType.value shouldBe 1
     varWithType.typ shouldBe Typed(classOf[Int])
   }
 

@@ -22,7 +22,7 @@ object part {
   }
 
   case class SourcePart(
-      obj: api.process.Source,
+      runtimeLogic: api.process.Source,
       node: splittednode.SourceNode[SourceNodeData],
       validationContext: ValidationContext,
       nextParts: List[SubsequentPart],
@@ -49,7 +49,7 @@ object part {
   }
 
   case class SinkPart(
-      obj: api.process.Sink,
+      runtimeLogic: api.process.Sink,
       node: splittednode.EndingNode[Sink],
       contextBefore: ValidationContext,
       validationContext: ValidationContext

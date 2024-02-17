@@ -28,7 +28,7 @@ object customComponentTypes {
   trait LiteSource[Input] extends Source {
 
     def createTransformation[F[_]: Monad](
-        evaluateLazyParameter: CustomComponentContext[F]
+        context: CustomComponentContext[F]
     ): Input => ValidatedNel[ErrorType, Context]
 
   }
@@ -59,7 +59,7 @@ object customComponentTypes {
   trait LiteSink[Res] extends Sink {
 
     def createTransformation[F[_]: Monad](
-        evaluateLazyParameter: CustomComponentContext[F]
+        context: CustomComponentContext[F]
     ): (TypingResult, DataBatch => F[ResultType[(Context, Res)]])
 
   }
