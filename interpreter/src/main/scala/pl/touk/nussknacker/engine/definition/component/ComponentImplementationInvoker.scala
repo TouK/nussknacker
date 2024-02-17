@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component
 
 import pl.touk.nussknacker.engine.api.Params
 
-// Purpose of this class is to allow to invoke Component's logic. It is encapsulated to the separated class to make
+// Purpose of this class is to allow to invoke Component's implementation. It is encapsulated to the separated class to make
 // stubbing and other post-processing easier. Most Components are just a factories that creates "Executors".
 // The situation is different for non-eager Services where Component is an Executor, so invokeMethod is run for each request
 trait ComponentImplementationInvoker extends Serializable {
