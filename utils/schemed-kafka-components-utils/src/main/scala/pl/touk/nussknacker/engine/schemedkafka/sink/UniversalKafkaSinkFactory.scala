@@ -72,7 +72,7 @@ class UniversalKafkaSinkFactory(
 
   protected def rawEditorParameterStep(
       context: ValidationContext
-  )(implicit nodeId: NodeId): NodeTransformationDefinition = {
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
           (`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (
             SinkRawEditorParamName,
@@ -135,7 +135,7 @@ class UniversalKafkaSinkFactory(
 
   private def valueEditorParamStep(
       context: ValidationContext
-  )(implicit nodeId: NodeId): NodeTransformationDefinition = {
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
@@ -194,13 +194,13 @@ class UniversalKafkaSinkFactory(
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition =
+  ): ContextTransformationDefinition =
     topicParamStep orElse
       schemaParamStep orElse
       rawEditorParameterStep(context) orElse
       valueEditorParamStep(context)
 
-  override def implementation(
+  override def createComponentLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]

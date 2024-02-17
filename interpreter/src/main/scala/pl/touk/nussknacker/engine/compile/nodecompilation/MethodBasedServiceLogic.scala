@@ -5,26 +5,26 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.OutputVar
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 
 import scala.concurrent.{ExecutionContext, Future}
 
-private[nodecompilation] class MethodBasedServiceInvoker(
-    metaData: MetaData,
-    nodeId: NodeId,
-    outputVariableNameOpt: Option[OutputVar],
-    componentDefWithImpl: ComponentDefinitionWithImplementation,
-    parametersProvider: Context => Map[String, Any]
-) extends ServiceInvoker
+private[nodecompilation] class MethodBasedServiceLogic(
+                                                        metaData: MetaData,
+                                                        nodeId: NodeId,
+                                                        outputVariableNameOpt: Option[OutputVar],
+                                                        componentDefWithImpl: ComponentDefinitionWithLogic,
+                                                        parametersProvider: Context => Map[String, Any]
+) extends ServiceLogic
     with LazyLogging {
 
-  override def invokeService(context: Context)(
+  override def run(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] = {
-    componentDefWithImpl.implementationInvoker
-      .invokeMethod(
+    componentDefWithImpl.componentLogic
+      .run(
         parametersProvider(context),
         outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
         additional = Seq(ec, collector, metaData, nodeId, context, ContextId(context.id), componentUseCase)

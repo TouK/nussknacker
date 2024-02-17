@@ -33,7 +33,7 @@ class DelayedUniversalKafkaSourceFactory(
 
   override protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::

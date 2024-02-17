@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker
+import pl.touk.nussknacker.engine.definition.component.ComponentLogic
 
-private[definition] class MethodBasedComponentImplementationInvoker(
+private[definition] class MethodBasedComponentLogic(
     obj: Any,
     private[definition] val methodDef: MethodDefinition
-) extends ComponentImplementationInvoker
+) extends ComponentLogic
     with LazyLogging {
 
-  override def invokeMethod(
+  override def run(
       params: Map[String, Any],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef]

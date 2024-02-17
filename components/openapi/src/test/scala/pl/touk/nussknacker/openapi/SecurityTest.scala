@@ -64,7 +64,7 @@ class SecurityTest
       withClue(config.serviceName) {
         implicit val contextId: ContextId = ContextId("1")
         withCorrectConfig(ServiceName(config.serviceName))
-          .invoke(Map.empty)
+          .runServiceLogic(Map.empty)
           .futureValue shouldBe TypedMap(Map.empty)
       }
     }
@@ -75,7 +75,7 @@ class SecurityTest
       withClue(config.serviceName) {
         intercept[Exception] {
           implicit val contextId: ContextId = ContextId("1")
-          withBadConfig(ServiceName(config.serviceName)).invoke(Map.empty).futureValue
+          withBadConfig(ServiceName(config.serviceName)).runServiceLogic(Map.empty).futureValue
         }
       }
     }

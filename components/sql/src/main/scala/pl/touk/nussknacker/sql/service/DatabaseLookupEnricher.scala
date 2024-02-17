@@ -69,13 +69,13 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
   override protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
+  ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     NextParameters(parameters = tableParam() :: CacheTTLParam :: Nil)
   }
 
   protected def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(
           (TableParamName, DefinedEagerParameter(tableName: String, _)) :: (CacheTTLParamName, _) :: Nil,
           None
@@ -113,7 +113,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
   protected def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(
           (TableParamName, _) :: (CacheTTLParamName, _) :: (
             KeyColumnParamName,
@@ -131,7 +131,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition =
+  ): ContextTransformationDefinition =
     initialStep(context, dependencies) orElse
       tableParamStep(context, dependencies) orElse
       keyColumnParamStep(context, dependencies) orElse

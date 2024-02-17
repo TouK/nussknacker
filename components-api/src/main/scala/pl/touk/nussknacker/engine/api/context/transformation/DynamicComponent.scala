@@ -20,8 +20,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
      - for sinks OutputVariable is not handled, result ValidationContext will be ignored
      - for sources OutputVariable *has* to be used for Flink sources, it's value is always equal to 'input' ATM, due to source API limitations
  */
-// TODO: rename to DynamicComponent
-sealed trait GenericNodeTransformation[T] extends Component {
+sealed trait DynamicComponent[T] extends Component {
 
   // ValidationContext for single input, Map[String, ValidationContext] for joins
   type InputContext
@@ -31,14 +30,17 @@ sealed trait GenericNodeTransformation[T] extends Component {
   // State is arbitrary data that can be passed between steps of NodeTransformationDefinition
   type State
 
-  // TODO: Rename to ContextTransformationDefinition
-  type NodeTransformationDefinition = PartialFunction[TransformationStep, TransformationStepResult]
+  type ContextTransformationDefinition = PartialFunction[TransformationStep, TransformationStepResult]
 
   def contextTransformation(context: InputContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition
+  ): ContextTransformationDefinition
 
-  def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T
+  def createComponentLogic(
+      params: Map[String, Any],
+      dependencies: List[NodeDependencyValue],
+      finalState: Option[State]
+  ): T
 
   // Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]
@@ -131,7 +133,7 @@ sealed trait GenericNodeTransformation[T] extends Component {
 
 }
 
-trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
+trait SingleInputDynamicComponent[T] extends DynamicComponent[T] {
   type InputContext     = ValidationContext
   type DefinedParameter = DefinedSingleParameter
 }
@@ -140,7 +142,7 @@ trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[
   NOTE: currently, due to FE limitations, it's *NOT* possible to defined dynamic branch parameters - that is,
   branch parameters that are changed based on other parameter values
  */
-trait JoinGenericNodeTransformation[T] extends GenericNodeTransformation[T] with LazyLogging {
+trait JoinDynamicComponent[T] extends DynamicComponent[T] with LazyLogging {
   type InputContext     = Map[String, ValidationContext]
   type DefinedParameter = BaseDefinedParameter
 }

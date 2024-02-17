@@ -49,14 +49,14 @@ class UniversalKafkaSourceFactory(
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition =
+  ): ContextTransformationDefinition =
     topicParamStep orElse
       schemaParamStep orElse
       nextSteps(context, dependencies)
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: Nil,
@@ -148,7 +148,7 @@ class UniversalKafkaSourceFactory(
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
-  override def implementation(
+  override def createComponentLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

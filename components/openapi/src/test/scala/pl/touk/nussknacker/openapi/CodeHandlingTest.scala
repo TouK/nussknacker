@@ -35,19 +35,19 @@ class CodeHandlingTest
     val config          = baseConfig.copy(codesToInterpretAsEmpty = List(customEmptyCode))
     val service         = parseToEnrichers("custom-codes.yml", backend, config)(ServiceName("code"))
 
-    def invokeWithCode(code: Int) = {
+    def runWithCode(code: Int) = {
       implicit val contextId = ContextId("1")
-      service.invoke(Map(codeParameter -> code)).futureValue.asInstanceOf[AnyRef]
+      service.runServiceLogic(Map(codeParameter -> code)).futureValue.asInstanceOf[AnyRef]
     }
 
-    invokeWithCode(customEmptyCode) shouldBe null
-    invokeWithCode(200) shouldBe TypedMap(Map.empty)
+    runWithCode(customEmptyCode) shouldBe null
+    runWithCode(200) shouldBe TypedMap(Map.empty)
 
     intercept[Exception] {
-      invokeWithCode(404)
+      runWithCode(404)
     }
     intercept[Exception] {
-      invokeWithCode(503)
+      runWithCode(503)
     }
 
   }

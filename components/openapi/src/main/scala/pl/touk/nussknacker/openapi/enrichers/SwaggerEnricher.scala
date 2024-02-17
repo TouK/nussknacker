@@ -57,7 +57,7 @@ class SwaggerEnricher(
   override def returnType: typing.TypingResult =
     swaggerService.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit])
 
-  override def invoke(params: Map[String, Any])(
+  override def runServiceLogic(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       contextId: ContextId,

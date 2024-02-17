@@ -42,7 +42,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 class FullOuterJoinTransformer(
     timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]]
 ) extends CustomStreamTransformer
-    with JoinGenericNodeTransformation[FlinkCustomJoinTransformation]
+    with JoinDynamicComponent[FlinkCustomJoinTransformation]
     with ExplicitUidInOperatorsSupport
     with WithExplicitTypesToExtract
     with LazyLogging
@@ -58,7 +58,7 @@ class FullOuterJoinTransformer(
 
   override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       val ids          = contexts.keySet
       val errors_names = ContextTransformation.checkIdenticalSanitizedNodeNames(ids.toList)
@@ -112,7 +112,7 @@ class FullOuterJoinTransformer(
       )
   }
 
-  override def implementation(
+  override def createComponentLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

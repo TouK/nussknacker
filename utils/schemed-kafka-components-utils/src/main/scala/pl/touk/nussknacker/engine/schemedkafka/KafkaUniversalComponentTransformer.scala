@@ -4,10 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerParameter,
-  SingleInputGenericNodeTransformation
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.TopicParamName
@@ -34,7 +31,7 @@ object KafkaUniversalComponentTransformer {
 }
 
 trait KafkaUniversalComponentTransformer[T]
-    extends SingleInputGenericNodeTransformation[T]
+    extends SingleInputDynamicComponent[T]
     with WithCachedTopicsExistenceValidator { self: Component =>
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
@@ -149,13 +146,13 @@ trait KafkaUniversalComponentTransformer[T]
     new ParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
   }
 
-  protected def topicParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
+  protected def topicParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       val topicParam = getTopicParam.map(List(_))
       NextParameters(parameters = topicParam.value, errors = topicParam.written)
   }
 
-  protected def schemaParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
+  protected def schemaParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep((topicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
       val versionParam  = getVersionParam(preparedTopic)

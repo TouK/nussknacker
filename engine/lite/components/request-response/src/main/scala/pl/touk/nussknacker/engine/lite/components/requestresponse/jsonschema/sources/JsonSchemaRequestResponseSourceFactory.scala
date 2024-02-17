@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.so
 
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source}
 import pl.touk.nussknacker.engine.api.typed._
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseSource, Re
 
 class JsonSchemaRequestResponseSourceFactory
     extends RequestResponseSourceFactory
-    with SingleInputGenericNodeTransformation[Source] {
+    with SingleInputDynamicComponent[Source] {
 
   override type State = (Schema, Schema)
 
@@ -30,7 +30,7 @@ class JsonSchemaRequestResponseSourceFactory
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
+  ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     val inputSchema      = jsonSchemaExtractor.getSchemaFromProperty(InputSchemaProperty, dependencies)
     val outputSchema     = jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
     val validationResult = inputSchema.product(outputSchema).swap.toList.flatMap(_.toList)
@@ -42,7 +42,7 @@ class JsonSchemaRequestResponseSourceFactory
     FinalResults.forValidation(context, validationResult, finalState)(finalInitializer.validationContext)
   }
 
-  override def implementation(
+  override def createComponentLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[(Schema, Schema)]

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   DefinedLazyParameter,
   NodeDependencyValue,
-  SingleInputGenericNodeTransformation
+  SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -171,7 +171,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         additionalComponents
 
     val definitions = ModelDefinition(
-      ComponentDefinitionWithImplementation
+      ComponentDefinitionWithLogic
         .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
       ModelDefinitionBuilder.emptyExpressionConfig.copy(
         languages = LanguageConfiguration(List(LiteralExpressionParser))
@@ -1051,7 +1051,7 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Map[String, Any])(
+    override def runServiceLogic(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
@@ -1073,7 +1073,7 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Map[String, Any])(
+    override def runServiceLogic(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
@@ -1124,9 +1124,9 @@ object InterpreterSpec {
         @ParamName("param")
         @AdditionalVariables(Array(new AdditionalVariable(name = "helper", clazz = classOf[Helper])))
         param: String
-    ): ServiceInvoker = new ServiceInvoker {
+    ): ServiceLogic = new ServiceLogic {
 
-      override def invokeService(context: Context)(
+      override def run(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
@@ -1152,8 +1152,8 @@ object InterpreterSpec {
         outputVar,
         lazyOne.returnType, {
           if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
-          new ServiceInvoker {
-            override def invokeService(context: Context)(
+          new ServiceLogic {
+            override def run(context: Context)(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
                 componentUseCase: ComponentUseCase
@@ -1166,7 +1166,7 @@ object InterpreterSpec {
 
   }
 
-  object DynamicEagerService extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+  object DynamicEagerService extends EagerService with SingleInputDynamicComponent[ServiceLogic] {
 
     override type State = Nothing
 
@@ -1176,7 +1176,7 @@ object InterpreterSpec {
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
-    ): DynamicEagerService.NodeTransformationDefinition = {
+    ): DynamicEagerService.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(List(staticParam.parameter))
       case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) :: Nil, _) =>
@@ -1191,16 +1191,16 @@ object InterpreterSpec {
         )
     }
 
-    override def implementation(
+    override def createComponentLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[Nothing]
-    ): ServiceInvoker = {
+    ): ServiceLogic = {
 
       val paramName = staticParam.extractValue(params)
 
-      new ServiceInvoker {
-        override def invokeService(context: Context)(
+      new ServiceLogic {
+        override def run(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase

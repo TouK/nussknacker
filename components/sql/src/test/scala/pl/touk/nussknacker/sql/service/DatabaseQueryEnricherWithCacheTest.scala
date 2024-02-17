@@ -33,7 +33,7 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
-    val invoker = service.implementation(
+    val componentLogic = service.createComponentLogic(
       params = Map(
         CacheTTLParamName -> java.time.Duration.ofDays(1),
         "arg1"            -> 1
@@ -42,14 +42,14 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       finalState = Some(state)
     )
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
-    val resultF = invoker.invokeService(Context.withInitialId)
+    val resultF = componentLogic.run(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = invoker.invokeService(Context.withInitialId)
+    val resultF2 = componentLogic.run(Context.withInitialId)
     val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
@@ -57,7 +57,7 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
 
     service
       .close() // it's not production behaviour - we only close service to make sure DB connection is closed, and prove that value is populated from cache.
-    val resultF3 = invoker.invokeService(Context.withInitialId)
+    val resultF3 = componentLogic.run(Context.withInitialId)
     val result3  = Await.result(resultF3, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result3 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))

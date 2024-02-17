@@ -49,7 +49,7 @@ class KafkaSourceFactorySpec
       new KafkaContextInitializer[K, V](VariableConstants.InputVariableName, Typed[Any], Typed[Any])
     )
     val source = sourceFactory
-      .implementation(
+      .createComponentLogic(
         Map(TopicParamName -> topic),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
         Some(finalState)

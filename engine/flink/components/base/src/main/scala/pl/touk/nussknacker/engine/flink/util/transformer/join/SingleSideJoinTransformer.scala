@@ -31,7 +31,7 @@ import scala.concurrent.duration.FiniteDuration
 class SingleSideJoinTransformer(
     timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]]
 ) extends CustomStreamTransformer
-    with JoinGenericNodeTransformation[FlinkCustomJoinTransformation]
+    with JoinDynamicComponent[FlinkCustomJoinTransformation]
     with ExplicitUidInOperatorsSupport
     with WithExplicitTypesToExtract
     with LazyLogging
@@ -47,7 +47,7 @@ class SingleSideJoinTransformer(
 
   override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.parameter))
     case TransformationStep(
@@ -99,7 +99,7 @@ class SingleSideJoinTransformer(
       )
   }
 
-  override def implementation(
+  override def createComponentLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

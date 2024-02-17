@@ -21,7 +21,7 @@ class DynamicService extends EagerServiceWithStaticParametersAndReturnType {
 
   private val fileWithDefinition = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
-  override def invoke(params: Map[String, Any])(
+  override def runServiceLogic(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       contextId: ContextId,

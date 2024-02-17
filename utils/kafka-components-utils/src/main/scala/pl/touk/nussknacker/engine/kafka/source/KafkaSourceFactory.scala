@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
 
 /**
   * Base factory for Kafka sources with additional metadata variable.
-  * It is based on [[pl.touk.nussknacker.engine.api.context.transformation.SingleInputGenericNodeTransformation]]
+  * It is based on [[pl.touk.nussknacker.engine.api.context.transformation.SingleInputDynamicComponent]]
   * that allows custom ValidationContext and Context transformations, which are provided by [[KafkaContextInitializer]]
   * Can be used for single- or multi- topic sources (as csv, see topicNameSeparator and extractTopics).
   *
@@ -41,7 +41,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     protected val modelDependencies: ProcessObjectDependencies,
     protected val implProvider: KafkaSourceImplFactory[K, V]
 ) extends SourceFactory
-    with SingleInputGenericNodeTransformation[Source]
+    with SingleInputDynamicComponent[Source]
     with WithCachedTopicsExistenceValidator
     with WithExplicitTypesToExtract
     with UnboundedStreamComponent {
@@ -53,7 +53,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   protected lazy val valueTypingResult: TypingResult = Typed(implicitly[ClassTag[V]].runtimeClass)
 
   // Node validation and compilation refers to ValidationContext, that returns TypingResult's of all variables returned by the source.
-  // Variable suggestion uses DefinitionExtractor that requires proper type definitions for GenericNodeTransformation (which in general does not have a specified "returnType"):
+  // Variable suggestion uses DefinitionExtractor that requires proper type definitions for DynamicComponent (which in general does not have a specified "returnType"):
   // - for TypeClass (which is a default scenario) - it is necessary to provide all explicit TypeClass definitions as possibleVariableClasses
   // - for TypedObjectTypingResult - suggested variables are defined as explicit "fields"
   // Example:
@@ -66,7 +66,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 
   private def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case step @ TransformationStep(Nil, _) =>
+  ): ContextTransformationDefinition = { case step @ TransformationStep(Nil, _) =>
     NextParameters(prepareInitialParameters)
   }
 
@@ -81,7 +81,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case step @ TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) :: _, None) =>
       prepareSourceFinalResults(
         context,
@@ -143,14 +143,14 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     */
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition =
+  ): ContextTransformationDefinition =
     initialStep(context, dependencies) orElse
       nextSteps(context, dependencies)
 
   /**
     * Common set of operations required to create basic KafkaSource.
     */
-  override def implementation(
+  override def createComponentLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

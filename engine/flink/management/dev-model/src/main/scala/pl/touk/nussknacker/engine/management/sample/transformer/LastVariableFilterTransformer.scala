@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedLazyParameter,
   FailedToDefineParameter,
   NodeDependencyValue,
-  SingleInputGenericNodeTransformation
+  SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.api.NodeId
  */
 object LastVariableFilterTransformer
     extends CustomStreamTransformer
-    with SingleInputGenericNodeTransformation[FlinkCustomStreamTransformation] {
+    with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
 
   private val valueParameterName = "value"
 
@@ -56,7 +56,7 @@ object LastVariableFilterTransformer
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(groupByParameter.parameter :: valueParameter.parameter :: Nil)
     case TransformationStep((_, _) :: (`valueParameterName`, DefinedLazyParameter(expr)) :: Nil, _) =>
       NextParameters(conditionParameter(expr) :: Nil)
@@ -69,7 +69,7 @@ object LastVariableFilterTransformer
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
-  override def implementation(
+  override def createComponentLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

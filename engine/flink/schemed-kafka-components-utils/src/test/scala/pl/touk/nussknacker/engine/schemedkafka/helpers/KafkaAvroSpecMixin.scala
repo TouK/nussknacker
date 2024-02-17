@@ -323,7 +323,7 @@ trait KafkaAvroSpecMixin
     val validatedState = validateParamsAndInitializeState(sourceFactory, parameterValues)
     validatedState.map(state => {
       sourceFactory
-        .implementation(
+        .createComponentLogic(
           parameterValues,
           List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
           Some(state)

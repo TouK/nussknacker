@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.definition.component.dynamic
 
 import pl.touk.nussknacker.engine.api.context.transformation.{
-  GenericNodeTransformation,
+  DynamicComponent,
   OutputVariableNameValue,
   TypedNodeDependencyValue
 }
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, TypedNodeDependency}
-import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker
+import pl.touk.nussknacker.engine.definition.component.ComponentLogic
 
-class DynamicComponentImplementationInvoker(obj: GenericNodeTransformation[_]) extends ComponentImplementationInvoker {
+class DynamicComponentLogic(obj: DynamicComponent[_]) extends ComponentLogic {
 
-  override def invokeMethod(
+  override def run(
       params: Map[String, Any],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef]
@@ -33,7 +33,7 @@ class DynamicComponentImplementationInvoker(obj: GenericNodeTransformation[_]) e
       }
       .getOrElse(throw new IllegalArgumentException("Final state not passed to invokeMethod"))
     // we assume parameters were already validated!
-    obj.implementation(params, additionalParams, finalStateValue.asInstanceOf[Option[obj.State]])
+    obj.createComponentLogic(params, additionalParams, finalStateValue.asInstanceOf[Option[obj.State]])
   }
 
 }

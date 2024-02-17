@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   NodeDependencyValue,
-  SingleInputGenericNodeTransformation
+  SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
@@ -72,7 +72,7 @@ TODO:
 class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider)
     extends EagerService
     with TimeMeasuringService
-    with SingleInputGenericNodeTransformation[ServiceInvoker]
+    with SingleInputDynamicComponent[ServiceLogic]
     with LazyLogging {
 
   import DatabaseQueryEnricher._
@@ -111,20 +111,20 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition =
+  ): ContextTransformationDefinition =
     initialStep(context, dependencies) orElse
       queryParamStep(context, dependencies) orElse
       finalStep(context, dependencies)
 
   protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
+  ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     NextParameters(parameters = ResultStrategyParam :: QueryParam :: CacheTTLParam :: Nil)
   }
 
   protected def queryParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(
           (ResultStrategyParamName, DefinedEagerParameter(strategyName: String, _)) :: (
             QueryParamName,
@@ -204,7 +204,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
 
   protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(_, Some(state)) =>
+  ): ContextTransformationDefinition = { case TransformationStep(_, Some(state)) =>
     createFinalResults(context, dependencies, state)
   }
 
@@ -222,16 +222,16 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     )
   }
 
-  override def implementation(
+  override def createComponentLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[TransformationState]
-  ): ServiceInvoker = {
+  ): ServiceLogic = {
     val state          = finalState.get
     val cacheTTLOption = extractOptional[Duration](params, CacheTTLParamName)
     cacheTTLOption match {
       case Some(cacheTTL) =>
-        new DatabaseEnricherInvokerWithCache(
+        new DatabaseEnricherLogicWithCache(
           state.query,
           state.argsCount,
           state.tableDef,
@@ -244,7 +244,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
           params
         )
       case None =>
-        new DatabaseEnricherInvoker(
+        new DatabaseEnricherLogic(
           state.query,
           state.argsCount,
           state.tableDef,

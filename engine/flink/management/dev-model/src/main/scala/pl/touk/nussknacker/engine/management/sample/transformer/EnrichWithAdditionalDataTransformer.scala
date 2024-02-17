@@ -21,9 +21,9 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 /*
   This is basically left outer join - we join events stream (left side of join) with additional data stream (e.g. users - right side of join)
   Implementation is simplistic, it doesn't wait for additional data stream to initialize etc. - it's mainly to
-  show how JoinGenericNodeTransformation works
+  show how JoinDynamicComponent works
  */
-object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with JoinGenericNodeTransformation[AnyRef] {
+object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with JoinDynamicComponent[AnyRef] {
 
   private val roleParameter = "role"
 
@@ -39,7 +39,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
 
   override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): EnrichWithAdditionalDataTransformer.NodeTransformationDefinition = {
+  ): EnrichWithAdditionalDataTransformer.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(
         List(
@@ -97,7 +97,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
 
   private def right(byBranch: Map[String, String]): Option[String] = byBranch.find(_._2 == "Additional data").map(_._1)
 
-  override def implementation(
+  override def createComponentLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

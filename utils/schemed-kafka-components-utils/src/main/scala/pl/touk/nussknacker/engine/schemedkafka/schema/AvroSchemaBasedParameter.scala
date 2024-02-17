@@ -44,8 +44,6 @@ object AvroSchemaBasedParameter {
     if (schema.getType == Schema.Type.RECORD) {
       val recordFields = schema.getFields.asScala.toList
       if (containsRestrictedNames(recordFields, restrictedParamNames)) {
-        /* TODO: Since GenericNodeTransformation#implementation passes all parameters in a single Map we need to restrict value parameter names,
-         so they do not collide with other parameters like Topic or Key. */
         Invalid(
           NonEmptyList.one(
             CustomNodeError(
