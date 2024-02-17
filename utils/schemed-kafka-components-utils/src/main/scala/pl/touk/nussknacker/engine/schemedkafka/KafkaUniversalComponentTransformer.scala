@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedVal
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.TopicParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.component.Component
@@ -107,9 +107,8 @@ trait KafkaUniversalComponentTransformer[T]
       .copy(editor = Some(FixedValuesParameterEditor(versionValues)))
   }
 
-  protected def extractPreparedTopic(params: Map[String, Any]): PreparedKafkaTopic = prepareTopic(
-    params(topicParamName).asInstanceOf[String]
-  )
+  protected def extractPreparedTopic(params: Params): PreparedKafkaTopic =
+    prepareTopic(params.extractUnsafe(topicParamName))
 
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
     KafkaComponentsUtils.prepareKafkaTopic(topic, modelDependencies)

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.service
 
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
-import pl.touk.nussknacker.engine.api.{Context, ContextId}
+import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -24,12 +24,12 @@ class DatabaseEnricherLogicWithCache(
     argsCount: Int,
     tableDef: TableDefinition,
     strategy: QueryResultStrategy,
-    queryArgumentsExtractor: (Int, Map[String, Any], Context) => QueryArguments,
+    queryArgumentsExtractor: (Int, Params, Context) => QueryArguments,
     cacheTTL: Duration,
     override val returnType: typing.TypingResult,
     override val getConnection: () => Connection,
     override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
-    params: Map[String, Any]
+    params: Params
 ) extends DatabaseEnricherLogic(
       query,
       argsCount,

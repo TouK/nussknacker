@@ -291,9 +291,11 @@ trait KafkaAvroSpecMixin
       givenKey: Any,
       givenValue: Any
   ): Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
-    val parameterValues = Map(
-      KafkaUniversalComponentTransformer.TopicParamName         -> topic,
-      KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionToString(versionOption)
+    val parameterValues = Params(
+      Map(
+        KafkaUniversalComponentTransformer.TopicParamName         -> topic,
+        KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionToString(versionOption)
+      )
     )
     createValidatedSource(sourceFactory, parameterValues)
       .map(source => {
@@ -316,15 +318,15 @@ trait KafkaAvroSpecMixin
 
   private def createValidatedSource(
       sourceFactory: KafkaSource,
-      parameterValues: Map[String, Any]
+      params: Params,
   ): Validated[NonEmptyList[
     ProcessCompilationError
   ], Source with TestDataGenerator with FlinkSourceTestSupport[AnyRef]] = {
-    val validatedState = validateParamsAndInitializeState(sourceFactory, parameterValues)
+    val validatedState = validateParamsAndInitializeState(sourceFactory, params)
     validatedState.map(state => {
       sourceFactory
         .createComponentLogic(
-          parameterValues,
+          params,
           List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
           Some(state)
         )
@@ -338,10 +340,10 @@ trait KafkaAvroSpecMixin
   // - validation errors
   private def validateParamsAndInitializeState(
       sourceFactory: KafkaSource,
-      parameterValues: Map[String, Any]
+      params: Params,
   ): Validated[NonEmptyList[ProcessCompilationError], sourceFactory.State] = {
     implicit val nodeId: NodeId = NodeId("dummy")
-    val parameters              = parameterValues.mapValuesNow(value => DefinedEagerParameter(value, null)).toList
+    val parameters              = params.nameToValueMap.mapValuesNow(value => DefinedEagerParameter(value, null)).toList
     val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val stepResult = definition(sourceFactory.TransformationStep(parameters, None))
     stepResult match {

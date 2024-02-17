@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
@@ -201,12 +201,12 @@ class UniversalKafkaSinkFactory(
       valueEditorParamStep(context)
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]
   ): Sink = {
     val preparedTopic = extractPreparedTopic(params)
-    val key           = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
+    val key           = params.extractUnsafe[LazyParameter[CharSequence]](SinkKeyParamName)
     val finalState = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
@@ -221,7 +221,7 @@ class UniversalKafkaSinkFactory(
     )
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = extractValidationMode(
-      params.getOrElse(SinkValidationModeParameterName, ValidationMode.strict.name).asInstanceOf[String]
+      params.extract(SinkValidationModeParameterName).getOrElse(ValidationMode.strict.name)
     )
 
     implProvider.createSink(

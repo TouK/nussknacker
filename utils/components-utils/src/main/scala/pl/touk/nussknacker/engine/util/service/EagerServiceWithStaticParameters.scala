@@ -73,13 +73,13 @@ trait EagerServiceWithStaticParameters
     if (hasOutput) List(OutputVariableNameDependency, metaData) else List(metaData)
 
   override final def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[TypingResult]
   ): ServiceLogic =
     createServiceLogic(
-      params.filterNot { case (_, param) => param.isInstanceOf[LazyParameter[_]] },
-      params.collect { case (name, param: LazyParameter[AnyRef]) => (name, param) },
+      params.nameToValueMap.filterNot { case (_, param) => param.isInstanceOf[LazyParameter[_]] },
+      params.nameToValueMap.collect { case (name, param: LazyParameter[AnyRef]) => (name, param) },
       finalState.getOrElse(Unknown),
       metaData.extract(dependencies)
     )
@@ -96,7 +96,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
   // TODO: This method should be removed - instead, developers should deliver it's own ServiceLogic to avoid
   //       mixing implementation logic with definition logic. Before that we should fix EagerService Lifecycle handling.
   //       See notice next to EagerService
-  def runServiceLogic(params: Map[String, Any])(
+  def runServiceLogic(params: Params)(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
       contextId: ContextId,
@@ -133,7 +133,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       implicit val contextId: ContextId   = ContextId(context.id)
       implicit val metaImplicit: MetaData = metaData
       val evaluatedLazyParameters         = lazyParameters.map { case (name, value) => (name, value.evaluate(context)) }
-      runServiceLogic(eagerParameters ++ evaluatedLazyParameters)
+      runServiceLogic(Params(eagerParameters ++ evaluatedLazyParameters))
     }
 
   }

@@ -100,7 +100,7 @@ class SingleSideJoinTransformer(
   }
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomJoinTransformation = {
@@ -108,7 +108,7 @@ class SingleSideJoinTransformer(
     val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParam.extractValue(params)
     val aggregator: Aggregator                                  = AggregatorParam.extractValue(params)
     val window: Duration                                        = WindowLengthParam.extractValue(params)
-    val aggregateBy: LazyParameter[AnyRef] = params(AggregateByParamName).asInstanceOf[LazyParameter[AnyRef]]
+    val aggregateBy: LazyParameter[AnyRef] = params.extractUnsafe[LazyParameter[AnyRef]](AggregateByParamName)
     val outputType                         = aggregator.computeOutputTypeUnsafe(aggregateBy.returnType)
 
     new FlinkCustomJoinTransformation with Serializable {

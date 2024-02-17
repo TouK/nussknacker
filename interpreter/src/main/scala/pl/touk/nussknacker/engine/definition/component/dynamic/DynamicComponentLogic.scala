@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.dynamic
 
+import pl.touk.nussknacker.engine.api.Params
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DynamicComponent,
   OutputVariableNameValue,
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.definition.component.ComponentLogic
 class DynamicComponentLogic(obj: DynamicComponent[_]) extends ComponentLogic {
 
   override def run(
-      params: Map[String, Any],
+      params: Params,
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef]
   ): Any = {

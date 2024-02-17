@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -99,11 +99,7 @@ abstract class StubbedComponentLogic(
     )
   }
 
-  override def run(
-      params: Map[String, Any],
-      outputVariableNameOpt: Option[String],
-      additional: Seq[AnyRef]
-  ): Any = {
+  override def run(params: Params, outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
     def transform(impl: Any): Any = {
       // Correct TypingResult is important for method based components, because even for testing and verification
       // purpose, ImplementationInvoker is used also to determine output types. Dynamic components don't use it during

@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Params}
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case object UnionReturnObjectService extends EagerServiceWithStaticParametersAndReturnType {
 
-  override def runServiceLogic(params: Map[String, Any])(
+  override def runServiceLogic(params: Params)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       contextId: ContextId,

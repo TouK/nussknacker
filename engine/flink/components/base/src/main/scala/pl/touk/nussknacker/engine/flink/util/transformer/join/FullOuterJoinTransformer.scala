@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.context.{
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
@@ -113,7 +113,7 @@ class FullOuterJoinTransformer(
   }
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomJoinTransformation = {

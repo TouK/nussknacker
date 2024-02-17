@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.OutputVariableNameValue
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
@@ -43,7 +43,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       strategy = ResultSetStrategy
     )
     val logic = service.createComponentLogic(
-      params = Map(DatabaseLookupEnricher.KeyValueParamName -> 1L),
+      params = Params(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)),
       dependencies = Nil,
       finalState = Some(state)
     )

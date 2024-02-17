@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContex
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -206,7 +206,7 @@ object validationHelpers {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): ServiceLogic = ???
@@ -261,7 +261,7 @@ object validationHelpers {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): Validated[Unit, Int] = finalState.get
@@ -280,7 +280,7 @@ object validationHelpers {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
     ): Source = {
@@ -302,7 +302,7 @@ object validationHelpers {
   class GenericParametersSourceNoTestSupport extends GenericParametersSource with UnboundedStreamComponent {
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
     ): Source = {
@@ -316,7 +316,7 @@ object validationHelpers {
   class GenericParametersSourceNoGenerate extends GenericParametersSource with UnboundedStreamComponent {
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
     ): Source = {
@@ -331,7 +331,7 @@ object validationHelpers {
   class SourceWithTestParameters extends GenericParametersSource with UnboundedStreamComponent {
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
     ): Source = {
@@ -467,7 +467,7 @@ object validationHelpers {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): T = {
@@ -510,7 +510,7 @@ object validationHelpers {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): String = finalState.get
@@ -565,7 +565,7 @@ object validationHelpers {
     private def right(byBranch: Map[String, Boolean]): String = byBranch.find(!_._2).get._1
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): AnyRef = null
@@ -584,7 +584,7 @@ object validationHelpers {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): String = ""

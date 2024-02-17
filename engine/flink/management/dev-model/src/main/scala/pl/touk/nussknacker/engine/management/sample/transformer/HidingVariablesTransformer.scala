@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
-import pl.touk.nussknacker.engine.api.CustomStreamTransformer
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Params}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
@@ -29,7 +29,7 @@ object HidingVariablesTransformer
   )
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomStreamTransformation = ???

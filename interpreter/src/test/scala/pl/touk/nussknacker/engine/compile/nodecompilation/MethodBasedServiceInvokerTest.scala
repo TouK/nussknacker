@@ -27,7 +27,8 @@ class ServiceLogicTest extends AnyFlatSpec with PatientScalaFutures with OptionV
   it should "invoke service method with declared parameters as scala params" in {
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithLogic.withEmptyConfig("foo", mock)
-    val logic = new MethodBasedServiceLogic(metadata, nodeId, None, definition, _ => Map("foo" -> "aa", "bar" -> 1))
+    val logic =
+      new MethodBasedServiceLogic(metadata, nodeId, None, definition, _ => Params(Map("foo" -> "aa", "bar" -> 1)))
 
     whenReady(logic.run(context)) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
@@ -42,7 +43,7 @@ class ServiceLogicTest extends AnyFlatSpec with PatientScalaFutures with OptionV
       nodeId = nodeId,
       outputVariableNameOpt = None,
       componentDefWithImpl = definition,
-      parametersProvider = _ => Map("foo" -> "aa", "bar" -> "terefere")
+      parametersProvider = _ => Params(Map("foo" -> "aa", "bar" -> "terefere"))
     )
 
     intercept[IllegalArgumentException](

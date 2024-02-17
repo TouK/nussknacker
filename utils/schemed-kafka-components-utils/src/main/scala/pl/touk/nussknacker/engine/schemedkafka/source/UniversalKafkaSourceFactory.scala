@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
@@ -149,7 +149,7 @@ class UniversalKafkaSourceFactory(
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Source = {

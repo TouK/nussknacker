@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, NodeId, ServiceLogic}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, NodeId, Params, ServiceLogic}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   NodeDependencyValue,
@@ -63,7 +63,7 @@ object DynamicMultipleParamsService extends EagerService with SingleInputDynamic
   }
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): ServiceLogic = {

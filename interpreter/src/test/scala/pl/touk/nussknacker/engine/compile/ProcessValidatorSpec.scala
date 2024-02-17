@@ -1203,7 +1203,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val failingDefinition = base
       .mapComponents {
         case component if component.componentType == ComponentType.Source =>
-          component.withComponentLogic((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
+          component.withComponentLogic((_: Params, _: Option[String], _: Seq[AnyRef]) => {
             throw new RuntimeException("You passed incorrect parameter, cannot proceed")
           })
         case other => other

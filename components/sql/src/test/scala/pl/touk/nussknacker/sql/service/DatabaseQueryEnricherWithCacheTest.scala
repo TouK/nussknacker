@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
@@ -34,9 +34,11 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       strategy = ResultSetStrategy
     )
     val componentLogic = service.createComponentLogic(
-      params = Map(
-        CacheTTLParamName -> java.time.Duration.ofDays(1),
-        "arg1"            -> 1
+      params = Params(
+        Map(
+          CacheTTLParamName -> java.time.Duration.ofDays(1),
+          "arg1"            -> 1
+        )
       ),
       dependencies = Nil,
       finalState = Some(state)

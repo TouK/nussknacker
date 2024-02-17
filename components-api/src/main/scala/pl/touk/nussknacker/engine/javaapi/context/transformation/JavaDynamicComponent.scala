@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.javaapi.context.transformation
 
 import java.util.Optional
-import pl.touk.nussknacker.engine.api.CustomStreamTransformer
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 
 import scala.jdk.CollectionConverters._
@@ -57,14 +56,13 @@ trait DynamicComponentWrapper[T, VC, PAR, ST] { self: DynamicComponent[T] =>
 
   def javaDef: JavaDynamicComponent[T, VC, PAR, ST]
 
-
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): T =
     javaDef.createComponentLogic(
-      params.asJava,
+      params.nameToValueMap.asJava,
       dependencies.asJava,
       java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State]))
     )
@@ -152,12 +150,12 @@ class JoinDynamicComponentWrapper[ST](javaDef: JavaJoinDynamicComponent[_ <: Any
   }
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Object =
     javaDef.createComponentLogic(
-      params.asJava,
+      params.nameToValueMap.asJava,
       dependencies.asJava,
       java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State]))
     )

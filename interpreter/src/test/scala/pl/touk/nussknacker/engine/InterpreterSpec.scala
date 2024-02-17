@@ -1051,14 +1051,14 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def runServiceLogic(params: Map[String, Any])(
+    override def runServiceLogic(params: Params)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
-      Future.successful(params.head._2.toString)
+      Future.successful(params.nameToValueMap.head._2.toString)
     }
 
   }
@@ -1073,14 +1073,14 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def runServiceLogic(params: Map[String, Any])(
+    override def runServiceLogic(params: Params)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
-      Future.successful(params.head._2.toString)
+      Future.successful(params.nameToValueMap.head._2.toString)
     }
 
   }
@@ -1192,7 +1192,7 @@ object InterpreterSpec {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[Nothing]
     ): ServiceLogic = {
@@ -1205,8 +1205,8 @@ object InterpreterSpec {
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
-          val staticParam = params(paramName).asInstanceOf[LazyParameter[AnyRef]]
-          Future.successful(staticParam.evaluate(context))
+          val value = params.extractOrEvaluateUnsafe[AnyRef](paramName, context)
+          Future.successful(value)
         }
       }
     }

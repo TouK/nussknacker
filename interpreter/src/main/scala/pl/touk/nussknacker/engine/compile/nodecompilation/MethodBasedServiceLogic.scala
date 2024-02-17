@@ -10,11 +10,11 @@ import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLo
 import scala.concurrent.{ExecutionContext, Future}
 
 private[nodecompilation] class MethodBasedServiceLogic(
-                                                        metaData: MetaData,
-                                                        nodeId: NodeId,
-                                                        outputVariableNameOpt: Option[OutputVar],
-                                                        componentDefWithImpl: ComponentDefinitionWithLogic,
-                                                        parametersProvider: Context => Map[String, Any]
+    metaData: MetaData,
+    nodeId: NodeId,
+    outputVariableNameOpt: Option[OutputVar],
+    componentDefWithImpl: ComponentDefinitionWithLogic,
+    parametersProvider: Context => Params
 ) extends ServiceLogic
     with LazyLogging {
 

@@ -664,12 +664,12 @@ object SampleNodes {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): AnyRef = {
-      val map  = params.filterNot(k => List("par1", "lazyPar1").contains(k._1))
-      val bool = params("lazyPar1").asInstanceOf[LazyParameter[java.lang.Boolean]]
+      val map  = params.nameToValueMap.filterNot(k => List("par1", "lazyPar1").contains(k._1))
+      val bool = params.extractUnsafe[LazyParameter[java.lang.Boolean]]("lazyPar1")
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
@@ -704,7 +704,7 @@ object SampleNodes {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): AnyRef = {
@@ -771,11 +771,11 @@ object SampleNodes {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): Source = {
-      val out = "" + params("type") + "-" + params("version")
+      val out = s"${params.extractUnsafe("type")}-${params.extractUnsafe("version")}"
       CollectionSource(out :: Nil, None, Typed[String])
     }
 
@@ -841,12 +841,12 @@ object SampleNodes {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): Source = {
       import scala.jdk.CollectionConverters._
-      val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
+      val elements = params.extractUnsafe(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
       new CollectionSource(elements, None, Typed[String]) with TestDataGenerator with FlinkSourceTestSupport[String] {
 
@@ -905,15 +905,15 @@ object SampleNodes {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): FlinkSink = new FlinkSink {
 
       type Value = String
 
-      private val typ     = params("type")
-      private val version = params("version")
+      private val typ     = params.extractUnsafe("type")
+      private val version = params.extractUnsafe("version")
 
       override def prepareValue(
           dataStream: DataStream[Context],
@@ -921,7 +921,8 @@ object SampleNodes {
       ): DataStream[ValueWithContext[Value]] = {
         dataStream
           .flatMap(
-            flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]])
+            flinkNodeContext.lazyParameterHelper
+              .lazyMapFunction(params.extractUnsafe("value").asInstanceOf[LazyParameter[String]])
           )
           .map(
             (v: ValueWithContext[String]) =>

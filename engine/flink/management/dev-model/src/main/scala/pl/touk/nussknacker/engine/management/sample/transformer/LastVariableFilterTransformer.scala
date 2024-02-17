@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, Params, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation,
@@ -70,12 +70,12 @@ object LastVariableFilterTransformer
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomStreamTransformation = {
     val value     = valueParameter.extractValue(params)
-    val condition = params(conditionParameterName).asInstanceOf[LazyParameter[java.lang.Boolean]]
+    val condition = params.extractUnsafe[LazyParameter[java.lang.Boolean]](conditionParameterName)
     val groupBy   = groupByParameter.extractValue(params)
 
     FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {

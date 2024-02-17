@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, JsonSchemaExtractor}
@@ -113,7 +113,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
   }
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]
   ): Sink = {

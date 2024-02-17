@@ -371,7 +371,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult)
       extends EagerServiceWithStaticParametersAndReturnType {
 
-    override def runServiceLogic(params: Map[String, Any])(
+    override def runServiceLogic(params: Params)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,

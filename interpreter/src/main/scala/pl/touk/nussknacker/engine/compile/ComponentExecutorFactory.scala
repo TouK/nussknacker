@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Service}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params, Service}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, ParameterEvaluator}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
@@ -56,9 +56,9 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
         case _: Service => LazyParameterCreationStrategy.default
         case _          => nonServicesLazyParamStrategy
       }
-    val paramsMap = params.map { case (tp, p) =>
-      p.name -> parameterEvaluator.prepareParameter(tp, p)._1
-    }.toMap
+    val paramsMap = Params(
+      params.map { case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1 }.toMap
+    )
     componentDefWithImpl.componentLogic
       .run(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional)
       .asInstanceOf[LOGIC]

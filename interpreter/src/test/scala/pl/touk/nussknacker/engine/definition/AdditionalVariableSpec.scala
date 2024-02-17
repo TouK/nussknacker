@@ -118,7 +118,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
     }
 
     override def createComponentLogic(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[Nothing]
     ): Source = null

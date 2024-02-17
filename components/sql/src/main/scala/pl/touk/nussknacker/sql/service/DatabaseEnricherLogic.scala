@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.service
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.{Context, ContextId, ServiceLogic}
+import pl.touk.nussknacker.engine.api.{Context, Params, ServiceLogic}
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.sql.db.WithDBConnectionPool
 import pl.touk.nussknacker.sql.db.query._
@@ -18,11 +18,11 @@ class DatabaseEnricherLogic(
     argsCount: Int,
     tableDef: TableDefinition,
     strategy: QueryResultStrategy,
-    queryArgumentsExtractor: (Int, Map[String, Any], Context) => QueryArguments,
+    queryArgumentsExtractor: (Int, Params, Context) => QueryArguments,
     val returnType: typing.TypingResult,
     val getConnection: () => Connection,
     val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
-    params: Map[String, Any],
+    params: Params,
 ) extends ServiceLogic
     with WithDBConnectionPool {
 

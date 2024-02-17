@@ -114,7 +114,7 @@ private[test] class SimpleSourceFactory(result: TypingResult)
   }
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[Nothing]
   ): Source = {

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.api.{LazyParameter, Params}
 import pl.touk.nussknacker.engine.api.util.NotNothing
 
 import scala.reflect.runtime.universe._
@@ -12,7 +12,7 @@ import scala.reflect.runtime.universe._
  */
 case class ParameterWithExtractor[V](parameter: Parameter) {
 
-  def extractValue(params: Map[String, Any]): V = params(parameter.name).asInstanceOf[V]
+  def extractValue(params: Params): V = params.extractUnsafe[V](parameter.name)
 
 }
 

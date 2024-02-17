@@ -4,7 +4,7 @@ import cats.data.ValidatedNel
 import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId}
+import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
@@ -74,12 +74,12 @@ object GenericSourceWithCustomVariablesSample
   }
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Source = {
     import scala.jdk.CollectionConverters._
-    val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
+    val elements = params.extractUnsafe[java.util.List[String]](`elementsParamName`).asScala.toList
 
     new CollectionSource[String](elements, None, Typed[String])(TypeInformation.of(classOf[String]))
       with TestDataGenerator

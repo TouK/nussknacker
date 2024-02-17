@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchema, KafkaDeserializationSchemaFactory}
@@ -151,7 +151,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     * Common set of operations required to create basic KafkaSource.
     */
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Source = {
@@ -189,7 +189,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   /**
     * Extracts topics from default topic parameter.
     */
-  protected def extractTopics(params: Map[String, Any]): List[String] = {
+  protected def extractTopics(params: Params): List[String] = {
     val paramValue = topicParameter.extractValue(params)
     paramValue.split(topicNameSeparator).map(_.trim).toList
   }
@@ -213,7 +213,7 @@ object KafkaSourceFactory {
   trait KafkaSourceImplFactory[K, V] {
 
     def createSource(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Any,
         preparedTopics: List[PreparedKafkaTopic],

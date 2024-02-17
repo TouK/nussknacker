@@ -4,22 +4,20 @@ import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.sql.db.query._
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, DbParameterMetaData, SqlDialect, TableDefinition}
-import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.KeyValueParamName
 
 import java.sql.{SQLException, SQLSyntaxErrorException}
 import java.time.Duration
@@ -83,11 +81,11 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   protected lazy val sqlDialect                       = new SqlDialect(dbMetaDataProvider.getDialectMetaData)
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
 
-  protected val queryArgumentsExtractor: (Int, Map[String, Any], Context) => QueryArguments =
-    (argsCount: Int, params: Map[String, Any], context: Context) => {
+  protected val queryArgumentsExtractor: (Int, Params, Context) => QueryArguments =
+    (argsCount: Int, params: Params, context: Context) => {
       QueryArguments(
         (1 to argsCount).map { argNo =>
-          QueryArgument(index = argNo, value = extractOrEvaluate(params, s"$ArgPrefix$argNo", context))
+          QueryArgument(index = argNo, value = params.extractOrEvaluateUnsafe(s"$ArgPrefix$argNo", context))
         }.toList
       )
     }
@@ -223,12 +221,12 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   }
 
   override def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[TransformationState]
   ): ServiceLogic = {
     val state          = finalState.get
-    val cacheTTLOption = extractOptional[Duration](params, CacheTTLParamName)
+    val cacheTTLOption = params.extract[Duration](CacheTTLParamName)
     cacheTTLOption match {
       case Some(cacheTTL) =>
         new DatabaseEnricherLogicWithCache(
@@ -255,16 +253,6 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
           () => timeMeasurement,
           params
         )
-    }
-  }
-
-  protected def extractOptional[T](params: Map[String, Any], paramName: String): Option[T] =
-    params.get(paramName).flatMap(Option(_)).map(_.asInstanceOf[T])
-
-  private def extractOrEvaluate(params: Map[String, Any], paramName: String, context: Context) = {
-    params(paramName) match {
-      case lp: LazyParameter[_] => lp.evaluate(context)
-      case other                => other
     }
   }
 

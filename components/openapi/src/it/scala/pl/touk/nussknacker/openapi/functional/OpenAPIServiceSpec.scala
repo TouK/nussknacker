@@ -70,7 +70,7 @@ class OpenAPIServiceSpec
     implicit val contextId: ContextId = ContextId("1")
     val valueWithChosenFields =
       service
-        .runServiceLogic(Map("customer_id" -> "10"))
+        .runServiceLogic(Params(Map("customer_id" -> "10")))
         .futureValue
         .asInstanceOf[TypedMap]
         .asScala

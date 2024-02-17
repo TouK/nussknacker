@@ -672,7 +672,7 @@ class NodeCompiler(
       }
 
       val serviceRef = computedParameters.map { params =>
-        val evaluateParams: Context => Map[String, AnyRef] = parametersEvaluator.evaluate(params, _)(nodeId, metaData)
+        val evaluateParams = (c: Context) => Params(parametersEvaluator.evaluate(params, c)(nodeId, metaData))
         compiledgraph.service.ServiceRef(
           id = n.id,
           logic = new MethodBasedServiceLogic(metaData, nodeId, outputVar, objWithMethod, evaluateParams),

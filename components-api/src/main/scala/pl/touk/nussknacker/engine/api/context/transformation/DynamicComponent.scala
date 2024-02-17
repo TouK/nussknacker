@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.context.transformation
 
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, WrongParameters}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -37,7 +37,7 @@ sealed trait DynamicComponent[T] extends Component {
   ): ContextTransformationDefinition
 
   def createComponentLogic(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): T
