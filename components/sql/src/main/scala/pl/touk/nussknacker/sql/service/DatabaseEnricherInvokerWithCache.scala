@@ -13,13 +13,13 @@ import java.sql.Connection
 import java.time.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
-object DatabaseEnricherInvoker {
+object DatabaseEnricherInvokerWithCache {
 
   final case class CacheKey(query: String, queryArguments: QueryArguments)
   final case class CacheEntry[+A](value: A)
 }
 
-class DatabaseEnricherInvoker(
+class DatabaseEnricherInvokerWithCache(
     query: String,
     argsCount: Int,
     tableDef: TableDefinition,

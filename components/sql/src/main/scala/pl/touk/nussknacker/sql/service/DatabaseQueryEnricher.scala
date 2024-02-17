@@ -229,7 +229,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     val cacheTTLOption = params.extract[Duration](CacheTTLParamName)
     cacheTTLOption match {
       case Some(cacheTTL) =>
-        new DatabaseEnricherInvoker(
+        new DatabaseEnricherInvokerWithCache(
           state.query,
           state.argsCount,
           state.tableDef,
