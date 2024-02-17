@@ -1168,7 +1168,7 @@ object InterpreterSpec {
         param: String
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def run(context: Context)(
+      override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
@@ -1195,7 +1195,7 @@ object InterpreterSpec {
         lazyOne.returnType, {
           if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
           new ServiceInvoker {
-            override def run(context: Context)(
+            override def invoke(context: Context)(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
                 componentUseCase: ComponentUseCase
@@ -1242,7 +1242,7 @@ object InterpreterSpec {
       val paramName = staticParam.extractValue(params)
 
       new ServiceInvoker {
-        override def run(context: Context)(
+        override def invoke(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase

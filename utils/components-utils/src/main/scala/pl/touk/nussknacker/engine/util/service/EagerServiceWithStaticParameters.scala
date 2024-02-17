@@ -124,7 +124,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       metaData: MetaData
   ) extends ServiceInvoker {
 
-    override def run(context: Context)(
+    override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         componentUseCase: ComponentUseCase

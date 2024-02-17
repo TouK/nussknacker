@@ -32,7 +32,7 @@ class DatabaseEnricherInvoker(
     case UpdateResultStrategy => new UpdateQueryExecutor()
   }
 
-  override def run(context: Context)(
+  override def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase

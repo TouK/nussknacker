@@ -208,7 +208,7 @@ object SampleNodes {
     @MethodToInvoke
     def prepare(@ParamName("name") name: String): ServiceInvoker = synchronized {
       val newI = new ServiceInvoker with WithLifecycle {
-        override def run(context: Context)(
+        override def invoke(context: Context)(
             implicit ec: ExecutionContext,
             collector: ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
@@ -234,7 +234,7 @@ object SampleNodes {
         @ParamName("dynamic") dynamic: LazyParameter[String]
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def run(context: Context)(
+      override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
@@ -310,7 +310,7 @@ object SampleNodes {
     ): ContextTransformation = {
       ContextTransformation
         .definedBy(Valid(_))
-        .withComponentImplementation(FlinkCustomStreamTransformation {
+        .implementedBy(FlinkCustomStreamTransformation {
           (start: DataStream[Context], context: FlinkCustomNodeContext) =>
             start
               .filter(
@@ -331,7 +331,7 @@ object SampleNodes {
     def execute(@ParamName("value") value: LazyParameter[String]) = {
       ContextTransformation
         .definedBy((in: context.ValidationContext) => Valid(in.clearVariables))
-        .withComponentImplementation(
+        .implementedBy(
           FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
             start
               .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
@@ -354,7 +354,7 @@ object SampleNodes {
         .definedBy((in: Map[String, context.ValidationContext]) =>
           in.head._2.clearVariables.withVariable(outputVarName, Unknown, None)
         )
-        .withComponentImplementation(new FlinkCustomJoinTransformation {
+        .implementedBy(new FlinkCustomJoinTransformation {
           override def transform(
               inputs: Map[String, DataStream[Context]],
               context: FlinkCustomNodeContext
@@ -388,7 +388,7 @@ object SampleNodes {
           val parent = contexts.values.flatMap(_.parent).headOption
           Valid(ValidationContext(Map(variableName -> newType), Map.empty, parent))
         }
-        .withComponentImplementation(new FlinkCustomJoinTransformation {
+        .implementedBy(new FlinkCustomJoinTransformation {
 
           override def transform(
               inputs: Map[String, DataStream[Context]],
@@ -444,7 +444,7 @@ object SampleNodes {
         outputVar,
         returnType,
         new ServiceInvoker {
-          override def run(context: Context)(
+          override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
               componentUseCase: ComponentUseCase
@@ -501,7 +501,7 @@ object SampleNodes {
     ) = {
       ContextTransformation
         .definedBy((in: context.ValidationContext) => in.clearVariables.withVariable(outputVarName, Typed[Int], None))
-        .withComponentImplementation(
+        .implementedBy(
           FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
             start
               .map(_ => 1: java.lang.Integer)

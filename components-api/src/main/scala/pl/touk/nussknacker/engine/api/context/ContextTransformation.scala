@@ -40,7 +40,7 @@ sealed trait AbstractContextTransformation {
   * `
   *   ContextTransformation
   *     .definedBy(_.withVariable("foo", Typed[String])
-  *     .componentLogic { () =>
+  *     .implementedBy { () =>
   *       Future.success(Context.withRandomId.withVariable("foo", "bar")
   *     }
   * `
@@ -105,7 +105,7 @@ object ContextTransformation {
     })
 
   class DefinedByBuilder(definition: ContextTransformationDef) {
-    def withComponentImplementation(implementation: Any): ContextTransformation =
+    def implementedBy(implementation: Any): ContextTransformation =
       ContextTransformation(definition, implementation)
   }
 
@@ -128,7 +128,7 @@ object ContextTransformation {
   }
 
   class JoinDefinedByBuilder(definition: JoinContextTransformationDef) {
-    def withComponentImplementation(implementation: Any): JoinContextTransformation =
+    def implementedBy(implementation: Any): JoinContextTransformation =
       JoinContextTransformation(definition, implementation)
   }
 

@@ -26,7 +26,7 @@ object LoggingService extends EagerService {
         (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
       )
 
-      override def run(context: Context)(
+      override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
           componentUseCase: ComponentUseCase

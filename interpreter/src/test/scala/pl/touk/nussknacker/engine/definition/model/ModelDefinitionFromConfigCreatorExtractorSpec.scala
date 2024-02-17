@@ -299,7 +299,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     def invoke(@OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       ContextTransformation
         .definedBy((in: ValidationContext) => in.withVariable(variableName, Typed[String], None))
-        .withComponentImplementation(null)
+        .implementedBy(null)
     }
 
   }
@@ -310,7 +310,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     def invoke(): ContextTransformation = {
       ContextTransformation
         .definedBy(Valid(_))
-        .withComponentImplementation(null)
+        .implementedBy(null)
     }
 
   }

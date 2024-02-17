@@ -68,7 +68,7 @@ object DynamicMultipleParamsService extends EagerService with SingleInputDynamic
       finalState: Option[State]
   ): ServiceInvoker = {
     new ServiceInvoker {
-      override def run(context: Context)(
+      override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           componentUseCase: ComponentUseCase

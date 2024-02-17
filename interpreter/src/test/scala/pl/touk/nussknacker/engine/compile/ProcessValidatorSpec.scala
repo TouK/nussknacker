@@ -1691,7 +1691,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition))),
         new ServiceInvoker {
 
-          override def run(context: Context)(
+          override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
               componentUseCase: ComponentUseCase
@@ -1728,7 +1728,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         metaData: MetaData
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def run(context: Context)(
+      override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
@@ -1776,7 +1776,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         variableName,
         returnType,
         new ServiceInvoker {
-          override def run(context: Context)(
+          override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
               componentUseCase: ComponentUseCase

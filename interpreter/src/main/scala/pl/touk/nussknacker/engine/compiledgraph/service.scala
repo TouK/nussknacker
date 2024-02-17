@@ -29,7 +29,7 @@ object service {
 
       val contextId = ContextId(ctx.id)
       val collector = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
-      invoker.run(ctx)(
+      invoker.invoke(ctx)(
         serviceExecutionContext.executionContext,
         collector,
         componentUseCase

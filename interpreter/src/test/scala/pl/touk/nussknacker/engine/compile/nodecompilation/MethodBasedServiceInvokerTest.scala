@@ -30,7 +30,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
     val invoker =
       new MethodBasedServiceInvoker(metadata, nodeId, None, definition, _ => Params(Map("foo" -> "aa", "bar" -> 1)))
 
-    whenReady(invoker.run(context)) { _ =>
+    whenReady(invoker.invoke(context)) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
     }
   }
@@ -47,7 +47,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
     )
 
     intercept[IllegalArgumentException](
-      invoker.run(context)
+      invoker.invoke(context)
     ).getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String): argument type mismatch"""
   }
 

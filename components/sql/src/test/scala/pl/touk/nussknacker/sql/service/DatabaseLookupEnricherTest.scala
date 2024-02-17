@@ -49,7 +49,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
     )
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
     val resultF =
-      implementation.run(Context.withInitialId)
+      implementation.invoke(Context.withInitialId)
     val result = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
@@ -57,7 +57,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
     val resultF2 =
-      implementation.run(Context.withInitialId)
+      implementation.invoke(Context.withInitialId)
     val result2 = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))

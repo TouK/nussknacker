@@ -55,7 +55,7 @@ object validationHelpers {
     def execute(@OutputVariableName variableName: String)(implicit nodeId: NodeId) = {
       ContextTransformation
         .definedBy(_.withVariable(variableName, Typed[String], paramName = None))
-        .withComponentImplementation(null)
+        .implementedBy(null)
     }
 
   }
@@ -66,7 +66,7 @@ object validationHelpers {
     def execute() = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .withComponentImplementation(null)
+        .implementedBy(null)
     }
 
   }
@@ -84,7 +84,7 @@ object validationHelpers {
           }.toMap)
           context.withVariable(variableName, newType, paramName = None)
         }
-        .withComponentImplementation(null)
+        .implementedBy(null)
     }
 
   }
@@ -106,7 +106,7 @@ object validationHelpers {
           }.toMap)
           Valid(ValidationContext(Map(variableName -> newType)))
         }
-        .withComponentImplementation(null)
+        .implementedBy(null)
     }
 
   }
@@ -137,7 +137,7 @@ object validationHelpers {
             mainBranchContext.withVariable(variableName, newType, paramName = None)
           }
         }
-        .withComponentImplementation(null)
+        .implementedBy(null)
     }
 
   }
@@ -148,7 +148,7 @@ object validationHelpers {
     def execute(@ParamName("stringVal") stringVal: String): ContextTransformation = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .withComponentImplementation(null)
+        .implementedBy(null)
     }
 
     override def canBeEnding: Boolean = false
@@ -190,7 +190,7 @@ object validationHelpers {
             case _          => Invalid(CustomNodeError("Validation contexts do not match", Option.empty)).toValidatedNel
           }
         })
-        .withComponentImplementation(null)
+        .implementedBy(null)
     }
 
   }

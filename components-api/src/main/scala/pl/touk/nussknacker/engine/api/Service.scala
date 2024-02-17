@@ -34,7 +34,7 @@ abstract class EagerService extends Service
 
 trait ServiceInvoker {
 
-  def run(context: Context)(
+  def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase
