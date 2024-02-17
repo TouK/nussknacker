@@ -10,7 +10,6 @@ protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefault
       val lang = parameters.determinedEditor
         .map {
           case RawParameterEditor                   => Expression.Language.Spel
-          case DictParameterEditor(_)               => Expression.Language.DictKeyWithLabel
           case simpleEditor: SimpleParameterEditor  => determineLanguage(of = simpleEditor)
           case DualParameterEditor(simpleEditor, _) => determineLanguage(of = simpleEditor)
         }
@@ -28,6 +27,8 @@ protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefault
         Expression.Language.Spel
       case SqlParameterEditor | SpelTemplateParameterEditor =>
         Expression.Language.SpelTemplate
+      case DictParameterEditor(_) =>
+        Expression.Language.DictKeyWithLabel
       case TabularTypedDataEditor =>
         Expression.Language.TabularDataDefinition
     }

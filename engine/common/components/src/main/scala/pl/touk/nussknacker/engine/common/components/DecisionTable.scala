@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
-object DecisionTable extends EagerService with SingleInputDynamicComponent[ServiceLogic] {
+object DecisionTable extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
 
   override type State = Unit
 
@@ -55,15 +55,14 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       )
   }
 
-  override def createComponentLogic(
+  override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[Unit]
-  ): ServiceLogic =
-    new DecisionTableComponentLogic(
-      params.extractUnsafe(decisionTableParameterName),
-      params.extractUnsafe(filterDecisionTableExpressionParameterName)
-    )
+  ): ServiceInvoker = new DecisionTableImplementation(
+    params.extractUnsafe(decisionTableParameterName),
+    params.extractUnsafe(filterDecisionTableExpressionParameterName)
+  )
 
   private lazy val decisionTableParameterName = "Basic Decision Table"
 
@@ -99,12 +98,12 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       }.toMap
     )
 
-  private class DecisionTableComponentLogic(
+  private class DecisionTableImplementation(
       tabularData: TabularTypedData,
       expression: LazyParameter[java.lang.Boolean]
-  ) extends ServiceLogic {
+  ) extends ServiceInvoker {
 
-    override def run(context: Context)(
+    override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         componentUseCase: ComponentUseCase
