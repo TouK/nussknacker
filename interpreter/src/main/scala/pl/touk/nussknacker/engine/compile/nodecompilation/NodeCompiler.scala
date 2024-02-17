@@ -207,18 +207,18 @@ class NodeCompiler(
     val defaultCtxToUse = outputVar.map(defaultCtx.withVariable(_, Unknown)).getOrElse(Valid(defaultCtx))
 
     definitions.getComponent(ComponentType.CustomComponent, data.nodeType) match {
-      case Some(componentDefinitionWithImpl)
-          if ending && !componentDefinitionWithImpl.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
+      case Some(componentDefinition)
+          if ending && !componentDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
         val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(Set(nodeId.id))))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
-      case Some(componentDefinitionWithImpl) =>
+      case Some(componentDefinition) =>
         val default = defaultContextAfter(data, ending, ctx)
         compileComponentWithContextTransformation[AnyRef](
           data.parameters,
           data.cast[Join].map(_.branchParameters).getOrElse(Nil),
           ctx,
           outputVar.map(_.outputName),
-          componentDefinitionWithImpl,
+          componentDefinition,
           default
         ).map(_._1)
       case None =>
@@ -335,8 +335,8 @@ class NodeCompiler(
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
     definitions.getComponent(ComponentType.Service, n.id) match {
-      case Some(componentDefWithImpl) if componentDefWithImpl.component.isInstanceOf[EagerService] =>
-        compileEagerService(n, componentDefWithImpl, validationContext, outputVar)
+      case Some(componentDefinition) if componentDefinition.component.isInstanceOf[EagerService] =>
+        compileEagerService(n, componentDefinition, validationContext, outputVar)
       case Some(static: MethodBasedComponentDefinitionWithLogic) =>
         ServiceCompiler.compile(n, outputVar, static, validationContext)
       case Some(_: DynamicComponentDefinitionWithLogic) =>
@@ -347,9 +347,9 @@ class NodeCompiler(
           )
         ).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(validationContext), error)
-      case Some(notSupportedComponentDefWithImpl) =>
+      case Some(notSupportedComponentDefinition) =>
         throw new IllegalStateException(
-          s"Not supported ${classOf[ComponentDefinitionWithLogic].getName}: ${notSupportedComponentDefWithImpl.getClass}"
+          s"Not supported ${classOf[ComponentDefinitionWithLogic].getName}: ${notSupportedComponentDefinition.getClass}"
         )
       case None =>
         val error = invalid(MissingService(n.id)).toValidatedNel
@@ -359,7 +359,7 @@ class NodeCompiler(
 
   private def compileEagerService(
       serviceRef: ServiceRef,
-      componentDefWithImpl: ComponentDefinitionWithLogic,
+      componentDefinition: ComponentDefinitionWithLogic,
       validationContext: ValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
@@ -403,7 +403,7 @@ class NodeCompiler(
       branchParameters = Nil,
       ctx = Left(validationContext),
       outputVar = outputVar.map(_.outputName),
-      componentDefinitionWithImpl = componentDefWithImpl,
+      componentDefinition = componentDefinition,
       defaultCtxForMethodBasedCreatedComponentExecutor = defaultCtxForMethodBasedCreatedComponentExecutor
     )
     compilationResult.map { case (serviceLogic, nodeParams) =>
@@ -452,7 +452,7 @@ class NodeCompiler(
       branchParameters: List[BranchParameters],
       ctx: GenericValidationContext,
       outputVar: Option[String],
-      componentDefinitionWithImpl: ComponentDefinitionWithLogic,
+      componentDefinition: ComponentDefinitionWithLogic,
       defaultCtxForMethodBasedCreatedComponentExecutor: Option[TypingResult] => ValidatedNel[
         ProcessCompilationError,
         ValidationContext
@@ -461,7 +461,7 @@ class NodeCompiler(
       implicit metaData: MetaData,
       nodeId: NodeId
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
-    componentDefinitionWithImpl match {
+    componentDefinition match {
       case dynamicComponent: DynamicComponentDefinitionWithLogic =>
         val afterValidation =
           validateDynamicTransformer(ctx, parameters, branchParameters, outputVar, dynamicComponent).map {
@@ -469,7 +469,7 @@ class NodeCompiler(
               val computedParameterNames = computedParameters.filterNot(_.branchParam).map(p => p.name)
               val withoutRedundant       = nodeParameters.filter(p => computedParameterNames.contains(p.name))
               val (typingInfo, validComponentExecutor) = createComponentExecutor[ComponentExecutor](
-                componentDefinitionWithImpl,
+                componentDefinition,
                 withoutRedundant,
                 branchParameters,
                 outputVar,
@@ -500,7 +500,7 @@ class NodeCompiler(
         )
       case staticComponent: MethodBasedComponentDefinitionWithLogic =>
         val (typingInfo, validComponentExecutor) = createComponentExecutor[ComponentExecutor](
-          componentDefinitionWithImpl,
+          componentDefinition,
           parameters,
           branchParameters,
           outputVar,

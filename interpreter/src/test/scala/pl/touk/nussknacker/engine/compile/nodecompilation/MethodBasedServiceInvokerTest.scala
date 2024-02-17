@@ -42,7 +42,7 @@ class ServiceLogicTest extends AnyFlatSpec with PatientScalaFutures with OptionV
       metaData = metadata,
       nodeId = nodeId,
       outputVariableNameOpt = None,
-      componentDefWithImpl = definition,
+      componentDefinition = definition,
       parametersProvider = _ => Params(Map("foo" -> "aa", "bar" -> "terefere"))
     )
 

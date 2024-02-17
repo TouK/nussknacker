@@ -38,7 +38,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
   }
 
   private def doCreateComponentExecutor[LOGIC](
-      componentDefWithImpl: ComponentDefinitionWithLogic,
+      componentDefinition: ComponentDefinitionWithLogic,
       params: List[(TypedParameter, Parameter)],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef],
@@ -49,7 +49,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       nodeId: NodeId
   ): LOGIC = {
     implicit val lazyParameterCreationStrategy: LazyParameterCreationStrategy =
-      componentDefWithImpl.component match {
+      componentDefinition.component match {
         // Services are created within Interpreter so for every engine, lazy parameters can be evaluable. Other component types
         // (Sources, Sinks and CustomComponent) have engine specific logic around lazy parameters.
         // For Flink, they need to be Serializable (PostponedEvaluatorLazyParameterStrategy)
@@ -59,7 +59,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
     val paramsMap = Params(
       params.map { case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1 }.toMap
     )
-    componentDefWithImpl.componentLogic
+    componentDefinition.componentLogic
       .run(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional)
       .asInstanceOf[LOGIC]
   }

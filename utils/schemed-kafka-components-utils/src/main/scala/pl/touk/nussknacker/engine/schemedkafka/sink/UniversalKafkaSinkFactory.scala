@@ -221,7 +221,7 @@ class UniversalKafkaSinkFactory(
     )
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = extractValidationMode(
-      params.extract(SinkValidationModeParameterName).getOrElse(ValidationMode.strict.name)
+      params.extract[String](SinkValidationModeParameterName).getOrElse(ValidationMode.strict.name)
     )
 
     implProvider.createSink(
