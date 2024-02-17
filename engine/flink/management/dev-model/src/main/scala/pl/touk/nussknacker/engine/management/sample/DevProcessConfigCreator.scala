@@ -33,7 +33,13 @@ import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializatio
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
-import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
+import pl.touk.nussknacker.engine.management.sample.dict.{
+  BooleanDictionary,
+  BusinessConfigDictionary,
+  LongDictionary,
+  RGBDictionary,
+  TestDictionary
+}
 import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
@@ -207,13 +213,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         .withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
       "datesTypesService" -> categories(new DatesTypesService)
         .withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
-      "campaignService"        -> WithCategories(CampaignService, "Category2"),
-      "configuratorService"    -> categories(ConfiguratorService),
-      "meetingService"         -> categories(MeetingService),
-      "dynamicService"         -> categories(new DynamicService),
-      "customValidatedService" -> categories(new CustomValidatedService),
-      "modelConfigReader"      -> categories(new ModelConfigReaderService(modelDependencies.config)),
-      "log"                    -> all(LoggingService)
+      "campaignService"                -> WithCategories(CampaignService, "Category2"),
+      "configuratorService"            -> categories(ConfiguratorService),
+      "meetingService"                 -> categories(MeetingService),
+      "dynamicService"                 -> categories(new DynamicService),
+      "customValidatedService"         -> categories(new CustomValidatedService),
+      "serviceWithDictParameterEditor" -> categories(new ServiceWithDictParameterEditor),
+      "modelConfigReader"              -> categories(new ModelConfigReaderService(modelDependencies.config)),
+      "log"                            -> all(LoggingService)
     )
 
   override def customStreamTransformers(
@@ -266,7 +273,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       dictionaries = Map(
         TestDictionary.id           -> TestDictionary.definition,
         RGBDictionary.id            -> RGBDictionary.definition,
-        BusinessConfigDictionary.id -> BusinessConfigDictionary.definition
+        BusinessConfigDictionary.id -> BusinessConfigDictionary.definition,
+        BooleanDictionary.id -> BooleanDictionary.definition, // not available through global variables, but still available through DictParameterEditor
+        LongDictionary.id -> LongDictionary.definition, // not available through global variables, but still available through DictParameterEditor
       )
     )
   }

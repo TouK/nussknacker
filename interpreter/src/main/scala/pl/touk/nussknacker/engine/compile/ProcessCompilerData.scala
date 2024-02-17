@@ -55,7 +55,7 @@ object ProcessCompilerData {
       resultsCollector,
       componentUseCase
     )
-    val subCompiler             = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
+    val subCompiler             = new PartSubGraphCompiler(nodeCompiler)
     val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
     val processCompiler = new ProcessCompiler(
       userCodeClassLoader,

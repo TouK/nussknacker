@@ -316,6 +316,44 @@ object ProcessCompilationError {
       extends DuplicateFragmentOutputNames
       with ScenarioGraphLevelError
 
+  final case class DictNotDeclared(dictId: String, nodeId: String, paramName: String)
+      extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class DictEntryWithLabelNotExists(
+      dictId: String,
+      label: String,
+      possibleLabels: Option[List[String]],
+      nodeId: String,
+      paramName: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class DictEntryWithKeyNotExists(
+      dictId: String,
+      key: String,
+      possibleKeys: Option[List[String]],
+      nodeId: String,
+      paramName: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class DictLabelByKeyResolutionFailed(
+      dictId: String,
+      key: String,
+      nodeId: String,
+      paramName: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class KeyWithLabelExpressionParsingError(
+      keyWithLabel: String,
+      message: String,
+      paramName: String,
+      nodeId: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
+
   final case class CustomNodeError(nodeId: String, message: String, paramName: Option[String])
       extends ProcessCompilationError
       with InASingleNode
