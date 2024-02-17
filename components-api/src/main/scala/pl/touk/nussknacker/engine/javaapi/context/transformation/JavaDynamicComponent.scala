@@ -20,7 +20,7 @@ trait JavaDynamicComponent[T, VC, PAR, ST] {
       state: Optional[ST]
   ): JavaTransformationStepResult[ST]
 
-  def createComponentLogic(
+  def implementation(
       params: java.util.Map[String, Any],
       dependencies: java.util.List[NodeDependencyValue],
       finalState: java.util.Optional[ST]
@@ -56,12 +56,12 @@ trait DynamicComponentWrapper[T, VC, PAR, ST] { self: DynamicComponent[T] =>
 
   def javaDef: JavaDynamicComponent[T, VC, PAR, ST]
 
-  override def runComponentLogic(
+  override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): T =
-    javaDef.createComponentLogic(
+    javaDef.implementation(
       params.nameToValueMap.asJava,
       dependencies.asJava,
       java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State]))
@@ -149,12 +149,12 @@ class JoinDynamicComponentWrapper[ST](javaDef: JavaJoinDynamicComponent[_ <: Any
     }
   }
 
-  override def runComponentLogic(
+  override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Object =
-    javaDef.createComponentLogic(
+    javaDef.implementation(
       params.nameToValueMap.asJava,
       dependencies.asJava,
       java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State]))

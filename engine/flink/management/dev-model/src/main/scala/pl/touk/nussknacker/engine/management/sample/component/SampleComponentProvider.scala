@@ -35,7 +35,7 @@ class SampleComponentProvider extends ComponentProvider {
 
 case class SampleProvidedComponent(param: String) extends EagerServiceWithStaticParametersAndReturnType {
 
-  override def runServiceLogic(params: Params)(
+  override def invoke(params: Params)(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
       contextId: ContextId,

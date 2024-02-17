@@ -99,7 +99,7 @@ class SingleSideJoinTransformer(
       )
   }
 
-  override def runComponentLogic(
+  override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

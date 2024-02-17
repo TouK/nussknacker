@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.process.{
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
   FragmentParametersDefinitionExtractor
@@ -30,11 +30,11 @@ class StubbedFragmentSourceDefinitionPreparer(
     fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor
 ) {
 
-  def createSourceDefinition(name: String, frag: FragmentInputDefinition): ComponentDefinitionWithLogic = {
+  def createSourceDefinition(name: String, frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
     FragmentComponentDefinition(
       name = name,
-      componentLogic = (_: Params, _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
+      implementationInvoker = (_: Params, _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
       // We don't want to pass input parameters definition as parameters to definition of factory creating stubbed source because
       // use them only for testParametersDefinition which are used in the runtime not in compile-time.
       parameters = List.empty,

@@ -54,7 +54,7 @@ class UnionWithMemoTransformer(
   )(implicit nodeId: NodeId): JoinContextTransformation =
     ContextTransformation.join
       .definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
-      .withComponentLogic(
+      .implementedBy(
         new FlinkCustomJoinTransformation {
 
           override def transform(

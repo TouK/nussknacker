@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.process.{
   ProcessConfigCreator,
   ProcessObjectDependencies
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionFromConfigCreatorExtractor}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{
@@ -71,7 +71,7 @@ object LocalModelData {
         additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ): ModelDefinition = {
       val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
-      val componentDefs = ComponentDefinitionWithLogic.forList(
+      val componentDefs = ComponentDefinitionWithImplementation.forList(
         components,
         componentsUiConfig,
         determineDesignerWideId,

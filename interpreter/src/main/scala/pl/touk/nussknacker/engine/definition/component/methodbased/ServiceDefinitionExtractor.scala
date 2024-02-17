@@ -41,7 +41,7 @@ object JavaServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[
 
 object EagerServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[Service] {
 
-  override protected val expectedReturnType: Option[Class[_]] = Some(classOf[ServiceLogic])
+  override protected val expectedReturnType: Option[Class[_]] = Some(classOf[ServiceInvoker])
 
   override protected val additionalDependencies = Set[Class[_]](
     classOf[ExecutionContext],

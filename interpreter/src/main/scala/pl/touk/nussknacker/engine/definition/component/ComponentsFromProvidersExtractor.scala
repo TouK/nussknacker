@@ -45,7 +45,7 @@ class ComponentsFromProvidersExtractor(
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[ComponentDefinitionWithLogic] = {
+  ): List[ComponentDefinitionWithImplementation] = {
     loadCorrectProviders(modelDependencies.config).toList
       .flatMap { case (_, (config, provider)) =>
         extract(
@@ -136,8 +136,8 @@ class ComponentsFromProvidersExtractor(
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[ComponentDefinitionWithLogic] = {
-    ComponentDefinitionWithLogic.forList(
+  ): List[ComponentDefinitionWithImplementation] = {
+    ComponentDefinitionWithImplementation.forList(
       provider.create(config.config, modelDependencies).map { inputComponentDefinition =>
         config.componentPrefix
           .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))

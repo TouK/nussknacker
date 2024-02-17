@@ -26,9 +26,9 @@ object DelayedKafkaSourceFactory {
       editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
     )
 
-  def extractTimestampField(params: Params): String = params.extractUnsafe(TimestampFieldParamName)
+  def extractTimestampField(params: Params): String = params.extract[String](TimestampFieldParamName).getOrElse("")
 
-  def extractDelayInMillis(params: Params): Long = params.extractUnsafe(DelayParameterName)
+  def extractDelayInMillis(params: Params): Long = params.extract[Long](DelayParameterName).getOrElse(0)
 
   def validateTimestampField(field: String, typingResult: TypingResult)(
       implicit nodeId: NodeId

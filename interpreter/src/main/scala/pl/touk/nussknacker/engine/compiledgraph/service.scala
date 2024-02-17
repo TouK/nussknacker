@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
   ToCollect,
   TransmissionNames
 }
-import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId, ServiceLogic}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId, ServiceInvoker}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,7 +17,7 @@ object service {
 
   case class ServiceRef(
       id: String,
-      logic: ServiceLogic,
+      invoker: ServiceInvoker,
       parameters: List[CompiledParameter],
       resultCollector: ResultCollector,
   ) {
@@ -29,7 +29,7 @@ object service {
 
       val contextId = ContextId(ctx.id)
       val collector = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
-      logic.run(ctx)(
+      invoker.invoke(ctx)(
         serviceExecutionContext.executionContext,
         collector,
         componentUseCase

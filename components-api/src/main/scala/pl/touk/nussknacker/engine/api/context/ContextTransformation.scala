@@ -9,16 +9,16 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
   * Wrapper for tuple of definition and implementation of variable context transformation
   * @param definition Definition of variable context transformation - defines how will look ValidationContext
   *                   (types of variables) after transformation in runtime
-  * @param componentLogic Implements real variable context transformation which was defined in definition
+  * @param implementation Implements real variable context transformation which was defined in definition
   *                       Returned type depends on execution engine. It should be lazy evaluated to make sure that
   *                       none runtime work will be run in compilation/validation stage
   */
-case class ContextTransformation(definition: ContextTransformationDef, componentLogic: Any)
+case class ContextTransformation(definition: ContextTransformationDef, implementation: Any)
     extends AbstractContextTransformation {
   override type ContextTransformationDefType = ContextTransformationDef
 }
 
-case class JoinContextTransformation(definition: JoinContextTransformationDef, componentLogic: Any)
+case class JoinContextTransformation(definition: JoinContextTransformationDef, implementation: Any)
     extends AbstractContextTransformation {
   override type ContextTransformationDefType = JoinContextTransformationDef
 }
@@ -31,7 +31,7 @@ sealed trait AbstractContextTransformation {
 
   // Should be lazy evaluated to be sure that none runtime work will be run in compilation/validation stage
   // The result of evaluation depends on execution engine
-  def componentLogic: Any
+  def implementation: Any
 
 }
 
@@ -40,7 +40,7 @@ sealed trait AbstractContextTransformation {
   * `
   *   ContextTransformation
   *     .definedBy(_.withVariable("foo", Typed[String])
-  *     .componentLogic { () =>
+  *     .implementedBy { () =>
   *       Future.success(Context.withRandomId.withVariable("foo", "bar")
   *     }
   * `
@@ -105,8 +105,8 @@ object ContextTransformation {
     })
 
   class DefinedByBuilder(definition: ContextTransformationDef) {
-    def withComponentLogic(logic: Any): ContextTransformation =
-      ContextTransformation(definition, logic)
+    def implementedBy(implementation: Any): ContextTransformation =
+      ContextTransformation(definition, implementation)
   }
 
   class JoinBuilder {
@@ -128,8 +128,8 @@ object ContextTransformation {
   }
 
   class JoinDefinedByBuilder(definition: JoinContextTransformationDef) {
-    def withComponentLogic(logic: Any): JoinContextTransformation =
-      JoinContextTransformation(definition, logic)
+    def implementedBy(implementation: Any): JoinContextTransformation =
+      JoinContextTransformation(definition, implementation)
   }
 
 }

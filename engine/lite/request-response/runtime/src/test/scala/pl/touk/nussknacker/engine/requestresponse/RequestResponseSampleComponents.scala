@@ -152,8 +152,8 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
       varName,
       Typed[Response],
       synchronized {
-        val newI: ServiceLogic with WithLifecycle = new ServiceLogic with WithLifecycle {
-          override def run(context: Context)(
+        val newI: ServiceInvoker with WithLifecycle = new ServiceInvoker with WithLifecycle {
+          override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
               componentUseCase: ComponentUseCase
@@ -172,12 +172,12 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
 object CollectingEagerService extends EagerService {
 
   @MethodToInvoke
-  def logic(
+  def invoker(
       @ParamName("static") static: String,
       @ParamName("dynamic") dynamic: LazyParameter[String]
-  ): ServiceLogic = new ServiceLogic {
+  ): ServiceInvoker = new ServiceInvoker {
 
-    override def run(context: Context)(
+    override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         componentUseCase: ComponentUseCase
@@ -214,7 +214,7 @@ object CustomExtractor extends CustomStreamTransformer {
   )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
       .definedBy(ctx => ctx.withVariable(OutputVar.customNode(outputVariableName), expression.returnType))
-      .withComponentLogic(new CustomExtractor(outputVariableName, expression))
+      .implementedBy(new CustomExtractor(outputVariableName, expression))
   }
 
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.model
 
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 
 case class ModelDefinitionWithClasses(modelDefinition: ModelDefinition) {
 

@@ -3,18 +3,18 @@ package pl.touk.nussknacker.engine.definition.component.bultin
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component.BuiltInComponentId
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   BuiltInComponentSpecificData,
   ComponentDefinitionExtractor,
-  ComponentDefinitionWithLogic,
+  ComponentDefinitionWithImplementation,
   ComponentStaticDefinition
 }
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfig) {
 
-  def prepareDefinitions(forFragment: Boolean): List[ComponentDefinitionWithLogic] = {
+  def prepareDefinitions(forFragment: Boolean): List[ComponentDefinitionWithImplementation] = {
     val componentIds = if (forFragment) {
       BuiltInComponentId.AllAvailableForFragment
     } else {
@@ -27,7 +27,7 @@ class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfi
         .filterOutDisabledAndComputeFinalUiDefinition(combinedConfig, componentsUiConfig.groupName)
         .map { case (uiDefinition, _) =>
           // Currently built-in components are represented as method-based component, probably we should change it to some dedicated type
-          MethodBasedComponentDefinitionWithLogic.withNullLogic(
+          MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
             id.name,
             BuiltInComponentSpecificData,
             ComponentStaticDefinition(List.empty, None),

@@ -32,7 +32,7 @@ import scala.runtime.BoxedUnit
  */
 trait EagerServiceWithStaticParameters
     extends EagerService
-    with SingleInputDynamicComponent[ServiceLogic]
+    with SingleInputDynamicComponent[ServiceInvoker]
     with WithStaticParameters {
 
   override type State = TypingResult
@@ -45,12 +45,12 @@ trait EagerServiceWithStaticParameters
 
   def hasOutput: Boolean
 
-  def createServiceLogic(
+  def createServiceInvoker(
       eagerParameters: Map[String, Any],
       lazyParameters: Map[String, LazyParameter[AnyRef]],
       typingResult: TypingResult,
       metaData: MetaData
-  ): ServiceLogic
+  ): ServiceInvoker
 
   def returnType(
       validationContext: ValidationContext,
@@ -72,12 +72,12 @@ trait EagerServiceWithStaticParameters
   override def nodeDependencies: List[NodeDependency] =
     if (hasOutput) List(OutputVariableNameDependency, metaData) else List(metaData)
 
-  override final def runComponentLogic(
+  override final def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[TypingResult]
-  ): ServiceLogic =
-    createServiceLogic(
+  ): ServiceInvoker =
+    createServiceInvoker(
       params.nameToValueMap.filterNot { case (_, param) => param.isInstanceOf[LazyParameter[_]] },
       params.nameToValueMap.collect { case (name, param: LazyParameter[AnyRef]) => (name, param) },
       finalState.getOrElse(Unknown),
@@ -93,10 +93,10 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
 
   def returnType: TypingResult
 
-  // TODO: This method should be removed - instead, developers should deliver it's own ServiceLogic to avoid
+  // TODO: This method should be removed - instead, developers should deliver it's own ServiceInvoker to avoid
   //       mixing implementation logic with definition logic. Before that we should fix EagerService Lifecycle handling.
   //       See notice next to EagerService
-  def runServiceLogic(params: Params)(
+  def invoke(params: Params)(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
       contextId: ContextId,
@@ -104,13 +104,12 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       componentUseCase: ComponentUseCase
   ): Future[Any]
 
-  override final def createServiceLogic(
+  override final def createServiceInvoker(
       eagerParameters: Map[String, Any],
       lazyParameters: Map[String, LazyParameter[AnyRef]],
       typingResult: TypingResult,
       metaData: MetaData
-  ): ServiceLogic =
-    new ServiceLogicImplementation(eagerParameters, lazyParameters, metaData)
+  ): ServiceInvoker = new ServiceInvokerImplementation(eagerParameters, lazyParameters, metaData)
 
   override def hasOutput: Boolean = !List(Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
@@ -119,13 +118,13 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       parameters: Map[String, DefinedSingleParameter]
   ): ValidatedNel[ProcessCompilationError, TypingResult] = Valid(returnType)
 
-  private class ServiceLogicImplementation(
+  private class ServiceInvokerImplementation(
       eagerParameters: Map[String, Any],
       lazyParameters: Map[String, LazyParameter[AnyRef]],
       metaData: MetaData
-  ) extends ServiceLogic {
+  ) extends ServiceInvoker {
 
-    override def run(context: Context)(
+    override def invoke(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         componentUseCase: ComponentUseCase
@@ -133,7 +132,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       implicit val contextId: ContextId   = ContextId(context.id)
       implicit val metaImplicit: MetaData = metaData
       val evaluatedLazyParameters         = lazyParameters.map { case (name, value) => (name, value.evaluate(context)) }
-      runServiceLogic(Params(eagerParameters ++ evaluatedLazyParameters))
+      invoke(Params(eagerParameters ++ evaluatedLazyParameters))
     }
 
   }

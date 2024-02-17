@@ -9,8 +9,11 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithLogic
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithLogic, CustomComponentSpecificData}
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  CustomComponentSpecificData
+}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -201,11 +204,11 @@ class ComponentGroupsPreparerSpec
   }
 
   private def withStaticDefinition(
-      components: List[ComponentDefinitionWithLogic]
+      components: List[ComponentDefinitionWithImplementation]
   ): List[ComponentWithStaticDefinition] = {
     components
       .map {
-        case methodBased: MethodBasedComponentDefinitionWithLogic =>
+        case methodBased: MethodBasedComponentDefinitionWithImplementation =>
           component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
         case other => throw new IllegalStateException(s"Unexpected component class: ${other.getClass.getName}")
       }

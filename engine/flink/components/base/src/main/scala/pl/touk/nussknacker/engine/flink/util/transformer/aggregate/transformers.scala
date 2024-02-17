@@ -52,7 +52,7 @@ object transformers {
   )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
       .definedBy(aggregator.toContextTransformation(variableName, !emitWhenEventLeft, aggregateBy))
-      .withComponentLogic(
+      .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
           val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
@@ -122,7 +122,7 @@ object transformers {
           aggregateBy
         )
       )
-      .withComponentLogic(
+      .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
           val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
@@ -185,7 +185,7 @@ object transformers {
           aggregateBy
         )
       )
-      .withComponentLogic(
+      .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
           val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)

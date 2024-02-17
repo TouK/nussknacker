@@ -9,7 +9,10 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithLogic, ComponentLogic}
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  ComponentImplementationInvoker
+}
 
 class FragmentComponentDefinitionExtractor(
     classLoader: ClassLoader,
@@ -21,7 +24,7 @@ class FragmentComponentDefinitionExtractor(
 
   def extractFragmentComponentDefinition(
       fragment: CanonicalProcess,
-  ): Validated[FragmentDefinitionError, ComponentDefinitionWithLogic] = {
+  ): Validated[FragmentDefinitionError, ComponentDefinitionWithImplementation] = {
     FragmentGraphDefinitionExtractor.extractFragmentGraph(fragment).map { case (input, _, outputs) =>
       val parameters =
         parametersExtractor.extractFragmentParametersDefinition(input.parameters)(NodeId(input.id)).value
@@ -31,7 +34,7 @@ class FragmentComponentDefinitionExtractor(
 
       FragmentComponentDefinition(
         name = fragment.name.value,
-        componentLogic = ComponentLogic.nullReturningComponentLogic,
+        implementationInvoker = ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
         parameters = parameters,
         outputNames = outputNames,
         docsUrl = docsUrl,

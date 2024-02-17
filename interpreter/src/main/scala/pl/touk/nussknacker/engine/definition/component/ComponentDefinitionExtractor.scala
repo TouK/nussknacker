@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
-  DynamicComponentDefinitionWithLogic,
-  DynamicComponentLogic
+  DynamicComponentDefinitionWithImplementation,
+  DynamicComponentImplementationInvoker
 }
 import pl.touk.nussknacker.engine.definition.component.methodbased.{
-  MethodBasedComponentDefinitionWithLogic,
-  MethodBasedComponentLogic,
+  MethodBasedComponentDefinitionWithImplementation,
+  MethodBasedComponentImplementationInvoker,
   MethodDefinition,
   MethodDefinitionExtractor
 }
@@ -31,7 +31,7 @@ object ComponentDefinitionExtractor {
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): Option[ComponentDefinitionWithLogic] = {
+  ): Option[ComponentDefinitionWithImplementation] = {
     val configBasedOnDefinition = SingleComponentConfig.zero
       .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
     ComponentDefinitionExtractor
@@ -52,7 +52,7 @@ object ComponentDefinitionExtractor {
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): Option[ComponentDefinitionWithLogic] = {
+  ): Option[ComponentDefinitionWithImplementation] = {
     val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
       component match {
         case _: SourceFactory => (MethodDefinitionExtractor.Source, SourceSpecificData)
@@ -95,14 +95,14 @@ object ComponentDefinitionExtractor {
 
     (component match {
       case e: DynamicComponent[_] =>
-        val logic = new DynamicComponentLogic(e)
+        val invoker = new DynamicComponentImplementationInvoker(e)
         Right(
           withUiDefinitionForNotDisabledComponent(DynamicComponentStaticDefinitionDeterminer.staticReturnType(e)) {
             (uiDefinition, parametersConfig) =>
-              DynamicComponentDefinitionWithLogic(
+              DynamicComponentDefinitionWithImplementation(
                 name = componentName,
-                componentLogic = logic,
-                component = e,
+                implementationInvoker = invoker,
+                implementation = e,
                 componentTypeSpecificData = componentTypeSpecificData,
                 uiDefinition = uiDefinition,
                 parametersConfig = parametersConfig
@@ -130,11 +130,11 @@ object ComponentDefinitionExtractor {
             val returnType = Option(methodDef.returnType).filterNot(notReturnAnything)
             withUiDefinitionForNotDisabledComponent(returnType) { (uiDefinition, _) =>
               val staticDefinition = ComponentStaticDefinition(methodDef.definedParameters, returnType)
-              val logic            = extractComponentLogic(component, methodDef)
-              MethodBasedComponentDefinitionWithLogic(
+              val invoker          = extractComponentImplementationInvoker(component, methodDef)
+              MethodBasedComponentDefinitionWithImplementation(
                 name = componentName,
-                componentLogic = logic,
-                component = component,
+                implementationInvoker = invoker,
+                implementation = component,
                 componentTypeSpecificData = componentTypeSpecificData,
                 staticDefinition = staticDefinition,
                 uiDefinition = uiDefinition
@@ -145,14 +145,17 @@ object ComponentDefinitionExtractor {
 
   }
 
-  private def extractComponentLogic(component: Component, methodDef: MethodDefinition): ComponentLogic = {
-    val logic = new MethodBasedComponentLogic(component, methodDef)
+  private def extractComponentImplementationInvoker(
+      component: Component,
+      methodDef: MethodDefinition
+  ): ComponentImplementationInvoker = {
+    val invoker = new MethodBasedComponentImplementationInvoker(component, methodDef)
     if (component.isInstanceOf[Service] && classOf[CompletionStage[_]].isAssignableFrom(methodDef.runtimeClass)) {
-      logic.transformResult { completionStage =>
+      invoker.transformResult { completionStage =>
         FutureConverters.toScala(completionStage.asInstanceOf[CompletionStage[_]])
       }
     } else {
-      logic
+      invoker
     }
   }
 

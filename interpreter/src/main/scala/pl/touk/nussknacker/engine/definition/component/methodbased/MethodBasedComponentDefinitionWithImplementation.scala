@@ -5,19 +5,19 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component._
 
-final case class MethodBasedComponentDefinitionWithLogic(
+final case class MethodBasedComponentDefinitionWithImplementation(
     override val name: String,
-    override val componentLogic: ComponentLogic,
-    override val component: Component,
+    override val implementationInvoker: ComponentImplementationInvoker,
+    override val implementation: Component,
     override val componentTypeSpecificData: ComponentTypeSpecificData,
     staticDefinition: ComponentStaticDefinition,
     override protected val uiDefinition: ComponentUiDefinition,
-) extends ComponentDefinitionWithLogic {
+) extends ComponentDefinitionWithImplementation {
 
-  override def withComponentLogic(
-      logic: ComponentLogic
-  ): ComponentDefinitionWithLogic =
-    copy(componentLogic = logic)
+  override def withImplementationInvoker(
+      invoker: ComponentImplementationInvoker
+  ): ComponentDefinitionWithImplementation =
+    copy(implementationInvoker = invoker)
 
   def parameters: List[Parameter] = staticDefinition.parameters
 
@@ -33,18 +33,18 @@ final case class MethodBasedComponentDefinitionWithLogic(
 
 }
 
-object MethodBasedComponentDefinitionWithLogic {
+object MethodBasedComponentDefinitionWithImplementation {
 
-  def withNullLogic(
+  def withNullImplementation(
       name: String,
       componentTypeSpecificData: ComponentTypeSpecificData,
       staticDefinition: ComponentStaticDefinition,
       uiDefinition: ComponentUiDefinition,
       allowedProcessingModes: Option[Set[ProcessingMode]],
-  ): MethodBasedComponentDefinitionWithLogic = {
-    MethodBasedComponentDefinitionWithLogic(
+  ): MethodBasedComponentDefinitionWithImplementation = {
+    MethodBasedComponentDefinitionWithImplementation(
       name,
-      ComponentLogic.nullReturningComponentLogic,
+      ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
       new NullComponent(allowedProcessingModes),
       componentTypeSpecificData,
       staticDefinition,
