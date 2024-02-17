@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -10,17 +10,14 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  ComponentImplementationInvoker
-}
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithLogic, ComponentLogic}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
 import pl.touk.nussknacker.engine.node.ComponentIdExtractor
-import pl.touk.nussknacker.engine.process.compiler.StubbedComponentImplementationInvoker.returnType
+import pl.touk.nussknacker.engine.process.compiler.StubbedComponentLogic.returnType
 import shapeless.syntax.typeable.typeableOps
 
 abstract class StubbedFlinkProcessCompilerDataFactory(
@@ -79,34 +76,30 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
   }
 
   protected def prepareService(
-      service: ComponentDefinitionWithImplementation,
+      service: ComponentDefinitionWithLogic,
       context: ComponentDefinitionContext
-  ): ComponentDefinitionWithImplementation
+  ): ComponentDefinitionWithLogic
 
   protected def prepareSourceFactory(
-      sourceFactory: ComponentDefinitionWithImplementation,
+      sourceFactory: ComponentDefinitionWithLogic,
       context: ComponentDefinitionContext
-  ): ComponentDefinitionWithImplementation
+  ): ComponentDefinitionWithLogic
 
 }
 
-abstract class StubbedComponentImplementationInvoker(
-    original: ComponentImplementationInvoker,
+abstract class StubbedComponentLogic(
+    original: ComponentLogic,
     originalDefinitionReturnType: Option[TypingResult]
-) extends ComponentImplementationInvoker {
+) extends ComponentLogic {
 
-  def this(componentDefinitionWithImpl: ComponentDefinitionWithImplementation) = {
+  def this(componentDefinitionWithImpl: ComponentDefinitionWithLogic) = {
     this(
-      componentDefinitionWithImpl.implementationInvoker,
+      componentDefinitionWithImpl.componentLogic,
       returnType(componentDefinitionWithImpl)
     )
   }
 
-  override def invokeMethod(
-      params: Map[String, Any],
-      outputVariableNameOpt: Option[String],
-      additional: Seq[AnyRef]
-  ): Any = {
+  override def run(params: Params, outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
     def transform(impl: Any): Any = {
       // Correct TypingResult is important for method based components, because even for testing and verification
       // purpose, ImplementationInvoker is used also to determine output types. Dynamic components don't use it during
@@ -126,10 +119,10 @@ abstract class StubbedComponentImplementationInvoker(
       handleInvoke(impl, typingResult, nodeId)
     }
 
-    val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
+    val originalValue = original.run(params, outputVariableNameOpt, additional)
     originalValue match {
       case contextTransformation: ContextTransformation =>
-        contextTransformation.copy(implementation = transform(contextTransformation.implementation))
+        contextTransformation.copy(componentLogic = transform(contextTransformation.componentLogic))
       case componentExecutor => transform(componentExecutor)
     }
   }
@@ -137,12 +130,12 @@ abstract class StubbedComponentImplementationInvoker(
   def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any
 }
 
-object StubbedComponentImplementationInvoker {
+object StubbedComponentLogic {
 
-  private def returnType(componentDefinitionWithImpl: ComponentDefinitionWithImplementation): Option[TypingResult] = {
+  private def returnType(componentDefinitionWithImpl: ComponentDefinitionWithLogic): Option[TypingResult] = {
     componentDefinitionWithImpl match {
-      case methodBasedDefinition: MethodBasedComponentDefinitionWithImplementation => methodBasedDefinition.returnType
-      case _: DynamicComponentDefinitionWithImplementation                         => None
+      case methodBasedDefinition: MethodBasedComponentDefinitionWithLogic => methodBasedDefinition.returnType
+      case _: DynamicComponentDefinitionWithLogic                         => None
     }
   }
 

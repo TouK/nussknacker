@@ -81,7 +81,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         ),
         ComponentDefinition("stringService", SimpleStringService),
         ComponentDefinition("genericParametersThrowingException", GenericParametersThrowingException),
-        ComponentDefinition("missingParamHandleGenericNodeTransformation", MissingParamHandleGenericNodeTransformation),
+        ComponentDefinition("missingParamHandleGenericNodeTransformation", MissingParamHandleDynamicComponent$),
         ComponentDefinition("genericParametersSource", new GenericParametersSource),
         ComponentDefinition("genericParametersSink", GenericParametersSink),
         ComponentDefinition("optionalParameterService", OptionalParameterService)

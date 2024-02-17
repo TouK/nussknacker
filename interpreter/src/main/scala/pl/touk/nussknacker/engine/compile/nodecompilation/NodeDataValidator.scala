@@ -42,9 +42,7 @@ object NodeDataValidator {
 
 class NodeDataValidator(modelData: ModelData) {
 
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-    case spel: SpelExpressionParser => spel.typingDictLabels
-  }
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
 
   private val compiler = new NodeCompiler(
     modelData.modelDefinition,

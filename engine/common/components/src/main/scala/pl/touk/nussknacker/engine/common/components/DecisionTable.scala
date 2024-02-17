@@ -2,11 +2,7 @@ package pl.touk.nussknacker.engine.common.components
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerParameter,
-  NodeDependencyValue,
-  SingleInputGenericNodeTransformation
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData
 import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.Column
 import pl.touk.nussknacker.engine.api.definition._
@@ -17,7 +13,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
-object DecisionTable extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+object DecisionTable extends EagerService with SingleInputDynamicComponent[ServiceLogic] {
 
   override type State = Unit
 
@@ -25,7 +21,7 @@ object DecisionTable extends EagerService with SingleInputGenericNodeTransformat
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(
         parameters = decisionTableParameter :: Nil,
@@ -55,14 +51,14 @@ object DecisionTable extends EagerService with SingleInputGenericNodeTransformat
       )
   }
 
-  override def implementation(
-      params: Map[String, Any],
+  override def createComponentLogic(
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[Unit]
-  ): ServiceInvoker =
+  ): ServiceLogic =
     new DecisionTableComponentLogic(
-      params(decisionTableParameterName).asInstanceOf[TabularTypedData],
-      params(filterDecisionTableExpressionParameterName).asInstanceOf[LazyParameter[java.lang.Boolean]]
+      params.extractUnsafe(decisionTableParameterName),
+      params.extractUnsafe(filterDecisionTableExpressionParameterName)
     )
 
   private lazy val decisionTableParameterName = "Basic Decision Table"
@@ -102,9 +98,9 @@ object DecisionTable extends EagerService with SingleInputGenericNodeTransformat
   private class DecisionTableComponentLogic(
       tabularData: TabularTypedData,
       expression: LazyParameter[java.lang.Boolean]
-  ) extends ServiceInvoker {
+  ) extends ServiceLogic {
 
-    override def invokeService(context: Context)(
+    override def run(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         componentUseCase: ComponentUseCase

@@ -9,18 +9,16 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 // This class represents component's definition and implementation. It is used on the designer side for definitions
 // served to the FE and for validations. It is used on the runtime side for component's runtime execution and for stubbing.
 // Implementing component is in hte implementation field. It should be rarely used - instead, we should extract information
-// into definition. Runtime logic should be mainly used via implementationInvoker which can be transformed
+// into definition. Runtime logic should be mainly used via componentLogic which can be transformed
 // (e.g.) for purpose of stubbing.
-trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
+trait ComponentDefinitionWithLogic extends ObjectOperatingOnTypes {
 
-  def implementationInvoker: ComponentImplementationInvoker
+  def componentLogic: ComponentLogic
 
   // For purpose of transforming (e.g.) stubbing of the implementation
-  def withImplementationInvoker(
-      implementationInvoker: ComponentImplementationInvoker
-  ): ComponentDefinitionWithImplementation
+  def withComponentLogic(logic: ComponentLogic): ComponentDefinitionWithLogic
 
-  def implementation: Component
+  def component: Component
 
   def componentTypeSpecificData: ComponentTypeSpecificData
 
@@ -46,7 +44,7 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
   final def docsUrl: Option[String] = uiDefinition.docsUrl
 
   override final def definedTypes: List[TypingResult] = {
-    val fromExplicitTypes = implementation match {
+    val fromExplicitTypes = component match {
       case explicit: WithExplicitTypesToExtract => explicit.typesToExtract
       case _                                    => Nil
     }
@@ -71,14 +69,14 @@ final case class ComponentUiDefinition(
     designerWideId: DesignerWideComponentId
 )
 
-object ComponentDefinitionWithImplementation {
+object ComponentDefinitionWithLogic {
 
   def forList(
       components: List[ComponentDefinition],
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[ComponentDefinitionWithImplementation] = {
+  ): List[ComponentDefinitionWithLogic] = {
     components.flatMap(
       ComponentDefinitionExtractor.extract(_, additionalConfigs, determineDesignerWideId, additionalConfigsFromProvider)
     )
@@ -88,7 +86,7 @@ object ComponentDefinitionWithImplementation {
    *    - additionalConfigs from the model configuration
    *    - additionalConfigsFromProvider provided by AdditionalUIConfigProvider
    */
-  def withEmptyConfig(name: String, component: Component): ComponentDefinitionWithImplementation = {
+  def withEmptyConfig(name: String, component: Component): ComponentDefinitionWithLogic = {
     ComponentDefinitionExtractor
       .extract(
         name,

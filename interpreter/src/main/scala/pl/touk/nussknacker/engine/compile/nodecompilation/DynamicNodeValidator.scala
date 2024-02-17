@@ -30,7 +30,7 @@ class DynamicNodeValidator(
   private implicit val lazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
 
   def validateNode(
-      component: GenericNodeTransformation[_],
+      component: DynamicComponent[_],
       parametersFromNode: List[NodeParameter],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
@@ -48,7 +48,7 @@ class DynamicNodeValidator(
   }
 
   private class TransformationStepsProcessor(
-      component: GenericNodeTransformation[_],
+      component: DynamicComponent[_],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
       parametersConfig: Map[String, ParameterConfig],

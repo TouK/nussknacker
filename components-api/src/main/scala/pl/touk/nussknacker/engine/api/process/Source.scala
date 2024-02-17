@@ -83,7 +83,7 @@ object SourceFactory {
     @MethodToInvoke
     def create()(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
       .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, inputType, None))
-      .implementedBy(createSource(nodeId))
+      .withComponentLogic(createSource(nodeId))
 
     override def typesToExtract: List[typing.TypingResult] = List(inputType)
 

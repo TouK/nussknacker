@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.service
 
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -13,24 +13,24 @@ import java.sql.Connection
 import java.time.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
-object DatabaseEnricherInvokerWithCache {
+object DatabaseEnricherLogicWithCache {
 
   final case class CacheKey(query: String, queryArguments: QueryArguments)
   final case class CacheEntry[+A](value: A)
 }
 
-class DatabaseEnricherInvokerWithCache(
+class DatabaseEnricherLogicWithCache(
     query: String,
     argsCount: Int,
     tableDef: TableDefinition,
     strategy: QueryResultStrategy,
-    queryArgumentsExtractor: (Int, Map[String, Any], Context) => QueryArguments,
+    queryArgumentsExtractor: (Int, Params, Context) => QueryArguments,
     cacheTTL: Duration,
     override val returnType: typing.TypingResult,
     override val getConnection: () => Connection,
     override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
-    params: Map[String, Any]
-) extends DatabaseEnricherInvoker(
+    params: Params
+) extends DatabaseEnricherLogic(
       query,
       argsCount,
       tableDef,
@@ -42,7 +42,7 @@ class DatabaseEnricherInvokerWithCache(
       params
     ) {
 
-  import DatabaseEnricherInvokerWithCache._
+  import DatabaseEnricherLogicWithCache._
 
   // TODO: cache size
   private val cache: AsyncCache[CacheKey, CacheEntry[queryExecutor.QueryResult]] = Caffeine
@@ -52,7 +52,7 @@ class DatabaseEnricherInvokerWithCache(
 
   import scala.compat.java8.FutureConverters._
 
-  override def invokeService(context: Context)(
+  override def run(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase

@@ -31,7 +31,7 @@ import scala.concurrent.duration.FiniteDuration
 class SingleSideJoinTransformer(
     timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]]
 ) extends CustomStreamTransformer
-    with JoinGenericNodeTransformation[FlinkCustomJoinTransformation]
+    with JoinDynamicComponent[FlinkCustomJoinTransformation]
     with ExplicitUidInOperatorsSupport
     with WithExplicitTypesToExtract
     with LazyLogging
@@ -47,7 +47,7 @@ class SingleSideJoinTransformer(
 
   override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.parameter))
     case TransformationStep(
@@ -99,8 +99,8 @@ class SingleSideJoinTransformer(
       )
   }
 
-  override def implementation(
-      params: Map[String, Any],
+  override def createComponentLogic(
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomJoinTransformation = {
@@ -108,7 +108,7 @@ class SingleSideJoinTransformer(
     val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParam.extractValue(params)
     val aggregator: Aggregator                                  = AggregatorParam.extractValue(params)
     val window: Duration                                        = WindowLengthParam.extractValue(params)
-    val aggregateBy: LazyParameter[AnyRef] = params(AggregateByParamName).asInstanceOf[LazyParameter[AnyRef]]
+    val aggregateBy: LazyParameter[AnyRef] = params.extractUnsafe[LazyParameter[AnyRef]](AggregateByParamName)
     val outputType                         = aggregator.computeOutputTypeUnsafe(aggregateBy.returnType)
 
     new FlinkCustomJoinTransformation with Serializable {

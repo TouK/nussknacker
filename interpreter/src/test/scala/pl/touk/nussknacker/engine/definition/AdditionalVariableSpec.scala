@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
   AdditionalVariableWithFixedValue,
@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -65,9 +65,9 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
   }
 
   private def definition(sourceFactory: SourceFactory): List[Parameter] = {
-    ComponentDefinitionWithImplementation
+    ComponentDefinitionWithLogic
       .withEmptyConfig("foo", sourceFactory)
-      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+      .asInstanceOf[MethodBasedComponentDefinitionWithLogic]
       .parameters
   }
 
@@ -99,16 +99,13 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
 
   }
 
-  class IncorrectService2
-      extends SourceFactory
-      with SingleInputGenericNodeTransformation[Source]
-      with UnboundedStreamComponent {
+  class IncorrectService2 extends SourceFactory with SingleInputDynamicComponent[Source] with UnboundedStreamComponent {
 
     override type State = Nothing
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
-    ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
+    ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
       NextParameters(
         List(
           Parameter[String]("toFail")
@@ -120,8 +117,8 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
       )
     }
 
-    override def implementation(
-        params: Map[String, Any],
+    override def createComponentLogic(
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[Nothing]
     ): Source = null

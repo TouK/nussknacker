@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
@@ -34,23 +34,25 @@ class DatabaseLookupEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
-    val invoker = service.implementation(
-      params = Map(
-        CacheTTLParamName -> java.time.Duration.ofDays(1),
-        KeyValueParamName -> 1L
+    val logic = service.createComponentLogic(
+      params = Params(
+        Map(
+          CacheTTLParamName -> java.time.Duration.ofDays(1),
+          KeyValueParamName -> 1L
+        )
       ),
       dependencies = Nil,
       finalState = Some(state)
     )
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
-    val resultF = invoker.invokeService(Context.withInitialId)
+    val resultF = logic.run(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = invoker.invokeService(Context.withInitialId)
+    val resultF2 = logic.run(Context.withInitialId)
     val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))

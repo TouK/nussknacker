@@ -8,22 +8,28 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{
+  Context,
+  CustomStreamTransformer,
+  LazyParameter,
+  NodeId,
+  Params,
+  ValueWithContext
+}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomJoinTransformation,
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper,
   OneParamLazyParameterFunction
 }
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /*
   This is basically left outer join - we join events stream (left side of join) with additional data stream (e.g. users - right side of join)
   Implementation is simplistic, it doesn't wait for additional data stream to initialize etc. - it's mainly to
-  show how JoinGenericNodeTransformation works
+  show how JoinDynamicComponent works
  */
-object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with JoinGenericNodeTransformation[AnyRef] {
+object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with JoinDynamicComponent[AnyRef] {
 
   private val roleParameter = "role"
 
@@ -39,7 +45,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
 
   override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): EnrichWithAdditionalDataTransformer.NodeTransformationDefinition = {
+  ): EnrichWithAdditionalDataTransformer.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(
         List(
@@ -97,15 +103,15 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
 
   private def right(byBranch: Map[String, String]): Option[String] = byBranch.find(_._2 == "Additional data").map(_._1)
 
-  override def implementation(
-      params: Map[String, Any],
+  override def createComponentLogic(
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): AnyRef = {
-    val role      = params(roleParameter).asInstanceOf[Map[String, String]]
+    val role      = params.extractUnsafe[Map[String, String]](roleParameter)
     val leftName  = left(role)
     val rightName = right(role)
-    val key       = params(keyParameter).asInstanceOf[Map[String, LazyParameter[String]]]
+    val key       = params.extractUnsafe[Map[String, LazyParameter[String]]](keyParameter)
     new FlinkCustomJoinTransformation {
       override def transform(
           inputs: Map[String, DataStream[Context]],
@@ -119,7 +125,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
           .keyBy((v: ValueWithContext[String]) => v.value, (v: ValueWithContext[String]) => v.value)
           .process(
             new EnrichWithAdditionalDataFunction(
-              params(additionalDataValueParameter).asInstanceOf[LazyParameter[AnyRef]],
+              params.extractUnsafe(additionalDataValueParameter),
               context.lazyParameterHelper
             )
           )

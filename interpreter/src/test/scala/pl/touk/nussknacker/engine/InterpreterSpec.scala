@@ -15,10 +15,11 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   DefinedLazyParameter,
   NodeDependencyValue,
-  SingleInputGenericNodeTransformation
+  SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, _}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
@@ -32,7 +33,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -77,7 +78,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     ComponentDefinition("notBlankTypesService", NotBlankTypesService),
     ComponentDefinition("eagerServiceWithMethod", EagerServiceWithMethod),
     ComponentDefinition("dynamicEagerService", DynamicEagerService),
-    ComponentDefinition("eagerServiceWithFixedAdditional", EagerServiceWithFixedAdditional)
+    ComponentDefinition("eagerServiceWithFixedAdditional", EagerServiceWithFixedAdditional),
+    ComponentDefinition("dictParameterEditorService", DictParameterEditorService),
   )
 
   def listenersDef(listener: Option[ProcessListener] = None): Seq[ProcessListener] =
@@ -172,7 +174,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         additionalComponents
 
     val definitions = ModelDefinition(
-      ComponentDefinitionWithImplementation
+      ComponentDefinitionWithLogic
         .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
       ModelDefinitionBuilder.emptyExpressionConfig.copy(
         languages = LanguageConfiguration(List(LiteralExpressionParser))
@@ -182,7 +184,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
       definitionsWithTypes,
-      new SimpleDictRegistry(Map.empty).toEngineRegistry,
+      new SimpleDictRegistry(
+        Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))
+      ).toEngineRegistry,
       listeners,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
@@ -953,6 +957,22 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction()) shouldBe new Helper().value
   }
 
+  test("handle DictParameterEditor with known dictionary and key") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher(
+        "customNode",
+        "data",
+        "dictParameterEditorService",
+        "param" -> Expression.dictKeyWithLabel("someKey", Some("someLabel"))
+      )
+      .buildSimpleVariable("result-end", resultVariable, "#data")
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction()) shouldBe "someKey"
+  }
+
 }
 
 class ThrowingService extends Service {
@@ -1053,14 +1073,14 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Map[String, Any])(
+    override def runServiceLogic(params: Params)(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
-    ): Future[Any] = {
-      Future.successful(params.head._2.toString)
+    ): Future[AnyRef] = {
+      Future.successful(params.nameToValueMap.head._2.toString)
     }
 
   }
@@ -1072,6 +1092,28 @@ object InterpreterSpec {
       .copy(isLazyParameter = true, editor = Some(SpelTemplateParameterEditor))
 
     override def parameters: List[Parameter] = List(spelTemplateParameter)
+
+    override def returnType: typing.TypingResult = Typed[String]
+
+    override def runServiceLogic(params: Params)(
+        implicit ec: ExecutionContext,
+        collector: InvocationCollectors.ServiceInvocationCollector,
+        contextId: ContextId,
+        metaData: MetaData,
+        componentUseCase: ComponentUseCase
+    ): Future[AnyRef] = {
+      Future.successful(params.nameToValueMap.head._2.toString)
+    }
+
+  }
+
+  object DictParameterEditorService extends EagerServiceWithStaticParametersAndReturnType {
+
+    override def parameters: List[Parameter] = List(
+      Parameter[String]("param").copy(
+        editor = Some(DictParameterEditor("someDictId"))
+      )
+    )
 
     override def returnType: typing.TypingResult = Typed[String]
 
@@ -1126,9 +1168,9 @@ object InterpreterSpec {
         @ParamName("param")
         @AdditionalVariables(Array(new AdditionalVariable(name = "helper", clazz = classOf[Helper])))
         param: String
-    ): ServiceInvoker = new ServiceInvoker {
+    ): ServiceLogic = new ServiceLogic {
 
-      override def invokeService(context: Context)(
+      override def run(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
@@ -1154,8 +1196,8 @@ object InterpreterSpec {
         outputVar,
         lazyOne.returnType, {
           if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
-          new ServiceInvoker {
-            override def invokeService(context: Context)(
+          new ServiceLogic {
+            override def run(context: Context)(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
                 componentUseCase: ComponentUseCase
@@ -1168,7 +1210,7 @@ object InterpreterSpec {
 
   }
 
-  object DynamicEagerService extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+  object DynamicEagerService extends EagerService with SingleInputDynamicComponent[ServiceLogic] {
 
     override type State = Nothing
 
@@ -1178,7 +1220,7 @@ object InterpreterSpec {
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
-    ): DynamicEagerService.NodeTransformationDefinition = {
+    ): DynamicEagerService.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(List(staticParam.parameter))
       case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) :: Nil, _) =>
@@ -1193,22 +1235,22 @@ object InterpreterSpec {
         )
     }
 
-    override def implementation(
-        params: Map[String, Any],
+    override def createComponentLogic(
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[Nothing]
-    ): ServiceInvoker = {
+    ): ServiceLogic = {
 
       val paramName = staticParam.extractValue(params)
 
-      new ServiceInvoker {
-        override def invokeService(context: Context)(
+      new ServiceLogic {
+        override def run(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
-          val staticParam = params(paramName).asInstanceOf[LazyParameter[AnyRef]]
-          Future.successful(staticParam.evaluate(context))
+          val value = params.extractOrEvaluateUnsafe[AnyRef](paramName, context)
+          Future.successful(value)
         }
       }
     }

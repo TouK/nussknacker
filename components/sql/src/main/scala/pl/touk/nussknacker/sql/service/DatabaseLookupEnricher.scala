@@ -2,11 +2,11 @@ package pl.touk.nussknacker.sql.service
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, SchemaDefinition, TableDefinition}
@@ -62,20 +62,22 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
   import DatabaseLookupEnricher._
 
-  override protected val queryArgumentsExtractor: (Int, Map[String, Any], Context) => QueryArguments =
-    (_: Int, params: Map[String, Any], context: Context) => {
-      QueryArguments(QueryArgument(index = 1, value = extractOrEvaluate(params, KeyValueParamName, context)) :: Nil)
+  override protected val queryArgumentsExtractor: (Int, Params, Context) => QueryArguments =
+    (_: Int, params: Params, context: Context) => {
+      QueryArguments(
+        QueryArgument(index = 1, value = params.extractOrEvaluateUnsafe(KeyValueParamName, context)) :: Nil
+      )
     }
 
   override protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
+  ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     NextParameters(parameters = tableParam() :: CacheTTLParam :: Nil)
   }
 
   private def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(
           (TableParamName, DefinedEagerParameter(tableName: String, _)) :: (CacheTTLParamName, _) :: Nil,
           None
@@ -113,7 +115,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
   private def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(
           (TableParamName, _) :: (CacheTTLParamName, _) :: (
             KeyColumnParamName,
@@ -131,17 +133,10 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition =
+  ): ContextTransformationDefinition =
     initialStep(context, dependencies) orElse
       tableParamStep(context, dependencies) orElse
       keyColumnParamStep(context, dependencies) orElse
       finalStep(context, dependencies)
-
-  private def extractOrEvaluate(params: Map[String, Any], paramName: String, context: Context) = {
-    params(paramName) match {
-      case lp: LazyParameter[_] => lp.evaluate(context)
-      case other                => other
-    }
-  }
 
 }

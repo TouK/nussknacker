@@ -44,7 +44,7 @@ object JoinTransformerWithEditors extends CustomStreamTransformer with Serializa
           mainBranchContext.withVariable(OutputVar.customNode(variableName), valueByBranchId(joinedBranchId).returnType)
         }
       }
-      .implementedBy { () =>
+      .withComponentLogic { () =>
         ???
       }
   }

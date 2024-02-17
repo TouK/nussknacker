@@ -24,7 +24,7 @@ private[component] object ComponentNodeTemplatePreparer {
       ServiceRef(id.name, parameterTemplates(staticDefinition))
 
     def prepareComponentNodeTemplateWithGroup(
-        component: ComponentDefinitionWithImplementation,
+        component: ComponentDefinitionWithLogic,
         staticDefinition: ComponentStaticDefinition
     ) = {
       val nodeTemplate = (component.id, component.componentTypeSpecificData) match {

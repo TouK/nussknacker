@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.Params
 import pl.touk.nussknacker.engine.api.definition.{
   DualParameterEditor,
   Parameter,
@@ -32,8 +33,8 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
     )
     val parameters: Seq[Parameter] = stubbedSourcePreparer
       .createSourceDefinition("foo", fragmentInputDefinition)
-      .implementationInvoker
-      .invokeMethod(Map.empty, None, Seq.empty)
+      .componentLogic
+      .run(Params.empty, None, Seq.empty)
       .asInstanceOf[TestWithParametersSupport[Map[String, Any]]]
       .testParametersDefinition
     val expectedParameters = List(

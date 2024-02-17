@@ -39,7 +39,7 @@ object Union extends CustomStreamTransformer {
             Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId.id))
           )
       }
-      .implementedBy(new LiteJoinCustomComponent {
+      .withComponentLogic(new LiteJoinCustomComponent {
         override def createTransformation[F[_]: Monad, Result](
             continuation: DataBatch => F[ResultType[Result]],
             context: CustomComponentContext[F]

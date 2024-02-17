@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.language.tabularDataDefinition
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.Valid
+import cats.data.{Validated, ValidatedNel}
 import io.circe.parser.{parse => parseJson}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -24,9 +24,9 @@ object TabularDataDefinitionParser extends ExpressionParser {
       case Right(data) =>
         Valid(createTabularDataDefinitionTypedExpression(data, original, expectedType))
       case Left(error) =>
-        Invalid(NonEmptyList.one(new ExpressionParseError {
+        Validated.invalidNel(new ExpressionParseError {
           override def message: String = error.getMessage
-        }))
+        })
     }
   }
 
@@ -38,9 +38,9 @@ object TabularDataDefinitionParser extends ExpressionParser {
       case Right(data) =>
         Valid(createTabularDataDefinitionExpression(data, original))
       case Left(error) =>
-        Invalid(NonEmptyList.one(new ExpressionParseError {
+        Validated.invalidNel(new ExpressionParseError {
           override def message: String = error.getMessage
-        }))
+        })
     }
   }
 

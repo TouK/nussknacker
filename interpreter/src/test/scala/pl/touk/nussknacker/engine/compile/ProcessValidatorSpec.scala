@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
-import pl.touk.nussknacker.engine.api.{LazyParameter, _}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
@@ -20,10 +20,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  CustomComponentSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithLogic, CustomComponentSpecificData}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
@@ -1206,7 +1203,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val failingDefinition = base
       .mapComponents {
         case component if component.componentType == ComponentType.Source =>
-          component.withImplementationInvoker((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
+          component.withComponentLogic((_: Params, _: Option[String], _: Seq[AnyRef]) => {
             throw new RuntimeException("You passed incorrect parameter, cannot proceed")
           })
         case other => other
@@ -1230,7 +1227,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should be able to derive type from ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      ComponentDefinitionWithImplementation.withEmptyConfig("returningTypeService", ServiceReturningTypeSample)
+      ComponentDefinitionWithLogic.withEmptyConfig("returningTypeService", ServiceReturningTypeSample)
     )
 
     val process =
@@ -1258,7 +1255,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should override parameter definition from WithExplicitMethodToInvoke by definition from ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      ComponentDefinitionWithImplementation.withEmptyConfig(
+      ComponentDefinitionWithLogic.withEmptyConfig(
         "returningTypeService",
         ServiceReturningTypeWithExplicitMethodSample
       )
@@ -1288,7 +1285,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should be able to run custom validation using ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      ComponentDefinitionWithImplementation.withEmptyConfig("withCustomValidation", ServiceWithCustomValidation)
+      ComponentDefinitionWithLogic.withEmptyConfig("withCustomValidation", ServiceWithCustomValidation)
     )
 
     val process =
@@ -1689,9 +1686,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       EnricherContextTransformation(
         variableName,
         Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition))),
-        new ServiceInvoker {
+        new ServiceLogic {
 
-          override def invokeService(context: Context)(
+          override def run(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
               componentUseCase: ComponentUseCase
@@ -1721,14 +1718,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       )
     }
 
-    override def serviceImplementation(
+    override def createServiceLogic(
         eagerParameters: Map[String, Any],
         lazyParameters: Map[String, LazyParameter[AnyRef]],
         typingResult: TypingResult,
         metaData: MetaData
-    ): ServiceInvoker = new ServiceInvoker {
+    ): ServiceLogic = new ServiceLogic {
 
-      override def invokeService(context: Context)(
+      override def run(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
@@ -1775,8 +1772,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       EnricherContextTransformation(
         variableName,
         returnType,
-        new ServiceInvoker {
-          override def invokeService(context: Context)(
+        new ServiceLogic {
+          override def run(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
               componentUseCase: ComponentUseCase

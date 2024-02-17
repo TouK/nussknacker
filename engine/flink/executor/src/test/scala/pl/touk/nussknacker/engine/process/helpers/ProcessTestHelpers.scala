@@ -23,14 +23,13 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
     def invokeWithSampleData(
         process: CanonicalProcess,
         data: List[SimpleRecord],
-        config: Config = config,
-        additionalComponents: List[ComponentDefinition] = List.empty // todo: better solution?
+        config: Config = config
     ): Unit = {
       val defaultComponents = ProcessTestHelpers.prepareComponents(data)
       val env               = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(
         config,
-        defaultComponents ++ additionalComponents,
+        defaultComponents,
         configCreator = ProcessTestHelpersConfigCreator
       )
       UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, NodeDependencyValue}
@@ -13,12 +13,12 @@ import pl.touk.nussknacker.engine.management.sample.transformer.DynamicParameter
 
 object DynamicParametersSource extends SourceFactory with DynamicParametersMixin with UnboundedStreamComponent {
 
-  override def implementation(
-      params: Map[String, Any],
+  override def createComponentLogic(
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): AnyRef = {
-    new CollectionSource[Any](List(TypedMap(params.filterNot(_._1 == choiceParamName))), None, Unknown)(
+    new CollectionSource[Any](List(TypedMap(params.nameToValueMap.filterNot(_._1 == choiceParamName))), None, Unknown)(
       TypeInformation.of(classOf[Any])
     )
   }

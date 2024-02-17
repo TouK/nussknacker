@@ -36,7 +36,7 @@ The main limitation of this method is that the parameters have to be fixed.
 Examples:
 - [CustomStreamTransformer](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/TransformStateTransformer.scala#L40)
 
-### GenericNodeTransformation
+### DynamicComponent
 
 This is the most powerful way to define components. It allows for:
 - Arbitrary ValidationContext transformations

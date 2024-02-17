@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.engine.javaapi.context.transformation
 
 import java.util.Optional
-import pl.touk.nussknacker.engine.api.CustomStreamTransformer
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 
 import scala.jdk.CollectionConverters._
 
-trait JavaGenericTransformation[T, VC, PAR, ST] {
+trait JavaDynamicComponent[T, VC, PAR, ST] {
 
   def contextTransformation(
       context: VC,
@@ -21,7 +20,7 @@ trait JavaGenericTransformation[T, VC, PAR, ST] {
       state: Optional[ST]
   ): JavaTransformationStepResult[ST]
 
-  def implementation(
+  def createComponentLogic(
       params: java.util.Map[String, Any],
       dependencies: java.util.List[NodeDependencyValue],
       finalState: java.util.Optional[ST]
@@ -31,39 +30,39 @@ trait JavaGenericTransformation[T, VC, PAR, ST] {
 
 }
 
-trait JavaGenericSingleTransformation[T, ST]
-    extends JavaGenericTransformation[T, ValidationContext, DefinedSingleParameter, ST] {
+trait JavaSingleInputDynamicComponent[T, ST]
+    extends JavaDynamicComponent[T, ValidationContext, DefinedSingleParameter, ST] {
 
   def canBeEnding: Boolean = false
 
 }
 
-trait JavaGenericJoinTransformation[T, ST]
-    extends JavaGenericTransformation[T, java.util.Map[String, ValidationContext], BaseDefinedParameter, ST] {
+trait JavaJoinDynamicComponent[T, ST]
+    extends JavaDynamicComponent[T, java.util.Map[String, ValidationContext], BaseDefinedParameter, ST] {
 
   def canBeEnding: Boolean = false
 
 }
 
-trait JavaSourceFactoryGenericTransformation[ST] extends JavaGenericSingleTransformation[Source, ST] {
+trait JavaSourceFactoryDynamicComponent[ST] extends JavaSingleInputDynamicComponent[Source, ST] {
 
   def clazz: Class[_]
 
 }
 
-trait GenericContextTransformationWrapper[T, VC, PAR, ST] { self: GenericNodeTransformation[T] =>
+trait DynamicComponentWrapper[T, VC, PAR, ST] { self: DynamicComponent[T] =>
 
   override type State = ST
 
-  def javaDef: JavaGenericTransformation[T, VC, PAR, ST]
+  def javaDef: JavaDynamicComponent[T, VC, PAR, ST]
 
-  override def implementation(
-      params: Map[String, Any],
+  override def createComponentLogic(
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): T =
-    javaDef.implementation(
-      params.asJava,
+    javaDef.createComponentLogic(
+      params.nameToValueMap.asJava,
       dependencies.asJava,
       java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State]))
     )
@@ -72,16 +71,16 @@ trait GenericContextTransformationWrapper[T, VC, PAR, ST] { self: GenericNodeTra
 
 }
 
-class SingleGenericContextTransformationWrapper[T, ST](val javaDef: JavaGenericSingleTransformation[T, ST])
+class SingleInputDynamicComponentWrapper[T, ST](val javaDef: JavaSingleInputDynamicComponent[T, ST])
     extends CustomStreamTransformer
-    with SingleInputGenericNodeTransformation[T]
-    with GenericContextTransformationWrapper[T, ValidationContext, DefinedSingleParameter, ST] {
+    with SingleInputDynamicComponent[T]
+    with DynamicComponentWrapper[T, ValidationContext, DefinedSingleParameter, ST] {
 
   override def canBeEnding: Boolean = javaDef.canBeEnding
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case step =>
+  ): ContextTransformationDefinition = { case step =>
     javaDef.contextTransformation(
       context,
       dependencies.asJava,
@@ -98,15 +97,15 @@ class SingleGenericContextTransformationWrapper[T, ST](val javaDef: JavaGenericS
 
 }
 
-class SourceFactoryGenericContextTransformationWrapper[ST](val javaDef: JavaSourceFactoryGenericTransformation[ST])
+class SourceFactoryDynamicComponentWrapper[ST](val javaDef: JavaSourceFactoryDynamicComponent[ST])
     extends SourceFactory
-    with SingleInputGenericNodeTransformation[Source]
-    with GenericContextTransformationWrapper[Source, ValidationContext, DefinedSingleParameter, ST]
+    with SingleInputDynamicComponent[Source]
+    with DynamicComponentWrapper[Source, ValidationContext, DefinedSingleParameter, ST]
     with UnboundedStreamComponent {
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case step =>
+  ): ContextTransformationDefinition = { case step =>
     javaDef.contextTransformation(
       context,
       dependencies.asJava,
@@ -123,9 +122,9 @@ class SourceFactoryGenericContextTransformationWrapper[ST](val javaDef: JavaSour
 
 }
 
-class JoinGenericContextTransformationWrapper[ST](javaDef: JavaGenericJoinTransformation[_ <: AnyRef, ST])
+class JoinDynamicComponentWrapper[ST](javaDef: JavaJoinDynamicComponent[_ <: AnyRef, ST])
     extends CustomStreamTransformer
-    with JoinGenericNodeTransformation[Object] {
+    with JoinDynamicComponent[Object] {
 
   override type State = ST
 
@@ -135,7 +134,7 @@ class JoinGenericContextTransformationWrapper[ST](javaDef: JavaGenericJoinTransf
 
   override def contextTransformation(context: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case step =>
+  ): ContextTransformationDefinition = { case step =>
     javaDef.contextTransformation(
       context.asJava,
       dependencies.asJava,
@@ -150,13 +149,13 @@ class JoinGenericContextTransformationWrapper[ST](javaDef: JavaGenericJoinTransf
     }
   }
 
-  override def implementation(
-      params: Map[String, Any],
+  override def createComponentLogic(
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Object =
-    javaDef.implementation(
-      params.asJava,
+    javaDef.createComponentLogic(
+      params.nameToValueMap.asJava,
       dependencies.asJava,
       java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State]))
     )

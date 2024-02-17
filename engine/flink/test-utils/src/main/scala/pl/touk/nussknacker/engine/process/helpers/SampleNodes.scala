@@ -206,9 +206,9 @@ object SampleNodes {
     }
 
     @MethodToInvoke
-    def invoke(@ParamName("name") name: String): ServiceInvoker = synchronized {
-      val newI = new ServiceInvoker with WithLifecycle {
-        override def invokeService(context: Context)(
+    def prepare(@ParamName("name") name: String): ServiceLogic = synchronized {
+      val newI = new ServiceLogic with WithLifecycle {
+        override def run(context: Context)(
             implicit ec: ExecutionContext,
             collector: ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
@@ -229,12 +229,12 @@ object SampleNodes {
   object CollectingEagerService extends EagerService with Serializable {
 
     @MethodToInvoke
-    def invoke(
+    def prepare(
         @ParamName("static") static: String,
         @ParamName("dynamic") dynamic: LazyParameter[String]
-    ): ServiceInvoker = new ServiceInvoker {
+    ): ServiceLogic = new ServiceLogic {
 
-      override def invokeService(context: Context)(
+      override def run(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
@@ -310,7 +310,7 @@ object SampleNodes {
     ): ContextTransformation = {
       ContextTransformation
         .definedBy(Valid(_))
-        .implementedBy(FlinkCustomStreamTransformation {
+        .withComponentLogic(FlinkCustomStreamTransformation {
           (start: DataStream[Context], context: FlinkCustomNodeContext) =>
             start
               .filter(
@@ -331,7 +331,7 @@ object SampleNodes {
     def execute(@ParamName("value") value: LazyParameter[String]) = {
       ContextTransformation
         .definedBy((in: context.ValidationContext) => Valid(in.clearVariables))
-        .implementedBy(
+        .withComponentLogic(
           FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
             start
               .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
@@ -354,7 +354,7 @@ object SampleNodes {
         .definedBy((in: Map[String, context.ValidationContext]) =>
           in.head._2.clearVariables.withVariable(outputVarName, Unknown, None)
         )
-        .implementedBy(new FlinkCustomJoinTransformation {
+        .withComponentLogic(new FlinkCustomJoinTransformation {
           override def transform(
               inputs: Map[String, DataStream[Context]],
               context: FlinkCustomNodeContext
@@ -388,7 +388,7 @@ object SampleNodes {
           val parent = contexts.values.flatMap(_.parent).headOption
           Valid(ValidationContext(Map(variableName -> newType), Map.empty, parent))
         }
-        .implementedBy(new FlinkCustomJoinTransformation {
+        .withComponentLogic(new FlinkCustomJoinTransformation {
 
           override def transform(
               inputs: Map[String, DataStream[Context]],
@@ -443,8 +443,8 @@ object SampleNodes {
       EnricherContextTransformation(
         outputVar,
         returnType,
-        new ServiceInvoker {
-          override def invokeService(context: Context)(
+        new ServiceLogic {
+          override def run(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
               componentUseCase: ComponentUseCase
@@ -501,7 +501,7 @@ object SampleNodes {
     ) = {
       ContextTransformation
         .definedBy((in: context.ValidationContext) => in.clearVariables.withVariable(outputVarName, Typed[Int], None))
-        .implementedBy(
+        .withComponentLogic(
           FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
             start
               .map(_ => 1: java.lang.Integer)
@@ -628,14 +628,14 @@ object SampleNodes {
 
   object GenericParametersNode
       extends CustomStreamTransformer
-      with SingleInputGenericNodeTransformation[AnyRef]
+      with SingleInputDynamicComponent[AnyRef]
       with Serializable {
 
     override type State = List[String]
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
-    ): this.NodeTransformationDefinition = {
+    ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(
           List(Parameter[String]("par1"), Parameter[java.lang.Boolean]("lazyPar1").copy(isLazyParameter = true))
@@ -663,13 +663,13 @@ object SampleNodes {
       }
     }
 
-    override def implementation(
-        params: Map[String, Any],
+    override def createComponentLogic(
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): AnyRef = {
-      val map  = params.filterNot(k => List("par1", "lazyPar1").contains(k._1))
-      val bool = params("lazyPar1").asInstanceOf[LazyParameter[java.lang.Boolean]]
+      val map  = params.nameToValueMap.filterNot(k => List("par1", "lazyPar1").contains(k._1))
+      val bool = params.extractUnsafe[LazyParameter[java.lang.Boolean]]("lazyPar1")
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
@@ -687,7 +687,7 @@ object SampleNodes {
 
   object NodePassingStateToImplementation
       extends CustomStreamTransformer
-      with SingleInputGenericNodeTransformation[AnyRef]
+      with SingleInputDynamicComponent[AnyRef]
       with Serializable {
 
     val VariableThatshouldBeDefinedBeforeNodeName = "foo"
@@ -696,15 +696,15 @@ object SampleNodes {
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
-    ): this.NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
+    ): this.ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
       context
         .withVariable(OutputVar.customNode(OutputVariableNameDependency.extract(dependencies)), Typed[Boolean])
         .map(FinalResults(_, state = Some(context.contains(VariableThatshouldBeDefinedBeforeNodeName))))
         .valueOr(errors => FinalResults(context, errors.toList))
     }
 
-    override def implementation(
-        params: Map[String, Any],
+    override def createComponentLogic(
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): AnyRef = {
@@ -724,14 +724,14 @@ object SampleNodes {
   object GenericParametersSource
       extends SourceFactory
       with UnboundedStreamComponent
-      with SingleInputGenericNodeTransformation[Source]
+      with SingleInputDynamicComponent[Source]
       with Serializable {
 
     override type State = Nothing
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
-    ): this.NodeTransformationDefinition = {
+    ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(
           Parameter[String]("type")
@@ -770,12 +770,12 @@ object SampleNodes {
       FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), Typed[String]))
     }
 
-    override def implementation(
-        params: Map[String, Any],
+    override def createComponentLogic(
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): Source = {
-      val out = "" + params("type") + "-" + params("version")
+      val out = s"${params.extractUnsafe("type")}-${params.extractUnsafe("version")}"
       CollectionSource(out :: Nil, None, Typed[String])
     }
 
@@ -785,7 +785,7 @@ object SampleNodes {
   object GenericSourceWithCustomVariables
       extends SourceFactory
       with UnboundedStreamComponent
-      with SingleInputGenericNodeTransformation[Source]
+      with SingleInputDynamicComponent[Source]
       with Serializable {
 
     private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
@@ -834,19 +834,19 @@ object SampleNodes {
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
-    ): GenericSourceWithCustomVariables.NodeTransformationDefinition = {
+    ): GenericSourceWithCustomVariables.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
       case step @ TransformationStep((`elementsParamName`, _) :: Nil, None) =>
         FinalResults.forValidation(context)(customContextInitializer.validationContext)
     }
 
-    override def implementation(
-        params: Map[String, Any],
+    override def createComponentLogic(
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): Source = {
       import scala.jdk.CollectionConverters._
-      val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
+      val elements = params.extractUnsafe(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
       new CollectionSource(elements, None, Typed[String]) with TestDataGenerator with FlinkSourceTestSupport[String] {
 
@@ -867,7 +867,7 @@ object SampleNodes {
 
   class GenericParametersSink(resultsHolder: => TestResultsHolder[String])
       extends SinkFactory
-      with SingleInputGenericNodeTransformation[Sink]
+      with SingleInputDynamicComponent[Sink]
       with Serializable {
 
     private val componentUseCaseDependency = TypedNodeDependency[ComponentUseCase]
@@ -876,7 +876,7 @@ object SampleNodes {
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
-    ): this.NodeTransformationDefinition = {
+    ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(
           Parameter[String]("value").copy(isLazyParameter = true) :: Parameter[String]("type")
@@ -904,16 +904,16 @@ object SampleNodes {
       case TransformationStep(("value", _) :: ("type", _) :: ("version", _) :: Nil, None)     => FinalResults(context)
     }
 
-    override def implementation(
-        params: Map[String, Any],
+    override def createComponentLogic(
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): FlinkSink = new FlinkSink {
 
       type Value = String
 
-      private val typ     = params("type")
-      private val version = params("version")
+      private val typ     = params.extractUnsafe("type")
+      private val version = params.extractUnsafe("version")
 
       override def prepareValue(
           dataStream: DataStream[Context],
@@ -921,7 +921,8 @@ object SampleNodes {
       ): DataStream[ValueWithContext[Value]] = {
         dataStream
           .flatMap(
-            flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]])
+            flinkNodeContext.lazyParameterHelper
+              .lazyMapFunction(params.extractUnsafe("value").asInstanceOf[LazyParameter[String]])
           )
           .map(
             (v: ValueWithContext[String]) =>

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, NodeId, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, NodeId, Params, ServiceLogic}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   NodeDependencyValue,
-  SingleInputGenericNodeTransformation
+  SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
@@ -21,13 +21,13 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object DynamicMultipleParamsService extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+object DynamicMultipleParamsService extends EagerService with SingleInputDynamicComponent[ServiceLogic] {
 
   override type State = Unit
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): DynamicMultipleParamsService.NodeTransformationDefinition = {
+  ): DynamicMultipleParamsService.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       val fooParam = Parameter("foo", Typed[String]).copy(editor =
         Some(
@@ -62,13 +62,13 @@ object DynamicMultipleParamsService extends EagerService with SingleInputGeneric
       FinalResults(context)
   }
 
-  override def implementation(
-      params: Map[String, Any],
+  override def createComponentLogic(
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
-  ): ServiceInvoker = {
-    new ServiceInvoker {
-      override def invokeService(context: Context)(
+  ): ServiceLogic = {
+    new ServiceLogic {
+      override def run(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           componentUseCase: ComponentUseCase

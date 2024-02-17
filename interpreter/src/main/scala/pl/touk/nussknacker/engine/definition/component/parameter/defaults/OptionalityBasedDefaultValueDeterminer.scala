@@ -9,8 +9,9 @@ protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefault
     Option(parameters).filter(_.isOptional).map { _ =>
       val lang = parameters.determinedEditor
         .map {
-          case RawParameterEditor                   => Expression.Language.Spel
-          case simpleEditor: SimpleParameterEditor  => determineLanguage(of = simpleEditor)
+          case RawParameterEditor => Expression.Language.Spel
+          case DictParameterEditor(_) => Expression.Language.DictKeyWithLabel
+          case simpleEditor: SimpleParameterEditor => determineLanguage(of = simpleEditor)
           case DualParameterEditor(simpleEditor, _) => determineLanguage(of = simpleEditor)
         }
         .getOrElse(Expression.Language.Spel)
@@ -22,8 +23,8 @@ protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefault
   private def determineLanguage(of: SimpleParameterEditor) = {
     of match {
       case BoolParameterEditor | StringParameterEditor | DateParameterEditor | TimeParameterEditor |
-          DateTimeParameterEditor | TextareaParameterEditor | JsonParameterEditor | DurationParameterEditor(_) |
-          PeriodParameterEditor(_) | CronParameterEditor | FixedValuesParameterEditor(_) =>
+           DateTimeParameterEditor | TextareaParameterEditor | JsonParameterEditor | DurationParameterEditor(_) |
+           PeriodParameterEditor(_) | CronParameterEditor | FixedValuesParameterEditor(_) =>
         Expression.Language.Spel
       case SqlParameterEditor | SpelTemplateParameterEditor =>
         Expression.Language.SpelTemplate

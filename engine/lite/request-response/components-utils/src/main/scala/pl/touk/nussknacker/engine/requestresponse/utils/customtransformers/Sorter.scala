@@ -25,7 +25,7 @@ object Sorter extends CustomStreamTransformer {
         val outputType = output.returnType
         context.withVariable(OutputVar.variable(outputVariable), outputType)
       }
-      .implementedBy(new LiteCustomComponent with Lifecycle {
+      .withComponentLogic(new LiteCustomComponent with Lifecycle {
 
         private var runtimeContext: EngineRuntimeContext = _
 

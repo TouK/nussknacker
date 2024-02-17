@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.component.{AllProcessingModesComponent, Component}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,21 +23,21 @@ import scala.concurrent.{ExecutionContext, Future}
 abstract class Service extends Lifecycle with Component with AllProcessingModesComponent
 
 /*
-  This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with ServiceInvoker
+  This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with ServiceLogic
   Lifecycle is handled on EagerService level (like in standard Service).
   A sample use case is as follows:
     - Enrichment with data from SQL database, ConnectionPool is created on level of EagerService
-    - Each ServiceInvoker has different SQL query, ServiceInvoker stores PreparedStatement
+    - Each ServiceLogic has different SQL query, ServiceLogic stores PreparedStatement
   Please see EagerLifecycleService to see how such scenario can be achieved.
  */
-// TODO: EagerService shouldn't extend Lifecycle, instead ServiceInvoker should extend it - see notice in ProcessCompilerData.lifecycle
+// TODO: EagerService shouldn't extend Lifecycle, instead ServiceLogic should extend it - see notice in ProcessCompilerData.lifecycle
 abstract class EagerService extends Service
 
-trait ServiceInvoker {
+trait ServiceLogic {
 
-  def invokeService(context: Context)(
+  def run(context: Context)(
       implicit ec: ExecutionContext,
-      collector: InvocationCollectors.ServiceInvocationCollector,
+      collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase
   ): Future[Any]
 

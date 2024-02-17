@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.context.transformation
 
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, WrongParameters}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -20,8 +20,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
      - for sinks OutputVariable is not handled, result ValidationContext will be ignored
      - for sources OutputVariable *has* to be used for Flink sources, it's value is always equal to 'input' ATM, due to source API limitations
  */
-// TODO: rename to DynamicComponent
-sealed trait GenericNodeTransformation[INVOKER] extends Component {
+sealed trait DynamicComponent[T] extends Component {
 
   // ValidationContext for single input, Map[String, ValidationContext] for joins
   type InputContext
@@ -31,18 +30,17 @@ sealed trait GenericNodeTransformation[INVOKER] extends Component {
   // State is arbitrary data that can be passed between steps of NodeTransformationDefinition
   type State
 
-  // TODO: Rename to ContextTransformationDefinition
-  type NodeTransformationDefinition = PartialFunction[TransformationStep, TransformationStepResult]
+  type ContextTransformationDefinition = PartialFunction[TransformationStep, TransformationStepResult]
 
   def contextTransformation(context: InputContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition
+  ): ContextTransformationDefinition
 
-  def implementation(
-      params: Map[String, Any],
+  def createComponentLogic(
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
-  ): INVOKER
+  ): T
 
   // Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]
@@ -135,7 +133,7 @@ sealed trait GenericNodeTransformation[INVOKER] extends Component {
 
 }
 
-trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
+trait SingleInputDynamicComponent[T] extends DynamicComponent[T] {
   type InputContext     = ValidationContext
   type DefinedParameter = DefinedSingleParameter
 }
@@ -144,7 +142,7 @@ trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[
   NOTE: currently, due to FE limitations, it's *NOT* possible to defined dynamic branch parameters - that is,
   branch parameters that are changed based on other parameter values
  */
-trait JoinGenericNodeTransformation[T] extends GenericNodeTransformation[T] with LazyLogging {
+trait JoinDynamicComponent[T] extends DynamicComponent[T] with LazyLogging {
   type InputContext     = Map[String, ValidationContext]
   type DefinedParameter = BaseDefinedParameter
 }

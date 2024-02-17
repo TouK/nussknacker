@@ -44,7 +44,7 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
   )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation
       .definedBy(_.withVariable(OutputVar.customNode(variableName), newValue.returnType))
-      .implementedBy(
+      .withComponentLogic(
         FlinkCustomStreamTransformation { (stream, nodeContext) =>
           implicit val nctx: FlinkCustomNodeContext = nodeContext
           setUidToNodeIdIfNeed(
