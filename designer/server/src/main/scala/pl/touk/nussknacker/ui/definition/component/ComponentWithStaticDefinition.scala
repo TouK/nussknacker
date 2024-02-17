@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.ui.definition.component
 
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithLogic, ComponentStaticDefinition}
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  ComponentStaticDefinition
+}
 
 final case class ComponentWithStaticDefinition(
-    component: ComponentDefinitionWithLogic,
+    component: ComponentDefinitionWithImplementation,
     staticDefinition: ComponentStaticDefinition
 )

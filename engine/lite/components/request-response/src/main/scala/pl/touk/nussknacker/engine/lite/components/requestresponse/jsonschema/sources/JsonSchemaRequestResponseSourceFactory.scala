@@ -42,7 +42,7 @@ class JsonSchemaRequestResponseSourceFactory
     FinalResults.forValidation(context, validationResult, finalState)(finalInitializer.validationContext)
   }
 
-  override def runComponentLogic(
+  override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[(Schema, Schema)]

@@ -206,8 +206,8 @@ object SampleNodes {
     }
 
     @MethodToInvoke
-    def prepare(@ParamName("name") name: String): ServiceLogic = synchronized {
-      val newI = new ServiceLogic with WithLifecycle {
+    def prepare(@ParamName("name") name: String): ServiceInvoker = synchronized {
+      val newI = new ServiceInvoker with WithLifecycle {
         override def run(context: Context)(
             implicit ec: ExecutionContext,
             collector: ServiceInvocationCollector,
@@ -232,7 +232,7 @@ object SampleNodes {
     def prepare(
         @ParamName("static") static: String,
         @ParamName("dynamic") dynamic: LazyParameter[String]
-    ): ServiceLogic = new ServiceLogic {
+    ): ServiceInvoker = new ServiceInvoker {
 
       override def run(context: Context)(
           implicit ec: ExecutionContext,
@@ -310,7 +310,7 @@ object SampleNodes {
     ): ContextTransformation = {
       ContextTransformation
         .definedBy(Valid(_))
-        .withComponentLogic(FlinkCustomStreamTransformation {
+        .withComponentImplementation(FlinkCustomStreamTransformation {
           (start: DataStream[Context], context: FlinkCustomNodeContext) =>
             start
               .filter(
@@ -331,7 +331,7 @@ object SampleNodes {
     def execute(@ParamName("value") value: LazyParameter[String]) = {
       ContextTransformation
         .definedBy((in: context.ValidationContext) => Valid(in.clearVariables))
-        .withComponentLogic(
+        .withComponentImplementation(
           FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
             start
               .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
@@ -354,7 +354,7 @@ object SampleNodes {
         .definedBy((in: Map[String, context.ValidationContext]) =>
           in.head._2.clearVariables.withVariable(outputVarName, Unknown, None)
         )
-        .withComponentLogic(new FlinkCustomJoinTransformation {
+        .withComponentImplementation(new FlinkCustomJoinTransformation {
           override def transform(
               inputs: Map[String, DataStream[Context]],
               context: FlinkCustomNodeContext
@@ -388,7 +388,7 @@ object SampleNodes {
           val parent = contexts.values.flatMap(_.parent).headOption
           Valid(ValidationContext(Map(variableName -> newType), Map.empty, parent))
         }
-        .withComponentLogic(new FlinkCustomJoinTransformation {
+        .withComponentImplementation(new FlinkCustomJoinTransformation {
 
           override def transform(
               inputs: Map[String, DataStream[Context]],
@@ -443,7 +443,7 @@ object SampleNodes {
       EnricherContextTransformation(
         outputVar,
         returnType,
-        new ServiceLogic {
+        new ServiceInvoker {
           override def run(context: Context)(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
@@ -501,7 +501,7 @@ object SampleNodes {
     ) = {
       ContextTransformation
         .definedBy((in: context.ValidationContext) => in.clearVariables.withVariable(outputVarName, Typed[Int], None))
-        .withComponentLogic(
+        .withComponentImplementation(
           FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
             start
               .map(_ => 1: java.lang.Integer)
@@ -663,7 +663,7 @@ object SampleNodes {
       }
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -703,7 +703,7 @@ object SampleNodes {
         .valueOr(errors => FinalResults(context, errors.toList))
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -770,7 +770,7 @@ object SampleNodes {
       FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), Typed[String]))
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -840,7 +840,7 @@ object SampleNodes {
         FinalResults.forValidation(context)(customContextInitializer.validationContext)
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -904,7 +904,7 @@ object SampleNodes {
       case TransformationStep(("value", _) :: ("type", _) :: ("version", _) :: Nil, None)     => FinalResults(context)
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]

@@ -96,7 +96,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
   )(implicit nodeId: NodeId): JoinContextTransformation =
     ContextTransformation.join
       .definedBy(transformContextsDefinition(outputExpressionByBranchId, variableName)(_))
-      .withComponentLogic(
+      .withComponentImplementation(
         new FlinkCustomJoinTransformation {
 
           override def transform(

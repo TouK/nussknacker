@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, NodeId, Params, ServiceLogic}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, NodeId, Params, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   NodeDependencyValue,
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object DynamicMultipleParamsService extends EagerService with SingleInputDynamicComponent[ServiceLogic] {
+object DynamicMultipleParamsService extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
 
   override type State = Unit
 
@@ -62,12 +62,12 @@ object DynamicMultipleParamsService extends EagerService with SingleInputDynamic
       FinalResults(context)
   }
 
-  override def runComponentLogic(
+  override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
-  ): ServiceLogic = {
-    new ServiceLogic {
+  ): ServiceInvoker = {
+    new ServiceInvoker {
       override def run(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,

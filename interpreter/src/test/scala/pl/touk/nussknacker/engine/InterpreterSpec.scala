@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -173,7 +173,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         additionalComponents
 
     val definitions = ModelDefinition(
-      ComponentDefinitionWithLogic
+      ComponentDefinitionWithImplementation
         .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
       ModelDefinitionBuilder.emptyExpressionConfig.copy(
         languages = LanguageConfiguration(List(LiteralExpressionParser))
@@ -1071,7 +1071,7 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def runServiceLogic(params: Params)(
+    override def invoke(params: Params)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
@@ -1093,7 +1093,7 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def runServiceLogic(params: Params)(
+    override def invoke(params: Params)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
@@ -1115,7 +1115,7 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def runServiceLogic(params: Params)(
+    override def invoke(params: Params)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
@@ -1166,7 +1166,7 @@ object InterpreterSpec {
         @ParamName("param")
         @AdditionalVariables(Array(new AdditionalVariable(name = "helper", clazz = classOf[Helper])))
         param: String
-    ): ServiceLogic = new ServiceLogic {
+    ): ServiceInvoker = new ServiceInvoker {
 
       override def run(context: Context)(
           implicit ec: ExecutionContext,
@@ -1194,7 +1194,7 @@ object InterpreterSpec {
         outputVar,
         lazyOne.returnType, {
           if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
-          new ServiceLogic {
+          new ServiceInvoker {
             override def run(context: Context)(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
@@ -1208,7 +1208,7 @@ object InterpreterSpec {
 
   }
 
-  object DynamicEagerService extends EagerService with SingleInputDynamicComponent[ServiceLogic] {
+  object DynamicEagerService extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
 
     override type State = Nothing
 
@@ -1233,15 +1233,15 @@ object InterpreterSpec {
         )
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[Nothing]
-    ): ServiceLogic = {
+    ): ServiceInvoker = {
 
       val paramName = staticParam.extractValue(params)
 
-      new ServiceLogic {
+      new ServiceInvoker {
         override def run(context: Context)(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,

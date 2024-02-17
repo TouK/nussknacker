@@ -4,8 +4,8 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithLogic
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
@@ -40,13 +40,13 @@ class DefinitionsService(
           .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
 
       val withStaticDefinition = alignedComponentsDefinition.map {
-        case dynamic: DynamicComponentDefinitionWithLogic =>
+        case dynamic: DynamicComponentDefinitionWithImplementation =>
           val staticDefinition = staticDefinitionForDynamicComponents.getOrElse(
             dynamic.id,
             throw new IllegalStateException(s"Static definition for dynamic component: $dynamic should be precomputed")
           )
           ComponentWithStaticDefinition(dynamic, staticDefinition)
-        case methodBased: MethodBasedComponentDefinitionWithLogic =>
+        case methodBased: MethodBasedComponentDefinitionWithImplementation =>
           ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
         case other =>
           throw new IllegalStateException(s"Unknown component representation: $other")

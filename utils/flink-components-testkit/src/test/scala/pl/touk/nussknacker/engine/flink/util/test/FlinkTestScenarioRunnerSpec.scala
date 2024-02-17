@@ -123,7 +123,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
     val MockedValued = "sample-mocked"
 
     @MethodToInvoke
-    def prepare(@ParamName("param") value: LazyParameter[String]): ServiceLogic = new ServiceLogic {
+    def prepare(@ParamName("param") value: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
 
       override def run(context: Context)(
           implicit ec: ExecutionContext,

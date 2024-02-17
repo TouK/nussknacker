@@ -28,9 +28,12 @@ import pl.touk.nussknacker.engine.compile.{
   NodeValidationExceptionHandler
 }
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
-import pl.touk.nussknacker.engine.definition.component.dynamic.{DynamicComponentDefinitionWithLogic, FinalStateValue}
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.dynamic.{
+  DynamicComponentDefinitionWithImplementation,
+  FinalStateValue
+}
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -334,21 +337,21 @@ class NodeCompiler(
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
     definitions.getComponent(ComponentType.Service, n.id) match {
-      case Some(componentDefinition) if componentDefinition.component.isInstanceOf[EagerService] =>
+      case Some(componentDefinition) if componentDefinition.implementation.isInstanceOf[EagerService] =>
         compileEagerService(n, componentDefinition, validationContext, outputVar)
-      case Some(static: MethodBasedComponentDefinitionWithLogic) =>
+      case Some(static: MethodBasedComponentDefinitionWithImplementation) =>
         ServiceCompiler.compile(n, outputVar, static, validationContext)
-      case Some(_: DynamicComponentDefinitionWithLogic) =>
+      case Some(_: DynamicComponentDefinitionWithImplementation) =>
         val error = invalid(
           CustomNodeError(
-            "Not supported service logic: DynamicComponent can be mixed only with EagerService",
+            "Not supported service implementation: DynamicComponent can be mixed only with EagerService",
             None
           )
         ).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(validationContext), error)
       case Some(notSupportedComponentDefinition) =>
         throw new IllegalStateException(
-          s"Not supported ${classOf[ComponentDefinitionWithLogic].getName}: ${notSupportedComponentDefinition.getClass}"
+          s"Not supported ${classOf[ComponentDefinitionWithImplementation].getName}: ${notSupportedComponentDefinition.getClass}"
         )
       case None =>
         val error = invalid(MissingService(n.id)).toValidatedNel
@@ -358,7 +361,7 @@ class NodeCompiler(
 
   private def compileEagerService(
       serviceRef: ServiceRef,
-      componentDefinition: ComponentDefinitionWithLogic,
+      componentDefinition: ComponentDefinitionWithImplementation,
       validationContext: ValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
@@ -389,15 +392,15 @@ class NodeCompiler(
       }
     }
 
-    def createService(logic: ServiceLogic, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
+    def createService(invoker: ServiceInvoker, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
       compiledgraph.service.ServiceRef(
         id = serviceRef.id,
-        logic = logic,
+        invoker = invoker,
         parameters = prepareCompiledLazyParameters(paramsDefs, nodeParams),
         resultCollector = resultCollector
       )
 
-    val compilationResult = compileComponentWithContextTransformation[ServiceLogic](
+    val compilationResult = compileComponentWithContextTransformation[ServiceInvoker](
       parameters = serviceRef.parameters,
       branchParameters = Nil,
       ctx = Left(validationContext),
@@ -405,16 +408,16 @@ class NodeCompiler(
       componentDefinition = componentDefinition,
       defaultCtxForMethodBasedCreatedComponentExecutor = defaultCtxForMethodBasedCreatedComponentExecutor
     )
-    compilationResult.map { case (serviceLogic, nodeParams) =>
+    compilationResult.map { case (serviceInvoker, nodeParams) =>
       // TODO: Currently in case of object compilation failures we prefer to create "dumb" service invoker, with empty parameters list
       //       instead of return Invalid - I assume that it is probably because of errors accumulation purpose.
       //       We should clean up this compilation process by some NodeCompilationResult refactor like introduction of WriterT monad transformer
-      createService(serviceLogic, nodeParams, compilationResult.parameters.getOrElse(List.empty))
+      createService(serviceInvoker, nodeParams, compilationResult.parameters.getOrElse(List.empty))
     }
   }
 
   private def unwrapContextTransformation[T](value: Any): T = (value match {
-    case ct: ContextTransformation => ct.componentLogic
+    case ct: ContextTransformation => ct.implementation
     case a                         => a
   }).asInstanceOf[T]
 
@@ -451,7 +454,7 @@ class NodeCompiler(
       branchParameters: List[BranchParameters],
       ctx: GenericValidationContext,
       outputVar: Option[String],
-      componentDefinition: ComponentDefinitionWithLogic,
+      componentDefinition: ComponentDefinitionWithImplementation,
       defaultCtxForMethodBasedCreatedComponentExecutor: Option[TypingResult] => ValidatedNel[
         ProcessCompilationError,
         ValidationContext
@@ -461,7 +464,7 @@ class NodeCompiler(
       nodeId: NodeId
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
     componentDefinition match {
-      case dynamicComponent: DynamicComponentDefinitionWithLogic =>
+      case dynamicComponent: DynamicComponentDefinitionWithImplementation =>
         val afterValidation =
           validateDynamicTransformer(ctx, parameters, branchParameters, outputVar, dynamicComponent).map {
             case TransformationResult(Nil, computedParameters, outputContext, finalState, nodeParameters) =>
@@ -497,7 +500,7 @@ class NodeCompiler(
           afterValidation.map(_._3),
           afterValidation.andThen(_._4)
         )
-      case staticComponent: MethodBasedComponentDefinitionWithLogic =>
+      case staticComponent: MethodBasedComponentDefinitionWithImplementation =>
         val (typingInfo, validComponentExecutor) = createComponentExecutor[ComponentExecutor](
           componentDefinition,
           parameters,
@@ -532,7 +535,7 @@ class NodeCompiler(
     }
 
   private def createComponentExecutor[ComponentExecutor](
-      componentDefinition: ComponentDefinitionWithLogic,
+      componentDefinition: ComponentDefinitionWithImplementation,
       nodeParameters: List[NodeParameter],
       nodeBranchParameters: List[BranchParameters],
       outputVariableNameOpt: Option[String],
@@ -556,7 +559,7 @@ class NodeCompiler(
       )
       .andThen { compiledParameters =>
         factory
-          .executeComponentLogic[ComponentExecutor](
+          .createComponentExecutor[ComponentExecutor](
             componentDefinition,
             compiledParameters,
             outputVariableNameOpt,
@@ -614,9 +617,9 @@ class NodeCompiler(
       parameters: List[NodeParameter],
       branchParameters: List[BranchParameters],
       outputVar: Option[String],
-      dynamicDefinition: DynamicComponentDefinitionWithLogic
+      dynamicDefinition: DynamicComponentDefinitionWithImplementation
   )(implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
-    (dynamicDefinition.component, eitherSingleOrJoin) match {
+    (dynamicDefinition.implementation, eitherSingleOrJoin) match {
       case (single: SingleInputDynamicComponent[_], Left(singleCtx)) =>
         dynamicNodeValidator.validateNode(
           single,
@@ -656,7 +659,7 @@ class NodeCompiler(
     def compile(
         n: ServiceRef,
         outputVar: Option[OutputVar],
-        objWithMethod: MethodBasedComponentDefinitionWithLogic,
+        objWithMethod: MethodBasedComponentDefinitionWithImplementation,
         ctx: ValidationContext
     )(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
       val computedParameters =
@@ -674,7 +677,7 @@ class NodeCompiler(
         val evaluateParams = (c: Context) => Params(parametersEvaluator.evaluate(params, c)(nodeId, metaData))
         compiledgraph.service.ServiceRef(
           id = n.id,
-          logic = new MethodBasedServiceLogic(metaData, nodeId, outputVar, objWithMethod, evaluateParams),
+          invoker = new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod, evaluateParams),
           parameters = params,
           resultCollector = resultCollector
         )

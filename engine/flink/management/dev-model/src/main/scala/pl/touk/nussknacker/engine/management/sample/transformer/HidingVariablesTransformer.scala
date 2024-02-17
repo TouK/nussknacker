@@ -28,7 +28,7 @@ object HidingVariablesTransformer
       .copy(isLazyParameter = true, variablesToHide = context.localVariables.keySet)
   )
 
-  override def runComponentLogic(
+  override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

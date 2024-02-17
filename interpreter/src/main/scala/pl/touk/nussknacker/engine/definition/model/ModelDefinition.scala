@@ -3,43 +3,43 @@ package pl.touk.nussknacker.engine.definition.model
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 
 case class ModelDefinition private (
-    components: List[ComponentDefinitionWithLogic],
+    components: List[ComponentDefinitionWithImplementation],
     expressionConfig: ExpressionConfigDefinition,
     settings: ClassExtractionSettings
 ) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def withComponent(component: ComponentDefinitionWithLogic): ModelDefinition = {
+  def withComponent(component: ComponentDefinitionWithImplementation): ModelDefinition = {
     withComponents(List(component))
   }
 
-  def withComponents(componentsToAdd: List[ComponentDefinitionWithLogic]): ModelDefinition = {
+  def withComponents(componentsToAdd: List[ComponentDefinitionWithImplementation]): ModelDefinition = {
     val newComponents = components ++ componentsToAdd
     checkDuplicates(newComponents)
     copy(components = newComponents)
   }
 
-  def getComponent(componentType: ComponentType, componentName: String): Option[ComponentDefinitionWithLogic] =
+  def getComponent(componentType: ComponentType, componentName: String): Option[ComponentDefinitionWithImplementation] =
     getComponent(ComponentId(componentType, componentName))
 
-  def getComponent(id: ComponentId): Option[ComponentDefinitionWithLogic] = {
+  def getComponent(id: ComponentId): Option[ComponentDefinitionWithImplementation] = {
     components.find(_.id == id)
   }
 
-  def filterComponents(predicate: ComponentDefinitionWithLogic => Boolean): ModelDefinition =
+  def filterComponents(predicate: ComponentDefinitionWithImplementation => Boolean): ModelDefinition =
     copy(components.filter(predicate))
 
   def mapComponents(
-      f: ComponentDefinitionWithLogic => ComponentDefinitionWithLogic
+      f: ComponentDefinitionWithImplementation => ComponentDefinitionWithImplementation
   ): ModelDefinition =
     copy(components.map(f))
 
-  private def checkDuplicates(components: List[ComponentDefinitionWithLogic]): Unit = {
+  private def checkDuplicates(components: List[ComponentDefinitionWithImplementation]): Unit = {
     val duplicates = components
       .map(component => component.id -> component)
       .toGroupedMap
@@ -62,7 +62,7 @@ class DuplicatedComponentsException(duplicates: List[ComponentId])
 object ModelDefinition {
 
   def apply(
-      components: List[ComponentDefinitionWithLogic],
+      components: List[ComponentDefinitionWithImplementation],
       expressionConfig: ExpressionConfigDefinition,
       settings: ClassExtractionSettings
   ): ModelDefinition =

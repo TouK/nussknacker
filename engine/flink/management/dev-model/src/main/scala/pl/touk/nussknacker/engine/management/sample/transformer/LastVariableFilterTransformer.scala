@@ -69,7 +69,7 @@ object LastVariableFilterTransformer
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
-  override def runComponentLogic(
+  override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

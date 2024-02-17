@@ -55,7 +55,7 @@ object validationHelpers {
     def execute(@OutputVariableName variableName: String)(implicit nodeId: NodeId) = {
       ContextTransformation
         .definedBy(_.withVariable(variableName, Typed[String], paramName = None))
-        .withComponentLogic(null)
+        .withComponentImplementation(null)
     }
 
   }
@@ -66,7 +66,7 @@ object validationHelpers {
     def execute() = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .withComponentLogic(null)
+        .withComponentImplementation(null)
     }
 
   }
@@ -84,7 +84,7 @@ object validationHelpers {
           }.toMap)
           context.withVariable(variableName, newType, paramName = None)
         }
-        .withComponentLogic(null)
+        .withComponentImplementation(null)
     }
 
   }
@@ -106,7 +106,7 @@ object validationHelpers {
           }.toMap)
           Valid(ValidationContext(Map(variableName -> newType)))
         }
-        .withComponentLogic(null)
+        .withComponentImplementation(null)
     }
 
   }
@@ -137,7 +137,7 @@ object validationHelpers {
             mainBranchContext.withVariable(variableName, newType, paramName = None)
           }
         }
-        .withComponentLogic(null)
+        .withComponentImplementation(null)
     }
 
   }
@@ -148,7 +148,7 @@ object validationHelpers {
     def execute(@ParamName("stringVal") stringVal: String): ContextTransformation = {
       ContextTransformation
         .definedBy(ctx => Valid(ctx.clearVariables))
-        .withComponentLogic(null)
+        .withComponentImplementation(null)
     }
 
     override def canBeEnding: Boolean = false
@@ -190,12 +190,12 @@ object validationHelpers {
             case _          => Invalid(CustomNodeError("Validation contexts do not match", Option.empty)).toValidatedNel
           }
         })
-        .withComponentLogic(null)
+        .withComponentImplementation(null)
     }
 
   }
 
-  object MissingParamHandleDynamicComponent$ extends EagerService with SingleInputDynamicComponent[ServiceLogic] {
+  object MissingParamHandleDynamicComponent$ extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
 
     override type State = Nothing
 
@@ -205,11 +205,11 @@ object validationHelpers {
       NextParameters(Parameter[String]("param1") :: Nil)
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
-    ): ServiceLogic = ???
+    ): ServiceInvoker = ???
 
     override def nodeDependencies: List[NodeDependency] = List.empty
 
@@ -260,7 +260,7 @@ object validationHelpers {
         FinalResults(context, state = Some(Invalid(())))
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -279,7 +279,7 @@ object validationHelpers {
       finalResult(context, rest, "otherNameThanInput")
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -301,7 +301,7 @@ object validationHelpers {
 
   class GenericParametersSourceNoTestSupport extends GenericParametersSource with UnboundedStreamComponent {
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -315,7 +315,7 @@ object validationHelpers {
 
   class GenericParametersSourceNoGenerate extends GenericParametersSource with UnboundedStreamComponent {
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -330,7 +330,7 @@ object validationHelpers {
 
   class SourceWithTestParameters extends GenericParametersSource with UnboundedStreamComponent {
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -379,7 +379,7 @@ object validationHelpers {
 
   }
 
-  object GenericParametersProcessor extends EagerService with GenericParameters[ServiceLogic] {
+  object GenericParametersProcessor extends EagerService with GenericParameters[ServiceInvoker] {
 
     protected def outputParameters(
         context: ValidationContext,
@@ -393,7 +393,7 @@ object validationHelpers {
 
   case object SomeException extends Exception("Some exception")
 
-  object GenericParametersThrowingException extends EagerService with GenericParameters[ServiceLogic] {
+  object GenericParametersThrowingException extends EagerService with GenericParameters[ServiceInvoker] {
 
     protected def outputParameters(
         context: ValidationContext,
@@ -405,7 +405,7 @@ object validationHelpers {
 
   }
 
-  object GenericParametersEnricher extends EagerService with GenericParameters[ServiceLogic] {
+  object GenericParametersEnricher extends EagerService with GenericParameters[ServiceInvoker] {
 
     protected def outputParameters(
         context: ValidationContext,
@@ -466,7 +466,7 @@ object validationHelpers {
       prepareFinalResultWithOptionalVariable(context, Some((name, result)), None)
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -509,7 +509,7 @@ object validationHelpers {
         FinalResults(context, state = Some(extraParamValue))
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -564,7 +564,7 @@ object validationHelpers {
 
     private def right(byBranch: Map[String, Boolean]): String = byBranch.find(!_._2).get._1
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -583,7 +583,7 @@ object validationHelpers {
       NextParameters(Nil)
     }
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]

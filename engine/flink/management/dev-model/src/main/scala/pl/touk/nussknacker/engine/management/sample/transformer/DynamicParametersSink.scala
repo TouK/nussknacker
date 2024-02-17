@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 object DynamicParametersSink extends SinkFactory with DynamicParametersMixin {
 
-  override def runComponentLogic(
+  override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

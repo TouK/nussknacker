@@ -19,7 +19,7 @@ class JsonRequestResponseSourceFactory[T: Decoder: ClassTag]
   @MethodToInvoke
   def create(implicit nodeIdPassed: NodeId): ContextTransformation = ContextTransformation
     .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, Typed[T], None))
-    .withComponentLogic(new RequestResponsePostSource[T] with SourceTestSupport[T] {
+    .withComponentImplementation(new RequestResponsePostSource[T] with SourceTestSupport[T] {
 
       override val nodeId: NodeId = nodeIdPassed
 

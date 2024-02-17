@@ -45,7 +45,7 @@ class ModelDataTestInfoProviderSpec
 
   object SourceGeneratingEmptyTimestamp extends GenericParametersSource {
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -67,7 +67,7 @@ class ModelDataTestInfoProviderSpec
 
   object SourceGeneratingEmptyData extends GenericParametersSource {
 
-    override def runComponentLogic(
+    override def implementation(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithLogic
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
@@ -40,10 +40,10 @@ object TestFlinkProcessCompilerDataFactory {
       }
 
       override protected def prepareSourceFactory(
-          sourceFactory: ComponentDefinitionWithLogic,
+          sourceFactory: ComponentDefinitionWithImplementation,
           context: ComponentDefinitionContext
-      ): ComponentDefinitionWithLogic = {
-        sourceFactory.withComponentLogic(new StubbedComponentLogic(sourceFactory) {
+      ): ComponentDefinitionWithImplementation = {
+        sourceFactory.withImplementationInvoker(new StubbedComponentImplementationInvoker(sourceFactory) {
           private lazy val sourcePreparer = new StubbedSourcePreparer(
             new TestDataPreparer(
               context.userCodeClassLoader,
@@ -71,9 +71,9 @@ object TestFlinkProcessCompilerDataFactory {
       }
 
       override protected def prepareService(
-          service: ComponentDefinitionWithLogic,
+          service: ComponentDefinitionWithImplementation,
           context: ComponentDefinitionContext
-      ): ComponentDefinitionWithLogic = service
+      ): ComponentDefinitionWithImplementation = service
 
       override protected def exceptionHandler(
           metaData: MetaData,

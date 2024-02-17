@@ -20,7 +20,10 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithLogic, CustomComponentSpecificData}
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  CustomComponentSpecificData
+}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
@@ -1203,7 +1206,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val failingDefinition = base
       .mapComponents {
         case component if component.componentType == ComponentType.Source =>
-          component.withComponentLogic((_: Params, _: Option[String], _: Seq[AnyRef]) => {
+          component.withImplementationInvoker((_: Params, _: Option[String], _: Seq[AnyRef]) => {
             throw new RuntimeException("You passed incorrect parameter, cannot proceed")
           })
         case other => other
@@ -1227,7 +1230,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should be able to derive type from ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      ComponentDefinitionWithLogic.withEmptyConfig("returningTypeService", ServiceReturningTypeSample)
+      ComponentDefinitionWithImplementation.withEmptyConfig("returningTypeService", ServiceReturningTypeSample)
     )
 
     val process =
@@ -1255,7 +1258,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should override parameter definition from WithExplicitMethodToInvoke by definition from ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      ComponentDefinitionWithLogic.withEmptyConfig(
+      ComponentDefinitionWithImplementation.withEmptyConfig(
         "returningTypeService",
         ServiceReturningTypeWithExplicitMethodSample
       )
@@ -1285,7 +1288,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should be able to run custom validation using ServiceReturningType") {
     val base = baseDefinition
     val withServiceRef = base.withComponent(
-      ComponentDefinitionWithLogic.withEmptyConfig("withCustomValidation", ServiceWithCustomValidation)
+      ComponentDefinitionWithImplementation.withEmptyConfig("withCustomValidation", ServiceWithCustomValidation)
     )
 
     val process =
@@ -1686,7 +1689,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       EnricherContextTransformation(
         variableName,
         Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition))),
-        new ServiceLogic {
+        new ServiceInvoker {
 
           override def run(context: Context)(
               implicit ec: ExecutionContext,
@@ -1718,12 +1721,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       )
     }
 
-    override def createServiceLogic(
+    override def createServiceInvoker(
         eagerParameters: Map[String, Any],
         lazyParameters: Map[String, LazyParameter[AnyRef]],
         typingResult: TypingResult,
         metaData: MetaData
-    ): ServiceLogic = new ServiceLogic {
+    ): ServiceInvoker = new ServiceInvoker {
 
       override def run(context: Context)(
           implicit ec: ExecutionContext,
@@ -1772,7 +1775,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       EnricherContextTransformation(
         variableName,
         returnType,
-        new ServiceLogic {
+        new ServiceInvoker {
           override def run(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,

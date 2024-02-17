@@ -24,7 +24,7 @@ object CollectTransformer extends CustomStreamTransformer {
         val outputType = Typed.genericTypeClass(classOf[java.util.List[_]], inputExpression.returnType :: Nil)
         context.clearVariables.withVariable(OutputVar.variable(outputVariable), outputType)
       }
-      .withComponentLogic(
+      .withComponentImplementation(
         new CollectTransformer(outputVariable, inputExpression)
       )
   }
