@@ -132,7 +132,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       implicit val contextId: ContextId   = ContextId(context.id)
       implicit val metaImplicit: MetaData = metaData
       val evaluatedLazyParameters         = lazyParameters.map { case (name, value) => (name, value.evaluate(context)) }
-      invoke(Params(eagerParameters ++ evaluatedLazyParameters))
+      EagerServiceWithStaticParametersAndReturnType.this.invoke(Params(eagerParameters ++ evaluatedLazyParameters))
     }
 
   }
