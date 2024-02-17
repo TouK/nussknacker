@@ -42,7 +42,7 @@ class DatabaseEnricherInvokerWithCache(
       params
     ) {
 
-  import DatabaseEnricherInvoker._
+  import DatabaseEnricherInvokerWithCache._
 
   // TODO: cache size
   private val cache: AsyncCache[CacheKey, CacheEntry[queryExecutor.QueryResult]] = Caffeine
@@ -52,7 +52,7 @@ class DatabaseEnricherInvokerWithCache(
 
   import scala.compat.java8.FutureConverters._
 
-  override def run(context: Context)(
+  override def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase
