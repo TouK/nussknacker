@@ -26,18 +26,18 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.validateParameterNames
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.{
-  ComponentExecutorFactory,
+  ComponentRuntimeLogicCreator,
   ExpressionCompiler,
   FragmentSourceWithTestWithParametersSupportFactory,
   NodeValidationExceptionHandler
 }
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithRuntimeLogicFactory
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
-  DynamicComponentDefinitionWithImplementation,
+  DynamicComponentWithRuntimeLogicFactory,
   FinalStateValue
 }
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentWithRuntimeLogicFactory
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -101,7 +101,7 @@ class NodeCompiler(
   private val expressionEvaluator =
     ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
   private val parametersEvaluator = new ParameterEvaluator(expressionEvaluator)
-  private val factory             = new ComponentExecutorFactory(parametersEvaluator)
+  private val factory             = new ComponentRuntimeLogicCreator(parametersEvaluator)
   private val dynamicNodeValidator =
     new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator)
   private val builtInNodeCompiler = new BuiltInNodeCompiler(expressionCompiler)
@@ -339,11 +339,11 @@ class NodeCompiler(
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
     definitions.getComponent(ComponentType.Service, n.id) match {
-      case Some(componentDefWithImpl) if componentDefWithImpl.implementation.isInstanceOf[EagerService] =>
+      case Some(componentDefWithImpl) if componentDefWithImpl.component.isInstanceOf[EagerService] =>
         compileEagerService(n, componentDefWithImpl, validationContext, outputVar)
-      case Some(static: MethodBasedComponentDefinitionWithImplementation) =>
+      case Some(static: MethodBasedComponentWithRuntimeLogicFactory) =>
         ServiceCompiler.compile(n, outputVar, static, validationContext)
-      case Some(_: DynamicComponentDefinitionWithImplementation) =>
+      case Some(_: DynamicComponentWithRuntimeLogicFactory) =>
         val error = invalid(
           CustomNodeError(
             "Not supported service implementation: GenericNodeTransformation can be mixed only with EagerService",
@@ -363,7 +363,7 @@ class NodeCompiler(
 
   private def compileEagerService(
       serviceRef: ServiceRef,
-      componentDefWithImpl: ComponentDefinitionWithImplementation,
+      componentDefWithImpl: ComponentWithRuntimeLogicFactory,
       validationContext: ValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
@@ -394,7 +394,7 @@ class NodeCompiler(
       }
     }
 
-    def makeInvoker(service: ServiceInvoker, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
+    def makeInvoker(service: ServiceRuntimeLogic, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
       compiledgraph.service.ServiceRef(
         serviceRef.id,
         service,
@@ -402,7 +402,7 @@ class NodeCompiler(
         resultCollector
       )
 
-    val compilationResult = compileComponentWithContextTransformation[ServiceInvoker](
+    val compilationResult = compileComponentWithContextTransformation[ServiceRuntimeLogic](
       serviceRef.parameters,
       Nil,
       Left(validationContext),
@@ -419,7 +419,7 @@ class NodeCompiler(
   }
 
   private def unwrapContextTransformation[T](value: Any): T = (value match {
-    case ct: ContextTransformation => ct.implementation
+    case ct: ContextTransformation => ct.runtimeLogic
     case a                         => a
   }).asInstanceOf[T]
 
@@ -456,7 +456,7 @@ class NodeCompiler(
       branchParameters: List[BranchParameters],
       ctx: GenericValidationContext,
       outputVar: Option[String],
-      componentDefinitionWithImpl: ComponentDefinitionWithImplementation,
+      componentDefinitionWithImpl: ComponentWithRuntimeLogicFactory,
       defaultCtxForMethodBasedCreatedComponentExecutor: Option[TypingResult] => ValidatedNel[
         ProcessCompilationError,
         ValidationContext
@@ -466,7 +466,7 @@ class NodeCompiler(
       nodeId: NodeId
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
     componentDefinitionWithImpl match {
-      case dynamicComponent: DynamicComponentDefinitionWithImplementation =>
+      case dynamicComponent: DynamicComponentWithRuntimeLogicFactory =>
         val afterValidation =
           validateDynamicTransformer(ctx, parameters, branchParameters, outputVar, dynamicComponent).map {
             case TransformationResult(Nil, computedParameters, outputContext, finalState, nodeParameters) =>
@@ -502,7 +502,7 @@ class NodeCompiler(
           afterValidation.map(_._3),
           afterValidation.andThen(_._4)
         )
-      case staticComponent: MethodBasedComponentDefinitionWithImplementation =>
+      case staticComponent: MethodBasedComponentWithRuntimeLogicFactory =>
         val (typingInfo, validComponentExecutor) = createComponentExecutor[ComponentExecutor](
           componentDefinitionWithImpl,
           parameters,
@@ -537,7 +537,7 @@ class NodeCompiler(
     }
 
   private def createComponentExecutor[ComponentExecutor](
-      componentDefinition: ComponentDefinitionWithImplementation,
+      componentDefinition: ComponentWithRuntimeLogicFactory,
       nodeParameters: List[NodeParameter],
       nodeBranchParameters: List[BranchParameters],
       outputVariableNameOpt: Option[String],
@@ -561,7 +561,7 @@ class NodeCompiler(
       )
       .andThen { compiledParameters =>
         factory
-          .createComponentExecutor[ComponentExecutor](
+          .createRuntimeLogic[ComponentExecutor](
             componentDefinition,
             compiledParameters,
             outputVariableNameOpt,
@@ -618,9 +618,9 @@ class NodeCompiler(
       parameters: List[NodeParameter],
       branchParameters: List[BranchParameters],
       outputVar: Option[String],
-      dynamicDefinition: DynamicComponentDefinitionWithImplementation
+      dynamicDefinition: DynamicComponentWithRuntimeLogicFactory
   )(implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
-    (dynamicDefinition.implementation, eitherSingleOrJoin) match {
+    (dynamicDefinition.component, eitherSingleOrJoin) match {
       case (single: SingleInputGenericNodeTransformation[_], Left(singleCtx)) =>
         dynamicNodeValidator.validateNode(
           single,
@@ -660,7 +660,7 @@ class NodeCompiler(
     def compile(
         n: ServiceRef,
         outputVar: Option[OutputVar],
-        objWithMethod: MethodBasedComponentDefinitionWithImplementation,
+        objWithMethod: MethodBasedComponentWithRuntimeLogicFactory,
         ctx: ValidationContext
     )(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
       val computedParameters =
@@ -677,7 +677,7 @@ class NodeCompiler(
       val serviceRef = computedParameters.map { params =>
         compiledgraph.service.ServiceRef(
           n.id,
-          new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod),
+          new MethodBasedServiceRuntimeLogic(metaData, nodeId, outputVar, objWithMethod),
           params,
           resultCollector
         )

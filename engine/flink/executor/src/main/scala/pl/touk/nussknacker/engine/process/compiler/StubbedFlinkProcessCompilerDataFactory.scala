@@ -10,17 +10,14 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  ComponentImplementationInvoker
-}
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentWithRuntimeLogicFactory
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentWithRuntimeLogicFactory
+import pl.touk.nussknacker.engine.definition.component.{ComponentRuntimeLogicFactory, ComponentWithRuntimeLogicFactory}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
 import pl.touk.nussknacker.engine.node.ComponentIdExtractor
-import pl.touk.nussknacker.engine.process.compiler.StubbedComponentImplementationInvoker.returnType
+import pl.touk.nussknacker.engine.process.compiler.StubbedComponentRuntimeLogicFactory.returnType
 import shapeless.syntax.typeable.typeableOps
 
 abstract class StubbedFlinkProcessCompilerDataFactory(
@@ -79,30 +76,30 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
   }
 
   protected def prepareService(
-      service: ComponentDefinitionWithImplementation,
+      service: ComponentWithRuntimeLogicFactory,
       context: ComponentDefinitionContext
-  ): ComponentDefinitionWithImplementation
+  ): ComponentWithRuntimeLogicFactory
 
   protected def prepareSourceFactory(
-      sourceFactory: ComponentDefinitionWithImplementation,
+      sourceFactory: ComponentWithRuntimeLogicFactory,
       context: ComponentDefinitionContext
-  ): ComponentDefinitionWithImplementation
+  ): ComponentWithRuntimeLogicFactory
 
 }
 
-abstract class StubbedComponentImplementationInvoker(
-    original: ComponentImplementationInvoker,
+abstract class StubbedComponentRuntimeLogicFactory(
+    original: ComponentRuntimeLogicFactory,
     originalDefinitionReturnType: Option[TypingResult]
-) extends ComponentImplementationInvoker {
+) extends ComponentRuntimeLogicFactory {
 
-  def this(componentDefinitionWithImpl: ComponentDefinitionWithImplementation) = {
+  def this(componentDefinitionWithImpl: ComponentWithRuntimeLogicFactory) = {
     this(
-      componentDefinitionWithImpl.implementationInvoker,
+      componentDefinitionWithImpl.runtimeLogicFactory,
       returnType(componentDefinitionWithImpl)
     )
   }
 
-  override def invokeMethod(
+  override def createRuntimeLogic(
       params: Map[String, Any],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef]
@@ -126,10 +123,10 @@ abstract class StubbedComponentImplementationInvoker(
       handleInvoke(impl, typingResult, nodeId)
     }
 
-    val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
+    val originalValue = original.createRuntimeLogic(params, outputVariableNameOpt, additional)
     originalValue match {
       case contextTransformation: ContextTransformation =>
-        contextTransformation.copy(implementation = transform(contextTransformation.implementation))
+        contextTransformation.copy(runtimeLogic = transform(contextTransformation.runtimeLogic))
       case componentExecutor => transform(componentExecutor)
     }
   }
@@ -137,12 +134,12 @@ abstract class StubbedComponentImplementationInvoker(
   def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any
 }
 
-object StubbedComponentImplementationInvoker {
+object StubbedComponentRuntimeLogicFactory {
 
-  private def returnType(componentDefinitionWithImpl: ComponentDefinitionWithImplementation): Option[TypingResult] = {
+  private def returnType(componentDefinitionWithImpl: ComponentWithRuntimeLogicFactory): Option[TypingResult] = {
     componentDefinitionWithImpl match {
-      case methodBasedDefinition: MethodBasedComponentDefinitionWithImplementation => methodBasedDefinition.returnType
-      case _: DynamicComponentDefinitionWithImplementation                         => None
+      case methodBasedDefinition: MethodBasedComponentWithRuntimeLogicFactory => methodBasedDefinition.returnType
+      case _: DynamicComponentWithRuntimeLogicFactory                         => None
     }
   }
 

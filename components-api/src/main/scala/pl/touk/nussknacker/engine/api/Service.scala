@@ -33,9 +33,9 @@ abstract class Service extends Lifecycle with Component with AllProcessingModesC
 // TODO: EagerService shouldn't extend Lifecycle, instead ServiceInvoker should extend it - see notice in ProcessCompilerData.lifecycle
 abstract class EagerService extends Service
 
-trait ServiceInvoker {
+trait ServiceRuntimeLogic {
 
-  def invokeService(params: Map[String, Any])(
+  def apply(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
       contextId: ContextId,

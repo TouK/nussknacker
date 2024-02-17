@@ -32,7 +32,7 @@ import scala.runtime.BoxedUnit
  */
 trait EagerServiceWithStaticParameters
     extends EagerService
-    with SingleInputGenericNodeTransformation[ServiceInvoker]
+    with SingleInputGenericNodeTransformation[ServiceRuntimeLogic]
     with WithStaticParameters {
 
   override type State = TypingResult
@@ -45,11 +45,11 @@ trait EagerServiceWithStaticParameters
 
   def hasOutput: Boolean
 
-  def serviceImplementation(
+  def createServiceRuntimeLogic(
       eagerParameters: Map[String, Any],
       typingResult: TypingResult,
       metaData: MetaData
-  ): ServiceInvoker
+  ): ServiceRuntimeLogic
 
   def returnType(
       validationContext: ValidationContext,
@@ -71,12 +71,12 @@ trait EagerServiceWithStaticParameters
   override def nodeDependencies: List[NodeDependency] =
     if (hasOutput) List(OutputVariableNameDependency, metaData) else List(metaData)
 
-  override def implementation(
+  override def createRuntimeLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[TypingResult]
-  ): ServiceInvoker = {
-    serviceImplementation(
+  ): ServiceRuntimeLogic = {
+    createServiceRuntimeLogic(
       params.filterNot(_._2.isInstanceOf[LazyParameter[_]]),
       finalState.getOrElse(Unknown),
       metaData.extract(dependencies)
@@ -103,15 +103,15 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       componentUseCase: ComponentUseCase
   ): Future[Any]
 
-  override def serviceImplementation(
+  override def createServiceRuntimeLogic(
       eagerParameters: Map[String, Any],
       typingResult: TypingResult,
       metaData: MetaData
-  ): ServiceInvoker = {
+  ): ServiceRuntimeLogic = {
     implicit val metaImplicit: MetaData = metaData
-    new ServiceInvoker {
+    new ServiceRuntimeLogic {
 
-      override def invokeService(params: Map[String, Any])(
+      override def apply(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           contextId: ContextId,

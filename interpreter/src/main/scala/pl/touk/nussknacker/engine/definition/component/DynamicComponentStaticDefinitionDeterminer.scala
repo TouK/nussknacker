@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.DynamicNodeValidator
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer.staticReturnType
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentWithRuntimeLogicFactory
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 
 // This class purpose is to provide initial set of parameters that will be presented after first usage of a component.
@@ -30,16 +30,16 @@ class DynamicComponentStaticDefinitionDeterminer(
 ) extends LazyLogging {
 
   private def determineStaticDefinition(
-      dynamic: DynamicComponentDefinitionWithImplementation
+      dynamic: DynamicComponentWithRuntimeLogicFactory
   ): ComponentStaticDefinition = {
     val parameters = determineInitialParameters(dynamic)
     ComponentStaticDefinition(
       parameters,
-      staticReturnType(dynamic.implementation)
+      staticReturnType(dynamic.component)
     )
   }
 
-  private def determineInitialParameters(dynamic: DynamicComponentDefinitionWithImplementation): List[Parameter] = {
+  private def determineInitialParameters(dynamic: DynamicComponentWithRuntimeLogicFactory): List[Parameter] = {
     def inferParameters(transformer: GenericNodeTransformation[_])(inputContext: transformer.InputContext) = {
       // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
       //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
@@ -51,7 +51,7 @@ class DynamicComponentStaticDefinitionDeterminer(
           transformer,
           Nil,
           Nil,
-          if (dynamic.implementation.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
+          if (dynamic.component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
           else None,
           dynamic.parametersConfig
         )(inputContext)
@@ -66,7 +66,7 @@ class DynamicComponentStaticDefinitionDeterminer(
         }
     }
 
-    dynamic.implementation match {
+    dynamic.component match {
       case withStatic: WithStaticParameters =>
         StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.parametersConfig)
       case single: SingleInputGenericNodeTransformation[_] =>
@@ -90,9 +90,8 @@ object DynamicComponentStaticDefinitionDeterminer {
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {
-      modelDataForType.modelDefinition.components.collect {
-        case dynamic: DynamicComponentDefinitionWithImplementation =>
-          dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
+      modelDataForType.modelDefinition.components.collect { case dynamic: DynamicComponentWithRuntimeLogicFactory =>
+        dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
       }.toMap
     }
   }

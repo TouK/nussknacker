@@ -5,11 +5,11 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentWithRuntimeLogicFactory
 import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  ComponentImplementationInvoker,
+  ComponentRuntimeLogicFactory,
   ComponentStaticDefinition,
+  ComponentWithRuntimeLogicFactory,
   FragmentSpecificData
 }
 
@@ -17,17 +17,17 @@ object FragmentComponentDefinition {
 
   def apply(
       name: String,
-      implementationInvoker: ComponentImplementationInvoker,
+      implementationInvoker: ComponentRuntimeLogicFactory,
       parameters: List[Parameter],
       outputNames: List[String],
       docsUrl: Option[String],
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
       designerWideId: DesignerWideComponentId,
-  ): ComponentDefinitionWithImplementation = {
+  ): ComponentWithRuntimeLogicFactory = {
     val uiDefinition =
       DefaultComponentConfigDeterminer.forFragment(docsUrl, translateGroupName, designerWideId)
     // Currently fragments are represented as method-based component, probably we should change it to some dedicated type
-    MethodBasedComponentDefinitionWithImplementation(
+    MethodBasedComponentWithRuntimeLogicFactory(
       name,
       implementationInvoker,
       null,

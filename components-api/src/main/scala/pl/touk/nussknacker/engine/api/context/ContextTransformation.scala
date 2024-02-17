@@ -9,16 +9,16 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
   * Wrapper for tuple of definition and implementation of variable context transformation
   * @param definition Definition of variable context transformation - defines how will look ValidationContext
   *                   (types of variables) after transformation in runtime
-  * @param implementation Implements real variable context transformation which was defined in definition
+  * @param runtimeLogic Implements real variable context transformation which was defined in definition
   *                       Returned type depends on execution engine. It should be lazy evaluated to make sure that
   *                       none runtime work will be run in compilation/validation stage
   */
-case class ContextTransformation(definition: ContextTransformationDef, implementation: Any)
+case class ContextTransformation(definition: ContextTransformationDef, runtimeLogic: Any)
     extends AbstractContextTransformation {
   override type ContextTransformationDefType = ContextTransformationDef
 }
 
-case class JoinContextTransformation(definition: JoinContextTransformationDef, implementation: Any)
+case class JoinContextTransformation(definition: JoinContextTransformationDef, runtimeLogic: Any)
     extends AbstractContextTransformation {
   override type ContextTransformationDefType = JoinContextTransformationDef
 }
@@ -31,7 +31,7 @@ sealed trait AbstractContextTransformation {
 
   // Should be lazy evaluated to be sure that none runtime work will be run in compilation/validation stage
   // The result of evaluation depends on execution engine
-  def implementation: Any
+  def runtimeLogic: Any
 
 }
 
@@ -105,7 +105,7 @@ object ContextTransformation {
     })
 
   class DefinedByBuilder(definition: ContextTransformationDef) {
-    def implementedBy(impl: Any): ContextTransformation =
+    def withRuntimeLogic(impl: Any): ContextTransformation =
       ContextTransformation(definition, impl)
   }
 
@@ -128,7 +128,7 @@ object ContextTransformation {
   }
 
   class JoinDefinedByBuilder(definition: JoinContextTransformationDef) {
-    def implementedBy(impl: Any): JoinContextTransformation =
+    def withRuntimeLogic(impl: Any): JoinContextTransformation =
       JoinContextTransformation(definition, impl)
   }
 

@@ -32,20 +32,20 @@ class DatabaseLookupEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
-    val invoker = service.implementation(
+    val invoker = service.createRuntimeLogic(
       params = Map(CacheTTLParamName -> java.time.Duration.ofDays(1)),
       dependencies = Nil,
       finalState = Some(state)
     )
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
-    val resultF = invoker.invokeService(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
+    val resultF = invoker.apply(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = invoker.invokeService(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
+    val resultF2 = invoker.apply(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
     val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))

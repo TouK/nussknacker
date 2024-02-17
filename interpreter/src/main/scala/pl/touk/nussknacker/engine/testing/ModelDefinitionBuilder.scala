@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Language
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentWithRuntimeLogicFactory
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
   GlobalVariableDefinitionWithImplementation
@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 final case class ModelDefinitionBuilder(
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
-    components: List[ComponentDefinitionWithImplementation],
+    components: List[ComponentWithRuntimeLogicFactory],
     globalVariables: Map[String, AnyRef],
     private val groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
 ) {
@@ -174,7 +174,7 @@ final case class ModelDefinitionBuilder(
         groupName => groupNameMapping.getOrElse(groupName, Some(groupName))
       )
       .map { case (uiDefinition, _) =>
-        MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
+        MethodBasedComponentWithRuntimeLogicFactory.withNullRuntimeLogic(
           name,
           componentTypeSpecificData,
           staticDefinition,

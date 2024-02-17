@@ -21,7 +21,7 @@ trait JavaGenericTransformation[T, VC, PAR, ST] {
       state: Optional[ST]
   ): JavaTransformationStepResult[ST]
 
-  def implementation(
+  def createRuntimeLogic(
       params: java.util.Map[String, Any],
       dependencies: java.util.List[NodeDependencyValue],
       finalState: java.util.Optional[ST]
@@ -57,12 +57,12 @@ trait GenericContextTransformationWrapper[T, VC, PAR, ST] { self: GenericNodeTra
 
   def javaDef: JavaGenericTransformation[T, VC, PAR, ST]
 
-  override def implementation(
+  override def createRuntimeLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): T =
-    javaDef.implementation(
+    javaDef.createRuntimeLogic(
       params.asJava,
       dependencies.asJava,
       java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State]))
@@ -150,12 +150,12 @@ class JoinGenericContextTransformationWrapper[ST](javaDef: JavaGenericJoinTransf
     }
   }
 
-  override def implementation(
+  override def createRuntimeLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Object =
-    javaDef.implementation(
+    javaDef.createRuntimeLogic(
       params.asJava,
       dependencies.asJava,
       java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State]))

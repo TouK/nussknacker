@@ -21,10 +21,10 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentWithRuntimeLogicFactory
 import pl.touk.nussknacker.engine.definition.component.methodbased.{
-  MethodBasedComponentDefinitionWithImplementation,
-  MethodBasedComponentImplementationInvoker
+  MethodBasedComponentRuntimeLogicFactory,
+  MethodBasedComponentWithRuntimeLogicFactory
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.{
@@ -47,9 +47,9 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val methodDef = modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformer1")
       .value
-      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
-      .implementationInvoker
-      .asInstanceOf[MethodBasedComponentImplementationInvoker]
+      .asInstanceOf[MethodBasedComponentWithRuntimeLogicFactory]
+      .runtimeLogicFactory
+      .asInstanceOf[MethodBasedComponentRuntimeLogicFactory]
       .methodDef
     val additionalVars = methodDef.definedParameters.head.additionalVariables
     additionalVars("var1") shouldBe AdditionalVariableProvidedInRuntime[OnlyUsedInAdditionalVariable]
@@ -70,8 +70,8 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       modelDefinitionWithTypes(None).modelDefinition.getComponent(ComponentType.Service, "configurable1").value
 
     definition
-      .asInstanceOf[DynamicComponentDefinitionWithImplementation]
-      .implementation
+      .asInstanceOf[DynamicComponentWithRuntimeLogicFactory]
+      .component
       .asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
       .returnType shouldBe Typed[String]
   }
@@ -80,7 +80,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val definition = modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerWithGenericParam")
       .value
-      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+      .asInstanceOf[MethodBasedComponentWithRuntimeLogicFactory]
 
     definition.parameters should have size 1
     definition.parameters.head.typ shouldEqual Typed.fromDetailedType[List[String]]
@@ -90,12 +90,12 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerReturningContextTransformationWithOutputVariable")
       .value
-      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+      .asInstanceOf[MethodBasedComponentWithRuntimeLogicFactory]
       .returnType shouldBe defined
     modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerReturningContextTransformationWithoutOutputVariable")
       .value
-      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+      .asInstanceOf[MethodBasedComponentWithRuntimeLogicFactory]
       .returnType shouldBe empty
   }
 
@@ -103,7 +103,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val definition = modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerWithFixedValueParam")
       .value
-      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+      .asInstanceOf[MethodBasedComponentWithRuntimeLogicFactory]
 
     definition.parameters should have size 1
     val parameter = definition.parameters.head
@@ -117,7 +117,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val definition = modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerWithDefaultValueForParameter")
       .value
-      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+      .asInstanceOf[MethodBasedComponentWithRuntimeLogicFactory]
 
     definition.parameters should have size 1
     val parameter = definition.parameters.head
@@ -128,7 +128,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val definition = modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerWithOptionalDefaultValueForParameter")
       .value
-      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+      .asInstanceOf[MethodBasedComponentWithRuntimeLogicFactory]
 
     definition.parameters should have size 1
     val parameter = definition.parameters.head
@@ -139,7 +139,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     val definition = modelDefinitionWithTypes(None).modelDefinition
       .getComponent(ComponentType.CustomComponent, "transformerWithBranchParam")
       .value
-      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+      .asInstanceOf[MethodBasedComponentWithRuntimeLogicFactory]
 
     definition.parameters should have size 2
 
@@ -176,7 +176,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       modelDefinitionWithTypes(None).modelDefinition
         .getComponent(ComponentType.CustomComponent, "transformer1")
         .value
-        .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+        .asInstanceOf[MethodBasedComponentWithRuntimeLogicFactory]
     val parameter = definition.parameters.find(_.name == "param1")
     parameter.map(_.validators) shouldBe Some(
       List(
@@ -299,7 +299,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     def invoke(@OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       ContextTransformation
         .definedBy((in: ValidationContext) => in.withVariable(variableName, Typed[String], None))
-        .implementedBy(null)
+        .withRuntimeLogic(null)
     }
 
   }
@@ -310,7 +310,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     def invoke(): ContextTransformation = {
       ContextTransformation
         .definedBy(Valid(_))
-        .implementedBy(null)
+        .withRuntimeLogic(null)
     }
 
   }

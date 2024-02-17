@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.processingtype
 
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithRuntimeLogicFactory
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 
@@ -11,11 +11,11 @@ import scala.collection.immutable.ListMap
 object ScenarioParametersDeterminer {
 
   def determineProcessingMode(
-      components: List[ComponentDefinitionWithImplementation],
+      components: List[ComponentWithRuntimeLogicFactory],
       processingType: ProcessingType,
   ): ProcessingMode = {
     val componentsToProcessingMode = components.map { component =>
-      val allowedProcessingModes = component.implementation.allowedProcessingModes
+      val allowedProcessingModes = component.component.allowedProcessingModes
       component.id -> allowedProcessingModes
     }.toMap
 

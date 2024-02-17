@@ -12,10 +12,7 @@ import pl.touk.nussknacker.engine.api.process.{
   ProcessObjectDependencies,
   WithCategories
 }
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionExtractor,
-  ComponentDefinitionWithImplementation
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionExtractor, ComponentWithRuntimeLogicFactory}
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
   GlobalVariableDefinitionWithImplementation
@@ -64,7 +61,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[ComponentDefinitionWithImplementation] = {
+  ): List[ComponentWithRuntimeLogicFactory] = {
     collectAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component, componentConfig) =>
       ComponentDefinitionExtractor
         .extract(

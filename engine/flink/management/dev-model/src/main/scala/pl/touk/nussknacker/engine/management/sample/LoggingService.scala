@@ -19,14 +19,14 @@ object LoggingService extends EagerService {
       @ParamName("logger") @Nullable loggerName: String,
       @ParamName("level") @DefaultValue("T(org.slf4j.event.Level).DEBUG") level: Level,
       @ParamName("message") @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String]
-  )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
-    new ServiceInvoker {
+  )(implicit metaData: MetaData, nodeId: NodeId): ServiceRuntimeLogic =
+    new ServiceRuntimeLogic {
 
       private lazy val logger = LoggerFactory.getLogger(
         (rootLogger :: metaData.name.value :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
       )
 
-      override def invokeService(params: Map[String, Any])(
+      override def apply(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
           contextId: ContextId,

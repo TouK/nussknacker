@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithRuntimeLogicFactory
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentWithRuntimeLogicFactory
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -65,9 +65,9 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
   }
 
   private def definition(sourceFactory: SourceFactory): List[Parameter] = {
-    ComponentDefinitionWithImplementation
+    ComponentWithRuntimeLogicFactory
       .withEmptyConfig("foo", sourceFactory)
-      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+      .asInstanceOf[MethodBasedComponentWithRuntimeLogicFactory]
       .parameters
   }
 
@@ -120,7 +120,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
       )
     }
 
-    override def implementation(
+    override def createRuntimeLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[Nothing]

@@ -32,8 +32,8 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
     )
     val parameters: Seq[Parameter] = stubbedSourcePreparer
       .createSourceDefinition("foo", fragmentInputDefinition)
-      .implementationInvoker
-      .invokeMethod(Map.empty, None, Seq.empty)
+      .runtimeLogicFactory
+      .createRuntimeLogic(Map.empty, None, Seq.empty)
       .asInstanceOf[TestWithParametersSupport[Map[String, Any]]]
       .testParametersDefinition
     val expectedParameters = List(

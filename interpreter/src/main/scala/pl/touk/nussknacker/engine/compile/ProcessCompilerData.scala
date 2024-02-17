@@ -75,7 +75,7 @@ object ProcessCompilerData {
       LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
       interpreter,
       listeners,
-      servicesDefs.map(service => service.name -> service.implementation.asInstanceOf[Lifecycle]).toMap
+      servicesDefs.map(service => service.name -> service.component.asInstanceOf[Lifecycle]).toMap
     )
 
   }

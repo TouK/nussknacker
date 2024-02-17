@@ -97,7 +97,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
 
   private def right(byBranch: Map[String, String]): Option[String] = byBranch.find(_._2 == "Additional data").map(_._1)
 
-  override def implementation(
+  override def createRuntimeLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

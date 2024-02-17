@@ -71,7 +71,7 @@ TODO:
 class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider)
     extends EagerService
     with TimeMeasuringService
-    with SingleInputGenericNodeTransformation[ServiceInvoker]
+    with SingleInputGenericNodeTransformation[ServiceRuntimeLogic]
     with LazyLogging {
 
   import DatabaseQueryEnricher._
@@ -222,16 +222,16 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     )
   }
 
-  override def implementation(
+  override def createRuntimeLogic(
       params: Map[String, Any],
       dependencies: List[NodeDependencyValue],
       finalState: Option[TransformationState]
-  ): ServiceInvoker = {
+  ): ServiceRuntimeLogic = {
     val state          = finalState.get
     val cacheTTLOption = extractOptional[Duration](params, CacheTTLParamName)
     cacheTTLOption match {
       case Some(cacheTTL) =>
-        new DatabaseEnricherInvokerWithCache(
+        new DatabaseEnricherRuntimeLogicWithCache(
           state.query,
           state.argsCount,
           state.tableDef,
@@ -243,7 +243,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
           () => timeMeasurement
         )
       case None =>
-        new DatabaseEnricherInvoker(
+        new DatabaseEnricherRuntimeLogic(
           state.query,
           state.argsCount,
           state.tableDef,

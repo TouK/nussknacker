@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDe
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithRuntimeLogicFactory
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
 
 object VerificationFlinkProcessCompilerDataFactory {
@@ -27,18 +27,18 @@ object VerificationFlinkProcessCompilerDataFactory {
       ): List[ProcessListener] = Nil
 
       override protected def prepareService(
-          service: ComponentDefinitionWithImplementation,
+          service: ComponentWithRuntimeLogicFactory,
           context: ComponentDefinitionContext
-      ): ComponentDefinitionWithImplementation =
-        service.withImplementationInvoker(new StubbedComponentImplementationInvoker(service) {
+      ): ComponentWithRuntimeLogicFactory =
+        service.withRuntimeLogicFactory(new StubbedComponentRuntimeLogicFactory(service) {
           override def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any = null
         })
 
       override protected def prepareSourceFactory(
-          sourceFactory: ComponentDefinitionWithImplementation,
+          sourceFactory: ComponentWithRuntimeLogicFactory,
           context: ComponentDefinitionContext
-      ): ComponentDefinitionWithImplementation =
-        sourceFactory.withImplementationInvoker(new StubbedComponentImplementationInvoker(sourceFactory) {
+      ): ComponentWithRuntimeLogicFactory =
+        sourceFactory.withRuntimeLogicFactory(new StubbedComponentRuntimeLogicFactory(sourceFactory) {
           override def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any =
             new EmptySource[Object](typingResult)(TypeInformation.of(classOf[Object]))
         })

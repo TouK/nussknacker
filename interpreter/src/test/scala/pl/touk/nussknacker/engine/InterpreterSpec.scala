@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithRuntimeLogicFactory
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -173,7 +173,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         additionalComponents
 
     val definitions = ModelDefinition(
-      ComponentDefinitionWithImplementation
+      ComponentWithRuntimeLogicFactory
         .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
       ModelDefinitionBuilder.emptyExpressionConfig.copy(
         languages = LanguageConfiguration(List(LiteralExpressionParser))
@@ -1167,9 +1167,9 @@ object InterpreterSpec {
         @ParamName("param")
         @AdditionalVariables(Array(new AdditionalVariable(name = "helper", clazz = classOf[Helper])))
         param: String
-    ): ServiceInvoker = new ServiceInvoker {
+    ): ServiceRuntimeLogic = new ServiceRuntimeLogic {
 
-      override def invokeService(params: Map[String, Any])(
+      override def apply(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
           contextId: ContextId,
@@ -1196,8 +1196,8 @@ object InterpreterSpec {
         outputVar,
         lazyOne.returnType, {
           if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
-          new ServiceInvoker {
-            override def invokeService(params: Map[String, Any])(
+          new ServiceRuntimeLogic {
+            override def apply(params: Map[String, Any])(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
                 contextId: ContextId,
@@ -1211,7 +1211,7 @@ object InterpreterSpec {
 
   }
 
-  object DynamicEagerService extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+  object DynamicEagerService extends EagerService with SingleInputGenericNodeTransformation[ServiceRuntimeLogic] {
 
     override type State = Nothing
 
@@ -1236,16 +1236,16 @@ object InterpreterSpec {
         )
     }
 
-    override def implementation(
+    override def createRuntimeLogic(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
         finalState: Option[Nothing]
-    ): ServiceInvoker = {
+    ): ServiceRuntimeLogic = {
 
       val paramName = staticParam.extractValue(params)
 
-      new ServiceInvoker {
-        override def invokeService(params: Map[String, Any])(
+      new ServiceRuntimeLogic {
+        override def apply(params: Map[String, Any])(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
             contextId: ContextId,
