@@ -4,7 +4,11 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, CustomNodeError, MissingParameters}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  CannotCreateObjectError,
+  CustomNodeError,
+  MissingParameters
+}
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, MissingOutputVariableException}
 import pl.touk.nussknacker.engine.api.NodeId
 

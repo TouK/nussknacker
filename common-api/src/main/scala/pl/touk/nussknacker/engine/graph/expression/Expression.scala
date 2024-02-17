@@ -9,9 +9,9 @@ import io.circe.syntax.EncoderOps
 object Expression {
 
   object Language {
-    val Spel             = "spel"
-    val SpelTemplate     = "spelTemplate"
-    val DictKeyWithLabel = "dictKeyWithLabel"
+    val Spel                  = "spel"
+    val SpelTemplate          = "spelTemplate"
+    val DictKeyWithLabel      = "dictKeyWithLabel"
     val TabularDataDefinition = "tabularDataDefinition"
   }
 

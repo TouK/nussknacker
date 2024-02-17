@@ -222,7 +222,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "serviceWithDictParameterEditor" -> categories(new ServiceWithDictParameterEditor),
       "modelConfigReader"              -> categories(new ModelConfigReaderService(modelDependencies.config)),
       "log"                            -> all(LoggingService),
-      "decisionTable"          -> all(DecisionTable)
+      "decisionTable"                  -> all(DecisionTable)
     )
 
   override def customStreamTransformers(

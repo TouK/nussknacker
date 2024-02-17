@@ -1117,14 +1117,14 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Map[String, Any])(
+    override def runServiceLogic(params: Params)(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[Any] = {
-      Future.successful(params.head._2.toString)
+      Future.successful(params.nameToValueMap.head._2.toString)
     }
 
   }

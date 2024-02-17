@@ -8,7 +8,11 @@ import pl.touk.nussknacker.engine.util.cache.DefaultCache
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
-import pl.touk.nussknacker.ui.security.basicauth.BasicHttpAuthenticator.{EncryptedPassword, PlainPassword, UserWithPassword}
+import pl.touk.nussknacker.ui.security.basicauth.BasicHttpAuthenticator.{
+  EncryptedPassword,
+  PlainPassword,
+  UserWithPassword
+}
 
 import scala.concurrent.{ExecutionContext, Future}
 

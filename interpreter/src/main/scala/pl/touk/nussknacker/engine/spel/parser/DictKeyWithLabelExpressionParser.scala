@@ -30,7 +30,6 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
     parseDictKeyWithLabelExpression(keyWithLabel).map(expr =>
       TypedExpression(
         CompiledDictKeyExpression(expr.key),
-        Typed[String],
         DictKeyWithLabelExpressionTypingInfo(expr.key, expr.label)
       )
     )
