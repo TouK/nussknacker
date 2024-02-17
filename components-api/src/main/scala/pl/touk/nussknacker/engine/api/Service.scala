@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.component.{AllProcessingModesComponent, Component}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 
 import scala.concurrent.{ExecutionContext, Future}
