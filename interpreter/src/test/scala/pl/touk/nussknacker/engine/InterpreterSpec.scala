@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, _}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
@@ -76,7 +77,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     ComponentDefinition("notBlankTypesService", NotBlankTypesService),
     ComponentDefinition("eagerServiceWithMethod", EagerServiceWithMethod),
     ComponentDefinition("dynamicEagerService", DynamicEagerService),
-    ComponentDefinition("eagerServiceWithFixedAdditional", EagerServiceWithFixedAdditional)
+    ComponentDefinition("eagerServiceWithFixedAdditional", EagerServiceWithFixedAdditional),
+    ComponentDefinition("dictParameterEditorService", DictParameterEditorService),
   )
 
   def listenersDef(listener: Option[ProcessListener] = None): Seq[ProcessListener] =
@@ -181,7 +183,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
       definitionsWithTypes,
-      new SimpleDictRegistry(Map.empty).toEngineRegistry,
+      new SimpleDictRegistry(
+        Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))
+      ).toEngineRegistry,
       listeners,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
@@ -951,6 +955,22 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction()) shouldBe new Helper().value
   }
 
+  test("handle DictParameterEditor with known dictionary and key") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher(
+        "customNode",
+        "data",
+        "dictParameterEditorService",
+        "param" -> Expression.dictKeyWithLabel("someKey", Some("someLabel"))
+      )
+      .buildSimpleVariable("result-end", resultVariable, "#data")
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction()) shouldBe "someKey"
+  }
+
 }
 
 class ThrowingService extends Service {
@@ -1081,6 +1101,28 @@ object InterpreterSpec {
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
       Future.successful(params.nameToValueMap.head._2.toString)
+    }
+
+  }
+
+  object DictParameterEditorService extends EagerServiceWithStaticParametersAndReturnType {
+
+    override def parameters: List[Parameter] = List(
+      Parameter[String]("param").copy(
+        editor = Some(DictParameterEditor("someDictId"))
+      )
+    )
+
+    override def returnType: typing.TypingResult = Typed[String]
+
+    override def invoke(params: Map[String, Any])(
+        implicit ec: ExecutionContext,
+        collector: InvocationCollectors.ServiceInvocationCollector,
+        contextId: ContextId,
+        metaData: MetaData,
+        componentUseCase: ComponentUseCase
+    ): Future[AnyRef] = {
+      Future.successful(params.head._2.toString)
     }
 
   }

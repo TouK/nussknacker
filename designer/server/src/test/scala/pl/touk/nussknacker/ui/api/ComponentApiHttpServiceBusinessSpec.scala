@@ -161,6 +161,7 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-service-providedcomponent-component-v2",
     "streaming-service-providedcomponent-component-v3",
     "streaming-service-servicemodelservice",
+    "streaming-service-servicewithdictparametereditor",
     "streaming-service-simpletypesservice",
     "streaming-service-transactionservice",
     "streaming-service-unionreturnobjectservice",

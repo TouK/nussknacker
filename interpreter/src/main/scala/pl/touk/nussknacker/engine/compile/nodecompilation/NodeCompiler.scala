@@ -75,11 +75,11 @@ class NodeCompiler(
     nonServicesLazyParamStrategy: LazyParameterCreationStrategy
 ) {
 
-  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
+  def withLabelsDictTyper: NodeCompiler = {
     new NodeCompiler(
       definitions,
       fragmentDefinitionExtractor,
-      expressionCompiler.withExpressionParsers(modify),
+      expressionCompiler.withLabelsDictTyper,
       classLoader,
       listeners,
       resultCollector,

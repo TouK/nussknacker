@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
-import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -42,12 +41,12 @@ class ProcessCompiler(
 ) extends ProcessCompilerBase
     with ProcessValidator {
 
-  override def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessCompiler =
+  override def withLabelsDictTyper: ProcessCompiler =
     new ProcessCompiler(
       classLoader,
-      sub.withExpressionParsers(modify),
+      sub.withLabelsDictTyper,
       globalVariablesPreparer,
-      nodeCompiler.withExpressionParsers(modify),
+      nodeCompiler.withLabelsDictTyper,
       customProcessValidator
     )
 
@@ -81,7 +80,7 @@ trait ProcessValidator extends LazyLogging {
     customProcessValidator.validate(process)
   }
 
-  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessValidator
+  def withLabelsDictTyper: ProcessValidator
 
   protected def compile(process: CanonicalProcess): CompilationResult[_]
 
@@ -349,7 +348,7 @@ object ProcessValidator {
       ComponentUseCase.Validation,
       nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
     )
-    val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
+    val sub = new PartSubGraphCompiler(nodeCompiler)
     new ProcessCompiler(
       classLoader,
       sub,

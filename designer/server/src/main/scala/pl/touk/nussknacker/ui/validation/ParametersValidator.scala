@@ -12,9 +12,7 @@ import pl.touk.nussknacker.ui.api.ParametersValidationRequest
 
 class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterable[String]) {
 
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-    case spel: SpelExpressionParser => spel.typingDictLabels
-  }
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
 
   private val validationContextGlobalVariablesOnly =
     GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)

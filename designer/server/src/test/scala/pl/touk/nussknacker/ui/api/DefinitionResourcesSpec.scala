@@ -43,11 +43,15 @@ class DefinitionResourcesSpec
   private val definitionResources = new DefinitionResources(
     definitionsServices = testProcessingTypeDataProvider.mapValues { processingTypeData =>
       val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.designerModelData.modelData)
-      DefinitionsService(
-        processingTypeData,
-        modelDefinitionEnricher,
-        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.processingType),
-        fragmentRepository
+
+      (
+        DefinitionsService(
+          processingTypeData,
+          modelDefinitionEnricher,
+          new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.processingType),
+          fragmentRepository
+        ),
+        processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService
       )
     }
   )
