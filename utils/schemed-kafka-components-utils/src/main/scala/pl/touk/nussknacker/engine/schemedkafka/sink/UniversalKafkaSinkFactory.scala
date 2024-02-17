@@ -200,7 +200,7 @@ class UniversalKafkaSinkFactory(
       rawEditorParameterStep(context) orElse
       valueEditorParamStep(context)
 
-  override def createComponentLogic(
+  override def runComponentLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]
@@ -221,7 +221,7 @@ class UniversalKafkaSinkFactory(
     )
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = extractValidationMode(
-      params.extract(SinkValidationModeParameterName).getOrElse(ValidationMode.strict.name)
+      params.extract[String](SinkValidationModeParameterName).getOrElse(ValidationMode.strict.name)
     )
 
     implProvider.createSink(

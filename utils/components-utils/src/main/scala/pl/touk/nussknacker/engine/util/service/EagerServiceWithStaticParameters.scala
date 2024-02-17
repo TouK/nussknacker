@@ -72,7 +72,7 @@ trait EagerServiceWithStaticParameters
   override def nodeDependencies: List[NodeDependency] =
     if (hasOutput) List(OutputVariableNameDependency, metaData) else List(metaData)
 
-  override final def createComponentLogic(
+  override final def runComponentLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[TypingResult]

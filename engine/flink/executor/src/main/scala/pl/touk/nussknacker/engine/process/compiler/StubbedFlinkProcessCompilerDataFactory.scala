@@ -66,8 +66,8 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
         // We create source definition only to reuse prepareSourceFactory method.
         // Source will have fragment component type to avoid collisions with normal sources
-        val fragmentSourceDefWithImpl = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id, frag)
-        prepareSourceFactory(fragmentSourceDefWithImpl, definitionContext)
+        val fragmentSourceDef = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id, frag)
+        prepareSourceFactory(fragmentSourceDef, definitionContext)
       }
 
     originalModelDefinition
@@ -92,10 +92,10 @@ abstract class StubbedComponentLogic(
     originalDefinitionReturnType: Option[TypingResult]
 ) extends ComponentLogic {
 
-  def this(componentDefinitionWithImpl: ComponentDefinitionWithLogic) = {
+  def this(componentDefinition: ComponentDefinitionWithLogic) = {
     this(
-      componentDefinitionWithImpl.componentLogic,
-      returnType(componentDefinitionWithImpl)
+      componentDefinition.componentLogic,
+      returnType(componentDefinition)
     )
   }
 
@@ -132,8 +132,8 @@ abstract class StubbedComponentLogic(
 
 object StubbedComponentLogic {
 
-  private def returnType(componentDefinitionWithImpl: ComponentDefinitionWithLogic): Option[TypingResult] = {
-    componentDefinitionWithImpl match {
+  private def returnType(componentDefinition: ComponentDefinitionWithLogic): Option[TypingResult] = {
+    componentDefinition match {
       case methodBasedDefinition: MethodBasedComponentDefinitionWithLogic => methodBasedDefinition.returnType
       case _: DynamicComponentDefinitionWithLogic                         => None
     }

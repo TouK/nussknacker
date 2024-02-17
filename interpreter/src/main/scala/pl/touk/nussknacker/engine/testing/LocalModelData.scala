@@ -71,7 +71,7 @@ object LocalModelData {
         additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ): ModelDefinition = {
       val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
-      val componentsDefWithImpl = ComponentDefinitionWithLogic.forList(
+      val componentDefs = ComponentDefinitionWithLogic.forList(
         components,
         componentsUiConfig,
         determineDesignerWideId,
@@ -87,7 +87,7 @@ object LocalModelData {
           determineDesignerWideId,
           additionalConfigsFromProvider
         )
-        .withComponents(componentsDefWithImpl)
+        .withComponents(componentDefs)
     }
 
   }

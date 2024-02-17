@@ -34,7 +34,7 @@ class DynamicComponentLogic(obj: DynamicComponent[_]) extends ComponentLogic {
       }
       .getOrElse(throw new IllegalArgumentException("Final state not passed to invokeMethod"))
     // we assume parameters were already validated!
-    obj.createComponentLogic(params, additionalParams, finalStateValue.asInstanceOf[Option[obj.State]])
+    obj.runComponentLogic(params, additionalParams, finalStateValue.asInstanceOf[Option[obj.State]])
   }
 
 }

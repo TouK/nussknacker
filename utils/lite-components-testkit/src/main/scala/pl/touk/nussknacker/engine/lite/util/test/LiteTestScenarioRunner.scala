@@ -116,7 +116,7 @@ private[test] class SimpleSourceFactory(result: TypingResult)
     FinalResults.forValidation(context, Nil, None)(finalInitializer.validationContext)
   }
 
-  override def createComponentLogic(
+  override def runComponentLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[Nothing]

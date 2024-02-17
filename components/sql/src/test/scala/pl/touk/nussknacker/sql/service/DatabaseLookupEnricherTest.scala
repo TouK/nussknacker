@@ -42,7 +42,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
-    val logic = service.createComponentLogic(
+    val logic = service.runComponentLogic(
       params = Params(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)),
       dependencies = Nil,
       finalState = Some(state)

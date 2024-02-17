@@ -98,7 +98,7 @@ object ComponentDefinitionWithLogic {
       )
       .getOrElse(
         throw new IllegalStateException(
-          s"ComponentDefinitionWithImplementation.withEmptyConfig returned None for: $component but component should be filtered for empty config"
+          s"Cannot extract component definition for $name (and component type: ${component.getClass.getName})"
         )
       )
   }

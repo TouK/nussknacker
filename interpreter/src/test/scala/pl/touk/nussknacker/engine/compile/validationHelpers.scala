@@ -205,7 +205,7 @@ object validationHelpers {
       NextParameters(Parameter[String]("param1") :: Nil)
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -260,7 +260,7 @@ object validationHelpers {
         FinalResults(context, state = Some(Invalid(())))
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -279,7 +279,7 @@ object validationHelpers {
       finalResult(context, rest, "otherNameThanInput")
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -301,7 +301,7 @@ object validationHelpers {
 
   class GenericParametersSourceNoTestSupport extends GenericParametersSource with UnboundedStreamComponent {
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -315,7 +315,7 @@ object validationHelpers {
 
   class GenericParametersSourceNoGenerate extends GenericParametersSource with UnboundedStreamComponent {
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -330,7 +330,7 @@ object validationHelpers {
 
   class SourceWithTestParameters extends GenericParametersSource with UnboundedStreamComponent {
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
@@ -466,7 +466,7 @@ object validationHelpers {
       prepareFinalResultWithOptionalVariable(context, Some((name, result)), None)
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -509,7 +509,7 @@ object validationHelpers {
         FinalResults(context, state = Some(extraParamValue))
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -564,7 +564,7 @@ object validationHelpers {
 
     private def right(byBranch: Map[String, Boolean]): String = byBranch.find(!_._2).get._1
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -583,7 +583,7 @@ object validationHelpers {
       NextParameters(Nil)
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]

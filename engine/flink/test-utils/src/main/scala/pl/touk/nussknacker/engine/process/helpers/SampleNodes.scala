@@ -663,7 +663,7 @@ object SampleNodes {
       }
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -703,7 +703,7 @@ object SampleNodes {
         .valueOr(errors => FinalResults(context, errors.toList))
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -770,7 +770,7 @@ object SampleNodes {
       FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), Typed[String]))
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -840,13 +840,13 @@ object SampleNodes {
         FinalResults.forValidation(context)(customContextInitializer.validationContext)
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): Source = {
       import scala.jdk.CollectionConverters._
-      val elements = params.extractUnsafe(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
+      val elements = params.extractUnsafe[java.util.List[String]](`elementsParamName`).asScala.toList
 
       new CollectionSource(elements, None, Typed[String]) with TestDataGenerator with FlinkSourceTestSupport[String] {
 
@@ -904,7 +904,7 @@ object SampleNodes {
       case TransformationStep(("value", _) :: ("type", _) :: ("version", _) :: Nil, None)     => FinalResults(context)
     }
 
-    override def createComponentLogic(
+    override def runComponentLogic(
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
@@ -912,8 +912,8 @@ object SampleNodes {
 
       type Value = String
 
-      private val typ     = params.extractUnsafe("type")
-      private val version = params.extractUnsafe("version")
+      private val typ     = params.extractUnsafe[String]("type")
+      private val version = params.extractUnsafe[Integer]("version")
 
       override def prepareValue(
           dataStream: DataStream[Context],
@@ -922,7 +922,7 @@ object SampleNodes {
         dataStream
           .flatMap(
             flinkNodeContext.lazyParameterHelper
-              .lazyMapFunction(params.extractUnsafe("value").asInstanceOf[LazyParameter[String]])
+              .lazyMapFunction(params.extractUnsafe[LazyParameter[String]]("value"))
           )
           .map(
             (v: ValueWithContext[String]) =>

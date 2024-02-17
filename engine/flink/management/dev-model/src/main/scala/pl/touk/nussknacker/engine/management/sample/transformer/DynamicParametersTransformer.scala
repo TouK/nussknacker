@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformat
 
 object DynamicParametersTransformer extends CustomStreamTransformer with DynamicParametersMixin {
 
-  override def createComponentLogic(
+  override def runComponentLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

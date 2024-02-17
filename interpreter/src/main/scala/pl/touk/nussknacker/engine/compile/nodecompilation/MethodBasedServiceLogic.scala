@@ -13,7 +13,7 @@ private[nodecompilation] class MethodBasedServiceLogic(
     metaData: MetaData,
     nodeId: NodeId,
     outputVariableNameOpt: Option[OutputVar],
-    componentDefWithImpl: ComponentDefinitionWithLogic,
+    componentDefinition: ComponentDefinitionWithLogic,
     parametersProvider: Context => Params
 ) extends ServiceLogic
     with LazyLogging {
@@ -23,7 +23,7 @@ private[nodecompilation] class MethodBasedServiceLogic(
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] = {
-    componentDefWithImpl.componentLogic
+    componentDefinition.componentLogic
       .run(
         parametersProvider(context),
         outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),

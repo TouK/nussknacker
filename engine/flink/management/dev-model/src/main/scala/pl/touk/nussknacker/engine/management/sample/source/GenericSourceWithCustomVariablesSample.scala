@@ -73,7 +73,7 @@ object GenericSourceWithCustomVariablesSample
       FinalResults.forValidation(context)(customContextInitializer.validationContext)
   }
 
-  override def createComponentLogic(
+  override def runComponentLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

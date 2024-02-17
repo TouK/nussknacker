@@ -62,7 +62,7 @@ object DynamicMultipleParamsService extends EagerService with SingleInputDynamic
       FinalResults(context)
   }
 
-  override def createComponentLogic(
+  override def runComponentLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

@@ -33,7 +33,7 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
-    val componentLogic = service.createComponentLogic(
+    val componentLogic = service.runComponentLogic(
       params = Params(
         Map(
           CacheTTLParamName -> java.time.Duration.ofDays(1),
