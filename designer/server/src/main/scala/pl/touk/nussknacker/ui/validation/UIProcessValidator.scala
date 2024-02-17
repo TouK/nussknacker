@@ -39,10 +39,10 @@ class UIProcessValidator(
   def withFragmentResolver(fragmentResolver: FragmentResolver) =
     new UIProcessValidator(processingType, validator, scenarioProperties, additionalValidators, fragmentResolver)
 
-  def withValidator(transformValidator: ProcessValidator => ProcessValidator) =
+  def transformValidator(transform: ProcessValidator => ProcessValidator) =
     new UIProcessValidator(
       processingType,
-      transformValidator(validator),
+      transform(validator),
       scenarioProperties,
       additionalValidators,
       fragmentResolver

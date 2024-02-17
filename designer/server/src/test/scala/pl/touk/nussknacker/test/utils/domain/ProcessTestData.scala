@@ -3,6 +3,7 @@ package pl.touk.nussknacker.test.utils.domain
 import pl.touk.nussknacker.engine.MetaDataInitializer
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -46,12 +47,13 @@ object ProcessTestData {
   val existingSinkFactory2           = "barSink2"
   val existingSinkFactoryKafkaString = "kafka-string"
 
-  val existingServiceId         = "barService"
-  val otherExistingServiceId    = "fooService"
-  val otherExistingServiceId2   = "fooService2"
-  val otherExistingServiceId3   = "fooService3"
-  val notBlankExistingServiceId = "notBlank"
-  val otherExistingServiceId4   = "fooService4"
+  val existingServiceId            = "barService"
+  val otherExistingServiceId       = "fooService"
+  val otherExistingServiceId2      = "fooService2"
+  val otherExistingServiceId3      = "fooService3"
+  val notBlankExistingServiceId    = "notBlank"
+  val otherExistingServiceId4      = "fooService4"
+  val dictParameterEditorServiceId = "dictParameterEditorService"
 
   val processorId = "fooProcessor"
 
@@ -94,6 +96,10 @@ object ProcessTestData {
         Some(Typed[String]),
         CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
       )
+      .withService(
+        dictParameterEditorServiceId,
+        Parameter[String]("expression").copy(editor = Some(DictParameterEditor("someDictId")), validators = List.empty)
+      )
       .withCustom(
         otherExistingStreamTransformer,
         Some(Typed[String]),
@@ -116,9 +122,27 @@ object ProcessTestData {
       )
       .build
 
+  def modelDefinitionWithDicts(
+      dictionaries: Map[String, DictDefinition]
+  ): ModelDefinition = {
+    val definition = modelDefinition()
+
+    definition.copy(
+      expressionConfig = definition.expressionConfig.copy(dictionaries = dictionaries)
+    )
+  }
+
   def processValidator: UIProcessValidator = new UIProcessValidator(
     processingType = Streaming.stringify,
     validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition())),
+    scenarioProperties = Map.empty,
+    additionalValidators = List.empty,
+    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+  )
+
+  def processValidatorWithDicts(dictionaries: Map[String, DictDefinition]): UIProcessValidator = new UIProcessValidator(
+    processingType = Streaming.stringify,
+    validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinitionWithDicts(dictionaries))),
     scenarioProperties = Map.empty,
     additionalValidators = List.empty,
     fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))

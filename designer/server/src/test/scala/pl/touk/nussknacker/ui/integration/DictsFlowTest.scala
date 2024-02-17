@@ -6,13 +6,16 @@ import io.circe.syntax.EncoderOps
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.ScenarioToJson
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
@@ -42,10 +45,76 @@ class DictsFlowTest
 
   override def designerConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
+  test("create scenario with DictParameterEditor, save it and test it") {
+    val DictId = "rgb"
+
+    // Use dict suggestion endpoint
+    val response1 = httpClient.send(
+      quickRequest
+        .get(
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dict/$DictId/entry?label=${"Black"
+              .take(3)}"
+        )
+        .auth
+        .basic("admin", "admin")
+    )
+    response1.code shouldEqual StatusCode.Ok
+    response1.bodyAsJson shouldEqual Json.arr(
+      Json.obj(
+        "key"   -> Json.fromString("H000000"),
+        "label" -> Json.fromString("Black")
+      )
+    )
+
+    // Create and test process that uses DictParameterEditor parameters
+    val process = ScenarioBuilder
+      .streaming("processWithDictParameterEditor")
+      .source("source", "csv-source-lite")
+      .enricher(
+        "customNode",
+        "data",
+        "serviceWithDictParameterEditor",
+        "RGBDict"     -> Expression.dictKeyWithLabel("H000000", Some("Black")),
+        "BooleanDict" -> Expression.dictKeyWithLabel("true", Some("OLD LABEL")),
+        "LongDict"    -> Expression.dictKeyWithLabel("-1500100900", Some("large (negative) number"))
+      )
+      .emptySink(EndNodeId, "dead-end-lite")
+
+    saveProcessAndTestIt(
+      process,
+      expressionUsingDictWithLabel = None,
+      expectedResult = """RGBDict: Some(H000000)
+         |LongDict: Some(-1500100900)
+         |BooleanDict: Some(true)""".stripMargin,
+      variableToCheck = "data"
+    )
+
+    // Check that label bound to dictId-key is updated in BE response
+    val response2 = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/processes/${process.name}")
+        .auth
+        .basic("admin", "admin")
+    )
+    response2.code shouldEqual StatusCode.Ok
+
+    response2.bodyAsJson.hcursor
+      .downField("scenarioGraph")
+      .downField("nodes")
+      .downAt(_.hcursor.get[String]("id").rightValue == "customNode")
+      .downField("service")
+      .downField("parameters")
+      .downAt(_.hcursor.get[String]("name").rightValue == "BooleanDict")
+      .downField("expression")
+      .downField("expression")
+      .as[String]
+      .rightValue shouldBe """{"key":"true","label":"ON"}""" // returns "ON" even though "OLD LABEL" was sent, because of ProcessDictSubstitutor
+  }
+
   test("save process with expression using dicts and get it back") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
-    saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel) shouldBe Json.obj()
+    saveProcessAndExtractValidationResult(process, Some(expressionUsingDictWithLabel)) shouldBe Json.obj()
   }
 
   test("save process with invalid expression using dicts and get it back with validation results") {
@@ -102,13 +171,13 @@ class DictsFlowTest
   test("save process with expression using dicts and test it") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
-    saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
+    saveProcessAndTestIt(process, Some(expressionUsingDictWithLabel), Key)
   }
 
   test("save process with expression using dict values as property and test it") {
     val expressionUsingDictWithLabel = s"#DICT.$Label"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
-    saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
+    saveProcessAndTestIt(process, Some(expressionUsingDictWithLabel), Key)
   }
 
   test("export process with expression using dict") {
@@ -133,8 +202,9 @@ class DictsFlowTest
 
   private def saveProcessAndTestIt(
       process: CanonicalProcess,
-      expressionUsingDictWithLabel: String,
-      expectedResult: String
+      expressionUsingDictWithLabel: Option[String],
+      expectedResult: String,
+      variableToCheck: String = VariableName
   ) = {
     saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel) shouldBe Json.obj()
 
@@ -153,7 +223,7 @@ class DictsFlowTest
     )
 
     response.code shouldEqual StatusCode.Ok
-    val endInvocationResult = extractedVariableResultFrom(response.bodyAsJson)
+    val endInvocationResult = extractedVariableResultFrom(response.bodyAsJson, variableToCheck)
     endInvocationResult shouldEqual expectedResult
   }
 
@@ -167,7 +237,7 @@ class DictsFlowTest
 
   private def saveProcessAndExtractValidationResult(
       process: CanonicalProcess,
-      endResultExpressionToPost: String
+      endResultExpressionToPost: Option[String]
   ): Json = {
     createEmptyScenario(process.name)
 
@@ -193,9 +263,10 @@ class DictsFlowTest
         .basic("admin", "admin")
     )
     response2.code shouldEqual StatusCode.Ok
-    val returnedEndResultExpression = extractVariableExpressionFromGetProcessResponse(response2.bodyAsJson)
-    returnedEndResultExpression shouldEqual endResultExpressionToPost
-
+    endResultExpressionToPost.foreach { endResultExpressionToPost =>
+      val returnedEndResultExpression = extractVariableExpressionFromGetProcessResponse(response2.bodyAsJson)
+      returnedEndResultExpression shouldEqual endResultExpressionToPost
+    }
     response2.extractFieldJsonValue("validationResult", "errors", "invalidNodes")
   }
 
@@ -255,14 +326,17 @@ class DictsFlowTest
       .rightValue
   }
 
-  private def extractedVariableResultFrom(json: Json) = {
+  private def extractedVariableResultFrom(
+      json: Json,
+      variableToCheck: String
+  ) = {
     json.hcursor
       .downField("results")
       .downField("nodeResults")
       .downField(EndNodeId)
       .downArray
       .downField("variables")
-      .downField(VariableName)
+      .downField(variableToCheck)
       .downField("pretty")
       .as[String]
       .rightValue

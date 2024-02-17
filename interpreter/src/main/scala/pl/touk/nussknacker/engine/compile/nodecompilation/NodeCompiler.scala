@@ -80,11 +80,11 @@ class NodeCompiler(
     componentUseCase: ComponentUseCase
 ) {
 
-  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
+  def withLabelsDictTyper: NodeCompiler = {
     new NodeCompiler(
       definitions,
       fragmentDefinitionExtractor,
-      expressionCompiler.withExpressionParsers(modify),
+      expressionCompiler.withLabelsDictTyper,
       classLoader,
       resultCollector,
       componentUseCase

@@ -84,8 +84,8 @@ object ProcessNodesRewriter {
       ): Expression =
         rewrite(expressionIdWithMetaData)(e)
     }
-    new ProcessNodesRewriter {
 
+    new ProcessNodesRewriter {
       override protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
         Some(exprRewriter.rewriteNode(data))
     }
