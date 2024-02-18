@@ -78,15 +78,15 @@ describe("Table editor", () => {
         cy.contains(`Bad expression type, expected: Boolean, found: Double`).should("be.visible");
 
         cy.get("@table").rightclick(15, 125);
-        cy.contains(/^remove row$/i).click();
+        cy.contains(/^remove 1 row$/i).click();
         cy.get("@table").rightclick(480, 15);
-        cy.contains(/^remove column$/i).click();
+        cy.contains(/^remove 1 column$/i).click();
         cy.get("@table").rightclick(480, 125);
-        cy.contains(/^remove column$/i).click();
+        cy.contains(/^remove 1 column$/i).click();
         cy.get("@table").rightclick(480, 125);
-        cy.contains(/^remove row$/i).click();
+        cy.contains(/^remove 1 row$/i).click();
         cy.get("@table").rightclick(480, 90);
-        cy.contains(/^remove column$/i).click();
+        cy.contains(/^remove 1 column$/i).click();
         snapshot();
 
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
