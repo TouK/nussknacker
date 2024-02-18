@@ -15,18 +15,20 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { GridColumn } from "@glideapps/glide-data-grid/dist/ts/data-grid/data-grid-types";
 import ErrorBoundary from "../../../../../common/ErrorBoundary";
 import { Sizer } from "./Sizer";
-import { longestRow } from "./tableDataUtils";
 import { css } from "@emotion/css";
 import { useTypeOptions } from "../../../fragment-input-definition/FragmentInputDefinition";
 import { PopoverPosition } from "@mui/material/Popover/Popover";
 import { DataEditorRef } from "@glideapps/glide-data-grid/dist/ts/data-editor/data-editor";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
-import { ActionTypes, useTableState } from "./tableState";
+import { useTableState } from "./state/tableState";
 import { TypesMenu } from "./TypesMenu";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
 import { useTableTheme } from "./tableTheme";
 import i18next from "i18next";
 import { Box } from "@mui/material";
+
+import { ActionTypes } from "./state/action";
+import { longestRow } from "./state/helpers";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",

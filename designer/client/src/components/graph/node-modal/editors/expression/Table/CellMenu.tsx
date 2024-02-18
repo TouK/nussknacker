@@ -4,6 +4,7 @@ import { ClickAwayListener, ListItemIcon, ListItemText, Menu, MenuItem } from "@
 import { AutoAwesome, DeleteForever } from "@mui/icons-material";
 import React, { PropsWithChildren, useMemo } from "react";
 import { useTableTheme } from "./tableTheme";
+import { useTranslation } from "react-i18next";
 
 interface ColumnMenuParams {
     anchorPosition: PopoverPosition | null;
@@ -40,6 +41,7 @@ export function CellMenu({ anchorPosition, onClose, children }: PropsWithChildre
 }
 
 export function DeleteRowMenuItem({ onClick, indexes = [] }: { indexes: number[]; onClick: (indexes: number[]) => void }) {
+    const { t } = useTranslation();
     return (
         <MenuItem
             onClick={() => {
@@ -49,7 +51,13 @@ export function DeleteRowMenuItem({ onClick, indexes = [] }: { indexes: number[]
             <ListItemIcon>
                 <DeleteForever fontSize="small" />
             </ListItemIcon>
-            <ListItemText>Remove {indexes.length > 1 ? "rows" : "row"}</ListItemText>
+            <ListItemText>
+                {t("cellMenu.deleteRow", {
+                    defaultValue_one: "Remove {{count}} row",
+                    defaultValue_other: "Remove {{count}} rows",
+                    count: indexes.length,
+                })}
+            </ListItemText>
         </MenuItem>
     );
 }
@@ -79,6 +87,7 @@ export function ResetColumnWidthMenuItem({
 }
 
 export function DeleteColumnMenuItem({ indexes, onClick }: { indexes: number[]; onClick: (indexes: number[]) => void }) {
+    const { t } = useTranslation();
     return (
         <MenuItem
             onClick={() => {
@@ -88,7 +97,13 @@ export function DeleteColumnMenuItem({ indexes, onClick }: { indexes: number[]; 
             <ListItemIcon>
                 <DeleteForever fontSize="small" />
             </ListItemIcon>
-            <ListItemText>Remove {indexes.length > 1 ? "columns" : "column"}</ListItemText>
+            <ListItemText>
+                {t("cellMenu.deleteColumns", {
+                    defaultValue_one: "Remove {{count}} column",
+                    defaultValue_other: "Remove {{count}} columns",
+                    count: indexes.length,
+                })}
+            </ListItemText>
         </MenuItem>
     );
 }

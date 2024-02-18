@@ -10,7 +10,7 @@ import { BASE_PATH } from "./config";
 import { css } from "@emotion/css";
 import RootErrorBoundary from "./components/common/RootErrorBoundary";
 import { NuThemeProvider } from "./containers/theme/nuThemeProvider";
-import { FixedPortal } from "./fixedPortal";
+import { GlideGridPortal } from "./components/graph/node-modal/editors/expression/Table/glideGridPortal";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -36,7 +36,7 @@ const Root = () => {
                     </StoreProvider>
                 </RootErrorBoundary>
             </NuThemeProvider>
-            <FixedPortal />
+            <GlideGridPortal />
         </>
     );
 };
