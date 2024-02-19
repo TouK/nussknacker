@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.service
 
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
-import pl.touk.nussknacker.engine.api.ContextId
+import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -24,11 +24,12 @@ class DatabaseEnricherInvokerWithCache(
     argsCount: Int,
     tableDef: TableDefinition,
     strategy: QueryResultStrategy,
-    queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
+    queryArgumentsExtractor: (Int, Params, Context) => QueryArguments,
     cacheTTL: Duration,
     override val returnType: typing.TypingResult,
     override val getConnection: () => Connection,
-    override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement
+    override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
+    params: Params
 ) extends DatabaseEnricherInvoker(
       query,
       argsCount,
@@ -37,8 +38,10 @@ class DatabaseEnricherInvokerWithCache(
       queryArgumentsExtractor,
       returnType,
       getConnection,
-      getTimeMeasurement
+      getTimeMeasurement,
+      params
     ) {
+
   import DatabaseEnricherInvokerWithCache._
 
   // TODO: cache size
@@ -49,14 +52,13 @@ class DatabaseEnricherInvokerWithCache(
 
   import scala.compat.java8.FutureConverters._
 
-  override def invokeService(params: Map[String, Any])(
+  override def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ContextId,
       componentUseCase: ComponentUseCase
   ): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {
-      val queryArguments = queryArgumentsExtractor(argsCount, params)
+      val queryArguments = queryArgumentsExtractor(argsCount, params, context)
       val cacheKey       = CacheKey(query, queryArguments)
 
       cache

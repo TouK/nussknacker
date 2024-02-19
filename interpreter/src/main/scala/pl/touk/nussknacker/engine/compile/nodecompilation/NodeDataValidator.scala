@@ -49,8 +49,10 @@ class NodeDataValidator(modelData: ModelData) {
     new FragmentParametersDefinitionExtractor(modelData.modelClassLoader.classLoader),
     expressionCompiler,
     modelData.modelClassLoader.classLoader,
+    Seq.empty,
     PreventInvocationCollector,
-    ComponentUseCase.Validation
+    ComponentUseCase.Validation,
+    nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )
 
   def validate(

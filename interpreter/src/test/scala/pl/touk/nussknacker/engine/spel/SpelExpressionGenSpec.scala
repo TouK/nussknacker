@@ -80,29 +80,32 @@ class SpelExpressionGenSpec
     }
   }
 
-  private def checkIfEvaluatedClassMatchesExpected(op: String, a: Any, b: Any): Unit = {
+  private def checkIfEvaluatedClassMatchesExpected(op: String, a: Number, b: Number): Unit = {
     val expr         = s"#a $op #b"
     val debugMessage = s"expression: $expr; operands: $a, $b; operand types: ${a.getClass} and ${b.getClass}."
     logger.debug(debugMessage)
 
     withClue(debugMessage) {
       Try(evaluate(expr, a, b)) match {
-        case Failure(
-              a: ArithmeticException
-            ) => // in case of overflow or similar exception, typed Type doesn't need to match
+        // in case of overflow or similar exception, typed Type doesn't need to match
+        case Failure(a: ArithmeticException) =>
           logger.debug(s"Ignored arithmetic exception: ${a.getMessage}")
         case Failure(other) =>
           fail(other) // shouldn't happen
         case Success(evaluatedValue) =>
-          inside(validate(expr, a, b)) {
-            case Valid(TypedExpression(_, TypedObjectWithValue(TypedClass(typedClass, Nil), typedValue), _)) =>
-              typedValue shouldEqual evaluatedValue
-              typedClass shouldEqual evaluatedValue.getClass
-            case Valid(TypedExpression(_, TypedClass(typedClass, Nil), _)) =>
-              typedClass shouldEqual evaluatedValue.getClass
-            case Valid(TypedExpression(_, union: TypedUnion, _)) =>
-              val typedClasses = union.possibleTypes.map(_.asInstanceOf[TypedClass].klass)
-              typedClasses.toList should contain(evaluatedValue.getClass)
+          inside(validate(expr, a, b)) { case Valid(typedExpression) =>
+            typedExpression.typingInfo.typingResult match {
+              case TypedObjectWithValue(TypedClass(typedClass, Nil), typedValue) =>
+                typedValue shouldEqual evaluatedValue
+                typedClass shouldEqual evaluatedValue.getClass
+              case TypedClass(typedClass, Nil) =>
+                typedClass shouldEqual evaluatedValue.getClass
+              case union: TypedUnion =>
+                val typedClasses = union.possibleTypes.map(_.asInstanceOf[TypedClass].klass)
+                typedClasses.toList should contain(evaluatedValue.getClass)
+              case other =>
+                throw new IllegalArgumentException(s"Not expected typing result: $other")
+            }
           }
       }
     }

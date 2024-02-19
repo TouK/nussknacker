@@ -91,6 +91,26 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5505](https://github.com/TouK/nussknacker/pull/5505) anonymous access functionality for Tapir-based API 
   * `AuthenticationResources` & `AnonymousAccess` traits were changed to be able to introduce anonymous access feature
   * `AuthCredentials` class was changed too
+* [#5373](https://github.com/TouK/nussknacker/pull/5373) changes related to `Component`s and `LazyParameter`s:
+  * `LazyParameter` can be evaluated on request thanks to its `evaluate` method 
+  * `Params` data class was introduced as a replacement for runtime parameters values defined as `Map[String, Any]`
+  * `TypedExpression` was removed from `BaseDefinedParameter` hierarchy in favour of `TypingResult` 
+  * `TypedExpression` doesn't depend on `ExpressionTypingInfo` anymore 
+  * `ServiceInvoker` refactoring (parameters map was removed, a context is passed to its method)
+  * `ProcessListener` interface changed slightly
+  * classes renaming:
+    * `LazyParameterInterpreter` to `LazyParameterInterpreter`
+    * `GenericNodeTransformation` to `DynamicComponent`
+    * `SingleInputGenericNodeTransformation` to `SingleInputDynamicComponent`
+    * `JoinGenericNodeTransformation` to `JoinDynamicComponent`
+    * `JavaGenericTransformation` to `JavaDynamicComponent`
+    * `JavaGenericSingleTransformation` to `JavaSingleInputDynamicComponent`
+    * `JavaGenericJoinTransformation` to `JavaJoinDynamicComponent`
+    * `JavaSourceFactoryGenericTransformation` to `JavaSourceFactoryDynamicComponent`
+    * `GenericContextTransformationWrapper` to `DynamicComponentWrapper`
+    * `SingleGenericContextTransformationWrapper` to `SingleInputDynamicComponentWrapper`
+    * `SourceFactoryGenericContextTransformationWrapper` to `SourceFactoryDynamicComponentWrapper`
+    * `JoinGenericContextTransformationWrapper` to `JoinDynamicComponentWrapper`
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:

@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.api.{LazyParameter, Params}
 import pl.touk.nussknacker.engine.api.util.NotNothing
 
 import scala.reflect.runtime.universe._
 
 /**
  * It is helper class that holds runtime value type next to definition of parameter.
- * It reduce boilerplate defining `GenericNodeTransformation` and reduce risk that definition of parameter
+ * It reduce boilerplate defining `DynamicComponent` and reduce risk that definition of parameter
  * will desynchronize with implementation code using values
  */
 case class ParameterWithExtractor[V](parameter: Parameter) {
 
-  def extractValue(params: Map[String, Any]): V = params(parameter.name).asInstanceOf[V]
+  def extractValue(params: Params): V = params.extractUnsafe[V](parameter.name)
 
 }
 

@@ -165,7 +165,6 @@ class SpelExpressionParser(
       Valid(
         TypedExpression(
           NullExpression(original, flavour),
-          expectedType,
           SpelExpressionTypingInfo(Map.empty, typing.TypedNull)
         )
       )
@@ -177,7 +176,6 @@ class SpelExpressionParser(
         .map { case (combinedResult, parsed) =>
           TypedExpression(
             expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType),
-            combinedResult.finalResult.typingResult,
             combinedResult.typingInfo
           )
         }

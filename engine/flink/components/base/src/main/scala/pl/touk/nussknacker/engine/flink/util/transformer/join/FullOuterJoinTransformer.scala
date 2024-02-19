@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.context.{
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
@@ -42,7 +42,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 class FullOuterJoinTransformer(
     timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]]
 ) extends CustomStreamTransformer
-    with JoinGenericNodeTransformation[FlinkCustomJoinTransformation]
+    with JoinDynamicComponent[FlinkCustomJoinTransformation]
     with ExplicitUidInOperatorsSupport
     with WithExplicitTypesToExtract
     with LazyLogging
@@ -58,7 +58,7 @@ class FullOuterJoinTransformer(
 
   override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       val ids          = contexts.keySet
       val errors_names = ContextTransformation.checkIdenticalSanitizedNodeNames(ids.toList)
@@ -87,7 +87,7 @@ class FullOuterJoinTransformer(
           val validatedAggregatorReturnTypes = aggregatorByBranchId
             .map { case (id, agg) =>
               agg
-                .computeOutputType(aggregateByByBranchId(id).returnType)
+                .computeOutputType(aggregateByByBranchId(id))
                 .leftMap(x => {
                   val branchParamId = ParameterNaming.getNameForBranchParameter(AggregateByParam.parameter, id)
                   NonEmptyList.one(CustomNodeError(x, Some(branchParamId)))
@@ -113,7 +113,7 @@ class FullOuterJoinTransformer(
   }
 
   override def implementation(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomJoinTransformation = {

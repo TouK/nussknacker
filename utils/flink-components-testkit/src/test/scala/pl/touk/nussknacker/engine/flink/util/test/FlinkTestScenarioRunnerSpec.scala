@@ -123,16 +123,15 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
     val MockedValued = "sample-mocked"
 
     @MethodToInvoke
-    def invoke(@ParamName("param") value: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
+    def prepare(@ParamName("param") value: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(params: Map[String, Any])(
+      override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          contextId: ContextId,
           componentUseCase: ComponentUseCase
       ): Future[String] = {
         collector.collect(s"test-service-$value", Option(MockedValued)) {
-          Future.successful(params("param").asInstanceOf[String])
+          Future.successful(value.evaluate(context))
         }
       }
 

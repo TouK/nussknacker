@@ -15,9 +15,9 @@ final case class MethodBasedComponentDefinitionWithImplementation(
 ) extends ComponentDefinitionWithImplementation {
 
   override def withImplementationInvoker(
-      implementationInvoker: ComponentImplementationInvoker
+      invoker: ComponentImplementationInvoker
   ): ComponentDefinitionWithImplementation =
-    copy(implementationInvoker = implementationInvoker)
+    copy(implementationInvoker = invoker)
 
   def parameters: List[Parameter] = staticDefinition.parameters
 
@@ -44,7 +44,7 @@ object MethodBasedComponentDefinitionWithImplementation {
   ): MethodBasedComponentDefinitionWithImplementation = {
     MethodBasedComponentDefinitionWithImplementation(
       name,
-      ComponentImplementationInvoker.nullImplementationInvoker,
+      ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
       new NullComponent(allowedProcessingModes),
       componentTypeSpecificData,
       staticDefinition,

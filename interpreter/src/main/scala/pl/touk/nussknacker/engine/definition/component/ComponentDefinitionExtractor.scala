@@ -94,18 +94,18 @@ object ComponentDefinitionExtractor {
     }
 
     (component match {
-      case e: GenericNodeTransformation[_] =>
-        val implementationInvoker = new DynamicComponentImplementationInvoker(e)
+      case e: DynamicComponent[_] =>
+        val invoker = new DynamicComponentImplementationInvoker(e)
         Right(
           withUiDefinitionForNotDisabledComponent(DynamicComponentStaticDefinitionDeterminer.staticReturnType(e)) {
             (uiDefinition, parametersConfig) =>
               DynamicComponentDefinitionWithImplementation(
-                componentName,
-                implementationInvoker,
-                e,
-                componentTypeSpecificData,
-                uiDefinition,
-                parametersConfig
+                name = componentName,
+                implementationInvoker = invoker,
+                implementation = e,
+                componentTypeSpecificData = componentTypeSpecificData,
+                uiDefinition = uiDefinition,
+                parametersConfig = parametersConfig
               )
           }
         )
@@ -129,15 +129,15 @@ object ComponentDefinitionExtractor {
               Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
             val returnType = Option(methodDef.returnType).filterNot(notReturnAnything)
             withUiDefinitionForNotDisabledComponent(returnType) { (uiDefinition, _) =>
-              val staticDefinition      = ComponentStaticDefinition(methodDef.definedParameters, returnType)
-              val implementationInvoker = extractImplementationInvoker(component, methodDef)
+              val staticDefinition = ComponentStaticDefinition(methodDef.definedParameters, returnType)
+              val invoker          = extractComponentImplementationInvoker(component, methodDef)
               MethodBasedComponentDefinitionWithImplementation(
-                componentName,
-                implementationInvoker,
-                component,
-                componentTypeSpecificData,
-                staticDefinition,
-                uiDefinition
+                name = componentName,
+                implementationInvoker = invoker,
+                implementation = component,
+                componentTypeSpecificData = componentTypeSpecificData,
+                staticDefinition = staticDefinition,
+                uiDefinition = uiDefinition
               )
             }
           }
@@ -145,7 +145,7 @@ object ComponentDefinitionExtractor {
 
   }
 
-  private def extractImplementationInvoker(
+  private def extractComponentImplementationInvoker(
       component: Component,
       methodDef: MethodDefinition
   ): ComponentImplementationInvoker = {

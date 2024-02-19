@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -100,7 +100,7 @@ class LiteTestScenarioRunner(
 
 private[test] class SimpleSourceFactory(result: TypingResult)
     extends SourceFactory
-    with SingleInputGenericNodeTransformation[Source]
+    with SingleInputDynamicComponent[Source]
     with WithExplicitTypesToExtract
     with UnboundedStreamComponent {
 
@@ -108,13 +108,13 @@ private[test] class SimpleSourceFactory(result: TypingResult)
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
+  ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     val finalInitializer = new BasicContextInitializer(result)
     FinalResults.forValidation(context, Nil, None)(finalInitializer.validationContext)
   }
 
   override def implementation(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[Nothing]
   ): Source = {
@@ -139,7 +139,10 @@ private[test] class SimpleSourceFactory(result: TypingResult)
 private[test] object SimpleSinkFactory extends SinkFactory {
 
   @MethodToInvoke
-  def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] = (_: LazyParameterInterpreter) =>
-    value
+  def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] = {
+    new LazyParamSink[AnyRef] {
+      override def prepareResponse: LazyParameter[AnyRef] = value
+    }
+  }
 
 }

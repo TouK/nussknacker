@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -69,8 +69,8 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
         // We create source definition only to reuse prepareSourceFactory method.
         // Source will have fragment component type to avoid collisions with normal sources
-        val fragmentSourceDefWithImpl = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id, frag)
-        prepareSourceFactory(fragmentSourceDefWithImpl, definitionContext)
+        val fragmentSourceDef = fragmentSourceDefinitionPreparer.createSourceDefinition(frag.id, frag)
+        prepareSourceFactory(fragmentSourceDef, definitionContext)
       }
 
     originalModelDefinition
@@ -95,18 +95,14 @@ abstract class StubbedComponentImplementationInvoker(
     originalDefinitionReturnType: Option[TypingResult]
 ) extends ComponentImplementationInvoker {
 
-  def this(componentDefinitionWithImpl: ComponentDefinitionWithImplementation) = {
+  def this(componentDefinition: ComponentDefinitionWithImplementation) = {
     this(
-      componentDefinitionWithImpl.implementationInvoker,
-      returnType(componentDefinitionWithImpl)
+      componentDefinition.implementationInvoker,
+      returnType(componentDefinition)
     )
   }
 
-  override def invokeMethod(
-      params: Map[String, Any],
-      outputVariableNameOpt: Option[String],
-      additional: Seq[AnyRef]
-  ): Any = {
+  override def invokeMethod(params: Params, outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
     def transform(impl: Any): Any = {
       // Correct TypingResult is important for method based components, because even for testing and verification
       // purpose, ImplementationInvoker is used also to determine output types. Dynamic components don't use it during
@@ -139,8 +135,8 @@ abstract class StubbedComponentImplementationInvoker(
 
 object StubbedComponentImplementationInvoker {
 
-  private def returnType(componentDefinitionWithImpl: ComponentDefinitionWithImplementation): Option[TypingResult] = {
-    componentDefinitionWithImpl match {
+  private def returnType(componentDefinition: ComponentDefinitionWithImplementation): Option[TypingResult] = {
+    componentDefinition match {
       case methodBasedDefinition: MethodBasedComponentDefinitionWithImplementation => methodBasedDefinition.returnType
       case _: DynamicComponentDefinitionWithImplementation                         => None
     }

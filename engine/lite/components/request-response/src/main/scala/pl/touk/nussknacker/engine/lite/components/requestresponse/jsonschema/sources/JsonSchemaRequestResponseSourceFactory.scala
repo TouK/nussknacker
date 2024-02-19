@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.so
 
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source}
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{
   InputSchemaProperty,
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseSource, Re
 
 class JsonSchemaRequestResponseSourceFactory
     extends RequestResponseSourceFactory
-    with SingleInputGenericNodeTransformation[Source] {
+    with SingleInputDynamicComponent[Source] {
 
   override type State = (Schema, Schema)
 
@@ -30,7 +30,7 @@ class JsonSchemaRequestResponseSourceFactory
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
+  ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     val inputSchema      = jsonSchemaExtractor.getSchemaFromProperty(InputSchemaProperty, dependencies)
     val outputSchema     = jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
     val validationResult = inputSchema.product(outputSchema).swap.toList.flatMap(_.toList)
@@ -43,7 +43,7 @@ class JsonSchemaRequestResponseSourceFactory
   }
 
   override def implementation(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[(Schema, Schema)]
   ): RequestResponseSource[Any] = {

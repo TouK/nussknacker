@@ -164,7 +164,7 @@ object CompilationResult extends Applicative[CompilationResult] {
 case class NodeTypingInfo(
     inputValidationContext: ValidationContext,
     expressionsTypingInfo: Map[String, ExpressionTypingInfo],
-    // Currently only parameters for dynamic nodes (implemented by GenericNodeTransformation) are returned
+    // Currently only parameters for dynamic nodes (implemented by DynamicComponent) are returned
     // They are used on FE, to faster display correct node details modal (without need for additional validation request to BE)
     parameters: Option[List[Parameter]]
 )

@@ -34,7 +34,7 @@ class FragmentComponentDefinitionExtractor(
 
       FragmentComponentDefinition(
         name = fragment.name.value,
-        implementationInvoker = ComponentImplementationInvoker.nullImplementationInvoker,
+        implementationInvoker = ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
         parameters = parameters,
         outputNames = outputNames,
         docsUrl = docsUrl,
