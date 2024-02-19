@@ -13,14 +13,14 @@ import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 
 // TODO: Shouldn't be unbounded - this is just for easier local development
-object BoundedSourceFactory extends SourceFactory with UnboundedStreamComponent {
+object BoundedSourceFactory extends SourceFactory with UnboundedStreamComponent with TableApiComponentFactory {
 
   @MethodToInvoke
   def invoke(): Source = {
     new BoundedSource()
   }
 
-  private class BoundedSource extends FlinkSource with ReturningType with TableApiComponent {
+  private class BoundedSource extends FlinkSource with ReturningType {
 
     import scala.jdk.CollectionConverters._
 
@@ -37,6 +37,8 @@ object BoundedSourceFactory extends SourceFactory with UnboundedStreamComponent 
 
       val rowStream: DataStream[Row] = tableEnv.toDataStream(table)
 
+      // TODO: infer returnType dynamically from table schema
+      //  based on table.getResolvedSchema.getColumns
       val mappedToSchemaStream = rowStream
         .map(r => {
           val eInt    = r.getFieldAs[Int](0)
