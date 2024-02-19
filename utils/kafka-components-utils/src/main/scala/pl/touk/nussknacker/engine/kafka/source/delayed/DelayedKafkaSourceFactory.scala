@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source.delayed
 
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition._
@@ -26,11 +26,9 @@ object DelayedKafkaSourceFactory {
       editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
     )
 
-  def extractTimestampField(params: Map[String, Any]): String =
-    params(TimestampFieldParamName).asInstanceOf[String]
+  def extractTimestampField(params: Params): String = params.extract[String](TimestampFieldParamName).getOrElse("")
 
-  def extractDelayInMillis(params: Map[String, Any]): Long =
-    params(DelayParameterName).asInstanceOf[Long]
+  def extractDelayInMillis(params: Params): Long = params.extract[Long](DelayParameterName).getOrElse(0)
 
   def validateTimestampField(field: String, typingResult: TypingResult)(
       implicit nodeId: NodeId

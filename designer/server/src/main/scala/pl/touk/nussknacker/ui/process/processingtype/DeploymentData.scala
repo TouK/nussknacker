@@ -14,11 +14,8 @@ final case class DeploymentData(
     engineSetupName: EngineSetupName
 ) {
 
-  def validDeploymentManagerOrStub: DeploymentManager = validDeploymentManager.valueOr(err =>
-    // FIXME (next PRs): Instead of throwing this exception we should follow Null object design pattern and return some
-    //                   stubbed DeploymentManager which will always return some meaningful status and not allow to run actions on scenario
-    throw new IllegalStateException("Deployment Manager not available because of errors: " + err.toList.mkString(", "))
-  )
+  def validDeploymentManagerOrStub: DeploymentManager =
+    validDeploymentManager.valueOr(_ => InvalidDeploymentManagerStub)
 
   def engineSetupErrors: List[String] = validDeploymentManager.swap.map(_.toList).valueOr(_ => List.empty)
 

@@ -1,21 +1,14 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.{
-  selectedScenarioTypeConfigurationPath,
-  toValueWithRestriction
-}
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.toValueWithRestriction
 
 object ProcessingTypeDataReader extends ProcessingTypeDataReader {
-
-  val selectedScenarioTypeConfigurationPath = "selectedScenarioType"
 
   def toValueWithRestriction(processingTypeData: ProcessingTypeData): ValueWithRestriction[ProcessingTypeData] = {
     ValueWithRestriction.userWithAccessRightsToAnyOfCategories(processingTypeData, Set(processingTypeData.category))
@@ -27,16 +20,14 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
   def loadProcessingTypeData(
       config: ConfigWithUnresolvedVersion,
+      getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
-    val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
-    val filteredProcessingTypes    = processingTypesConfig.filter(selectedScenarioTypeFilter)
+    val processingTypesConfig = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     // This step with splitting DeploymentManagerProvider loading for all processing types
     // and after that creating ProcessingTypeData is done because of the deduplication of deployments
     // See DeploymentManagerProvider.engineSetupIdentity
-    val providerWithNameInputData = filteredProcessingTypes.mapValuesNow { processingTypeConfig =>
+    val providerWithNameInputData = processingTypesConfig.mapValuesNow { processingTypeConfig =>
       val provider = createDeploymentManagerProvider(processingTypeConfig)
       val nameInputData = EngineNameInputData(
         provider.defaultEngineSetupName,
@@ -48,14 +39,15 @@ trait ProcessingTypeDataReader extends LazyLogging {
     val engineSetupNames =
       ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
     val processingTypesData = providerWithNameInputData
-      .map { case (processingType, (typeConfig, provider, _)) =>
+      .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
+        logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
         val processingTypeData = createProcessingTypeData(
           processingType,
-          typeConfig,
-          provider,
+          processingTypeConfig,
+          getModelDependencies(processingType),
+          deploymentManagerProvider,
           getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),
-          additionalUIConfigProvider
         )
         processingType -> processingTypeData
       }
@@ -72,16 +64,6 @@ trait ProcessingTypeDataReader extends LazyLogging {
     )
   }
 
-  // TODO Replace selectedScenarioType property by mechanism allowing to configure multiple scenario types with
-  //      different processing mode and engine configurations. This mechanism should also allow to have some scenario types
-  //      configurations that are invalid (e.g. some mandatory field is not configured)
-  private def createSelectedScenarioTypeFilter(
-      config: ConfigWithUnresolvedVersion
-  ): (ProcessingType, ProcessingTypeConfig) => Boolean = {
-    val selectedScenarioTypeOpt = config.resolved.getAs[String](selectedScenarioTypeConfigurationPath)
-    (processingType, _) => selectedScenarioTypeOpt.forall(_ == processingType)
-  }
-
   protected def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
     ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.deploymentManagerType)
   }
@@ -89,19 +71,19 @@ trait ProcessingTypeDataReader extends LazyLogging {
   protected def createProcessingTypeData(
       processingType: ProcessingType,
       processingTypeConfig: ProcessingTypeConfig,
+      modelDependencies: ModelDependencies,
       deploymentManagerProvider: DeploymentManagerProvider,
       deploymentManagerDependencies: DeploymentManagerDependencies,
-      engineSetupName: EngineSetupName,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      engineSetupName: EngineSetupName
   ): ProcessingTypeData = {
-    logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
     ProcessingTypeData.createProcessingTypeData(
       processingType,
+      ModelData(processingTypeConfig, modelDependencies),
       deploymentManagerProvider,
       deploymentManagerDependencies,
       engineSetupName,
-      processingTypeConfig,
-      additionalUIConfigProvider
+      processingTypeConfig.deploymentConfig,
+      processingTypeConfig.category
     )
   }
 

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, StreamMetaData, process}
+import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, Params, StreamMetaData, process}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers.{
@@ -46,7 +46,7 @@ class ModelDataTestInfoProviderSpec
   object SourceGeneratingEmptyTimestamp extends GenericParametersSource {
 
     override def implementation(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
     ): process.Source = {
@@ -68,14 +68,14 @@ class ModelDataTestInfoProviderSpec
   object SourceGeneratingEmptyData extends GenericParametersSource {
 
     override def implementation(
-        params: Map[String, Any],
+        params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Option[List[String]]
     ): process.Source = {
 
       new process.Source with SourceTestSupport[String] with TestDataGenerator {
 
-        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => ???
+        override def testRecordParser: TestRecordParser[String] = (_: TestRecord) => ???
 
         override def generateTestData(size: Int): TestData = TestData(Nil)
       }

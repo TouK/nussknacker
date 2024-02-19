@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.language.tabularDataDefinition
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
-import io.circe.parser.{parse => parseJson}
+import cats.data.ValidatedNel
+import cats.implicits._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData
+import pl.touk.nussknacker.engine.api.definition.TabularTypedData
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, ExpressionTypingInfo, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -20,35 +19,23 @@ object TabularDataDefinitionParser extends ExpressionParser {
       ctx: ValidationContext,
       expectedType: typing.TypingResult
   ): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parseTabularTypedData(original) match {
-      case Right(data) =>
-        Valid(createTabularDataDefinitionTypedExpression(data, original, expectedType))
-      case Left(error) =>
-        Invalid(NonEmptyList.one(new ExpressionParseError {
-          override def message: String = error.getMessage
-        }))
-    }
+    parse(original, fromTabularDataToT = createTabularDataDefinitionTypedExpression(_, original, expectedType))
   }
 
   override def parseWithoutContextValidation(
       original: String,
       expectedType: typing.TypingResult
   ): ValidatedNel[ExpressionParseError, Expression] = {
-    parseTabularTypedData(original) match {
-      case Right(data) =>
-        Valid(createTabularDataDefinitionExpression(data, original))
-      case Left(error) =>
-        Invalid(NonEmptyList.one(new ExpressionParseError {
-          override def message: String = error.getMessage
-        }))
-    }
+    parse(original, fromTabularDataToT = createTabularDataDefinitionExpression(_, original))
   }
 
-  private def parseTabularTypedData(value: String) = {
-    for {
-      json <- parseJson(value)
-      data <- TabularTypedData.decoder.decodeJson(json)
-    } yield data
+  private def parse[T](original: String, fromTabularDataToT: TabularTypedData => T) = {
+    TabularTypedData
+      .fromString(original)
+      .map(fromTabularDataToT)
+      .left
+      .map(toExpressionParseError)
+      .toValidatedNel
   }
 
   private def createTabularDataDefinitionTypedExpression(
@@ -57,7 +44,6 @@ object TabularDataDefinitionParser extends ExpressionParser {
       expectedType: typing.TypingResult
   ) = TypedExpression(
     createTabularDataDefinitionExpression(tabularTypedData, anOriginal),
-    expectedType,
     new ExpressionTypingInfo {
       override def typingResult: typing.TypingResult = expectedType
     }
@@ -68,6 +54,12 @@ object TabularDataDefinitionParser extends ExpressionParser {
       override val language: String                                        = languageId
       override val original: String                                        = anOriginal
       override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = tabularTypedData.asInstanceOf[T]
+    }
+  }
+
+  private def toExpressionParseError(error: Throwable) = {
+    new ExpressionParseError {
+      override def message: String = error.getMessage
     }
   }
 

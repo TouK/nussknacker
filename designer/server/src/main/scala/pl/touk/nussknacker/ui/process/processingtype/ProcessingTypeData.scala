@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  DesignerWideComponentId,
-  ScenarioPropertyConfig
-}
+import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
+
+import scala.util.control.NonFatal
 
 final case class ProcessingTypeData private (
     processingType: ProcessingType,
@@ -48,59 +47,40 @@ object ProcessingTypeData {
 
   def createProcessingTypeData(
       processingType: ProcessingType,
-      deploymentManagerProvider: DeploymentManagerProvider,
-      deploymentManagerDependencies: DeploymentManagerDependencies,
-      engineSetupName: EngineSetupName,
-      processingTypeConfig: ProcessingTypeConfig,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
-  ): ProcessingTypeData = {
-    val managerConfig                 = processingTypeConfig.deploymentConfig
-    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
-
-    createProcessingTypeData(
-      processingType,
-      deploymentManagerProvider,
-      deploymentManagerDependencies,
-      engineSetupName,
-      ModelData(
-        processingTypeConfig,
-        additionalConfigsFromProvider,
-        DesignerWideComponentId.default(processingType, _)
-      ),
-      managerConfig,
-      processingTypeConfig.category
-    )
-  }
-
-  // It is extracted mostly for easier testing and LocalNussknackerWithSingleModel
-  def createProcessingTypeData(
-      processingType: ProcessingType,
-      deploymentManagerProvider: DeploymentManagerProvider,
-      deploymentManagerDependencies: DeploymentManagerDependencies,
-      engineSetupName: EngineSetupName,
       modelData: ModelData,
-      managerConfig: Config,
+      deploymentManagerProvider: DeploymentManagerProvider,
+      deploymentManagerDependencies: DeploymentManagerDependencies,
+      engineSetupName: EngineSetupName,
+      deploymentConfig: Config,
       category: String
   ): ProcessingTypeData = {
-    val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(managerConfig)
-    val deploymentData =
-      createDeploymentData(
-        deploymentManagerProvider,
-        deploymentManagerDependencies,
-        engineSetupName,
-        modelData,
-        managerConfig,
-        metaDataInitializer
-      )
+    try {
+      val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(deploymentConfig)
+      val deploymentData =
+        createDeploymentData(
+          deploymentManagerProvider,
+          deploymentManagerDependencies,
+          engineSetupName,
+          modelData,
+          deploymentConfig,
+          metaDataInitializer
+        )
 
-    val designerModelData = createDesignerModelData(modelData, metaDataInitializer, processingType)
-    ProcessingTypeData(
-      processingType,
-      designerModelData,
-      deploymentData,
-      category,
-      ProcessingTypeUsageStatistics(managerConfig),
-    )
+      val designerModelData = createDesignerModelData(modelData, metaDataInitializer, processingType)
+      ProcessingTypeData(
+        processingType,
+        designerModelData,
+        deploymentData,
+        category,
+        ProcessingTypeUsageStatistics(deploymentConfig),
+      )
+    } catch {
+      case NonFatal(ex) =>
+        throw new IllegalArgumentException(
+          s"Error during creation of processing type data for processing type [$processingType]",
+          ex
+        )
+    }
   }
 
   private def createDeploymentData(
@@ -108,19 +88,27 @@ object ProcessingTypeData {
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       modelData: ModelData,
-      managerConfig: Config,
+      deploymentConfig: Config,
       metaDataInitializer: MetaDataInitializer
   ) = {
+    val scenarioStateCacheTTL = ScenarioStateCachingConfig.extractScenarioStateCacheTTL(deploymentConfig)
+
     val validDeploymentManager =
-      deploymentManagerProvider.createDeploymentManager(modelData, deploymentManagerDependencies, managerConfig)
+      deploymentManagerProvider.createDeploymentManager(
+        modelData,
+        deploymentManagerDependencies,
+        deploymentConfig,
+        scenarioStateCacheTTL
+      )
     val scenarioProperties =
-      deploymentManagerProvider.scenarioPropertiesConfig(managerConfig) ++ modelData.modelConfig
+      deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelData.modelConfig
         .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
+
     DeploymentData(
       validDeploymentManager,
       metaDataInitializer,
       scenarioProperties,
-      deploymentManagerProvider.additionalValidators(managerConfig),
+      deploymentManagerProvider.additionalValidators(deploymentConfig),
       engineSetupName
     )
   }

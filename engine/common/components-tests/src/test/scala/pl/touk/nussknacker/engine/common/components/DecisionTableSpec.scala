@@ -27,7 +27,7 @@ class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDe
       new DecisionTableComponentProvider()
         .create(
           ConfigFactory.empty(),
-          ProcessObjectDependencies.empty
+          ProcessObjectDependencies.withConfig(ConfigFactory.empty())
         )
     }
     .build()

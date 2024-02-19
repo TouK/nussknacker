@@ -13,21 +13,21 @@ private[nodecompilation] class MethodBasedServiceInvoker(
     metaData: MetaData,
     nodeId: NodeId,
     outputVariableNameOpt: Option[OutputVar],
-    componentDefWithImpl: ComponentDefinitionWithImplementation
+    componentDefinition: ComponentDefinitionWithImplementation,
+    parametersProvider: Context => Params
 ) extends ServiceInvoker
     with LazyLogging {
 
-  override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+  override def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      context: Context,
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] = {
-    componentDefWithImpl.implementationInvoker
+    componentDefinition.implementationInvoker
       .invokeMethod(
-        evaluateParams(context)._2,
+        parametersProvider(context),
         outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
-        additional = Seq(ec, collector, metaData, nodeId, context, componentUseCase)
+        additional = Seq(ec, collector, metaData, nodeId, context, ContextId(context.id), componentUseCase)
       )
       .asInstanceOf[Future[AnyRef]]
   }

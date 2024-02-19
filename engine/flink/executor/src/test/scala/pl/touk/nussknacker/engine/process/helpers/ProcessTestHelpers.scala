@@ -23,14 +23,13 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
     def invokeWithSampleData(
         process: CanonicalProcess,
         data: List[SimpleRecord],
-        config: Config = config,
-        additionalComponents: List[ComponentDefinition] = List.empty // todo: better solution?
+        config: Config = config
     ): Unit = {
       val defaultComponents = ProcessTestHelpers.prepareComponents(data)
       val env               = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(
         config,
-        defaultComponents ++ additionalComponents,
+        defaultComponents,
         configCreator = ProcessTestHelpersConfigCreator
       )
       UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
@@ -98,7 +97,7 @@ object ProcessTestHelpers extends Serializable {
 
 object ProcessTestHelpersConfigCreator extends EmptyProcessConfigCreator {
   override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-    List(CountingNodesListener)
+    List(CountingNodesListener, new LifecycleCheckingListener)
 
   override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val dictId  = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])

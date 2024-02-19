@@ -1,13 +1,40 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-export function useInterval(action: () => void, { refreshTime, ignoreFirst }: { refreshTime: number; ignoreFirst?: boolean }): void {
+function useWindowVisibility() {
+    const [active, setActive] = useState(() => document.visibilityState === "visible");
+
+    const visibilityChange = useCallback(() => {
+        setActive(() => document.visibilityState === "visible");
+    }, []);
+
     useEffect(() => {
-        if (!ignoreFirst) {
-            action();
-        }
-    }, [ignoreFirst, action]);
+        document.addEventListener("visibilitychange", visibilityChange);
+        return () => document.removeEventListener("visibilitychange", visibilityChange);
+    }, [visibilityChange]);
+
+    return active;
+}
+
+type IntervalOptions = {
+    refreshTime: number;
+    ignoreFirst?: boolean;
+    disabled?: boolean;
+};
+
+export function useInterval(action: () => void, { refreshTime, ignoreFirst, disabled }: IntervalOptions): void {
+    const isWindowActive = useWindowVisibility();
+    const enabled = !disabled && isWindowActive;
+
     useEffect(() => {
+        if (ignoreFirst || !enabled) return;
+
+        action();
+    }, [action, enabled, ignoreFirst]);
+
+    useEffect(() => {
+        if (!enabled) return;
+
         const interval = setInterval(() => action(), refreshTime);
         return () => clearInterval(interval);
-    }, [refreshTime, action]);
+    }, [action, enabled, refreshTime]);
 }

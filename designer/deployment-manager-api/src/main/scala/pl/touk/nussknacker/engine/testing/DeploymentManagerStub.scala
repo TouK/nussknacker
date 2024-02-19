@@ -19,9 +19,10 @@ import pl.touk.nussknacker.engine.{
   MetaDataInitializer
 }
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.Future
 
-class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessState {
+class DeploymentManagerStub extends DeploymentManager {
 
   override def validate(
       processVersion: ProcessVersion,
@@ -75,8 +76,13 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
     Future.successful(processStateDefinitionManager.processState(StatusDetails(lastStateActionStatus, None)))
   }
 
-  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
-    Future.successful(List.empty)
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    Future.successful(
+      WithDataFreshnessStatus.fresh(List.empty)
+    )
+  }
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
     Future.successful(SavepointResult(""))
@@ -102,7 +108,8 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
   override def createDeploymentManager(
       modelData: BaseModelData,
       deploymentManagerDependencies: DeploymentManagerDependencies,
-      config: Config
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = Validated.valid(new DeploymentManagerStub)
 
   override def name: String = "stub"

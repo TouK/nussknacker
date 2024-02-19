@@ -4,11 +4,15 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  ComponentId,
+  ComponentProvider,
+  DesignerWideComponentId
+}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinition,
   ModelDefinitionExtractor,
@@ -16,19 +20,13 @@ import pl.touk.nussknacker.engine.definition.model.{
 }
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.engine.modelconfig.{
-  ComponentsUiConfig,
-  ComponentsUiConfigParser,
-  DefaultModelConfigLoader,
-  InputConfigDuringExecution,
-  ModelConfigLoader
-}
+import pl.touk.nussknacker.engine.modelconfig._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 import java.net.URL
+import java.nio.file.Path
 
 object ModelData extends LazyLogging {
 
@@ -40,18 +38,26 @@ object ModelData extends LazyLogging {
         Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ) => ModelDefinition
 
-  def apply(
-      processingTypeConfig: ProcessingTypeConfig,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      determineDesignerWideId: ComponentId => DesignerWideComponentId
-  ): ModelData = {
-    ModelData(
-      processingTypeConfig.modelConfig,
-      ModelClassLoader(processingTypeConfig.classPath),
+  def apply(processingTypeConfig: ProcessingTypeConfig, dependencies: ModelDependencies): ModelData = {
+    val modelClassLoader = ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt)
+    ClassLoaderModelData(
+      modelConfigLoader =>
+        modelConfigLoader
+          .resolveInputConfigDuringExecution(processingTypeConfig.modelConfig, modelClassLoader.classLoader),
+      modelClassLoader,
       Some(processingTypeConfig.category),
-      determineDesignerWideId,
-      additionalConfigsFromProvider
+      dependencies.determineDesignerWideId,
+      dependencies.additionalConfigsFromProvider,
+      dependencies.shouldIncludeComponentProvider
     )
+  }
+
+  // Used on Flink, where we start already with resolved config so we should not resolve it twice.
+  // Also a classloader is correct so we don't need to build the new one
+  // This tiny method is Flink specific so probably the interpreter module is not the best one
+  // but it is very convenient to keep in near normal, duringExecution method
+  def duringFlinkExecution(inputConfig: Config): ModelData = {
+    duringExecution(inputConfig, ModelClassLoader.empty, resolveConfigs = false)
   }
 
   // On the runtime side, we get only model config, not the whole processing type config,
@@ -59,42 +65,24 @@ object ModelData extends LazyLogging {
   // But it is not a big deal, because scenario was already validated before deploy, so we already check that
   // we don't use not allowed components for a given category
   // and that the scenario doesn't violate validators introduced by additionalConfigsFromProvider
-  def apply(inputConfig: Config, modelClassLoader: ModelClassLoader, category: Option[String]): ModelData = {
-    ModelData(
-      inputConfig = ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig),
+  def duringExecution(inputConfig: Config, modelClassLoader: ModelClassLoader, resolveConfigs: Boolean): ModelData = {
+    def resolveInputConfigDuringExecution(modelConfigLoader: ModelConfigLoader): InputConfigDuringExecution = {
+      if (resolveConfigs) {
+        modelConfigLoader.resolveInputConfigDuringExecution(
+          ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig),
+          modelClassLoader.classLoader
+        )
+      } else {
+        InputConfigDuringExecution(inputConfig)
+      }
+    }
+    ClassLoaderModelData(
+      resolveInputConfigDuringExecution = resolveInputConfigDuringExecution,
       modelClassLoader = modelClassLoader,
-      category = category,
+      category = None,
       determineDesignerWideId = id => DesignerWideComponentId(id.toString),
-      additionalConfigsFromProvider = Map.empty
-    )
-  }
-
-  def apply(
-      inputConfig: ConfigWithUnresolvedVersion,
-      modelClassLoader: ModelClassLoader,
-      category: Option[String],
-      determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): ModelData = {
-    logger.debug("Loading model data from: " + modelClassLoader)
-    ClassLoaderModelData(
-      modelConfigLoader =>
-        modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
-      modelClassLoader,
-      category,
-      determineDesignerWideId,
-      additionalConfigsFromProvider
-    )
-  }
-
-  // Used on Flink, where we start already with resolved config so we should not resolve it twice.
-  def duringExecution(inputConfig: Config): ModelData = {
-    ClassLoaderModelData(
-      _ => InputConfigDuringExecution(inputConfig),
-      ModelClassLoader(Nil),
-      None,
-      id => DesignerWideComponentId(id.toString),
-      Map.empty
+      additionalConfigsFromProvider = Map.empty,
+      shouldIncludeComponentProvider = _ => true
     )
   }
 
@@ -104,20 +92,35 @@ object ModelData extends LazyLogging {
 
 }
 
+case class ModelDependencies(
+    additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    determineDesignerWideId: ComponentId => DesignerWideComponentId,
+    workingDirectoryOpt: Option[Path],
+    // This property is for easier testing when for some reason, some jars with ComponentProvider are
+    // on the test classpath and CPs collide with other once with the same name.
+    // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
+    // add liteKafkaComponents (which are in test scope), see comment next to designer module
+    shouldIncludeComponentProvider: ComponentProvider => Boolean
+)
+
 case class ClassLoaderModelData private (
     private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
     modelClassLoader: ModelClassLoader,
     override val category: Option[String],
     override val determineDesignerWideId: ComponentId => DesignerWideComponentId,
-    override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-) extends ModelData {
+    override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    shouldIncludeComponentProvider: ComponentProvider => Boolean
+) extends ModelData
+    with LazyLogging {
+
+  logger.debug("Loading model data from: " + modelClassLoader)
 
   // this is not lazy, to be able to detect if creator can be created...
   override val configCreator: ProcessConfigCreator = ProcessConfigCreatorLoader.justOne(modelClassLoader.classLoader)
 
   override lazy val modelConfigLoader: ModelConfigLoader = {
     Multiplicity(ScalaServiceLoader.load[ModelConfigLoader](modelClassLoader.classLoader)) match {
-      case Empty()                => new DefaultModelConfigLoader
+      case Empty()                => new DefaultModelConfigLoader(shouldIncludeComponentProvider)
       case One(modelConfigLoader) => modelConfigLoader
       case Many(moreThanOne) =>
         throw new IllegalArgumentException(s"More than one ModelConfigLoader instance found: $moreThanOne")
@@ -137,16 +140,20 @@ case class ClassLoaderModelData private (
     }
   }
 
-  override def objectNaming: ObjectNaming = ObjectNamingProvider(modelClassLoader.classLoader)
+  override val namingStrategy: NamingStrategy = NamingStrategy.fromConfig(modelConfig)
 
-  override val extractModelDefinitionFun: ExtractDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category)
+  override val extractModelDefinitionFun: ExtractDefinitionFun =
+    new ExtractDefinitionFunImpl(configCreator, category, shouldIncludeComponentProvider)
 
 }
 
 object ClassLoaderModelData {
 
-  class ExtractDefinitionFunImpl(configCreator: ProcessConfigCreator, category: Option[String])
-      extends ExtractDefinitionFun
+  class ExtractDefinitionFunImpl(
+      configCreator: ProcessConfigCreator,
+      category: Option[String],
+      shouldIncludeComponentProvider: ComponentProvider => Boolean
+  ) extends ExtractDefinitionFun
       with Serializable {
 
     override def apply(
@@ -161,7 +168,8 @@ object ClassLoaderModelData {
         modelDependencies,
         category,
         determineDesignerWideId,
-        additionalConfigsFromProvider
+        additionalConfigsFromProvider,
+        shouldIncludeComponentProvider
       )
     }
 
@@ -191,7 +199,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
     val modelDefinitions = withThisAsContextClassLoader {
       extractModelDefinitionFun(
         modelClassLoader.classLoader,
-        ProcessObjectDependencies(modelConfig, objectNaming),
+        ProcessObjectDependencies(modelConfig, namingStrategy),
         determineDesignerWideId,
         additionalConfigsFromProvider
       )

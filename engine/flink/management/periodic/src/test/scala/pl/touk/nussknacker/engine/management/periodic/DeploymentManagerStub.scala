@@ -58,8 +58,11 @@ class DeploymentManagerStub extends BaseDeploymentManager {
       )
     )
 
-  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
-    Future.successful(jobStatus.toList)
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    Future.successful(WithDataFreshnessStatus.fresh(jobStatus.toList))
+  }
 
   override def validate(
       processVersion: ProcessVersion,

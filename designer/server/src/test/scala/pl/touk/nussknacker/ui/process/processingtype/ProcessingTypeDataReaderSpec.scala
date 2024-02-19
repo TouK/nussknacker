@@ -6,15 +6,15 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
+import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider, TestFactory}
-import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
@@ -27,45 +27,6 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       |modelConfig {
       |  classPath: []
       |}""".stripMargin
-
-  test("load only scenario types assigned to configured categories") {
-    val config = ConfigFactory.parseString("""
-        |selectedScenarioType: foo
-        |scenarioTypes {
-        |  foo {
-        |    deploymentConfig {
-        |      type: "foo"
-        |    }
-        |    modelConfig {
-        |      classPath: []
-        |    }
-        |    category: "Default"
-        |  }
-        |  bar {
-        |    deploymentConfig {
-        |      type: "bar"
-        |    }
-        |    modelConfig {
-        |      classPath: []
-        |    }
-        |    category: "Default"
-        |  }
-        |}
-        |""".stripMargin)
-
-    val provider = ProcessingTypeDataProvider(
-      StubbedProcessingTypeDataReader
-        .loadProcessingTypeData(
-          ConfigWithUnresolvedVersion(config),
-          _ => TestFactory.deploymentManagerDependencies,
-          TestAdditionalUIConfigProvider
-        )
-    )
-    val scenarioTypes = provider
-      .all(AdminUser("admin", "admin"))
-
-    scenarioTypes.keySet shouldEqual Set("foo")
-  }
 
   test("allow to access to processing type data only users that has read access to associated category") {
     val config = ConfigFactory.parseString(s"""
@@ -85,8 +46,8 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       StubbedProcessingTypeDataReader
         .loadProcessingTypeData(
           ConfigWithUnresolvedVersion(config),
-          _ => TestFactory.deploymentManagerDependencies,
-          TestAdditionalUIConfigProvider
+          _ => TestFactory.modelDependencies,
+          _ => TestFactory.deploymentManagerDependencies
         )
     )
 
@@ -115,10 +76,10 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
     override protected def createProcessingTypeData(
         processingType: ProcessingType,
         processingTypeConfig: ProcessingTypeConfig,
+        modelDependencies: ModelDependencies,
         deploymentManagerProvider: DeploymentManagerProvider,
         deploymentManagerDependencies: DeploymentManagerDependencies,
-        engineSetupName: EngineSetupName,
-        additionalUIConfigProvider: AdditionalUIConfigProvider
+        engineSetupName: EngineSetupName
     ): ProcessingTypeData = {
       val modelData = LocalModelData(ConfigFactory.empty, List.empty)
       ProcessingTypeData(
@@ -129,7 +90,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
           MetaDataInitializer(StreamMetaData.typeName),
           Map.empty,
           List.empty,
-          EngineSetupName("Test engine")
+          engineSetupName
         ),
         processingTypeConfig.category,
         ProcessingTypeUsageStatistics(None, None),

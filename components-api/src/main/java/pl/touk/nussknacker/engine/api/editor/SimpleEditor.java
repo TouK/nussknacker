@@ -21,4 +21,9 @@ public @interface SimpleEditor {
      * This field should be used only with {@link SimpleEditorType#DURATION_EDITOR} or {@link SimpleEditorType#PERIOD_EDITOR}
      */
     ChronoUnit[] timeRangeComponents() default {};
+
+    /**
+     * This field should be used only with {@link SimpleEditorType#DICT_EDITOR}
+     */
+    String dictId() default "";
 }

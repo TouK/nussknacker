@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.service
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.{Context, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{Context, Params, ServiceInvoker}
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.sql.db.WithDBConnectionPool
 import pl.touk.nussknacker.sql.db.query._
@@ -18,10 +18,11 @@ class DatabaseEnricherInvoker(
     argsCount: Int,
     tableDef: TableDefinition,
     strategy: QueryResultStrategy,
-    queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
+    queryArgumentsExtractor: (Int, Params, Context) => QueryArguments,
     val returnType: typing.TypingResult,
     val getConnection: () => Connection,
-    val getTimeMeasurement: () => AsyncExecutionTimeMeasurement
+    val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
+    params: Params,
 ) extends ServiceInvoker
     with WithDBConnectionPool {
 
@@ -31,15 +32,13 @@ class DatabaseEnricherInvoker(
     case UpdateResultStrategy => new UpdateQueryExecutor()
   }
 
-  override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+  override def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      context: Context,
       componentUseCase: ComponentUseCase
   ): Future[queryExecutor.QueryResult] = {
-    val params = evaluateParams(context)._2
     getTimeMeasurement().measuring {
-      queryDatabase(queryArgumentsExtractor(argsCount, params))
+      queryDatabase(queryArgumentsExtractor(argsCount, params, context))
     }
   }
 

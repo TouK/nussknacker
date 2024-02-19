@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.Params
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
+import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
@@ -14,7 +16,7 @@ class FlinkKafkaSourceImplFactory[K, V](
     with Serializable {
 
   override def createSource(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Any,
       preparedTopics: List[PreparedKafkaTopic],
@@ -22,7 +24,8 @@ class FlinkKafkaSourceImplFactory[K, V](
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: RecordFormatter,
       contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-      testParametersInfo: KafkaTestParametersInfo
+      testParametersInfo: KafkaTestParametersInfo,
+      namingStrategy: NamingStrategy
   ): Source =
     new FlinkConsumerRecordBasedKafkaSource[K, V](
       preparedTopics,
@@ -31,7 +34,8 @@ class FlinkKafkaSourceImplFactory[K, V](
       timestampAssigner,
       formatter,
       contextInitializer,
-      testParametersInfo
+      testParametersInfo,
+      namingStrategy
     )
 
 }

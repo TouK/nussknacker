@@ -52,34 +52,36 @@ object transformers {
   )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
       .definedBy(aggregator.toContextTransformation(variableName, !emitWhenEventLeft, aggregateBy))
-      .implementedBy(FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-        implicit val fctx: FlinkCustomNodeContext = ctx
-        val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
+      .implementedBy(
+        FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
+          implicit val fctx: FlinkCustomNodeContext = ctx
+          val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
-        val aggregatorFunction =
-          if (emitWhenEventLeft)
-            new EmitWhenEventLeftAggregatorFunction[SortedMap](
-              aggregator,
-              windowLength.toMillis,
-              nodeId,
-              aggregateBy.returnType,
-              typeInfos.storedTypeInfo,
-              fctx.convertToEngineRuntimeContext
-            )
-          else
-            new AggregatorFunction[SortedMap](
-              aggregator,
-              windowLength.toMillis,
-              nodeId,
-              aggregateBy.returnType,
-              typeInfos.storedTypeInfo,
-              fctx.convertToEngineRuntimeContext
-            )
-        start
-          .groupByWithValue(groupBy, aggregateBy)
-          .process(aggregatorFunction, typeInfos.returnedValueTypeInfo)
-          .setUidWithName(ctx, explicitUidInStatefulOperators)
-      }))
+          val aggregatorFunction =
+            if (emitWhenEventLeft)
+              new EmitWhenEventLeftAggregatorFunction[SortedMap](
+                aggregator,
+                windowLength.toMillis,
+                nodeId,
+                aggregateBy.returnType,
+                typeInfos.storedTypeInfo,
+                fctx.convertToEngineRuntimeContext
+              )
+            else
+              new AggregatorFunction[SortedMap](
+                aggregator,
+                windowLength.toMillis,
+                nodeId,
+                aggregateBy.returnType,
+                typeInfos.storedTypeInfo,
+                fctx.convertToEngineRuntimeContext
+              )
+          start
+            .groupByWithValue(groupBy, aggregateBy)
+            .process(aggregatorFunction, typeInfos.returnedValueTypeInfo)
+            .setUidWithName(ctx, explicitUidInStatefulOperators)
+        })
+      )
   }
 
   def tumblingTransformer(
@@ -120,47 +122,50 @@ object transformers {
           aggregateBy
         )
       )
-      .implementedBy(FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-        implicit val fctx: FlinkCustomNodeContext = ctx
-        val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
+      .implementedBy(
+        FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
+          implicit val fctx: FlinkCustomNodeContext = ctx
+          val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
-        val keyedStream = start
-          .groupByWithValue(groupBy, aggregateBy)
-        val aggregatingFunction = new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity)
-        val offsetMillis        = windowOffset.getOrElse(Duration.Zero).toMillis
-        val windowDefinition =
-          TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis), Time.milliseconds(offsetMillis))
+          val keyedStream = start
+            .groupByWithValue(groupBy, aggregateBy)
+          val aggregatingFunction =
+            new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity)
+          val offsetMillis = windowOffset.getOrElse(Duration.Zero).toMillis
+          val windowDefinition =
+            TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis), Time.milliseconds(offsetMillis))
 
-        (tumblingWindowTrigger match {
-          case TumblingWindowTrigger.OnEvent =>
-            keyedStream
-              .eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
-          case TumblingWindowTrigger.OnEnd =>
-            keyedStream
-              .window(windowDefinition)
-              .aggregate(
-                aggregatingFunction,
-                EnrichingWithKeyFunction(fctx),
-                typeInfos.storedTypeInfo,
-                typeInfos.returnTypeInfo,
-                typeInfos.returnedValueTypeInfo
-              )
-          case TumblingWindowTrigger.OnEndWithExtraWindow =>
-            keyedStream
-              // TODO: alignment??
-              .process(
-                new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](
-                  aggregator,
-                  windowLength.toMillis,
-                  offsetMillis,
-                  nodeId,
-                  aggregateBy.returnType,
+          (tumblingWindowTrigger match {
+            case TumblingWindowTrigger.OnEvent =>
+              keyedStream
+                .eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
+            case TumblingWindowTrigger.OnEnd =>
+              keyedStream
+                .window(windowDefinition)
+                .aggregate(
+                  aggregatingFunction,
+                  EnrichingWithKeyFunction(fctx),
                   typeInfos.storedTypeInfo,
-                  fctx.convertToEngineRuntimeContext
+                  typeInfos.returnTypeInfo,
+                  typeInfos.returnedValueTypeInfo
                 )
-              )
-        }).setUidWithName(ctx, explicitUidInStatefulOperators)
-      }))
+            case TumblingWindowTrigger.OnEndWithExtraWindow =>
+              keyedStream
+                // TODO: alignment??
+                .process(
+                  new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](
+                    aggregator,
+                    windowLength.toMillis,
+                    offsetMillis,
+                    nodeId,
+                    aggregateBy.returnType,
+                    typeInfos.storedTypeInfo,
+                    fctx.convertToEngineRuntimeContext
+                  )
+                )
+          }).setUidWithName(ctx, explicitUidInStatefulOperators)
+        })
+      )
 
   // Experimental component, API may change in the future
   def sessionWindowTransformer(
@@ -180,39 +185,45 @@ object transformers {
           aggregateBy
         )
       )
-      .implementedBy(FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-        implicit val fctx: FlinkCustomNodeContext = ctx
-        val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
+      .implementedBy(
+        FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
+          implicit val fctx: FlinkCustomNodeContext = ctx
+          val typeInfos                             = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
-        val baseTrigger =
-          ClosingEndEventTrigger[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
-            EventTimeTrigger.create(),
-            _.value.value._2
-          )
-        val groupByValue = aggregateBy.product(endSessionCondition)
+          val baseTrigger =
+            ClosingEndEventTrigger[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](
+              EventTimeTrigger.create(),
+              _.value.value._2
+            )
+          val groupByValue = aggregateBy.product(endSessionCondition)
 
-        val keyedStream = start
-          .groupByWithValue(groupBy, groupByValue)
-        val aggregatingFunction =
-          new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1)
-        val windowDefinition = EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis))
+          val keyedStream = start
+            .groupByWithValue(groupBy, groupByValue)
+          val aggregatingFunction =
+            new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1)
+          val windowDefinition = EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis))
 
-        (sessionWindowTrigger match {
-          case SessionWindowTrigger.OnEvent =>
-            keyedStream.eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
-          case SessionWindowTrigger.OnEnd =>
-            keyedStream
-              .window(windowDefinition)
-              .trigger(baseTrigger)
-              .aggregate(
-                new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1),
-                EnrichingWithKeyFunction(fctx),
-                typeInfos.storedTypeInfo,
-                typeInfos.returnTypeInfo,
-                typeInfos.returnedValueTypeInfo
-              )
-        }).setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
-      }))
+          (sessionWindowTrigger match {
+            case SessionWindowTrigger.OnEvent =>
+              keyedStream.eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
+            case SessionWindowTrigger.OnEnd =>
+              keyedStream
+                .window(windowDefinition)
+                .trigger(baseTrigger)
+                .aggregate(
+                  new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](
+                    aggregator,
+                    aggregateBy.returnType,
+                    _._1
+                  ),
+                  EnrichingWithKeyFunction(fctx),
+                  typeInfos.storedTypeInfo,
+                  typeInfos.returnTypeInfo,
+                  typeInfos.returnedValueTypeInfo
+                )
+          }).setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+        })
+      )
 
   case class AggregatorTypeInformations(
       ctx: FlinkCustomNodeContext,

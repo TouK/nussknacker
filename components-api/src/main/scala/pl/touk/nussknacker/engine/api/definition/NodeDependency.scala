@@ -16,7 +16,7 @@ import scala.reflect.runtime.universe._
 sealed trait NodeDependency
 
 /**
- * This trait reduce boilerplate defining `GenericNodeTransformation` and reduce risk that definition of node dependencies
+ * This trait reduce boilerplate defining `DynamicComponent` and reduce risk that definition of node dependencies
  * will desynchronize with implementation code using values
  */
 trait ValueExtractor { self: NodeDependency =>

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management
 
-import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
@@ -11,7 +10,9 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
+import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -23,16 +24,17 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
   override def createDeploymentManager(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
-      deploymentConfig: Config
+      deploymentConfig: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
-    // TODO: validate parameter
+    import dependencies._
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
-    valid(
+    FlinkClient.create(flinkConfig, scenarioStateCacheTTL).map { client =>
       CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
-        new FlinkStreamingRestManager(flinkConfig, modelData, dependencies),
-        deploymentConfig
+        new FlinkStreamingRestManager(client, flinkConfig, modelData, dependencies),
+        scenarioStateCacheTTL
       )
-    )
+    }
   }
 
   override def name: String = "flinkStreaming"

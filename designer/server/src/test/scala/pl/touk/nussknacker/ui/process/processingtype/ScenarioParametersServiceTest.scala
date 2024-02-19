@@ -1,23 +1,32 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import cats.data.Validated.Invalid
+import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.ModelDependencies
+import pl.touk.nussknacker.engine.api.component.{ComponentProvider, DesignerWideComponentId, ProcessingMode}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.ui.api.helpers.TestFactory
+import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+
+import java.nio.file.Path
+import scala.jdk.CollectionConverters._
 
 class ScenarioParametersServiceTest
     extends AnyFunSuite
     with Matchers
     with ValidatedValuesDetailedMessage
-    with OptionValues {
+    with OptionValues
+    with LazyLogging {
 
   private val oneToOneProcessingType1 = "oneToOneProcessingType1"
   private val oneToOneCategory1       = "OneToOneCategory1"
@@ -32,7 +41,7 @@ class ScenarioParametersServiceTest
     ScenarioParametersService.create(combinations).validValue
   }
 
-  test("unambiguous category to processing type mapping detection") {
+  test("ambiguous category to processing type mapping detection") {
     val categoryUsedMoreThanOnce = "CategoryUsedMoreThanOnce"
     val scenarioTypeA            = "scenarioTypeA"
     val scenarioTypeB            = "scenarioTypeB"
@@ -121,7 +130,11 @@ class ScenarioParametersServiceTest
     val writeAccessEngineSetupName = EngineSetupName("writeAccessEngine")
     val noAccessEngineSetupName    = EngineSetupName("noAccessEngine")
     val noErrorEngineSetupName     = EngineSetupName("noErrorsEngine")
-    implicit val user: LoggedUser  = TestFactory.user(permissions = Map(writeAccessCategory -> Set(Permission.Write)))
+    implicit val user: LoggedUser = LoggedUser(
+      id = "1",
+      username = "user",
+      categoryPermissions = Map(writeAccessCategory -> Set(Permission.Write))
+    )
 
     val setupErrors = ScenarioParametersService
       .create(
@@ -158,7 +171,11 @@ class ScenarioParametersServiceTest
     val noAccessCategory                          = "noAccessCategory"
     val engineSetupNameUsedForMoreThanOneCategory = EngineSetupName("foo")
     val noErrorEngineSetupName                    = EngineSetupName("noErrorsEngine")
-    implicit val user: LoggedUser = TestFactory.user(permissions = Map(writeAccessCategory -> Set(Permission.Write)))
+    implicit val user: LoggedUser = LoggedUser(
+      id = "1",
+      username = "user",
+      categoryPermissions = Map(writeAccessCategory -> Set(Permission.Write))
+    )
 
     val setupErrors = ScenarioParametersService
       .create(
@@ -201,6 +218,79 @@ class ScenarioParametersServiceTest
       .engineSetupErrorsWithWritePermission
 
     setupErrors.get(engineSetupNameUsedForMoreThanOneCategory).value shouldBe List("aError")
+  }
+
+  // This test need to be run manually - it requires sbt prepareDev step to be run before it and we don't
+  // want to introduce dependency between designer module and this step to make it run on CI.
+  // Alternatively we could introduce a separate sbt project that would depend on designer and dist/Universal/stage
+  // but it seems to be a very heavy solution
+  ignore("should allow to run docker image without flink") {
+    val resourcesDir            = Path.of(getClass.getResource("/").toURI)
+    val designerServerModuleDir = resourcesDir.getParent.getParent.getParent
+    val distModuleDir           = designerServerModuleDir.getParent.getParent.resolve("nussknacker-dist")
+    val devApplicationConfFile  = distModuleDir.resolve("src/universal/conf/application.conf").toFile
+    val fallbackConfig = ConfigFactory.parseMap(
+      Map(
+        "SCHEMA_REGISTRY_URL" -> "foo"
+      ).asJava
+    )
+    val designerConfig =
+      DesignerConfigLoader.load(
+        ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig),
+        getClass.getClassLoader
+      )
+    val workPath = designerServerModuleDir.resolve("work")
+    logDirectoryStructure(workPath)
+    val processingTypeData = ProcessingTypeDataReader.loadProcessingTypeData(
+      designerConfig,
+      processingType =>
+        ModelDependencies(
+          Map.empty,
+          componentId => DesignerWideComponentId(componentId.toString),
+          Some(workPath),
+          shouldIncludeComponentProvider(processingType, _)
+        ),
+      _ => TestFactory.deploymentManagerDependencies,
+    )
+    val parametersService = processingTypeData.getCombined().parametersService
+
+    parametersService.scenarioParametersCombinationsWithWritePermission(TestFactory.adminUser()) shouldEqual List(
+      ScenarioParameters(ProcessingMode.UnboundedStream, "Default", EngineSetupName("Flink")),
+      ScenarioParameters(ProcessingMode.UnboundedStream, "Default", EngineSetupName("Lite Embedded")),
+      ScenarioParameters(ProcessingMode.RequestResponse, "Default", EngineSetupName("Lite Embedded"))
+    )
+    parametersService.engineSetupErrorsWithWritePermission(TestFactory.adminUser()) shouldEqual Map(
+      EngineSetupName("Flink")         -> List("Invalid configuration: missing restUrl"),
+      EngineSetupName("Lite Embedded") -> List.empty
+    )
+  }
+
+  private def logDirectoryStructure(workPath: Path): Unit = {
+    def listFiles(path: Path): Unit =
+      logger.info(s"$path files: ${Option(path.toFile.list()).map(_.mkString(", ")).getOrElse("<missing>")}")
+    List(
+      workPath,
+      workPath.resolve("components"),
+      workPath.resolve("components/flink"),
+      workPath.resolve("components/lite"),
+      workPath.resolve("components/common"),
+      workPath.resolve("model"),
+    ).foreach(listFiles)
+  }
+
+  // This ugly hack is because of Idea classloader issue, see comment in ModelDependencies
+  private def shouldIncludeComponentProvider(processingType: ProcessingType, componentProvider: ComponentProvider) = {
+    (
+      processingType,
+      componentProvider.providerName,
+      componentProvider.getClass.getClassLoader.getName == "app"
+    ) match {
+      case (_, "test", _)                                    => false
+      case ("streaming", _, true)                            => false
+      case ("streaming-lite-embedded", "requestResponse", _) => false
+      case ("request-response-embedded", "kafka", _)         => false
+      case _                                                 => true
+    }
   }
 
   private def parametersWithCategory(category: String, errors: List[String] = List.empty) =

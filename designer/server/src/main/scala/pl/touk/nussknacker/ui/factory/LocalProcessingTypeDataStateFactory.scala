@@ -13,26 +13,28 @@ import pl.touk.nussknacker.ui.process.processingtype.{
 }
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel.{category, typeName}
 
+import java.nio.file.Path
+
 class LocalProcessingTypeDataStateFactory(
     modelData: ModelData,
     deploymentManagerProvider: DeploymentManagerProvider,
-    managerConfig: Config
+    deploymentConfig: Config
 ) extends ProcessingTypeDataStateFactory {
 
   override def create(
       designerConfig: ConfigWithUnresolvedVersion,
+      getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val deploymentManagerDependencies = getDeploymentManagerDependencies(typeName)
     val data =
       ProcessingTypeData.createProcessingTypeData(
         typeName,
+        modelData,
         deploymentManagerProvider,
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
-        modelData,
-        managerConfig,
+        deploymentConfig,
         category,
       )
     val processingTypes = Map(typeName -> data)

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.component.{AllProcessingModesComponent, Component}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,17 +34,9 @@ abstract class EagerService extends Service
 
 trait ServiceInvoker {
 
-//  def invokeService(params: Map[String, Any])(
-//      implicit ec: ExecutionContext,
-//      collector: InvocationCollectors.ServiceInvocationCollector,
-//      contextId: ContextId,
-//      componentUseCase: ComponentUseCase
-//  ): Future[Any]
-
-  def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+  def invoke(context: Context)(
       implicit ec: ExecutionContext,
-      collector: InvocationCollectors.ServiceInvocationCollector,
-      context: Context,
+      collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase
   ): Future[Any]
 

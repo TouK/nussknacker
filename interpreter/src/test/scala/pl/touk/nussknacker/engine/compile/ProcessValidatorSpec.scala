@@ -1206,7 +1206,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val failingDefinition = base
       .mapComponents {
         case component if component.componentType == ComponentType.Source =>
-          component.withImplementationInvoker((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
+          component.withImplementationInvoker((_: Params, _: Option[String], _: Seq[AnyRef]) => {
             throw new RuntimeException("You passed incorrect parameter, cannot proceed")
           })
         case other => other
@@ -1691,10 +1691,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition))),
         new ServiceInvoker {
 
-          override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+          override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              context: Context,
               componentUseCase: ComponentUseCase
           ): Future[Any] = Future.successful(null)
 
@@ -1722,16 +1721,16 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       )
     }
 
-    override def serviceImplementation(
+    override def createServiceInvoker(
         eagerParameters: Map[String, Any],
+        lazyParameters: Map[String, LazyParameter[AnyRef]],
         typingResult: TypingResult,
         metaData: MetaData
     ): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+      override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          context: Context,
           componentUseCase: ComponentUseCase
       ): Future[Any] = Future.successful(null)
 
@@ -1777,17 +1776,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         variableName,
         returnType,
         new ServiceInvoker {
-          override def invokeService(evaluateParams: Context => (Context, Map[String, Any]))(
+          override def invoke(context: Context)(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              context: Context,
               componentUseCase: ComponentUseCase
-          ): Future[Any] = {
-            val params = evaluateParams(context)._2
+          ): Future[Any] =
             Future.successful(
-              s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age"
+              s"name: ${fields.evaluate(context).get("name")}, age: $age"
             )
-          }
         }
       )
     }

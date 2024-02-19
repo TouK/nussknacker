@@ -10,6 +10,8 @@ import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, Deploy
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManagerProvider
 
+import scala.concurrent.duration.FiniteDuration
+
 /*
   Each scenario is deployed as Deployment+ConfigMap
   ConfigMap contains: model config with overrides for execution and scenario
@@ -22,7 +24,8 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
   override def createDeploymentManager(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
-      config: Config
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
     Validated.valid(
       CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
@@ -32,7 +35,7 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
           config,
           dependencies
         ),
-        config
+        scenarioStateCacheTTL
       )
     )
   }

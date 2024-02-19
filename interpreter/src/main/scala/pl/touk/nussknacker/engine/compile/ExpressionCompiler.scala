@@ -6,8 +6,21 @@ import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ValidationExpressionParameterValidatorToCompile, Validator}
-import pl.touk.nussknacker.engine.api.dict.DictRegistry
+import pl.touk.nussknacker.engine.api.definition.{
+  DictParameterEditor,
+  Parameter,
+  ParameterEditor,
+  ValidationExpressionParameterValidatorToCompile,
+  Validator
+}
+import pl.touk.nussknacker.engine.api.dict.{DictRegistry, EngineDictRegistry}
+import pl.touk.nussknacker.engine.api.expression.{
+  Expression => CompiledExpression,
+  ExpressionParser,
+  TypedExpression,
+  TypedExpressionMap
+}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.expression.{
   Expression => CompiledExpression,
   ExpressionParser,
@@ -23,6 +36,7 @@ import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDef
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
 import pl.touk.nussknacker.engine.language.tabularDataDefinition.TabularDataDefinitionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
@@ -72,19 +86,22 @@ object ExpressionCompiler {
         flavour,
         classDefinitionSet
       )
-    val defaultParsers = Seq(
-      spelParser(SpelExpressionParser.Standard),
-      spelParser(SpelExpressionParser.Template),
-      TabularDataDefinitionParser
-    )
+
+    val defaultParsers =
+      Seq(
+        spelParser(SpelExpressionParser.Standard),
+        spelParser(SpelExpressionParser.Template),
+        DictKeyWithLabelExpressionParser,
+        TabularDataDefinitionParser
+      )
     val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
     val parsers    = parsersSeq.map(p => p.languageId -> p).toMap
-    new ExpressionCompiler(parsers)
+    new ExpressionCompiler(parsers, dictRegistry)
   }
 
 }
 
-class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
+class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictRegistry: DictRegistry) {
 
   // used only for services and fragments - in places where component is an Executor instead of a factory
   // that creates Executor
@@ -130,10 +147,10 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     val paramDefMap        = parameterDefinitions.map(p => p.name -> p).toMap
 
     val compiledParams = nodeParameters
-      .flatMap { p =>
+      .flatMap { nodeParam =>
         paramDefMap
-          .get(p.name)
-          .map(pd => compileParam(p, ctx, pd, treatEagerParametersAsLazy).map((_, pd)))
+          .get(nodeParam.name)
+          .map(paramDef => compileParam(nodeParam, ctx, paramDef, treatEagerParametersAsLazy).map((_, paramDef)))
       }
     val compiledBranchParams = (for {
       branchParams <- nodeBranchParameters
@@ -142,7 +159,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       case (paramName, branchIdAndExpressions) =>
         paramDefMap
           .get(paramName)
-          .map(pd => compileBranchParam(branchIdAndExpressions, branchContexts, pd).map((_, pd)))
+          .map(paramDef => compileBranchParam(branchIdAndExpressions, branchContexts, paramDef).map((_, paramDef)))
     }
     val allCompiledParams = (compiledParams ++ compiledBranchParams).sequence
 
@@ -165,9 +182,12 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
     val ctxToUse = if (definition.isLazyParameter || treatEagerParametersAsLazy) ctx else ctx.clearVariables
-    enrichContext(ctxToUse, definition).andThen { finalCtx =>
-      compile(nodeParam.expression, Some(nodeParam.name), finalCtx, definition.typ)
-        .map(TypedParameter(nodeParam.name, _))
+
+    substituteDictKeyExpression(nodeParam.expression, definition.editor, nodeParam.name).andThen { finalExpr =>
+      enrichContext(ctxToUse, definition).andThen { finalCtx =>
+        compile(finalExpr, Some(nodeParam.name), finalCtx, definition.typ)
+          .map(TypedParameter(nodeParam.name, _))
+      }
     }
   }
 
@@ -178,21 +198,44 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
     branchIdAndExpressions
       .map { case (branchId, expression) =>
-        enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
-          // TODO JOIN: branch id on error field level
-          compile(
-            expression,
-            Some(ParameterNaming.getNameForBranchParameter(definition, branchId)),
-            finalCtx,
-            definition.typ
-          ).map(
-            branchId -> _
-          )
+        val paramName = ParameterNaming.getNameForBranchParameter(definition, branchId)
+
+        substituteDictKeyExpression(expression, definition.editor, paramName).andThen { finalExpr =>
+          enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
+            // TODO JOIN: branch id on error field level
+            compile(finalExpr, Some(paramName), finalCtx, definition.typ).map(branchId -> _)
+          }
         }
       }
       .sequence
       .map(exprByBranchId => TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
   }
+
+  private def substituteDictKeyExpression(expression: Expression, editor: Option[ParameterEditor], paramName: String)(
+      implicit nodeId: NodeId
+  ) =
+    editor match {
+      case Some(DictParameterEditor(dictId)) =>
+        DictKeyWithLabelExpressionParser
+          .parseDictKeyWithLabelExpression(expression.expression)
+          .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, paramName)))
+          .andThen(expr =>
+            dictRegistry match {
+              case _: EngineDictRegistry =>
+                // no need to validate and resolve label it on Engine side, this allows EngineDictRegistry to be lighter (not having to contain dictionaries only used by DictParameterEditor)
+                Valid(expression)
+              case _ =>
+                dictRegistry
+                  .labelByKey(dictId, expr.key)
+                  .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, paramName)))
+                  .andThen {
+                    case Some(label) => Valid(Expression.dictKeyWithLabel(expr.key, Some(label)))
+                    case None => invalidNel(DictLabelByKeyResolutionFailed(dictId, expr.key, nodeId.id, paramName))
+                  }
+            }
+          )
+      case _ => Valid(expression)
+    }
 
   def compileValidator(
       validator: Validator,
@@ -223,7 +266,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
         // TODO in the future, we'd like to support more references, see ValidationExpressionParameterValidator
         Map(ValidationExpressionParameterValidator.variableName -> paramType)
       ),
-      expectedType = Typed[Boolean],
+      expectedType = Typed[Boolean]
     ).leftMap(_.map {
       case e: ExpressionParserCompilationError =>
         InvalidValidationExpression(
@@ -297,10 +340,14 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     }
   }
 
-  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ExpressionCompiler =
-    new ExpressionCompiler(expressionParsers.map { case (k, v) =>
-      k -> modify.lift(v).getOrElse(v)
-    })
+  def withLabelsDictTyper: ExpressionCompiler =
+    new ExpressionCompiler(
+      expressionParsers.map {
+        case (k, spel: SpelExpressionParser) => k -> spel.typingDictLabels
+        case other                           => other
+      },
+      dictRegistry
+    )
 
   private def enrichContext(ctx: ValidationContext, definition: Parameter)(implicit nodeId: NodeId) = {
     val withoutVariablesToHide = ctx.copy(localVariables =

@@ -5,9 +5,9 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
-  GenericNodeTransformation,
-  JoinGenericNodeTransformation,
-  SingleInputGenericNodeTransformation,
+  DynamicComponent,
+  JoinDynamicComponent,
+  SingleInputDynamicComponent,
   WithStaticParameters
 }
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
@@ -40,7 +40,7 @@ class DynamicComponentStaticDefinitionDeterminer(
   }
 
   private def determineInitialParameters(dynamic: DynamicComponentDefinitionWithImplementation): List[Parameter] = {
-    def inferParameters(transformer: GenericNodeTransformation[_])(inputContext: transformer.InputContext) = {
+    def inferParameters(transformer: DynamicComponent[_])(inputContext: transformer.InputContext) = {
       // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
       //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
       val scenarioName                = ProcessName("fakeScenarioName")
@@ -69,9 +69,9 @@ class DynamicComponentStaticDefinitionDeterminer(
     dynamic.implementation match {
       case withStatic: WithStaticParameters =>
         StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.parametersConfig)
-      case single: SingleInputGenericNodeTransformation[_] =>
+      case single: SingleInputDynamicComponent[_] =>
         inferParameters(single)(ValidationContext())
-      case join: JoinGenericNodeTransformation[_] =>
+      case join: JoinDynamicComponent[_] =>
         inferParameters(join)(Map.empty)
     }
   }
@@ -97,8 +97,8 @@ object DynamicComponentStaticDefinitionDeterminer {
     }
   }
 
-  def staticReturnType(dynamicImplementation: GenericNodeTransformation[_]): Option[TypingResult] = {
-    if (dynamicImplementation.nodeDependencies.contains(OutputVariableNameDependency)) Some(Unknown) else None
+  def staticReturnType(component: DynamicComponent[_]): Option[TypingResult] = {
+    if (component.nodeDependencies.contains(OutputVariableNameDependency)) Some(Unknown) else None
   }
 
 }

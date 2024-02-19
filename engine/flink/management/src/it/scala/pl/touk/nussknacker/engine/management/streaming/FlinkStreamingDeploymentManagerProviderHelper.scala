@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.{
   ConfigWithUnresolvedVersion,
   DeploymentManagerDependencies,
   ModelData,
+  ModelDependencies,
   ProcessingTypeConfig
 }
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
@@ -21,8 +22,12 @@ object FlinkStreamingDeploymentManagerProviderHelper {
     val typeConfig = ProcessingTypeConfig.read(processingTypeConfig)
     val modelData = ModelData(
       processingTypeConfig = typeConfig,
-      additionalConfigsFromProvider = Map.empty,
-      determineDesignerWideId = id => DesignerWideComponentId(id.toString)
+      ModelDependencies(
+        additionalConfigsFromProvider = Map.empty,
+        determineDesignerWideId = id => DesignerWideComponentId(id.toString),
+        workingDirectoryOpt = None,
+        _ => true
+      )
     )
     val actorSystem       = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")
     val backend           = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
@@ -37,7 +42,8 @@ object FlinkStreamingDeploymentManagerProviderHelper {
       .createDeploymentManager(
         modelData,
         deploymentManagerDependencies,
-        typeConfig.deploymentConfig
+        typeConfig.deploymentConfig,
+        None
       )
       .valueOr(err => throw new IllegalStateException(s"Invalid Deployment Manager: ${err.toList.mkString(", ")}"))
   }

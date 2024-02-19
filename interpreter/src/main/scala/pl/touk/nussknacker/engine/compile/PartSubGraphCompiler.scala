@@ -8,7 +8,7 @@ import cats.instances.option._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
+import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
 
-class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler: NodeCompiler) {
+class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
 
   import CompilationResult._
 
@@ -269,10 +269,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler:
     }
   }
 
-  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): PartSubGraphCompiler =
-    new PartSubGraphCompiler(
-      expressionCompiler.withExpressionParsers(modify),
-      nodeCompiler.withExpressionParsers(modify)
-    )
+  def withLabelsDictTyper: PartSubGraphCompiler =
+    new PartSubGraphCompiler(nodeCompiler.withLabelsDictTyper)
 
 }
