@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management.rest
 
+import cats.data.Validated.{invalid, valid}
+import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
@@ -10,18 +12,20 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
 import sttp.client3._
 import sttp.client3.circe._
+import sttp.model.Uri
 
 import java.io.File
 import java.util.concurrent.TimeoutException
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
-class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext)
-    extends FlinkClient
+class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
+    implicit backend: SttpBackend[Future, Any],
+    ec: ExecutionContext
+) extends FlinkClient
     with LazyLogging {
 
   import pl.touk.nussknacker.engine.sttp.HttpClientErrorHandler._
-
-  private val flinkUrl = uri"${config.restUrl}"
 
   def uploadJarFileIfNotExists(jarFile: File): Future[JarFile] = {
     checkThatJarWithNameExists(jarFile.getName).flatMap {
@@ -238,5 +242,30 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
     }
     configuration
   }
+
+}
+
+object HttpFlinkClient {
+
+  def createUnsafe(
+      config: FlinkConfig
+  )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): HttpFlinkClient = {
+    create(config).valueOr(err =>
+      throw new IllegalArgumentException(err.toList.mkString("Cannot create HttpFlinkClient: ", ", ", ""))
+    )
+  }
+
+  def create(
+      config: FlinkConfig
+  )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): ValidatedNel[String, HttpFlinkClient] = {
+    config.restUrl.map(valid).getOrElse(invalid("Invalid configuration: missing restUrl")).andThen { restUrl =>
+      Try(uri"$restUrl")
+        .map(valid)
+        .getOrElse(invalid(s"Invalid configuration: restUrl is not a valid url [$restUrl]"))
+        .map { parsedRestUrl =>
+          new HttpFlinkClient(config, parsedRestUrl)
+        }
+    }
+  }.toValidatedNel
 
 }

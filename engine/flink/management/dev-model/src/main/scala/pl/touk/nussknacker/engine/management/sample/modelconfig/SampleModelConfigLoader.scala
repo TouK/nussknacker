@@ -14,7 +14,7 @@ class SampleModelConfigLoader extends ModelConfigLoader {
       classLoader: ClassLoader
   ): InputConfigDuringExecution = {
     val withExtractors =
-      ComponentsFromProvidersExtractor(classLoader, skipComponentProvidersLoadedFromAppClassloader = false)
+      ComponentsFromProvidersExtractor(classLoader, _ => true)
         .loadAdditionalConfig(inputConfig, configWithDefaults)
     val valueFromOriginalConfig = configWithDefaults.getAs[String]("configValueToLoadFrom").getOrElse("notFound")
     InputConfigDuringExecution(

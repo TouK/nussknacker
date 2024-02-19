@@ -5,7 +5,6 @@ services:
     container_name: e2e_designer
     image: touk/nussknacker:${NUSSKNACKER_VERSION}
     environment:
-      DEFAULT_SCENARIO_TYPE: streaming-lite-embedded
       JDK_JAVA_OPTIONS: -Xmx512M
       KAFKA_ADDRESS: kafka:9092
       KAFKA_AUTO_OFFSET_RESET: "earliest"

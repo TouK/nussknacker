@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
@@ -41,7 +42,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
   // We don't test scenario's json here
-  private val defaultConfig = FlinkConfig("http://test.pl", shouldVerifyBeforeDeploy = false)
+  private val defaultConfig = FlinkConfig(Some("http://test.pl"), shouldVerifyBeforeDeploy = false)
 
   private var statuses: List[JobOverview] = List()
 
@@ -446,8 +447,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         )
       }
       val manager = createDeploymentManager(
-        config =
-          defaultConfig.copy(restUrl = wireMockServer.baseUrl(), scenarioStateRequestTimeout = clientRequestTimeout),
+        config = defaultConfig
+          .copy(restUrl = Some(wireMockServer.baseUrl()), scenarioStateRequestTimeout = clientRequestTimeout),
       )
 
       val durationLongerThanClientTimeout = clientRequestTimeout.plus(patienceConfig.timeout)
@@ -480,8 +481,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       sttpBackend
     )
     new FlinkRestManager(
+      client = HttpFlinkClient.createUnsafe(config)(sttpBackend, ExecutionContext.global),
       config = config,
-      ScenarioStateCachingConfig.Default.cacheTTL,
       modelData = LocalModelData(ConfigFactory.empty, List.empty),
       deploymentManagerDependencies,
       mainClassName = "UNUSED"
