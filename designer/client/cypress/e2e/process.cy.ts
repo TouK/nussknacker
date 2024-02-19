@@ -202,6 +202,8 @@ describe("Process", () => {
         it("should have counts button and modal", () => {
             cy.viewport("macbook-15");
 
+            // Collapse toolbar to make counts button visible
+            cy.contains(/^scenario details$/i).click();
             cy.contains(/^counts$/i).as("button");
             cy.get("@button").should("be.visible").matchImage();
             cy.get("@button").click();
