@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependency
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
@@ -50,7 +50,7 @@ class KafkaSourceFactorySpec
     )
     val source = sourceFactory
       .implementation(
-        Map(TopicParamName -> topic),
+        Params(Map(TopicParamName -> topic)),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
         Some(finalState)
       )

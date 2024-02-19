@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{Context, NodeId, VariableConstants}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, Params, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.{Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
 
   override def createSource(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Any,
       preparedTopics: List[PreparedKafkaTopic],

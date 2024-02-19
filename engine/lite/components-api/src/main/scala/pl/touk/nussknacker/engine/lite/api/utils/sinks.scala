@@ -5,11 +5,10 @@ import cats.implicits._
 import cats.{Monad, Monoid}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteSink}
 import pl.touk.nussknacker.engine.lite.api.utils.errors.withErrors
-
 import scala.language.higherKinds
 
 object sinks {
@@ -41,21 +40,19 @@ object sinks {
 
   trait LazyParamSink[Res <: AnyRef] extends SingleContextSink[Res] {
 
-    // TODO: Replace with response: LazyParameter[Res] - interpreter is now not needed
-    def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Res]
+    def prepareResponse: LazyParameter[Res]
 
     override def createSingleTransformation[F[_]: Monad](
         context: CustomComponentContext[F]
     ): (TypingResult, Context => F[Either[ErrorType, Res]]) = {
-      val response    = prepareResponse(context.interpreter)
-      val interpreter = context.interpreter.syncInterpretationFunction(response)
+      val response = prepareResponse
       (
         response.returnType,
         ctx =>
           implicitly[Monad[F]].pure(
             // FIXME: figure out how to pass componentName here
             withErrors(context, Some(ComponentId(ComponentType.Sink, "unknown")), ctx) {
-              interpreter(ctx)
+              response.evaluate(ctx)
             }
           )
       )

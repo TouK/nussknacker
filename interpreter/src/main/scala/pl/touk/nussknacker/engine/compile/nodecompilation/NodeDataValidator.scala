@@ -42,17 +42,17 @@ object NodeDataValidator {
 
 class NodeDataValidator(modelData: ModelData) {
 
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-    case spel: SpelExpressionParser => spel.typingDictLabels
-  }
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
 
   private val compiler = new NodeCompiler(
     modelData.modelDefinition,
     new FragmentParametersDefinitionExtractor(modelData.modelClassLoader.classLoader),
     expressionCompiler,
     modelData.modelClassLoader.classLoader,
+    Seq.empty,
     PreventInvocationCollector,
-    ComponentUseCase.Validation
+    ComponentUseCase.Validation,
+    nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )
 
   def validate(

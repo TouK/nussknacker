@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -19,10 +18,7 @@ import pl.touk.nussknacker.ui.validation.UIProcessValidator
   */
 class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDictSubstitutor) {
 
-  private val beforeUiResolvingValidator = uiValidator.withValidator(_.withExpressionParsers {
-    case spel: SpelExpressionParser =>
-      spel.typingDictLabels
-  })
+  private val beforeUiResolvingValidator = uiValidator.transformValidator(_.withLabelsDictTyper)
 
   def validateAndResolve(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean)(
       implicit loggedUser: LoggedUser

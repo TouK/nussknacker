@@ -67,6 +67,7 @@ object EditorExtractor {
       case SimpleEditorType.JSON_EDITOR          => JsonParameterEditor
       case SimpleEditorType.SQL_EDITOR           => SqlParameterEditor
       case SimpleEditorType.SPEL_TEMPLATE_EDITOR => SpelTemplateParameterEditor
+      case SimpleEditorType.DICT_EDITOR          => DictParameterEditor(simpleEditor.dictId())
     }
   }
 

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
 }
 
 /*
-  For parameters defined explicitly in code (e.g. by GenericNodeTransformation or using WithExplicitMethod) we want to define sensible fallback/defaults:
+  For parameters defined explicitly in code (e.g. by DynamicComponent or using WithExplicitMethod) we want to define sensible fallback/defaults:
   - if no editor is defined in code, we take the one based by config or parameter type
   - if editor is defined, we add validator based on type
  */

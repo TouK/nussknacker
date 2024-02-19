@@ -20,10 +20,6 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.compile.nodecompilation.{
-  CompilerLazyParameterInterpreter,
-  LazyInterpreterDependencies
-}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
@@ -171,14 +167,6 @@ object ScenarioInterpreterFactory {
 
     private type PartInterpreterType = DataBatch => InterpreterOutputType
 
-    private val lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
-      override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps
-
-      override def metaData: MetaData = compiledProcess.metaData
-
-      override def close(): Unit = {}
-    }
-
     def compile: CompilationResult[ScenarioInterpreterType] = {
       val emptyPartInvocation: ScenarioInterpreterType = (inputs: ScenarioInputBatch[Input]) =>
         Monoid.combineAll(inputs.value.map { case (source, input) =>
@@ -255,7 +243,7 @@ object ScenarioInterpreterFactory {
       processCompilerData.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result
 
     private def customComponentContext(nodeId: String) =
-      CustomComponentContext[F](nodeId, lazyParameterInterpreter, capabilityTransformer)
+      CustomComponentContext[F](nodeId, capabilityTransformer)
 
     private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[PartInterpreterType] =
       processPart match {

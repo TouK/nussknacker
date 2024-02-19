@@ -27,8 +27,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
       |      ]
       |      topRight: [
       |        {
-      |          type: "process-info-panel"
-      |          title: "Process Info $processName"
+      |          type: "process-actions-panel"
+      |          title: "Process Actions $processName"
       |          buttons: [
       |            { type: "process-save", icon: "/assets/$processId/buttons/save.svg", title: "save", disabled: {archived: true} }
       |            { type: "custom-link", name: "metrics", title: "metrics for process", url: "/metrics/$processName" }
@@ -211,8 +211,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -266,8 +266,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -311,8 +311,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -377,8 +377,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -431,8 +431,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -485,8 +485,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(

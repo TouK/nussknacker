@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.kafka.generic
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.Params
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
@@ -44,7 +45,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
 ) extends FlinkKafkaSourceImplFactory[K, V](timestampAssigner) {
 
   override def createSource(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Any,
       preparedTopics: List[PreparedKafkaTopic],

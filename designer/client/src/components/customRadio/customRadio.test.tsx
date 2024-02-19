@@ -8,6 +8,7 @@ describe("CustomRadio component", () => {
     const defaultProps = {
         label: "Test Label",
         value: "test-value",
+        // eslint-disable-next-line i18next/no-literal-string
         Icon: () => <div>Icon</div>,
         disabled: false,
         active: false,

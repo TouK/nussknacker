@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.NonEmptyList
 import org.springframework.expression.spel.SpelNode
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
 
@@ -246,5 +247,15 @@ object SpelExpressionParseError {
   }
 
   case class ExpressionCompilationError(message: String) extends ExpressionParseError
+
+  case class KeyWithLabelExpressionParsingError(keyWithLabel: String, message: String) extends ExpressionParseError {
+
+    def toProcessCompilationError(
+        nodeId: String,
+        paramName: String
+    ): ProcessCompilationError.KeyWithLabelExpressionParsingError =
+      ProcessCompilationError.KeyWithLabelExpressionParsingError(keyWithLabel, message, nodeId, paramName)
+
+  }
 
 }

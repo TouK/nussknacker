@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.Params
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
@@ -15,7 +16,7 @@ class FlinkKafkaSourceImplFactory[K, V](
     with Serializable {
 
   override def createSource(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Any,
       preparedTopics: List[PreparedKafkaTopic],

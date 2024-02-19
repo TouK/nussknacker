@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   FailedToDefineParameter,
   NodeDependencyValue,
-  SingleInputGenericNodeTransformation
+  SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.NodeId
 
-trait DynamicParametersMixin extends SingleInputGenericNodeTransformation[AnyRef] {
+trait DynamicParametersMixin extends SingleInputDynamicComponent[AnyRef] {
 
   override type State = Nothing
 
@@ -43,7 +43,7 @@ trait DynamicParametersMixin extends SingleInputGenericNodeTransformation[AnyRef
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): this.NodeTransformationDefinition = {
+  ): this.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(List(choiceParam))
     case TransformationStep((`choiceParamName`, DefinedEagerParameter(value: String, _)) :: Nil, None) =>
       paramsMap

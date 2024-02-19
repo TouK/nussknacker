@@ -504,7 +504,7 @@ processToolbarConfig {
     ]
     topRight: [
       {
-        type: "process-info-panel"
+        type: "process-actions-panel"
         buttons: [
           { type: "process-save", disabled: { fragment: false, archived: true, type: "oneof" } }
           { type: "custom-link", title: "Metrics for $processName", url: "/metrics/$processId" }
@@ -577,8 +577,9 @@ processToolbarConfig {
       { type: "attachments-panel" }
     ]
     topRight: [
+      { type: "process-info-panel" }
       {
-        type: "process-info-panel"
+        type: "process-actions-panel"
         buttons: [
           { type: "process-save", title: "Save changes", disabled: { archived: true } }
           { type: "process-deploy", disabled: { fragment: true, archived: true, type: "oneof" } }

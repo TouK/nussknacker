@@ -13,7 +13,8 @@ object TestDictionary {
     Map(
       "foo"                           -> "Foo",
       "bar"                           -> "Bar",
-      "sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots"
+      "sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots",
+      "_some_key_"                    -> "Pretty label"
     )
   )
 

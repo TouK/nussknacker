@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{ContextId, Params}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client3.Response
 import sttp.client3.testing.SttpBackendStub
@@ -34,17 +35,19 @@ class CodeHandlingTest
     val config          = baseConfig.copy(codesToInterpretAsEmpty = List(customEmptyCode))
     val service         = parseToEnrichers("custom-codes.yml", backend, config)(ServiceName("code"))
 
-    def invokeWithCode(code: Int) =
-      service.invoke(Map(codeParameter -> code)).futureValue.asInstanceOf[AnyRef]
+    def runWithCode(code: Int) = {
+      implicit val contextId: ContextId = ContextId("1")
+      service.invoke(Params(Map(codeParameter -> code))).futureValue.asInstanceOf[AnyRef]
+    }
 
-    invokeWithCode(customEmptyCode) shouldBe null
-    invokeWithCode(200) shouldBe TypedMap(Map.empty)
+    runWithCode(customEmptyCode) shouldBe null
+    runWithCode(200) shouldBe TypedMap(Map.empty)
 
     intercept[Exception] {
-      invokeWithCode(404)
+      runWithCode(404)
     }
     intercept[Exception] {
-      invokeWithCode(503)
+      runWithCode(503)
     }
 
   }

@@ -3,9 +3,9 @@ package pl.touk.nussknacker.openapi.functional
 import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.asynchttpclient.DefaultAsyncHttpClient
-import org.scalatest.{BeforeAndAfterAll, Outcome}
 import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, Outcome}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
@@ -20,8 +20,8 @@ import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.net.URL
-import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters._
 
 class OpenAPIServiceSpec
     extends FixtureAnyFunSuite
@@ -67,7 +67,13 @@ class OpenAPIServiceSpec
   }
 
   test("service returns customers") { service =>
-    val valueWithChosenFields = service.invoke(Map("customer_id" -> "10")).futureValue.asInstanceOf[TypedMap].asScala
+    implicit val contextId: ContextId = ContextId("1")
+    val valueWithChosenFields =
+      service
+        .invoke(Params(Map("customer_id" -> "10")))
+        .futureValue
+        .asInstanceOf[TypedMap]
+        .asScala
     valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")
   }
 
