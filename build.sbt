@@ -105,6 +105,9 @@ lazy val publishSettings = Seq(
 def defaultMergeStrategy: String => MergeStrategy = {
   // remove JPMS module descriptors (a proper soultion would be to merge them)
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
+  // TODO local: this prevents https://stackoverflow.com/questions/60436823/issue-when-flink-upload-a-job-with-stream-sql-query
+  //  check it
+  case PathList("org", "codehaus", "janino", "CompilerFactory.class") => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
   // merge Netty version information files
@@ -1730,9 +1733,13 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
     componentsUtils    % Provided
   )
 
-lazy val experimentalConnectors = Seq(
-  "org.apache.flink" % "flink-connector-kafka" % flinkV % Provided,
-)
+//lazy val experimentalConnectors = Seq(
+//  "org.apache.flink" % "flink-connector-kafka" % flinkV % Provided,
+//)
+//
+//lazy val experimentalFormats = Seq(
+//  "org.apache.flink" % "flink-json" % flinkV % Provided,
+//)
 
 // TODO local: clean this up
 lazy val flinkTableApiComponents = (project in flink("components/table"))
@@ -1744,12 +1751,14 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     libraryDependencies ++= {
       Seq(
         "org.scalatest"   %% "scalatest"                   % scalaTestV % Test,
-        "org.apache.flink" % "flink-table"                 % flinkV     % Provided,
-        "org.apache.flink" % "flink-table-api-java"        % flinkV     % Provided,
-        "org.apache.flink" % "flink-table-api-java-bridge" % flinkV     % Provided,
-        "org.apache.flink" % "flink-table-planner-loader"  % flinkV     % Provided,
-        "org.apache.flink" % "flink-table-runtime"         % flinkV     % Provided,
-      ) ++: experimentalConnectors
+        "org.apache.flink" % "flink-table"                 % flinkV,
+        "org.apache.flink" % "flink-table-api-java"        % flinkV,
+        "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
+        "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
+        "org.apache.flink" % "flink-table-runtime"         % flinkV,
+        "org.apache.flink" % "flink-json"                  % flinkV,
+        "org.apache.flink" % "flink-connector-kafka"       % flinkV     % Provided,
+      )
     }
   )
   .dependsOn(
