@@ -158,6 +158,7 @@ class DeploymentServiceSpec
         .getProcessState(id)
         .futureValue
         .status
+
       status should not be SimpleStateStatus.Running
 
       status shouldBe SimpleStateStatus.NotDeployed
@@ -208,15 +209,14 @@ class DeploymentServiceSpec
       deploymentServiceWithCommentSettings.cancelProcess(processId, None).failed.futureValue
 
       eventually {
-        deploymentServiceWithCommentSettings
+        val status = deploymentServiceWithCommentSettings
           .getProcessState(processId)
           .futureValue
-          .status should not be SimpleStateStatus.Canceled
+          .status
 
-        deploymentServiceWithCommentSettings
-          .getProcessState(processId)
-          .futureValue
-          .status shouldBe SimpleStateStatus.Running
+        status should not be SimpleStateStatus.Canceled
+
+        status shouldBe SimpleStateStatus.Running
       }
 
       eventually {
