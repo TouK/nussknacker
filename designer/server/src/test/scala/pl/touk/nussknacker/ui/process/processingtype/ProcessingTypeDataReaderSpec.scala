@@ -28,45 +28,6 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       |  classPath: []
       |}""".stripMargin
 
-  test("load only scenario types assigned to configured categories") {
-    val config = ConfigFactory.parseString("""
-        |selectedScenarioType: foo
-        |scenarioTypes {
-        |  foo {
-        |    deploymentConfig {
-        |      type: "foo"
-        |    }
-        |    modelConfig {
-        |      classPath: []
-        |    }
-        |    category: "Default"
-        |  }
-        |  bar {
-        |    deploymentConfig {
-        |      type: "bar"
-        |    }
-        |    modelConfig {
-        |      classPath: []
-        |    }
-        |    category: "Default"
-        |  }
-        |}
-        |""".stripMargin)
-
-    val provider = ProcessingTypeDataProvider(
-      StubbedProcessingTypeDataReader
-        .loadProcessingTypeData(
-          ConfigWithUnresolvedVersion(config),
-          _ => TestFactory.modelDependencies,
-          _ => TestFactory.deploymentManagerDependencies,
-        )
-    )
-    val scenarioTypes = provider
-      .all(AdminUser("admin", "admin"))
-
-    scenarioTypes.keySet shouldEqual Set("foo")
-  }
-
   test("allow to access to processing type data only users that has read access to associated category") {
     val config = ConfigFactory.parseString(s"""
         |scenarioTypes {

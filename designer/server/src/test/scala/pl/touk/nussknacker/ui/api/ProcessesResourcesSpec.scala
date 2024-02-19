@@ -30,7 +30,11 @@ import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithRichD
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
-import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
+import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
+  CreatorPanel,
+  ProcessActionsPanel,
+  TipsPanel
+}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
@@ -909,7 +913,7 @@ class ProcessesResourcesSpec
         List(),
         List(
           ToolbarPanel(
-            ProcessInfoPanel,
+            ProcessActionsPanel,
             None,
             None,
             Some(

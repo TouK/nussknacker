@@ -13,7 +13,7 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
   * @param shouldCheckAvailableSlots When true {@link FlinkDeploymentManager} checks if there are free slots to run new job. This check should be disabled on Flink Kubernetes Native deployments, where Taskmanager is started on demand.
   */
 final case class FlinkConfig(
-    restUrl: String,
+    restUrl: Option[String],
     jobManagerTimeout: FiniteDuration = 1 minute,
     shouldVerifyBeforeDeploy: Boolean = true,
     shouldCheckAvailableSlots: Boolean = true,

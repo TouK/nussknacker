@@ -504,7 +504,7 @@ processToolbarConfig {
     ]
     topRight: [
       {
-        type: "process-info-panel"
+        type: "process-actions-panel"
         buttons: [
           { type: "process-save", disabled: { fragment: false, archived: true, type: "oneof" } }
           { type: "custom-link", title: "Metrics for $processName", url: "/metrics/$processId" }
@@ -577,8 +577,9 @@ processToolbarConfig {
       { type: "attachments-panel" }
     ]
     topRight: [
+      { type: "process-info-panel" }
       {
-        type: "process-info-panel"
+        type: "process-actions-panel"
         buttons: [
           { type: "process-save", title: "Save changes", disabled: { archived: true } }
           { type: "process-deploy", disabled: { fragment: true, archived: true, type: "oneof" } }
@@ -778,7 +779,7 @@ In Nussknacker distribution there are preconfigured scenario types:
 - `streaming-lite-embedded` - using embedded Lite Deployment Manager in Streaming processing mode providing only stateless streaming components
 - `request-response-embedded` - use embedded Request-Response Deployment Manager, scenario logic is exposed as REST API, on additional HTTP port at Designer
 
-And one `Default` category using `streaming` by default (can be configured via `DEFAULT_SCENARIO_TYPE` environment variable)
+Each of these scenario types has `Default` category assigned.
 
 See [example](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33)
 from development config for more complex examples.

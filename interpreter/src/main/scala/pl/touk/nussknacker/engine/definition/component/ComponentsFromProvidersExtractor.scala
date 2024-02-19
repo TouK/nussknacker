@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
+import cats.data.NonEmptyList
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component._
@@ -14,11 +15,11 @@ object ComponentsFromProvidersExtractor {
 
   def apply(
       classLoader: ClassLoader,
-      skipComponentProvidersLoadedFromAppClassloader: Boolean
+      shouldIncludeComponentProvider: ComponentProvider => Boolean
   ): ComponentsFromProvidersExtractor = {
     new ComponentsFromProvidersExtractor(
       classLoader,
-      skipComponentProvidersLoadedFromAppClassloader,
+      shouldIncludeComponentProvider,
       NussknackerVersion.current
     )
   }
@@ -27,16 +28,13 @@ object ComponentsFromProvidersExtractor {
 
 class ComponentsFromProvidersExtractor(
     classLoader: ClassLoader,
-    skipComponentProvidersLoadedFromAppClassloader: Boolean,
+    shouldIncludeComponentProvider: ComponentProvider => Boolean,
     nussknackerVersion: NussknackerVersion
 ) {
 
   private lazy val providers: Map[String, List[ComponentProvider]] = {
     ScalaServiceLoader
-      .load[ComponentProvider](
-        classLoader,
-        skipClassesLoadedFromAppClassloader = skipComponentProvidersLoadedFromAppClassloader
-      )
+      .load[ComponentProvider](classLoader)
       .groupBy(_.providerName)
   }
 
@@ -67,14 +65,17 @@ class ComponentsFromProvidersExtractor(
   }
 
   private def loadManuallyLoadedProviders(componentsConfig: Map[String, ComponentProviderConfig]) = {
-    componentsConfig.filterNot(_._2.disabled).map { case (name, providerConfig: ComponentProviderConfig) =>
+    componentsConfig.filterNot(_._2.disabled).flatMap { case (name, providerConfig: ComponentProviderConfig) =>
       val providerName = providerConfig.providerType.getOrElse(name)
       val componentProviders = providers.getOrElse(
         providerName,
         throw new IllegalArgumentException(s"Provider $providerName (for component $name) not found")
       )
-      val provider: ComponentProvider = findSingleCompatible(name, providerName, componentProviders)
-      name -> (providerConfig, provider)
+      val filteredClassloaderProviders = componentProviders.filter(shouldIncludeComponentProvider)
+      NonEmptyList.fromList(filteredClassloaderProviders).map { nel =>
+        val provider = findSingleCompatible(name, providerName, nel)
+        name -> (providerConfig, provider)
+      }
     }
   }
 
@@ -85,8 +86,10 @@ class ComponentsFromProvidersExtractor(
     val manuallyLoadedProviders = manuallyLoadedProvidersWithConfig.values.map(_._2).toSet
     val autoLoadedProvidersWithConfig = providers.values.flatten
       .filter(provider =>
-        provider.isAutoLoaded && !manuallyLoadedProviders
-          .contains(provider) && !componentsConfig.get(provider.providerName).exists(_.disabled)
+        provider.isAutoLoaded &&
+          !manuallyLoadedProviders.contains(provider) &&
+          !componentsConfig.get(provider.providerName).exists(_.disabled) &&
+          shouldIncludeComponentProvider(provider)
       )
       .map { provider =>
         if (!provider.isCompatible(nussknackerVersion)) {
@@ -111,13 +114,13 @@ class ComponentsFromProvidersExtractor(
   private def findSingleCompatible(
       name: String,
       providerName: String,
-      componentProviders: List[ComponentProvider]
+      componentProviders: NonEmptyList[ComponentProvider]
   ): ComponentProvider = {
-    val (compatible, incompatible) = componentProviders.partition(_.isCompatible(nussknackerVersion))
+    val (compatible, incompatible) = componentProviders.toList.partition(_.isCompatible(nussknackerVersion))
     compatible match {
-      case List() =>
+      case Nil =>
         incompatible match {
-          case List() => throw new IllegalArgumentException(s"Provider $providerName (for component $name) not found")
+          case Nil => throw new IllegalArgumentException(s"Provider $providerName (for component $name) not found")
           case _ =>
             throw new IllegalArgumentException(
               s"Component provider $name (of type $providerName) is not compatible with $nussknackerVersion, please use correct component provider version or disable it explicitly."

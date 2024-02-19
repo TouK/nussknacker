@@ -26,7 +26,7 @@ object ComponentFromProvidersExtractorTest {
 
 class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
 
-  private val loader = new DefaultModelConfigLoader(skipComponentProvidersLoadedFromAppClassloader = false)
+  private val loader = new DefaultModelConfigLoader(_ => true)
 
   test("should discover services") {
     val components = extractComponents(
@@ -91,7 +91,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
         (cl: ClassLoader) =>
           new ComponentsFromProvidersExtractor(
             cl,
-            skipComponentProvidersLoadedFromAppClassloader = false,
+            _ => true,
             NussknackerVersion(largeVersionNumber)
           )
       )
@@ -112,12 +112,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     intercept[IllegalArgumentException] {
       extractComponents(
         Map.empty[String, Any],
-        (cl: ClassLoader) =>
-          new ComponentsFromProvidersExtractor(
-            cl,
-            skipComponentProvidersLoadedFromAppClassloader = false,
-            NussknackerVersion(largeVersionNumber)
-          )
+        (cl: ClassLoader) => new ComponentsFromProvidersExtractor(cl, _ => true, NussknackerVersion(largeVersionNumber))
       )
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
@@ -153,7 +148,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
   ): List[ComponentDefinitionWithImplementation] =
     extractComponents(
       componentsConfig.toMap,
-      ComponentsFromProvidersExtractor(_, skipComponentProvidersLoadedFromAppClassloader = false)
+      ComponentsFromProvidersExtractor(_, _ => true)
     )
 
   private def extractComponents(
@@ -183,7 +178,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
 
   private def extractProvider(providers: List[(Class[_], Class[_])], config: Map[String, Any] = Map()) = {
     ClassLoaderWithServices.withCustomServices(providers, getClass.getClassLoader) { cl =>
-      val extractor = ComponentsFromProvidersExtractor(cl, skipComponentProvidersLoadedFromAppClassloader = false)
+      val extractor = ComponentsFromProvidersExtractor(cl, _ => true)
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
       extractor.extractComponents(

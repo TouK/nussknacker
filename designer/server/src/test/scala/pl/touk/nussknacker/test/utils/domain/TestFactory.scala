@@ -114,7 +114,7 @@ object TestFactory {
       TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
       componentId => DesignerWideComponentId(componentId.toString),
       workingDirectoryOpt = None,
-      skipComponentProvidersLoadedFromAppClassloader = false
+      _ => true
     )
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = {
