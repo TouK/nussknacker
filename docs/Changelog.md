@@ -44,6 +44,9 @@
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
 * [#5371](https://github.com/TouK/nussknacker/pull/5371) Added new parameter editor type: DictParameterEditor.
 * [#5373](https://github.com/TouK/nussknacker/pull/5373) API changes related to components development
+* [#5566](https://github.com/TouK/nussknacker/pull/5566) [#5550](https://github.com/TouK/nussknacker/pull/5537) 
+  [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Processing mode and engine available in the GUI
+* [#5566](https://github.com/TouK/nussknacker/pull/5566) `DEFAULT_SCENARIO_TYPE` environment variable is not supported anymore 
 
 1.13.1 (Not released yet)
 ------------------------

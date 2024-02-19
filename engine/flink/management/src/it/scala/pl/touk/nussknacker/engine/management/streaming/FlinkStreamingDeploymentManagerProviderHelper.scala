@@ -26,7 +26,7 @@ object FlinkStreamingDeploymentManagerProviderHelper {
         additionalConfigsFromProvider = Map.empty,
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
-        skipComponentProvidersLoadedFromAppClassloader = false
+        _ => true
       )
     )
     val actorSystem       = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")

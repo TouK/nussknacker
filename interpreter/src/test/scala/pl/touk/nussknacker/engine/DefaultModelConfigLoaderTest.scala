@@ -14,7 +14,7 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
   private val inputConfig = ConfigFactory.parseMap(Collections.singletonMap("property1", "value1"))
 
   test("should handle absence of model.conf") {
-    val loader = new DefaultModelConfigLoader(skipComponentProvidersLoadedFromAppClassloader = false) {
+    val loader = new DefaultModelConfigLoader(_ => true) {
       override def modelConfigResource: String = "notExist.conf"
     }
 
