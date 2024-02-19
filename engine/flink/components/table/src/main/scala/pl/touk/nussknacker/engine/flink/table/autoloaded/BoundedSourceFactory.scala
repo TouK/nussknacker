@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.transformer
+package pl.touk.nussknacker.engine.flink.table.autoloaded
 
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -11,9 +11,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.table.TableApiComponentFactoryMixin
 
 // TODO: Shouldn't be unbounded - this is just for easier local development
-object BoundedSourceFactory extends SourceFactory with UnboundedStreamComponent with TableApiComponentFactory {
+object BoundedSourceFactory extends SourceFactory with UnboundedStreamComponent with TableApiComponentFactoryMixin {
 
   @MethodToInvoke
   def invoke(): Source = {
