@@ -12,14 +12,15 @@ import RequestResponseIcon from "../assets/img/request-response.svg";
 import { CustomRadio } from "./customRadio/CustomRadio";
 import { ProcessingMode } from "../http/HttpService";
 import { NodeValidationError } from "../types";
+import { isEmpty } from "lodash";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
     validationErrors: NodeValidationError[];
-    categories: { value: string; disabled: boolean }[] | undefined;
+    categories: { value: string; disabled: boolean }[];
     processingModes: ProcessingMode[];
-    engines: string[] | undefined;
+    engines: string[];
 }
 
 export function AddProcessForm({
@@ -110,7 +111,7 @@ export function AddProcessForm({
                         <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processName")} />
                     </div>
                 </FormControl>
-                {categories && (
+                {!isEmpty(categories) && (
                     <FormControl>
                         <FormLabel required>{t("addProcessForm.label.category", "Category")}</FormLabel>
                         <div className="node-value">
@@ -148,7 +149,7 @@ export function AddProcessForm({
                         </div>
                     </FormControl>
                 )}
-                {engines && (
+                {!isEmpty(engines) && (
                     <FormControl>
                         <FormLabel required>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
                         <div className="node-value">

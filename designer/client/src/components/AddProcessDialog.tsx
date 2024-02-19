@@ -109,9 +109,9 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
                 value={value}
                 onChange={onChange}
                 validationErrors={isFormSubmitted ? validationErrors : []}
-                categories={isCategoryFieldVisible ? categories : undefined}
+                categories={isCategoryFieldVisible ? categories : []}
                 processingModes={processingModes}
-                engines={isEngineFieldVisible ? engines : undefined}
+                engines={isEngineFieldVisible ? engines : []}
             />
         </WindowContent>
     );
