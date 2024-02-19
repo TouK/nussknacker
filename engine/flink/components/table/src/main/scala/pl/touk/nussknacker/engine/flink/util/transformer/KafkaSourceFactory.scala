@@ -12,8 +12,6 @@ import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 
-import scala.jdk.CollectionConverters.mapAsJavaMapConverter
-
 object KafkaSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
   @MethodToInvoke
@@ -22,6 +20,8 @@ object KafkaSourceFactory extends SourceFactory with UnboundedStreamComponent {
   }
 
   private class KafkaSource extends FlinkSource with ReturningType with TableApiComponent {
+
+    import scala.jdk.CollectionConverters._
 
     override def sourceStream(
         env: StreamExecutionEnvironment,
