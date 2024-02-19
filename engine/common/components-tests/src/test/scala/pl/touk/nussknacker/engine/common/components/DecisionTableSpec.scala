@@ -1,128 +1,249 @@
 package pl.touk.nussknacker.engine.common.components
 
-import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.funsuite.AnyFunSuite
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import org.scalatest.Inside
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.util.config.DocsConfig
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.{RunListResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
+import java.time.LocalDate
+import java.util.{List => JList, Map => JMap}
 import scala.jdk.CollectionConverters._
-import java.util.{List => JList}
-import java.util.{Map => JMap}
+import scala.reflect.ClassTag
 
-class DecisionTableSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDetailedMessage with Inside {
 
   import spel.Implicits._
 
-  private val testScenarioRunner = TestScenarioRunner
-    .liteBased()
-    .withExtraComponents {
-      new DecisionTableComponentProvider()
-        .create(
-          ConfigFactory.empty(),
-          ProcessObjectDependencies.withConfig(ConfigFactory.empty())
+  "Decision Table component should" - {
+    "filter and return decision table's rows filtered by the expression" in {
+      val result = execute[TestMessage, SCENARIO_RESULT](
+        scenario = decisionTableExampleScenario(
+          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
+        ),
+        withData = List(
+          TestMessage(id = "1", minAge = 30),
+          TestMessage(id = "2", minAge = 18)
         )
-    }
-    .build()
+      )
 
-  test("simple test") { // todo: change name
-    val scenarioWithDecisionTable = ScenarioBuilder
+      inside(result) { case Validated.Valid(r) =>
+        r.errors should be(List.empty)
+        r.successes should be(
+          List(
+            rows(
+              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
+            ),
+            rows(
+              rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
+              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
+            )
+          )
+        )
+      }
+    }
+    "fail to compile expression when" - {
+      "non-present column name is used" in {
+        val result = execute[TestMessage, SCENARIO_RESULT](
+          scenario = decisionTableExampleScenario(
+            expression = "#ROW['years'] > #input.minAge"
+          ),
+          withData = List(
+            TestMessage(id = "1", minAge = 30),
+            TestMessage(id = "2", minAge = 18)
+          )
+        )
+        inside(result) { case Validated.Invalid(errors) =>
+          errors should be(
+            NonEmptyList.one(
+              ExpressionParserCompilationError(
+                message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
+                nodeId = "decision-table",
+                fieldName = Some("Expression"),
+                originalExpr = "#ROW['years'] > #input.minAge"
+              )
+            )
+          )
+        }
+      }
+      "type of the accessed column is wrong" in {
+        val result = execute[TestMessage, SCENARIO_RESULT](
+          scenario = decisionTableExampleScenario(
+            expression = "#ROW['name'] > #input.minAge"
+          ),
+          withData = List(
+            TestMessage(id = "1", minAge = 30),
+            TestMessage(id = "2", minAge = 18)
+          )
+        )
+        inside(result) { case Validated.Invalid(errors) =>
+          errors should be(
+            NonEmptyList.one(
+              ExpressionParserCompilationError(
+                message = "Wrong part types",
+                nodeId = "decision-table",
+                fieldName = Some("Expression"),
+                originalExpr = "#ROW['name'] > #input.minAge"
+              )
+            )
+          )
+        }
+      }
+    }
+    "fail to compile tabular data definition when" - {
+      "not supported type of column is used" in {
+        val result = execute[TestMessage, SCENARIO_RESULT](
+          scenario = decisionTableExampleScenario(
+            basicDecisionTableDefinition = invalidColumnTypeDecisionTableJson,
+            expression = "#ROW['age'] > #input.minAge",
+          ),
+          withData = List(
+            TestMessage(id = "1", minAge = 30),
+            TestMessage(id = "2", minAge = 18)
+          )
+        )
+        inside(result) { case Validated.Invalid(errors) =>
+          errors should be(
+            NonEmptyList.one(
+              ExpressionParserCompilationError(
+                message = "Column has a 'java.lang.Object' type but the value 'John' cannot be converted to it.",
+                nodeId = "decision-table",
+                fieldName = Some("Basic Decision Table"),
+                originalExpr = invalidColumnTypeDecisionTableJson.expression
+              )
+            )
+          )
+        }
+      }
+    }
+  }
+
+  private type SCENARIO_RESULT = JList[JMap[String, Any]]
+
+  private lazy val exampleDecisionTableJson = Expression.tabularDataDefinition {
+    s"""{
+       |  "columns": [
+       |    { "name": "name", "type": "java.lang.String" },
+       |    { "name": "age", "type": "java.lang.Integer" },
+       |    { "name": "DoB", "type": "java.time.LocalDate" }
+       |  ],
+       |  "rows": [
+       |    [ "John", "39", null ],
+       |    [ "Lisa", "21", "2003-01-13" ],
+       |    [ "Mark", "54", "1970-12-30" ]
+       |  ]
+       |}""".stripMargin
+  }
+
+  private lazy val invalidColumnTypeDecisionTableJson = Expression.tabularDataDefinition {
+    s"""{
+       |  "columns": [
+       |    { "name": "name", "type": "java.lang.Object" },
+       |    { "name": "age", "type": "java.lang.Integer" },
+       |    { "name": "DoB", "type": "java.time.LocalDate" }
+       |  ],
+       |  "rows": [
+       |    [ "John", "39", null ],
+       |    [ "Lisa", "21", "2003-01-13" ],
+       |    [ "Mark", "54", "1970-12-30" ]
+       |  ]
+       |}""".stripMargin
+  }
+
+  private def decisionTableExampleScenario(
+      expression: Expression,
+      basicDecisionTableDefinition: Expression = exampleDecisionTableJson
+  ) = {
+    ScenarioBuilder
       .requestResponse("test scenario")
       .source("request", TestScenarioRunner.testDataSource)
       .enricher(
         "decision-table",
         "dtResult",
         "decision-table",
-        "Basic Decision Table" -> decisionTableJson,
-        "Expression"           -> "#ROW['B'] == 'foo' && #ROW['C'] != null",
+        "Basic Decision Table" -> basicDecisionTableDefinition,
+        "Expression"           -> expression,
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#dtResult")
-
-    val validatedResult = testScenarioRunner.runWithData[TestMessage, JList[JMap[String, Any]]](
-      scenario = scenarioWithDecisionTable,
-      data = List(TestMessage("1", 100))
-    )
-
-    val resultList = validatedResult.validValue.successes
-    resultList should be(oneElementList {
-      List(
-        Map(
-          "somename" -> 1,
-          "B"        -> "foo",
-          "C"        -> "bar"
-        ).asJava
-      ).asJava
-    })
+      .end("end", "value" -> "#dtResult")
   }
 
-  private lazy val decisionTableJson = Expression.tabularDataDefinition {
-    s"""{
-       |  "columns": [
-       |    {
-       |      "name": "somename",
-       |      "type": "java.lang.Double"
-       |    },
-       |    {
-       |      "name": "B",
-       |      "type": "java.lang.String"
-       |    },
-       |    {
-       |      "name": "C",
-       |      "type": "java.lang.String"
-       |    }
-       |  ],
-       |  "rows": [
-       |    [
-       |      null,
-       |      null,
-       |      "test"
-       |    ],
-       |    [
-       |      1,
-       |      "foo",
-       |      "bar"
-       |    ],
-       |    [
-       |      null,
-       |      null,
-       |      "xxx"
-       |    ]
-       |  ]
-       |}""".stripMargin
+  private def rows(maps: java.util.Map[String, Any]*) = List(maps: _*).asJava
+
+  private def rowData(name: String, age: Int, dob: LocalDate) =
+    Map("name" -> name, "age" -> age, "DoB" -> dob).asJava
+
+  protected def testScenarioRunner: TestScenarioRunner
+
+  protected def execute[DATA: ClassTag, RESULT](
+      scenario: CanonicalProcess,
+      withData: Iterable[DATA]
+  ): ValidatedNel[ProcessCompilationError, RunListResult[RESULT]]
+
+  protected def addEndNode(
+      builder: GraphBuilder[CanonicalProcess]
+  )(id: String, params: Seq[(String, Expression)]): CanonicalProcess
+
+  private implicit class AddEndNodeExt(builder: GraphBuilder[CanonicalProcess]) {
+    def end(id: String, params: (String, Expression)*): CanonicalProcess =
+      addEndNode(builder)(id, params)
   }
 
-  private def oneElementList[T](obj: T) = List(obj)
 }
 
-private final case class TestMessage(id: String, value: Int)
+private final case class TestMessage(id: String, minAge: Int)
 
-class DecisionTableComponentProvider extends ComponentProvider {
+class FlinkEngineRunDecisionTableSpec extends DecisionTableSpec with FlinkSpec {
 
-  override val providerName: String = "decisionTable"
+  override protected lazy val testScenarioRunner: FlinkTestScenarioRunner =
+    TestScenarioRunner
+      .flinkBased(config, flinkMiniCluster)
+      .build()
 
-  override def resolveConfigForExecution(config: Config): Config = config
+  override protected def execute[DATA: ClassTag, RESULT](
+      scenario: CanonicalProcess,
+      withData: Iterable[DATA]
+  ): ValidatedNel[ProcessCompilationError, RunListResult[RESULT]] = {
+    testScenarioRunner.runWithData(scenario, withData.toList)
+  }
 
-  override def isCompatible(version: NussknackerVersion): Boolean = true
+  override protected def addEndNode(
+      builder: GraphBuilder[CanonicalProcess]
+  )(id: String, params: Seq[(String, Expression)]): CanonicalProcess = {
+    builder.processorEnd(id, TestScenarioRunner.testResultService, params: _*)
+  }
 
-  override val isAutoLoaded: Boolean = true
+}
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val docsConfig = DocsConfig(config)
-    import docsConfig._
+class LiteEngineRunDecisionTableSpec extends DecisionTableSpec {
 
-    List {
-      ComponentDefinition(
-        name = "decision-table",
-        component = DecisionTable
-      ).withRelativeDocs("BasicNodes#decisiontable")
-    }
+  override protected lazy val testScenarioRunner: LiteTestScenarioRunner =
+    TestScenarioRunner
+      .liteBased()
+      .build()
+
+  override protected def execute[DATA: ClassTag, RESULT](
+      scenario: CanonicalProcess,
+      withData: Iterable[DATA]
+  ): ValidatedNel[ProcessCompilationError, RunListResult[RESULT]] = {
+    testScenarioRunner.runWithData(scenario, withData.toList)
+  }
+
+  override protected def addEndNode(
+      builder: GraphBuilder[CanonicalProcess]
+  )(id: String, params: Seq[(String, Expression)]): CanonicalProcess = {
+    builder.emptySink(id, TestScenarioRunner.testResultSink, params: _*)
   }
 
 }

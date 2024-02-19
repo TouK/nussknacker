@@ -32,10 +32,14 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         description: "",
         typ: "",
     }));
-    const { categories, engines, processingModes, isEngineFieldVisible } = useProcessFormDataOptions({ allCombinations, value });
+    const { categories, engines, processingModes, isEngineFieldVisible, isCategoryFieldVisible } = useProcessFormDataOptions({
+        allCombinations,
+        value,
+    });
+
     const [isFormSubmitted, setIsFormSubmitted] = useState<boolean>(false);
     const validationErrors = flow(
-        (errors) => extendErrors(errors, value.processCategory, "processCategory", [mandatoryValueValidator]),
+        (errors) => extendErrors(errors, value.processCategory, "processCategory", isCategoryFieldVisible ? [mandatoryValueValidator] : []),
         (errors) => extendErrors(errors, value.processingMode, "processingMode", [mandatoryValueValidator]),
         (errors) => extendErrors(errors, value.processEngine, "processEngine", isEngineFieldVisible ? [mandatoryValueValidator] : []),
         (errors) => extendErrors([...errors, ...processNameFromBackend, ...engineErrors], value.processName, "processName", nameValidators),
@@ -48,7 +52,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
             try {
                 await HttpService.createProcess({
                     name: processName,
-                    category: processCategory,
+                    category: processCategory || undefined,
                     isFragment,
                     processingMode,
                     engineSetupName: processEngine || undefined,
@@ -105,9 +109,9 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
                 value={value}
                 onChange={onChange}
                 validationErrors={isFormSubmitted ? validationErrors : []}
-                categories={categories}
+                categories={isCategoryFieldVisible ? categories : []}
                 processingModes={processingModes}
-                engines={isEngineFieldVisible ? engines : undefined}
+                engines={isEngineFieldVisible ? engines : []}
             />
         </WindowContent>
     );
