@@ -31,6 +31,7 @@ export function useTableState(expressionObj: ExpressionObj): [TableData, Dispatc
     const [state, dispatch] = useReducer(reducer, emptyValue, (defaultValue) => fromExpression(expressionObj.expression, defaultValue));
 
     useEffect(() => {
+        // synchronize rawExpression & state with new expressionObj
         setRawExpression((currentRawExpression: string) => {
             if (currentRawExpression === expressionObj.expression) {
                 return currentRawExpression;
@@ -45,6 +46,7 @@ export function useTableState(expressionObj: ExpressionObj): [TableData, Dispatc
     }, [expressionObj.expression, fromExpression]);
 
     useEffect(() => {
+        // synchronize rawExpression with new state
         setRawExpression(toExpression(state));
     }, [state, toExpression]);
 
