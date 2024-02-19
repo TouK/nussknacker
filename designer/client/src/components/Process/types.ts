@@ -1,6 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import { UnknownRecord, Instant } from "../../types/common";
 import { ScenarioGraph, ValidationResult } from "../../types";
+import { ProcessingMode } from "../../http/HttpService";
 
 export enum ActionType {
     Deploy = "DEPLOY",
@@ -45,9 +46,10 @@ export interface Scenario {
     isLatestVersion: boolean;
     processCategory: string;
     processType: string;
-    modificationDate: Instant;
+    modificationDate: Instant; // Deprecated
     modifiedBy: string;
     createdAt: Instant;
+    modifiedAt: Instant;
     createdBy: string;
     lastAction?: ProcessActionType;
     lastDeployedAction?: ProcessActionType;
@@ -56,6 +58,8 @@ export interface Scenario {
     scenarioGraph: ScenarioGraph;
     validationResult: ValidationResult;
     processingType: string;
+    processingMode: ProcessingMode;
+    engineSetupName: string;
 }
 
 export type ProcessName = Scenario["name"];

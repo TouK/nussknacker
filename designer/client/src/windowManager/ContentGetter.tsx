@@ -42,6 +42,10 @@ const GenerateDataAndTestDialog = loadable(() => import("../components/modals/Ge
     fallback: <LoaderSpinner show />,
 });
 
+const ScenarioDetailsDialog = loadable(() => import("../components/modals/MoreScenarioDetailsDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+
 const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -74,6 +78,9 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <NodeDetails {...props} readOnly />;
         case WindowKind.survey:
             return <FrameDialog {...props} />;
+        case WindowKind.scenarioDetails: {
+            return <ScenarioDetailsDialog {...props} />;
+        }
         default:
             return (
                 <WindowContent {...props}>

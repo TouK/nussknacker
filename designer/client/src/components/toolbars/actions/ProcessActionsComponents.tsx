@@ -1,17 +1,17 @@
 import { styled, Typography } from "@mui/material";
 
-export const PanelProcessInfo = styled("div")`
+export const PanelScenarioDetails = styled("div")`
     display: flex;
     padding: 15px 10px;
 `;
 
-export const PanelProcessInfoIcon = styled("div")`
+export const PanelScenarioDetailsIcon = styled("div")`
     display: inline-block;
     width: 32px;
     height: 32px;
 `;
 
-export const ProcessInfoText = styled("div")`
+export const ScenarioDetailsText = styled("div")`
     display: inline-block;
     margin-left: 7px;
     font-size: 14px;
@@ -31,7 +31,7 @@ export const ProcessRename = styled(ProcessName)`
     color: orange;
 `;
 
-export const ProcessInfoDescription = styled("div")`
+export const ScenarioDetailsDescription = styled("div")`
     font-size: 12px;
     font-weight: lighter;
 `;
