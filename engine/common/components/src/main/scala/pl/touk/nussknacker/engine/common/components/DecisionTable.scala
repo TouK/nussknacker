@@ -102,9 +102,9 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
     ): java.util.List[java.util.Map[String, Any]] = {
       tabularData.rows
         .filter { row =>
-          val m          = row.cells.map(c => (c.definition.name, c.value)).toMap.asJava
-          val newContext = context.withVariables(Map(decisionTableRowRuntimeVariableName -> m))
-          val result     = expression.evaluate(newContext)
+          val m            = row.cells.map(c => (c.definition.name, c.value)).toMap.asJava
+          val localContext = context.withVariables(Map(decisionTableRowRuntimeVariableName -> m))
+          val result       = expression.evaluate(localContext)
           result
         }
         .map { row =>

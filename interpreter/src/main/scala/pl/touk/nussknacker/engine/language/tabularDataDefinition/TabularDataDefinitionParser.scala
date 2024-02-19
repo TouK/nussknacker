@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.language.tabularDataDefinition
 
 import cats.data.ValidatedNel
 import cats.implicits._
+import io.circe.DecodingFailure
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.TabularTypedData
@@ -59,7 +60,10 @@ object TabularDataDefinitionParser extends ExpressionParser {
 
   private def toExpressionParseError(error: Throwable) = {
     new ExpressionParseError {
-      override def message: String = error.getMessage
+      override val message: String = error match {
+        case DecodingFailure((message, _)) => message
+        case other                         => other.getMessage
+      }
     }
   }
 

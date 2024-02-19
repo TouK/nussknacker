@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api.definition
 
 import io.circe
 import io.circe.Decoder.Result
-import io.circe.DecodingFailure.Reason.CustomReason
 import io.circe.syntax.EncoderOps
 import io.circe._
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -88,7 +87,7 @@ object TabularTypedData {
       case (r @ Right(()), cell) if doesCellValueLookOK(cell)       => r
       case (Right(()), cell) =>
         Left(
-          s"Column has a ${cell.definition.aType.getCanonicalName} type but the value ${cell.rawValue.value} cannot be converted to it."
+          s"Column has a '${cell.definition.aType.getCanonicalName}' type but the value '${cell.rawValue.value}' cannot be converted to it."
         )
       case (l @ Left(_), _) => l
     }
@@ -171,14 +170,11 @@ private object Coders {
       Encoder.forProduct2("columns", "rows")(data => (data.columns, data.rows))
 
     private implicit lazy val columnEncoder: Encoder[Column] =
-      Encoder.forProduct2("name", "type")(column => (column.definition.name, column.definition.aType))
+      Encoder.forProduct2("name", "type")(column => (column.definition.name, column.definition.aType.getCanonicalName))
 
     private implicit lazy val rowEncoder: Encoder[Row] = Encoder.instance { row =>
       row.cells.map(_.rawValue).asJson
     }
-
-    private implicit lazy val aTypeEncoder: Encoder[Class[_]] =
-      Encoder.encodeString.contramap(_.getCanonicalName)
 
     private implicit lazy val rawValueEncoder: Encoder[RawValue] = Encoder.encodeJson.contramap {
       case RawValue(null)    => Json.Null
@@ -196,7 +192,7 @@ private object Coders {
         data <- TabularTypedData
           .create(columns, rows)
           .left
-          .map(message => DecodingFailure(CustomReason(message), List.empty))
+          .map(message => DecodingFailure(message, List.empty))
       } yield data
     }
 
