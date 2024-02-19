@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 
 import java.net.URLClassLoader
 import java.util.ServiceLoader
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
 object ScalaServiceLoader extends LazyLogging {
   import scala.jdk.CollectionConverters._
@@ -42,15 +42,12 @@ object ScalaServiceLoader extends LazyLogging {
     }
   }
 
-  def load[T](classLoader: ClassLoader, skipClassesLoadedFromAppClassloader: Boolean = false)(
-      implicit classTag: ClassTag[T]
-  ): List[T] = {
-    val interface: Class[T] = toClass(classTag)
+  def load[T: ClassTag](classLoader: ClassLoader): List[T] = {
+    val interface: Class[T] = classTag[T].runtimeClass.asInstanceOf[Class[T]]
     val loadedClasses = ServiceLoader
       .load(interface, classLoader)
       .asScala
       .toList
-      .filterNot(cl => skipClassesLoadedFromAppClassloader && cl.getClass.getClassLoader.getName == "app")
     logLoadedClassesAndClassloaders(interface, loadedClasses)
     loadedClasses
   }
@@ -69,10 +66,6 @@ object ScalaServiceLoader extends LazyLogging {
         }
         .mkString(s"Classes loaded for the ${interface.getName} interface: ", ", ", "")
     )
-  }
-
-  private def toClass[T](implicit classTag: ClassTag[T]): Class[T] = {
-    classTag.runtimeClass.asInstanceOf[Class[T]]
   }
 
 }
