@@ -10,11 +10,11 @@ import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessCo
 class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProcessMixin {
 
   test(
-    "should extract valid type definitions from source based on GenericNodeTransformation with explicit type definitions"
+    "should extract valid type definitions from source based on DynamicComponent with explicit type definitions"
   ) {
     val extractedTypes = modelData.modelDefinitionWithClasses.classDefinitions.all
 
-    // Here we are checking explicit type extraction for sources based on GenericNodeTransformation
+    // Here we are checking explicit type extraction for sources based on DynamicComponent
     // with defined explicit type extraction.
     // It is important that SampleKey and SampleValue are used only by source of that kind,
     // and they must not be returned by other services.

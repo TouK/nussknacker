@@ -232,10 +232,10 @@ private class InterpreterInternal[F[_]: Monad](
 
   private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node) = {
     implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
-    val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator, serviceExecutionContext)
+    val resultFuture                                        = ref.invoke(ctx, serviceExecutionContext)
     import SynchronousExecutionContextAndIORuntime.syncEc
     resultFuture.onComplete { result =>
-      listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
+      listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, result))
     }
     resultFuture.map(ValueWithContext(_, ctx))
   }

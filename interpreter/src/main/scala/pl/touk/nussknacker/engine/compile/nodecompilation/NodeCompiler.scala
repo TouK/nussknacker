@@ -2,20 +2,16 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel}
-import cats.implicits.{toTraverseOps, _}
+import cats.implicits._
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  JoinGenericNodeTransformation,
-  SingleInputGenericNodeTransformation
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{JoinDynamicComponent, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{
   Expression => CompiledExpression,
-  ExpressionParser,
   ExpressionTypingInfo,
   TypedExpression,
   TypedExpressionMap
@@ -41,7 +37,6 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.expression._
@@ -76,8 +71,10 @@ class NodeCompiler(
     fragmentDefinitionExtractor: FragmentParametersDefinitionExtractor,
     expressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
+    listeners: Seq[ProcessListener],
     resultCollector: ResultCollector,
-    componentUseCase: ComponentUseCase
+    componentUseCase: ComponentUseCase,
+    nonServicesLazyParamStrategy: LazyParameterCreationStrategy
 ) {
 
   def withLabelsDictTyper: NodeCompiler = {
@@ -86,8 +83,10 @@ class NodeCompiler(
       fragmentDefinitionExtractor,
       expressionCompiler.withLabelsDictTyper,
       classLoader,
+      listeners,
       resultCollector,
-      componentUseCase
+      componentUseCase,
+      nonServicesLazyParamStrategy
     )
   }
 
@@ -98,10 +97,9 @@ class NodeCompiler(
   private val expressionConfig: ExpressionConfigDefinition =
     definitions.expressionConfig
 
-  private val expressionEvaluator =
-    ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
-  private val parametersEvaluator = new ParameterEvaluator(expressionEvaluator)
-  private val factory             = new ComponentExecutorFactory(parametersEvaluator)
+  private val parametersEvaluator =
+    new ParameterEvaluator(globalVariablesPreparer, listeners)
+  private val factory = new ComponentExecutorFactory(parametersEvaluator)
   private val dynamicNodeValidator =
     new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator)
   private val builtInNodeCompiler = new BuiltInNodeCompiler(expressionCompiler)
@@ -211,18 +209,18 @@ class NodeCompiler(
     val defaultCtxToUse = outputVar.map(defaultCtx.withVariable(_, Unknown)).getOrElse(Valid(defaultCtx))
 
     definitions.getComponent(ComponentType.CustomComponent, data.nodeType) match {
-      case Some(componentDefinitionWithImpl)
-          if ending && !componentDefinitionWithImpl.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
+      case Some(componentDefinition)
+          if ending && !componentDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
         val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(Set(nodeId.id))))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
-      case Some(componentDefinitionWithImpl) =>
+      case Some(componentDefinition) =>
         val default = defaultContextAfter(data, ending, ctx)
         compileComponentWithContextTransformation[AnyRef](
           data.parameters,
           data.cast[Join].map(_.branchParameters).getOrElse(Nil),
           ctx,
           outputVar.map(_.outputName),
-          componentDefinitionWithImpl,
+          componentDefinition,
           default
         ).map(_._1)
       case None =>
@@ -339,21 +337,21 @@ class NodeCompiler(
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
     definitions.getComponent(ComponentType.Service, n.id) match {
-      case Some(componentDefWithImpl) if componentDefWithImpl.implementation.isInstanceOf[EagerService] =>
-        compileEagerService(n, componentDefWithImpl, validationContext, outputVar)
+      case Some(componentDefinition) if componentDefinition.implementation.isInstanceOf[EagerService] =>
+        compileEagerService(n, componentDefinition, validationContext, outputVar)
       case Some(static: MethodBasedComponentDefinitionWithImplementation) =>
         ServiceCompiler.compile(n, outputVar, static, validationContext)
       case Some(_: DynamicComponentDefinitionWithImplementation) =>
         val error = invalid(
           CustomNodeError(
-            "Not supported service implementation: GenericNodeTransformation can be mixed only with EagerService",
+            "Not supported service implementation: DynamicComponent can be mixed only with EagerService",
             None
           )
         ).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(validationContext), error)
-      case Some(notSupportedComponentDefWithImpl) =>
+      case Some(notSupportedComponentDefinition) =>
         throw new IllegalStateException(
-          s"Not supported ComponentDefinitionWithImplementation: ${notSupportedComponentDefWithImpl.getClass}"
+          s"Not supported ${classOf[ComponentDefinitionWithImplementation].getName}: ${notSupportedComponentDefinition.getClass}"
         )
       case None =>
         val error = invalid(MissingService(n.id)).toValidatedNel
@@ -363,7 +361,7 @@ class NodeCompiler(
 
   private def compileEagerService(
       serviceRef: ServiceRef,
-      componentDefWithImpl: ComponentDefinitionWithImplementation,
+      componentDefinition: ComponentDefinitionWithImplementation,
       validationContext: ValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
@@ -394,27 +392,27 @@ class NodeCompiler(
       }
     }
 
-    def makeInvoker(service: ServiceInvoker, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
+    def createService(invoker: ServiceInvoker, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
       compiledgraph.service.ServiceRef(
-        serviceRef.id,
-        service,
-        prepareCompiledLazyParameters(paramsDefs, nodeParams),
-        resultCollector
+        id = serviceRef.id,
+        invoker = invoker,
+        parameters = prepareCompiledLazyParameters(paramsDefs, nodeParams),
+        resultCollector = resultCollector
       )
 
     val compilationResult = compileComponentWithContextTransformation[ServiceInvoker](
-      serviceRef.parameters,
-      Nil,
-      Left(validationContext),
-      outputVar.map(_.outputName),
-      componentDefWithImpl,
-      defaultCtxForMethodBasedCreatedComponentExecutor
+      parameters = serviceRef.parameters,
+      branchParameters = Nil,
+      ctx = Left(validationContext),
+      outputVar = outputVar.map(_.outputName),
+      componentDefinition = componentDefinition,
+      defaultCtxForMethodBasedCreatedComponentExecutor = defaultCtxForMethodBasedCreatedComponentExecutor
     )
-    compilationResult.map { case (invoker, nodeParams) =>
+    compilationResult.map { case (serviceInvoker, nodeParams) =>
       // TODO: Currently in case of object compilation failures we prefer to create "dumb" service invoker, with empty parameters list
       //       instead of return Invalid - I assume that it is probably because of errors accumulation purpose.
       //       We should clean up this compilation process by some NodeCompilationResult refactor like introduction of WriterT monad transformer
-      makeInvoker(invoker, nodeParams, compilationResult.parameters.getOrElse(List.empty))
+      createService(serviceInvoker, nodeParams, compilationResult.parameters.getOrElse(List.empty))
     }
   }
 
@@ -456,7 +454,7 @@ class NodeCompiler(
       branchParameters: List[BranchParameters],
       ctx: GenericValidationContext,
       outputVar: Option[String],
-      componentDefinitionWithImpl: ComponentDefinitionWithImplementation,
+      componentDefinition: ComponentDefinitionWithImplementation,
       defaultCtxForMethodBasedCreatedComponentExecutor: Option[TypingResult] => ValidatedNel[
         ProcessCompilationError,
         ValidationContext
@@ -465,7 +463,7 @@ class NodeCompiler(
       implicit metaData: MetaData,
       nodeId: NodeId
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
-    componentDefinitionWithImpl match {
+    componentDefinition match {
       case dynamicComponent: DynamicComponentDefinitionWithImplementation =>
         val afterValidation =
           validateDynamicTransformer(ctx, parameters, branchParameters, outputVar, dynamicComponent).map {
@@ -473,7 +471,7 @@ class NodeCompiler(
               val computedParameterNames = computedParameters.filterNot(_.branchParam).map(p => p.name)
               val withoutRedundant       = nodeParameters.filter(p => computedParameterNames.contains(p.name))
               val (typingInfo, validComponentExecutor) = createComponentExecutor[ComponentExecutor](
-                componentDefinitionWithImpl,
+                componentDefinition,
                 withoutRedundant,
                 branchParameters,
                 outputVar,
@@ -504,7 +502,7 @@ class NodeCompiler(
         )
       case staticComponent: MethodBasedComponentDefinitionWithImplementation =>
         val (typingInfo, validComponentExecutor) = createComponentExecutor[ComponentExecutor](
-          componentDefinitionWithImpl,
+          componentDefinition,
           parameters,
           branchParameters,
           outputVar,
@@ -566,14 +564,15 @@ class NodeCompiler(
             compiledParameters,
             outputVariableNameOpt,
             additionalDependencies,
-            componentUseCase
+            componentUseCase,
+            nonServicesLazyParamStrategy
           )
           .map { componentExecutor =>
             val typingInfo = compiledParameters.flatMap {
-              case (TypedParameter(name, TypedExpression(_, _, typingInfo)), _) =>
+              case (TypedParameter(name, TypedExpression(_, typingInfo)), _) =>
                 List(name -> typingInfo)
               case (TypedParameter(paramName, TypedExpressionMap(valueByBranch)), _) =>
-                valueByBranch.map { case (branch, TypedExpression(_, _, typingInfo)) =>
+                valueByBranch.map { case (branch, TypedExpression(_, typingInfo)) =>
                   val expressionId = branchParameterExpressionId(paramName, branch)
                   expressionId -> typingInfo
                 }
@@ -621,7 +620,7 @@ class NodeCompiler(
       dynamicDefinition: DynamicComponentDefinitionWithImplementation
   )(implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
     (dynamicDefinition.implementation, eitherSingleOrJoin) match {
-      case (single: SingleInputGenericNodeTransformation[_], Left(singleCtx)) =>
+      case (single: SingleInputDynamicComponent[_], Left(singleCtx)) =>
         dynamicNodeValidator.validateNode(
           single,
           parameters,
@@ -631,7 +630,7 @@ class NodeCompiler(
         )(
           singleCtx
         )
-      case (join: JoinGenericNodeTransformation[_], Right(joinCtx)) =>
+      case (join: JoinDynamicComponent[_], Right(joinCtx)) =>
         dynamicNodeValidator.validateNode(
           join,
           parameters,
@@ -641,11 +640,11 @@ class NodeCompiler(
         )(
           joinCtx
         )
-      case (_: SingleInputGenericNodeTransformation[_], Right(_)) =>
+      case (_: SingleInputDynamicComponent[_], Right(_)) =>
         Invalid(
           NonEmptyList.of(CustomNodeError("Invalid scenario structure: single input component used as a join", None))
         )
-      case (_: JoinGenericNodeTransformation[_], Left(_)) =>
+      case (_: JoinDynamicComponent[_], Left(_)) =>
         Invalid(
           NonEmptyList.of(
             CustomNodeError("Invalid scenario structure: join component used as with single, not named input", None)
@@ -675,11 +674,12 @@ class NodeCompiler(
       }
 
       val serviceRef = computedParameters.map { params =>
+        val evaluateParams = (c: Context) => Params(parametersEvaluator.evaluate(params, c)(nodeId, metaData))
         compiledgraph.service.ServiceRef(
-          n.id,
-          new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod),
-          params,
-          resultCollector
+          id = n.id,
+          invoker = new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod, evaluateParams),
+          parameters = params,
+          resultCollector = resultCollector
         )
       }
       val nodeTypingInfo = computedParameters.map(_.map(p => p.name -> p.typingInfo).toMap).getOrElse(Map.empty)

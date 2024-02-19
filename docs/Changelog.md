@@ -43,6 +43,7 @@
 * [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
 * [#5371](https://github.com/TouK/nussknacker/pull/5371) Added new parameter editor type: DictParameterEditor.
+* [#5373](https://github.com/TouK/nussknacker/pull/5373) API changes related to components development
 
 1.13.1 (Not released yet)
 ------------------------

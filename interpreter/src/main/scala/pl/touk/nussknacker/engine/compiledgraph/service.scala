@@ -1,16 +1,14 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
+import cats.implicits._
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
   CollectableAction,
   ServiceInvocationCollector,
   ToCollect,
   TransmissionNames
 }
-import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, ServiceInvoker}
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import cats.implicits._
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId, ServiceInvoker}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,27 +22,17 @@ object service {
       resultCollector: ResultCollector,
   ) {
 
-    def invoke(
-        ctx: Context,
-        expressionEvaluator: ExpressionEvaluator,
-        serviceExecutionContext: ServiceExecutionContext
-    )(
+    def invoke(ctx: Context, serviceExecutionContext: ServiceExecutionContext)(
         implicit nodeId: NodeId,
-        metaData: MetaData,
         componentUseCase: ComponentUseCase
-    ): (Map[String, AnyRef], Future[Any]) = {
+    ): Future[Any] = {
 
-      val (_, preparedParams) = expressionEvaluator.evaluateParameters(parameters, ctx)
-      val contextId           = ContextId(ctx.id)
-      val collector           = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
-      (
-        preparedParams,
-        invoker.invokeService(preparedParams)(
-          serviceExecutionContext.executionContext,
-          collector,
-          contextId,
-          componentUseCase
-        )
+      val contextId = ContextId(ctx.id)
+      val collector = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
+      invoker.invoke(ctx)(
+        serviceExecutionContext.executionContext,
+        collector,
+        componentUseCase
       )
     }
 

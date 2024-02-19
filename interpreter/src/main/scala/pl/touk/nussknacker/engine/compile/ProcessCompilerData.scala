@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyInterpreterDependencies, NodeCompiler}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
@@ -17,9 +17,6 @@ import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter}
-
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
 
 /*
   This is helper class, which collects pieces needed for various stages of compilation process
@@ -34,7 +31,8 @@ object ProcessCompilerData {
       userCodeClassLoader: ClassLoader,
       resultsCollector: ResultCollector,
       componentUseCase: ComponentUseCase,
-      customProcessValidator: CustomProcessValidator
+      customProcessValidator: CustomProcessValidator,
+      nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
   ): ProcessCompilerData = {
     val servicesDefs = definitionWithTypes.modelDefinition.components
       .filter(_.componentType == ComponentType.Service)
@@ -52,8 +50,10 @@ object ProcessCompilerData {
       new FragmentParametersDefinitionExtractor(userCodeClassLoader),
       expressionCompiler,
       userCodeClassLoader,
+      listeners,
       resultsCollector,
-      componentUseCase
+      componentUseCase,
+      nonServicesLazyParamStrategy
     )
     val subCompiler             = new PartSubGraphCompiler(nodeCompiler)
     val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
@@ -72,7 +72,8 @@ object ProcessCompilerData {
     new ProcessCompilerData(
       processCompiler,
       subCompiler,
-      LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
+      expressionCompiler,
+      expressionEvaluator,
       interpreter,
       listeners,
       servicesDefs.map(service => service.name -> service.implementation.asInstanceOf[Lifecycle]).toMap
@@ -85,7 +86,8 @@ object ProcessCompilerData {
 final class ProcessCompilerData(
     compiler: ProcessCompiler,
     val subPartCompiler: PartSubGraphCompiler,
-    val lazyInterpreterDeps: LazyInterpreterDependencies,
+    val expressionCompiler: ExpressionCompiler,
+    val expressionEvaluator: ExpressionEvaluator,
     val interpreter: Interpreter,
     val listeners: Seq[ProcessListener],
     services: Map[String, Lifecycle]
@@ -96,7 +98,7 @@ final class ProcessCompilerData(
       e.componentId
     }
     // TODO: For eager services we should open service implementation (ServiceInvoker) which is hold inside
-    //       SyncInterpretationFunction.compiledNode inside ServiceRef instead of definition (GenericNodeTransformation)
+    //       SyncInterpretationFunction.compiledNode inside ServiceRef instead of definition (DynamicComponent)
     //       Definition shouldn't be used after component is compiled. Thanks to that it will be possible to
     //       e.g. to pass ExecutionContext inside EngineRuntimeContext and to separate implementation from definition
     val servicesToUse = services.filterKeysNow(componentIds.contains).values

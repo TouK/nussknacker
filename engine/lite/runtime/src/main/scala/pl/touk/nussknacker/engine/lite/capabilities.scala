@@ -31,7 +31,7 @@ object capabilities {
           override def apply[A](fa: From[A]): Target[A] = fa.asInstanceOf[Target[A]]
         })
       } else {
-        Validated.invalidNel(new CannotCreateObjectError(s"Cannot convert capability: $tag", ""))
+        Validated.invalidNel(CannotCreateObjectError(s"Cannot convert capability: $tag", ""))
       }
     }
 

@@ -37,13 +37,11 @@ object Sorter extends CustomStreamTransformer {
             continuation: DataBatch => F[ResultType[Result]],
             context: CustomComponentContext[F]
         ): DataBatch => F[ResultType[Result]] = {
-          val rankInterpreter   = context.interpreter.syncInterpretationFunction(rank)
-          val outputInterpreter = context.interpreter.syncInterpretationFunction(output)
           // TODO: this lazy val is tricky - we should instead assign ContextIdGenerator in open, but we don't have nodeId in open
           lazy val contextIdGenerator = runtimeContext.contextIdGenerator(context.nodeId)
           (inputCtx: DataBatch) =>
-            val ranks        = inputCtx.map(rankInterpreter(_))
-            val outputs      = inputCtx.map(outputInterpreter(_))
+            val ranks        = inputCtx.map(rank.evaluate)
+            val outputs      = inputCtx.map(output.evaluate)
             val listWithRank = ranks.zip(outputs)
             val finalList    = listWithRank.sortBy(_._1.doubleValue()).reverse.take(maxCount).map(_._2).asJava
             val sorted =

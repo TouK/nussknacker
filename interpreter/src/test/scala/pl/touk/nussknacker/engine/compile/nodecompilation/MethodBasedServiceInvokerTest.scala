@@ -18,8 +18,8 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private implicit val metadata: MetaData                 = MetaData("proc1", StreamMetaData())
-  private implicit val ctxId: ContextId                   = ContextId("")
   private implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
+  private val context: Context                            = Context.withInitialId
 
   private val nodeId           = NodeId("id")
   private val jobData: JobData = JobData(metadata, ProcessVersion.empty)
@@ -27,9 +27,10 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   it should "invoke service method with declared parameters as scala params" in {
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig("foo", mock)
-    val invoker    = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
+    val invoker =
+      new MethodBasedServiceInvoker(metadata, nodeId, None, definition, _ => Params(Map("foo" -> "aa", "bar" -> 1)))
 
-    whenReady(invoker.invokeService(Map("foo" -> "aa", "bar" -> 1))) { _ =>
+    whenReady(invoker.invoke(context)) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
     }
   }
@@ -37,10 +38,16 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   it should "throw excpetion with nice message when parameters do not match" in {
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig("foo", mock)
-    val invoker    = new MethodBasedServiceInvoker(metadata, nodeId, None, definition)
+    val invoker = new MethodBasedServiceInvoker(
+      metaData = metadata,
+      nodeId = nodeId,
+      outputVariableNameOpt = None,
+      componentDefinition = definition,
+      parametersProvider = _ => Params(Map("foo" -> "aa", "bar" -> "terefere"))
+    )
 
     intercept[IllegalArgumentException](
-      invoker.invokeService(Map("foo" -> "aa", "bar" -> "terefere"))
+      invoker.invoke(context)
     ).getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String): argument type mismatch"""
   }
 
