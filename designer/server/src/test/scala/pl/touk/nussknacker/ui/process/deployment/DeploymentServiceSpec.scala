@@ -154,15 +154,13 @@ class DeploymentServiceSpec
     deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None)
 
     eventually {
-      deploymentServiceWithCommentSettings
+      val status = deploymentServiceWithCommentSettings
         .getProcessState(id)
         .futureValue
-        .status should not be SimpleStateStatus.Running
+        .status
+      status should not be SimpleStateStatus.Running
 
-      deploymentServiceWithCommentSettings
-        .getProcessState(id)
-        .futureValue
-        .status shouldBe SimpleStateStatus.NotDeployed
+      status shouldBe SimpleStateStatus.NotDeployed
     }
 
     eventually {
