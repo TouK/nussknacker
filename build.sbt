@@ -1696,6 +1696,10 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
     componentsUtils    % Provided
   )
 
+lazy val experimentalConnectors = Seq(
+  "org.apache.flink" % "flink-connector-kafka" % flinkV % Provided,
+)
+
 // TODO local: clean this up
 lazy val flinkTableApiComponents = (project in flink("components/table"))
   .settings(commonSettings)
@@ -1705,13 +1709,13 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     name := "nussknacker-flink-table-components",
     libraryDependencies ++= {
       Seq(
-//        TODO local: make the flink code thats provided by flink provided scope
         "org.scalatest"   %% "scalatest"                   % scalaTestV % Test,
         "org.apache.flink" % "flink-table"                 % flinkV     % Provided,
         "org.apache.flink" % "flink-table-api-java"        % flinkV     % Provided,
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV     % Provided,
-        "org.apache.flink" % "flink-table-planner_2.12"    % flinkV     % Provided
-      )
+        "org.apache.flink" % "flink-table-planner-loader"  % flinkV     % Provided,
+        "org.apache.flink" % "flink-table-runtime"         % flinkV     % Provided,
+      ) ++: experimentalConnectors
     }
   )
   .dependsOn(

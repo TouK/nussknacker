@@ -5,7 +5,7 @@ import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.Expressions.row
+import org.apache.flink.table.api.{DataTypes, Schema, TableDescriptor}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
@@ -75,23 +75,38 @@ object ExperimentalTableSource extends SourceFactory with UnboundedStreamCompone
     ): DataStream[Context] = {
       val tableEnv = StreamTableEnvironment.create(env);
 
-      val table = tableEnv.fromValues(
-        row(1, "ABC"),
-        row(2, "DEF")
+      tableEnv.createTable(
+        "kafkaInput",
+        TableDescriptor
+          .forConnector("kafka")
+          .option("properties.bootstrap.servers", "localhost:13032")
+          .option("properties.group.id", "testGroup")
+          .option("topic", "input1")
+          .option("scan.startup.mode", "earliest-offset")
+          .format("json")
+          .schema(
+            Schema
+              .newBuilder()
+              .column("id", DataTypes.INT())
+              .column("name", DataTypes.STRING())
+              .build()
+          )
+          .build()
       )
+
+      val table = tableEnv.from("kafkaInput")
 
       val rowStream: DataStream[Row] = tableEnv.toDataStream(table)
 
-      // TODO: infer returnType dynamically from table schema
-      //  based on table.getResolvedSchema.getColumns
+      // TODO: Types:
+      //  - for catalogs / dynamic components: infer returnType dynamically from table schema based on table.getResolvedSchema.getColumns
+      //  - for method based components - get schema from config
       val mappedToSchemaStream = rowStream
         .map(r => {
           val eInt    = r.getFieldAs[Int](0)
           val eString = r.getFieldAs[String](1)
-          val fields  = Map("someInt" -> eInt, "someString" -> eString)
-
-          val map: RECORD = new java.util.HashMap[String, Any](fields.asJava)
-          map
+          val fields  = Map("id" -> eInt, "name" -> eString)
+          new java.util.HashMap[String, Any](fields.asJava): RECORD
         })
         .returns(classOf[RECORD])
 
@@ -109,12 +124,11 @@ object ExperimentalTableSource extends SourceFactory with UnboundedStreamCompone
 
     // This gets displayed in FE suggestions
     override def returnType: typing.TypedObjectTypingResult = {
-      Typed.record(Map("someInt" -> Typed[Integer], "someString" -> Typed[String]))
+      Typed.record(Map("id" -> Typed[Integer], "name" -> Typed[String]))
     }
 
   }
 
-  // TODO local: type has to be calculated dynamically or based on schema
   private type RECORD = java.util.Map[String, Any]
 
   // TODO local: this context initialization was copied from kafka source - check this
