@@ -36,7 +36,7 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
           Vector(RawValue(null), RawValue(null), RawValue("3")),
         )
       )
-      result should be(Left("Column has a java.lang.Object type but the value 1 cannot be converted to it."))
+      result should be(Left("Column has a 'java.lang.Object' type but the value '1' cannot be converted to it."))
     }
     "there are more cells in some rows than the columns number" in {
       val result = TabularTypedData.create(
@@ -81,7 +81,7 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
           Vector(RawValue(null), RawValue(null), RawValue("3")),
         )
       )
-      result should be(Left("Column has a java.time.LocalDate type but the value 1.0 cannot be converted to it."))
+      result should be(Left("Column has a 'java.time.LocalDate' type but the value '1.0' cannot be converted to it."))
     }
   }
 
