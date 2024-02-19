@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData
-import pl.touk.nussknacker.engine.api.definition.TabularTypedDataEditor.TabularTypedData.Column
+import pl.touk.nussknacker.engine.api.definition.TabularTypedData
+import pl.touk.nussknacker.engine.api.definition.TabularTypedData.Column
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
@@ -19,6 +19,29 @@ import scala.jdk.CollectionConverters._
 
 object DecisionTable extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
 
+  private object BasicDecisionTableParameter {
+    val name = "Basic Decision Table"
+
+    val declaration: Parameter =
+      Parameter(name, Typed[TabularTypedData])
+        .copy(editor = Some(TabularTypedDataEditor))
+
+  }
+
+  private object FilterDecisionTableExpressionParameter {
+    val name = "Expression"
+
+    def declaration(data: TabularTypedData): Parameter =
+      Parameter(name, Typed[java.lang.Boolean])
+        .copy(
+          isLazyParameter = true,
+          additionalVariables = Map(
+            "ROW" -> AdditionalVariableProvidedInRuntime(rowDataTypingResult(data.columnDefinitions))
+          )
+        )
+
+  }
+
   override type State = Unit
 
   override val nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
@@ -28,24 +51,24 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(
-        parameters = decisionTableParameter :: Nil,
+        parameters = BasicDecisionTableParameter.declaration :: Nil,
         errors = List.empty,
         state = None
       )
-    case TransformationStep(
-          (`decisionTableParameterName`, DefinedEagerParameter(data: TabularTypedData, _)) :: Nil,
-          _
-        ) =>
+    case TransformationStep((name, DefinedEagerParameter(data: TabularTypedData, _)) :: Nil, _)
+        if name == BasicDecisionTableParameter.name =>
       NextParameters(
-        parameters = filterDecisionTableExpressionParameter(data) :: Nil,
+        parameters = FilterDecisionTableExpressionParameter.declaration(data) :: Nil,
         errors = List.empty,
         state = None
       )
     case TransformationStep(
-          (`decisionTableParameterName`, DefinedEagerParameter(data: TabularTypedData, _)) ::
-          (`filterDecisionTableExpressionParameterName`, _) :: Nil,
+          (firstParamName, DefinedEagerParameter(data: TabularTypedData, _)) ::
+          (secondParamName, _) :: Nil,
           _
-        ) =>
+        )
+        if firstParamName == BasicDecisionTableParameter.name &&
+          secondParamName == FilterDecisionTableExpressionParameter.name =>
       FinalResults.forValidation(context)(
         _.withVariable(
           name = OutputVariableNameDependency.extract(dependencies),
@@ -60,32 +83,9 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       dependencies: List[NodeDependencyValue],
       finalState: Option[Unit]
   ): ServiceInvoker = new DecisionTableImplementation(
-    params.extractUnsafe(decisionTableParameterName),
-    params.extractUnsafe(filterDecisionTableExpressionParameterName)
+    params.extractUnsafe(BasicDecisionTableParameter.name),
+    params.extractUnsafe(FilterDecisionTableExpressionParameter.name)
   )
-
-  private lazy val decisionTableParameterName = "Basic Decision Table"
-
-  private lazy val decisionTableParameter =
-    Parameter(
-      decisionTableParameterName,
-      Typed[TabularTypedData]
-    ).copy(
-      editor = Some(TabularTypedDataEditor)
-    )
-
-  private lazy val filterDecisionTableExpressionParameterName = "Expression"
-
-  private def filterDecisionTableExpressionParameter(data: TabularTypedData) =
-    Parameter(
-      filterDecisionTableExpressionParameterName,
-      Typed[java.lang.Boolean]
-    ).copy(
-      isLazyParameter = true,
-      additionalVariables = Map(
-        "ROW" -> AdditionalVariableProvidedInRuntime(rowDataTypingResult(data.columnDefinitions))
-      )
-    )
 
   private def componentResultTypingResult(columnDefinitions: Iterable[Column.Definition]): TypingResult = {
     Typed.genericTypeClass(classOf[List[Map[String, Any]]], rowDataTypingResult(columnDefinitions) :: Nil)
@@ -123,7 +123,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
           result
         }
         .map { row =>
-          row.cells.map(c => c.definition.name -> c.value).toMap // todo: are we sure keys are unique
+          row.cells.map(c => c.definition.name -> c.value).toMap
         }
         .map(_.asJava)
         .asJava

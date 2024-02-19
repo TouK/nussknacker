@@ -1680,7 +1680,7 @@ lazy val commonComponentsTests = (project in engine("common/components-tests"))
   .dependsOn(
     commonComponents,
     liteComponentsTestkit  % "test",
-    flinkComponentsTestkit % "test" // todo:
+    flinkComponentsTestkit % "test"
   )
 
 lazy val flinkBaseComponents = (project in flink("components/base"))

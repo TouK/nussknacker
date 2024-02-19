@@ -36,10 +36,10 @@ import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDef
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
 import pl.touk.nussknacker.engine.language.tabularDataDefinition.TabularDataDefinitionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
-import pl.touk.nussknacker.engine.spel.parser.DictKeyWithLabelExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 

@@ -1,17 +1,16 @@
-package pl.touk.nussknacker.engine.spel.parser
+package pl.touk.nussknacker.engine.language.dictWithLabel
 
 import cats.data.Validated.{Valid, invalidNel}
 import cats.data.{NonEmptyList, Validated}
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _}
+import pl.touk.nussknacker.engine.api.definition.{DictKeyWithLabelExpression, AdditionalVariable => _}
 import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, _}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.DictKeyWithLabelExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.KeyWithLabelExpressionParsingError
 
 case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String]) extends ExpressionTypingInfo {
