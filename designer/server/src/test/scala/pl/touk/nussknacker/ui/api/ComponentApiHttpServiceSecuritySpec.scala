@@ -298,6 +298,7 @@ class ComponentApiHttpServiceSecuritySpec
     "streaming2-service-componentservice",
     "streaming2-service-configuratorservice",
     "streaming2-service-customvalidatedservice",
+    "streaming2-service-decisiontable",
     "streaming2-service-datestypesservice",
     "streaming2-service-dynamicmultipleparamsservice",
     "streaming2-service-dynamicservice",

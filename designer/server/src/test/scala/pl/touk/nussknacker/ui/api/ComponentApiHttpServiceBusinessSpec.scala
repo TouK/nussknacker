@@ -144,6 +144,7 @@ class ComponentApiHttpServiceBusinessSpec
     "streaming-service-componentservice",
     "streaming-service-configuratorservice",
     "streaming-service-customvalidatedservice",
+    "streaming-service-decisiontable",
     "streaming-service-datestypesservice",
     "streaming-service-dynamicmultipleparamsservice",
     "streaming-service-dynamicservice",
