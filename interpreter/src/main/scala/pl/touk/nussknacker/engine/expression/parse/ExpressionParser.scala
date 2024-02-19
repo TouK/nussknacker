@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.engine.api.expression
+package pl.touk.nussknacker.engine.expression.parse
 
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
+import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 
 trait ExpressionParser {
 

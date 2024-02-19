@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCom
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, _}
+import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
@@ -36,6 +36,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPar
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
@@ -176,9 +177,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val definitions = ModelDefinition(
       ComponentDefinitionWithImplementation
         .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
-      ModelDefinitionBuilder.emptyExpressionConfig.copy(
-        languages = LanguageConfiguration(List(LiteralExpressionParser))
-      ),
+      ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
@@ -835,19 +834,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .emptySink("end-end", "dummySink")
 
     interpretProcess(process, Transaction(msisdn = "foo")) should equal("Hello foo")
-  }
-
-  test("uses configured expression languages") {
-    val testExpression = "literal expression, no need for quotes"
-
-    val process = ScenarioBuilder
-      .streaming("test")
-      .source("start", "transaction-source")
-      .buildSimpleVariable("result-end", resultVariable, Expression("literal", testExpression))
-      .emptySink("end-end", "dummySink")
-
-    interpretProcess(process, Transaction()) should equal(testExpression)
-
   }
 
   test("accept empty expression for option parameter") {

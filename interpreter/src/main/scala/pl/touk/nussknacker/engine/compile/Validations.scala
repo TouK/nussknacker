@@ -4,9 +4,9 @@ import cats.data.Validated.valid
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, RedundantParameters}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition.{Parameter, Validator}
-import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
+import pl.touk.nussknacker.engine.expression.parse.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 

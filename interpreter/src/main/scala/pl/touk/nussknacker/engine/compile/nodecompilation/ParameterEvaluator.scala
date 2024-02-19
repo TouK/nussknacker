@@ -3,13 +3,13 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
-import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy.{
   EvaluableLazyParameterStrategy,
   PostponedEvaluatorLazyParameterStrategy
 }
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.expression.parse.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer

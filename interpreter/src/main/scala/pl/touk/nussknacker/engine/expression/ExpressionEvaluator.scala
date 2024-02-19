@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.expression
 
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.compiledgraph.{BaseCompiledParameter, CompiledParameter}
+import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
