@@ -10,17 +10,19 @@ protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefault
       val lang = parameters.determinedEditor
         .map {
           case RawParameterEditor                   => Expression.Language.Spel
-          case simpleEditor: SimpleParameterEditor  => determineLanguage(of = simpleEditor)
-          case DualParameterEditor(simpleEditor, _) => determineLanguage(of = simpleEditor)
+          case simpleEditor: SimpleParameterEditor  => determineLanguageOf(simpleEditor)
+          case DualParameterEditor(simpleEditor, _) => determineLanguageOf(simpleEditor)
         }
-        .getOrElse(Expression.Language.Spel)
+        .getOrElse {
+          Expression.Language.Spel
+        }
 
       Expression(lang, "")
     }
   }
 
-  private def determineLanguage(of: SimpleParameterEditor) = {
-    of match {
+  private def determineLanguageOf(editor: SimpleParameterEditor) = {
+    editor match {
       case BoolParameterEditor | StringParameterEditor | DateParameterEditor | TimeParameterEditor |
           DateTimeParameterEditor | TextareaParameterEditor | JsonParameterEditor | DurationParameterEditor(_) |
           PeriodParameterEditor(_) | CronParameterEditor | FixedValuesParameterEditor(_) =>
