@@ -16,7 +16,6 @@ class AutoloadedTableApiComponentProvider extends ComponentProvider {
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
-  // TODO local: just for local development
   override def isAutoLoaded: Boolean = true
 
 }

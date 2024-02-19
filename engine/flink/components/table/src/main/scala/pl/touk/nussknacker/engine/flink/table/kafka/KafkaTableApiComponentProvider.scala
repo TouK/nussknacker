@@ -3,6 +3,9 @@ package pl.touk.nussknacker.engine.flink.table.kafka
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 
 class KafkaTableApiComponentProvider extends ComponentProvider {
 
@@ -11,13 +14,25 @@ class KafkaTableApiComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val eh = 1
-    Nil
+    val kafkaTableConfig = config.rootAs[KafkaTableApiConfig]
+
+    List(
+      ComponentDefinition(
+        "KafkaSource-TableApi",
+        new KafkaSourceFactory(kafkaTableConfig)
+      )
+    )
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
-  // TODO local: just for local development
   override def isAutoLoaded: Boolean = false
 
 }
+
+/**
+ * TODO local: here should be:
+ *  - schema
+ *  - data format
+ */
+final case class KafkaTableApiConfig(kafkaProperties: Map[String, String])
