@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 // This class represents component's definition and implementation. It is used on the designer side for definitions
 // served to the FE and for validations. It is used on the runtime side for component's runtime execution and for stubbing.
 // Implementing component is in hte implementation field. It should be rarely used - instead, we should extract information
-// into definition. Runtime logic should be mainly used via componentLogic which can be transformed
+// into definition. Runtime logic should be mainly used via implementationInvoker which can be transformed
 // (e.g.) for purpose of stubbing.
 trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
