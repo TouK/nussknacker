@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.transformer
+package pl.touk.nussknacker.engine.flink.table.kafka
 
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -6,13 +6,14 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{DataTypes, Schema, TableDescriptor}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.table.TableApiComponentFactoryMixin
 
-object KafkaSourceFactory extends SourceFactory with UnboundedStreamComponent with TableApiComponentFactory {
+object KafkaSourceFactory extends SourceFactory with UnboundedStreamComponent with TableApiComponentFactoryMixin {
 
   @MethodToInvoke
   def invoke(): Source = {

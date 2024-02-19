@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.transformer
+package pl.touk.nussknacker.engine.flink.table
 
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextI
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
-trait TableApiComponentFactory {
+trait TableApiComponentFactoryMixin {
 
   // TODO local: type has to be calculated dynamically or based on schema
   protected type RECORD = java.util.Map[String, Any]
