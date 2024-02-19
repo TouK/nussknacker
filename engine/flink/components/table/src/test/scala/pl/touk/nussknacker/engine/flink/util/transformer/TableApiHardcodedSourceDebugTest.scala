@@ -25,13 +25,13 @@ class TableApiHardcodedSourceDebugTest extends AnyFunSuite with FlinkSpec with M
     val listener = initializeListener
     val model = LocalModelData(
       ConfigFactory.empty(),
-      FlinkBaseComponentProvider.Components ::: TableApiComponentProvider.Components,
+      FlinkBaseComponentProvider.Components ::: TableApiComponentProvider.ConfigIndependentComponents,
       configCreator = new ConfigCreatorWithCollectingListener(listener),
     )
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source(sourceId, "tableBoundedSource")
+      .source(sourceId, "BoundedSource-TableApi")
       .buildSimpleVariable(resultNodeId, "varName", "#input")
       .emptySink(sinkId, "dead-end")
 
