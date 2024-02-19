@@ -12,14 +12,14 @@ import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 
-object KafkaSourceFactory extends SourceFactory with UnboundedStreamComponent {
+object KafkaSourceFactory extends SourceFactory with UnboundedStreamComponent with TableApiComponentFactory {
 
   @MethodToInvoke
   def invoke(): Source = {
     new KafkaSource()
   }
 
-  private class KafkaSource extends FlinkSource with ReturningType with TableApiComponent {
+  private class KafkaSource extends FlinkSource with ReturningType {
 
     import scala.jdk.CollectionConverters._
 

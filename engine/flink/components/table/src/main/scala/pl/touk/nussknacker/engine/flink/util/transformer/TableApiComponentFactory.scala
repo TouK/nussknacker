@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextI
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
-trait TableApiComponent {
+trait TableApiComponentFactory {
 
   // TODO local: type has to be calculated dynamically or based on schema
   protected type RECORD = java.util.Map[String, Any]
