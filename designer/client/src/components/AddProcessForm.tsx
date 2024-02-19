@@ -138,7 +138,7 @@ export function AddProcessForm({
                                     To read more about categories,
                                     <Link
                                         sx={{ cursor: "pointer", ml: 0.5 }}
-                                        href="https://nussknacker.io/documentation/docs/1.10/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories"
+                                        href="https://nussknacker.io/documentation/docs/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >
