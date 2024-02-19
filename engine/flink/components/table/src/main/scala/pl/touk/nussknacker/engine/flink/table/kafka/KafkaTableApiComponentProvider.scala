@@ -20,6 +20,10 @@ class KafkaTableApiComponentProvider extends ComponentProvider {
       ComponentDefinition(
         "KafkaSource-TableApi",
         new KafkaSourceFactory(kafkaTableConfig)
+      ),
+      ComponentDefinition(
+        "KafkaSink-TableApi",
+        new KafkaSinkFactory(kafkaTableConfig)
       )
     )
   }

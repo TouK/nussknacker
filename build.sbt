@@ -1762,14 +1762,15 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     }
   )
   .dependsOn(
-    flinkComponentsApi  % Provided,
-    componentsApi       % Provided,
-    commonUtils         % Provided,
-    componentsUtils     % Provided,
-    flinkTestUtils      % Test,
-    flinkExecutor       % Test,
-    kafkaTestUtils      % Test,
-    flinkBaseComponents % Test
+    flinkComponentsApi   % Provided,
+    componentsApi        % Provided,
+    commonUtils          % Provided,
+    componentsUtils      % Provided,
+    flinkComponentsUtils % Provided,
+    flinkTestUtils       % Test,
+    flinkExecutor        % Test,
+    kafkaTestUtils       % Test,
+    flinkBaseComponents  % Test,
   )
 
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
