@@ -9,7 +9,7 @@ class TabularTypedDataCodersSpec extends AnyFreeSpec with Matchers {
 
   "we should be able to encode and then decode" - {
     "empty data" in {
-      encodeAndDecode(TabularTypedData.empty) should be(TabularTypedData.empty)
+      roundTripCoding(TabularTypedData.empty) should be(TabularTypedData.empty)
     }
     "some non-trivial data" in {
       val data = unsafeCreateTabularTypedData(
@@ -25,7 +25,7 @@ class TabularTypedDataCodersSpec extends AnyFreeSpec with Matchers {
         )
       )
 
-      encodeAndDecode(data) should be(data)
+      roundTripCoding(data) should be(data)
     }
   }
 
@@ -38,7 +38,7 @@ class TabularTypedDataCodersSpec extends AnyFreeSpec with Matchers {
       .get
   }
 
-  private def encodeAndDecode = {
+  private def roundTripCoding = {
     encode _ andThen decode
   }
 

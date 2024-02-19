@@ -171,9 +171,7 @@ private object Coders {
       Encoder.forProduct2("columns", "rows")(data => (data.columns, data.rows))
 
     private implicit lazy val columnEncoder: Encoder[Column] =
-      Encoder.forProduct2("name", "type")(column =>
-        (column.definition.name, column.definition.aType.asJson(aTypeEncoder))
-      )
+      Encoder.forProduct2("name", "type")(column => (column.definition.name, column.definition.aType))
 
     private implicit lazy val rowEncoder: Encoder[Row] = Encoder.instance { row =>
       row.cells.map(_.rawValue).asJson

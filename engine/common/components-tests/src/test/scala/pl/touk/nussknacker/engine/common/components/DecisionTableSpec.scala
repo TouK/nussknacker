@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.common.components
 import cats.data.ValidatedNel
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -118,9 +117,6 @@ class FlinkEngineRunDecisionTableSpec extends DecisionTableSpec with FlinkSpec {
   override protected lazy val testScenarioRunner: FlinkTestScenarioRunner =
     TestScenarioRunner
       .flinkBased(config, flinkMiniCluster)
-      .withExtraComponents(
-        ComponentDefinition("decision-table", DecisionTable) :: Nil
-      )
       .build()
 
   override protected def runScenario[DATA: ClassTag, RESULT](
@@ -142,9 +138,6 @@ class LiteEngineRunDecisionTableSpec extends DecisionTableSpec {
   override protected lazy val testScenarioRunner: LiteTestScenarioRunner =
     TestScenarioRunner
       .liteBased()
-      .withExtraComponents(
-        ComponentDefinition("decision-table", DecisionTable) :: Nil
-      )
       .build()
 
   override protected def runScenario[DATA: ClassTag, RESULT](

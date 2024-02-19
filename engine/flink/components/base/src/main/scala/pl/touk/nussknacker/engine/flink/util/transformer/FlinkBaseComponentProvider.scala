@@ -45,7 +45,7 @@ object FlinkBaseComponentProvider {
       ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)).withRelativeDocs("DataSourcesAndSinks#deadend"),
       ComponentDefinition("periodic", PeriodicSourceFactory).withRelativeDocs("DataSourcesAndSinks#periodic"),
       ComponentDefinition(
-        name = "decision-table-flink",
+        name = "decision-table",
         component = DecisionTable
       ).withRelativeDocs("BasicNodes#decisiontable")
     )

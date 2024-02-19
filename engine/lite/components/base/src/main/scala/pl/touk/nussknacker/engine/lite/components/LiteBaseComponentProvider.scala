@@ -42,7 +42,7 @@ object LiteBaseComponentProvider {
       ComponentDefinition("union", Union).withRelativeDocs("BasicNodes#union"),
       ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink)).withRelativeDocs("DataSourcesAndSinks#deadend"),
       ComponentDefinition(
-        name = "decision-table-lite",
+        name = "decision-table",
         component = DecisionTable
       ).withRelativeDocs("BasicNodes#decisiontable")
     )
