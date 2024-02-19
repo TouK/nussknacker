@@ -105,6 +105,7 @@ describe("useProcessFormDataOptions", () => {
                 },
             ],
             engines: ["Flink"],
+            isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
             processingModes: ["Unbounded-Stream"],
         });
@@ -156,6 +157,7 @@ describe("useProcessFormDataOptions", () => {
                 },
             ],
             engines: ["Flink"],
+            isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
             processingModes: ["Unbounded-Stream"],
         });
@@ -206,6 +208,7 @@ describe("useProcessFormDataOptions", () => {
                 },
             ],
             engines: ["Flink"],
+            isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
             processingModes: ["Unbounded-Stream"],
         });
@@ -254,6 +257,7 @@ describe("useProcessFormDataOptions", () => {
                 },
             ],
             engines: ["Lite Embedded", "Lite K8s", "Flink", "Development Tests", "Dev Periodic"],
+            isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
             processingModes: ["Request-Response", "Unbounded-Stream"],
         });
@@ -304,6 +308,7 @@ describe("useProcessFormDataOptions", () => {
                 },
             ],
             engines: ["Lite Embedded", "Lite K8s"],
+            isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
             processingModes: ["Request-Response", "Unbounded-Stream"],
         });
@@ -342,6 +347,7 @@ describe("useProcessFormDataOptions", () => {
                 },
             ],
             engines: ["Engine1", "Engine2"],
+            isCategoryFieldVisible: true,
             isEngineFieldVisible: true,
             processingModes: ["Unbounded-Stream", "Bounded-Stream"],
         });
@@ -379,6 +385,41 @@ describe("useProcessFormDataOptions", () => {
                 },
             ],
             engines: ["Engine1", "Engine2"],
+            isCategoryFieldVisible: true,
+            isEngineFieldVisible: false,
+            processingModes: ["Unbounded-Stream", "Bounded-Stream"],
+        });
+    });
+
+    it("should return isCategoryFieldVisible false when there is only one category available", () => {
+        const jsonDataOneUnique: ScenarioParametersCombination[] = [
+            { processingMode: ProcessingMode.streaming, category: "Category1", engineSetupName: "Engine1" },
+            { processingMode: ProcessingMode.streaming, category: "Category1", engineSetupName: "Engine1" },
+            { processingMode: ProcessingMode.batch, category: "Category1", engineSetupName: "Engine2" },
+        ];
+
+        const value: Record<string, string> = {
+            processingMode: "",
+            processCategory: "",
+            processEngine: "",
+        };
+
+        const { result } = renderHook(() =>
+            useProcessFormDataOptions({
+                allCombinations: jsonDataOneUnique,
+                value,
+            }),
+        );
+
+        expect(result.current).toEqual({
+            categories: [
+                {
+                    disabled: false,
+                    value: "Category1",
+                },
+            ],
+            engines: ["Engine1", "Engine2"],
+            isCategoryFieldVisible: false,
             isEngineFieldVisible: false,
             processingModes: ["Unbounded-Stream", "Bounded-Stream"],
         });

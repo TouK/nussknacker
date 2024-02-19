@@ -12,6 +12,7 @@ import RequestResponseIcon from "../assets/img/request-response.svg";
 import { CustomRadio } from "./customRadio/CustomRadio";
 import { ProcessingMode } from "../http/HttpService";
 import { NodeValidationError } from "../types";
+import { isEmpty } from "lodash";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
@@ -19,7 +20,7 @@ interface AddProcessFormProps extends ChangeableValue<FormValue> {
     validationErrors: NodeValidationError[];
     categories: { value: string; disabled: boolean }[];
     processingModes: ProcessingMode[];
-    engines: string[] | undefined;
+    engines: string[];
 }
 
 export function AddProcessForm({
@@ -110,43 +111,45 @@ export function AddProcessForm({
                         <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processName")} />
                     </div>
                 </FormControl>
-                <FormControl>
-                    <FormLabel required>{t("addProcessForm.label.category", "Category")}</FormLabel>
-                    <div className="node-value">
-                        <SelectNodeWithFocus
-                            id="processCategory"
-                            value={value.processCategory}
-                            onChange={(e) => {
-                                onFieldChange("processCategory", e.target.value);
-                            }}
-                        >
-                            <>
-                                <option value={""}></option>
-                                {categories.map(({ value, disabled }, index) => (
-                                    <option key={index} value={value} disabled={disabled}>
-                                        {value}
-                                    </option>
-                                ))}
-                            </>
-                        </SelectNodeWithFocus>
-                        <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processCategory")} />
+                {!isEmpty(categories) && (
+                    <FormControl>
+                        <FormLabel required>{t("addProcessForm.label.category", "Category")}</FormLabel>
+                        <div className="node-value">
+                            <SelectNodeWithFocus
+                                id="processCategory"
+                                value={value.processCategory}
+                                onChange={(e) => {
+                                    onFieldChange("processCategory", e.target.value);
+                                }}
+                            >
+                                <>
+                                    <option value={""}></option>
+                                    {categories.map(({ value, disabled }, index) => (
+                                        <option key={index} value={value} disabled={disabled}>
+                                            {value}
+                                        </option>
+                                    ))}
+                                </>
+                            </SelectNodeWithFocus>
+                            <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processCategory")} />
 
-                        <Typography component={"div"} variant={"overline"} mt={1}>
-                            <Trans i18nKey={"addProcessForm.helperText.category"}>
-                                To read more about categories,
-                                <Link
-                                    sx={{ cursor: "pointer", ml: 0.5 }}
-                                    href="https://nussknacker.io/documentation/docs/1.10/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    click here.
-                                </Link>
-                            </Trans>
-                        </Typography>
-                    </div>
-                </FormControl>
-                {engines && (
+                            <Typography component={"div"} variant={"overline"} mt={1}>
+                                <Trans i18nKey={"addProcessForm.helperText.category"}>
+                                    To read more about categories,
+                                    <Link
+                                        sx={{ cursor: "pointer", ml: 0.5 }}
+                                        href="https://nussknacker.io/documentation/docs/1.10/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        click here.
+                                    </Link>
+                                </Trans>
+                            </Typography>
+                        </div>
+                    </FormControl>
+                )}
+                {!isEmpty(engines) && (
                     <FormControl>
                         <FormLabel required>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
                         <div className="node-value">
