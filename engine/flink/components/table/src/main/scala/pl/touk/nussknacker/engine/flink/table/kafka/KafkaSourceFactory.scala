@@ -13,7 +13,10 @@ import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.table.TableApiComponentFactoryMixin
 
-object KafkaSourceFactory extends SourceFactory with UnboundedStreamComponent with TableApiComponentFactoryMixin {
+class KafkaSourceFactory(config: KafkaTableApiConfig)
+    extends SourceFactory
+    with UnboundedStreamComponent
+    with TableApiComponentFactoryMixin {
 
   @MethodToInvoke
   def invoke(): Source = {
@@ -30,26 +33,10 @@ object KafkaSourceFactory extends SourceFactory with UnboundedStreamComponent wi
     ): DataStream[Context] = {
       val tableEnv = StreamTableEnvironment.create(env);
 
-      tableEnv.createTable(
-        "kafkaInput",
-        TableDescriptor
-          .forConnector("kafka")
-          .option("properties.bootstrap.servers", "localhost:13032")
-          .option("properties.group.id", "testGroup")
-          .option("topic", "input1")
-          .option("scan.startup.mode", "earliest-offset")
-          .format("json")
-          .schema(
-            Schema
-              .newBuilder()
-              .column("id", DataTypes.INT())
-              .column("name", DataTypes.STRING())
-              .build()
-          )
-          .build()
-      )
+      val tableName = "kafkaSource"
 
-      val table = tableEnv.from("kafkaInput")
+      addTableToEnv(tableEnv, flinkNodeContext, tableName)
+      val table = tableEnv.from(tableName)
 
       val rowStream: DataStream[Row] = tableEnv.toDataStream(table)
 
@@ -75,6 +62,35 @@ object KafkaSourceFactory extends SourceFactory with UnboundedStreamComponent wi
       )
 
       contextStream
+    }
+
+    private def addTableToEnv(
+        tableEnv: StreamTableEnvironment,
+        flinkNodeContext: FlinkCustomNodeContext,
+        tableName: String
+    ): Unit = {
+      val tableDescriptor = TableDescriptor
+        .forConnector("kafka")
+        .option("topic", "input1")
+        // TODO: handle consumer groups same with namespace naming strategy and consumer group specific naming strategy
+        .option("properties.group.id", flinkNodeContext.jobData.metaData.name.value)
+        .option("scan.startup.mode", "earliest-offset")
+        .format("json")
+        .schema(
+          Schema
+            .newBuilder()
+            .column("id", DataTypes.INT())
+            .column("name", DataTypes.STRING())
+            .build()
+        )
+
+      config.kafkaProperties.foreach { case (key, value) =>
+        tableDescriptor.option(s"properties.$key", value)
+      }
+
+      val tableDescriptorFilled = tableDescriptor.build()
+
+      tableEnv.createTable(tableName, tableDescriptorFilled)
     }
 
     // This gets displayed in FE suggestions
