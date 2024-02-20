@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpressi
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -941,7 +942,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .buildSimpleVariable("result-end", resultVariable, "#data")
       .emptySink("end-end", "dummySink")
 
-    interpretProcess(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
+    val result = interpretProcess(process, Transaction())
+    result shouldBe Collections.singletonMap("bool", false)
   }
 
   test("inject fixed additional variable") {
@@ -1073,7 +1075,7 @@ object InterpreterSpec {
 
     override def invoke(params: Params)(
         implicit ec: ExecutionContext,
-        collector: InvocationCollectors.ServiceInvocationCollector,
+        collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
@@ -1117,7 +1119,7 @@ object InterpreterSpec {
 
     override def invoke(params: Params)(
         implicit ec: ExecutionContext,
-        collector: InvocationCollectors.ServiceInvocationCollector,
+        collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase

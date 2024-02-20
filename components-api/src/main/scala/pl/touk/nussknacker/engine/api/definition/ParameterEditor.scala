@@ -33,6 +33,8 @@ case object SqlParameterEditor extends SimpleParameterEditor
 
 case object SpelTemplateParameterEditor extends SimpleParameterEditor
 
+case object TabularTypedDataEditor extends SimpleParameterEditor
+
 @JsonCodec case class DurationParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
 
 object DurationParameterEditor {

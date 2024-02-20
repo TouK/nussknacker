@@ -19,7 +19,7 @@ object LoggingListener extends ProcessListener with Serializable {
    */
   private val loggerMap = new ConcurrentHashMap[List[String], Logger]()
 
-  private def debug(keys: List[String], message: => String): Unit = {
+  private def debug(keys: List[String], message: => String, throwable: => Option[Throwable] = None): Unit = {
     val logger = loggerMap.computeIfAbsent(
       keys,
       (ks: List[String]) => {
@@ -28,7 +28,11 @@ object LoggingListener extends ProcessListener with Serializable {
       }
     )
     if (logger.isDebugEnabled()) {
-      logger.debug(message)
+      throwable match {
+        case None    => logger.debug(message)
+        case Some(t) => logger.debug(message, t)
+      }
+
     }
   }
 
@@ -77,7 +81,11 @@ object LoggingListener extends ProcessListener with Serializable {
   }
 
   override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
-    // TODO:??
+    debug(
+      List(exceptionInfo.context.id, "exception"),
+      "Exception occurred",
+      Some(exceptionInfo.throwable)
+    )
   }
 
 }

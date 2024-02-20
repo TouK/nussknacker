@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api
 import org.scalatest.prop.TableFor3
 import org.scalatest.prop.TableDrivenPropertyChecks.Table
 
-object MetaDataTestData {
+object TypeSpecificDataTestData {
 
   // flink
   val flinkEmptyTypeData: StreamMetaData = StreamMetaData(None, None, None, None)

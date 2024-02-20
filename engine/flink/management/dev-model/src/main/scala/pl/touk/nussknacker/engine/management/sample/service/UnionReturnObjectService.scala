@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersA
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case object UnionReturnObjectService extends EagerServiceWithStaticParametersAndReturnType {
+object UnionReturnObjectService extends EagerServiceWithStaticParametersAndReturnType {
 
   override def invoke(params: Params)(
       implicit ec: ExecutionContext,
@@ -18,7 +18,7 @@ case object UnionReturnObjectService extends EagerServiceWithStaticParametersAnd
       contextId: ContextId,
       metaData: MetaData,
       componentUseCase: ComponentUseCase
-  ): Future[AnyRef] =
+  ): Future[Any] =
     Future.successful(Map("foo" -> 1))
 
   override def parameters: List[Parameter] = List.empty
