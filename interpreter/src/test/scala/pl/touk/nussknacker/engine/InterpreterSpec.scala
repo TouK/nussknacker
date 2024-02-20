@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import org.scalatest.funsuite.AnyFunSuite
@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression._
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -36,7 +35,6 @@ import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPar
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
@@ -1111,34 +1109,6 @@ object InterpreterSpec {
         componentUseCase: ComponentUseCase
     ): Future[Any] = {
       Future.successful(params.nameToValueMap.head._2.toString)
-    }
-
-  }
-
-  object LiteralExpressionParser extends ExpressionParser {
-
-    override def languageId: String = "literal"
-
-    override def parse(
-        original: String,
-        ctx: ValidationContext,
-        expectedType: typing.TypingResult
-    ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
-      parseWithoutContextValidation(original, expectedType).map(
-        TypedExpression(_, LiteralExpressionTypingInfo(typing.Unknown))
-      )
-
-    override def parseWithoutContextValidation(
-        original: String,
-        expectedType: TypingResult
-    ): Validated[NonEmptyList[ExpressionParseError], CompiledExpression] = Valid(
-      LiteralExpression(original)
-    )
-
-    case class LiteralExpression(original: String) extends CompiledExpression {
-      override def language: String = languageId
-
-      override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = original.asInstanceOf[T]
     }
 
   }
