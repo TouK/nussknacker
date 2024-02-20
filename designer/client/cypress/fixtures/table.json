@@ -62,7 +62,7 @@
                         "name": "Basic Decision Table",
                         "expression": {
                             "language": "tabularDataDefinition",
-                            "expression": "{\n \"columns\": [\n  {\"name\":\"A\", \"type\": \"java.lang.String\"}\n ],\n \"rows\": [\n  [\"test\"]\n ]\n}"
+                            "expression": "{\n \"columns\": [\n  {\"name\":\"A\", \"type\": \"java.lang.String\"}\n ],\n \"rows\": [\n  [\"1\"]\n ]\n}"
                         }
                     },
                     {

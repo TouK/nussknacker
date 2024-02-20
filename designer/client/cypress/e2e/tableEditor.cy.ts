@@ -36,7 +36,7 @@ describe("Table editor", () => {
 
         cy.get("@table").click(100, 125);
         cy.get("#portal textarea").should("be.visible");
-        cy.realType("hello world");
+        cy.realType("2.0");
         cy.realPress("Enter");
         cy.get("@table").click(580, 25).click(580, 25);
         cy.get("@table").click(350, 125).click(350, 125);
@@ -76,7 +76,6 @@ describe("Table editor", () => {
         cy.get("@expr").type(`{leftarrow}{leftarrow}some name`);
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
         cy.contains(`Bad expression type, expected: Boolean, found: Double`).should("be.visible");
-
         cy.get("@table").rightclick(15, 125);
         cy.contains(/^remove 1 row$/i).click();
         cy.get("@table").rightclick(480, 15);
