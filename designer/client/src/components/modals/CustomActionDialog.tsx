@@ -5,16 +5,16 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../actions/nk";
 import HttpService from "../../http/HttpService";
-import { getProcessName } from "../../reducers/selectors/graph";
 import { CustomAction } from "../../types";
 import { UnknownRecord } from "../../types/common";
-import { WindowContent } from "../../windowManager";
-import { WindowKind } from "../../windowManager";
+import { WindowContent, WindowKind } from "../../windowManager";
 import { ChangeableValue } from "../ChangeableValue";
 import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { FormControl, FormHelperText, FormLabel } from "@mui/material";
+import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -37,7 +37,6 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
 
     useEffect(() => onChange(state), [onChange, state]);
 
-    console.log("props check", props);
     return (
         <NodeTable>
             {(action?.parameters || []).map((param) => {
@@ -47,20 +46,22 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                 return (
                     <FormControl key={param.name}>
                         <FormLabel title={fieldName}>{fieldName}:</FormLabel>
-                        <Editor
-                            editorConfig={param?.editor}
-                            className={"node-value"}
-                            fieldErrors={undefined}
-                            formatter={null}
-                            expressionInfo={null}
-                            onValueChange={setParam(fieldName)}
-                            expressionObj={{ language: ExpressionLang.String, expression: state[fieldName] }}
-                            readOnly={false}
-                            key={fieldName}
-                            showSwitch={false}
-                            showValidation={false}
-                            variableTypes={{}}
-                        />
+                        <ErrorBoundary>
+                            <Editor
+                                editorConfig={param?.editor}
+                                className={"node-value"}
+                                fieldErrors={undefined}
+                                formatter={null}
+                                expressionInfo={null}
+                                onValueChange={setParam(fieldName)}
+                                expressionObj={{ language: ExpressionLang.String, expression: state[fieldName] }}
+                                readOnly={false}
+                                key={fieldName}
+                                showSwitch={false}
+                                showValidation={false}
+                                variableTypes={{}}
+                            />
+                        </ErrorBoundary>
                     </FormControl>
                 );
             })}

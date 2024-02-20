@@ -7,8 +7,8 @@ import { NodeField } from "./NodeField";
 import { FieldType } from "./editors/field/Field";
 import NodeUtils from "../NodeUtils";
 import BranchParameters from "./BranchParameters";
-import { ParameterExpressionField } from "./ParameterExpressionField";
 import { DescriptionField } from "./DescriptionField";
+import { ParametersList } from "./parametersList";
 
 export function JoinCustomNode({
     errors,
@@ -74,25 +74,19 @@ export function JoinCustomNode({
                     findAvailableVariables={findAvailableVariables}
                 />
             )}
-            {node.parameters?.map((param, index) => {
-                return (
-                    <div className="node-block" key={node.id + param.name + index}>
-                        <ParameterExpressionField
-                            showSwitch={showSwitch}
-                            findAvailableVariables={findAvailableVariables}
-                            parameterDefinitions={parameterDefinitions}
-                            errors={errors}
-                            node={node}
-                            isEditMode={isEditMode}
-                            showValidation={showValidation}
-                            renderFieldLabel={renderFieldLabel}
-                            setProperty={setProperty}
-                            parameter={param}
-                            listFieldPath={`parameters[${index}]`}
-                        />
-                    </div>
-                );
-            })}
+            <ParametersList
+                parameters={node.parameters}
+                showSwitch={showSwitch}
+                findAvailableVariables={findAvailableVariables}
+                parameterDefinitions={parameterDefinitions}
+                errors={errors}
+                node={node}
+                isEditMode={isEditMode}
+                showValidation={showValidation}
+                renderFieldLabel={renderFieldLabel}
+                setProperty={setProperty}
+                getListFieldPath={(index: number) => `parameters[${index}]`}
+            />
             <DescriptionField
                 node={node}
                 isEditMode={isEditMode}

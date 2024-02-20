@@ -4,6 +4,7 @@ export enum ExpressionLang {
     SpELTemplate = "spelTemplate",
     String = "string",
     JSON = "json",
+    TabularDataDefinition = "tabularDataDefinition",
 }
 
 export type ExpressionObj = {

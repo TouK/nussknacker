@@ -7,8 +7,8 @@ import { ExpressionLang } from "./types";
 import { FieldError } from "../Validators";
 
 type Props = {
-    expressionObj?: $TodoType;
-    onValueChange?: (value: string) => void;
+    expressionObj: $TodoType;
+    onValueChange: (value: string) => void;
     onFocus?: () => void;
     className?: string;
     inputClassName?: string;
