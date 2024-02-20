@@ -1,5 +1,5 @@
 import { TableData } from "./tableState";
-import { expandTable, longestRow } from "./helpers";
+import { expandTable, getNextColumnName, longestRow, normalizeValue } from "./helpers";
 import { Action, ActionTypes } from "./action";
 
 export function reducer(state: TableData, action: Action): TableData {
@@ -15,7 +15,7 @@ export function reducer(state: TableData, action: Action): TableData {
                     const currentRow = action.row + y;
                     if (currentRow >= 0) {
                         const row = rows[currentRow].slice();
-                        row[action.column + x] = value;
+                        row[action.column + x] = normalizeValue(value);
                         rows[currentRow] = row;
                     }
                 });
@@ -30,18 +30,23 @@ export function reducer(state: TableData, action: Action): TableData {
             return {
                 ...state,
                 rows: action.dataChanges.reduce(
-                    (rows, { row: y, column: x, value }) => rows.map((r, i) => (i === y ? r.map((v, i) => (i === x ? value : v)) : r)),
+                    (rows, { row: y, column: x, value }) =>
+                        rows.map((r, i) => (i === y ? r.map((v, i) => (i === x ? normalizeValue(value) : v)) : r)),
                     state.rows,
                 ),
             };
         case ActionTypes.renameColumn:
-            // prevent duplicates
-            if (state.columns.find(({ name }) => name === action.to)) {
-                return state;
-            }
             return {
                 ...state,
-                columns: state.columns.map(({ name, ...col }) => ({ name: name === action.from ? action.to : name, ...col })),
+                columns: state.columns.map((column, i, columns) => {
+                    if (column.name !== action.from) {
+                        return column;
+                    }
+                    const names = columns.map((c) => c.name).filter((n) => action.from !== n);
+                    // prevent duplicates and empty
+                    const nextName = getNextColumnName(names, i, action.to);
+                    return { ...column, name: nextName };
+                }),
             };
         case ActionTypes.deleteColumns:
             return {
