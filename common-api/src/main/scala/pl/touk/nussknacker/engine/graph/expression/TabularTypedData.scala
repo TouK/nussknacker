@@ -1,12 +1,11 @@
-package pl.touk.nussknacker.engine.api.definition
+package pl.touk.nussknacker.engine.graph.expression
 
 import io.circe
 import io.circe.Decoder.Result
-import io.circe.syntax.EncoderOps
 import io.circe._
-import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.definition.TabularTypedData.Cell.RawValue
-import pl.touk.nussknacker.engine.api.definition.TabularTypedData.{Column, Row}
+import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Cell.RawValue
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.{Column, Row}
 
 import scala.util.Try
 

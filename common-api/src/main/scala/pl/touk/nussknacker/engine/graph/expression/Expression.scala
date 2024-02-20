@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.graph.expression
 
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.definition.DictKeyWithLabelExpression
 
 // TODO in the future 'expression' should be a dedicated type rather than String, it would for example make DictKeyWithLabelExpression handling prettier
 @JsonCodec case class Expression(language: String, expression: String)
