@@ -25,7 +25,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.typingDtoSchemas._
+import pl.touk.nussknacker.ui.api.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
@@ -225,7 +225,7 @@ object NodesApiEndpoints {
         Decoder.decodeJson.map(TypingResultInJson.apply)
       implicit lazy val typingResultInJsonEncoder: Encoder[TypingResultInJson] =
         Encoder.instance(typingResultInJson => typingResultInJson.value)
-      implicit lazy val typingResultInJsonSchema: Schema[TypingResultInJson] = typingDtoSchemas.typingResult.as
+      implicit lazy val typingResultInJsonSchema: Schema[TypingResultInJson] = TypingDtoSchemas.typingResult.as
     }
 
     implicit lazy val scenarioNameSchema: Schema[ProcessName]                         = Schema.derived
@@ -246,7 +246,7 @@ object NodesApiEndpoints {
       implicit lazy val nodeDataSchema: Schema[NodeData]                    = Schema.anyObject
       implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.derived.hidden(true)
       implicit val nodeValidationRequestDtoEmptyEncoder: Encoder[NodeValidationRequestDto] =
-        Encoder.encodeJson.contramap[NodeValidationRequestDto](_ => Json.Null)
+        Encoder.encodeJson.contramap[NodeValidationRequestDto](_ => throw new IllegalStateException)
     }
 
     // Response doesn't need valid decoder
@@ -259,7 +259,7 @@ object NodesApiEndpoints {
     )
 
     implicit val nodeValidationRequestDtoDecoder: Decoder[NodeValidationResultDto] =
-      Decoder.instance[NodeValidationResultDto](_ => ???)
+      Decoder.instance[NodeValidationResultDto](_ => throw new IllegalStateException)
 
     object NodeValidationResultDto {
 
@@ -324,7 +324,7 @@ object NodesApiEndpoints {
     )
 
     implicit val parametersValidationRequestDtoEncoder: Encoder[ParametersValidationRequestDto] =
-      Encoder.encodeJson.contramap[ParametersValidationRequestDto](_ => Json.Null)
+      Encoder.encodeJson.contramap[ParametersValidationRequestDto](_ => throw new IllegalStateException)
 
     @derive(schema, encoder, decoder)
     final case class ParametersValidationResultDto(
@@ -352,7 +352,7 @@ object NodesApiEndpoints {
     )
 
     implicit val expressionSuggestionRequestDtoEncoder: Encoder[ExpressionSuggestionRequestDto] =
-      Encoder.encodeJson.contramap[ExpressionSuggestionRequestDto](_ => Json.Null)
+      Encoder.encodeJson.contramap[ExpressionSuggestionRequestDto](_ => throw new IllegalStateException)
 
     // Response doesn't need valid decoder
     @derive(schema, encoder)
@@ -379,7 +379,7 @@ object NodesApiEndpoints {
     }
 
     implicit val expressionSuggestionDtoDecoder: Decoder[ExpressionSuggestionDto] =
-      Decoder.instance[ExpressionSuggestionDto](_ => ???)
+      Decoder.instance[ExpressionSuggestionDto](_ => throw new IllegalStateException)
 
     // Response doesn't need valid decoder
     @derive(schema, encoder)
@@ -416,29 +416,6 @@ object NodesApiEndpoints {
         variableTypes: Map[String, TypingResult]
     )
 
-    object ParametersValidationRequest {
-
-      def apply(
-          request: ParametersValidationRequestDto
-      )(typingResultDecoder: Decoder[TypingResult]): ParametersValidationRequest = {
-        new ParametersValidationRequest(
-          request.parameters.map { parameter =>
-            UIValueParameter(
-              name = parameter.name,
-              typ = typingResultDecoder
-                .decodeJson(parameter.typ) match {
-                case Left(failure)       => throw failure
-                case Right(typingResult) => typingResult
-              },
-              expression = parameter.expression
-            )
-          },
-          mapVariableTypesOrThrowError(request.variableTypes, typingResultDecoder)
-        )
-      }
-
-    }
-
     @JsonCodec(encodeOnly = true) final case class NodeValidationResult(
         // It it used for node parameter adjustment on FE side (see ParametersUtils.ts -> adjustParameters)
         parameters: Option[List[UIParameter]],
@@ -463,36 +440,22 @@ object NodesApiEndpoints {
         outgoingEdges: Option[List[Edge]]
     )
 
-    object NodeValidationRequest {
-
-      def apply(node: NodeValidationRequestDto)(typingResultDecoder: Decoder[TypingResult]): NodeValidationRequest = {
-        new NodeValidationRequest(
-          nodeData = node.nodeData,
-          processProperties = node.processProperties,
-          variableTypes = mapVariableTypesOrThrowError(node.variableTypes, typingResultDecoder),
-          branchVariableTypes = node.branchVariableTypes.map { outerMap =>
-            outerMap.map { case (name, innerMap) =>
-              val changedMap = mapVariableTypesOrThrowError(innerMap, typingResultDecoder)
-              (name, changedMap)
-            }
-          },
-          outgoingEdges = node.outgoingEdges
-        )
-
-      }
-
-    }
-
-    def mapVariableTypesOrThrowError(
+    def decodeVariableTypes(
         variableTypes: Map[String, Dtos.TypingResultInJson],
         typingResultDecoder: Decoder[TypingResult]
-    ): Map[String, TypingResult] = {
-      variableTypes.map { case (key, typingResult) =>
-        typingResultDecoder.decodeJson(typingResult) match {
-          case Left(failure) => throw failure
-          case Right(result) => (key, result)
+    ): Either[MalformedTypingResult, Map[String, TypingResult]] = {
+      val result: Map[ProcessingType, TypingResult] = variableTypes.view
+        .mapValues { typingResult =>
+          typingResultDecoder.decodeJson(typingResult)
         }
-      }
+        .map { case (key, maybeValue) =>
+          maybeValue match {
+            case Left(failure) => return Left(MalformedTypingResult(failure.message))
+            case Right(value)  => (key, value)
+          }
+        }
+        .toMap
+      Right(result)
     }
 
     sealed trait NodesError
@@ -503,18 +466,20 @@ object NodesApiEndpoints {
       final case object NoPermission                                    extends NodesError with CustomAuthorizationError
       final case class MalformedTypingResult(msg: String)               extends NodesError
 
-      private def deserializationException =
+      private def deserializationNotSupportedException =
         (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
 
       implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
         Codec.string.map(
-          Mapping.from[String, NoScenario](deserializationException)(e => s"No scenario ${e.scenarioName} found")
+          Mapping.from[String, NoScenario](deserializationNotSupportedException)(e =>
+            s"No scenario ${e.scenarioName} found"
+          )
         )
       }
 
       implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
         Codec.string.map(
-          Mapping.from[String, NoProcessingType](deserializationException)(e =>
+          Mapping.from[String, NoProcessingType](deserializationNotSupportedException)(e =>
             s"ProcessingType type: ${e.processingType} not found"
           )
         )
@@ -522,7 +487,7 @@ object NodesApiEndpoints {
 
       implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
         Codec.string.map(
-          Mapping.from[String, MalformedTypingResult](deserializationException)(e =>
+          Mapping.from[String, MalformedTypingResult](deserializationNotSupportedException)(e =>
             s"The request content was malformed:\n${e.msg}"
           )
         )
@@ -530,6 +495,145 @@ object NodesApiEndpoints {
 
     }
 
+  }
+
+}
+
+object TypingDtoSchemas {
+
+  import pl.touk.nussknacker.engine.api.typed.TypingType.TypingType
+  import pl.touk.nussknacker.engine.api.typed.typing._
+  import pl.touk.nussknacker.engine.api.typed.TypingType
+  import sttp.tapir.Schema.SName
+  import sttp.tapir.SchemaType.SProductField
+  import sttp.tapir.{FieldName, Schema, SchemaType}
+
+  implicit lazy val typingResult: Schema[TypingResult] = Schema.derived
+
+  implicit lazy val singleTypingResultSchema: Schema[SingleTypingResult] =
+    Schema.derived.hidden(true)
+
+  implicit lazy val additionalDataValueSchema: Schema[AdditionalDataValue] = Schema.derived
+
+  implicit lazy val typedObjectTypingResultSchema: Schema[TypedObjectTypingResult] = {
+    Schema(
+      SchemaType.SProduct(
+        sProductFieldForDisplayAndType :::
+          List(
+            SProductField[String, Map[String, TypingResult]](
+              FieldName("fields"),
+              Schema.schemaForMap[TypingResult],
+              _ => None
+            )
+          ) :::
+          sProductFieldForKlassAndParams
+      ),
+      Some(SName("TypedObjectTypingResult"))
+    )
+      .title("TypedObjectTypingResult")
+      .as
+  }
+
+  implicit lazy val typedDictSchema: Schema[TypedDict] = {
+    final case class Dict(id: String, valueType: TypedTaggedValue)
+    lazy val dictSchema: Schema[Dict] = Schema.derived
+    Schema(
+      SchemaType.SProduct(
+        sProductFieldForDisplayAndType :::
+          List(SProductField[String, Dict](FieldName("dict"), dictSchema, _ => None))
+      ),
+      Some(SName("TypedDict"))
+    )
+      .title("TypedDict")
+      .as
+  }
+
+  implicit lazy val typedObjectWithDataSchema: Schema[TypedObjectWithData] =
+    Schema.derived.hidden(true)
+
+  implicit lazy val typedTaggedSchema: Schema[TypedTaggedValue] = {
+    Schema(
+      SchemaType.SProduct(
+        List(SProductField[String, String](FieldName("tag"), Schema.string, tag => Some(tag))) :::
+          sProductFieldForDisplayAndType :::
+          sProductFieldForKlassAndParams
+      ),
+      Some(SName("TypedTaggedValue"))
+    )
+      .title("TypedTaggedValue")
+      .as
+  }
+
+  implicit lazy val typedObjectSchema: Schema[TypedObjectWithValue] = {
+    Schema(
+      SchemaType.SProduct(
+        List(SProductField[String, Any](FieldName("value"), Schema.any, value => Some(value))) :::
+          sProductFieldForDisplayAndType :::
+          sProductFieldForKlassAndParams
+      ),
+      Some(SName("TypedObjectWithValue"))
+    )
+      .title("TypedObjectWithValue")
+      .as
+  }
+
+  implicit lazy val typedNullSchema: Schema[TypedNull.type] =
+    Schema.derived.name(Schema.SName("TypedNull")).title("TypedNull")
+
+  implicit lazy val unknownSchema: Schema[Unknown.type] =
+    Schema.derived.name(Schema.SName("Unknown")).title("Unknown")
+
+  implicit lazy val unionSchema: Schema[TypedUnion] = {
+    Schema(
+      SchemaType.SProduct(
+        sProductFieldForDisplayAndType :::
+          List(
+            SProductField[String, List[TypingResult]](
+              FieldName("union"),
+              Schema.schemaForArray[TypingResult].as,
+              _ => Some(List(Unknown))
+            )
+          )
+      ),
+      Some(Schema.SName("TypedUnion"))
+    )
+      .title("TypedUnion")
+      .as
+  }
+
+  implicit lazy val typedClassSchema: Schema[TypedClass] = {
+    Schema(
+      SchemaType.SProduct(
+        sProductFieldForDisplayAndType :::
+          sProductFieldForKlassAndParams
+      ),
+      Some(SName("TypedClass"))
+    )
+      .title("TypedClass")
+      .as
+  }
+
+  private lazy val sProductFieldForDisplayAndType: List[SProductField[String]] = {
+    List(
+      SProductField[String, String](FieldName("display"), Schema.string, display => Some(display)),
+      SProductField[String, TypingType](
+        FieldName("type"),
+        Schema.derivedEnumerationValue,
+        _ => Some(TypingType.Unknown)
+      )
+    )
+  }
+
+  private lazy val sProductFieldForKlassAndParams: List[SProductField[String]] = {
+    lazy val typingResultSchema: Schema[TypingResult] = Schema.derived
+    List(
+      SProductField[String, String](FieldName("refClazzName"), Schema.string, refClazzName => Some(refClazzName)),
+      SProductField[String, List[TypingResult]](
+        FieldName("params"),
+        Schema.schemaForIterable[TypingResult, List](typingResultSchema),
+        _ => Some(List(Unknown))
+      )
+    )
   }
 
 }
