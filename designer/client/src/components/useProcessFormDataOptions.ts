@@ -68,5 +68,7 @@ export const useProcessFormDataOptions = ({ allCombinations, value }: Props) => 
         return multipleEnginesSelectable;
     }, [allCombinations]);
 
-    return { processingModes, categories, engines, isEngineFieldVisible };
+    const isCategoryFieldVisible = categories.length > 1;
+
+    return { processingModes, categories, engines, isEngineFieldVisible, isCategoryFieldVisible };
 };

@@ -47,6 +47,7 @@
 * [#5566](https://github.com/TouK/nussknacker/pull/5566) [#5550](https://github.com/TouK/nussknacker/pull/5537) 
   [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Processing mode and engine available in the GUI
 * [#5566](https://github.com/TouK/nussknacker/pull/5566) `DEFAULT_SCENARIO_TYPE` environment variable is not supported anymore 
+* [#5272](https://github.com/TouK/nussknacker/pull/5272) [#5145](https://github.com/TouK/nussknacker/pull/5145) Added: Decision Table component
 
 1.13.1 (Not released yet)
 ------------------------

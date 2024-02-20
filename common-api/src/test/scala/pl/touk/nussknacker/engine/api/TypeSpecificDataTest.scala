@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.api
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import pl.touk.nussknacker.engine.api.MetaDataTestData._
+import pl.touk.nussknacker.engine.api.TypeSpecificDataTestData._
 
-class MetaDataTest extends AnyFunSuite with Matchers {
+class TypeSpecificDataTest extends AnyFunSuite with Matchers {
 
   private val testId = "Id"
 

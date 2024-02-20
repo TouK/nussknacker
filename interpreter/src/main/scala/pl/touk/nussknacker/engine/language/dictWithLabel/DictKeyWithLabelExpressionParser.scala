@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, Validated}
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.definition.{DictKeyWithLabelExpression, AdditionalVariable => _}
+import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, DictKeyWithLabelExpression}
 import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, _}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
