@@ -81,7 +81,6 @@ object ParameterExtractor {
     val declaring     = p.getDeclaringExecutable.getDeclaringClass.getName
     val parameterType = if (isBranch) "Branch parameter" else "Parameter"
     throw new IllegalArgumentException(s"$parameterType $p of method: $method in class: $declaring has $message")
-
   }
 
   private def determineIfLazyParameter(typ: TypingResult) = typ match {

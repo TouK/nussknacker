@@ -79,9 +79,9 @@ class EnricherService extends Service {
   def invoke()(
       implicit ex: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ContextId
+      context: Context
   ): Future[Response] = {
-    Future.successful(Response("alamakota-" + contextId.value))
+    Future.successful(Response(s"alamakota-${context.id}"))
   }
 
 }

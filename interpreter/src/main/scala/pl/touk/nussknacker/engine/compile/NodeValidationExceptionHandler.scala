@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.Valid
+import cats.data.{Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
@@ -10,7 +11,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   MissingParameters
 }
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, MissingOutputVariableException}
-import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.util.control.NonFatal
 
@@ -27,13 +27,12 @@ object NodeValidationExceptionHandler extends LazyLogging {
       f
     } catch {
       case MissingOutputVariableException =>
-        Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"), nodeId.id)))
+        Validated.invalidNel(MissingParameters(Set("OutputVariable"), nodeId.id))
       case exc: CustomNodeValidationException =>
-        Invalid(NonEmptyList.of(CustomNodeError(exc.message, exc.paramName)))
+        Validated.invalidNel(CustomNodeError(exc.message, exc.paramName))
       case NonFatal(e) =>
-        logger.error("Exception during validation", e)
         // TODO: better message?
-        Invalid(NonEmptyList.of(CannotCreateObjectError(e.getMessage, nodeId.id)))
+        Validated.invalidNel(CannotCreateObjectError(e.getMessage, nodeId.id))
     }
   }
 

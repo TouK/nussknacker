@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
+import pl.touk.nussknacker.engine.common.components.DecisionTable
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWindowsConfig
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{
@@ -43,9 +44,10 @@ object FlinkBaseComponentProvider {
       ComponentDefinition("union", UnionTransformer).withRelativeDocs("BasicNodes#union"),
       ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)).withRelativeDocs("DataSourcesAndSinks#deadend"),
       ComponentDefinition("periodic", PeriodicSourceFactory).withRelativeDocs("DataSourcesAndSinks#periodic"),
-      ComponentDefinition("decision-table", DecisionTableTransformer).withRelativeDocs(
-        "BasicNodes#decisiontable"
-      ),
+      ComponentDefinition(
+        name = "decision-table",
+        component = DecisionTable
+      ).withRelativeDocs("BasicNodes#decisiontable")
     )
 
     val statefulComponents = List(
@@ -67,7 +69,7 @@ object FlinkBaseComponentProvider {
       ComponentDefinition("full-outer-join", FullOuterJoinTransformer).withRelativeDocs(
         "AggregatesInTimeWindows#full-outer-join"
       ),
-      ComponentDefinition("delay", DelayTransformer).withRelativeDocs("DataSourcesAndSinks#delay"),
+      ComponentDefinition("delay", DelayTransformer).withRelativeDocs("DataSourcesAndSinks#delay")
     )
 
     statefulComponents ++ statelessComponents

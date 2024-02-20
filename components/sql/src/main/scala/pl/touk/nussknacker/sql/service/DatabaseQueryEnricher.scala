@@ -195,7 +195,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       s"Failed to execute query: $e"
   }
 
-  protected def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =
+  private def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =
     (1 to dbParameterMetaData.parameterCount).map { paramNo =>
       Parameter(s"$ArgPrefix$paramNo", typing.Unknown).copy(isLazyParameter = true)
     }.toList
