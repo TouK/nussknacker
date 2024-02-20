@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import java.io.File
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -10,9 +9,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Params}
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
+import java.io.File
 import java.nio.charset.StandardCharsets
-import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 import scala.util.Properties
 
 //this is to simulate model reloading - we read parameters from file

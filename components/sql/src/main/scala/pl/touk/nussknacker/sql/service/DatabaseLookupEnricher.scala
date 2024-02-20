@@ -45,7 +45,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
     extends DatabaseQueryEnricher(dBPoolConfig, dbMetaDataProvider)
     with LazyLogging {
 
-  protected def tableParam(): Parameter = {
+  private def tableParam(): Parameter = {
     val schemaMetaData =
       try {
         dbMetaDataProvider.getSchemaDefinition()
@@ -75,7 +75,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
     NextParameters(parameters = tableParam() :: CacheTTLParam :: Nil)
   }
 
-  protected def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+  private def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep(
@@ -113,7 +113,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
       }
   }
 
-  protected def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+  private def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep(

@@ -36,10 +36,11 @@ class DatabaseEnricherInvoker(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase
-  ): Future[queryExecutor.QueryResult] =
+  ): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {
       queryDatabase(queryArgumentsExtractor(argsCount, params, context))
     }
+  }
 
   protected def queryDatabase(
       queryArguments: QueryArguments

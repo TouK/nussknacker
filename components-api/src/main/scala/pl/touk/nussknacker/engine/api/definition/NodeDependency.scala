@@ -268,7 +268,7 @@ case class Parameter(
       _.isInstanceOf[AdditionalVariableProvidedInRuntime]
     )) {
     throw new IllegalArgumentException(
-      s"${classOf[AdditionalVariableProvidedInRuntime].getClass.getSimpleName} should be used only with LazyParameters"
+      s"${classOf[AdditionalVariableProvidedInRuntime].getSimpleName} should be used only with LazyParameters"
     )
   }
 

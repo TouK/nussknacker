@@ -32,7 +32,7 @@ class OpenAPIServiceSpec
 
   implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
   implicit val metaData: MetaData                 = MetaData("testProc", StreamMetaData())
-  implicit val contextId: ContextId               = ContextId("testContextId")
+  implicit val context: Context                   = Context("testContextId", Map.empty)
 
   type FixtureParam = EagerServiceWithStaticParametersAndReturnType
 

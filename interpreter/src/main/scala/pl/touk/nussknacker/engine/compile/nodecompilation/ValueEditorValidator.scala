@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.definition.{
   ParameterEditor
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValues
 
 object ValueEditorValidator {
@@ -26,7 +25,7 @@ object ValueEditorValidator {
     validateFixedValuesList(valueEditor, initialValue, paramName, nodeIds)
       .andThen { _ =>
         val fixedValuesEditor = FixedValuesParameterEditor(
-          nullFixedValue +: valueEditor.fixedValuesList
+          FixedExpressionValue.nullFixedValue +: valueEditor.fixedValuesList
         )
 
         if (valueEditor.allowOtherValue) {

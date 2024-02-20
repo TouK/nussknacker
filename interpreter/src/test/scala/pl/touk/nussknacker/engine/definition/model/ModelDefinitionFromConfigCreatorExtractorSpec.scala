@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
@@ -373,7 +373,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
 
     override def invoke(params: Params)(
         implicit ec: ExecutionContext,
-        collector: InvocationCollectors.ServiceInvocationCollector,
+        collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase

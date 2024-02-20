@@ -12,6 +12,10 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, ProcessNodes
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor.KeyToLabelReplacingStrategy
 import pl.touk.nussknacker.engine.expression.{ExpressionSubstitutionsCollector, ExpressionSubstitutor}
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
+import pl.touk.nussknacker.engine.language.dictWithLabel.{
+  DictKeyWithLabelExpressionParser,
+  DictKeyWithLabelExpressionTypingInfo
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.{
@@ -20,7 +24,6 @@ import pl.touk.nussknacker.engine.spel.ast.{
   SpelSubstitutionsCollector,
   TypedTreeLevel
 }
-import pl.touk.nussknacker.engine.spel.parser.{DictKeyWithLabelExpressionParser, DictKeyWithLabelExpressionTypingInfo}
 
 class ProcessDictSubstitutor(
     dictRegistry: DictRegistry,

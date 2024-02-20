@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.common.components.DecisionTable
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{
   EspDeserializationSchema,

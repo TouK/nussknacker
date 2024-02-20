@@ -5,7 +5,6 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.defaultmodel.SerializationTest.DataStructureWithOptionals
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
-import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage._
 
