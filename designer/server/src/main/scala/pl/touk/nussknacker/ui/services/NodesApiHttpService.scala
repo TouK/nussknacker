@@ -2,12 +2,27 @@ package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Decoder
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
+import pl.touk.nussknacker.restmodel.definition.UIValueParameter
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{ExpressionSuggestionDto, NodeValidationRequest, NodeValidationRequestDto, NodeValidationResult, NodeValidationResultDto, NodesError, ParametersValidationRequest, ParametersValidationRequestDto, ParametersValidationResultDto, mapVariableTypesOrThrowError, prepareTypingResultDecoder}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
+  ExpressionSuggestionDto,
+  NodeValidationRequest,
+  NodeValidationRequestDto,
+  NodeValidationResult,
+  NodeValidationResultDto,
+  NodesError,
+  ParametersValidationRequest,
+  ParametersValidationRequestDto,
+  ParametersValidationResultDto,
+  decodeVariableTypes,
+  prepareTypingResultDecoder
+}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{MalformedTypingResult, NoProcessingType, NoScenario}
@@ -21,7 +36,7 @@ import pl.touk.nussknacker.ui.util.EitherTImplicits
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class NodesApiHttpService(
     config: Config,
@@ -77,8 +92,8 @@ class NodesApiHttpService(
               .eitherT()
             modelData <- getModelData(scenario.processingType)
             nodeValidator = typeToNodeValidator.forTypeUnsafe(scenario.processingType)
-            nodeData   <- dtoToRequest(nodeValidationRequestDto, modelData)
-            validation <- getValidation(nodeValidator, scenarioName, nodeData)
+            nodeData   <- dtoToNodeRequest(nodeValidationRequestDto, modelData)
+            validation <- getNodeValidation(nodeValidator, scenarioName, nodeData)
             validationDto = NodeValidationResultDto.apply(validation)
           } yield validationDto
         }
@@ -145,7 +160,7 @@ class NodesApiHttpService(
           for {
             modelData <- getModelData(processingType)
             validator = typeToParametersValidator.forTypeUnsafe(processingType)
-            requestWithTypingResult <- parametersValidationRequestFromDto(request, modelData)
+            requestWithTypingResult <- dtoToParameterRequest(request, modelData)
             validationResults = validator.validate(requestWithTypingResult)
           } yield ParametersValidationResultDto(validationResults, validationPerformed = true)
         }
@@ -161,7 +176,7 @@ class NodesApiHttpService(
             modelData <- getModelData(processingType)
             expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)
             suggestions   <- getSuggestions(expressionSuggester, request, modelData)
-            suggestionDto <- toResponse(suggestions)
+            suggestionDto <- toExpressionSuggestionResponse(suggestions)
           } yield suggestionDto
         }
       }
@@ -173,31 +188,26 @@ class NodesApiHttpService(
       .toRightEitherT(NoScenario(scenarioName))
   }
 
-  private def dtoToRequest(nodeValidationRequestDto: NodeValidationRequestDto, modelData: ModelData) = {
+  private def dtoToNodeRequest(nodeValidationRequestDto: NodeValidationRequestDto, modelData: ModelData) = {
     Future[Either[NodesError, NodeValidationRequest]](
-      try {
-        Right(NodeValidationRequest.apply(nodeValidationRequestDto)(prepareTypingResultDecoder(modelData)))
-      } catch {
-        case e: Exception =>
-          Left(MalformedTypingResult(e.getMessage))
-      }
-    )
-      .eitherT()
+      fromNodeRequestDto(nodeValidationRequestDto)(prepareTypingResultDecoder(modelData))
+    ).eitherT()
   }
 
   private def getModelData(processingType: ProcessingType)(implicit user: LoggedUser) = {
-    Future[Either[NodesError, ModelData]](
-      try {
-        Right(typeToConfig.forTypeUnsafe(processingType))
-      } catch {
-        case _: IllegalArgumentException =>
-          Left(NoProcessingType(processingType))
+    Future(
+      Try(typeToConfig.forTypeUnsafe(processingType)).toEither.left.map { case _: IllegalArgumentException =>
+        NoProcessingType(processingType)
       }
     )
       .eitherT()
   }
 
-  private def getValidation(nodeValidator: NodeValidator, scenarioName: ProcessName, nodeData: NodeValidationRequest)(
+  private def getNodeValidation(
+      nodeValidator: NodeValidator,
+      scenarioName: ProcessName,
+      nodeData: NodeValidationRequest
+  )(
       implicit user: LoggedUser
   ) =
     Future[Either[NodesError, NodeValidationResult]](
@@ -210,19 +220,12 @@ class NodesApiHttpService(
     )
       .eitherT()
 
-  private def parametersValidationRequestFromDto(request: ParametersValidationRequestDto, modelData: ModelData) = {
+  private def dtoToParameterRequest(request: ParametersValidationRequestDto, modelData: ModelData) =
     Future[Either[NodesError, ParametersValidationRequest]](
-      try {
-        Right(ParametersValidationRequest.apply(request)(prepareTypingResultDecoder(modelData)))
-      } catch {
-        case e: Exception =>
-          Left(MalformedTypingResult(e.getMessage))
-      }
-    )
-      .eitherT()
-  }
+      parametersValidationRequestFromDto(request, modelData)
+    ).eitherT()
 
-  private def toResponse(suggestions: Future[List[ExpressionSuggestion]]) = {
+  private def toExpressionSuggestionResponse(suggestions: Future[List[ExpressionSuggestion]]) = {
     Future[Either[NodesError, List[ExpressionSuggestionDto]]](
       suggestions.value match {
         case Some(value) =>
@@ -230,8 +233,8 @@ class NodesApiHttpService(
             case Failure(exception) => Left(MalformedTypingResult(exception.getMessage))
             case Success(list)      => Right(list.map { expression => ExpressionSuggestionDto(expression) })
           }
-        case None => // Not completed yet
-          Left(NoScenario(ProcessName("idk")))
+        case None => // Request not completed yet
+          throw new IllegalStateException()
       }
     )
       .eitherT()
@@ -243,19 +246,69 @@ class NodesApiHttpService(
       modelData: ModelData
   ) = {
     Future[Either[NodesError, Future[List[ExpressionSuggestion]]]](
-      try {
-        Right(
-          expressionSuggester.expressionSuggestions(
-            request.expression,
-            request.caretPosition2d,
-            mapVariableTypesOrThrowError(request.variableTypes, prepareTypingResultDecoder(modelData))
+      decodeVariableTypes(request.variableTypes, prepareTypingResultDecoder(modelData)) match {
+        case Left(value) => Left(value)
+        case Right(localVariables) =>
+          Right(
+            expressionSuggester.expressionSuggestions(
+              request.expression,
+              request.caretPosition2d,
+              localVariables
+            )
           )
-        )
-      } catch {
-        case e: Exception => Left(MalformedTypingResult(e.getMessage))
       }
     )
       .eitherT()
+  }
+
+  private def fromNodeRequestDto(
+      node: NodeValidationRequestDto
+  )(typingResultDecoder: Decoder[TypingResult]): Either[NodesError, NodeValidationRequest] = {
+    val variableTypes = decodeVariableTypes(node.variableTypes, typingResultDecoder) match {
+      case Left(value)  => return Left(value)
+      case Right(value) => value
+    }
+    val branchVariableTypes = node.branchVariableTypes.map { outerMap =>
+      outerMap.map { case (name, innerMap) =>
+        decodeVariableTypes(innerMap, typingResultDecoder) match {
+          case Right(changedMap) => (name, changedMap)
+          case Left(value)       => return Left(value)
+        }
+      }
+    }
+    Right(
+      NodeValidationRequest(
+        nodeData = node.nodeData,
+        processProperties = node.processProperties,
+        variableTypes = variableTypes,
+        branchVariableTypes = branchVariableTypes,
+        outgoingEdges = node.outgoingEdges
+      )
+    )
+  }
+
+  private def parametersValidationRequestFromDto(
+      request: ParametersValidationRequestDto,
+      modelData: ModelData
+  ): Either[NodesError, ParametersValidationRequest] = {
+    val typingResultDecoder = prepareTypingResultDecoder(modelData)
+    val parameters = request.parameters.map { parameter =>
+      UIValueParameter(
+        name = parameter.name,
+        typ = typingResultDecoder
+          .decodeJson(parameter.typ) match {
+          case Left(failure)       => return Left(MalformedTypingResult(failure.getMessage()))
+          case Right(typingResult) => typingResult
+        },
+        expression = parameter.expression
+      )
+    }
+    val variableTypes =
+      decodeVariableTypes(request.variableTypes, typingResultDecoder) match {
+        case Left(value)  => return Left(value)
+        case Right(value) => value
+      }
+    Right(ParametersValidationRequest(parameters, variableTypes))
   }
 
 }
