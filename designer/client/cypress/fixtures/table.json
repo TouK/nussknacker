@@ -54,7 +54,7 @@
             "type": "Source"
         },
         {
-            "id": "decisionTableCustomNode",
+            "id": "decision-table",
             "service": {
                 "id": "decision-table",
                 "parameters": [
