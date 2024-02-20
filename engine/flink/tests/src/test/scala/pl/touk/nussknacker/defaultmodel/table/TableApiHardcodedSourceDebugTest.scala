@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.table
+package pl.touk.nussknacker.defaultmodel.table
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.table.kafka.KafkaTableApiComponentProvider
+import pl.touk.nussknacker.engine.flink.table.autoloaded.AutoloadedTableApiComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
@@ -27,7 +27,7 @@ class TableApiHardcodedSourceDebugTest extends AnyFunSuite with FlinkSpec with M
     val listener = initializeListener
     val model = LocalModelData(
       ConfigFactory.empty(),
-      FlinkBaseComponentProvider.Components ::: KafkaTableApiComponentProvider.ConfigIndependentComponents,
+      FlinkBaseComponentProvider.Components ::: AutoloadedTableApiComponentProvider.ConfigIndependentComponents,
       configCreator = new ConfigCreatorWithCollectingListener(listener),
     )
 
