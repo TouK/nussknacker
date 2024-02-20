@@ -56,7 +56,7 @@
         {
             "id": "decisionTableCustomNode",
             "service": {
-                "id": "decisionTable",
+                "id": "decision-table",
                 "parameters": [
                     {
                         "name": "Basic Decision Table",

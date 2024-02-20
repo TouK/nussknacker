@@ -15,7 +15,7 @@ describe("Table editor", () => {
 
     it("should display rich table editor", () => {
         cy.viewport("macbook-15");
-        cy.visitNewProcess(seed, "table");
+        cy.visitNewProcess(seed, "table", "Default");
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
             if (request.body.nodeData.service?.parameters.find((p) => p.name === "Expression")) {
                 request.alias = "validation";
