@@ -71,7 +71,7 @@ class KafkaSourceFactory(config: KafkaTableApiConfig)
     ): Unit = {
       val tableDescriptor = TableDescriptor
         .forConnector("kafka")
-        .option("topic", "input1")
+        .option("topic", config.topic)
         // TODO: handle consumer groups same with namespace naming strategy and consumer group specific naming strategy
         .option("properties.group.id", flinkNodeContext.jobData.metaData.name.value)
         .option("scan.startup.mode", "earliest-offset")

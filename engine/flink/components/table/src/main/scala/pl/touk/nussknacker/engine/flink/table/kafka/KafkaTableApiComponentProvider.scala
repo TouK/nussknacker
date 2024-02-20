@@ -39,4 +39,4 @@ class KafkaTableApiComponentProvider extends ComponentProvider {
  *  - schema
  *  - data format
  */
-final case class KafkaTableApiConfig(kafkaProperties: Map[String, String])
+final case class KafkaTableApiConfig(kafkaProperties: Map[String, String] = Map.empty, topic: String)

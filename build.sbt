@@ -716,16 +716,17 @@ lazy val flinkTests = (project in flink("tests"))
     }
   )
   .dependsOn(
-    defaultModel           % "test",
-    flinkExecutor          % "test",
-    flinkKafkaComponents   % "test",
-    flinkBaseComponents    % "test",
-    flinkTestUtils         % "test",
-    kafkaTestUtils         % "test",
-    flinkComponentsTestkit % "test",
+    defaultModel            % "test",
+    flinkExecutor           % "test",
+    flinkKafkaComponents    % "test",
+    flinkBaseComponents     % "test",
+    flinkTestUtils          % "test",
+    kafkaTestUtils          % "test",
+    flinkComponentsTestkit  % "test",
+    flinkTableApiComponents % "test",
     // for local development
-    designer               % "test",
-    deploymentManagerApi   % "test"
+    designer                % "test",
+    deploymentManagerApi    % "test"
   )
 
 lazy val defaultModel = (project in (file("defaultModel")))
@@ -1733,10 +1734,6 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     commonUtils          % Provided,
     componentsUtils      % Provided,
     flinkComponentsUtils % Provided,
-    flinkTestUtils       % Test,
-    flinkExecutor        % Test,
-    kafkaTestUtils       % Test,
-    flinkBaseComponents  % Test,
   )
 
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
