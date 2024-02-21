@@ -38,75 +38,39 @@ import sttp.model.StatusCode.{BadRequest, Conflict, InternalServerError, NotFoun
 class RemoteEnvironmentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import RemoteEnvironmentApiEndpoints.Dtos._
-  import RemoteEnvironmentApiEndpoints.Dtos.ComparisonDifferences._
   import TapirCodecs.ScenarioNameCodec._
   import TapirCodecs.VersionIdCodec._
 
-  lazy val compareEndpoint: SecuredEndpoint[Unit, NuDesignerError, EnvironmentComparisonResult, Any] =
-    baseNuApiEndpoint
-      .summary("summary")
-      .tag("RemoteEnv")
-      .get
-      .in("remoteEnvironment" / "compare")
-      .out(
-        statusCode(Ok).and(
-          jsonBody[EnvironmentComparisonResult].example(
-            Example.of(???)
-          )
-        )
-      )
-      .errorOut(nuDesignerErrorOutput)
-      .withSecurity(auth)
-
-  lazy val compareTwoVersionsEndpoint
-      : SecuredEndpoint[(ProcessName, VersionId, VersionId), NuDesignerError, ComparisonDifferences, Any] =
-    baseNuApiEndpoint
-      .summary("summary")
-      .tag("RemoteEnv")
-      .get
-      .in(
-        "remoteEnvironment" / path[ProcessName]("processName") / path[VersionId]("versionId") / "compare" / path[
-          VersionId
-        ]("otherVersionId")
-      )
-      .out(
-        statusCode(Ok).and(
-          jsonBody[ComparisonDifferences]
-        )
-      )
-      .errorOut(nuDesignerErrorOutput)
-      .withSecurity(auth)
-
-  private lazy val nuDesignerErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
+  val nuDesignerErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
     oneOf[NuDesignerError](
-      oneOfVariantFromMatchType(
+      oneOfVariant(
         NotFound,
         plainBody[NotFoundError]
           .example(
             Example.of(???)
           )
       ),
-      oneOfVariantFromMatchType(
+      oneOfVariant(
         BadRequest,
         plainBody[BadRequestError]
           .example(Example.of(???))
       ),
-      oneOfVariantFromMatchType(
+      oneOfVariant(
         Unauthorized,
         plainBody[UnauthorizedError]
           .example(Example.of(???))
       ),
-      oneOfVariantFromMatchType(
+      oneOfVariant(
         Conflict,
         plainBody[IllegalOperationError]
           .example(Example.of(???))
       ),
-      oneOfVariantFromMatchType(
+      oneOfVariant(
         InternalServerError,
         plainBody[OtherError]
           .example(Example.of(???))
       ),
-      oneOfVariantFromMatchType(
+      oneOfVariant(
         InternalServerError,
         plainBody[FatalError]
           .example(Example.of(???))
@@ -118,7 +82,7 @@ class RemoteEnvironmentApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
 object RemoteEnvironmentApiEndpoints {
 
   object Dtos {
-    private def deserializationException =
+    def deserializationException =
       (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
 
     implicit val notFoundErrorCodec: Codec[String, NotFoundError, CodecFormat.TextPlain] =
@@ -150,30 +114,6 @@ object RemoteEnvironmentApiEndpoints {
       Codec.string.map(
         Mapping.from[String, FatalError](deserializationException)(_.getMessage)
       )
-
-    implicit val processNameSchema: Schema[ProcessName] = Schema.derived
-
-    type ComparisonDifferences = Map[String, Difference]
-
-    implicit val notFoundSchema: Schema[NotFoundError] = Schema.derived[NotFoundError]
-
-    object ComparisonDifferences {
-      implicit val differenceSchema: Schema[Difference]        = Schema.derived[Difference]
-      implicit val myTypeSchema: Schema[ComparisonDifferences] = Schema.derived[ComparisonDifferences]
-    }
-
-    @derive(decoder, encoder, schema)
-    final case class EnvironmentComparisonResult(processDifferences: List[ProcessDifference])
-
-    @derive(encoder, decoder, schema)
-    final case class ProcessDifference(
-        name: ProcessName,
-        presentOnOther: Boolean,
-        differences: Map[String, ScenarioGraphComparator.Difference]
-    ) {
-
-      def areSame: Boolean = presentOnOther && differences.isEmpty
-    }
 
   }
 
