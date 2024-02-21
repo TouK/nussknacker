@@ -104,7 +104,6 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY/Python"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY/PyPy"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY/node"
       - name: "Build"
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
