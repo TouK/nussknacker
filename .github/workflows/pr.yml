@@ -76,6 +76,13 @@ jobs:
           df -h
           echo "$AGENT_TOOLSDIRECTORY"
           ls -l "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/go"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/Ruby"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/Python"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/PyPy"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
+          ls -l "$AGENT_TOOLSDIRECTORY"
+          df -h
           echo "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
 
   build:
