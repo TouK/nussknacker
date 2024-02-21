@@ -2,6 +2,12 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.15.x (Not released yet)
+
+### Other changes
+
+* [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the plugable expression languages: `ExpressionConfig.languages` removed
+
 ## In version 1.14.x (Not released yet)
 
 ### Code API changes

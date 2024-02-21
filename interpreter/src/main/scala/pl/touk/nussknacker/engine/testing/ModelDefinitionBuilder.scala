@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.component.{
   ProcessingMode
 }
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
@@ -218,7 +218,6 @@ object ModelDefinitionBuilder {
       Map.empty[String, GlobalVariableDefinitionWithImplementation],
       List.empty,
       defaultAdditionalClasses,
-      languages = LanguageConfiguration.default,
       optimizeCompilation = true,
       dictionaries = Map.empty,
       hideMetaVariable = false,

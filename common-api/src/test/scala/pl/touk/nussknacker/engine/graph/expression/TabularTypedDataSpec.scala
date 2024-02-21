@@ -1,9 +1,9 @@
-package pl.touk.nussknacker.engine.api.definition
+package pl.touk.nussknacker.engine.graph.expression
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.definition.TabularTypedData.Cell.RawValue
-import pl.touk.nussknacker.engine.api.definition.TabularTypedData.Column
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Cell.RawValue
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Column
 
 class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
 

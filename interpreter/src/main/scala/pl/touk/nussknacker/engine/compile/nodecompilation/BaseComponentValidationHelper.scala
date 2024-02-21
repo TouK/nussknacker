@@ -9,9 +9,9 @@ import pl.touk.nussknacker.engine.api.definition.{
   NotNullParameterValidator,
   ParameterValidator
 }
-import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 
 object BaseComponentValidationHelper {
 
