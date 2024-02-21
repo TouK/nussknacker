@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.restmodel.CustomActionRequest
+import pl.touk.nussknacker.restmodel.ActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -99,7 +99,6 @@ trait NuResourcesTest
   protected lazy val deploymentManager: MockDeploymentManager = new MockDeploymentManager
 
   protected val deploymentCommentSettings: Option[DeploymentCommentSettings] = None
-
 
   protected val dmDispatcher = new DeploymentManagerDispatcher(
     mapProcessingTypeDataProvider(Streaming.stringify -> deploymentManager),
@@ -353,7 +352,7 @@ trait NuResourcesTest
       Permission.Read
     )
 
-  protected def customAction(processName: ProcessName, reqPayload: CustomActionRequest): RouteTestResult =
+  protected def customAction(processName: ProcessName, reqPayload: ActionRequest): RouteTestResult =
     Post(s"/processManagement/customAction/$processName", reqPayload.toJsonRequestEntity()) ~>
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 

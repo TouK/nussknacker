@@ -217,9 +217,9 @@ class PeriodicDeploymentManager private[periodic] (
   override def customActions: List[CustomAction] = customActionsProvider.customActions
 
   override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
+      actionRequest: ActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] =
+  ): Future[ActionResult] =
     customActionsProvider.invokeCustomAction(actionRequest, canonicalProcess)
 
 }

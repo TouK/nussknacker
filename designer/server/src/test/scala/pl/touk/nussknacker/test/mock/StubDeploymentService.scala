@@ -62,10 +62,10 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): Future[CustomActionResult] =
+  ): Future[ActionResult] =
     Future.successful(
-      CustomActionResult(
-        req = CustomActionRequest(actionName, ProcessVersion.empty, User(loggedUser.id, loggedUser.username), params),
+      ActionResult(
+        req = ActionRequest(actionName, ProcessVersion.empty, User(loggedUser.id, loggedUser.username), params),
         msg = "stub response"
       )
     )

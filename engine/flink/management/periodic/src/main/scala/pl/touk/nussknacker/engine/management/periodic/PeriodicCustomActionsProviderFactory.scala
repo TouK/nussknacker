@@ -24,9 +24,9 @@ trait PeriodicCustomActionsProvider {
   def customActions: List[CustomAction]
 
   def invokeCustomAction(
-      actionRequest: CustomActionRequest,
+      actionRequest: ActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult]
+  ): Future[ActionResult]
 
 }
 
@@ -34,9 +34,9 @@ object EmptyPeriodicCustomActionsProvider extends PeriodicCustomActionsProvider 
   override def customActions: List[CustomAction] = Nil
 
   override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
+      actionRequest: ActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] =
+  ): Future[ActionResult] =
     Future.failed(new NotImplementedError())
 
 }

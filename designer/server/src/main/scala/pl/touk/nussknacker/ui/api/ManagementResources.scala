@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.restmodel.CustomActionResponse
 import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
@@ -157,12 +157,12 @@ class ManagementResources(
           }
         } ~
         path("deploy" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[Option[String]]) & parameters(Symbol("savepointPath"))) {
-            (processId, comment, savepointPath) =>
+          (post & processId(processName) & entity(as[ActionRequest]) & parameters(Symbol("savepointPath"))) {
+            (processId, req, savepointPath) =>
               canDeploy(processId) {
                 complete {
                   deploymentService
-                    .deployProcessAsync(processId, Some(savepointPath), comment)
+                    .deployProcessAsync(processId, Some(savepointPath), req)
                     .map(_ => ())
                 }
               }
@@ -173,12 +173,12 @@ class ManagementResources(
     pathPrefix("processManagement") {
 
       path("deploy" / ProcessNameSegment) { processName =>
-        (post & processId(processName) & entity(as[Option[String]])) { (processId, comment) =>
+        (post & processId(processName) & entity(as[ActionRequest])) { (processId, req) =>
           canDeploy(processId) {
             complete {
               measureTime("deployment", metricRegistry) {
                 deploymentService
-                  .deployProcessAsync(processId, None, comment)
+                  .deployProcessAsync(processId, None, req)
                   .map(_ => ())
               }
             }
@@ -186,12 +186,12 @@ class ManagementResources(
         }
       } ~
         path("cancel" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[Option[String]])) { (processId, comment) =>
+          (post & processId(processName) & entity(as[ActionRequest])) { (processId, req) =>
             canDeploy(processId) {
               complete {
                 measureTime("cancel", metricRegistry) {
                   deploymentService
-                    .cancelProcess(processId, comment)
+                    .cancelProcess(processId, req)
                 }
               }
             }
@@ -291,7 +291,7 @@ class ManagementResources(
           }
         } ~
         path("customAction" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
+          (post & processId(processName) & entity(as[ActionRequest])) { (process, req) =>
             val params = req.params.getOrElse(Map.empty)
             complete {
               deploymentService

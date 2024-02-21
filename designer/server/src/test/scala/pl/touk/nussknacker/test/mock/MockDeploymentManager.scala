@@ -230,11 +230,11 @@ class MockDeploymentManager(
   }
 
   override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
+      actionRequest: ActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] =
+  ): Future[ActionResult] =
     actionRequest.name.value match {
-      case "hello" | "invalid-status" => Future.successful(CustomActionResult(actionRequest, "Hi"))
+      case "hello" | "invalid-status" => Future.successful(ActionResult(actionRequest, "Hi"))
       case _                          => Future.failed(new NotImplementedError())
     }
 

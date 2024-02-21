@@ -180,9 +180,9 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   override def customActions: List[CustomAction] = customActionStatusMapping.keys.toList
 
   override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
+      actionRequest: ActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] = {
+  ): Future[ActionResult] = {
     val processName = actionRequest.processVersion.processName
     val statusOpt = customActionStatusMapping
       .collectFirst { case (customAction, status) if customAction.name == actionRequest.name => status }
@@ -190,7 +190,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     statusOpt match {
       case Some(newStatus) =>
         asyncChangeState(processName, newStatus)
-        Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
+        Future.successful(ActionResult(actionRequest, s"Done ${actionRequest.name}"))
       case _ =>
         Future.failed(new NotImplementedError())
     }

@@ -187,9 +187,9 @@ abstract class FlinkDeploymentManager(
   override def customActions: List[CustomAction] = List.empty
 
   override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
+      actionRequest: ActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] =
+  ): Future[ActionResult] =
     Future.failed(new NotImplementedError())
 
   private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(
