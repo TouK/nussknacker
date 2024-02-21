@@ -5,7 +5,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -444,17 +444,16 @@ object NodesApiEndpoints {
         variableTypes: Map[String, Dtos.TypingResultInJson],
         typingResultDecoder: Decoder[TypingResult]
     ): Either[MalformedTypingResult, Map[String, TypingResult]] = {
-      val result: Map[ProcessingType, TypingResult] = variableTypes.view
-        .mapValues { typingResult =>
-          typingResultDecoder.decodeJson(typingResult)
+      val result: Map[ProcessingType, TypingResult] = variableTypes
+        .map { case (key, typingResult) =>
+          (key, typingResultDecoder.decodeJson(typingResult))
         }
         .map { case (key, maybeValue) =>
           maybeValue match {
-            case Left(failure) => return Left(MalformedTypingResult(failure.message))
-            case Right(value)  => (key, value)
+            case Left(failure: DecodingFailure) => return Left(MalformedTypingResult(failure.message))
+            case Right(value)                   => (key, value)
           }
         }
-        .toMap
       Right(result)
     }
 
