@@ -41,6 +41,16 @@ class RemoteEnvironmentApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
   import TapirCodecs.ScenarioNameCodec._
   import TapirCodecs.VersionIdCodec._
 
+  lazy val migrateEndpoint: SecuredEndpoint[(ProcessName, VersionId), NuDesignerError, Unit, Any] =
+    baseNuApiEndpoint
+      .summary("TODO")
+      .tag("TODO")
+      .post
+      .in("remoteEnvironment" / path[ProcessName]("processName") / path[VersionId]("versionId") / "migrate")
+      .out(statusCode(Ok))
+      .errorOut(nuDesignerErrorOutput)
+      .withSecurity(auth)
+
   val nuDesignerErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
     oneOf[NuDesignerError](
       oneOfVariant(

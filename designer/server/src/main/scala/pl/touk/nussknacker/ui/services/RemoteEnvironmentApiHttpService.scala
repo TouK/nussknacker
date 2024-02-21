@@ -16,6 +16,8 @@ import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptio
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 import scala.concurrent.{ExecutionContext, Future}
 import pl.touk.nussknacker.ui.util.EitherTImplicits
@@ -24,6 +26,7 @@ class RemoteEnvironmentApiHttpService(
     config: Config,
     authenticator: AuthenticationResources,
     processService: ProcessService,
+    processResolver: ProcessingTypeDataProvider[UIProcessResolver, _],
     remoteEnvironment: RemoteEnvironment
 )(implicit val ec: ExecutionContext)
     extends BaseHttpService(config, authenticator)
@@ -32,6 +35,30 @@ class RemoteEnvironmentApiHttpService(
   import EitherTImplicits._
 
   private val remoteEnvironmentApiEndpoints = new RemoteEnvironmentApiEndpoints(authenticator.authenticationMethod())
+
+  expose {
+    remoteEnvironmentApiEndpoints.migrateEndpoint
+      .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (processName, versionId) =>
+          EitherT(for {
+            pid <- processService.getProcessIdUnsafe(processName)
+            processIdWithName = ProcessIdWithName(pid, processName)
+            res <- withProcess(
+              processIdWithName,
+              versionId,
+              details =>
+                remoteEnvironment.migrate(
+                  details.scenarioGraphUnsafe,
+                  details.name,
+                  details.parameters,
+                  details.isFragment
+                )
+            )
+          } yield res)
+        }
+      }
+  }
 
   private def withProcess[T: Encoder](
       processIdWithName: ProcessIdWithName,
