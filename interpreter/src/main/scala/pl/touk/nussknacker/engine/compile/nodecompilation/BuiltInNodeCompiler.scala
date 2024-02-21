@@ -5,15 +5,15 @@ import cats.data.ValidatedNel
 import cats.implicits.{catsSyntaxTuple2Semigroupal, toFoldableOps, toTraverseOps}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.expression.{ExpressionTypingInfo, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.BaseComponentValidationHelper._
 import pl.touk.nussknacker.engine.compile.nodecompilation.BuiltInNodeCompiler._
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph
+import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionId
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node

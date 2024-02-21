@@ -4,21 +4,14 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, ExpressionTypingInfo, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionTypingInfo, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
-  ErrorDetails,
-  TabularDataDefinitionParserErrorDetails
-}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{ErrorDetails, TabularDataDefinitionParserErrorDetails}
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
-import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{
-  CellsCountInRowDifferentThanColumnsCount,
-  ColumnNameUniquenessViolation,
-  InvalidCellValues
-}
-import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Error
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{CellsCountInRowDifferentThanColumnsCount, ColumnNameUniquenessViolation, InvalidCellValues}
 
 object TabularDataDefinitionParser extends ExpressionParser {
 
@@ -35,7 +28,7 @@ object TabularDataDefinitionParser extends ExpressionParser {
   override def parseWithoutContextValidation(
       original: String,
       expectedType: typing.TypingResult
-  ): ValidatedNel[ExpressionParseError, Expression] = {
+  ): ValidatedNel[ExpressionParseError, CompiledExpression] = {
     parse(original, fromTabularDataToT = createTabularDataDefinitionExpression(_, original))
   }
 

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.expression.{ExpressionTypingInfo, TypedExpression}
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
+import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 
 object CompiledParameter {
 

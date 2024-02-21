@@ -10,8 +10,9 @@ import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpressi
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.graph.expression.{DictKeyWithLabelExpression, Expression}
+import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.expression.{DictKeyWithLabelExpression, Expression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.KeyWithLabelExpressionParsingError
 
 case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String]) extends ExpressionTypingInfo {
