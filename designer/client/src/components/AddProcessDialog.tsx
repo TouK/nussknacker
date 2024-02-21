@@ -5,11 +5,11 @@ import { visualizationUrl } from "../common/VisualizationUrl";
 import { useProcessNameValidators } from "../containers/hooks/useProcessNameValidators";
 import HttpService, { ScenarioParametersCombination } from "../http/HttpService";
 import { WindowContent } from "../windowManager";
-import { AddProcessForm, FormValue } from "./AddProcessForm";
+import { AddProcessForm, FormValue, TouchedValue } from "./AddProcessForm";
 import { extendErrors, mandatoryValueValidator } from "./graph/node-modal/editors/Validators";
 import { useNavigate } from "react-router-dom";
 import { NodeValidationError } from "../types";
-import { flow, isEmpty } from "lodash";
+import { flow, isEmpty, transform } from "lodash";
 import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
 
 interface AddProcessDialogProps extends WindowContentProps {
@@ -21,7 +21,13 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     const { t } = useTranslation();
     const { isFragment = false, errors = [], ...passProps } = props;
     const nameValidators = useProcessNameValidators();
-    const [value, setState] = useState({ processName: "", processCategory: "", processingMode: "", processEngine: "" });
+    const [value, setState] = useState<FormValue>({ processName: "", processCategory: "", processingMode: "", processEngine: "" });
+    const [touched, setTouched] = useState<TouchedValue>({
+        processName: false,
+        processCategory: false,
+        processingMode: false,
+        processEngine: false,
+    });
     const [processNameFromBackend, setProcessNameFromBackendError] = useState<NodeValidationError[]>([]);
     const [engineSetupErrors, setEngineSetupErrors] = useState<Record<string, string[]>>({});
     const [allCombinations, setAllCombinations] = useState<ScenarioParametersCombination[]>([]);
@@ -71,13 +77,22 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         }
     }, [isFragment, validationErrors, navigate, passProps, value]);
 
+    const setAllFieldTouched = useCallback(() => {
+        setTouched((prevState) =>
+            transform(prevState, (currentObjet, _, key) => {
+                currentObjet[key.trim()] = true;
+            }),
+        );
+    }, []);
+
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => passProps.close() },
             {
                 title: t("dialog.button.create", "create"),
                 action: async () => {
-                    if (!isEmpty(validationErrors) && !isFormSubmitted) {
+                    if (!isEmpty(validationErrors)) {
+                        setAllFieldTouched();
                         setIsFormSubmitted(true);
                         return;
                     }
@@ -86,7 +101,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
                 disabled: !isEmpty(validationErrors) && isFormSubmitted,
             },
         ],
-        [createProcess, isFormSubmitted, passProps, t, validationErrors],
+        [createProcess, isFormSubmitted, passProps, setAllFieldTouched, t, validationErrors],
     );
 
     const onChange = (value: FormValue) => {
@@ -95,6 +110,10 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         if (processNameFromBackend.length > 0) {
             setProcessNameFromBackendError([]);
         }
+    };
+
+    const handleSetTouched = (touched: TouchedValue) => {
+        setTouched(touched);
     };
 
     useEffect(() => {
@@ -108,10 +127,12 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
             <AddProcessForm
                 value={value}
                 onChange={onChange}
-                validationErrors={isFormSubmitted ? validationErrors : []}
+                validationErrors={validationErrors}
                 categories={isCategoryFieldVisible ? categories : []}
                 processingModes={processingModes}
                 engines={isEngineFieldVisible ? engines : []}
+                touched={touched}
+                handleSetTouched={handleSetTouched}
             />
         </WindowContent>
     );

@@ -8,6 +8,7 @@ import { DATE_FORMAT } from "../../config";
 import moment from "moment";
 import i18next from "i18next";
 import { capitalize, startCase } from "lodash";
+import { ProcessingMode } from "../../http/HttpService";
 
 const ItemWrapperStyled = styled("div")({ display: "grid", gridAutoColumns: "minmax(0, 1fr)", gridAutoFlow: "column" });
 
@@ -36,6 +37,20 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
         [props, t],
     );
 
+    const processingModeVariantName = useMemo(() => {
+        switch (scenario.processingMode) {
+            case ProcessingMode.batch: {
+                return i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch");
+            }
+
+            case ProcessingMode.requestResponse: {
+                return i18next.t(`scenarioDetails.processingModeVariants.requestResponse`, "Request-Response");
+            }
+            case ProcessingMode.streaming:
+                return i18next.t(`scenarioDetails.processingModeVariants.streaming`, "Streaming");
+        }
+    }, [scenario.processingMode]);
+
     return (
         <WindowContent
             {...props}
@@ -56,13 +71,7 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
                             </ItemWrapperStyled>
                             <ItemWrapperStyled>
                                 <ItemLabelStyled>{i18next.t("scenarioDetails.label.processingMode", "Processing mode")}</ItemLabelStyled>
-                                <Typography variant={"body2"}>
-                                    {i18next.t(`scenarioDetails.processingMode`, `{{${scenario.processingMode}}}`, {
-                                        "Unbounded-Stream": "Streaming",
-                                        "Request-Response": "Request-Response",
-                                        "Bounded-Stream": "Batch",
-                                    })}
-                                </Typography>
+                                <Typography variant={"body2"}>{processingModeVariantName}</Typography>
                             </ItemWrapperStyled>
                             <ItemWrapperStyled>
                                 <ItemLabelStyled>{i18next.t("scenarioDetails.label.category", "Category")}</ItemLabelStyled>
