@@ -18,13 +18,15 @@ trait DeploymentService extends ProcessStateService {
   // We split deploy process that way because we want to be able to split FE logic into two phases:
   // - validations - it is quick part, the result will be displayed on deploy modal
   // - deployment on engine side - it is longer part, the result will be shown as a notification
+
+  // TODO: do we require comment here?
   def deployProcessAsync(
       id: ProcessIdWithName,
       savepointPath: Option[String],
-      comment: Option[String]
+      request: ActionRequest
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]]
 
-  def cancelProcess(id: ProcessIdWithName, comment: Option[String])(
+  def cancelProcess(id: ProcessIdWithName, request: ActionRequest)(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[Unit]
@@ -47,7 +49,7 @@ trait DeploymentService extends ProcessStateService {
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): Future[CustomActionResult]
+  ): Future[ActionResult]
 
 }
 

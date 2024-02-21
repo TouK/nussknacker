@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails._
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.restmodel.{ActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
@@ -407,7 +407,7 @@ class ManagementResourcesSpec
     createEmptyProcess(ProcessTestData.sampleProcessName)
     customAction(
       ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("hello"))
+      ActionRequest(ScenarioActionName("hello"))
     ) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = true, msg = "Hi")
@@ -418,7 +418,7 @@ class ManagementResourcesSpec
     createEmptyProcess(ProcessTestData.sampleProcessName)
     customAction(
       ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("non-existing"))
+      ActionRequest(ScenarioActionName("non-existing"))
     ) ~> check {
       status shouldBe StatusCodes.NotFound
       responseAs[String] shouldBe "non-existing is not existing"
@@ -429,7 +429,7 @@ class ManagementResourcesSpec
     createEmptyProcess(ProcessTestData.sampleProcessName)
     customAction(
       ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("not-implemented"))
+      ActionRequest(ScenarioActionName("not-implemented"))
     ) ~> check {
       status shouldBe StatusCodes.NotImplemented
       responseAs[String] shouldBe "an implementation is missing"
@@ -440,7 +440,7 @@ class ManagementResourcesSpec
     createEmptyProcess(ProcessTestData.sampleProcessName)
     customAction(
       ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("invalid-status"))
+      ActionRequest(ScenarioActionName("invalid-status"))
     ) ~> check {
       // TODO: "conflict" is coherrent with "canceled process can't be canceled again" above, consider changing to Forbidden
       status shouldBe StatusCodes.Conflict
@@ -452,7 +452,7 @@ class ManagementResourcesSpec
     createArchivedProcess(ProcessTestData.sampleProcessName)
     customAction(
       ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("hello"))
+      ActionRequest(ScenarioActionName("hello"))
     ) ~> check {
       // TODO: "conflict" is coherrent with "can't deploy fragment" above, consider changing to Forbidden
       status shouldBe StatusCodes.Conflict
@@ -463,7 +463,7 @@ class ManagementResourcesSpec
     createEmptyProcess(ProcessTestData.sampleProcessName, isFragment = true)
     customAction(
       ProcessTestData.sampleProcessName,
-      CustomActionRequest(ScenarioActionName("hello"))
+      ActionRequest(ScenarioActionName("hello"))
     ) ~> check {
       // TODO: "conflict" is coherrent with "can't deploy fragment" above, consider changing to Forbidden
       status shouldBe StatusCodes.Conflict

@@ -68,9 +68,9 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
   override def customActions: List[CustomAction] = List.empty
 
   override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
+      actionRequest: ActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] = stubbedActionResponse
+  ): Future[ActionResult] = stubbedActionResponse
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
     stubbedActionResponse

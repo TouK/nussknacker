@@ -16,7 +16,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionFailed, OnDeployActionSuccess}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
+  OnActionExecutionFinished,
+  OnDeployActionFailed,
+  OnDeployActionSuccess
+}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -58,28 +62,38 @@ class DeploymentServiceImpl(
 
   override def cancelProcess(
       processId: ProcessIdWithName,
-      comment: Option[String]
+      request: ActionRequest
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[Unit] = {
     val actionType = ProcessActionType.Cancel
+    val comment    = request.params.get("comment")
 
-    validateDeploymentComment(comment).flatMap { comment =>
-      checkCanPerformActionAndAddInProgressAction[Unit](
-        processId,
-        actionType,
-        _.lastDeployedAction.map(_.processVersionId),
-        _ => None
-      ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-        runDeploymentActionWithNotifications(
-          actionType,
-          actionId,
-          processId,
-          versionOnWhichActionIsDone,
-          comment,
-          buildInfoProcessIngType
-        ) {
-          dispatcher.deploymentManagerUnsafe(processDetails.processingType).cancel(processId.name, user.toManagerUser)
-        }.map(_ => ())
-      }
+    isOfActionType(request.name, actionType) match {
+      case Some(_) =>
+        validateDeploymentComment(comment).flatMap { comment =>
+          checkCanPerformActionAndAddInProgressAction[Unit](
+            processId,
+            actionType,
+            _.lastDeployedAction.map(_.processVersionId),
+            _ => None
+          ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
+            runDeploymentActionWithNotifications(
+              actionType,
+              actionId,
+              processId,
+              versionOnWhichActionIsDone,
+              comment,
+              buildInfoProcessIngType
+            ) {
+              dispatcher
+                .deploymentManagerUnsafe(processDetails.processingType)
+                .cancel(processId.name, user.toManagerUser)
+            }.map(_ => ())
+          }
+        }
+      case _ =>
+        Future.failed(
+          new IllegalArgumentException("Got a request for: " + request.name + " but ended up trying to cancel process")
+        )
     }
   }
 
@@ -91,41 +105,58 @@ class DeploymentServiceImpl(
   override def deployProcessAsync(
       processIdWithName: ProcessIdWithName,
       savepointPath: Option[String],
-      comment: Option[String]
+      request: ActionRequest
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] = {
-    val actionType = ProcessActionType.Deploy
-    validateDeploymentComment(comment).flatMap { validatedComment =>
-      checkCanPerformActionAndAddInProgressAction[CanonicalProcess](
-        processIdWithName,
-        actionType,
-        d => Some(d.processVersionId),
-        d => Some(d.processingType)
-      ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-        validateBeforeDeploy(processDetails, actionId).transformWith {
-          case Failure(ex) =>
-            dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
-          case Success(validationResult) =>
-            // we notify of deployment finish/fail only if initial validation succeeded
-            val deploymentFuture = runDeploymentActionWithNotifications(
-              actionType,
-              actionId,
-              processIdWithName,
-              versionOnWhichActionIsDone,
-              validatedComment,
-              buildInfoProcessIngType
-            ) {
-              dispatcher
-                .deploymentManagerUnsafe(processDetails.processingType)
-                .deploy(
-                  validationResult.processVersion,
-                  validationResult.deploymentData,
-                  validationResult.resolvedScenario,
-                  savepointPath
-                )
+    val actionType        = ProcessActionType.Deploy
+    val deploymentComment = request.params.get("comment")
+
+    isOfActionType(request.name, actionType) match {
+      case Some(_) =>
+        validateDeploymentComment(deploymentComment).flatMap { validatedComment =>
+          checkCanPerformActionAndAddInProgressAction[CanonicalProcess](
+            processIdWithName,
+            actionType,
+            d => Some(d.processVersionId),
+            d => Some(d.processingType)
+          ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
+            validateBeforeDeploy(processDetails, actionId).transformWith {
+              case Failure(ex) =>
+                dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
+              case Success(validationResult) =>
+                // we notify of deployment finish/fail only if initial validation succeeded
+                val deploymentFuture = runDeploymentActionWithNotifications(
+                  actionType,
+                  actionId,
+                  processIdWithName,
+                  versionOnWhichActionIsDone,
+                  validatedComment,
+                  buildInfoProcessIngType
+                ) {
+                  dispatcher
+                    .deploymentManagerUnsafe(processDetails.processingType)
+                    .deploy(
+                      validationResult.processVersion,
+                      validationResult.deploymentData,
+                      validationResult.resolvedScenario,
+                      savepointPath
+                    )
+                }
+                Future.successful(deploymentFuture)
             }
-            Future.successful(deploymentFuture)
+          }
         }
-      }
+      case _ =>
+        Future.failed(
+          new IllegalArgumentException("Got a request for: " + request.name + " but ended up trying to deploy process")
+        )
+    }
+  }
+
+  private def isOfActionType(name: ScenarioActionName, actionType: ProcessActionType): Option[Unit] = {
+    if (name == ScenarioActionName(actionType)) {
+      Some(())
+    } else {
+      None
     }
   }
 
@@ -556,7 +587,7 @@ class DeploymentServiceImpl(
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): Future[CustomActionResult] = {
+  ): Future[ActionResult] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     dbioRunner.run(
       for {
@@ -569,7 +600,7 @@ class DeploymentServiceImpl(
         processState <- DBIOAction.from(getProcessState(processDetails))
         manager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
         // Fetch and validate custom action details
-        actionReq = CustomActionRequest(
+        actionReq = ActionRequest(
           actionName,
           processDetails.toEngineProcessVersion,
           loggedUser.toManagerUser,

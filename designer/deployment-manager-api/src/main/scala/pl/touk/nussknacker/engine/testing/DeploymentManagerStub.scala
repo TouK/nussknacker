@@ -92,9 +92,9 @@ class DeploymentManagerStub extends DeploymentManager {
   override def customActions: List[CustomAction] = Nil
 
   override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
+      actionRequest: ActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] =
+  ): Future[ActionResult] =
     Future.failed(new NotImplementedError())
 
   override def close(): Unit = {}

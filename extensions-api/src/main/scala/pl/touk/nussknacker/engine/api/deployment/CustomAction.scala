@@ -29,11 +29,4 @@ case class CustomAction(
 //TODO: validators, defaultValue, hint, labelOpt?
 case class CustomActionParameter(name: String, editor: ParameterEditor)
 
-case class CustomActionRequest(
-    name: ScenarioActionName,
-    processVersion: ProcessVersion,
-    user: User,
-    params: Map[String, String]
-)
-
-case class CustomActionResult(req: CustomActionRequest, msg: String)
+case class ActionResult(req: ActionRequest, msg: String)
