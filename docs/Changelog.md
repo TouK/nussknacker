@@ -2,8 +2,8 @@
 
 1.14.0 (Not released yet)
 -------------------------
-* [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) Libraries bump:
-  * Flink: 1.16.2 -> 1.16.3
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) [#5552](https://github.com/TouK/nussknacker/pull/5552) Libraries bump:
+  * Flink: 1.16.2 -> 1.17.2
   * Cats Effect: 2.5.5 -> 3.5.2
   * Kafka client: 3.3.2 -> 3.6.1
   * Confluent Schema Registry client: 7.3.2 -> 7.5.1
