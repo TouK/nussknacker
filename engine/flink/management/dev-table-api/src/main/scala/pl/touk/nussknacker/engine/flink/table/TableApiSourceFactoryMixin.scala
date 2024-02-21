@@ -7,12 +7,12 @@ import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextI
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
-trait TableApiComponentFactoryMixin {
+trait TableApiSourceFactoryMixin {
 
-  // TODO local: type has to be calculated dynamically or based on schema
+  // TODO: type has to be calculated dynamically or based on configured schema
   protected type RECORD = java.util.Map[String, Any]
 
-  // TODO local: this context initialization was copied from kafka source - check this
+  // TODO: this context initialization was copied from kafka source
   protected val contextInitializer: ContextInitializer[RECORD] = new BasicContextInitializer[RECORD](Typed[RECORD])
 
   protected class FlinkContextInitializingFunction[T](

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.defaultmodel.table
+package pl.touk.nussknacker.experimental
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.table.autoloaded.AutoloadedTableApiComponentProvider
+import pl.touk.nussknacker.engine.flink.table.autoloaded.{HardcodedTableApiComponentProvider, BoundedSourceFactory}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess}
 
-class TableApiHardcodedSourceDebugTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
+class TableApiHardcodedSourceTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
   val sinkId       = "sinkId"
   val sourceId     = "sourceId"
@@ -27,13 +27,13 @@ class TableApiHardcodedSourceDebugTest extends AnyFunSuite with FlinkSpec with M
     val listener = initializeListener
     val model = LocalModelData(
       ConfigFactory.empty(),
-      FlinkBaseComponentProvider.Components ::: AutoloadedTableApiComponentProvider.ConfigIndependentComponents,
+      FlinkBaseComponentProvider.Components ::: HardcodedTableApiComponentProvider.ConfigIndependentComponents,
       configCreator = new ConfigCreatorWithCollectingListener(listener),
     )
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source(sourceId, "BoundedSource-TableApi")
+      .source(sourceId, "boundedSource-tableApi")
       .buildSimpleVariable(resultNodeId, "varName", "#input")
       .emptySink(sinkId, "dead-end")
 
@@ -53,7 +53,7 @@ class TableApiHardcodedSourceDebugTest extends AnyFunSuite with FlinkSpec with M
     stoppableEnv.executeAndWaitForFinished(testProcess.name.value)()
   }
 
-  private def collectTestResults[T](
+  private def collectTestResults(
       model: LocalModelData,
       testProcess: CanonicalProcess,
       collectingListener: ResultsCollectingListener

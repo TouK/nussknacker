@@ -11,10 +11,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.table.TableApiComponentFactoryMixin
+import pl.touk.nussknacker.engine.flink.table.TableApiSourceFactoryMixin
 
 // TODO: Shouldn't be unbounded - this is just for easier local development
-object BoundedSourceFactory extends SourceFactory with UnboundedStreamComponent with TableApiComponentFactoryMixin {
+object BoundedSourceFactory extends SourceFactory with UnboundedStreamComponent with TableApiSourceFactoryMixin {
 
   @MethodToInvoke
   def invoke(): Source = {

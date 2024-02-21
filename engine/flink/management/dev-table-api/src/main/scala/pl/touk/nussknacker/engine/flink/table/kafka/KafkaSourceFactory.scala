@@ -11,12 +11,14 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.table.TableApiComponentFactoryMixin
+import pl.touk.nussknacker.engine.flink.table.TableApiSourceFactoryMixin
 
+
+// TODO: experimental - this source should work minding the hardcoded values, but sink doesn't work
 class KafkaSourceFactory(config: KafkaTableApiConfig)
     extends SourceFactory
     with UnboundedStreamComponent
-    with TableApiComponentFactoryMixin {
+    with TableApiSourceFactoryMixin {
 
   @MethodToInvoke
   def invoke(): Source = {

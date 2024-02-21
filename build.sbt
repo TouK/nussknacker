@@ -105,8 +105,8 @@ lazy val publishSettings = Seq(
 def defaultMergeStrategy: String => MergeStrategy = {
   // remove JPMS module descriptors (a proper soultion would be to merge them)
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
-  // TODO local: this prevents https://stackoverflow.com/questions/60436823/issue-when-flink-upload-a-job-with-stream-sql-query
-  //  check it
+  // this prevents problem with table api in runtime:
+  // https://stackoverflow.com/questions/60436823/issue-when-flink-upload-a-job-with-stream-sql-query
   case PathList("org", "codehaus", "janino", "CompilerFactory.class") => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
@@ -467,7 +467,6 @@ componentArtifacts := {
   List(
     (flinkBaseComponents / assembly).value           -> "components/flink/flinkBase.jar",
     (flinkKafkaComponents / assembly).value          -> "components/flink/flinkKafka.jar",
-    (flinkTableApiComponents / assembly).value       -> "components/flink/flinkTableApi.jar",
     (liteBaseComponents / assembly).value            -> "components/lite/liteBase.jar",
     (liteKafkaComponents / assembly).value           -> "components/lite/liteKafka.jar",
     (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
@@ -489,8 +488,9 @@ lazy val devArtifacts = taskKey[List[(File, String)]]("dev artifacts")
 
 devArtifacts := {
   modelArtifacts.value ++ List(
-    (flinkDevModel / assembly).value -> "model/devModel.jar",
-    (devPeriodicDM / assembly).value -> "managers/devPeriodicDM.jar"
+    (experimentalFlinkTableApiComponents / assembly).value -> "model/devFlinkTableApi.jar",
+    (flinkDevModel / assembly).value                       -> "model/devModel.jar",
+    (devPeriodicDM / assembly).value                       -> "managers/devPeriodicDM.jar"
   )
 }
 
@@ -587,7 +587,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
         flinkDevModelJava / Compile / assembly,
         flinkBaseComponents / Compile / assembly,
         flinkKafkaComponents / Compile / assembly,
-        flinkTableApiComponents / Compile / assembly
+        experimentalFlinkTableApiComponents / Compile / assembly
       )
       .value,
     // flink cannot run tests and deployment concurrently
@@ -717,17 +717,17 @@ lazy val flinkTests = (project in flink("tests"))
     }
   )
   .dependsOn(
-    defaultModel            % "test",
-    flinkExecutor           % "test",
-    flinkKafkaComponents    % "test",
-    flinkBaseComponents     % "test",
-    flinkTestUtils          % "test",
-    kafkaTestUtils          % "test",
-    flinkComponentsTestkit  % "test",
-    flinkTableApiComponents % "test",
+    defaultModel                        % "test",
+    flinkExecutor                       % "test",
+    flinkKafkaComponents                % "test",
+    flinkBaseComponents                 % "test",
+    flinkTestUtils                      % "test",
+    kafkaTestUtils                      % "test",
+    flinkComponentsTestkit              % "test",
+    experimentalFlinkTableApiComponents % "test",
     // for local development
-    designer                % "test",
-    deploymentManagerApi    % "test"
+    designer                            % "test",
+    deploymentManagerApi                % "test"
   )
 
 lazy val defaultModel = (project in (file("defaultModel")))
@@ -1734,18 +1734,10 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
     componentsUtils    % Provided
   )
 
-//lazy val experimentalConnectors = Seq(
-//  "org.apache.flink" % "flink-connector-kafka" % flinkV % Provided,
-//)
-//
-//lazy val experimentalFormats = Seq(
-//  "org.apache.flink" % "flink-json" % flinkV % Provided,
-//)
-
-// TODO local: clean this up
-lazy val flinkTableApiComponents = (project in flink("components/table"))
+// TODO: clean this up - especially dependencies
+lazy val experimentalFlinkTableApiComponents = (project in flink("management/dev-table-api"))
   .settings(commonSettings)
-  .settings(assemblyNoScala("flinkTableApi.jar"): _*)
+  .settings(assemblyNoScala("devFlinkTableApi.jar"): _*)
   .settings(publishAssemblySettings: _*)
   .settings(
     name := "nussknacker-flink-table-components",
@@ -2030,7 +2022,7 @@ lazy val modules = List[ProjectReference](
   flinkBaseComponents,
   flinkBaseComponentsTests,
   flinkKafkaComponents,
-  flinkTableApiComponents,
+  experimentalFlinkTableApiComponents,
   liteComponentsApi,
   liteEngineKafkaComponentsApi,
   liteEngineRuntime,

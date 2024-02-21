@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
-import pl.touk.nussknacker.engine.flink.table.TableApiComponentFactoryMixin
+import pl.touk.nussknacker.engine.flink.table.TableApiSourceFactoryMixin
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink.valueFunction
 
 class KafkaSinkFactory(config: KafkaTableApiConfig)
     extends SinkFactory
     with UnboundedStreamComponent
-    with TableApiComponentFactoryMixin {
+    with TableApiSourceFactoryMixin {
 
   @MethodToInvoke
   def invoke(): Sink = {
@@ -43,13 +43,14 @@ class KafkaSinkFactory(config: KafkaTableApiConfig)
     ): DataStreamSink[_] = {
       val env            = dataStream.getExecutionEnvironment
       val tableEnv       = StreamTableEnvironment.create(env)
-      val tableName      = "kafkaSink"
+      val tableName      = config.topic
       val kafkaTopicName = "output1"
 
-      // TODO local: This is wrong - try:
+      // TODO: This is wrong - try:
       //  - getting a table with the data to be inserted into the sink
       //  - define a sink as TableDescriptor
       //  - insert the table straight into the sink table using descriptor
+      // TODO: probably parameters for schema will require this being a dynamic component
       addTableToEnv(tableEnv, flinkNodeContext, tableName, kafkaTopicName)
       val table = tableEnv.from(tableName)
 
