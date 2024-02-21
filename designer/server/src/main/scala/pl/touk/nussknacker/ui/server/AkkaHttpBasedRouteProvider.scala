@@ -180,7 +180,8 @@ class AkkaHttpBasedRouteProvider(
         processValidator,
         scenarioResolver,
         processChangeListener,
-        featureTogglesConfig.scenarioStateTimeout
+        featureTogglesConfig.scenarioStateTimeout,
+        featureTogglesConfig.deploymentCommentSettings
       )
       deploymentService.invalidateInProgressActions()
 
@@ -314,7 +315,6 @@ class AkkaHttpBasedRouteProvider(
           new ManagementResources(
             processAuthorizer,
             processService,
-            featureTogglesConfig.deploymentCommentSettings,
             deploymentService,
             dmDispatcher,
             metricsRegistry,
