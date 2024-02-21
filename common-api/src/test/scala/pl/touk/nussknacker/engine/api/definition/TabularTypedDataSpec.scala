@@ -68,20 +68,37 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
       )
       result should be(Left("All rows should have the same number of cells as there are columns"))
     }
-    "cannot convert some cell values to declared column's type" in {
-      val result = TabularTypedData.create(
-        columns = Vector(
-          Column.Definition("A", classOf[java.time.LocalDate]),
-          Column.Definition("B", classOf[java.lang.String]),
-          Column.Definition("C", classOf[java.lang.Integer]),
-        ),
-        rows = Vector(
-          Vector(RawValue("2024-01-01"), RawValue(null), RawValue("1")),
-          Vector(RawValue("1.0"), RawValue("foo"), RawValue("2")),
-          Vector(RawValue(null), RawValue(null), RawValue("3")),
+    "cannot convert some cell values to declared column's type when" - {
+      "the type is java.time.LocalDate" in {
+        val result = TabularTypedData.create(
+          columns = Vector(
+            Column.Definition("A", classOf[java.time.LocalDate]),
+            Column.Definition("B", classOf[java.lang.String]),
+            Column.Definition("C", classOf[java.lang.Integer]),
+          ),
+          rows = Vector(
+            Vector(RawValue("2024-01-01"), RawValue(null), RawValue("1")),
+            Vector(RawValue("1.0"), RawValue("foo"), RawValue("2")),
+            Vector(RawValue(null), RawValue(null), RawValue("3")),
+          )
         )
-      )
-      result should be(Left("Column has a 'java.time.LocalDate' type but the value '1.0' cannot be converted to it."))
+        result should be(Left("Column has a 'java.time.LocalDate' type but the value '1.0' cannot be converted to it."))
+      }
+      "the type is java.lang.Boolean" in {
+        val result = TabularTypedData.create(
+          columns = Vector(
+            Column.Definition("A", classOf[java.lang.Boolean]),
+            Column.Definition("B", classOf[java.lang.String]),
+            Column.Definition("C", classOf[java.lang.Integer]),
+          ),
+          rows = Vector(
+            Vector(RawValue("TRUE"), RawValue(null), RawValue("1")),
+            Vector(RawValue("False"), RawValue("foo"), RawValue("2")),
+            Vector(RawValue("fałsz"), RawValue(null), RawValue("3")),
+          )
+        )
+        result should be(Left("Column has a 'java.lang.Boolean' type but the value 'fałsz' cannot be converted to it."))
+      }
     }
   }
 
