@@ -28,7 +28,23 @@ class RemoteEnvironmentApiHttpService(
 )(implicit val ec: ExecutionContext)
     extends BaseHttpService(config, authenticator)
     with LazyLogging {
+
   import EitherTImplicits._
 
   private val remoteEnvironmentApiEndpoints = new RemoteEnvironmentApiEndpoints(authenticator.authenticationMethod())
+
+  private def withProcess[T: Encoder](
+      processIdWithName: ProcessIdWithName,
+      version: VersionId,
+      fun: ScenarioWithDetails => Future[Either[NuDesignerError, T]]
+  )(implicit user: LoggedUser) = {
+    processService
+      .getProcessWithDetails(
+        processIdWithName,
+        version,
+        GetScenarioWithDetailsOptions.withsScenarioGraph
+      )
+      .flatMap(fun)
+  }
+
 }
