@@ -27,8 +27,8 @@ function dedup(values: string[], name: string): string {
     return name;
 }
 
-export function getNextColumnName(names: string[], index: number) {
-    return dedup(names, getLetterColumnName(index));
+export function getNextColumnName(names: string[], index: number, name?: string) {
+    return dedup(names, name || getLetterColumnName(index));
 }
 
 function expandArray<T>(array: T[], length: number, fill?: (i: number) => T): T[] {
@@ -60,4 +60,8 @@ export function expandTable(state: TableData, rowsNum = 0, colsNum = 0, dataType
         columns,
         rows,
     };
+}
+
+export function normalizeValue(value: string) {
+    return value.trim() || null;
 }

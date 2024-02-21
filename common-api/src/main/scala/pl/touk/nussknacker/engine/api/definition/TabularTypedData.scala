@@ -100,7 +100,7 @@ object TabularTypedData {
   private def fromStringToSupportedClassInstance(value: String, toType: Class[_]): Try[Any] = Try {
     toType match {
       case t if classOf[java.lang.String] == t        => value
-      case t if classOf[java.lang.Boolean] == t       => java.lang.Boolean.valueOf(value)
+      case t if classOf[java.lang.Boolean] == t       => stringToJavaBoolean(value)
       case t if classOf[java.lang.Integer] == t       => java.lang.Integer.valueOf(value)
       case t if classOf[java.lang.Float] == t         => java.lang.Float.valueOf(value)
       case t if classOf[java.lang.Double] == t        => java.lang.Double.valueOf(value)
@@ -109,6 +109,14 @@ object TabularTypedData {
       case t if classOf[java.time.LocalDate] == t     => java.time.LocalDate.parse(value)
       case t if classOf[java.time.LocalDateTime] == t => java.time.LocalDateTime.parse(value)
       case t => throw new IllegalArgumentException(s"Type ${t.getCanonicalName} is not supported")
+    }
+  }
+
+  private def stringToJavaBoolean(value: String) = {
+    value.toLowerCase match {
+      case "true"  => java.lang.Boolean.TRUE
+      case "false" => java.lang.Boolean.FALSE
+      case _       => throw new IllegalArgumentException(s"Cannot convert $value to java.lang.Boolean")
     }
   }
 
