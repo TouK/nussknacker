@@ -68,6 +68,15 @@ jobs:
           else
             echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
           fi
+      - name: Log diskspace
+        id: disk_space
+        shell: bash
+        run: |
+          echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          df -h
+          echo "$AGENT_TOOLSDIRECTORY"
+          ls -l "$AGENT_TOOLSDIRECTORY"
+          echo "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
 
   build:
     name: Build
