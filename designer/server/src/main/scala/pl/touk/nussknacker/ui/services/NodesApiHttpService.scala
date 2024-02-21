@@ -183,7 +183,9 @@ class NodesApiHttpService(
   ): EitherT[Future, NodesError, ScenarioWithDetails] = {
     scenarioWithDetails(scenarioId, scenarioName)
       .eitherT()
-      .leftMap(e => NodesError.NoScenario(e.scenarioName))
+      .leftMap { no: NoScenario =>
+        NodesError.NoScenario(no.scenarioName)
+      }
   }
 
   private def scenarioWithDetails(scenarioId: ProcessId, scenarioName: ProcessName)(implicit user: LoggedUser) = {
@@ -193,7 +195,7 @@ class NodesApiHttpService(
         GetScenarioWithDetailsOptions.detailsOnly
       )
       .map(scenario => Right(scenario))
-      .recover(_ => Left(NoScenario(scenarioName)))
+      .recover { case _: Throwable => Left(NoScenario(scenarioName)) }
   }
 
   private def dtoToNodeRequest(nodeValidationRequestDto: NodeValidationRequestDto, modelData: ModelData) = {

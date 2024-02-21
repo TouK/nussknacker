@@ -497,6 +497,7 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
       security:
+      - {}
       - httpAuth: []
   /api/nodes/{scenarioName}/validation:
     post:
@@ -561,6 +562,7 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
       security:
+      - {}
       - httpAuth: []
   /api/parameters/{processingType}/suggestions:
     post:
@@ -623,6 +625,7 @@ paths:
               schema:
                 type: string
       security:
+      - {}
       - httpAuth: []
   /api/parameters/{processingType}/validate:
     post:
@@ -683,6 +686,7 @@ paths:
               schema:
                 type: string
       security:
+      - {}
       - httpAuth: []
   /api/properties/{scenarioName}/additionalInfo:
     post:
@@ -747,6 +751,7 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
       security:
+      - {}
       - httpAuth: []
   /api/properties/{scenarioName}/validation:
     post:
@@ -811,6 +816,7 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
       security:
+      - {}
       - httpAuth: []
   /api/notifications:
     get:
@@ -1439,6 +1445,13 @@ components:
           type: string
         valueType:
           $ref: '#/components/schemas/TypedTaggedValue'
+    DictParameterEditor:
+      required:
+      - dictId
+      type: object
+      properties:
+        dictId:
+          type: string
     DisplayableUser:
       required:
       - id
@@ -1998,6 +2011,7 @@ components:
       - $ref: '#/components/schemas/CronParameterEditor'
       - $ref: '#/components/schemas/DateParameterEditor'
       - $ref: '#/components/schemas/DateTimeParameterEditor'
+      - $ref: '#/components/schemas/DictParameterEditor'
       - $ref: '#/components/schemas/DualParameterEditor'
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
@@ -2007,6 +2021,7 @@ components:
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
       - $ref: '#/components/schemas/SqlParameterEditor'
       - $ref: '#/components/schemas/StringParameterEditor'
+      - $ref: '#/components/schemas/TabularTypedDataEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
     ParameterValueCompileTimeValidation:
@@ -2242,6 +2257,7 @@ components:
       - $ref: '#/components/schemas/CronParameterEditor'
       - $ref: '#/components/schemas/DateParameterEditor'
       - $ref: '#/components/schemas/DateTimeParameterEditor'
+      - $ref: '#/components/schemas/DictParameterEditor'
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
@@ -2249,6 +2265,7 @@ components:
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'
       - $ref: '#/components/schemas/SqlParameterEditor'
       - $ref: '#/components/schemas/StringParameterEditor'
+      - $ref: '#/components/schemas/TabularTypedDataEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
     Sink:
@@ -2342,6 +2359,8 @@ components:
         additionalFields:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SwitchDefault:
+      type: object
+    TabularTypedDataEditor:
       type: object
     TextareaParameterEditor:
       type: object
