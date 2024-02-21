@@ -5,6 +5,7 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{
   DeploymentIdSequence,
@@ -64,10 +65,12 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       processName = processName,
       processVersionId = VersionId.initialVersionId,
       processingType = processingType,
-      processJson = ScenarioBuilder
-        .streaming(processName.value)
-        .source("start", "source")
-        .emptySink("end", "KafkaSink"),
+      processJson = Some(
+        ScenarioBuilder
+          .streaming(processName.value)
+          .source("start", "source")
+          .emptySink("end", "KafkaSink")
+      ),
       inputConfigDuringExecutionJson = "{}",
       jarFileName = "",
       scheduleProperty = scheduleProperty.asJson.noSpaces,
@@ -113,7 +116,8 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   override def create(
       deploymentWithJarData: DeploymentWithJarData,
       scheduleProperty: ScheduleProperty,
-      processActionId: ProcessActionId
+      processActionId: ProcessActionId,
+      canonicalProcess: CanonicalProcess
   ): PeriodicProcess = {
     val id = PeriodicProcessId(Random.nextLong())
     val periodicProcess = PeriodicProcessEntity(
@@ -121,7 +125,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       processName = deploymentWithJarData.processVersion.processName,
       processVersionId = deploymentWithJarData.processVersion.versionId,
       processingType = processingType,
-      processJson = deploymentWithJarData.canonicalProcess,
+      processJson = Some(canonicalProcess),
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,
@@ -286,6 +290,12 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   private def readyToRun(deployments: Seq[PeriodicProcessDeployment]): Seq[PeriodicProcessDeployment] = {
     val now = LocalDateTime.now()
     deployments.filter(d => d.runAt.isBefore(now) || d.runAt.isEqual(now))
+  }
+
+  override def findScenarioJson(periodicProcessId: PeriodicProcessId): CanonicalProcess = {
+    (for {
+      p <- processEntities if p.id == periodicProcessId
+    } yield p.processJson.get).head
   }
 
 }

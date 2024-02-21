@@ -13,13 +13,11 @@ class JarManagerStub extends JarManager {
   var lastDeploymentWithJarData: Option[DeploymentWithJarData]  = None
 
   override def prepareDeploymentWithJar(
-      processVersion: ProcessVersion,
-      canonicalProcess: CanonicalProcess
+      processVersion: ProcessVersion
   ): Future[DeploymentWithJarData] = {
     Future.successful(
       model.DeploymentWithJarData(
         processVersion = processVersion,
-        canonicalProcess = canonicalProcess,
         inputConfigDuringExecutionJson = "",
         jarFileName = ""
       )
@@ -28,7 +26,8 @@ class JarManagerStub extends JarManager {
 
   override def deployWithJar(
       deploymentWithJarData: DeploymentWithJarData,
-      deploymentData: DeploymentData
+      deploymentData: DeploymentData,
+      canonicalProcess: CanonicalProcess
   ): Future[Option[ExternalDeploymentId]] = {
     lastDeploymentWithJarData = Some(deploymentWithJarData)
     deployWithJarFuture
