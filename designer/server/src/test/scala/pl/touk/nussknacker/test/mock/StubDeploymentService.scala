@@ -28,11 +28,11 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   override def deployProcessAsync(
       id: ProcessIdWithName,
       savepointPath: Option[String],
-      deploymentComment: Option[DeploymentComment]
+      deploymentComment: Option[String]
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] =
     Future.successful(Future.successful(None))
 
-  override def cancelProcess(id: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(
+  override def cancelProcess(id: ProcessIdWithName, deploymentComment: Option[String])(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[Unit] = Future.successful(())

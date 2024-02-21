@@ -89,7 +89,6 @@ class ProcessesChangeListenerSpec
 
     deployProcess(
       processName,
-      Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
       comment
     ) ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern {
@@ -114,7 +113,6 @@ class ProcessesChangeListenerSpec
 
     cancelProcess(
       ProcessTestData.sampleScenario.name,
-      Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
       comment
     ) ~> checkEventually {
       val head = processChangeListener.events.toArray.last
