@@ -110,8 +110,9 @@ object FlinkMiniClusterHolder {
 
   case class AdditionalEnvironmentConfig(
       detachedClient: Boolean = true,
+      // On the CI, 10 seconds is sometimes too low
       defaultWaitForStatePatience: PatienceConfig =
-        PatienceConfig(timeout = scaled(Span(10, Seconds)), interval = scaled(Span(100, Millis)))
+        PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis)))
   )
 
 }
