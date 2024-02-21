@@ -1,14 +1,18 @@
 package pl.touk.nussknacker.ui.services
 
+import cats.data.EitherT
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
+import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.ScenarioName
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.definition.UIValueParameter
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
   ExpressionSuggestionDto,
@@ -25,7 +29,12 @@ import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
 }
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{MalformedTypingResult, NoProcessingType, NoScenario}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{
+  MalformedTypingResult,
+  NoPermission,
+  NoProcessingType,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
@@ -35,6 +44,7 @@ import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.util.EitherTImplicits
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 
+import scala.concurrent.impl.Promise
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -63,12 +73,7 @@ class NodesApiHttpService(
         { case (scenarioName, nodeData) =>
           for {
             scenarioId <- getScenarioIdByName(scenarioName)
-            scenario <- scenarioService
-              .getLatestProcessWithDetails(
-                ProcessIdWithName(scenarioId, scenarioName),
-                GetScenarioWithDetailsOptions.detailsOnly
-              )
-              .eitherT()
+            scenario   <- getScenarioWithDetails(scenarioId, scenarioName)
             additionalInfo <- additionalInfoProviders
               .prepareAdditionalInfoForNode(nodeData, scenario.processingType)
               .eitherT()
@@ -84,13 +89,8 @@ class NodesApiHttpService(
         { case (scenarioName, nodeValidationRequestDto) =>
           for {
             scenarioId <- getScenarioIdByName(scenarioName)
-            scenario <- scenarioService
-              .getLatestProcessWithDetails(
-                ProcessIdWithName(scenarioId, scenarioName),
-                GetScenarioWithDetailsOptions.detailsOnly
-              )
-              .eitherT()
-            modelData <- getModelData(scenario.processingType)
+            scenario   <- getScenarioWithDetails(scenarioId, scenarioName)
+            modelData  <- getModelData(scenario.processingType)
             nodeValidator = typeToNodeValidator.forTypeUnsafe(scenario.processingType)
             nodeData   <- dtoToNodeRequest(nodeValidationRequestDto, modelData)
             validation <- getNodeValidation(nodeValidator, scenarioName, nodeData)
@@ -107,12 +107,7 @@ class NodesApiHttpService(
         { case (scenarioName, scenarioProperties) =>
           for {
             scenarioId <- getScenarioIdByName(scenarioName)
-            scenario <- scenarioService
-              .getLatestProcessWithDetails(
-                ProcessIdWithName(scenarioId, scenarioName),
-                GetScenarioWithDetailsOptions.detailsOnly
-              )
-              .eitherT()
+            scenario   <- getScenarioWithDetails(scenarioId, scenarioName)
             additionalInfo <- additionalInfoProviders
               .prepareAdditionalInfoForProperties(
                 scenarioProperties.toMetaData(scenarioName),
@@ -130,13 +125,8 @@ class NodesApiHttpService(
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, request) =>
           for {
-            scenarioId <- getScenarioIdByName(scenarioName)
-            scenarioWithDetails <- scenarioService
-              .getLatestProcessWithDetails(
-                ProcessIdWithName(scenarioId, scenarioName),
-                GetScenarioWithDetailsOptions.detailsOnly
-              )
-              .eitherT()
+            scenarioId          <- getScenarioIdByName(scenarioName)
+            scenarioWithDetails <- getScenarioWithDetails(scenarioId, scenarioName)
             scenario = ScenarioGraph(ProcessProperties(request.additionalFields), Nil, Nil)
             result = typeToProcessValidator
               .forTypeUnsafe(scenarioWithDetails.processingType)
@@ -188,6 +178,24 @@ class NodesApiHttpService(
       .toRightEitherT(NoScenario(scenarioName))
   }
 
+  private def getScenarioWithDetails(scenarioId: ProcessId, scenarioName: ProcessName)(
+      implicit user: LoggedUser
+  ): EitherT[Future, NodesError, ScenarioWithDetails] = {
+    scenarioWithDetails(scenarioId, scenarioName)
+      .eitherT()
+      .leftMap(e => NodesError.NoScenario(e.scenarioName))
+  }
+
+  private def scenarioWithDetails(scenarioId: ProcessId, scenarioName: ProcessName)(implicit user: LoggedUser) = {
+    scenarioService
+      .getLatestProcessWithDetails(
+        ProcessIdWithName(scenarioId, scenarioName),
+        GetScenarioWithDetailsOptions.detailsOnly
+      )
+      .map(scenario => Right(scenario))
+      .recover(_ => Left(NoScenario(scenarioName)))
+  }
+
   private def dtoToNodeRequest(nodeValidationRequestDto: NodeValidationRequestDto, modelData: ModelData) = {
     Future[Either[NodesError, NodeValidationRequest]](
       fromNodeRequestDto(nodeValidationRequestDto)(prepareTypingResultDecoder(modelData))
@@ -196,8 +204,11 @@ class NodesApiHttpService(
 
   private def getModelData(processingType: ProcessingType)(implicit user: LoggedUser) = {
     Future(
-      Try(typeToConfig.forTypeUnsafe(processingType)).toEither.left.map { case _: IllegalArgumentException =>
-        NoProcessingType(processingType)
+      Try(typeToConfig.forTypeUnsafe(processingType)).toEither.left.map {
+        case _: IllegalArgumentException =>
+          NoProcessingType(processingType)
+        case _: UnauthorizedError =>
+          NoPermission
       }
     )
       .eitherT()
