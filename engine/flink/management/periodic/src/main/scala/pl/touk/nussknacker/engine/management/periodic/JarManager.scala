@@ -11,12 +11,12 @@ private[periodic] trait JarManager {
 
   def prepareDeploymentWithJar(
       processVersion: ProcessVersion,
-      canonicalProcess: CanonicalProcess
   ): Future[DeploymentWithJarData]
 
   def deployWithJar(
       deploymentWithJarData: DeploymentWithJarData,
-      deploymentData: DeploymentData
+      deploymentData: DeploymentData,
+      canonicalProcess: CanonicalProcess
   ): Future[Option[ExternalDeploymentId]]
 
   def deleteJar(jarFileName: String): Future[Unit]

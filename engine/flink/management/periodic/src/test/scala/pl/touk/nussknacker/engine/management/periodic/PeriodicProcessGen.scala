@@ -15,7 +15,6 @@ object PeriodicProcessGen {
       id = PeriodicProcessId(42),
       deploymentData = DeploymentWithJarData(
         processVersion = ProcessVersion.empty,
-        canonicalProcess = buildCanonicalProcess(),
         inputConfigDuringExecutionJson = "{}",
         jarFileName = "jar-file-name.jar"
       ),

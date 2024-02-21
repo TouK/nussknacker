@@ -25,7 +25,6 @@ import pl.touk.nussknacker.engine.management.periodic.service._
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, LocalDateTime}
-import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -104,17 +103,23 @@ class PeriodicProcessService(
   ): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
     for {
-      deploymentWithJarData <- jarManager.prepareDeploymentWithJar(processVersion, canonicalProcess)
+      deploymentWithJarData <- jarManager.prepareDeploymentWithJar(processVersion)
       enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(
         ProcessConfigEnricher.InitialScheduleData(
-          deploymentWithJarData.canonicalProcess,
+          canonicalProcess,
           deploymentWithJarData.inputConfigDuringExecutionJson
         )
       )
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson =
         enrichedProcessConfig.inputConfigDuringExecutionJson
       )
-      _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData, processActionId)
+      _ <- initialSchedule(
+        scheduleProperty,
+        scheduleDates,
+        enrichedDeploymentWithJarData,
+        processActionId,
+        canonicalProcess
+      )
     } yield ()
   }
 
@@ -122,10 +127,11 @@ class PeriodicProcessService(
       scheduleMap: ScheduleProperty,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
       deploymentWithJarData: DeploymentWithJarData,
-      processActionId: ProcessActionId
+      processActionId: ProcessActionId,
+      canonicalProcess: CanonicalProcess
   ): Future[Unit] = {
     scheduledProcessesRepository
-      .create(deploymentWithJarData, scheduleMap, processActionId)
+      .create(deploymentWithJarData, scheduleMap, processActionId, canonicalProcess)
       .flatMap { process =>
         scheduleDates.collect {
           case (name, Some(date)) =>
@@ -372,9 +378,10 @@ class PeriodicProcessService(
       _ <- Future.successful(
         logger.info("Deploying scenario {} for deployment id {}", deploymentWithJarData.processVersion, id)
       )
+      scenarioJson <- scheduledProcessesRepository.findScenarioJson(deployment.periodicProcess.id).run
       enrichedProcessConfig <- processConfigEnricher.onDeploy(
         ProcessConfigEnricher.DeployData(
-          deploymentWithJarData.canonicalProcess,
+          scenarioJson,
           deploymentWithJarData.inputConfigDuringExecutionJson,
           deployment
         )
@@ -382,7 +389,7 @@ class PeriodicProcessService(
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson =
         enrichedProcessConfig.inputConfigDuringExecutionJson
       )
-      externalDeploymentId <- jarManager.deployWithJar(enrichedDeploymentWithJarData, deploymentData)
+      externalDeploymentId <- jarManager.deployWithJar(enrichedDeploymentWithJarData, deploymentData, scenarioJson)
     } yield externalDeploymentId
     deploymentAction
       .flatMap { externalDeploymentId =>

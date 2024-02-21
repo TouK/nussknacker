@@ -50,7 +50,7 @@ class JarManagerTest extends AnyFunSuite with Matchers with ScalaFutures with Pa
   }
 
   test("prepareDeploymentWithJar - should copy to local dir") {
-    val result = jarManager.prepareDeploymentWithJar(processVersion, process)
+    val result = jarManager.prepareDeploymentWithJar(processVersion)
 
     val copiedJarFileName = result.futureValue.jarFileName
     copiedJarFileName should fullyMatch regex s"^$processName-$processVersionId-\\d+\\.jar$$"
@@ -70,11 +70,11 @@ class JarManagerTest extends AnyFunSuite with Matchers with ScalaFutures with Pa
       Files.delete(copiedJarFile)
     }
 
-    verifyAndDeleteJar(jarManager.prepareDeploymentWithJar(processVersion, process))
+    verifyAndDeleteJar(jarManager.prepareDeploymentWithJar(processVersion))
 
     modelJarProvider.getJobJar().delete() shouldBe true
 
-    verifyAndDeleteJar(jarManager.prepareDeploymentWithJar(processVersion, process))
+    verifyAndDeleteJar(jarManager.prepareDeploymentWithJar(processVersion))
   }
 
   test("prepareDeploymentWithJar - should create jars dir if not exists") {
@@ -84,7 +84,7 @@ class JarManagerTest extends AnyFunSuite with Matchers with ScalaFutures with Pa
 
     Files.exists(jarsDir) shouldBe false
 
-    val result = jarManager.prepareDeploymentWithJar(processVersion, process)
+    val result = jarManager.prepareDeploymentWithJar(processVersion)
 
     val copiedJarFileName = result.futureValue.jarFileName
     Files.exists(jarsDir) shouldBe true
