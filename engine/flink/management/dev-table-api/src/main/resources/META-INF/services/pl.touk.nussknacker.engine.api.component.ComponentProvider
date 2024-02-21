@@ -1,1 +1,3 @@
 pl.touk.nussknacker.engine.flink.table.autoloaded.HardcodedTableApiComponentProvider
+pl.touk.nussknacker.engine.flink.table.generic.GenericTableComponentProvider
+
