@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import sttp.tapir.Schema
 
 // It is a minimal set of information used by migration mechanism
 @JsonCodec final case class ScenarioWithDetailsForMigrations(
@@ -26,7 +27,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
   def validationResultUnsafe: ValidationResults.ValidationResult =
     validationResult.getOrElse(throw new IllegalStateException("Missing validation result"))
+}
 
+object ScenarioWithDetailsForMigrations {
+  implicit val scenarioGraph: Schema[ScenarioWithDetailsForMigrations] = ???
 }
 
 // This trait is extracted for easier monitoring changes in the /processes api that have an influence on the migration API
