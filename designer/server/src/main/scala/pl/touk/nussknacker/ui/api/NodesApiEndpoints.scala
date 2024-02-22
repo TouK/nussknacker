@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.ProcessProperties
-import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -38,6 +38,7 @@ import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{
 }
 import pl.touk.nussknacker.ui.services.BaseHttpService.CustomAuthorizationError
 import sttp.tapir.EndpointIO.Example
+import sttp.tapir.SchemaType.SString
 import sttp.tapir.derevo.schema
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -290,7 +291,7 @@ object NodesApiEndpoints {
         label: String
     )
 
-    object UIParameterDto {
+    private object UIParameterDto {
       implicit lazy val parameterEditorSchema: Schema[ParameterEditor]    = Schema.derived
       implicit lazy val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
       implicit lazy val expressionSchema: Schema[Expression]              = Schema.derived
@@ -513,6 +514,7 @@ object TypingDtoSchemas {
     Schema.derived.hidden(true)
 
   implicit lazy val additionalDataValueSchema: Schema[AdditionalDataValue] = Schema.derived
+  private val encoder                                                      = Encoder[TypingResult]
 
   implicit lazy val typedObjectTypingResultSchema: Schema[TypedObjectTypingResult] = {
     Schema(
@@ -530,6 +532,7 @@ object TypingDtoSchemas {
       Some(SName("TypedObjectTypingResult"))
     )
       .title("TypedObjectTypingResult")
+      .encodedExample(encoder.apply(TypedObjectTypingResult(Map("hi" -> Typed.fromInstance(5)))))
       .as
   }
 
@@ -580,9 +583,19 @@ object TypingDtoSchemas {
     Schema.derived.name(Schema.SName("TypedNull")).title("TypedNull")
 
   implicit lazy val unknownSchema: Schema[Unknown.type] =
-    Schema.derived.name(Schema.SName("Unknown")).title("Unknown")
+    Schema.derived
+      .name(Schema.SName("Unknown"))
+      .title("Unknown")
+      .encodedExample(
+        Json.obj(
+          "display"      -> Json.fromString("Unknown"),
+          "type"         -> Json.fromString("Unknown"),
+          "refClazzName" -> Json.fromString("java.lang.Object"),
+          "params"       -> Json.fromValues(List.empty)
+        )
+      )
 
-  implicit lazy val unionSchema: Schema[TypedUnion] = {
+  implicit lazy val typedUnionSchema: Schema[TypedUnion] = {
     Schema(
       SchemaType.SProduct(
         sProductFieldForDisplayAndType :::
@@ -597,6 +610,11 @@ object TypingDtoSchemas {
       Some(Schema.SName("TypedUnion"))
     )
       .title("TypedUnion")
+      .encodedExample(
+        encoder.apply(
+          Typed.apply(Typed.apply(Integer.TYPE), Typed.apply(Class.forName("java.lang.String")))
+        )
+      )
       .as
   }
 
@@ -609,12 +627,24 @@ object TypingDtoSchemas {
       Some(SName("TypedClass"))
     )
       .title("TypedClass")
+      .encodedExample(
+        Json.obj(
+          "display"      -> Json.fromString("Integer"),
+          "type"         -> Json.fromString("TypedClass"),
+          "refClazzName" -> Json.fromString("java.lang.Integer"),
+          "params"       -> Json.fromValues(List.empty)
+        )
+      )
       .as
   }
 
   private lazy val sProductFieldForDisplayAndType: List[SProductField[String]] = {
     List(
-      SProductField[String, String](FieldName("display"), Schema.string, display => Some(display)),
+      SProductField[String, String](
+        FieldName("display"),
+        Schema(SString(), isOptional = true),
+        display => Some(display)
+      ),
       SProductField[String, TypingType](
         FieldName("type"),
         Schema.derivedEnumerationValue,

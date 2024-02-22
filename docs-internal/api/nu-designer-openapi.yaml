@@ -2369,7 +2369,6 @@ components:
     TypedClass:
       title: TypedClass
       required:
-      - display
       - type
       - refClazzName
       type: object
@@ -2384,10 +2383,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TypingResult'
+      example:
+        display: Integer
+        type: TypedClass
+        refClazzName: java.lang.Integer
+        params: []
     TypedDict:
       title: TypedDict
       required:
-      - display
       - type
       - dict
       type: object
@@ -2404,7 +2407,6 @@ components:
     TypedObjectTypingResult:
       title: TypedObjectTypingResult
       required:
-      - display
       - type
       - fields
       - refClazzName
@@ -2422,11 +2424,31 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TypingResult'
+      example:
+        display: 'Record{hi: Integer(5)}'
+        type: TypedObjectTypingResult
+        fields:
+          hi:
+            value: 5
+            display: Integer(5)
+            type: TypedObjectWithValue
+            refClazzName: java.lang.Integer
+            params: []
+        refClazzName: java.util.Map
+        params:
+        - display: String
+          type: TypedClass
+          refClazzName: java.lang.String
+          params: []
+        - value: 5
+          display: Integer(5)
+          type: TypedObjectWithValue
+          refClazzName: java.lang.Integer
+          params: []
     TypedObjectWithValue:
       title: TypedObjectWithValue
       required:
       - value
-      - display
       - type
       - refClazzName
       type: object
@@ -2446,7 +2468,6 @@ components:
       title: TypedTaggedValue
       required:
       - tag
-      - display
       - type
       - refClazzName
       type: object
@@ -2466,7 +2487,6 @@ components:
     TypedUnion:
       title: TypedUnion
       required:
-      - display
       - type
       type: object
       properties:
@@ -2478,6 +2498,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TypingResult'
+      example:
+        display: Integer | String
+        type: TypedUnion
+        union:
+        - display: Integer
+          type: TypedClass
+          refClazzName: java.lang.Integer
+          params: []
+        - display: String
+          type: TypedClass
+          refClazzName: java.lang.String
+          params: []
     TypingResult:
       oneOf:
       - $ref: '#/components/schemas/TypedClass'
@@ -2548,6 +2580,11 @@ components:
     Unknown:
       title: Unknown
       type: object
+      example:
+        display: Unknown
+        type: Unknown
+        refClazzName: java.lang.Object
+        params: []
     UserDefinedAdditionalNodeFields:
       type: object
       properties:

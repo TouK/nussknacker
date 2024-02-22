@@ -1,10 +1,14 @@
 package pl.touk.nussknacker.ui.api
 
+import io.circe.Json
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.must.Matchers.defined
+import pl.touk.nussknacker.engine.api.typed.{TypingResultDecoder, TypingType, typing}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
@@ -923,6 +927,37 @@ class NodesApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .body(equalTo("[]"))
+    }
+  }
+
+  "if TypingResult changed - Schemas in `NodesApiEndpoints` should be changed too" in {
+    val decoder = new TypingResultDecoder(getClass.getClassLoader.loadClass)
+    import TypingDtoSchemas._
+
+    val schemaAsString = typingResult.schemaType.toString
+
+//    If changed here should also change in NodesApiEndpoints.TypingDtoSchemas
+    List(
+      TypingType.TypedClass.toString,
+      TypingType.TypedUnion.toString,
+      TypingType.TypedDict.toString,
+      TypingType.TypedObjectTypingResult.toString,
+      TypingType.TypedTaggedValue.toString,
+      TypingType.TypedObjectWithValue.toString,
+      TypingType.TypedNull.toString,
+      TypingType.Unknown.toString,
+    )
+      .foreach(schemaAsString contains _ shouldBe true)
+
+    val failMessage = "Example couldn't be decoded -> need to change schema in NodesApiEndpoints.TypingDtoSchemas"
+
+    decoder.decodeTypingResults.decodeJson(typedClassSchema.encodedExample.get.asInstanceOf[Json]) match {
+      case Left(_)      => fail(failMessage)
+      case Right(value) => value.isInstanceOf[typing.TypedClass] shouldBe true
+    }
+    decoder.decodeTypingResults.decodeJson(unknownSchema.encodedExample.get.asInstanceOf[Json]) match {
+      case Left(_)      => fail(failMessage)
+      case Right(value) => value shouldBe typing.Unknown
     }
   }
 
