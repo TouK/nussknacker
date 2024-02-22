@@ -107,11 +107,19 @@ class K8sDeploymentManager(
     .map(path => Using.resource(Source.fromFile(path))(_.mkString))
     .getOrElse(defaultLogbackConfig)
 
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = {
+  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+    command match {
+      case command: ValidateScenarioCommand => validate(command)
+      case command: RunDeploymentCommand    => runDeployment(command)
+      case command: CancelScenarioCommand   => cancelScenario(command)
+      case command: TestScenarioCommand     => processTestActionCommand(command)
+      case _: CancelDeploymentCommand | _: StopDeploymentCommand | _: StopScenarioCommand |
+          _: MakeAScenarioSavepointCommand | _: CustomActionCommand =>
+        notImplemented
+    }
+
+  private def validate(command: ValidateScenarioCommand): Future[Unit] = {
+    import command._
     val scalingOptions = determineScalingOptions(canonicalProcess)
     val deploymentStrategy = deploymentPreparer
       .prepare(
@@ -142,12 +150,8 @@ class K8sDeploymentManager(
     } yield ()
   }
 
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  private def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+    import command._
     val scalingOptions = determineScalingOptions(canonicalProcess)
     logger.debug(s"Deploying $processVersion")
     for {
@@ -276,9 +280,10 @@ class K8sDeploymentManager(
     }
   }
 
-  override def cancel(name: ProcessName, user: User): Future[Unit] = {
+  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+    import command._
     // TODO: move to requirementForId when cancel changes the API...
-    val selector: LabelSelector = requirementForName(name)
+    val selector: LabelSelector = requirementForName(scenarioName)
     // We wait for deployment removal before removing configmaps,
     // in case of crash it's better to have unnecessary configmaps than deployments without config
     for {
@@ -293,7 +298,7 @@ class K8sDeploymentManager(
       secrets     <- k8sClient.deleteAllSelected[ListResource[Secret]](selector)
     } yield {
       logger.debug(
-        s"Canceled $name, ${ingresses.map(i => s"ingresses: ${i.itemNames}, ").getOrElse("")}services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}"
+        s"Canceled $scenarioName, ${ingresses.map(i => s"ingresses: ${i.itemNames}, ").getOrElse("")}services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}"
       )
       ()
     }
@@ -363,17 +368,6 @@ class K8sDeploymentManager(
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
   override protected def executionContext: ExecutionContext = dependencies.executionContext
-
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
-    Future.failed(new UnsupportedOperationException(s"Cancelling of deployment is not supported"))
-
-  override def stop(
-      name: ProcessName,
-      deploymentId: DeploymentId,
-      savepointDir: Option[String],
-      user: User
-  ): Future[SavepointResult] =
-    Future.failed(new UnsupportedOperationException(s"Stopping of deployment is not supported"))
 
 }
 

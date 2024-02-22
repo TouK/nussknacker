@@ -4,14 +4,7 @@ import akka.actor.ActorSystem
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{
-  AfterRunningActionName,
-  AfterRunningStatus,
-  PreparingResourcesActionName,
-  PreparingResourcesStatus,
-  TestActionName,
-  TestStatus
-}
+import pl.touk.nussknacker.development.manager.DevelopmentStateStatus._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
@@ -19,24 +12,10 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{
-  CustomActionDefinition,
-  CustomActionRequest,
-  CustomActionResult,
-  DeploymentData,
-  DeploymentId,
-  ExternalDeploymentId,
-  User
-}
+import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{
-  BaseModelData,
-  DeploymentManagerDependencies,
-  DeploymentManagerProvider,
-  MetaDataInitializer,
-  deployment
-}
+import pl.touk.nussknacker.engine._
 
 import java.net.URI
 import java.util.UUID
@@ -90,28 +69,33 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   }
 
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = {
-    if (description(canonicalProcess).contains(descriptionForValidationFail)) {
-      Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
-    } else {
-      Future.successful(())
-    }
+  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = command match {
+    case ValidateScenarioCommand(_, _, canonicalProcess) =>
+      if (description(canonicalProcess).contains(descriptionForValidationFail)) {
+        Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
+      } else {
+        Future.successful(())
+      }
+    case command: RunDeploymentCommand                      => runDeployment(command)
+    case StopDeploymentCommand(name, _, savepointDir, user) =>
+      // TODO: stopping specific deployment
+      stopScenario(StopScenarioCommand(name, savepointDir, user))
+    case command: StopScenarioCommand           => stopScenario(command)
+    case CancelDeploymentCommand(name, _, user) =>
+      // TODO: cancelling specific deployment
+      cancelScenario(CancelScenarioCommand(name, user))
+    case command: CancelScenarioCommand   => cancelScenario(command)
+    case command: CustomActionCommand     => invokeCustomAction(command)
+    case _: MakeAScenarioSavepointCommand => Future.successful(SavepointResult(""))
+    case _: TestScenarioCommand           => notImplemented
   }
 
   private def description(canonicalProcess: CanonicalProcess) = {
     canonicalProcess.metaData.additionalFields.description
   }
 
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  private def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+    import command._
     logger.debug(s"Starting deploying scenario: ${processVersion.processName}..")
     val previous                = memory.get(processVersion.processName)
     val duringDeployStateStatus = createAndSaveProcessState(DuringDeploy, processVersion)
@@ -138,41 +122,22 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     result.future
   }
 
-  override def stop(
-      name: ProcessName,
-      deploymentId: DeploymentId,
-      savepointDir: Option[String],
-      user: User
-  ): Future[SavepointResult] = {
-    // TODO: stopping specific deployment
-    stop(name, savepointDir, user)
-  }
-
-  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    logger.debug(s"Starting stopping scenario: $name..")
-    asyncChangeState(name, Finished)
-    logger.debug(s"Finished stopping scenario: $name.")
+  private def stopScenario(command: StopScenarioCommand): Future[SavepointResult] = {
+    import command._
+    logger.debug(s"Starting stopping scenario: $scenarioName..")
+    asyncChangeState(scenarioName, Finished)
+    logger.debug(s"Finished stopping scenario: $scenarioName.")
     Future.successful(SavepointResult(""))
   }
 
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = {
-    // TODO: cancelling specific deployment
-    cancel(name, user)
-  }
-
-  override def cancel(name: ProcessName, user: User): Future[Unit] = {
-    logger.debug(s"Starting canceling scenario: $name..")
-    changeState(name, DuringCancel)
-    asyncChangeState(name, Canceled)
-    logger.debug(s"Finished canceling scenario: $name.")
+  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+    import command._
+    logger.debug(s"Starting canceling scenario: $scenarioName..")
+    changeState(scenarioName, DuringCancel)
+    asyncChangeState(scenarioName, Canceled)
+    logger.debug(s"Finished canceling scenario: $scenarioName.")
     Future.unit
   }
-
-  override def test(
-      name: ProcessName,
-      canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] = ???
 
   override def getProcessStates(
       name: ProcessName
@@ -180,26 +145,20 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     Future.successful(WithDataFreshnessStatus.fresh(memory.get(name).toList))
   }
 
-  override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
-    Future.successful(SavepointResult(""))
-
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     new DevelopmentProcessStateDefinitionManager(SimpleProcessStateDefinitionManager)
 
-  override def customActions: List[CustomActionDefinition] = customActionStatusMapping.keys.toList
+  override def customActionsDefinitions: List[CustomActionDefinition] = customActionStatusMapping.keys.toList
 
-  override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
-      canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] = {
-    val processName = actionRequest.processVersion.processName
+  private def invokeCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
+    val processName = command.processVersion.processName
     val statusOpt = customActionStatusMapping
-      .collectFirst { case (customAction, status) if customAction.name == actionRequest.name => status }
+      .collectFirst { case (customAction, status) if customAction.name == command.scenarioName => status }
 
     statusOpt match {
       case Some(newStatus) =>
         asyncChangeState(processName, newStatus)
-        Future.successful(CustomActionResult(s"Done ${actionRequest.name}"))
+        Future.successful(CustomActionResult(s"Done ${command.scenarioName}"))
       case _ =>
         Future.failed(new NotImplementedError())
     }

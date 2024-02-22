@@ -9,10 +9,12 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{
+  CancelScenarioCommand,
   DataFreshnessPolicy,
   DeployedScenarioData,
   DeploymentManager,
-  ProcessingTypeDeploymentServiceStub
+  ProcessingTypeDeploymentServiceStub,
+  RunDeploymentCommand
 }
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -71,7 +73,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
 
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = scenario.name)
-      deploymentManager.deploy(version, DeploymentData.empty, scenario, None).futureValue
+      deploymentManager.processCommand(RunDeploymentCommand(version, DeploymentData.empty, scenario, None)).futureValue
     }
 
   }
@@ -131,7 +133,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
       .toOption
       .get should include("\"openapi\"")
 
-    manager.cancel(name, User("a", "b")).futureValue
+    manager.processCommand(CancelScenarioCommand(name, User("a", "b"))).futureValue
 
     manager.getProcessStates(name).futureValue.value shouldBe List.empty
     request.body("""{ productId: 15 }""").send(backend).code shouldBe StatusCode.NotFound

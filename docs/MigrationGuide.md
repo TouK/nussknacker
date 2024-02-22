@@ -7,9 +7,21 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Code API changes
 
 * [#5609](https://github.com/TouK/nussknacker/pull/5609) Refactoring around DeploymentManager's actions:
-  * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module
-  * `CustomActionResult.req` was removed
-  * `CustomAction` was renamed to `CustomActionDefinition`
+  * Custom Actions
+    * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module
+    * `CustomActionResult.req` was removed
+    * `CustomAction` was renamed to `CustomActionDefinition`
+    * `CustomActionRequest` (from the `extension-api`) was renamed to `CustomActionCommand`
+  * Other "action" methods - all methods operating on a scenario (or its deployment) were replaced by case classes and
+    one method handling them all: `processCommand(command)`:
+    * `validate` - `ValidateScenarioCommand`
+    * `deploy` - `RunDeploymentCommand`
+    * `cancel` with `deploymentId` argument - `CancelDeploymentCommand`
+    * `cancel` without `deploymentId` argument - `CancelScenarioCommand`
+    * `stop` with `deploymentId` argument - `StopDeploymentCommand`
+    * `stop` without `deploymentId` argument - `StopScenarioCommand`
+    * `savepoint` - `MakeAScenarioSavepointCommand`
+    * `test` - `TestScenarioCommand`
 
 ### Other changes
 

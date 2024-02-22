@@ -87,27 +87,25 @@ class EmbeddedDeploymentManager(
       .toMap
   }
 
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = Future.successful(())
-
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
-    Future.successful(
-      deployScenarioClosingOldIfNeeded(
-        processVersion,
-        deploymentData,
-        canonicalProcess,
-        throwInterpreterRunExceptionsImmediately = true
-      )
-    )
-  }
+  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+    command match {
+      case _: ValidateScenarioCommand => Future.successful(())
+      case RunDeploymentCommand(processVersion, deploymentData, canonicalProcess, _) =>
+        Future {
+          deployScenarioClosingOldIfNeeded(
+            processVersion,
+            deploymentData,
+            canonicalProcess,
+            throwInterpreterRunExceptionsImmediately = true
+          )
+        }
+      case command: CancelDeploymentCommand => cancelDeployment(command)
+      case command: CancelScenarioCommand   => cancelScenario(command)
+      case command: TestScenarioCommand     => processTestActionCommand(command)
+      case _: StopDeploymentCommand | _: StopScenarioCommand | _: MakeAScenarioSavepointCommand |
+          _: CustomActionCommand =>
+        notImplemented
+    }
 
   private def deployScenarioClosingOldIfNeeded(
       processVersion: ProcessVersion,
@@ -150,26 +148,30 @@ class EmbeddedDeploymentManager(
     deploymentStrategy.onScenarioAdded(jobData, parsedResolvedScenario)
   }
 
-  override def cancel(name: ProcessName, user: User): Future[Unit] = {
-    deployments.get(name) match {
-      case None                 => Future.failed(new IllegalArgumentException(s"Cannot find scenario $name"))
-      case Some(deploymentData) => stopDeployment(name, deploymentData)
+  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+    import command._
+    deployments.get(scenarioName) match {
+      case None                 => Future.failed(new IllegalArgumentException(s"Cannot find scenario $scenarioName"))
+      case Some(deploymentData) => stopDeployment(scenarioName, deploymentData)
     }
   }
 
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = {
+  private def cancelDeployment(command: CancelDeploymentCommand): Future[Unit] = {
+    import command._
     for {
       deploymentData <- deployments
-        .get(name)
+        .get(scenarioName)
         .map(Future.successful)
-        .getOrElse(Future.failed(new IllegalArgumentException(s"Cannot find scenario $name")))
+        .getOrElse(Future.failed(new IllegalArgumentException(s"Cannot find scenario $scenarioName")))
       deploymentDataForDeploymentId <- Option(deploymentData)
         .filter(_.deploymentId == deploymentId)
         .map(Future.successful)
         .getOrElse(
-          Future.failed(new IllegalArgumentException(s"Cannot find deployment $deploymentId for scenario $name"))
+          Future.failed(
+            new IllegalArgumentException(s"Cannot find deployment $deploymentId for scenario $scenarioName")
+          )
         )
-      stoppingResult <- stopDeployment(name, deploymentDataForDeploymentId)
+      stoppingResult <- stopDeployment(scenarioName, deploymentDataForDeploymentId)
     } yield stoppingResult
   }
 

@@ -137,7 +137,7 @@ class ManagementResources(
               convertSavepointResultToResponse(
                 dispatcher
                   .deploymentManagerUnsafe(processId)(ec, user)
-                  .flatMap(_.savepoint(processId.name, savepointDir))
+                  .flatMap(_.processCommand(MakeAScenarioSavepointCommand(processId.name, savepointDir)))
               )
             }
           }
@@ -150,7 +150,7 @@ class ManagementResources(
                 convertSavepointResultToResponse(
                   dispatcher
                     .deploymentManagerUnsafe(processId)(ec, user)
-                    .flatMap(_.stop(processId.name, savepointDir, user.toManagerUser))
+                    .flatMap(_.processCommand(StopScenarioCommand(processId.name, savepointDir, user.toManagerUser)))
                 )
               }
             }
