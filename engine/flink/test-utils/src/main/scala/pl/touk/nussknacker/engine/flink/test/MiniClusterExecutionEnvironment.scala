@@ -35,8 +35,9 @@ class MiniClusterExecutionEnvironment(
   def withJobRunning[T](jobName: String, actionToInvokeWithJobRunning: JobExecutionResult => T): T = {
     val executionResult: JobExecutionResult = executeAndWaitForStart(jobName)
     try {
-      val res = actionToInvokeWithJobRunning(executionResult)
-      checkJobNotFailing(executionResult.getJobID)
+      val res   = actionToInvokeWithJobRunning(executionResult)
+      val jobID = executionResult.getJobID
+      assertJobNotFailing(jobID, flinkMiniClusterHolder.getExecutionGraph(jobID).get())
       res
     } finally {
       stopJob(jobName, executionResult)
@@ -77,9 +78,9 @@ class MiniClusterExecutionEnvironment(
       patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
   ): Unit = {
     Eventually.eventually {
-
       val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
       assertJobInitialized(executionGraph)
+      assertJobNotFailing(jobID, executionGraph)
       val executionVertices = executionGraph.getAllExecutionVertices.asScala
       val notRunning        = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
       assert(
@@ -90,8 +91,7 @@ class MiniClusterExecutionEnvironment(
     }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
   }
 
-  def checkJobNotFailing(jobID: JobID): Unit = {
-    val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
+  private def assertJobNotFailing(jobID: JobID, executionGraph: AccessExecutionGraph): Unit = {
     assert(
       !Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING).contains(executionGraph.getState),
       s"Job: $jobID has failing state. Failure info: ${Option(executionGraph.getFailureInfo).map(_.getExceptionAsString).orNull}"
