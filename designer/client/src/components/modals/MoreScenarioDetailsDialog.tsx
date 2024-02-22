@@ -51,6 +51,8 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
         }
     }, [scenario.processingMode]);
 
+    const displayStatus = !scenario.isArchived && !scenario.isFragment;
+
     return (
         <WindowContent
             {...props}
@@ -65,10 +67,12 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
                             {scenario.name}
                         </Typography>
                         <Box display={"flex"} flexDirection={"column"} mt={4} mb={6}>
-                            <ItemWrapperStyled>
-                                <ItemLabelStyled>{i18next.t("scenarioDetails.label.status", "Status")}</ItemLabelStyled>
-                                <Typography variant={"body2"}>{capitalize(startCase(processState.status.name))}</Typography>
-                            </ItemWrapperStyled>
+                            {displayStatus && (
+                                <ItemWrapperStyled>
+                                    <ItemLabelStyled>{i18next.t("scenarioDetails.label.status", "Status")}</ItemLabelStyled>
+                                    <Typography variant={"body2"}>{capitalize(startCase(processState.status.name))}</Typography>
+                                </ItemWrapperStyled>
+                            )}
                             <ItemWrapperStyled>
                                 <ItemLabelStyled>{i18next.t("scenarioDetails.label.processingMode", "Processing mode")}</ItemLabelStyled>
                                 <Typography variant={"body2"}>{processingModeVariantName}</Typography>
