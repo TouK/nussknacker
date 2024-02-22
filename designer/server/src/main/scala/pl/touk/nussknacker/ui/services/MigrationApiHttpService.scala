@@ -1,35 +1,31 @@
 package pl.touk.nussknacker.ui.services
 
-import akka.http.scaladsl.model.StatusCodes
 import cats.data.EitherT
-import cats.syntax.traverse._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Encoder
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, VersionId}
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
+import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.{EnvironmentComparisonResult, MigrationApiEndpoints, ProcessDifference}
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos._
-import pl.touk.nussknacker.ui.process.ProcessService.{FetchScenarioGraph, GetScenarioWithDetailsOptions}
-import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
-import pl.touk.nussknacker.ui.process.migrate.{
-  MigrationToArchivedError,
-  MigrationValidationError,
-  RemoteEnvironment,
-  RemoteEnvironmentCommunicationError
+import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser, MigrationApiEndpoints}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
+import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
+import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.ProcessService.{
+  FetchScenarioGraph,
+  GetScenarioWithDetailsOptions,
+  UpdateScenarioCommand
 }
+import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
+import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 import scala.concurrent.{ExecutionContext, Future}
-import pl.touk.nussknacker.ui.util.EitherTImplicits
-
 import scala.util.{Failure, Success}
 
 class MigrationApiHttpService(
@@ -37,12 +33,11 @@ class MigrationApiHttpService(
     authenticator: AuthenticationResources,
     processService: ProcessService,
     processResolver: ProcessingTypeDataProvider[UIProcessResolver, _],
-    remoteEnvironment: RemoteEnvironment
+    processAuthorizer: AuthorizeProcess,
+    processChangeListener: ProcessChangeListener
 )(implicit val ec: ExecutionContext)
     extends BaseHttpService(config, authenticator)
     with LazyLogging {
-
-  import EitherTImplicits._
 
   private val remoteEnvironmentApiEndpoints = new MigrationApiEndpoints(authenticator.authenticationMethod())
   private val passUsernameInMigrations      = true
@@ -58,8 +53,13 @@ class MigrationApiHttpService(
           val scenarioGraphUnsafe              = scenarioWithDetailsForMigrations.scenarioGraphUnsafe
           val processName                      = scenarioWithDetailsForMigrations.name
           val isFragment                       = scenarioWithDetailsForMigrations.isFragment
-          val remoteUser                       = if (passUsernameInMigrations) Some(loggedUser) else None
-          val remoteUsername                   = remoteUser.map(user => RemoteUserName(user.username))
+          val forwardedUser                    = if (passUsernameInMigrations) Some(loggedUser) else None
+          val forwardedUsername                = forwardedUser.map(user => RemoteUserName(user.username))
+          val updateProcessComment =
+            UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")
+          val updateScenarioCommand =
+            UpdateScenarioCommand(scenarioGraphUnsafe, updateProcessComment, forwardedUsername)
+
           EitherT(
             for {
               validation <- Future.successful(
@@ -95,55 +95,72 @@ class MigrationApiHttpService(
               _ <- remoteScenarioWithDetailsE match {
                 case Left(ProcessNotFoundError(processName)) => ???
                 case Right(_)                                => Future.successful(Right(()))
+                case Left(e)                                 => Future.failed(e)
               }
 
-            } yield ???
+              // TODO: Create scenario if not exists
+
+              // TODO: Permission check for updateProcess
+
+              _ <- processService
+                .updateProcess(processIdWithName, updateScenarioCommand)
+                .withSideEffect(response =>
+                  response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
+                )
+                .map(_.validationResult)
+
+            } yield Right(())
           )
         }
       }
   }
 
-  /*  expose {
-    remoteEnvironmentApiEndpoints.migrateEndpointV2
-      .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
-      .serverLogicEitherT { implicit loggedUser => data =>
-          EitherT(
-                for {
-                  validation <- Future.successful(
-                    processResolver
-                      .forTypeUnsafe()
-                      .validateBeforeUiResolving(details.scenarioGraphUnsafe, details.name, details.isFragment)
-                  )
+  private def notifyListener(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
+    implicit val listenerUser: User = ListenerApiUser(user)
+    processChangeListener.handle(event)
+  }
 
-                  _ <-
-                    if (validation.errors != ValidationErrors.success)
-                      Future.failed(MigrationValidationError(validation.errors))
-                    else Future.successful(())
+  /*
+      _ <- EitherT {
+        saveProcess(
+          localGraph,
+          processName,
+          UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}"),
+          usernameToPass
+        )
+      }
 
-                  scenarioWithDetailsE <- processService
-                    .getLatestProcessWithDetails(
-                      processIdWithName,
-                      GetScenarioWithDetailsOptions(
-                        FetchScenarioGraph(FetchScenarioGraph.DontValidate),
-                        fetchState = true
-                      )
+
+  private def saveProcess(
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      comment: UpdateProcessComment,
+      forwardedUserName: Option[RemoteUserName]
+  )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, ValidationResult]] = {
+    for {
+      processToSave <- Marshal(UpdateScenarioCommand(scenarioGraph, comment, forwardedUserName))
+        .to[MessageEntity](marshaller, ec)
+      response <- invokeJson[ValidationResult](
+        HttpMethods.PUT,
+        List("processes", processName.value),
+        requestEntity = processToSave
+      )
+    } yield response
+  }
+
+
+          } ~ (put & canWrite(processId)) {
+            entity(as[UpdateScenarioCommand]) { updateCommand =>
+              canOverrideUsername(processId.id, updateCommand.forwardedUserName)(ec, user) {
+                complete {
+                  processService
+                    .updateProcess(processId, updateCommand)
+                    .withSideEffect(response =>
+                      response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
                     )
-                    .transform[Either[NuDesignerError, ScenarioWithDetails]] {
-                      case Failure(e: ProcessNotFoundError) => Success(Left(e))
-                      case Success(scenarioWithDetails) if scenarioWithDetails.isArchived =>
-                        Failure(MigrationToArchivedError(scenarioWithDetails.name, environmentId))
-                      case Success(scenarioWithDetails) => Success(Right(scenarioWithDetails))
-                    }
-
-                  _ <- scenarioWithDetailsE match {
-                    case Left(ProcessNotFoundError(processName)) => ???
-                    case Right(_)              => Future.successful(Right(()))
-                  }
-
-
-                } yield ???
-        }
-
-  }*/
-
+                    .map(_.validationResult)
+                }
+              }
+            }
+   */
 }
