@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, ScenarioVersion}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import sttp.tapir.Schema
@@ -30,6 +30,7 @@ import sttp.tapir.Schema
 }
 
 object ScenarioWithDetailsForMigrations {
+
   implicit val scenarioGraph: Schema[ScenarioWithDetailsForMigrations] = ???
 }
 

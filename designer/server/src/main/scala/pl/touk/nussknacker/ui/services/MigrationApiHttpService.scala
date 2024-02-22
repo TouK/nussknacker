@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.process.migrate.{
 }
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,8 +37,7 @@ class MigrationApiHttpService(
     authenticator: AuthenticationResources,
     processService: ProcessService,
     processResolver: ProcessingTypeDataProvider[UIProcessResolver, _],
-    remoteEnvironment: RemoteEnvironment,
-    environmentId: String
+    remoteEnvironment: RemoteEnvironment
 )(implicit val ec: ExecutionContext)
     extends BaseHttpService(config, authenticator)
     with LazyLogging {
@@ -45,6 +45,63 @@ class MigrationApiHttpService(
   import EitherTImplicits._
 
   private val remoteEnvironmentApiEndpoints = new MigrationApiEndpoints(authenticator.authenticationMethod())
+  private val passUsernameInMigrations      = true
+
+  expose {
+    remoteEnvironmentApiEndpoints.migrateEndpoint
+      .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
+      .serverLogicEitherT { implicit loggedUser => migrateScenarioRequest =>
+        {
+          val scenarioWithDetailsForMigrations = migrateScenarioRequest.scenarioWithDetailsForMigrations
+          val environmentId                    = migrateScenarioRequest.environmentId
+          val processingType                   = scenarioWithDetailsForMigrations.processingType
+          val scenarioGraphUnsafe              = scenarioWithDetailsForMigrations.scenarioGraphUnsafe
+          val processName                      = scenarioWithDetailsForMigrations.name
+          val isFragment                       = scenarioWithDetailsForMigrations.isFragment
+          val remoteUser                       = if (passUsernameInMigrations) Some(loggedUser) else None
+          val remoteUsername                   = remoteUser.map(user => RemoteUserName(user.username))
+          EitherT(
+            for {
+              validation <- Future.successful(
+                processResolver
+                  .forTypeUnsafe(processingType)
+                  .validateBeforeUiResolving(scenarioGraphUnsafe, processName, isFragment)
+              )
+
+              _ <-
+                if (validation.errors != ValidationErrors.success)
+                  Future.failed(MigrationValidationError(validation.errors))
+                else Future.successful(())
+
+              processId <- processService.getProcessIdUnsafe(processName)
+              processIdWithName = ProcessIdWithName(processId, processName)
+
+              remoteScenarioWithDetailsE <- processService
+                .getLatestProcessWithDetails(
+                  processIdWithName,
+                  GetScenarioWithDetailsOptions(
+                    FetchScenarioGraph(FetchScenarioGraph.DontValidate),
+                    fetchState = true
+                  )
+                )
+                .transformWith[Either[NuDesignerError, ScenarioWithDetails]] {
+                  case Failure(e: ProcessNotFoundError) => Future.successful(Left(e))
+                  case Success(scenarioWithDetails) if scenarioWithDetails.isArchived =>
+                    Future.failed(MigrationToArchivedError(scenarioWithDetails.name, environmentId))
+                  case Success(scenarioWithDetails) => Future.successful(Right(scenarioWithDetails))
+                  case Failure(e)                   => Future.failed(e)
+                }
+
+              _ <- remoteScenarioWithDetailsE match {
+                case Left(ProcessNotFoundError(processName)) => ???
+                case Right(_)                                => Future.successful(Right(()))
+              }
+
+            } yield ???
+          )
+        }
+      }
+  }
 
   /*  expose {
     remoteEnvironmentApiEndpoints.migrateEndpointV2
