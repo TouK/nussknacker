@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import cats.Traverse
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.deployment.{CustomActionResult, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity

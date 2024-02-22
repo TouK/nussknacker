@@ -10,9 +10,23 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionRequest,
+  CustomActionResult,
+  DeploymentData,
+  DeploymentId,
+  ExternalDeploymentId,
+  User
+}
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{
+  BaseModelData,
+  DeploymentManagerDependencies,
+  ModelData,
+  ProcessingTypeConfig,
+  deployment
+}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import shapeless.syntax.typeable.typeableOps
@@ -214,18 +228,18 @@ class MockDeploymentManager(
       savepointPath: Option[String]
   ): Future[Option[ExternalDeploymentId]] = ???
 
-  override def customActions: List[CustomAction] = {
+  override def customActions: List[CustomActionDefinition] = {
     import SimpleStateStatus._
     List(
-      CustomAction(
+      deployment.CustomActionDefinition(
         name = ScenarioActionName("hello"),
         allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
       ),
-      CustomAction(
+      deployment.CustomActionDefinition(
         name = ScenarioActionName("not-implemented"),
         allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
       ),
-      CustomAction(name = ScenarioActionName("invalid-status"), allowedStateStatusNames = Nil)
+      deployment.CustomActionDefinition(name = ScenarioActionName("invalid-status"), allowedStateStatusNames = Nil)
     )
   }
 
@@ -234,7 +248,7 @@ class MockDeploymentManager(
       canonicalProcess: CanonicalProcess
   ): Future[CustomActionResult] =
     actionRequest.name.value match {
-      case "hello" | "invalid-status" => Future.successful(CustomActionResult(actionRequest, "Hi"))
+      case "hello" | "invalid-status" => Future.successful(CustomActionResult("Hi"))
       case _                          => Future.failed(new NotImplementedError())
     }
 

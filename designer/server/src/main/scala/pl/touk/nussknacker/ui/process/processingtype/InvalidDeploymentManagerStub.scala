@@ -8,7 +8,14 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionRequest,
+  CustomActionResult,
+  DeploymentId,
+  ExternalDeploymentId,
+  User
+}
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 
@@ -65,7 +72,7 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
       scenarioTestData: ScenarioTestData
   ): Future[TestProcess.TestResults] = stubbedActionResponse
 
-  override def customActions: List[CustomAction] = List.empty
+  override def customActions: List[CustomActionDefinition] = List.empty
 
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,
