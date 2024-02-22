@@ -42,7 +42,7 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close() },
+            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: "secondary-button" },
             { title: t("dialog.button.ok", "Ok"), disabled: !isValid, action: () => confirmAction() },
         ],
         [t, confirmAction, props, isValid],

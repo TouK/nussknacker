@@ -42,6 +42,7 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
                 action: () => {
                     props.close();
                 },
+                classname: "secondary-button",
             },
             {
                 title: t("dialog.button.ok", "Ok"),

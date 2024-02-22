@@ -91,7 +91,7 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "cancel"), action: () => props.close() },
+            { title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: "secondary-button" },
             { title: t("dialog.button.confirm", "confirm"), action: () => confirm() },
         ],
         [confirm, props, t],

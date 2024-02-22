@@ -31,7 +31,7 @@ function Survey(): JSX.Element {
     }
 
     return (
-        <ToolbarWrapper onClose={hideSurvey} color={theme.custom.colors.accent}>
+        <ToolbarWrapper onClose={hideSurvey} color={theme.palette.success.dark}>
             <SimpleDragHandle>
                 <Stack p={1} spacing={0.5}>
                     <Typography variant="body2">{survey.text}</Typography>

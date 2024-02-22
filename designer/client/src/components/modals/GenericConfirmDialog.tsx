@@ -29,6 +29,7 @@ export function GenericConfirmDialog({
                     meta.onConfirmCallback(false);
                     props.close();
                 },
+                classname: "secondary-button",
             },
             {
                 title: meta.confirmText || t("dialog.button.yes", "yes"),
@@ -36,6 +37,7 @@ export function GenericConfirmDialog({
                     meta.onConfirmCallback(true);
                     props.close();
                 },
+                classname: "secondary-button",
             },
         ],
         [meta, props, t],
