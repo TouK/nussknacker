@@ -104,6 +104,14 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
     runAndVerify(topicConfig, process, IntFieldV1.record)
   }
 
+  test("raise an error when timestamp field set to string field") {
+    val topicConfig = createAndRegisterTopicConfig("simple-topic-with-Fullname-schema", FullNameV1.schema)
+    val process     = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'first'", "123L")
+    intercept[IllegalArgumentException] {
+      runAndVerify(topicConfig, process, FullNameV1.record)
+    }.getMessage should include("'first' has invalid type: String.")
+  }
+
   test("handle timestamp field in TimestampMillis format") {
     val topicConfig =
       createAndRegisterTopicConfig("simple-topic-with-timestamp-millis-field", TimestampMillisFieldV1.schema)
