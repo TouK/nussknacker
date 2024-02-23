@@ -31,7 +31,8 @@ import sttp.tapir.Schema
 
 object ScenarioWithDetailsForMigrations {
 
-  implicit val scenarioGraph: Schema[ScenarioWithDetailsForMigrations] = ???
+  // TODO: implement schema
+  implicit val scenarioWithDetailsForMigrationsSchema: Schema[ScenarioWithDetailsForMigrations] = ???
 }
 
 // This trait is extracted for easier monitoring changes in the /processes api that have an influence on the migration API
