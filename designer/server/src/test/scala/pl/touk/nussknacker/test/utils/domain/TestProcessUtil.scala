@@ -145,8 +145,6 @@ object TestProcessUtil {
       validationResult = Some(validationResult),
       history = None,
       modelVersion = None,
-      processingMode = RequestResponseProcessingMode,
-      engineSetupName = EngineSetupName("engine-name")
     )
   }
 

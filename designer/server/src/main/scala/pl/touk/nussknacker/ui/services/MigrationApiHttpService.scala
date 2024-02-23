@@ -51,8 +51,8 @@ class MigrationApiHttpService(
       .serverLogicEitherT { implicit loggedUser => migrateScenarioRequest =>
         {
           val scenarioWithDetailsForMigrations = migrateScenarioRequest.scenarioWithDetailsForMigrations
-          val parameters                       = scenarioWithDetailsForMigrations.parameters
           val environmentId                    = migrateScenarioRequest.environmentId
+          val parameters: ScenarioParameters   = ???
           val processingType                   = scenarioWithDetailsForMigrations.processingType
           val scenarioGraphUnsafe              = scenarioWithDetailsForMigrations.scenarioGraphUnsafe
           val processName                      = scenarioWithDetailsForMigrations.name

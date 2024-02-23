@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, ScenarioVersion}
-import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import sttp.tapir.Schema
@@ -20,11 +18,7 @@ import sttp.tapir.Schema
     override val validationResult: Option[ValidationResult],
     override val history: Option[List[ScenarioVersion]],
     override val modelVersion: Option[Int],
-    override val processingMode: ProcessingMode,
-    override val engineSetupName: EngineSetupName,
 ) extends BaseScenarioWithDetailsForMigrations {
-
-  def parameters: ScenarioParameters = ScenarioParameters(processingMode, processCategory, engineSetupName)
 
   def historyUnsafe: List[ScenarioVersion] = history.getOrElse(throw new IllegalStateException("Missing history"))
 
@@ -46,8 +40,6 @@ trait BaseScenarioWithDetailsForMigrations {
   def isArchived: Boolean
   def isFragment: Boolean
   def processingType: ProcessingType
-  def processingMode: ProcessingMode
-  def engineSetupName: EngineSetupName
   def processCategory: String
   def scenarioGraph: Option[ScenarioGraph]
   def validationResult: Option[ValidationResult]
