@@ -36,13 +36,14 @@ class MigrationApiHttpService(
     processService: ProcessService,
     processResolver: ProcessingTypeDataProvider[UIProcessResolver, _],
     processAuthorizer: AuthorizeProcess,
-    processChangeListener: ProcessChangeListener
+    processChangeListener: ProcessChangeListener,
+    useLegacyCreateScenarioApi: Boolean
 )(implicit val ec: ExecutionContext)
     extends BaseHttpService(config, authenticator)
     with LazyLogging {
 
   private val remoteEnvironmentApiEndpoints = new MigrationApiEndpoints(authenticator.authenticationMethod())
-  private val passUsernameInMigrations      = true
+  private val passUsernameInMigration       = true
 
   expose {
     remoteEnvironmentApiEndpoints.migrateEndpoint
@@ -52,12 +53,11 @@ class MigrationApiHttpService(
           val scenarioWithDetailsForMigrations = migrateScenarioRequest.scenarioWithDetailsForMigrations
           val parameters                       = scenarioWithDetailsForMigrations.parameters
           val environmentId                    = migrateScenarioRequest.environmentId
-          val useLegacyCreateScenarioApi       = migrateScenarioRequest.useLegacyCreateScenarioApi
           val processingType                   = scenarioWithDetailsForMigrations.processingType
           val scenarioGraphUnsafe              = scenarioWithDetailsForMigrations.scenarioGraphUnsafe
           val processName                      = scenarioWithDetailsForMigrations.name
           val isFragment                       = scenarioWithDetailsForMigrations.isFragment
-          val forwardedUser                    = if (passUsernameInMigrations) Some(loggedUser) else None
+          val forwardedUser                    = if (passUsernameInMigration) Some(loggedUser) else None
           val forwardedUsername                = forwardedUser.map(user => RemoteUserName(user.username))
           val updateProcessComment =
             UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")
