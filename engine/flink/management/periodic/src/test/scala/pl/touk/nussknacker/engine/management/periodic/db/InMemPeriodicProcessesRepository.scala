@@ -5,6 +5,7 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{
   DeploymentIdSequence,
@@ -64,10 +65,12 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       processName = processName,
       processVersionId = VersionId.initialVersionId,
       processingType = processingType,
-      processJson = ScenarioBuilder
-        .streaming(processName.value)
-        .source("start", "source")
-        .emptySink("end", "KafkaSink"),
+      processJson = Some(
+        ScenarioBuilder
+          .streaming(processName.value)
+          .source("start", "source")
+          .emptySink("end", "KafkaSink")
+      ),
       inputConfigDuringExecutionJson = "{}",
       jarFileName = "",
       scheduleProperty = scheduleProperty.asJson.noSpaces,
@@ -111,17 +114,17 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       }
 
   override def create(
-      deploymentWithJarData: DeploymentWithJarData,
+      deploymentWithJarData: DeploymentWithJarData[CanonicalProcess],
       scheduleProperty: ScheduleProperty,
-      processActionId: ProcessActionId
-  ): PeriodicProcess = {
+      processActionId: ProcessActionId,
+  ): PeriodicProcess[CanonicalProcess] = {
     val id = PeriodicProcessId(Random.nextLong())
     val periodicProcess = PeriodicProcessEntity(
       id = id,
       processName = deploymentWithJarData.processVersion.processName,
       processVersionId = deploymentWithJarData.processVersion.versionId,
       processingType = processingType,
-      processJson = deploymentWithJarData.canonicalProcess,
+      processJson = Some(deploymentWithJarData.process),
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,
@@ -178,27 +181,27 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
             .take(deploymentsPerScheduleMaxCount)
             .map(ScheduleDeploymentData(_))
             .toList
-          scheduleId -> ScheduleData(PeriodicProcessesRepository.createPeriodicProcess(process), ds)
+          scheduleId -> ScheduleData(PeriodicProcessesRepository.createPeriodicProcessWithoutJson(process), ds)
         }
     } yield deploymentGroupedByScheduleName).toMap)
 
-  override def findToBeDeployed: Seq[PeriodicProcessDeployment] = {
+  override def findToBeDeployed: Seq[PeriodicProcessDeployment[CanonicalProcess]] = {
     val scheduled = findActive(PeriodicProcessDeploymentStatus.Scheduled)
     readyToRun(scheduled)
   }
 
-  override def findToBeRetried: Action[Seq[PeriodicProcessDeployment]] = {
+  override def findToBeRetried: Action[Seq[PeriodicProcessDeployment[CanonicalProcess]]] = {
     val toBeRetried = findActive(PeriodicProcessDeploymentStatus.FailedOnDeploy).filter(_.retriesLeft > 0)
     readyToRun(toBeRetried)
   }
 
-  override def findProcessData(id: PeriodicProcessDeploymentId): PeriodicProcessDeployment =
+  override def findProcessData(id: PeriodicProcessDeploymentId): PeriodicProcessDeployment[CanonicalProcess] =
     (for {
       d <- deploymentEntities if d.id == id
       p <- processEntities if p.id == d.periodicProcessId
     } yield createPeriodicProcessDeployment(p, d)).head
 
-  override def findProcessData(processName: ProcessName): Seq[PeriodicProcess] =
+  override def findProcessData(processName: ProcessName): Seq[PeriodicProcess[CanonicalProcess]] =
     processEntities(processName)
       .filter(_.active)
       .map(PeriodicProcessesRepository.createPeriodicProcess)
@@ -246,7 +249,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       scheduleName: ScheduleName,
       runAt: LocalDateTime,
       deployMaxRetries: Int
-  ): PeriodicProcessDeployment = {
+  ): PeriodicProcessDeployment[CanonicalProcess] = {
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(Random.nextLong()),
       periodicProcessId = id,
@@ -273,17 +276,22 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       }
   }
 
-  private def findActive(status: PeriodicProcessDeploymentStatus): Seq[PeriodicProcessDeployment] = findActive(
-    Seq(status)
-  )
+  private def findActive(status: PeriodicProcessDeploymentStatus): Seq[PeriodicProcessDeployment[CanonicalProcess]] =
+    findActive(
+      Seq(status)
+    )
 
-  private def findActive(statusList: Seq[PeriodicProcessDeploymentStatus]): Seq[PeriodicProcessDeployment] =
+  private def findActive(
+      statusList: Seq[PeriodicProcessDeploymentStatus]
+  ): Seq[PeriodicProcessDeployment[CanonicalProcess]] =
     (for {
       p <- processEntities if p.active && p.processingType == processingType
       d <- deploymentEntities if d.periodicProcessId == p.id && statusList.contains(d.status)
     } yield createPeriodicProcessDeployment(p, d)).toSeq
 
-  private def readyToRun(deployments: Seq[PeriodicProcessDeployment]): Seq[PeriodicProcessDeployment] = {
+  private def readyToRun(
+      deployments: Seq[PeriodicProcessDeployment[CanonicalProcess]]
+  ): Seq[PeriodicProcessDeployment[CanonicalProcess]] = {
     val now = LocalDateTime.now()
     deployments.filter(d => d.runAt.isBefore(now) || d.runAt.isEqual(now))
   }

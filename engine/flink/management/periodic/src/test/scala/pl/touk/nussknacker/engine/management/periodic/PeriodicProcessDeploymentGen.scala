@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.{
   PeriodicProcessDeployment,
   PeriodicProcessDeploymentId,
@@ -14,7 +15,7 @@ object PeriodicProcessDeploymentGen {
 
   val now: LocalDateTime = LocalDateTime.now()
 
-  def apply(): PeriodicProcessDeployment = {
+  def apply(): PeriodicProcessDeployment[CanonicalProcess] = {
     PeriodicProcessDeployment(
       id = PeriodicProcessDeploymentId(42),
       periodicProcess = PeriodicProcessGen(),
