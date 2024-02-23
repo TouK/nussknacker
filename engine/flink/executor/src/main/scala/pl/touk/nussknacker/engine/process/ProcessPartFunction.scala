@@ -22,9 +22,9 @@ trait ProcessPartFunction extends ExceptionHandlerFunction {
     }
   }
 
-  override def open(parameters: Configuration): Unit = {
+  def open(parameters: Configuration, isTest: Boolean = false): Unit = {
     super.open(parameters)
-    compilerData.open(getRuntimeContext, nodesUsed)
+    compilerData.open(getRuntimeContext, nodesUsed, isTest)
   }
 
 }
