@@ -2,6 +2,8 @@ package pl.touk.nussknacker.ui.api
 
 import derevo.derive
 import derevo.circe._
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
@@ -108,6 +110,8 @@ object MigrationApiEndpoints {
     @derive(encoder, decoder, schema)
     final case class MigrateScenarioRequest(
         environmentId: String,
+        processingMode: ProcessingMode,
+        engineSetupName: EngineSetupName,
         scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations
     )
 

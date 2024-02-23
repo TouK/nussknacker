@@ -52,7 +52,10 @@ class MigrationApiHttpService(
         {
           val scenarioWithDetailsForMigrations = migrateScenarioRequest.scenarioWithDetailsForMigrations
           val environmentId                    = migrateScenarioRequest.environmentId
-          val parameters: ScenarioParameters   = ???
+          val processingMode                   = migrateScenarioRequest.processingMode
+          val processCategory                  = scenarioWithDetailsForMigrations.processCategory
+          val engineSetupName                  = migrateScenarioRequest.engineSetupName
+          val parameters                       = ScenarioParameters(processingMode, processCategory, engineSetupName)
           val processingType                   = scenarioWithDetailsForMigrations.processingType
           val scenarioGraphUnsafe              = scenarioWithDetailsForMigrations.scenarioGraphUnsafe
           val processName                      = scenarioWithDetailsForMigrations.name
