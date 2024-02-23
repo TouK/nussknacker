@@ -108,6 +108,7 @@ object MigrationApiEndpoints {
     @derive(encoder, decoder, schema)
     final case class MigrateScenarioRequest(
         environmentId: String,
+        useLegacyCreateScenarioApi: Boolean,
         scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations
     )
 

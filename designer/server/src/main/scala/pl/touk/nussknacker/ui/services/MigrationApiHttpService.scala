@@ -3,16 +3,18 @@ package pl.touk.nussknacker.ui.services
 import cats.data.EitherT
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
-import pl.touk.nussknacker.ui.NuDesignerError
+import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser, MigrationApiEndpoints}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.{
+  CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
   UpdateScenarioCommand
@@ -48,7 +50,9 @@ class MigrationApiHttpService(
       .serverLogicEitherT { implicit loggedUser => migrateScenarioRequest =>
         {
           val scenarioWithDetailsForMigrations = migrateScenarioRequest.scenarioWithDetailsForMigrations
+          val parameters                       = scenarioWithDetailsForMigrations.parameters
           val environmentId                    = migrateScenarioRequest.environmentId
+          val useLegacyCreateScenarioApi       = migrateScenarioRequest.useLegacyCreateScenarioApi
           val processingType                   = scenarioWithDetailsForMigrations.processingType
           val scenarioGraphUnsafe              = scenarioWithDetailsForMigrations.scenarioGraphUnsafe
           val processName                      = scenarioWithDetailsForMigrations.name
@@ -93,14 +97,23 @@ class MigrationApiHttpService(
                 }
 
               _ <- remoteScenarioWithDetailsE match {
-                case Left(ProcessNotFoundError(processName)) => ???
-                case Right(_)                                => Future.successful(Right(()))
-                case Left(e)                                 => Future.failed(e)
+                case Left(ProcessNotFoundError(processName)) =>
+                  Future.successful(
+                    createProcess(processName, parameters, isFragment, forwardedUsername, useLegacyCreateScenarioApi)
+                  )
+                case Right(_) => Future.successful(Right(()))
+                case Left(e)  => Future.failed(e)
               }
 
-              // TODO: Create scenario if not exists
+              canWrite <- processAuthorizer.check(processId, Permission.Write, loggedUser)
+              _ <- if (canWrite) Future.successful(Right(())) else Future.failed(new UnauthorizedError(loggedUser))
 
-              // TODO: Permission check for updateProcess
+              canOverrideUsername <- processAuthorizer
+                .check(processId, Permission.OverrideUsername, loggedUser)
+                .map(_ || forwardedUsername.isEmpty)
+              _ <-
+                if (canOverrideUsername) Future.successful(Right(()))
+                else Future.failed(new UnauthorizedError(loggedUser))
 
               _ <- processService
                 .updateProcess(processIdWithName, updateScenarioCommand)
@@ -120,47 +133,42 @@ class MigrationApiHttpService(
     processChangeListener.handle(event)
   }
 
-  /*
-      _ <- EitherT {
-        saveProcess(
-          localGraph,
-          processName,
-          UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}"),
-          usernameToPass
-        )
-      }
-
-
-  private def saveProcess(
-      scenarioGraph: ScenarioGraph,
+  private def createProcess(
       processName: ProcessName,
-      comment: UpdateProcessComment,
-      forwardedUserName: Option[RemoteUserName]
-  )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, ValidationResult]] = {
-    for {
-      processToSave <- Marshal(UpdateScenarioCommand(scenarioGraph, comment, forwardedUserName))
-        .to[MessageEntity](marshaller, ec)
-      response <- invokeJson[ValidationResult](
-        HttpMethods.PUT,
-        List("processes", processName.value),
-        requestEntity = processToSave
+      parameters: ScenarioParameters,
+      isFragment: Boolean,
+      forwardedUsername: Option[RemoteUserName],
+      useLegacyCreateScenarioApi: Boolean
+  )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = if (useLegacyCreateScenarioApi) {
+    processService
+      .createProcess(
+        CreateScenarioCommand(processName, Some(parameters.category), None, None, isFragment, forwardedUsername)
       )
-    } yield response
+      .map(_.toEither)
+      .map {
+        case Left(value) => Left(value)
+        case Right(response) =>
+          notifyListener(OnSaved(response.id, response.versionId))
+          Right(())
+      }
+  } else {
+    val createScenarioCommand = CreateScenarioCommand(
+      processName,
+      Some(parameters.category),
+      Some(parameters.processingMode),
+      Some(parameters.engineSetupName),
+      isFragment = isFragment,
+      forwardedUserName = forwardedUsername
+    )
+    processService
+      .createProcess(createScenarioCommand)
+      .map(_.toEither)
+      .map {
+        case Left(value) => Left(value)
+        case Right(response) =>
+          notifyListener(OnSaved(response.id, response.versionId))
+          Right(())
+      }
   }
 
-
-          } ~ (put & canWrite(processId)) {
-            entity(as[UpdateScenarioCommand]) { updateCommand =>
-              canOverrideUsername(processId.id, updateCommand.forwardedUserName)(ec, user) {
-                complete {
-                  processService
-                    .updateProcess(processId, updateCommand)
-                    .withSideEffect(response =>
-                      response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
-                    )
-                    .map(_.validationResult)
-                }
-              }
-            }
-   */
 }
