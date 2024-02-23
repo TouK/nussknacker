@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.test.utils.domain
 
 import io.circe.{Encoder, Json}
+import pl.touk.nussknacker.engine.api.component.RequestResponseProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.scenariodetails._
@@ -15,6 +17,7 @@ import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
+
 import java.time.Instant
 import java.util.UUID
 import scala.util.Random
@@ -141,7 +144,9 @@ object TestProcessUtil {
       scenarioGraph = Some(scenarioGraph),
       validationResult = Some(validationResult),
       history = None,
-      modelVersion = None
+      modelVersion = None,
+      processingMode = RequestResponseProcessingMode,
+      engineSetupName = EngineSetupName("engine-name")
     )
   }
 
