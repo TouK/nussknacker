@@ -30,7 +30,7 @@ class DelayedUniversalKafkaSourceFactory(
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition =
+  ): ContextTransformationDefinition =
     topicParamStep orElse
       schemaParamStep(Nil) orElse
       timestampFieldParamStep orElse
@@ -64,7 +64,7 @@ class DelayedUniversalKafkaSourceFactory(
       NextParameters(parameters = fallbackTimestampFieldParameter :: paramsDeterminedAfterSchema)
   }
 
-  protected def timestampFieldParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
+  protected def timestampFieldParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: Nil,
