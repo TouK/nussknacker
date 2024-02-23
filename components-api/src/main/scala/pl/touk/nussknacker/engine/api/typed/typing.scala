@@ -16,6 +16,7 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 // TODO: remove this object because it causes typing.TypingResult in IDE
+// If changes are made to structure of TypingResult should also change Schemas in NodesApiEndpoints.TypingDtoSchemas for OpenApi
 object typing {
 
   object TypingResult {

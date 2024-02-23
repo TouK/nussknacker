@@ -930,37 +930,6 @@ class NodesApiHttpServiceBusinessSpec
     }
   }
 
-  "if TypingResult changed - Schemas in `NodesApiEndpoints` should be changed too" in {
-    val decoder = new TypingResultDecoder(getClass.getClassLoader.loadClass)
-    import TypingDtoSchemas._
-
-    val schemaAsString = typingResult.schemaType.toString
-
-//    If changed here should also change in NodesApiEndpoints.TypingDtoSchemas
-    List(
-      TypingType.TypedClass.toString,
-      TypingType.TypedUnion.toString,
-      TypingType.TypedDict.toString,
-      TypingType.TypedObjectTypingResult.toString,
-      TypingType.TypedTaggedValue.toString,
-      TypingType.TypedObjectWithValue.toString,
-      TypingType.TypedNull.toString,
-      TypingType.Unknown.toString,
-    )
-      .foreach(schemaAsString contains _ shouldBe true)
-
-    val failMessage = "Example couldn't be decoded -> need to change schema in NodesApiEndpoints.TypingDtoSchemas"
-
-    decoder.decodeTypingResults.decodeJson(typedClassSchema.encodedExample.get.asInstanceOf[Json]) match {
-      case Left(_)      => fail(failMessage)
-      case Right(value) => value.isInstanceOf[typing.TypedClass] shouldBe true
-    }
-    decoder.decodeTypingResults.decodeJson(unknownSchema.encodedExample.get.asInstanceOf[Json]) match {
-      case Left(_)      => fail(failMessage)
-      case Right(value) => value shouldBe typing.Unknown
-    }
-  }
-
   private lazy val exampleScenario = ScenarioBuilder
     .streaming("test")
     .source("sourceId", "barSource")

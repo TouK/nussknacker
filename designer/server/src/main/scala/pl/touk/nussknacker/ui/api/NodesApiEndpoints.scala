@@ -514,7 +514,6 @@ object TypingDtoSchemas {
     Schema.derived.hidden(true)
 
   implicit lazy val additionalDataValueSchema: Schema[AdditionalDataValue] = Schema.derived
-  private val encoder                                                      = Encoder[TypingResult]
 
   implicit lazy val typedObjectTypingResultSchema: Schema[TypedObjectTypingResult] = {
     Schema(
@@ -532,7 +531,6 @@ object TypingDtoSchemas {
       Some(SName("TypedObjectTypingResult"))
     )
       .title("TypedObjectTypingResult")
-      .encodedExample(encoder.apply(TypedObjectTypingResult(Map("hi" -> Typed.fromInstance(5)))))
       .as
   }
 
@@ -586,14 +584,6 @@ object TypingDtoSchemas {
     Schema.derived
       .name(Schema.SName("Unknown"))
       .title("Unknown")
-      .encodedExample(
-        Json.obj(
-          "display"      -> Json.fromString("Unknown"),
-          "type"         -> Json.fromString("Unknown"),
-          "refClazzName" -> Json.fromString("java.lang.Object"),
-          "params"       -> Json.fromValues(List.empty)
-        )
-      )
 
   implicit lazy val typedUnionSchema: Schema[TypedUnion] = {
     Schema(
@@ -610,11 +600,6 @@ object TypingDtoSchemas {
       Some(Schema.SName("TypedUnion"))
     )
       .title("TypedUnion")
-      .encodedExample(
-        encoder.apply(
-          Typed.apply(Typed.apply(Integer.TYPE), Typed.apply(Class.forName("java.lang.String")))
-        )
-      )
       .as
   }
 
@@ -627,14 +612,6 @@ object TypingDtoSchemas {
       Some(SName("TypedClass"))
     )
       .title("TypedClass")
-      .encodedExample(
-        Json.obj(
-          "display"      -> Json.fromString("Integer"),
-          "type"         -> Json.fromString("TypedClass"),
-          "refClazzName" -> Json.fromString("java.lang.Integer"),
-          "params"       -> Json.fromValues(List.empty)
-        )
-      )
       .as
   }
 
