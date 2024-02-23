@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.delayed
 
-import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
@@ -11,6 +10,7 @@ import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
+import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory.PrecalculatedValueSchemaUniversalKafkaSourceFactoryState
 
 import scala.reflect.ClassTag
 
@@ -27,18 +27,49 @@ class DelayedUniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](
     ) {
 
   override def paramsDeterminedAfterSchema: List[Parameter] = super.paramsDeterminedAfterSchema ++ List(
-    TimestampFieldParameter,
     DelayParameter
   )
 
-  override protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition =
+    topicParamStep orElse
+      schemaParamStep(Nil) orElse
+      timestampFieldParamStep orElse
+      validateTimestampFieldStep orElse
+      nextSteps(context, dependencies)
+
+  protected def validateTimestampFieldStep(
       implicit nodeId: NodeId
   ): NodeTransformationDefinition = {
-    case step @ TransformationStep(
+    case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
-          (TimestampFieldParamName, DefinedEagerParameter(field, _)) ::
-          (DelayParameterName, DefinedEagerParameter(delay, _)) :: Nil,
+          (TimestampFieldParamName, DefinedEagerParameter(field, _)) :: Nil,
+          state @ Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(valueValidationResult))
+        ) =>
+      val timestampValidation = valueValidationResult.toOption
+        .map(_._2)
+        .flatMap(typingResult => Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, typingResult)))
+        .getOrElse(Nil)
+
+      NextParameters(
+        paramsDeterminedAfterSchema,
+        state = state,
+        errors = timestampValidation
+      )
+
+    case TransformationStep(
+          (`topicParamName`, _) :: (SchemaVersionParamName, _) :: (TimestampFieldParamName, _) :: Nil,
+          _
+        ) =>
+      NextParameters(parameters = fallbackTimestampFieldParameter :: paramsDeterminedAfterSchema)
+  }
+
+  protected def timestampFieldParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
+    case TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
+          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: Nil,
           _
         ) =>
       val preparedTopic = prepareTopic(topic)
@@ -48,29 +79,12 @@ class DelayedUniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](
         Some(SchemaVersionParamName)
       )
 
-      valueValidationResult match {
-        case Valid((valueRuntimeSchema, typingResult)) =>
-          val timestampValidationErrors =
-            Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, typingResult)).getOrElse(Nil)
-          prepareSourceFinalResults(
-            preparedTopic,
-            valueValidationResult,
-            context,
-            dependencies,
-            step.parameters,
-            timestampValidationErrors
-          )
-        case Invalid(exc) =>
-          prepareSourceFinalErrors(context, dependencies, step.parameters, List(exc))
-      }
-    case step @ TransformationStep(
-          (`topicParamName`, _) :: (SchemaVersionParamName, _) :: (TimestampFieldParamName, _) :: (
-            DelayParameterName,
-            _
-          ) :: Nil,
-          _
-        ) =>
-      prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
+      NextParameters(
+        timestampFieldParameter(valueValidationResult.map(_._2).toOption) :: Nil,
+        state = Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(valueValidationResult))
+      )
+    case TransformationStep((topicParamName, _) :: (schemaVersionParamName, _) :: Nil, _) =>
+      NextParameters(parameters = fallbackTimestampFieldParameter :: paramsDeterminedAfterSchema)
   }
 
 }
