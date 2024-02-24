@@ -19,14 +19,23 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionRequest,
+  CustomActionResult,
+  DeploymentData,
+  DeploymentId,
+  ExternalDeploymentId,
+  User
+}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
   DeploymentManagerProvider,
-  MetaDataInitializer
+  MetaDataInitializer,
+  deployment
 }
 
 import java.net.URI
@@ -52,11 +61,11 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
 
-  private val customActionAfterRunning = CustomAction(AfterRunningActionName, List(Running.name))
+  private val customActionAfterRunning = CustomActionDefinition(AfterRunningActionName, List(Running.name))
   private val customActionPreparingResources =
-    CustomAction(PreparingResourcesActionName, List(NotDeployed.name, Canceled.name))
+    deployment.CustomActionDefinition(PreparingResourcesActionName, List(NotDeployed.name, Canceled.name))
   private val customActionTest =
-    CustomAction(TestActionName, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
+    deployment.CustomActionDefinition(TestActionName, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
 
   private val customActionStatusMapping = Map(
     customActionAfterRunning       -> AfterRunningStatus,
@@ -177,7 +186,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     new DevelopmentProcessStateDefinitionManager(SimpleProcessStateDefinitionManager)
 
-  override def customActions: List[CustomAction] = customActionStatusMapping.keys.toList
+  override def customActions: List[CustomActionDefinition] = customActionStatusMapping.keys.toList
 
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,
@@ -190,7 +199,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     statusOpt match {
       case Some(newStatus) =>
         asyncChangeState(processName, newStatus)
-        Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
+        Future.successful(CustomActionResult(s"Done ${actionRequest.name}"))
       case _ =>
         Future.failed(new NotImplementedError())
     }

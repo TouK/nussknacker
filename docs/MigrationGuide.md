@@ -4,6 +4,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.15.x (Not released yet)
 
+### Code API changes
+
+* [#5609](https://github.com/TouK/nussknacker/pull/5609) Refactoring around DeploymentManager's actions:
+  * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module
+  * `CustomActionResult.req` was removed
+  * `CustomAction` was renamed to `CustomActionDefinition`
+
 ### Other changes
 
 * [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the plugable expression languages: `ExpressionConfig.languages` removed

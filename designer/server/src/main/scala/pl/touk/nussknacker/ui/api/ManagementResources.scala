@@ -296,7 +296,9 @@ class ManagementResources(
             complete {
               deploymentService
                 .invokeCustomAction(req.actionName, process, params)
-                .flatMap(actionResult => toHttpResponse(CustomActionResponse(actionResult))(StatusCodes.OK))
+                .flatMap(actionResult =>
+                  toHttpResponse(CustomActionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
+                )
             }
           }
         }

@@ -11,7 +11,15 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionRequest,
+  CustomActionResult,
+  DeploymentData,
+  DeploymentId,
+  ExternalDeploymentId,
+  User
+}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
@@ -184,7 +192,7 @@ abstract class FlinkDeploymentManager(
     testRunner.test(canonicalProcess, scenarioTestData)
   }
 
-  override def customActions: List[CustomAction] = List.empty
+  override def customActions: List[CustomActionDefinition] = List.empty
 
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,
