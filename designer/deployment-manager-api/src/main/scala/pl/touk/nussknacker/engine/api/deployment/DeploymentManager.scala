@@ -5,7 +5,15 @@ import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentState
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionRequest,
+  CustomActionResult,
+  DeploymentData,
+  DeploymentId,
+  ExternalDeploymentId,
+  User
+}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
 import scala.concurrent.ExecutionContext.Implicits._
@@ -97,7 +105,7 @@ trait DeploymentManager extends AutoCloseable {
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
-  def customActions: List[CustomAction]
+  def customActions: List[CustomActionDefinition]
 
   def invokeCustomAction(
       actionRequest: CustomActionRequest,

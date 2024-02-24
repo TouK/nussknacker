@@ -10,7 +10,15 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionRequest,
+  CustomActionResult,
+  DeploymentData,
+  DeploymentId,
+  ExternalDeploymentId,
+  User
+}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.{
@@ -110,7 +118,7 @@ object MockableDeploymentManagerProvider {
     override def processStateDefinitionManager: ProcessStateDefinitionManager =
       SimpleProcessStateDefinitionManager
 
-    override def customActions: List[CustomAction] = Nil
+    override def customActions: List[CustomActionDefinition] = Nil
 
     override def invokeCustomAction(
         actionRequest: CustomActionRequest,

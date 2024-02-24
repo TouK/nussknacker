@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.api.deployment
+package pl.touk.nussknacker.engine.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
-import pl.touk.nussknacker.engine.deployment.User
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus}
 
 import java.net.URI
 
@@ -18,7 +18,7 @@ Things to consider in future changes:
 2. Storing custom actions taken in DB.
  */
 
-case class CustomAction(
+case class CustomActionDefinition(
     name: ScenarioActionName,
     // We cannot use "engine.api.deployment.StateStatus" because it can be implemented as a class containing nonconstant attributes
     allowedStateStatusNames: List[StateStatus.StatusName],
@@ -36,4 +36,4 @@ case class CustomActionRequest(
     params: Map[String, String]
 )
 
-case class CustomActionResult(req: CustomActionRequest, msg: String)
+case class CustomActionResult(msg: String)
