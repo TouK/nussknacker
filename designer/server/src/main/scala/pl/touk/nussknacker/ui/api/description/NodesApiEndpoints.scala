@@ -8,7 +8,8 @@ import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
+import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -20,28 +21,26 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.{Enricher, Filter}
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
-  MalformedTypingResult,
-  NoProcessingType,
-  NoScenario
-}
-import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
-import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{MalformedTypingResult, NoProcessingType, NoScenario}
+import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.{malformedTypingResultExample, noProcessingTypeExample, noScenarioExample}
+import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.SchemaType.SString
-import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{decodeVariableTypes, prepareTypingResultDecoder}
-import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
-import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import sttp.tapir.derevo.schema
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -51,6 +50,7 @@ import scala.language.implicitConversions
 class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import NodesApiEndpoints.Dtos._
+  lazy val encoder: Encoder[TypingResult] = TypingResult.encoder
 
   lazy val nodesAdditionalInfoEndpoint
       : SecuredEndpoint[(ProcessName, NodeData), NodesError, Option[AdditionalInfo], Any] = {
@@ -59,10 +59,38 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .tag("Nodes")
       .post
       .in("nodes" / path[ProcessName]("scenarioName") / "additionalInfo")
-      .in(jsonBody[NodeData])
+      .in(
+        jsonBody[NodeData]
+          .example(
+            Example.of(
+              summary = Some("Basic node request"),
+              value = Enricher(
+                "enricher",
+                ServiceRef(
+                  "paramService",
+                  List(
+                    evaluatedparam.Parameter(ParameterName("id"), Expression(Language.Spel, "'a'"))
+                  )
+                ),
+                "out",
+                None
+              )
+            )
+          )
+      )
       .out(
         statusCode(Ok).and(
           jsonBody[Option[AdditionalInfo]]
+            .example(
+              Example.of(
+                summary = Some("Additional info for node"),
+                value = Some(
+                  MarkdownAdditionalInfo(
+                    "\\nSamples:\\n\\n| id  | value |\\n| --- | ----- |\\n| a   | generated |\\n| b   | not existent |\\n\\nResults for a can be found [here](http://touk.pl?id=a)\\n"
+                  )
+                )
+              )
+            )
         )
       )
       .errorOut(scenarioNotFoundErrorOutput)
@@ -76,28 +104,82 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .tag("Nodes")
       .post
       .in("nodes" / path[ProcessName]("scenarioName") / "validation")
-      .in(jsonBody[NodeValidationRequestDto])
+      .in(
+        jsonBody[NodeValidationRequestDto]
+          .examples(
+            List(
+              Example.of(
+                NodeValidationRequestDto(
+                  Filter("id", Expression(Language.Spel, "#longValue > 1"), None, None),
+                  ProcessProperties.apply(ProcessAdditionalFields(None, Map.empty, "")),
+                  Map(
+                    "existButString" -> TypingResultInJson(
+                      encoder.apply(Typed.apply(Class.forName("java.lang.String")))
+                    ),
+                    "longValue" -> TypingResultInJson(encoder.apply(Typed.apply(Class.forName("java.lang.Long"))))
+                  ),
+                  None,
+                  None
+                ),
+                summary = Some("Validate correct Filter node")
+              ),
+              Example.of(
+                NodeValidationRequestDto(
+                  Filter("id", Expression(Language.Spel, "#existButString"), None, None),
+                  ProcessProperties.apply(ProcessAdditionalFields(None, Map.empty, "")),
+                  Map(
+                    "existButString" -> TypingResultInJson(
+                      encoder.apply(Typed.apply(Class.forName("java.lang.String")))
+                    ),
+                    "longValue" -> TypingResultInJson(encoder.apply(Typed.apply(Class.forName("java.lang.Long"))))
+                  ),
+                  None,
+                  None
+                )
+              )
+            )
+          )
+      )
       .out(
         statusCode(Ok).and(
           jsonBody[NodeValidationResultDto]
+            .examples(
+              List(
+                Example.of(
+                  summary = Some("Node validation without errors"),
+                  value = NodeValidationResultDto(
+                    None,
+                    Some(Typed.apply(Class.forName("java.lang.Boolean"))),
+                    List.empty,
+                    validationPerformed = true
+                  )
+                ),
+                Example.of(
+                  summary = Some("Wrong parameter type"),
+                  value = NodeValidationResultDto(
+                    None,
+                    Some(Unknown),
+                    List(
+                      NodeValidationError(
+                        "ExpressionParserCompilationError",
+                        "Failed to parse expression: Bad expression type, expected: Boolean, found: String",
+                        "There is problem with expression in field Some($expression) - it could not be parsed.",
+                        Some("$expression"),
+                        NodeValidationErrorType.SaveAllowed,
+                        None
+                      )
+                    ),
+                    validationPerformed = true
+                  )
+                )
+              )
+            )
         )
       )
       .errorOut(
         oneOf[NodesError](
-          oneOfVariantFromMatchType(
-            NotFound,
-            plainBody[NoScenario]
-              .example(
-                Example.of(
-                  summary = Some("No scenario {scenarioName} found"),
-                  value = NoScenario(ProcessName("'example scenario'"))
-                )
-              )
-          ),
-          oneOfVariantFromMatchType(
-            BadRequest,
-            plainBody[MalformedTypingResult]
-          )
+          noScenarioExample,
+          malformedTypingResultExample
         )
       )
       .withSecurity(auth)
@@ -110,10 +192,25 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .tag("Nodes")
       .post
       .in("properties" / path[ProcessName]("scenarioName") / "additionalInfo")
-      .in(jsonBody[ProcessProperties])
+      .in(
+        jsonBody[ProcessProperties]
+          .example(
+            Example.of(
+              ProcessProperties.apply(
+                validPropertiesAdditionalFields
+              )
+            )
+          )
+      )
       .out(
         statusCode(Ok).and(
           jsonBody[Option[AdditionalInfo]]
+            .example(
+              Example.of(
+                summary = Some("Some additional info for parameters"),
+                value = Some(MarkdownAdditionalInfo("2 threads will be used on environment '{scenarioName}'"))
+              )
+            )
         )
       )
       .errorOut(scenarioNotFoundErrorOutput)
@@ -127,10 +224,75 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .tag("Nodes")
       .post
       .in("properties" / path[ProcessName]("scenarioName") / "validation")
-      .in(jsonBody[PropertiesValidationRequestDto])
+      .in(
+        jsonBody[PropertiesValidationRequestDto]
+          .examples(
+            List(
+              Example.of(
+                summary = Some("Validate proper properties"),
+                value = PropertiesValidationRequestDto(
+                  validPropertiesAdditionalFields,
+                  ProcessName("test")
+                )
+              ),
+              Example.of(
+                summary = Some("Validate wrong 'number of threads' property"),
+                value = PropertiesValidationRequestDto(
+                  ProcessAdditionalFields(
+                    None,
+                    Map(
+                      "parallelism"                 -> "",
+                      "checkpointIntervalInSeconds" -> "",
+                      "numberOfThreads"             -> "a",
+                      "spillStateToDisk"            -> "true",
+                      "environment"                 -> "test",
+                      "useAsyncInterpretation"      -> ""
+                    ),
+                    "StreamMetaData"
+                  ),
+                  ProcessName("test")
+                )
+              )
+            )
+          )
+      )
       .out(
         statusCode(Ok).and(
           jsonBody[NodeValidationResultDto]
+            .examples(
+              List(
+                Example.of(
+                  summary = Some("Validation for proper node"),
+                  value = NodeValidationResultDto(None, None, List.empty, validationPerformed = true)
+                ),
+                Example.of(
+                  summary = Some("Validation for properties with errors"),
+                  value = NodeValidationResultDto(
+                    None,
+                    None,
+                    List(
+                      NodeValidationError(
+                        "InvalidPropertyFixedValue",
+                        "Property numberOfThreads (Number of threads) has invalid value",
+                        "Expected one of 1, 2, got: a.",
+                        Some("numberOfThreads"),
+                        NodeValidationErrorType.SaveAllowed,
+                        None
+                      ),
+                      NodeValidationError(
+                        "UnknownProperty",
+                        "Unknown property parallelism",
+                        "Property parallelism is not known",
+                        Some("parallelism"),
+                        NodeValidationErrorType.SaveAllowed,
+                        None
+                      )
+                    ),
+                    validationPerformed = true
+                  )
+                )
+              )
+            )
         )
       )
       .errorOut(scenarioNotFoundErrorOutput)
@@ -148,22 +310,75 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .tag("Nodes")
       .post
       .in("parameters" / path[ProcessingType]("processingType") / "validate")
-      .in(jsonBody[ParametersValidationRequestDto])
+      .in(
+        jsonBody[ParametersValidationRequestDto]
+          .example(
+            Example.of(
+              summary = Some("Parameters validation"),
+              value = ParametersValidationRequestDto(
+                List(
+                  UIValueParameterDto(
+                    "condition",
+                    TypingResultInJson(encoder.apply(Typed.apply(Class.forName("java.lang.Boolean")))),
+                    Expression(Language.Spel, "#input.amount > 2")
+                  )
+                ),
+                Map(
+                  "input" ->
+                    TypingResultInJson(
+                      encoder.apply(
+                        Typed.record(
+                          Map(
+                            "amount" ->
+                              TypedObjectWithValue.apply(
+                                Typed.apply(Class.forName("java.lang.Long")).asInstanceOf[TypedClass],
+                                5L
+                              )
+                          )
+                        )
+                      )
+                    )
+                )
+              )
+            )
+          )
+      )
       .out(
         statusCode(Ok).and(
           jsonBody[ParametersValidationResultDto]
+            .examples(
+              List(
+                Example.of(
+                  ParametersValidationResultDto(
+                    List.empty,
+                    validationPerformed = true
+                  ),
+                  summary = Some("Validate correct parameters")
+                ),
+                Example.of(
+                  ParametersValidationResultDto(
+                    List(
+                      NodeValidationError(
+                        "ExpressionParserCompilationError",
+                        "Failed to parse expression: Bad expression type, expected: Boolean, found: Long(5)",
+                        "There is problem with expression in field Some(condition) - it could not be parsed.",
+                        Some("condition"),
+                        NodeValidationErrorType.SaveAllowed,
+                        None
+                      )
+                    ),
+                    validationPerformed = true
+                  ),
+                  summary = Some("Validate incorrect parameters")
+                )
+              )
+            )
         )
       )
       .errorOut(
         oneOf[NodesError](
-          oneOfVariantFromMatchType(
-            NotFound,
-            plainBody[NoProcessingType]
-          ),
-          oneOfVariantFromMatchType(
-            BadRequest,
-            plainBody[MalformedTypingResult]
-          )
+          noProcessingTypeExample,
+          malformedTypingResultExample
         )
       )
       .withSecurity(auth)
@@ -180,22 +395,63 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .tag("Nodes")
       .post
       .in("parameters" / path[ProcessingType]("processingType") / "suggestions")
-      .in(jsonBody[ExpressionSuggestionRequestDto])
+      .in(
+        jsonBody[ExpressionSuggestionRequestDto]
+          .example(
+            Example.of(
+              ExpressionSuggestionRequestDto(
+                Expression(Language.Spel, "#inpu"),
+                CaretPosition2d(0, 5),
+                Map(
+                  "input" ->
+                    TypingResultInJson(
+                      encoder.apply(
+                        Typed.record(
+                          Map(
+                            "amount" ->
+                              TypedObjectWithValue.apply(
+                                Typed.apply(Class.forName("java.lang.Long")).asInstanceOf[TypedClass],
+                                5L
+                              )
+                          )
+                        )
+                      )
+                    )
+                )
+              )
+            )
+          )
+      )
       .out(
         statusCode(Ok).and(
           jsonBody[List[ExpressionSuggestionDto]]
+            .example(
+              Example.of(
+                List(
+                  ExpressionSuggestionDto(
+                    "input",
+                    Typed.record(
+                      Map(
+                        "amount" ->
+                          TypedObjectWithValue.apply(
+                            Typed.apply(Class.forName("java.lang.Long")).asInstanceOf[TypedClass],
+                            5L
+                          )
+                      )
+                    ),
+                    fromClass = false,
+                    None,
+                    List.empty
+                  )
+                )
+              )
+            )
         )
       )
       .errorOut(
         oneOf[NodesError](
-          oneOfVariantFromMatchType(
-            NotFound,
-            plainBody[NoProcessingType]
-          ),
-          oneOfVariantFromMatchType(
-            BadRequest,
-            plainBody[MalformedTypingResult]
-          )
+          noProcessingTypeExample,
+          malformedTypingResultExample
         )
       )
       .withSecurity(auth)
@@ -213,6 +469,20 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             )
           )
       )
+    )
+
+  private val validPropertiesAdditionalFields =
+    ProcessAdditionalFields(
+      None,
+      Map(
+        "parallelism"                 -> "",
+        "checkpointIntervalInSeconds" -> "",
+        "numberOfThreads"             -> "2",
+        "spillStateToDisk"            -> "true",
+        "environment"                 -> "test",
+        "useAsyncInterpretation"      -> ""
+      ),
+      "StreamMetaData"
     )
 
 }
@@ -237,9 +507,14 @@ object NodesApiEndpoints {
     implicit lazy val scenarioNameSchema: Schema[ProcessName]                         = Schema.derived
     implicit lazy val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
+    implicit lazy val expressionSchema: Schema[Expression] = {
+      implicit val languageSchema: Schema[Language] = Schema.string[Language]
+      Schema.derived
+    }
+    implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 
-    // Request doesn't need valid encoder
-    @derive(decoder, schema)
+    // Request doesn't need valid encoder, apart from examples
+    @derive(encoder, decoder, schema)
     final case class NodeValidationRequestDto(
         nodeData: NodeData,
         processProperties: ProcessProperties,
@@ -251,14 +526,12 @@ object NodesApiEndpoints {
     object NodeValidationRequestDto {
       implicit lazy val nodeDataSchema: Schema[NodeData]                    = Schema.anyObject
       implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties] = Schema.derived.hidden(true)
-      implicit val nodeValidationRequestDtoEmptyEncoder: Encoder[NodeValidationRequestDto] =
-        Encoder.encodeJson.contramap[NodeValidationRequestDto](_ => throw new IllegalStateException)
     }
 
     // Response doesn't need valid decoder
     @derive(encoder, schema)
     final case class NodeValidationResultDto(
-        parameters: Option[List[UIParameterDto]],
+        parameters: Option[List[UIParameter]],
         expressionType: Option[TypingResult],
         validationErrors: List[NodeValidationError],
         validationPerformed: Boolean
@@ -268,56 +541,18 @@ object NodesApiEndpoints {
       Decoder.instance[NodeValidationResultDto](_ => throw new IllegalStateException)
 
     object NodeValidationResultDto {
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]    = Schema.derived
+      implicit lazy val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
+      implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
 
       def apply(node: NodeValidationResult): NodeValidationResultDto = {
         new NodeValidationResultDto(
-          parameters = node.parameters.map { list =>
-            list.map(param => UIParameterDto(param))
-          },
+          parameters = node.parameters,
           expressionType = node.expressionType,
           validationErrors = node.validationErrors,
           validationPerformed = node.validationPerformed
         )
       }
-
-    }
-
-    // Only used in response, no need for valid decoder
-    @derive(encoder, schema)
-    final case class UIParameterDto(
-        name: String,
-        typ: TypingResult,
-        editor: ParameterEditor,
-        defaultValue: Expression,
-        additionalVariables: Map[String, TypingResult],
-        variablesToHide: Set[String],
-        branchParam: Boolean,
-        hintText: Option[String],
-        label: String
-    )
-
-    private object UIParameterDto {
-      implicit lazy val parameterEditorSchema: Schema[ParameterEditor] = Schema.derived
-      implicit lazy val dualEditorSchema: Schema[DualEditorMode]       = Schema.string
-
-      implicit lazy val expressionSchema: Schema[Expression] = {
-        implicit val languageSchema: Schema[Language] = Schema.string[Language]
-        Schema.derived
-      }
-
-      implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
-
-      def apply(param: UIParameter): UIParameterDto = new UIParameterDto(
-        param.name,
-        param.typ,
-        param.editor,
-        param.defaultValue,
-        param.additionalVariables,
-        param.variablesToHide,
-        param.branchParam,
-        param.hintText,
-        param.label
-      )
 
     }
 
@@ -327,15 +562,12 @@ object NodesApiEndpoints {
         name: ProcessName
     )
 
-    // Request doesn't need valid encoder
-    @derive(schema, decoder)
+    // Request doesn't need valid encoder, apart from examples
+    @derive(schema, encoder, decoder)
     final case class ParametersValidationRequestDto(
         parameters: List[UIValueParameterDto],
         variableTypes: Map[String, TypingResultInJson]
     )
-
-    implicit val parametersValidationRequestDtoEncoder: Encoder[ParametersValidationRequestDto] =
-      Encoder.encodeJson.contramap[ParametersValidationRequestDto](_ => throw new IllegalStateException)
 
     // for a sake of generation Open API using Scala 2.12, we have to define it explicitly
     private implicit def listSchema[T: Schema]: Typeclass[List[T]] = Schema.schemaForIterable[T, List]
@@ -346,31 +578,24 @@ object NodesApiEndpoints {
         validationPerformed: Boolean
     )
 
-    // Request doesn't need valid encoder
-    @derive(schema, decoder)
+    // Request doesn't need valid encoder, apart from examples
+    @derive(schema, encoder, decoder)
     final case class UIValueParameterDto(
         name: String,
         typ: TypingResultInJson,
         expression: Expression
     )
 
-    implicit lazy val expressionSchema: Schema[Expression] = {
-      implicit val languageSchema: Schema[Language] = Schema.string[Language]
-      Schema.derived
-    }
-
-    implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
-
-    // Request doesn't need valid encoder
-    @derive(schema, decoder)
+    // Request doesn't need valid encoder, apart from examples
+    @derive(schema, encoder, decoder)
     final case class ExpressionSuggestionRequestDto(
         expression: Expression,
         caretPosition2d: CaretPosition2d,
         variableTypes: Map[String, TypingResultInJson]
     )
 
-    implicit val expressionSuggestionRequestDtoEncoder: Encoder[ExpressionSuggestionRequestDto] =
-      Encoder.encodeJson.contramap[ExpressionSuggestionRequestDto](_ => throw new IllegalStateException)
+//    implicit val expressionSuggestionRequestDtoEncoder: Encoder[ExpressionSuggestionRequestDto] =
+//      Encoder.encodeJson.contramap[ExpressionSuggestionRequestDto](_ => throw new IllegalStateException)
 
     // Response doesn't need valid decoder
     @derive(schema, encoder)
@@ -514,6 +739,44 @@ object NodesApiEndpoints {
     }
 
   }
+
+  private val noScenarioExample: EndpointOutput.OneOfVariant[NoScenario] =
+    oneOfVariantFromMatchType(
+      NotFound,
+      plainBody[NoScenario]
+        .example(
+          Example.of(
+            summary = Some("No scenario {scenarioName} found"),
+            value = NoScenario(ProcessName("'example scenario'"))
+          )
+        )
+    )
+
+  private val malformedTypingResultExample: EndpointOutput.OneOfVariant[MalformedTypingResult] =
+    oneOfVariantFromMatchType(
+      BadRequest,
+      plainBody[MalformedTypingResult]
+        .example(
+          Example.of(
+            summary = Some("Malformed TypingResult sent in request"),
+            value = MalformedTypingResult(
+              "Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown"
+            )
+          )
+        )
+    )
+
+  private val noProcessingTypeExample: EndpointOutput.OneOfVariant[NoProcessingType] =
+    oneOfVariantFromMatchType(
+      NotFound,
+      plainBody[NoProcessingType]
+        .example(
+          Example.of(
+            summary = Some("ProcessingType type: {processingType} not found"),
+            value = NoProcessingType("'processingType'")
+          )
+        )
+    )
 
 }
 
