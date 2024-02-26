@@ -11,10 +11,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.table.TableSourceConfig
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
+import pl.touk.nussknacker.engine.flink.table.DataSourceConfig
 
-class ConfigurableTableSourceFactory(config: TableSourceConfig) extends SourceFactory with UnboundedStreamComponent {
+class ConfigurableTableSourceFactory(config: DataSourceConfig) extends SourceFactory with UnboundedStreamComponent {
 
   @MethodToInvoke
   def invoke(): Source = {

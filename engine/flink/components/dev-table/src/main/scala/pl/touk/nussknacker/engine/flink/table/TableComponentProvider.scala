@@ -5,11 +5,10 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.{
-  ConfigIndependentComponents,
-  dataSourceConfigPath
-}
+import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.ConfigIndependentComponents
+import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.{ConfigurableTableSourceFactory, HardcodedValuesTableSourceFactory}
+import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 class TableComponentProvider extends ComponentProvider {
 
@@ -18,16 +17,31 @@ class TableComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val tableDataSourcesConfigOpt = parseConfigOpt(config)
-    val sources = tableDataSourcesConfigOpt.map { a =>
-      ComponentDefinition(s"tableApi-source-${a.connector}", new ConfigurableTableSourceFactory(a))
-    }.toList
 
-    ConfigIndependentComponents ::: sources
+    val dataSourceComponents: List[ComponentDefinition] = for {
+      tableDataSourcesConfig <- parseConfigOpt(config).toList
+      dataSourceConfig       <- tableDataSourcesConfig.dataSources
+      componentDefinitions <- List(
+        ComponentDefinition(
+          tableDataSourceComponentId("source", dataSourceConfig),
+          new ConfigurableTableSourceFactory(dataSourceConfig)
+        ),
+        ComponentDefinition(
+          tableDataSourceComponentId("sink", dataSourceConfig),
+          new TableSinkFactory(dataSourceConfig)
+        )
+      )
+    } yield componentDefinitions
+
+    ConfigIndependentComponents ::: dataSourceComponents
   }
 
-  private def parseConfigOpt(config: Config): Option[TableSourceConfig] =
-    config.getAs[TableSourceConfig](dataSourceConfigPath)
+  private def tableDataSourceComponentId(componentType: String, config: DataSourceConfig): String = {
+    s"tableApi-$componentType-${config.connector}-${config.name}"
+  }
+
+  private def parseConfigOpt(config: Config): Option[TableDataSourcesConfig] =
+    config.rootAs[Option[TableDataSourcesConfig]]
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
@@ -36,7 +50,6 @@ class TableComponentProvider extends ComponentProvider {
 }
 
 object TableComponentProvider {
-  private val dataSourceConfigPath = "dataSource"
 
   lazy val ConfigIndependentComponents: List[ComponentDefinition] =
     List(
@@ -48,4 +61,11 @@ object TableComponentProvider {
 
 }
 
-final case class TableSourceConfig(options: Map[String, String] = Map.empty, connector: String, format: String)
+final case class TableDataSourcesConfig(dataSources: List[DataSourceConfig])
+
+final case class DataSourceConfig(
+    name: String,
+    options: Map[String, String] = Map.empty,
+    connector: String,
+    format: String
+)
