@@ -4,33 +4,32 @@ import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import org.apache.flink.table.api.Expressions.$
-import org.apache.flink.table.api.{DataTypes, Schema, Table, TableDescriptor}
+import org.apache.flink.table.api.{DataTypes, Schema, Table}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper,
   FlinkSink
 }
-import pl.touk.nussknacker.engine.flink.table.DataSourceConfig
+import pl.touk.nussknacker.engine.flink.table.HardcodedSchema.{intColumnName, stringColumnName}
+import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
+import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTable
 
 class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends FlinkSink {
 
+  // TODO: check if there is a way to have a Map[String,Any] in a LazyParameter
   override type Value   = AnyRef
   protected type RECORD = java.util.Map[String, Any]
 
-  // TODO: check if this is necessary
-  private def typeResult: TypingResult = Typed.record(Map("someInt" -> Typed[Integer], "someString" -> Typed[String]))
-
   override def prepareValue(
-      ds: DataStream[Context],
+      dataStream: DataStream[Context],
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[ValueWithContext[Value]] = {
-    ds.flatMap(
+    dataStream.flatMap(
       valueFunction(flinkNodeContext.lazyParameterHelper),
-      flinkNodeContext.valueWithContextInfo.forType(typeResult)
+      flinkNodeContext.valueWithContextInfo.forType(HardcodedSchema.typingResult)
     )
   }
 
@@ -58,26 +57,27 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends 
       4. Contain the insert into a statementSet and do attachAsDataStream
      */
     val streamOfRows: SingleOutputStreamOperator[Row] =
-      dataStream.map(a => {
-        val mapOfAny = a.value.asInstanceOf[RECORD]
+      dataStream.map(ctx => {
+        val mapOfAny = ctx.value.asInstanceOf[RECORD]
         val row      = Row.withNames()
 
-        val stringVal: String = mapOfAny.get("someString").asInstanceOf[String]
-        val intVal: Int       = mapOfAny.get("someInt").asInstanceOf[Int]
+        val stringVal: String = mapOfAny.get(stringColumnName).asInstanceOf[String]
+        val intVal: Int       = mapOfAny.get(intColumnName).asInstanceOf[Int]
 
-        row.setField("someString", stringVal)
-        row.setField("someInt", intVal)
+        row.setField(stringColumnName, stringVal)
+        row.setField(intColumnName, intVal)
         row
       })
 
+    val nestedRowColumnName = "f0"
     // TODO: avoid this step by mapping datastream directly without this intermediate table with nested row
     val nestedRowSchema = Schema
       .newBuilder()
       .column(
-        "f0",
+        nestedRowColumnName,
         DataTypes.ROW(
-          DataTypes.FIELD("someString", DataTypes.STRING()),
-          DataTypes.FIELD("someInt", DataTypes.INT()),
+          DataTypes.FIELD(stringColumnName, DataTypes.STRING()),
+          DataTypes.FIELD(intColumnName, DataTypes.INT()),
         )
       )
       .build()
@@ -87,26 +87,13 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends 
     )
 
     val flatInputValueTable = tableWithNestedRow
-      .select($("f0").get("someString").as("someString"), $("f0").get("someInt").as("someInt"))
-    flatInputValueTable.printSchema()
+      .select(
+        $(nestedRowColumnName).get(stringColumnName).as(stringColumnName),
+        $(nestedRowColumnName).get(intColumnName).as(intColumnName)
+      )
 
     // Registering output table
-    // TODO: remove duplication with source
-    val sinkTableDescriptorBuilder = TableDescriptor
-      .forConnector(config.connector)
-      .format(config.format)
-      .schema(
-        Schema
-          .newBuilder()
-          .column("someString", DataTypes.STRING())
-          .column("someInt", DataTypes.INT())
-          .build()
-      )
-    config.options.foreach { case (key, value) =>
-      sinkTableDescriptorBuilder.option(key, value)
-    }
-    val sinkTableDescriptor = sinkTableDescriptorBuilder.build()
-
+    val sinkTableDescriptor = buildTable(config, HardcodedSchema.schema)
     tableEnv.createTable(outputTableName, sinkTableDescriptor)
 
     // Adding insert statements to dataStream
