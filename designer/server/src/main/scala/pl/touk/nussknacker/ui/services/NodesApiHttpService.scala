@@ -4,7 +4,6 @@ import cats.data.EitherT
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
-import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.ScenarioName
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType}
@@ -44,9 +43,8 @@ import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.util.EitherTImplicits
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 
-import scala.concurrent.impl.Promise
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 class NodesApiHttpService(
     config: Config,
@@ -166,7 +164,7 @@ class NodesApiHttpService(
             modelData <- getModelData(processingType)
             expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)
             suggestions   <- getSuggestions(expressionSuggester, request, modelData)
-            suggestionDto <- toExpressionSuggestionResponse(suggestions)
+            suggestionDto <- getExpressionSuggestion(suggestions)
           } yield suggestionDto
         }
       }
@@ -238,19 +236,23 @@ class NodesApiHttpService(
       parametersValidationRequestFromDto(request, modelData)
     ).eitherT()
 
+  private def getExpressionSuggestion(
+      suggestions: Future[List[ExpressionSuggestion]]
+  ): EitherT[Future, NodesError, List[ExpressionSuggestionDto]] = {
+    toExpressionSuggestionResponse(suggestions).leftMap(identity)
+  }
+
   private def toExpressionSuggestionResponse(suggestions: Future[List[ExpressionSuggestion]]) = {
-    Future[Either[NodesError, List[ExpressionSuggestionDto]]](
-      suggestions.value match {
-        case Some(value) =>
-          value match {
-            case Failure(exception) => Left(MalformedTypingResult(exception.getMessage))
-            case Success(list)      => Right(list.map { expression => ExpressionSuggestionDto(expression) })
-          }
-        case None => // Request not completed yet
-          throw new IllegalStateException()
-      }
-    )
-      .eitherT()
+    EitherT
+      .liftF(
+        suggestions
+          .map(expressionList =>
+            expressionList
+              .map(expression => ExpressionSuggestionDto(expression))
+          )
+      )
+      // This should not happen as getSuggestions should have already deal with Malformed requests
+      .leftMap { _: Any => MalformedTypingResult("Internally passed malformed TypingResult") }
   }
 
   private def getSuggestions(
