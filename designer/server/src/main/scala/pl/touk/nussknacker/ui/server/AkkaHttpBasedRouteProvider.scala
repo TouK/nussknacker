@@ -249,6 +249,15 @@ class AkkaHttpBasedRouteProvider(
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
       )
+      val migrationApiHttpService = new MigrationApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        processService = processService,
+        processResolver = processResolver,
+        processAuthorizer = processAuthorizer,
+        processChangeListener = processChangeListener,
+        useLegacyCreateScenarioApi = true
+      )
       val componentsApiHttpService = new ComponentApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
@@ -391,6 +400,7 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
+          migrationApiHttpService,
         )
 
       val akkaHttpServerInterpreter = {
