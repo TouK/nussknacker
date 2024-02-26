@@ -7,14 +7,14 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.TableComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
-import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
-
-import scala.jdk.CollectionConverters._
 
 class TableApiHardcodedSourceTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
+
+  import scala.jdk.CollectionConverters._
+  import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
+  import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 
   val sinkId       = "sinkId"
   val sourceId     = "sourceId"
