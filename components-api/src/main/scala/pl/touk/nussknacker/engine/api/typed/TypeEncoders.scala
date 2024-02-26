@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import scala.util.{Failure, Success, Try}
 
 //TODO: refactor way of encoding to easier handle decoding.
+
+// If changes are made to Encoders/Decoders should also change Schemas in NodesApiEndpoints.TypingDtoSchemas for OpenApi
 object TypeEncoders {
 
   private[typed] val typeField = "type"
