@@ -6,16 +6,15 @@ import org.apache.flink.table.api.Expressions.row
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.process.Source
+import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-
-import scala.jdk.CollectionConverters._
+import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
 
 // TODO: Should be BoundedStreamComponent - change it after configuring batch Deployment Manager
-object HardcodedValuesTableSourceFactory extends TableSourceFactory with UnboundedStreamComponent {
+object HardcodedValuesTableSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
   @MethodToInvoke
   def invoke(): Source = {
@@ -23,6 +22,8 @@ object HardcodedValuesTableSourceFactory extends TableSourceFactory with Unbound
   }
 
   private class HardcodedValuesSource extends FlinkSource with ReturningType {
+
+    import scala.jdk.CollectionConverters._
 
     override def sourceStream(
         env: StreamExecutionEnvironment,

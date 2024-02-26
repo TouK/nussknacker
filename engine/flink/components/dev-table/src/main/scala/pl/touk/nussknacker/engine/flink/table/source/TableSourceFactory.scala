@@ -12,14 +12,14 @@ import pl.touk.nussknacker.engine.api.process.{
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
-trait TableSourceFactory extends SourceFactory {
+object TableSourceFactory {
 
-  protected type RECORD = java.util.Map[String, Any]
+  type RECORD = java.util.Map[String, Any]
 
   // this context initialization was copied from kafka source
-  protected val contextInitializer: ContextInitializer[RECORD] = new BasicContextInitializer[RECORD](Typed[RECORD])
+  val contextInitializer: ContextInitializer[RECORD] = new BasicContextInitializer[RECORD](Typed[RECORD])
 
-  protected class FlinkContextInitializingFunction[T](
+  class FlinkContextInitializingFunction[T](
       contextInitializer: ContextInitializer[T],
       nodeId: String,
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
