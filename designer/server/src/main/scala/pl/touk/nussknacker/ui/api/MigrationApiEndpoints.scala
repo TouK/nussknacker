@@ -38,34 +38,26 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       oneOfVariant(
         NotFound,
         plainBody[NotFoundError]
-          .example(
-            Example.of(???)
-          )
       ),
       oneOfVariant(
         BadRequest,
         plainBody[BadRequestError]
-          .example(Example.of(???))
       ),
       oneOfVariant(
         Unauthorized,
         plainBody[UnauthorizedError]
-          .example(Example.of(???))
       ),
       oneOfVariant(
         Conflict,
         plainBody[IllegalOperationError]
-          .example(Example.of(???))
       ),
       oneOfVariant(
         InternalServerError,
         plainBody[OtherError]
-          .example(Example.of(???))
       ),
       oneOfVariant(
         InternalServerError,
         plainBody[FatalError]
-          .example(Example.of(???))
       )
     )
 
