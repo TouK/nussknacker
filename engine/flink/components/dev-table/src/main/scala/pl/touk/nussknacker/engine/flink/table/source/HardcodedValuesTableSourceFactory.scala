@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, Fli
 import pl.touk.nussknacker.engine.flink.table.HardcodedSchema
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
 
-// TODO: Should be BoundedStreamComponent - change it after configuring batch Deployment Manager
 object HardcodedValuesTableSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
   @MethodToInvoke
@@ -37,7 +36,6 @@ object HardcodedValuesTableSourceFactory extends SourceFactory with UnboundedStr
 
       val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 
-      // TODO: infer returnType dynamically from table schema based on table.getResolvedSchema.getColumns
       val streamOfMaps = streamOfRows
         .map(r => { HardcodedSchema.toMap(r): RECORD })
         .returns(classOf[RECORD])

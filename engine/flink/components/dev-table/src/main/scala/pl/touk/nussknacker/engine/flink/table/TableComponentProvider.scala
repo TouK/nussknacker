@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentP
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.ConfigIndependentComponents
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
-import pl.touk.nussknacker.engine.flink.table.source.{ConfigurableTableSourceFactory, HardcodedValuesTableSourceFactory}
+import pl.touk.nussknacker.engine.flink.table.source.{HardcodedValuesTableSourceFactory, TableSourceFactory}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 class TableComponentProvider extends ComponentProvider {
@@ -24,7 +24,7 @@ class TableComponentProvider extends ComponentProvider {
       componentDefinitions <- List(
         ComponentDefinition(
           tableDataSourceComponentId("source", dataSourceConfig),
-          new ConfigurableTableSourceFactory(dataSourceConfig)
+          new TableSourceFactory(dataSourceConfig)
         ),
         ComponentDefinition(
           tableDataSourceComponentId("sink", dataSourceConfig),

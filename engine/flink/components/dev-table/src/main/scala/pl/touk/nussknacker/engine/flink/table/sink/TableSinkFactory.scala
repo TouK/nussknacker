@@ -55,7 +55,7 @@ class TableSinkFactory(config: DataSourceConfig) extends SingleInputDynamicCompo
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[NodeId])
 
-  override def allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.UnboundedStream))
+  override val allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.UnboundedStream))
 
 }
 
