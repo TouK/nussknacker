@@ -14,7 +14,6 @@ import pl.touk.nussknacker.openapi.OpenAPIsConfig._
 import pl.touk.nussknacker.openapi.discovery.SwaggerOpenApiDefinitionDiscovery
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.parser.ServiceParseError
-import sttp.model.StatusCode
 
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
