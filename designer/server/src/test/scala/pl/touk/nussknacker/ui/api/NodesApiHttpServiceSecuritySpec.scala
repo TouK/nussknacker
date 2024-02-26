@@ -836,8 +836,8 @@ class NodesApiHttpServiceSecuritySpec
           )
           .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming2.stringify}/validate")
           .Then()
-          .statusCode(401)
-          .equalsPlainBody("The supplied user [limitedReader] is not authorized to access this resource")
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
       }
     }
     "not authenticated should" - {
@@ -1025,8 +1025,8 @@ class NodesApiHttpServiceSecuritySpec
           .when()
           .post(s"$nuDesignerHttpAddress/api/parameters/${Streaming2.stringify}/suggestions")
           .Then()
-          .statusCode(401)
-          .equalsPlainBody("The supplied user [limitedReader] is not authorized to access this resource")
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
       }
     }
     "not authenticated should" - {
