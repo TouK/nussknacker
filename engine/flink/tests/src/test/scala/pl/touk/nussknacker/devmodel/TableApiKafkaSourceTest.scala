@@ -3,8 +3,7 @@ package pl.touk.nussknacker.devmodel
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.json.JsonSchema
-import pl.touk.nussknacker.defaultmodel.FlinkWithKafkaSuite
-import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.schemaRegistryMockClient
+import pl.touk.nussknacker.defaultmodel.{FlinkWithKafkaSuite, TopicConfig}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -12,15 +11,13 @@ import pl.touk.nussknacker.engine.flink.table.SourceTableComponentProvider
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.spel
 
 class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
 
   import spel.Implicits._
 
-  private val inputTopic: String  = "table-api.source.input"
-  private val outputTopic: String = "table-api.source.output"
+  private val testTopicPart: String = "table-api.source"
 
   private val schema = new JsonSchema("""{
                                         |  "type": "object",
@@ -43,6 +40,8 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
       |  "someString": "BBB"
       |}""".stripMargin
 
+  private lazy val inputTopicName = TopicConfig.inputTopicName(testTopicPart)
+
   private lazy val kafkaTableConfig =
     s"""
        | connector: "kafka"
@@ -51,7 +50,7 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
        |   "properties.bootstrap.servers": "${kafkaServer.kafkaAddress}"
        |   "properties.group.id": "someConsumerGroupId"
        |   "scan.startup.mode": "earliest-offset"
-       |   "topic": "$inputTopic"
+       |   "topic": "$inputTopicName"
        | }
        |""".stripMargin
 
@@ -63,13 +62,10 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
   )
 
   test("should ping-pong with table kafka source and filter") {
-    val inputSubject  = ConfluentUtils.topicSubject(inputTopic, isKey = false)
-    val outputSubject = ConfluentUtils.topicSubject(outputTopic, isKey = false)
-    schemaRegistryMockClient.register(inputSubject, schema)
-    schemaRegistryMockClient.register(outputSubject, schema)
+    val topics = createAndRegisterTopicConfig(testTopicPart, schema)
 
-    sendAsJson(record1, inputTopic)
-    sendAsJson(record2, inputTopic)
+    sendAsJson(record1, topics.input)
+    sendAsJson(record2, topics.input)
 
     val scenarioId = "scenarioId"
     val sourceId   = "input"
@@ -83,7 +79,7 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
         "kafka",
         KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
         KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
-        KafkaUniversalComponentTransformer.TopicParamName         -> s"'$outputTopic'",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topics.output}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
       )
@@ -91,7 +87,7 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
     run(process) {
       val result = kafkaClient
         .createConsumer()
-        .consumeWithJson[Json](outputTopic)
+        .consumeWithJson[Json](topics.output)
         .take(1)
         .map(_.message())
 

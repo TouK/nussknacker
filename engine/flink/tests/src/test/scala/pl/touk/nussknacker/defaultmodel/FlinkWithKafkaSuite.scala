@@ -9,7 +9,11 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
-import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, schemaRegistryMockClient}
+import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{
+  RecordSchemaV1,
+  resetSchemaRegistryMockClient,
+  schemaRegistryMockClient
+}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -19,13 +23,13 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
   ProcessSettingsPreparer,
   UnoptimizedSerializationPreparer
 }
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
@@ -54,14 +58,17 @@ abstract class FlinkWithKafkaSuite
 
   private lazy val creator: DefaultConfigCreator = new TestDefaultConfigCreator
 
-  protected var registrar: FlinkProcessRegistrar = _
-  protected lazy val valueSerializer             = new KafkaAvroSerializer(schemaRegistryMockClient)
-  protected lazy val valueDeserializer           = new KafkaAvroDeserializer(schemaRegistryMockClient)
+  protected var registrar: FlinkProcessRegistrar         = _
+  protected var valueSerializer: KafkaAvroSerializer     = _
+  protected var valueDeserializer: KafkaAvroDeserializer = _
 
   protected lazy val additionalComponents: List[ComponentDefinition] = Nil
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
+    resetSchemaRegistryMockClient()
+    valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
+    valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
     val components =
       new MockFlinkKafkaComponentProvider()
         .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
@@ -187,8 +194,16 @@ object TopicConfig {
   private final val inputPrefix  = "test.generic.avro.input."
   private final val outputPrefix = "test.generic.avro.output."
 
+  def inputTopicName(testName: String): String = {
+    inputPrefix + testName
+  }
+
+  def outputTopicName(testName: String): String = {
+    outputPrefix + testName
+  }
+
   def apply(testName: String, schemas: List[ParsedSchema]): TopicConfig =
-    new TopicConfig(inputPrefix + testName, outputPrefix + testName, schemas, isKey = false)
+    new TopicConfig(inputTopicName(testName), outputTopicName(testName), schemas, isKey = false)
 }
 
 object MockSchemaRegistry extends Serializable {
@@ -237,7 +252,11 @@ object MockSchemaRegistry extends Serializable {
 
   val SecondRecordSchemaV1: Schema = AvroUtils.parseSchema(SecondRecordSchemaStringV1)
 
-  val schemaRegistryMockClient: MockSchemaRegistryClient = new MockSchemaRegistryClient
+  var schemaRegistryMockClient: MockSchemaRegistryClient = _
+
+  def resetSchemaRegistryMockClient(): Unit = {
+    schemaRegistryMockClient = new MockSchemaRegistryClient
+  }
 
 }
 

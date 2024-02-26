@@ -721,7 +721,7 @@ lazy val flinkTests = (project in flink("tests"))
     flinkExecutor                       % "test",
     flinkKafkaComponents                % "test",
     flinkBaseComponents                 % "test",
-    experimentalFlinkTableApiComponents % "test, test->test",
+    experimentalFlinkTableApiComponents % "test",
     flinkTestUtils                      % "test",
     kafkaTestUtils                      % "test",
     flinkComponentsTestkit              % "test",

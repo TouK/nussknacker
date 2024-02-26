@@ -7,7 +7,7 @@ import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.scalatest.concurrent.Eventually
-import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.RecordSchemaV1
+import MockSchemaRegistry.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolderImpl
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.engine.version.BuildInfo
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
