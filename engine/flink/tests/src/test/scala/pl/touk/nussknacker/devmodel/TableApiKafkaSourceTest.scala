@@ -7,7 +7,7 @@ import pl.touk.nussknacker.defaultmodel.{FlinkWithKafkaSuite, TopicConfig}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.SourceTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.TableComponentProvider
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -44,19 +44,21 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
 
   private lazy val kafkaTableConfig =
     s"""
-       | connector: "kafka"
-       | format: "json"
-       | options {
-       |   "properties.bootstrap.servers": "${kafkaServer.kafkaAddress}"
-       |   "properties.group.id": "someConsumerGroupId"
-       |   "scan.startup.mode": "earliest-offset"
-       |   "topic": "$inputTopicName"
+       | dataSource: {
+       |   connector: "kafka"
+       |   format: "json"
+       |   options {
+       |     "properties.bootstrap.servers": "${kafkaServer.kafkaAddress}"
+       |     "properties.group.id": "someConsumerGroupId"
+       |     "scan.startup.mode": "earliest-offset"
+       |     "topic": "$inputTopicName"
+       |   }
        | }
        |""".stripMargin
 
   private lazy val tableKafkaComponentsConfig: Config = ConfigFactory.parseString(kafkaTableConfig)
 
-  override lazy val additionalComponents: List[ComponentDefinition] = new SourceTableComponentProvider().create(
+  override lazy val additionalComponents: List[ComponentDefinition] = new TableComponentProvider().create(
     tableKafkaComponentsConfig,
     ProcessObjectDependencies.withConfig(tableKafkaComponentsConfig)
   )
@@ -72,7 +74,7 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
     val process = ScenarioBuilder
       .streaming(scenarioId)
       .parallelism(1)
-      .source(sourceId, "configuredSource-kafka-tableApi")
+      .source(sourceId, "tableApi-source-kafka")
       .filter("filterId", "#input.someInt != 1")
       .emptySink(
         "output",

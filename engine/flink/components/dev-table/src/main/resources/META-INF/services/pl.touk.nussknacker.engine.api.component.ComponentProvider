@@ -1,2 +1,1 @@
-pl.touk.nussknacker.engine.flink.table.HardcodedSourceTableComponentProvider
-pl.touk.nussknacker.engine.flink.table.SourceTableComponentProvider
+pl.touk.nussknacker.engine.flink.table.TableComponentProvider

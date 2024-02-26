@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.flink.table.source
 
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.Expressions.row
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
+import org.apache.flink.table.api.{DataTypes, Schema, TableDescriptor}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.process.Source
@@ -11,18 +11,20 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.table.TableSourceConfig
 
-import scala.jdk.CollectionConverters._
-
-// TODO: Should be BoundedStreamComponent - change it after configuring batch Deployment Manager
-object HardcodedValuesTableSourceFactory extends TableSourceFactory with UnboundedStreamComponent {
+class ConfigurableTableSourceFactory(config: TableSourceConfig)
+    extends TableSourceFactory
+    with UnboundedStreamComponent {
 
   @MethodToInvoke
   def invoke(): Source = {
-    new HardcodedValuesSource()
+    new TableSource()
   }
 
-  private class HardcodedValuesSource extends FlinkSource with ReturningType {
+  private class TableSource extends FlinkSource with ReturningType {
+
+    import scala.jdk.CollectionConverters._
 
     override def sourceStream(
         env: StreamExecutionEnvironment,
@@ -30,18 +32,17 @@ object HardcodedValuesTableSourceFactory extends TableSourceFactory with Unbound
     ): DataStream[Context] = {
       val tableEnv = StreamTableEnvironment.create(env);
 
-      val table = tableEnv.fromValues(
-        row(1, "AAA"),
-        row(2, "BBB")
-      )
+      val tableName = "some_table_name"
+
+      addTableToEnv(tableEnv, tableName)
+      val table = tableEnv.from(tableName)
 
       val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 
-      // TODO: infer returnType dynamically from table schema based on table.getResolvedSchema.getColumns
       val streamOfMaps = streamOfRows
         .map(r => {
-          val intVal    = r.getFieldAs[Int](0)
-          val stringVal = r.getFieldAs[String](1)
+          val intVal    = r.getFieldAs[Int]("someInt")
+          val stringVal = r.getFieldAs[String]("someString")
           val fields    = Map("someInt" -> intVal, "someString" -> stringVal)
           new java.util.HashMap[String, Any](fields.asJava): RECORD
         })
@@ -59,7 +60,31 @@ object HardcodedValuesTableSourceFactory extends TableSourceFactory with Unbound
       contextStream
     }
 
-    override val returnType: typing.TypedObjectTypingResult = {
+    private def addTableToEnv(
+        tableEnv: StreamTableEnvironment,
+        tableName: String
+    ): Unit = {
+      val tableDescriptor = TableDescriptor
+        .forConnector(config.connector)
+        .format(config.format)
+        .schema(
+          Schema
+            .newBuilder()
+            .column("someInt", DataTypes.INT())
+            .column("someString", DataTypes.STRING())
+            .build()
+        )
+
+      config.options.foreach { case (key, value) =>
+        tableDescriptor.option(key, value)
+      }
+
+      val tableDescriptorFilled = tableDescriptor.build()
+
+      tableEnv.createTable(tableName, tableDescriptorFilled)
+    }
+
+    override def returnType: typing.TypedObjectTypingResult = {
       Typed.record(Map("someInt" -> Typed[Integer], "someString" -> Typed[String]))
     }
 
