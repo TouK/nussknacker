@@ -434,6 +434,65 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/migrate/v2:
+    post:
+      tags:
+      - TODO
+      summary: TODO
+      operationId: postApiMigrateV2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MigrateScenarioRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '409':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - {}
+      - httpAuth: []
   /api/notifications:
     get:
       tags:
@@ -1068,6 +1127,22 @@ components:
       type: object
       additionalProperties:
         type: string
+    MigrateScenarioRequest:
+      required:
+      - environmentId
+      - processingMode
+      - engineSetupName
+      - scenarioWithDetailsForMigrations
+      type: object
+      properties:
+        environmentId:
+          type: string
+        processingMode:
+          type: string
+        engineSetupName:
+          type: string
+        scenarioWithDetailsForMigrations:
+          type: string
     NodeUsageData:
       oneOf:
       - $ref: '#/components/schemas/FragmentUsageData'
