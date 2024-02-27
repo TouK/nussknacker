@@ -265,6 +265,18 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         notificationService = notificationService
       )
+      val nodesApiHttpService = new NodesApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData),
+        typeToProcessValidator = processValidator,
+        typeToNodeValidator = typeToConfig.mapValues(v => new NodeValidator(v.designerModelData.modelData, fragmentRepository)),
+        typeToExpressionSuggester =
+          typeToConfig.mapValues(v => ExpressionSuggester(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)),
+        typeToParametersValidator =
+          typeToConfig.mapValues(v => new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)),
+        scenarioService = processService
+      )
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
@@ -293,18 +305,6 @@ class AkkaHttpBasedRouteProvider(
             processToolbarService = configProcessToolbarService,
             processAuthorizer = processAuthorizer,
             processChangeListener = processChangeListener
-          ),
-          new NodesResources(
-            processService,
-            typeToConfig.mapValues(_.designerModelData.modelData),
-            processValidator,
-            typeToConfig.mapValues(v => new NodeValidator(v.designerModelData.modelData, fragmentRepository)),
-            typeToConfig.mapValues(v =>
-              ExpressionSuggester(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
-            ),
-            typeToConfig.mapValues(v =>
-              new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
-            ),
           ),
           new ProcessesExportResources(
             futureProcessRepository,
@@ -391,6 +391,7 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
+          nodesApiHttpService
         )
 
       val akkaHttpServerInterpreter = {

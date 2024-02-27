@@ -22,9 +22,8 @@ class ComponentApiHttpService(
   expose {
     componentApiEndpoints.componentsListEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
-      .serverLogic { user => _ =>
-        componentService
-          .getComponentsList(user)
+      .serverLogic { implicit loggedUser => _ =>
+        componentService.getComponentsList
           .map { componentList => success(componentList) }
       }
   }
@@ -32,9 +31,9 @@ class ComponentApiHttpService(
   expose {
     componentApiEndpoints.componentUsageEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { user: LoggedUser => designerWideComponentId: DesignerWideComponentId =>
+      .serverLogic { implicit loggedUser: LoggedUser => designerWideComponentId: DesignerWideComponentId =>
         componentService
-          .getComponentUsages(designerWideComponentId)(user)
+          .getComponentUsages(designerWideComponentId)
           .map {
             case Left(_)      => businessError(s"Component $designerWideComponentId not exist.")
             case Right(value) => success(value)

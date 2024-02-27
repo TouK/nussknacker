@@ -3,7 +3,13 @@ package pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionRequest,
+  CustomActionResult,
+  DeploymentId,
+  User
+}
 
 import scala.concurrent.Future
 
@@ -29,7 +35,7 @@ trait BaseDeploymentManager extends DeploymentManager {
 
   override def close(): Unit = {}
 
-  override def customActions: List[CustomAction] = List.empty
+  override def customActions: List[CustomActionDefinition] = List.empty
 
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,

@@ -105,6 +105,9 @@ lazy val publishSettings = Seq(
 def defaultMergeStrategy: String => MergeStrategy = {
   // remove JPMS module descriptors (a proper soultion would be to merge them)
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
+  // this prevents problem with table api in runtime:
+  // https://stackoverflow.com/questions/60436823/issue-when-flink-upload-a-job-with-stream-sql-query
+  case PathList("org", "codehaus", "janino", "CompilerFactory.class") => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
   // merge Netty version information files
@@ -485,8 +488,9 @@ lazy val devArtifacts = taskKey[List[(File, String)]]("dev artifacts")
 
 devArtifacts := {
   modelArtifacts.value ++ List(
-    (flinkDevModel / assembly).value -> "model/devModel.jar",
-    (devPeriodicDM / assembly).value -> "managers/devPeriodicDM.jar"
+    (flinkDevModel / assembly).value                       -> "model/devModel.jar",
+    (devPeriodicDM / assembly).value                       -> "managers/devPeriodicDM.jar",
+    (experimentalFlinkTableApiComponents / assembly).value -> "components/flink-dev/flinkTable.jar",
   )
 }
 
@@ -581,8 +585,9 @@ lazy val flinkDeploymentManager = (project in flink("management"))
         flinkExecutor / Compile / assembly,
         flinkDevModel / Compile / assembly,
         flinkDevModelJava / Compile / assembly,
+        experimentalFlinkTableApiComponents / Compile / assembly,
         flinkBaseComponents / Compile / assembly,
-        flinkKafkaComponents / Compile / assembly
+        flinkKafkaComponents / Compile / assembly,
       )
       .value,
     // flink cannot run tests and deployment concurrently
@@ -712,16 +717,17 @@ lazy val flinkTests = (project in flink("tests"))
     }
   )
   .dependsOn(
-    defaultModel           % "test",
-    flinkExecutor          % "test",
-    flinkKafkaComponents   % "test",
-    flinkBaseComponents    % "test",
-    flinkTestUtils         % "test",
-    kafkaTestUtils         % "test",
-    flinkComponentsTestkit % "test",
+    defaultModel                        % "test",
+    flinkExecutor                       % "test",
+    flinkKafkaComponents                % "test",
+    flinkBaseComponents                 % "test",
+    experimentalFlinkTableApiComponents % "test",
+    flinkTestUtils                      % "test",
+    kafkaTestUtils                      % "test",
+    flinkComponentsTestkit              % "test",
     // for local development
-    designer               % "test",
-    deploymentManagerApi   % "test"
+    designer                            % "test",
+    deploymentManagerApi                % "test"
   )
 
 lazy val defaultModel = (project in (file("defaultModel")))
@@ -1728,6 +1734,33 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
     componentsUtils    % Provided
   )
 
+// TODO: check if any flink-table / connector / format dependencies' scope can be limited
+lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev-table"))
+  .settings(commonSettings)
+  .settings(assemblyNoScala("flinkTable.jar"): _*)
+  .settings(publishAssemblySettings: _*)
+  .settings(
+    name := "nussknacker-flink-table-components",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" % "flink-table"                 % flinkV,
+        "org.apache.flink" % "flink-table-api-java"        % flinkV,
+        "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
+        "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
+        "org.apache.flink" % "flink-table-runtime"         % flinkV,
+        "org.apache.flink" % "flink-connector-kafka"       % flinkV,
+        "org.apache.flink" % "flink-json"                  % flinkV
+      )
+    }
+  )
+  .dependsOn(
+    flinkComponentsApi   % Provided,
+    componentsApi        % Provided,
+    commonUtils          % Provided,
+    componentsUtils      % Provided,
+    flinkComponentsUtils % Provided,
+  )
+
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
 
 lazy val additionalBundledArtifacts = taskKey[List[(File, String)]]("additional artifacts to include in the bundle")
@@ -1947,6 +1980,7 @@ lazy val modules = List[ProjectReference](
   flinkPeriodicDeploymentManager,
   flinkDevModel,
   flinkDevModelJava,
+  experimentalFlinkTableApiComponents,
   devPeriodicDM,
   defaultModel,
   openapiComponents,

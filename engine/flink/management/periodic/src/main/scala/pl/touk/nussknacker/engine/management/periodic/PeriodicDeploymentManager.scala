@@ -7,7 +7,15 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionRequest,
+  CustomActionResult,
+  DeploymentData,
+  DeploymentId,
+  ExternalDeploymentId,
+  User
+}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
@@ -214,7 +222,7 @@ class PeriodicDeploymentManager private[periodic] (
     delegate.close()
   }
 
-  override def customActions: List[CustomAction] = customActionsProvider.customActions
+  override def customActions: List[CustomActionDefinition] = customActionsProvider.customActions
 
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,

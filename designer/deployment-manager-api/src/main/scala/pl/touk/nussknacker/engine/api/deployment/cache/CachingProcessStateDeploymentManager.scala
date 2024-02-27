@@ -8,7 +8,15 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionRequest,
+  CustomActionResult,
+  DeploymentData,
+  DeploymentId,
+  ExternalDeploymentId,
+  User
+}
 import pl.touk.nussknacker.engine.testmode.TestProcess
 
 import scala.compat.java8.FutureConverters._
@@ -82,7 +90,7 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = delegate.processStateDefinitionManager
 
-  override def customActions: List[CustomAction] = delegate.customActions
+  override def customActions: List[CustomActionDefinition] = delegate.customActions
 
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,

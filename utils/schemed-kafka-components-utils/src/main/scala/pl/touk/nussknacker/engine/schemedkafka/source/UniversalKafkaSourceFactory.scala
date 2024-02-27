@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
-import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
+import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 
 /**
@@ -51,7 +51,7 @@ class UniversalKafkaSourceFactory(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition =
     topicParamStep orElse
-      schemaParamStep orElse
+      schemaParamStep(paramsDeterminedAfterSchema) orElse
       nextSteps(context, dependencies)
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -59,18 +59,23 @@ class UniversalKafkaSourceFactory(
   ): ContextTransformationDefinition = {
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: Nil,
-          _
+          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: _,
+          state
         ) =>
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
-      val valueValidationResult = determineSchemaAndType(
-        prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
-        Some(SchemaVersionParamName)
-      )
+      val valueValidationResult =
+        state match {
+          case Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(results)) => results
+          case _ =>
+            determineSchemaAndType(
+              prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
+              Some(SchemaVersionParamName)
+            )
+        }
 
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
-    case step @ TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: Nil, _) =>
+    case step @ TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: _, _) =>
       // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
       // 2. not resolved as a valid String
@@ -110,7 +115,8 @@ class UniversalKafkaSourceFactory(
     (keyValidationResult, valueValidationResult) match {
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
-        val finalState       = UniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
+        val finalState =
+          ImplementationUniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
         FinalResults.forValidation(context, errors, Some(finalState))(finalInitializer.validationContext)
       case _ =>
         prepareSourceFinalErrors(
@@ -156,7 +162,7 @@ class UniversalKafkaSourceFactory(
     implicit val nodeId: NodeId = TypedNodeDependency[NodeId].extract(dependencies)
 
     val preparedTopic = extractPreparedTopic(params)
-    val UniversalKafkaSourceFactoryState(
+    val ImplementationUniversalKafkaSourceFactoryState(
       keySchemaDataUsedInRuntime,
       valueSchemaUsedInRuntime,
       kafkaContextInitializer
@@ -229,10 +235,16 @@ class UniversalKafkaSourceFactory(
 
 object UniversalKafkaSourceFactory {
 
-  case class UniversalKafkaSourceFactoryState(
+  sealed trait UniversalKafkaSourceFactoryState
+
+  case class ImplementationUniversalKafkaSourceFactoryState(
       keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
       contextInitializer: ContextInitializer[ConsumerRecord[Any, Any]]
-  )
+  ) extends UniversalKafkaSourceFactoryState
+
+  case class PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(
+      valueValidationResult: Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)]
+  ) extends UniversalKafkaSourceFactoryState
 
 }
