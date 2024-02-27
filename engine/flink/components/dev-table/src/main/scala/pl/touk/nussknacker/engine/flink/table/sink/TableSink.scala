@@ -59,7 +59,7 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends 
     val streamOfRows: SingleOutputStreamOperator[Row] =
       dataStream.map(ctx => {
         val mapOfAny: java.util.Map[String, Any] = ctx.value.asInstanceOf[RECORD]
-        HardcodedSchema.fromMap(mapOfAny)
+        HardcodedSchema.MapRowConversion.fromMap(mapOfAny)
       })
 
     val nestedRowColumnName = "f0"

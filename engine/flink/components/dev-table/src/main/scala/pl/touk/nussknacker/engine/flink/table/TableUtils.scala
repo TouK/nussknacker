@@ -34,21 +34,25 @@ object HardcodedSchema {
 
   val typingResult: TypingResult = Typed.record(Map("someInt" -> Typed[Integer], "someString" -> Typed[String]))
 
-  def toMap(row: Row): java.util.HashMap[String, Any] = {
-    val intVal    = row.getFieldAs[Int](intColumnName)
-    val stringVal = row.getFieldAs[String](stringColumnName)
-    val fields    = Map(intColumnName -> intVal, stringColumnName -> stringVal)
-    new java.util.HashMap[String, Any](fields.asJava)
-  }
+  object MapRowConversion {
 
-  def fromMap(map: java.util.Map[String, Any]): Row = {
-    val stringVal: String = map.get(stringColumnName).asInstanceOf[String]
-    val intVal: Int       = map.get(intColumnName).asInstanceOf[Int]
+    def toMap(row: Row): java.util.HashMap[String, Any] = {
+      val intVal    = row.getFieldAs[Int](intColumnName)
+      val stringVal = row.getFieldAs[String](stringColumnName)
+      val fields    = Map(intColumnName -> intVal, stringColumnName -> stringVal)
+      new java.util.HashMap[String, Any](fields.asJava)
+    }
 
-    val row = Row.withNames()
-    row.setField(stringColumnName, stringVal)
-    row.setField(intColumnName, intVal)
-    row
+    def fromMap(map: java.util.Map[String, Any]): Row = {
+      val stringVal: String = map.get(stringColumnName).asInstanceOf[String]
+      val intVal: Int       = map.get(intColumnName).asInstanceOf[Int]
+
+      val row = Row.withNames()
+      row.setField(stringColumnName, stringVal)
+      row.setField(intColumnName, intVal)
+      row
+    }
+
   }
 
 }

@@ -42,7 +42,7 @@ object HardcodedValuesTableSourceFactory extends SourceFactory with UnboundedStr
       val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 
       val streamOfMaps = streamOfRows
-        .map(r => { HardcodedSchema.toMap(r): RECORD })
+        .map(r => { HardcodedSchema.MapRowConversion.toMap(r): RECORD })
         .returns(classOf[RECORD])
 
       val contextStream = streamOfMaps.map(

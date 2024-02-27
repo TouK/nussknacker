@@ -50,7 +50,7 @@ class TableSourceFactory(config: DataSourceConfig) extends SourceFactory with Un
 
       // TODO: infer returnType dynamically from table schema based on table.getResolvedSchema.getColumns
       val streamOfMaps = streamOfRows
-        .map(r => { HardcodedSchema.toMap(r): RECORD })
+        .map(r => { HardcodedSchema.MapRowConversion.toMap(r): RECORD })
         .returns(classOf[RECORD])
 
       val contextStream = streamOfMaps.map(
