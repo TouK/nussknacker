@@ -26,8 +26,10 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserNam
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.validation.FatalValidationError
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.internal.FatalError
 import scala.util.{Failure, Success}
 
 class MigrationApiHttpService(
@@ -51,7 +53,8 @@ class MigrationApiHttpService(
       .serverLogicEitherT { implicit loggedUser => migrateScenarioRequest =>
         {
           val scenarioWithDetailsForMigrations = migrateScenarioRequest.scenarioWithDetailsForMigrations
-          val environmentId                    = migrateScenarioRequest.environmentId
+          val sourceEnvironmentId              = migrateScenarioRequest.sourceEnvironmentId
+          val targetEnvironmentId              = config.getString("environment")
           val processingMode                   = migrateScenarioRequest.processingMode
           val processCategory                  = scenarioWithDetailsForMigrations.processCategory
           val engineSetupName                  = migrateScenarioRequest.engineSetupName
@@ -63,50 +66,54 @@ class MigrationApiHttpService(
           val forwardedUser                    = if (passUsernameInMigration) Some(loggedUser) else None
           val forwardedUsername                = forwardedUser.map(user => RemoteUserName(user.username))
           val updateProcessComment =
-            UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")
+            UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by ${loggedUser.username}")
           val updateScenarioCommand =
             UpdateScenarioCommand(scenarioGraphUnsafe, updateProcessComment, forwardedUsername)
 
           EitherT(
             for {
               validation <- Future.successful(
-                processResolver
-                  .forTypeUnsafe(processingType)
-                  .validateBeforeUiResolving(scenarioGraphUnsafe, processName, isFragment)
+                FatalValidationError.renderNotAllowedAsError(
+                  processResolver
+                    .forTypeUnsafe(processingType)
+                    .validateBeforeUiResolving(scenarioGraphUnsafe, processName, isFragment)
+                )
               )
 
-              _ <-
-                if (validation.errors != ValidationErrors.success)
-                  Future.failed(MigrationValidationError(validation.errors))
-                else Future.successful(())
+              _ <- validation match {
+                case Left(e) => Future.failed(e)
+                case Right(validationResults) =>
+                  if (validationResults.errors == ValidationErrors.success) // TODO: change me to inequality!!!
+                    Future.failed(MigrationValidationError(validationResults.errors))
+                  else Future.successful(())
+              }
+
+              processIdO <- processService.getProcessId(processName)
+
+              _ <- processIdO match {
+                case Some(pid) =>
+                  val processIdWithName = ProcessIdWithName(pid, processName)
+                  processService
+                    .getLatestProcessWithDetails(
+                      processIdWithName,
+                      GetScenarioWithDetailsOptions(
+                        FetchScenarioGraph(FetchScenarioGraph.DontValidate),
+                        fetchState = true
+                      )
+                    )
+                    .transformWith[Either[NuDesignerError, Unit]] {
+                      case Success(scenarioWithDetails) if scenarioWithDetails.isArchived =>
+                        Future
+                          .failed(MigrationToArchivedError(scenarioWithDetails.name, targetEnvironmentId))
+                      case Success(_) => Future.successful(Right(()))
+                      case Failure(e) => Future.failed(e)
+                    }
+                case None =>
+                  createProcess(processName, parameters, isFragment, forwardedUsername, useLegacyCreateScenarioApi)
+              }
 
               processId <- processService.getProcessIdUnsafe(processName)
               processIdWithName = ProcessIdWithName(processId, processName)
-
-              remoteScenarioWithDetailsE <- processService
-                .getLatestProcessWithDetails(
-                  processIdWithName,
-                  GetScenarioWithDetailsOptions(
-                    FetchScenarioGraph(FetchScenarioGraph.DontValidate),
-                    fetchState = true
-                  )
-                )
-                .transformWith[Either[NuDesignerError, ScenarioWithDetails]] {
-                  case Failure(e: ProcessNotFoundError) => Future.successful(Left(e))
-                  case Success(scenarioWithDetails) if scenarioWithDetails.isArchived =>
-                    Future.failed(MigrationToArchivedError(scenarioWithDetails.name, environmentId))
-                  case Success(scenarioWithDetails) => Future.successful(Right(scenarioWithDetails))
-                  case Failure(e)                   => Future.failed(e)
-                }
-
-              _ <- remoteScenarioWithDetailsE match {
-                case Left(ProcessNotFoundError(processName)) =>
-                  Future.successful(
-                    createProcess(processName, parameters, isFragment, forwardedUsername, useLegacyCreateScenarioApi)
-                  )
-                case Right(_) => Future.successful(Right(()))
-                case Left(e)  => Future.failed(e)
-              }
 
               canWrite <- processAuthorizer.check(processId, Permission.Write, loggedUser)
               _ <- if (canWrite) Future.successful(Right(())) else Future.failed(new UnauthorizedError(loggedUser))

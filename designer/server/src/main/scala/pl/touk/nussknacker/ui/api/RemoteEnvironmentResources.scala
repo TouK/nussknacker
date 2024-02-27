@@ -9,7 +9,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
@@ -70,11 +71,10 @@ class RemoteEnvironmentResources(
                 processIdWithName,
                 version,
                 details =>
-                  remoteEnvironment.migrate(
-                    details.scenarioGraphUnsafe,
-                    details.name,
-                    details.parameters,
-                    details.isFragment
+                  remoteEnvironment.migrateV2(
+                    details.processingMode,
+                    details.engineSetupName,
+                    ScenarioWithDetailsForMigrations.fromScenarioWithDetails(details)
                   )
               )
             }

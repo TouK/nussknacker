@@ -27,7 +27,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .summary("TODO")
       .tag("TODO")
       .post
-      .in("migrate" / "v2")
+      .in("migrate")
       .in(jsonBody[MigrateScenarioRequest])
       .out(statusCode(Ok))
       .errorOut(nuDesignerErrorOutput)
@@ -104,7 +104,7 @@ object MigrationApiEndpoints {
 
     @derive(encoder, decoder, schema)
     final case class MigrateScenarioRequest(
-        environmentId: String,
+        sourceEnvironmentId: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations

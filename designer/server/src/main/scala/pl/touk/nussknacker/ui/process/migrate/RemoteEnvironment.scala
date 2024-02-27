@@ -14,11 +14,18 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetailsForMigrations}
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.restmodel.scenariodetails.{
+  ScenarioParameters,
+  ScenarioWithDetails,
+  ScenarioWithDetailsForMigrations
+}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.NuDesignerError.XError
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
@@ -53,6 +60,15 @@ trait RemoteEnvironment {
       processName: ProcessName,
       parameters: ScenarioParameters,
       isFragment: Boolean
+  )(
+      implicit ec: ExecutionContext,
+      loggedUser: LoggedUser
+  ): Future[Either[NuDesignerError, Unit]]
+
+  def migrateV2(
+      processingMode: ProcessingMode,
+      engineSetupName: EngineSetupName,
+      scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations
   )(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
@@ -216,6 +232,27 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         )
       }
     } yield ()).value
+  }
+
+  override def migrateV2(
+      processingMode: ProcessingMode,
+      engineSetupName: EngineSetupName,
+      scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations
+  )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
+    val migrateScenarioRequest: MigrateScenarioRequest =
+      MigrateScenarioRequest(
+        environmentId,
+        processingMode,
+        engineSetupName,
+        scenarioWithDetailsForMigrations
+      )
+    invokeForSuccess(
+      HttpMethods.POST,
+      List("migrate"),
+      Query.Empty,
+      HttpEntity(migrateScenarioRequest.asJson.noSpaces),
+      List.empty
+    )
   }
 
   private def createProcessOnRemote(
