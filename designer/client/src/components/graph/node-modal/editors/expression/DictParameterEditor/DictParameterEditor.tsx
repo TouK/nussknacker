@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useAutocomplete } from "@mui/material";
-import httpService from "../../../../../../http/HttpService";
+import HttpService, { ProcessDefinitionDataDictOption } from "../../../../../../http/HttpService";
 import { getScenario } from "../../../../../../reducers/selectors/graph";
 import { useSelector } from "react-redux";
 import { debounce } from "@mui/material/utils";
@@ -19,7 +19,7 @@ interface Props {
 export const DictParameterEditor: SimpleEditor<Props> = (props: Props) => {
     const scenario = useSelector(getScenario);
 
-    const [options, setOptions] = useState([]);
+    const [options, setOptions] = useState<ProcessDefinitionDataDictOption[]>([]);
     const [value, setValue] = React.useState(() => {
         if (!props.expressionObj.expression) {
             return null;
@@ -31,7 +31,7 @@ export const DictParameterEditor: SimpleEditor<Props> = (props: Props) => {
 
     const fetchProcessDefinitionDataDict = useCallback(
         async (inputValue: string) => {
-            const response = await httpService.fetchProcessDefinitionDataDict(
+            const response = await HttpService.fetchProcessDefinitionDataDict(
                 scenario.processingType,
                 props.param.editor.dictId,
                 inputValue,
