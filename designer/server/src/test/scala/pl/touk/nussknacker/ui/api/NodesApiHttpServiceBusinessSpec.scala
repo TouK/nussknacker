@@ -1,17 +1,28 @@
 package pl.touk.nussknacker.ui.api
 
+import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import org.everit.json.schema.Schema
+import org.everit.json.schema.loader.SchemaLoader
 import org.hamcrest.Matchers.equalTo
+import org.json.JSONObject
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.{EnabledTypedFeatures, TypingResultGen}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import sttp.apispec.circe._
+import sttp.tapir.docs.apispec.schema._
+
+import scala.util.{Success, Try}
 
 class NodesApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -938,6 +949,27 @@ class NodesApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .body(equalTo("[]"))
+    }
+  }
+
+  "TypingResult schemas shouldn't go out of sync with Codecs" in {
+    for (_ <- 1 to 10) {
+      TypingResultGen.typingResultGen(EnabledTypedFeatures.All).sample match {
+        case Some(sample) =>
+          val sampleJson   = TypingResult.encoder.apply(sample)
+          val typingSchema = TypingDtoSchemas.typingResult
+          val jsonSchema = TapirSchemaToJsonSchema(
+            typingSchema,
+            markOptionsAsNullable = true
+          ).asJson
+
+          val rawSchema: JSONObject = new JSONObject(jsonSchema)
+          val schema: Schema        = SchemaLoader.load(rawSchema)
+
+          val result = Try(schema.validate(sampleJson.toString()))
+          result shouldBe Success(())
+        case None => None
+      }
     }
   }
 
