@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.table.source
 
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.api.Expressions.row
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
@@ -9,7 +10,11 @@ import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  FlinkContextInitializingFunction,
+  FlinkCustomNodeContext,
+  FlinkSource
+}
 import pl.touk.nussknacker.engine.flink.table.HardcodedSchema
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
 
@@ -29,7 +34,7 @@ object HardcodedValuesTableSourceFactory extends SourceFactory with UnboundedStr
       val tableEnv = StreamTableEnvironment.create(env);
 
       val table = tableEnv.fromValues(
-        HardcodedSchema.schema,
+        DataTypes.ROW(DataTypes.FIELD("someInt", DataTypes.INT()), DataTypes.FIELD("someString", DataTypes.STRING())),
         row(1, "AAA"),
         row(2, "BBB")
       )
