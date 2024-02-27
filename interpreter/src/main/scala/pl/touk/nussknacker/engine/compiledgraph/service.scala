@@ -18,7 +18,6 @@ object service {
   case class ServiceRef(
       id: String,
       invoker: ServiceInvoker,
-      parameters: List[CompiledParameter],
       resultCollector: ResultCollector,
   ) {
 
