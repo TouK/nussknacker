@@ -735,6 +735,20 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NodeData'
+            examples:
+              Example:
+                summary: Basic node request
+                value:
+                  id: enricher
+                  service:
+                    id: paramService
+                    parameters:
+                    - name: id
+                      expression:
+                        language: spel
+                        expression: '''a'''
+                  output: out
+                  type: Enricher
         required: true
       responses:
         '200':
@@ -743,6 +757,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdditionalInfo'
+              examples:
+                Example:
+                  summary: Additional info for node
+                  value:
+                    content: |2
+
+                      Samples:
+
+                      | id  | value |
+                      | --- | ----- |
+                      | a   | generated |
+                      | b   | not existent |
+
+                      Results for a can be found [here](http://touk.pl?id=a)
+                    type: MarkdownAdditionalInfo
         '400':
           description: 'Invalid value for: body'
           content:
@@ -800,6 +829,54 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NodeValidationRequestDto'
+            examples:
+              Example0:
+                summary: Validate correct Filter node
+                value:
+                  nodeData:
+                    id: id
+                    expression:
+                      language: spel
+                      expression: '#longValue > 1'
+                    type: Filter
+                  processProperties:
+                    additionalFields:
+                      properties: {}
+                      metaDataType: ''
+                  variableTypes:
+                    existButString:
+                      display: String
+                      type: TypedClass
+                      refClazzName: java.lang.String
+                      params: []
+                    longValue:
+                      display: Long
+                      type: TypedClass
+                      refClazzName: java.lang.Long
+                      params: []
+              Example1:
+                value:
+                  nodeData:
+                    id: id
+                    expression:
+                      language: spel
+                      expression: '#existButString'
+                    type: Filter
+                  processProperties:
+                    additionalFields:
+                      properties: {}
+                      metaDataType: ''
+                  variableTypes:
+                    existButString:
+                      display: String
+                      type: TypedClass
+                      refClazzName: java.lang.String
+                      params: []
+                    longValue:
+                      display: Long
+                      type: TypedClass
+                      refClazzName: java.lang.Long
+                      params: []
         required: true
       responses:
         '200':
@@ -808,12 +885,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NodeValidationResultDto'
+              examples:
+                Example0:
+                  summary: Node validation without errors
+                  value:
+                    expressionType:
+                      display: Boolean
+                      type: TypedClass
+                      refClazzName: java.lang.Boolean
+                      params: []
+                    validationErrors: []
+                    validationPerformed: true
+                Example1:
+                  summary: Wrong parameter type
+                  value:
+                    expressionType:
+                      display: Unknown
+                      type: Unknown
+                      refClazzName: java.lang.Object
+                      params: []
+                    validationErrors:
+                    - typ: ExpressionParserCompilationError
+                      message: 'Failed to parse expression: Bad expression type, expected:
+                        Boolean, found: String'
+                      description: There is problem with expression in field Some($expression)
+                        - it could not be parsed.
+                      fieldName: $expression
+                      errorType: SaveAllowed
+                    validationPerformed: true
         '400':
           description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Malformed TypingResult sent in request
+                  value: |-
+                    The request content was malformed:
+                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
         '401':
           description: ''
           content:
@@ -865,6 +976,35 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExpressionSuggestionRequestDto'
+            example:
+              expression:
+                language: spel
+                expression: '#inpu'
+              caretPosition2d:
+                row: 0
+                column: 5
+              variableTypes:
+                input:
+                  display: 'Record{amount: Long(5)}'
+                  type: TypedObjectTypingResult
+                  fields:
+                    amount:
+                      value: 5
+                      display: Long(5)
+                      type: TypedObjectWithValue
+                      refClazzName: java.lang.Long
+                      params: []
+                  refClazzName: java.util.Map
+                  params:
+                  - display: String
+                    type: TypedClass
+                    refClazzName: java.lang.String
+                    params: []
+                  - value: 5
+                    display: Long(5)
+                    type: TypedObjectWithValue
+                    refClazzName: java.lang.Long
+                    params: []
         required: true
       responses:
         '200':
@@ -875,12 +1015,43 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ExpressionSuggestionDto'
+              example:
+              - methodName: input
+                refClazz:
+                  display: 'Record{amount: Long(5)}'
+                  type: TypedObjectTypingResult
+                  fields:
+                    amount:
+                      value: 5
+                      display: Long(5)
+                      type: TypedObjectWithValue
+                      refClazzName: java.lang.Long
+                      params: []
+                  refClazzName: java.util.Map
+                  params:
+                  - display: String
+                    type: TypedClass
+                    refClazzName: java.lang.String
+                    params: []
+                  - value: 5
+                    display: Long(5)
+                    type: TypedObjectWithValue
+                    refClazzName: java.lang.Long
+                    params: []
+                fromClass: false
+                parameters: []
         '400':
           description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Malformed TypingResult sent in request
+                  value: |-
+                    The request content was malformed:
+                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
         '401':
           description: ''
           content:
@@ -908,6 +1079,10 @@ paths:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: 'ProcessingType type: {processingType} not found'
+                  value: 'ProcessingType type: ''processingType'' not found'
       security:
       - {}
       - httpAuth: []
@@ -928,6 +1103,42 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ParametersValidationRequestDto'
+            examples:
+              Example:
+                summary: Parameters validation
+                value:
+                  parameters:
+                  - name: condition
+                    typ:
+                      display: Boolean
+                      type: TypedClass
+                      refClazzName: java.lang.Boolean
+                      params: []
+                    expression:
+                      language: spel
+                      expression: '#input.amount > 2'
+                  variableTypes:
+                    input:
+                      display: 'Record{amount: Long(5)}'
+                      type: TypedObjectTypingResult
+                      fields:
+                        amount:
+                          value: 5
+                          display: Long(5)
+                          type: TypedObjectWithValue
+                          refClazzName: java.lang.Long
+                          params: []
+                      refClazzName: java.util.Map
+                      params:
+                      - display: String
+                        type: TypedClass
+                        refClazzName: java.lang.String
+                        params: []
+                      - value: 5
+                        display: Long(5)
+                        type: TypedObjectWithValue
+                        refClazzName: java.lang.Long
+                        params: []
         required: true
       responses:
         '200':
@@ -936,12 +1147,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ParametersValidationResultDto'
+              examples:
+                Example0:
+                  summary: Validate correct parameters
+                  value:
+                    validationErrors: []
+                    validationPerformed: true
+                Example1:
+                  summary: Validate incorrect parameters
+                  value:
+                    validationErrors:
+                    - typ: ExpressionParserCompilationError
+                      message: 'Failed to parse expression: Bad expression type, expected:
+                        Boolean, found: Long(5)'
+                      description: There is problem with expression in field Some(condition)
+                        - it could not be parsed.
+                      fieldName: condition
+                      errorType: SaveAllowed
+                    validationPerformed: true
         '400':
           description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Malformed TypingResult sent in request
+                  value: |-
+                    The request content was malformed:
+                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
         '401':
           description: ''
           content:
@@ -969,6 +1204,10 @@ paths:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: 'ProcessingType type: {processingType} not found'
+                  value: 'ProcessingType type: ''processingType'' not found'
       security:
       - {}
       - httpAuth: []
@@ -989,6 +1228,16 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ProcessProperties'
+            example:
+              additionalFields:
+                properties:
+                  parallelism: ''
+                  checkpointIntervalInSeconds: ''
+                  numberOfThreads: '2'
+                  spillStateToDisk: 'true'
+                  environment: test
+                  useAsyncInterpretation: ''
+                metaDataType: StreamMetaData
         required: true
       responses:
         '200':
@@ -997,6 +1246,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdditionalInfo'
+              examples:
+                Example:
+                  summary: Some additional info for parameters
+                  value:
+                    content: 2 threads will be used on environment '{scenarioName}'
+                    type: MarkdownAdditionalInfo
         '400':
           description: 'Invalid value for: body'
           content:
@@ -1054,6 +1309,33 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PropertiesValidationRequestDto'
+            examples:
+              Example0:
+                summary: Validate proper properties
+                value:
+                  additionalFields:
+                    properties:
+                      parallelism: ''
+                      checkpointIntervalInSeconds: ''
+                      numberOfThreads: '2'
+                      spillStateToDisk: 'true'
+                      environment: test
+                      useAsyncInterpretation: ''
+                    metaDataType: StreamMetaData
+                  name: test
+              Example1:
+                summary: Validate wrong 'number of threads' property
+                value:
+                  additionalFields:
+                    properties:
+                      parallelism: ''
+                      checkpointIntervalInSeconds: ''
+                      numberOfThreads: a
+                      spillStateToDisk: 'true'
+                      environment: test
+                      useAsyncInterpretation: ''
+                    metaDataType: StreamMetaData
+                  name: test
         required: true
       responses:
         '200':
@@ -1062,6 +1344,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NodeValidationResultDto'
+              examples:
+                Example0:
+                  summary: Validation for proper node
+                  value:
+                    validationErrors: []
+                    validationPerformed: true
+                Example1:
+                  summary: Validation for properties with errors
+                  value:
+                    validationErrors:
+                    - typ: InvalidPropertyFixedValue
+                      message: Property numberOfThreads (Number of threads) has invalid
+                        value
+                      description: 'Expected one of 1, 2, got: a.'
+                      fieldName: numberOfThreads
+                      errorType: SaveAllowed
+                    - typ: UnknownProperty
+                      message: Unknown property parallelism
+                      description: Property parallelism is not known
+                      fieldName: parallelism
+                      errorType: SaveAllowed
+                    validationPerformed: true
         '400':
           description: 'Invalid value for: body'
           content:
@@ -2316,7 +2620,7 @@ components:
           - array
           - 'null'
           items:
-            $ref: '#/components/schemas/UIParameterDto'
+            $ref: '#/components/schemas/UIParameter'
         expressionType:
           oneOf:
           - $ref: '#/components/schemas/TypingResult'
@@ -2879,7 +3183,7 @@ components:
       - TypedObjectWithValue
       - TypedNull
       - Unknown
-    UIParameterDto:
+    UIParameter:
       required:
       - name
       - typ
