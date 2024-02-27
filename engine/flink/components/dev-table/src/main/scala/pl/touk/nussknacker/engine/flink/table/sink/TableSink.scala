@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 }
 import pl.touk.nussknacker.engine.flink.table.HardcodedSchema.{intColumnName, stringColumnName}
 import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
-import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTable
+import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTableDescriptor
 
 class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends FlinkSink {
 
@@ -86,7 +86,7 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends 
       )
 
     // Registering output table
-    val sinkTableDescriptor = buildTable(config, HardcodedSchema.schema)
+    val sinkTableDescriptor = buildTableDescriptor(config, HardcodedSchema.schema)
     tableEnv.createTable(outputTableName, sinkTableDescriptor)
 
     // Adding insert statements to dataStream

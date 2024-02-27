@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
 import pl.touk.nussknacker.engine.flink.table.HardcodedSchema._
-import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTable
+import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTableDescriptor
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
 
 // TODO: Should be BoundedStreamComponent - change it after configuring batch Deployment Manager
@@ -42,7 +42,7 @@ class TableSourceFactory(config: DataSourceConfig) extends SourceFactory with Un
 
       val tableName = "some_table_name"
 
-      val tableDescriptorFilled = buildTable(config, schema)
+      val tableDescriptorFilled = buildTableDescriptor(config, schema)
       tableEnv.createTable(tableName, tableDescriptorFilled)
       val table = tableEnv.from(tableName)
 
