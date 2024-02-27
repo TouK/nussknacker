@@ -41,4 +41,14 @@ object HardcodedSchema {
     new java.util.HashMap[String, Any](fields.asJava)
   }
 
+  def fromMap(map: java.util.Map[String, Any]): Row = {
+    val stringVal: String = map.get(stringColumnName).asInstanceOf[String]
+    val intVal: Int       = map.get(intColumnName).asInstanceOf[Int]
+
+    val row = Row.withNames()
+    row.setField(stringColumnName, stringVal)
+    row.setField(intColumnName, intVal)
+    row
+  }
+
 }
