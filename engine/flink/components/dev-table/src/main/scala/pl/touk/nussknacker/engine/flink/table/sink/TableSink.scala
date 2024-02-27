@@ -68,10 +68,7 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends 
       .newBuilder()
       .column(
         nestedRowColumnName,
-        DataTypes.ROW(
-          DataTypes.FIELD(stringColumnName, DataTypes.STRING()),
-          DataTypes.FIELD(intColumnName, DataTypes.INT()),
-        )
+        HardcodedSchema.rowDataType
       )
       .build()
     val tableWithNestedRow: Table = tableEnv.fromDataStream(

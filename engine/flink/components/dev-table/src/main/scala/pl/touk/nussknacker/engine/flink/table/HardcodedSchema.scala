@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table
 
 import org.apache.flink.table.api.{DataTypes, Schema}
+import org.apache.flink.table.types.DataType
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
@@ -16,6 +17,11 @@ object HardcodedSchema {
     .column("someString", DataTypes.STRING())
     .column("someInt", DataTypes.INT())
     .build()
+
+  val rowDataType: DataType = DataTypes.ROW(
+    DataTypes.FIELD(stringColumnName, DataTypes.STRING()),
+    DataTypes.FIELD(intColumnName, DataTypes.INT()),
+  )
 
   val typingResult: TypingResult = Typed.record(Map("someInt" -> Typed[Integer], "someString" -> Typed[String]))
 
