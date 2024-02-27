@@ -623,17 +623,28 @@ jobs:
       - name: Try to free space
         run: |
           # Workaround to prevent "no space left on device" during buildx build - https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
+          echo "Disk space before:"
+          sudo df -h
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /usr/local/lib/android 
+          echo "Disk space after:"
+          sudo df -h
       - name: Publish with scaladocs
         if: ${{ github.ref == 'refs/heads/staging' }}
+        env:
+          # Workaround to preveent "no space left on device" during publishDocker failed to create temp dir: mkdir /tmp/containerd-mountXYZ
+          TMPDIR: ${{ github.workspace }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
         run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
+        env:
+          # Workaround to preveent "no space left on device" during publishDocker failed to create temp dir: mkdir /tmp/containerd-mountXYZ
+          TMPDIR: ${{ github.workspace }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
         run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
