@@ -13,6 +13,7 @@ import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { visualizationUrl } from "../../common/VisualizationUrl";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Typography } from "@mui/material";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     const location = useLocation();
@@ -61,7 +62,7 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: "secondary-button" },
+            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
             { title: t("dialog.button.ok", "Ok"), action: () => confirmAction() },
         ],
         [confirmAction, props, t],

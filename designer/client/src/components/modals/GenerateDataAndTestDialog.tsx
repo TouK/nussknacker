@@ -20,6 +20,7 @@ import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResul
 import { isEmpty } from "lodash";
 import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { Typography } from "@mui/material";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
@@ -43,7 +44,7 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: "secondary-button" },
+            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
             { title: t("dialog.button.test", "Test"), disabled: !isValid, action: () => confirmAction() },
         ],
         [t, confirmAction, props, isValid],

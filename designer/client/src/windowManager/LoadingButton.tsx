@@ -2,6 +2,12 @@ import { FooterButtonProps } from "@touk/window-manager/cjs/components/window/fo
 import React, { useCallback, useState } from "react";
 import { LoadingButton as MuiLoadingButton } from "@mui/lab";
 
+export enum LoadingButtonTypes {
+    "primaryButton" = "primary-button",
+    "secondaryButton" = "secondary-button",
+    "tertiaryButton" = "tertiary-button",
+}
+
 export const LoadingButton = (props: FooterButtonProps): JSX.Element => {
     const { classname, action, title, disabled } = props;
     const [loading, setLoading] = useState(false);
@@ -17,10 +23,18 @@ export const LoadingButton = (props: FooterButtonProps): JSX.Element => {
 
     return (
         <MuiLoadingButton
-            color={classname === "secondary-button" || classname === "tertiary-button" ? "inherit" : "primary"}
+            color={
+                classname === LoadingButtonTypes.secondaryButton || classname === LoadingButtonTypes.tertiaryButton ? "inherit" : "primary"
+            }
             disabled={disabled}
             onClick={onClick}
-            variant={classname === "secondary-button" ? "outlined" : classname === "tertiary-button" ? "text" : "contained"}
+            variant={
+                classname === LoadingButtonTypes.secondaryButton
+                    ? "outlined"
+                    : classname === LoadingButtonTypes.tertiaryButton
+                    ? "text"
+                    : "contained"
+            }
             loading={loading}
             sx={(theme) => ({
                 margin: theme.spacing(1.5),

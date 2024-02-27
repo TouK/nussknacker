@@ -4,6 +4,7 @@ import React, { PropsWithChildren, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { PromptContent, WindowKind } from "../../windowManager";
 import { Typography } from "@mui/material";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 export interface ConfirmDialogData {
     text: string;
@@ -29,7 +30,7 @@ export function GenericConfirmDialog({
                     meta.onConfirmCallback(false);
                     props.close();
                 },
-                classname: "secondary-button",
+                classname: LoadingButtonTypes.secondaryButton,
             },
             {
                 title: meta.confirmText || t("dialog.button.yes", "yes"),
@@ -37,7 +38,7 @@ export function GenericConfirmDialog({
                     meta.onConfirmCallback(true);
                     props.close();
                 },
-                classname: "secondary-button",
+                classname: LoadingButtonTypes.secondaryButton,
             },
         ],
         [meta, props, t],

@@ -19,6 +19,7 @@ import { applyIdFromFakeName } from "../IdField";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { Scenario } from "../../../Process/types";
 import { getScenario } from "../../../../reducers/selectors/graph";
+import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -80,7 +81,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     );
 
     const cancelButtonData = useMemo(
-        () => ({ title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: "secondary-button" }),
+        () => ({ title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton }),
         [props, t],
     );
 

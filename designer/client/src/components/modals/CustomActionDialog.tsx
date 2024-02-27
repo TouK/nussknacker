@@ -15,6 +15,7 @@ import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { FormControl, FormHelperText, FormLabel } from "@mui/material";
 import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -91,7 +92,7 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: "secondary-button" },
+            { title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
             { title: t("dialog.button.confirm", "confirm"), action: () => confirm() },
         ],
         [confirm, props, t],
