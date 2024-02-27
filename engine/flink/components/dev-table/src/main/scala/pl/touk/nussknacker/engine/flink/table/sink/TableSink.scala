@@ -4,8 +4,8 @@ import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import org.apache.flink.table.api.Expressions.$
-import org.apache.flink.table.api.{DataTypes, Schema, Table}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
+import org.apache.flink.table.api.{Schema, Table}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{
@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkSink
 }
 import pl.touk.nussknacker.engine.flink.table.HardcodedSchema.{intColumnName, stringColumnName}
-import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
 import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTableDescriptor
+import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
 
 class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends FlinkSink {
 
@@ -42,19 +42,22 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends 
       dataStream: DataStream[ValueWithContext[Value]],
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSink[_] = {
-    val env             = dataStream.getExecutionEnvironment
-    val tableEnv        = StreamTableEnvironment.create(env)
+    val env      = dataStream.getExecutionEnvironment
+    val tableEnv = StreamTableEnvironment.create(env)
+
+    // TODO: this will not work with multiple sinks
     val outputTableName = "some_sink_table_name"
 
     /*
       DataStream to Table transformation:
-      1. Add sink table to environment
-      2. Add a table for the input value
-          - here we need to do conversion AnyRef -> Map[String,Any] -> Row -> Table
-          - it begins with AnyRef until we get ValueWithContext[Map[String,Any]] or straight to ValueWithContext[Row]
-          - the conversion to Row is a workaround for RAW type - don't see other solutions now
-      3. Insert the input value table into the sink table
-      4. Contain the insert into a statementSet and do attachAsDataStream
+      1. Map the dataStream to dataStream[Row] to fit schema in later step
+      2. Map dataStream[Row] to intermediate table with row nested inside "f0" column. This deals with converting from
+         RAW type - don't see other simple solutions
+      3. Map the table with nesting to a flattened table
+      4. Add sink table to environment
+      5. Insert the input value table into the sink table
+      6. Put the insert operation in the statementSet and do attachAsDataStream on it
+      7. Continue with a DiscardingSink as DataStream
      */
     val streamOfRows: SingleOutputStreamOperator[Row] =
       dataStream.map(ctx => {
@@ -62,6 +65,11 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends 
         HardcodedSchema.MapRowConversion.fromMap(mapOfAny)
       })
 
+    /*
+      This "f0" value is name given by flink at conversion of DataStream with Raw type. Map is treated as RAW when
+      converting into table api. For details read:
+      https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
+     */
     val nestedRowColumnName = "f0"
     // TODO: avoid this step by mapping datastream directly without this intermediate table with nested row
     val nestedRowSchema = Schema
@@ -82,16 +90,17 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends 
         $(nestedRowColumnName).get(intColumnName).as(intColumnName)
       )
 
-    // Registering output table
     val sinkTableDescriptor = buildTableDescriptor(config, HardcodedSchema.schema)
     tableEnv.createTable(outputTableName, sinkTableDescriptor)
 
-    // Adding insert statements to dataStream
     val statementSet = tableEnv.createStatementSet();
     statementSet.add(flatInputValueTable.insertInto(outputTableName))
     statementSet.attachAsDataStream()
 
-    // TODO: check if this is ok. Flink docs show something like this when integrating table api into datastream
+    /*
+      Flink docs show something like this when integrating table api with inserts into dataStream. For details read:
+      https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
+     */
     dataStream.addSink(new DiscardingSink())
   }
 
