@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{NodePassingStateToImplementation, SimpleRecord}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{NodePassingStateToRuntimeLogic, SimpleRecord}
 import pl.touk.nussknacker.engine.spel
 
 import java.util.Date
@@ -55,7 +55,7 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
       .source("id", "input")
       .buildSimpleVariable(
         "build-var",
-        NodePassingStateToImplementation.VariableThatshouldBeDefinedBeforeNodeName,
+        NodePassingStateToRuntimeLogic.VariableThatShouldBeDefinedBeforeNodeName,
         "null"
       )
       .customNode("generic-node", "result", "nodePassingStateToImplementation")

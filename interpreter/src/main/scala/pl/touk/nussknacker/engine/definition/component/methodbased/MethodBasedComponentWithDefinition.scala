@@ -5,19 +5,19 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component._
 
-final case class MethodBasedComponentDefinitionWithImplementation(
+final case class MethodBasedComponentWithDefinition(
     override val name: String,
-    override val implementationInvoker: ComponentImplementationInvoker,
-    override val implementation: Component,
+    override val runtimeLogicFactory: ComponentRuntimeLogicFactory,
+    override val component: Component,
     override val componentTypeSpecificData: ComponentTypeSpecificData,
     staticDefinition: ComponentStaticDefinition,
     override protected val uiDefinition: ComponentUiDefinition,
-) extends ComponentDefinitionWithImplementation {
+) extends ComponentWithDefinition {
 
-  override def withImplementationInvoker(
-      invoker: ComponentImplementationInvoker
-  ): ComponentDefinitionWithImplementation =
-    copy(implementationInvoker = invoker)
+  override def withRuntimeLogicFactory(
+                                        runtimeLogicFactory: ComponentRuntimeLogicFactory
+  ): ComponentWithDefinition =
+    copy(runtimeLogicFactory = runtimeLogicFactory)
 
   def parameters: List[Parameter] = staticDefinition.parameters
 
@@ -33,18 +33,18 @@ final case class MethodBasedComponentDefinitionWithImplementation(
 
 }
 
-object MethodBasedComponentDefinitionWithImplementation {
+object MethodBasedComponentWithDefinition {
 
-  def withNullImplementation(
+  def withNullRuntimeLogic(
       name: String,
       componentTypeSpecificData: ComponentTypeSpecificData,
       staticDefinition: ComponentStaticDefinition,
       uiDefinition: ComponentUiDefinition,
       allowedProcessingModes: Option[Set[ProcessingMode]],
-  ): MethodBasedComponentDefinitionWithImplementation = {
-    MethodBasedComponentDefinitionWithImplementation(
+  ): MethodBasedComponentWithDefinition = {
+    MethodBasedComponentWithDefinition(
       name,
-      ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
+      ComponentRuntimeLogicFactory.nullRuntimeLogicFactory,
       new NullComponent(allowedProcessingModes),
       componentTypeSpecificData,
       staticDefinition,

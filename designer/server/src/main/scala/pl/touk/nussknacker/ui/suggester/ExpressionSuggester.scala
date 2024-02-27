@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.suggester
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithDefinition
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language

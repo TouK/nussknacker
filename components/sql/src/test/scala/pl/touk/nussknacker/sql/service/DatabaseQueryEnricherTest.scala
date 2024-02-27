@@ -32,16 +32,16 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
-    val implementation = service.implementation(Params(Map("arg1" -> 1)), dependencies = Nil, Some(state))
+    val implementation = service.createRuntimeLogic(Params(Map("arg1" -> 1)), dependencies = Nil, Some(state))
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
-    val resultF = implementation.invoke(Context.withInitialId)
+    val resultF = implementation.apply(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = implementation.invoke(Context.withInitialId.withVariables(Map("arg1" -> 1)))
+    val resultF2 = implementation.apply(Context.withInitialId.withVariables(Map("arg1" -> 1)))
     val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
@@ -58,9 +58,9 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(Nil),
       strategy = UpdateResultStrategy
     )
-    val implementation = service.implementation(Params(Map("arg1" -> 1)), dependencies = Nil, Some(state))
+    val implementation = service.createRuntimeLogic(Params(Map("arg1" -> 1)), dependencies = Nil, Some(state))
     returnType(service, state).display shouldBe "Integer"
-    val resultF = implementation.invoke(Context.withInitialId)
+    val resultF = implementation.apply(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]
     result shouldBe 1
     val queryResultSet = conn.prepareStatement("SELECT * FROM persons WHERE id = 1").executeQuery()

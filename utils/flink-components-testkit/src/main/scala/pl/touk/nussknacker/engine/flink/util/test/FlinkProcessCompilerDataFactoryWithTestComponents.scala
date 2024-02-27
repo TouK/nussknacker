@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionWithValue
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.process.compiler.{
@@ -60,7 +60,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
           definitionContext: ComponentDefinitionContext
       ): ModelDefinition = {
         val testComponents =
-          ComponentDefinitionWithImplementation.forList(
+          ComponentWithDefinition.forList(
             components = testExtensionsHolder.components,
             additionalConfigs = ComponentsUiConfig.Empty,
             determineDesignerWideId = id => DesignerWideComponentId(id.toString),
@@ -73,7 +73,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
             expressionConfig = originalModelDefinition.expressionConfig.copy(
               originalModelDefinition.expressionConfig.globalVariables ++
                 testExtensionsHolder.globalVariables.mapValuesNow(
-                  GlobalVariableDefinitionWithImplementation(_)
+                  GlobalVariableDefinitionWithValue(_)
                 )
             )
           )

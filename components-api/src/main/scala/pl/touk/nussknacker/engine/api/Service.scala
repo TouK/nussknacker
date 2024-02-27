@@ -22,19 +22,19 @@ import scala.concurrent.{ExecutionContext, Future}
 abstract class Service extends Lifecycle with Component with AllProcessingModesComponent
 
 /*
-  This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with ServiceInvoker
+  This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with ServiceRuntimeLogic
   Lifecycle is handled on EagerService level (like in standard Service).
   A sample use case is as follows:
     - Enrichment with data from SQL database, ConnectionPool is created on level of EagerService
-    - Each ServiceInvoker has different SQL query, ServiceInvoker stores PreparedStatement
+    - Each ServiceRuntimeLogic has different SQL query, ServiceRuntimeLogic stores PreparedStatement
   Please see EagerLifecycleService to see how such scenario can be achieved.
  */
-// TODO: EagerService shouldn't extend Lifecycle, instead ServiceInvoker should extend it - see notice in ProcessCompilerData.lifecycle
+// TODO: EagerService shouldn't extend Lifecycle, instead ServiceRuntimeLogic should extend it - see notice in ProcessCompilerData.lifecycle
 abstract class EagerService extends Service
 
-trait ServiceInvoker {
+trait ServiceRuntimeLogic {
 
-  def invoke(context: Context)(
+  def apply(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase

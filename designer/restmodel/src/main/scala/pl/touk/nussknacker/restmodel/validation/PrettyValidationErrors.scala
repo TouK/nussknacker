@@ -104,7 +104,7 @@ object PrettyValidationErrors {
       case pve: ParameterValidationError => handleParameterValidationError(pve)
 
       // exceptions below should not really happen (unless services change and process becomes invalid)
-      case MissingCustomNodeExecutor(id, _) =>
+      case MissingCustomComponent(id, _) =>
         node(s"Missing custom executor: $id", s"Please check the name of custom executor, $id is not available")
       case MissingService(id, _) =>
         node(s"Missing processor/enricher: $id", s"Please check the name of processor/enricher, $id is not available")

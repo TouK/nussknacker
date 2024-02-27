@@ -94,7 +94,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
       )
       .compileProcessOrFail(scenarioWithMultipleSources)
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
-      source.obj
+      source.runtimeLogic
     }
     sources should matchPattern { case (_: EmptySource[_]) :: (_: EmptySource[_]) :: (_: EmptySource[_]) :: Nil =>
     }
@@ -105,7 +105,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
       ScenarioTestData(List(1, 2, 3).map(v => ScenarioTestJsonRecord("left-source", Json.fromLong(v))))
     val compiledProcess = testCompile(scenarioWithSingleSource, scenarioTestData)
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
-      source.obj
+      source.runtimeLogic
     }
     sources should matchPattern { case CollectionSource(List(1, 2, 3), _, _) :: Nil =>
     }
@@ -126,7 +126,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     val compiledProcess = testCompile(scenarioWithMultipleSources, scenarioTestData)
 
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
-      source.node.id -> source.obj
+      source.node.id -> source.runtimeLogic
     }.toMap
     sources("left-source") should matchPattern { case CollectionSource(List(11, 12, 13), _, _) =>
     }
@@ -144,7 +144,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     )
     val compiledProcess = testCompile(scenarioWithSingleTestParametersSource, scenarioTestData)
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
-      source.obj
+      source.runtimeLogic
     }
     sources should matchPattern { case CollectionSource(List(1, 2, 3), _, _) :: Nil =>
     }

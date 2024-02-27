@@ -150,7 +150,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   /**
     * Common set of operations required to create basic KafkaSource.
     */
-  override def implementation(
+  override def createRuntimeLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

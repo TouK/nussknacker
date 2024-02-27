@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-// TODO: Rename to ComponentMainMethod
+// TODO: Rename to ComponentMainMethod or RuntimeLogicFactory after removing the support for non-eager Services
 /**
  * Method marked with this annotation will be invoked in Nu component (source, sink, service etc)
 * */

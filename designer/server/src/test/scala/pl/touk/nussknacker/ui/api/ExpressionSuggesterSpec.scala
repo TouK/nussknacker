@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinitionSet,
   StaticMethodDefinition
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentWithDefinition
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression

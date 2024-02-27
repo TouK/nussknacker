@@ -13,13 +13,13 @@ import java.sql.Connection
 import java.time.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
-object DatabaseEnricherInvokerWithCache {
+object DatabaseEnricherRuntimeLogicWithCache {
 
   final case class CacheKey(query: String, queryArguments: QueryArguments)
   final case class CacheEntry[+A](value: A)
 }
 
-class DatabaseEnricherInvokerWithCache(
+class DatabaseEnricherRuntimeLogicWithCache(
     query: String,
     argsCount: Int,
     tableDef: TableDefinition,
@@ -30,7 +30,7 @@ class DatabaseEnricherInvokerWithCache(
     override val getConnection: () => Connection,
     override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
     params: Params
-) extends DatabaseEnricherInvoker(
+) extends DatabaseEnricherRuntimeLogic(
       query,
       argsCount,
       tableDef,
@@ -42,7 +42,7 @@ class DatabaseEnricherInvokerWithCache(
       params
     ) {
 
-  import DatabaseEnricherInvokerWithCache._
+  import DatabaseEnricherRuntimeLogicWithCache._
 
   // TODO: cache size
   private val cache: AsyncCache[CacheKey, CacheEntry[queryExecutor.QueryResult]] = Caffeine
@@ -52,7 +52,7 @@ class DatabaseEnricherInvokerWithCache(
 
   import scala.compat.java8.FutureConverters._
 
-  override def invoke(context: Context)(
+  override def apply(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase

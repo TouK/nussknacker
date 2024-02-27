@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
   * It is our base class for every Component delivered within the model.
   * Possible implementations are: Service, SourceFactory, SinkFactory, CustomStreamTransformer
   * This class is marked as Serializable for easier testing with Flink. (See LocalModelData)
-  * Components are also in most cases only a factories for the "Executors" which process data streams so
+  * Components are also in most cases only a factories for the "RuntimeLogic" which process data streams so
   * in fact they need to be serializable.
   */
 trait Component extends Serializable {

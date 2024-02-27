@@ -76,7 +76,7 @@ object ProcessCompilerData {
       expressionEvaluator,
       interpreter,
       listeners,
-      servicesDefs.map(service => service.name -> service.implementation.asInstanceOf[Lifecycle]).toMap
+      servicesDefs.map(service => service.name -> service.component.asInstanceOf[Lifecycle]).toMap
     )
 
   }
@@ -97,7 +97,7 @@ final class ProcessCompilerData(
     val componentIds = nodesToUse.collect { case e: WithComponent =>
       e.componentId
     }
-    // TODO: For eager services we should open service implementation (ServiceInvoker) which is hold inside
+    // TODO: For eager services we should open ServiceRuntimeLogic which is hold inside
     //       SyncInterpretationFunction.compiledNode inside ServiceRef instead of definition (DynamicComponent)
     //       Definition shouldn't be used after component is compiled. Thanks to that it will be possible to
     //       e.g. to pass ExecutionContext inside EngineRuntimeContext and to separate implementation from definition

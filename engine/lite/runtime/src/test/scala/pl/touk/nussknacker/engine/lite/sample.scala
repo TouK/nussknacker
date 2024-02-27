@@ -184,7 +184,7 @@ object sample {
     def create(): Source = new LiteSource[SampleInput] with SourceTestSupport[SampleInput] {
 
       override def createTransformation[F[_]: Monad](
-          evaluateLazyParameter: CustomComponentContext[F]
+          context: CustomComponentContext[F]
       ): SampleInput => ValidatedNel[ErrorType, Context] =
         input => Valid(Context(input.contextId, Map("input" -> input.value), None))
 
@@ -203,7 +203,7 @@ object sample {
     def create()(implicit nodeId: NodeId): Source = new LiteSource[SampleInput] {
 
       override def createTransformation[F[_]: Monad](
-          evaluateLazyParameter: CustomComponentContext[F]
+          context: CustomComponentContext[F]
       ): SampleInput => ValidatedNel[ErrorType, Context] =
         input => {
           if (input.value == 1) {
@@ -232,7 +232,7 @@ object sample {
       override def returnType: typing.TypingResult = Typed[SampleInputWithListAndMap]
 
       override def createTransformation[F[_]: Monad](
-          evaluateLazyParameter: CustomComponentContext[F]
+          context: CustomComponentContext[F]
       ): SampleInputWithListAndMap => ValidatedNel[ErrorType, Context] =
         input => Valid(Context(input.contextId, Map("input" -> input.asInstanceOf[Any]), None))
 

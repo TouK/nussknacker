@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.management.sample.transformer.DynamicParameter
 
 object DynamicParametersSource extends SourceFactory with DynamicParametersMixin with UnboundedStreamComponent {
 
-  override def implementation(
+  override def createRuntimeLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]

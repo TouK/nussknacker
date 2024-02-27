@@ -164,7 +164,7 @@ class FlinkProcessRegistrar(
 
     def registerSourcePart(part: SourcePart): Map[BranchEndDefinition, BranchEndData] = {
       // TODO: get rid of cast (but how??)
-      val source = part.obj.asInstanceOf[FlinkSource]
+      val source = part.runtimeLogic.asInstanceOf[FlinkSource]
 
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
 
@@ -191,8 +191,8 @@ class FlinkProcessRegistrar(
       }
 
       val transformer = joinPart.transformer match {
-        case joinTransformer: FlinkCustomJoinTransformation                    => joinTransformer
-        case JoinContextTransformation(_, impl: FlinkCustomJoinTransformation) => impl
+        case joinTransformer: FlinkCustomJoinTransformation                            => joinTransformer
+        case JoinContextTransformation(_, runtimeLogic: FlinkCustomJoinTransformation) => runtimeLogic
         case other =>
           throw new IllegalArgumentException(s"Unknown join node transformer: $other")
       }
@@ -254,7 +254,7 @@ class FlinkProcessRegistrar(
         case part: SinkPart =>
           // TODO: fixme "part.obj" is not stringified well
           //      (eg. Scenario can only use flink sinks, instead given: pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink$@21220fd7)
-          throw new IllegalArgumentException(s"Scenario can only use flink sinks, instead given: ${part.obj}")
+          throw new IllegalArgumentException(s"Scenario can only use flink sinks, instead given: ${part.runtimeLogic}")
         case part: CustomNodePart =>
           registerCustomNodePart(start, part)
       }

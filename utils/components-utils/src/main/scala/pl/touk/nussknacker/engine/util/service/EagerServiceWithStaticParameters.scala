@@ -32,7 +32,7 @@ import scala.runtime.BoxedUnit
  */
 trait EagerServiceWithStaticParameters
     extends EagerService
-    with SingleInputDynamicComponent[ServiceInvoker]
+    with SingleInputDynamicComponent[ServiceRuntimeLogic]
     with WithStaticParameters {
 
   override type State = TypingResult
@@ -45,12 +45,12 @@ trait EagerServiceWithStaticParameters
 
   def hasOutput: Boolean
 
-  def createServiceInvoker(
+  def createServiceRuntimeLogic(
       eagerParameters: Map[String, Any],
       lazyParameters: Map[String, LazyParameter[AnyRef]],
       typingResult: TypingResult,
       metaData: MetaData
-  ): ServiceInvoker
+  ): ServiceRuntimeLogic
 
   def returnType(
       validationContext: ValidationContext,
@@ -72,12 +72,12 @@ trait EagerServiceWithStaticParameters
   override def nodeDependencies: List[NodeDependency] =
     if (hasOutput) List(OutputVariableNameDependency, metaData) else List(metaData)
 
-  override final def implementation(
+  override final def createRuntimeLogic(
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[TypingResult]
-  ): ServiceInvoker =
-    createServiceInvoker(
+  ): ServiceRuntimeLogic =
+    createServiceRuntimeLogic(
       params.nameToValueMap.filterNot { case (_, param) => param.isInstanceOf[LazyParameter[_]] },
       params.nameToValueMap.collect { case (name, param: LazyParameter[AnyRef]) => (name, param) },
       finalState.getOrElse(Unknown),
@@ -93,10 +93,10 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
 
   def returnType: TypingResult
 
-  // TODO: This method should be removed - instead, developers should deliver it's own ServiceInvoker to avoid
+  // TODO: This method should be removed - instead, developers should deliver it's own ServiceRuntimeLogic to avoid
   //       mixing implementation logic with definition logic. Before that we should fix EagerService Lifecycle handling.
   //       See notice next to EagerService
-  def invoke(params: Params)(
+  def apply(params: Params)(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
       contextId: ContextId,
@@ -104,12 +104,12 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       componentUseCase: ComponentUseCase
   ): Future[Any]
 
-  override final def createServiceInvoker(
+  override final def createServiceRuntimeLogic(
       eagerParameters: Map[String, Any],
       lazyParameters: Map[String, LazyParameter[AnyRef]],
       typingResult: TypingResult,
       metaData: MetaData
-  ): ServiceInvoker = new ServiceInvokerImplementation(eagerParameters, lazyParameters, metaData)
+  ): ServiceRuntimeLogic = new ServiceRuntimeLogicImpl(eagerParameters, lazyParameters, metaData)
 
   override def hasOutput: Boolean = !List(Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
@@ -118,13 +118,13 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       parameters: Map[String, DefinedSingleParameter]
   ): ValidatedNel[ProcessCompilationError, TypingResult] = Valid(returnType)
 
-  private class ServiceInvokerImplementation(
+  private class ServiceRuntimeLogicImpl(
       eagerParameters: Map[String, Any],
       lazyParameters: Map[String, LazyParameter[AnyRef]],
       metaData: MetaData
-  ) extends ServiceInvoker {
+  ) extends ServiceRuntimeLogic {
 
-    override def invoke(context: Context)(
+    override def apply(context: Context)(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         componentUseCase: ComponentUseCase
@@ -132,7 +132,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       implicit val contextId: ContextId   = ContextId(context.id)
       implicit val metaImplicit: MetaData = metaData
       val evaluatedLazyParameters         = lazyParameters.map { case (name, value) => (name, value.evaluate(context)) }
-      EagerServiceWithStaticParametersAndReturnType.this.invoke(Params(eagerParameters ++ evaluatedLazyParameters))
+      EagerServiceWithStaticParametersAndReturnType.this.apply(Params(eagerParameters ++ evaluatedLazyParameters))
     }
 
   }

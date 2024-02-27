@@ -13,7 +13,7 @@ import WrongConfigurationAttribute.{
 
 private[component] object ComponentsValidator {
 
-  // TODO: We should rather take ComponentDefinitionWithImplementation instead of ComponentListElement
+  // TODO: We should rather take ComponentWithRuntimeLogicFactory instead of ComponentListElement
   //       ComponentListElement is for a presentation purpose, we loose some information that we can check
   //       e.g. if class of Component is the same. We could even define identity mechanisms in Components.
   def validateComponents(

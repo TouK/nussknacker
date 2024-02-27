@@ -143,13 +143,13 @@ object ProcessCompilationError {
       MissingSinkFactory(typ, nodeId.id)
   }
 
-  final case class MissingCustomNodeExecutor(name: String, nodeId: String)
+  final case class MissingCustomComponent(name: String, nodeId: String)
       extends ProcessCompilationError
       with InASingleNode
 
-  object MissingCustomNodeExecutor {
+  object MissingCustomComponent {
     def apply(name: String)(implicit nodeId: NodeId): ProcessCompilationError =
-      MissingCustomNodeExecutor(name, nodeId.id)
+      MissingCustomComponent(name, nodeId.id)
   }
 
   case class MissingParameters(params: Set[String], nodeId: String)

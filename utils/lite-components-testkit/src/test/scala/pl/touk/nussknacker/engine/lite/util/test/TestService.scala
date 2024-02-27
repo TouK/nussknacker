@@ -13,9 +13,9 @@ object TestService extends EagerService {
   val MockedValued = "sample-mocked"
 
   @MethodToInvoke
-  def prepare(@ParamName("param") value: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
+  def prepare(@ParamName("param") value: LazyParameter[String]): ServiceRuntimeLogic = new ServiceRuntimeLogic {
 
-    override def invoke(context: Context)(
+    override def apply(context: Context)(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         componentUseCase: ComponentUseCase

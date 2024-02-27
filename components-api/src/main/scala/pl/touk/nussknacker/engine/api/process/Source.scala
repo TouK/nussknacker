@@ -13,7 +13,7 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 /**
-  * Common trait for source of events. For Flink see pl.touk.nussknacker.engine.flink.api.process.FlinkSource
+  * Common trait for runtime logic of source of events. For Flink see pl.touk.nussknacker.engine.flink.api.process.FlinkSource
   */
 trait Source
 
@@ -83,7 +83,7 @@ object SourceFactory {
     @MethodToInvoke
     def create()(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
       .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, inputType, None))
-      .implementedBy(createSource(nodeId))
+      .withRuntimeLogic(createSource(nodeId))
 
     override def typesToExtract: List[typing.TypingResult] = List(inputType)
 
