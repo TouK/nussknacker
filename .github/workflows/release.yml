@@ -99,6 +99,11 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/go"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/Ruby"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/Python"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/PyPy"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
       - name: "Build"
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
