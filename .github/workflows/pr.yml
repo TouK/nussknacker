@@ -623,15 +623,11 @@ jobs:
       - name: Try to free space
         run: |
           # Workaround to prevent "no space left on device" during buildx build - https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
-          echo "Disk space before:"
-          sudo df -h
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           sudo rm -rf /usr/local/lib/android 
-          echo "Disk space after:"
-          sudo df -h
       - name: Publish with scaladocs
         if: ${{ github.ref == 'refs/heads/staging' }}
         env:
