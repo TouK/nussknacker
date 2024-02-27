@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import org.apache.flink.table.api.Expressions.$
@@ -8,35 +7,24 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{Schema, Table}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkCustomNodeContext,
-  FlinkLazyParameterFunctionHelper,
-  FlinkSink
-}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.table.HardcodedSchema.{intColumnName, stringColumnName}
 import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTableDescriptor
 import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
 
-class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends FlinkSink {
+class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[String, Any]]) extends FlinkSink {
 
-  // TODO: check if there is a way to have a Map[String,Any] in a LazyParameter
-  override type Value   = AnyRef
-  protected type RECORD = java.util.Map[String, Any]
+  override type Value = java.util.Map[String, Any]
 
   override def prepareValue(
       dataStream: DataStream[Context],
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[ValueWithContext[Value]] = {
     dataStream.flatMap(
-      valueFunction(flinkNodeContext.lazyParameterHelper),
+      flinkNodeContext.lazyParameterHelper.lazyMapFunction(value),
       flinkNodeContext.valueWithContextInfo.forType(HardcodedSchema.typingResult)
     )
   }
-
-  private def valueFunction(
-      helper: FlinkLazyParameterFunctionHelper
-  ): FlatMapFunction[Context, ValueWithContext[Value]] =
-    helper.lazyMapFunction(value)
 
   override def registerSink(
       dataStream: DataStream[ValueWithContext[Value]],
@@ -60,10 +48,7 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[AnyRef]) extends 
       7. Continue with a DiscardingSink as DataStream
      */
     val streamOfRows: SingleOutputStreamOperator[Row] =
-      dataStream.map(ctx => {
-        val mapOfAny: java.util.Map[String, Any] = ctx.value.asInstanceOf[RECORD]
-        HardcodedSchema.MapRowConversion.fromMap(mapOfAny)
-      })
+      dataStream.map(ctx => HardcodedSchema.MapRowConversion.fromMap(ctx.value))
 
     /*
       This "f0" value is name given by flink at conversion of DataStream with Raw type. Map is treated as RAW when
