@@ -16,7 +16,7 @@ import { isEmpty } from "lodash";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
-export type TouchedValue = { processName: boolean; processCategory: boolean; processingMode: boolean; processEngine: boolean };
+export type TouchedValue = Record<keyof FormValue, boolean>;
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
     validationErrors: NodeValidationError[];
