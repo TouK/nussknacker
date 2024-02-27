@@ -9,11 +9,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
-import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{
-  RecordSchemaV1,
-  resetSchemaRegistryMockClient,
-  schemaRegistryMockClient
-}
+import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, schemaRegistryMockClient}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -58,17 +54,14 @@ abstract class FlinkWithKafkaSuite
 
   private lazy val creator: DefaultConfigCreator = new TestDefaultConfigCreator
 
-  protected var registrar: FlinkProcessRegistrar         = _
-  protected var valueSerializer: KafkaAvroSerializer     = _
-  protected var valueDeserializer: KafkaAvroDeserializer = _
+  protected var registrar: FlinkProcessRegistrar = _
+  protected lazy val valueSerializer             = new KafkaAvroSerializer(schemaRegistryMockClient)
+  protected lazy val valueDeserializer           = new KafkaAvroDeserializer(schemaRegistryMockClient)
 
   protected lazy val additionalComponents: List[ComponentDefinition] = Nil
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    resetSchemaRegistryMockClient()
-    valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
-    valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
     val components =
       new MockFlinkKafkaComponentProvider()
         .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
@@ -252,11 +245,7 @@ object MockSchemaRegistry extends Serializable {
 
   val SecondRecordSchemaV1: Schema = AvroUtils.parseSchema(SecondRecordSchemaStringV1)
 
-  var schemaRegistryMockClient: MockSchemaRegistryClient = _
-
-  def resetSchemaRegistryMockClient(): Unit = {
-    schemaRegistryMockClient = new MockSchemaRegistryClient
-  }
+  val schemaRegistryMockClient: MockSchemaRegistryClient = new MockSchemaRegistryClient
 
 }
 
