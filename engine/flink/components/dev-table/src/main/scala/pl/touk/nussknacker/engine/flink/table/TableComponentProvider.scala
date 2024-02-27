@@ -6,7 +6,12 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.ConfigIndependentComponents
+import pl.touk.nussknacker.engine.flink.table.DataSourceFromSqlExtractor.extractTablesFromFlinkRuntime
+import pl.touk.nussknacker.engine.flink.table.SqlFromResourceReader.readFileFromResources
+import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.{
+  ConfigIndependentComponents,
+  defaultDataSourceDefinitionFileName
+}
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.{HardcodedValuesTableSourceFactory, TableSourceFactory}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
@@ -36,6 +41,8 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
       )
     } yield componentDefinitions
 
+    val dataSourceConfigFromSql = extractDataSourceConfigFromSqlFile()
+
     ConfigIndependentComponents ::: dataSourceComponents
   }
 
@@ -53,6 +60,11 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
     tryParse.toOption
   }
 
+  private def extractDataSourceConfigFromSqlFile(): List[DataSourceConfigWithSql] = {
+    val sqlStatements = readFileFromResources(defaultDataSourceDefinitionFileName)
+    extractTablesFromFlinkRuntime(sqlStatements)
+  }
+
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
   override def isAutoLoaded: Boolean = true
@@ -60,6 +72,8 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
 }
 
 object TableComponentProvider {
+
+  private val defaultDataSourceDefinitionFileName = "tables-definition.sql"
 
   lazy val ConfigIndependentComponents: List[ComponentDefinition] =
     List(
