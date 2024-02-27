@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { NodeValidationError } from "../types";
 import { flow, isEmpty } from "lodash";
 import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
+import { LoadingButtonTypes } from "../windowManager/LoadingButton";
 
 interface AddProcessDialogProps extends WindowContentProps {
     isFragment?: boolean;
@@ -73,7 +74,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "Cancel"), action: () => passProps.close() },
+            { title: t("dialog.button.cancel", "Cancel"), action: () => passProps.close(), classname: LoadingButtonTypes.secondaryButton },
             {
                 title: t("dialog.button.create", "create"),
                 action: async () => {
