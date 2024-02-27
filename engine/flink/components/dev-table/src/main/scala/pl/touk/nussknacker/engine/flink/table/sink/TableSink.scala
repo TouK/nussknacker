@@ -51,8 +51,7 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
       dataStream.map(ctx => HardcodedSchema.MapRowConversion.fromMap(ctx.value))
 
     /*
-      This "f0" value is name given by flink at conversion of DataStream with Raw type. Map is treated as RAW when
-      converting into table api. For details read:
+      This "f0" value is name given by flink at conversion of one element stream. For details read:
       https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
      */
     val nestedRowColumnName = "f0"
