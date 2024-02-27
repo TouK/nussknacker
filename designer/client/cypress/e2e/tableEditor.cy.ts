@@ -41,7 +41,7 @@ describe("Table editor", () => {
         cy.get("@table").click(580, 25).click(580, 25);
         cy.get("@table").click(350, 125).click(350, 125);
         cy.get("#portal textarea").should("be.visible");
-        cy.realType("foo").realPress("Tab");
+        cy.realType("true").realPress("Tab");
         cy.realType("bar").realPress("Enter");
         cy.realPress("Enter");
         cy.realPress("Escape");

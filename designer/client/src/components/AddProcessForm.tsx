@@ -16,23 +16,39 @@ import { isEmpty } from "lodash";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
+export type TouchedValue = Record<keyof FormValue, boolean>;
+
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
     validationErrors: NodeValidationError[];
     categories: { value: string; disabled: boolean }[];
     processingModes: ProcessingMode[];
     engines: string[];
+    handleSetTouched: (touched: TouchedValue) => void;
+    touched: TouchedValue;
 }
 
 export function AddProcessForm({
     value,
+    touched,
     onChange,
+    handleSetTouched,
     validationErrors,
     categories,
     engines,
     processingModes,
 }: AddProcessFormProps): JSX.Element {
     const { t } = useTranslation();
-    const onFieldChange = useCallback((field: keyof FormValue, next: string) => onChange({ ...value, [field]: next }), [onChange, value]);
+    const onFieldChange = useCallback(
+        (field: keyof FormValue, next: string) => {
+            onChange({ ...value, [field]: next });
+            handleSetTouched({ ...touched, [field]: true });
+        },
+        [handleSetTouched, onChange, touched, value],
+    );
+    const onBlurChange = useCallback(
+        (field: keyof TouchedValue, next: boolean) => handleSetTouched({ ...touched, [field]: next }),
+        [handleSetTouched, touched],
+    );
 
     return (
         <div
@@ -52,12 +68,11 @@ export function AddProcessForm({
                             sx={(theme) => ({ flexWrap: "nowrap", gap: theme.spacing(1.5) })}
                             onChange={(event) => {
                                 const target = event.target as HTMLInputElement;
-                                if (!target.checked) {
-                                    onFieldChange("processingMode", "");
-                                    return;
-                                }
 
-                                onFieldChange("processingMode", target.value);
+                                onFieldChange("processingMode", target.checked ? target.value : "");
+                            }}
+                            onBlur={() => {
+                                onBlurChange("processingMode", true);
                             }}
                         >
                             <CustomRadio
@@ -83,7 +98,9 @@ export function AddProcessForm({
                             {/*    active={value.processingMode === ProcessingMode.batch}*/}
                             {/*/>*/}
                         </FormGroup>
-                        <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processingMode")} />
+                        <ValidationLabels
+                            fieldErrors={touched.processingMode ? getValidationErrorsForField(validationErrors, "processingMode") : []}
+                        />
                         <Typography component={"div"} variant={"overline"} mt={1}>
                             <Trans i18nKey={"addProcessForm.helperText.processingMode"}>
                                 Processing mode defines how scenario deployed on an engine interacts with the outside world. Click here to
@@ -107,8 +124,13 @@ export function AddProcessForm({
                             id="newProcessName"
                             value={value.processName}
                             onChange={(e) => onFieldChange("processName", e.target.value)}
+                            onBlur={() => {
+                                onBlurChange("processName", true);
+                            }}
                         />
-                        <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processName")} />
+                        <ValidationLabels
+                            fieldErrors={touched.processName ? getValidationErrorsForField(validationErrors, "processName") : []}
+                        />
                     </div>
                 </FormControl>
                 {!isEmpty(categories) && (
@@ -121,6 +143,9 @@ export function AddProcessForm({
                                 onChange={(e) => {
                                     onFieldChange("processCategory", e.target.value);
                                 }}
+                                onBlur={() => {
+                                    onBlurChange("processCategory", true);
+                                }}
                             >
                                 <>
                                     <option value={""}></option>
@@ -131,7 +156,11 @@ export function AddProcessForm({
                                     ))}
                                 </>
                             </SelectNodeWithFocus>
-                            <ValidationLabels fieldErrors={getValidationErrorsForField(validationErrors, "processCategory")} />
+                            <ValidationLabels
+                                fieldErrors={
+                                    touched.processCategory ? getValidationErrorsForField(validationErrors, "processCategory") : []
+                                }
+                            />
 
                             <Typography component={"div"} variant={"overline"} mt={1}>
                                 <Trans i18nKey={"addProcessForm.helperText.category"}>
@@ -159,6 +188,9 @@ export function AddProcessForm({
                                 onChange={(e) => {
                                     onFieldChange("processEngine", e.target.value);
                                 }}
+                                onBlur={() => {
+                                    onBlurChange("processEngine", true);
+                                }}
                             >
                                 <>
                                     <option value={""}></option>
@@ -169,11 +201,13 @@ export function AddProcessForm({
                                     ))}
                                 </>
                             </SelectNodeWithFocus>
-                            {getValidationErrorsForField(validationErrors, "processEngine").map((engineError, index) => (
-                                <FormHelperText key={index} error>
-                                    {engineError.message}
-                                </FormHelperText>
-                            ))}
+                            {touched.processEngine
+                                ? getValidationErrorsForField(validationErrors, "processEngine").map((engineError, index) => (
+                                      <FormHelperText key={index} error>
+                                          {engineError.message}
+                                      </FormHelperText>
+                                  ))
+                                : []}
                             <Typography component={"div"} variant={"overline"} mt={1}>
                                 <Trans i18nKey={"addProcessForm.helperText.engine"}>
                                     To read more about engines,

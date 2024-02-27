@@ -459,14 +459,16 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
     );
 };
 
-export const TableEditor: ExtendedEditor = ({ showValidation, fieldErrors, ...props }: EditorProps) => {
+export const TableEditor: ExtendedEditor = ({ showValidation, fieldErrors, className, ...props }: EditorProps) => {
     return (
-        <>
-            <ErrorBoundary>
-                <Table {...props} />
-            </ErrorBoundary>
+        <Box className={className}>
+            <Box display="flex">
+                <ErrorBoundary>
+                    <Table {...props} />
+                </ErrorBoundary>
+            </Box>
             {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
-        </>
+        </Box>
     );
 };
 
