@@ -372,27 +372,10 @@ class NodeCompiler(
         case None => Valid(validationContext)
       }
 
-    def prepareCompiledLazyParameters(paramsDefs: List[Parameter], nodeParams: List[NodeParameter]) = {
-      val nodeParamsMap = nodeParams.map(p => p.name -> p).toMap
-      paramsDefs.collect {
-        case paramDef if paramDef.isLazyParameter =>
-          val compiledParam = (for {
-            param <- nodeParamsMap.get(paramDef.name)
-            compiled <- expressionCompiler
-              .compileParam(param, validationContext, paramDef)
-              .toOption
-              .flatMap(_.typedValue.cast[TypedExpression])
-          } yield compiled)
-            .getOrElse(throw new IllegalArgumentException(s"$paramDef is not defined as TypedExpression"))
-          CompiledParameter(compiledParam, paramDef)
-      }
-    }
-
     def createService(invoker: ServiceInvoker, nodeParams: List[NodeParameter], paramsDefs: List[Parameter]) =
       compiledgraph.service.ServiceRef(
         id = serviceRef.id,
         invoker = invoker,
-        parameters = prepareCompiledLazyParameters(paramsDefs, nodeParams),
         resultCollector = resultCollector
       )
 
@@ -674,7 +657,6 @@ class NodeCompiler(
         compiledgraph.service.ServiceRef(
           id = n.id,
           invoker = new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod, evaluateParams),
-          parameters = params,
           resultCollector = resultCollector
         )
       }
