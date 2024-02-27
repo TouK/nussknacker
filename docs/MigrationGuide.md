@@ -48,6 +48,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ComponentId` was renamed to `DesignerWideComponentId`
   * new `ComponentId` is serialized in json to string in format `$componentType-$componentName` instead of separate fields (`name` and `type`)
   * `NodeComponentInfo.componentInfo` was renamed to `componentId`
+* [#5438](https://github.com/TouK/nussknacker/pull/5438) Removed sealed trait `CustomActionError`, now `CustomActionResult` is always used
 * [#5465](https://github.com/TouK/nussknacker/pull/5465) [#5457](https://github.com/TouK/nussknacker/pull/5457) Typed related changes
   * `CommonSupertypeFinder` shouldn't be created directly anymore - `CommonSupertypeFinder.*` predefined variables should be used instead,
     in most cases just (`CommonSupertypeFinder.Default`)
@@ -111,6 +112,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `SingleGenericContextTransformationWrapper` to `SingleInputDynamicComponentWrapper`
     * `SourceFactoryGenericContextTransformationWrapper` to `SourceFactoryDynamicComponentWrapper`
     * `JoinGenericContextTransformationWrapper` to `JoinDynamicComponentWrapper`
+  * type `NodeTransformationDefinition` (inside `DynamicComponent`) renamed to `ContextTransformationDefinition`
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
