@@ -2,7 +2,7 @@ import { css, cx } from "@emotion/css";
 import { DefaultContent, DefaultContentProps } from "@touk/window-manager";
 import React, { PropsWithChildren, useMemo } from "react";
 import { getWindowColors } from "./getWindowColors";
-import { LaddaButton } from "./LaddaButton";
+import { LoadingButton } from "./LoadingButton";
 import ErrorBoundary from "../components/common/ErrorBoundary";
 import { alpha, useTheme } from "@mui/material";
 
@@ -40,7 +40,7 @@ export function WindowContent({ children, ...props }: PropsWithChildren<DefaultC
 
     const components = useMemo(
         () => ({
-            FooterButton: LaddaButton,
+            FooterButton: LoadingButton,
             ...props.components,
         }),
         [props.components],

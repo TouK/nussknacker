@@ -16,11 +16,10 @@ import urljoin from "url-join";
 import { BASE_PATH } from "../../../../config";
 import { RootState } from "../../../../reducers";
 import { applyIdFromFakeName } from "../IdField";
-import { useTheme } from "@mui/material";
-import { alpha, tint } from "../../../../containers/theme/helpers";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { Scenario } from "../../../Process/types";
 import { getScenario } from "../../../../reducers/selectors/graph";
+import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -54,7 +53,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }, [scenario, node, editedNode, outputEdges, dispatch, props]);
 
     const { t } = useTranslation();
-    const theme = useTheme();
 
     const applyButtonData: WindowButtonProps | null = useMemo(
         () =>
@@ -63,23 +61,9 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
                       title: t("dialog.button.apply", "apply"),
                       action: () => performNodeEdit(),
                       disabled: !editedNode.id?.length,
-                      classname: css({
-                          //increase (x4) specificity over ladda
-                          "&&&&": {
-                              backgroundColor: theme.custom.colors.accent,
-                              ":hover": {
-                                  backgroundColor: tint(theme.custom.colors.accent, 0.25),
-                              },
-                              "&[disabled], &[data-loading]": {
-                                  "&, &:hover": {
-                                      backgroundColor: alpha(theme.custom.colors.accent, 0.5),
-                                  },
-                              },
-                          },
-                      }),
                   }
                 : null,
-        [editedNode.id?.length, performNodeEdit, readOnly, t, theme.custom.colors.accent],
+        [editedNode.id?.length, performNodeEdit, readOnly, t],
     );
 
     const openFragmentButtonData: WindowButtonProps | null = useMemo(
@@ -90,13 +74,14 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
                       action: () => {
                           window.open(urljoin(BASE_PATH, visualizationUrl(editedNode.ref.id)));
                       },
+                      classname: "tertiary-button",
                   }
                 : null,
         [editedNode, t],
     );
 
     const cancelButtonData = useMemo(
-        () => ({ title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: "window-close" }),
+        () => ({ title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton }),
         [props, t],
     );
 

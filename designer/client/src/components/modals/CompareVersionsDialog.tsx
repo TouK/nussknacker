@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
 import { css, cx } from "@emotion/css";
-import { WindowContentProps } from "@touk/window-manager";
+import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { keys } from "lodash";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { WindowContent } from "../../windowManager";
 import { formatAbsolutely } from "../../common/DateUtils";
@@ -18,6 +18,7 @@ import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { NodeType } from "../../types";
 import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 import { FormControl, FormLabel } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 interface State {
     currentDiffId: string;
@@ -205,8 +206,11 @@ const VersionsForm = () => {
 };
 
 const CompareVersionsDialog = (props: WindowContentProps) => {
+    const { t } = useTranslation();
+    const buttons: WindowButtonProps[] = useMemo(() => [{ title: t("dialog.button.ok", "OK"), action: props.close }], [props.close, t]);
+
     return (
-        <WindowContent {...props}>
+        <WindowContent buttons={buttons} {...props}>
             <CompareModal className={cx("modalContentDark", css({ minWidth: 980, padding: "1em" }))}>
                 <VersionsForm />
             </CompareModal>
