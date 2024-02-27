@@ -2,6 +2,7 @@
 
 1.15.0 (Not released yet)
 -------------------------
+* [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#5760](https://github.com/TouK/nussknacker/pull/5760) [#5599](https://github.com/TouK/nussknacker/pull/5599) Libraries bump:
   * Flink: 1.17.2 -> 1.18.1
   * Tapir: 1.7.4 -> 1.9.11
