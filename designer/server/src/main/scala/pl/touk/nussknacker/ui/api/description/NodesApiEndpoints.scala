@@ -86,7 +86,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 summary = Some("Additional info for node"),
                 value = Some(
                   MarkdownAdditionalInfo(
-                    "\\nSamples:\\n\\n| id  | value |\\n| --- | ----- |\\n| a   | generated |\\n| b   | not existent |\\n\\nResults for a can be found [here](http://touk.pl?id=a)\\n"
+                    "\nSamples:\n\n| id  | value |\n| --- | ----- |\n| a   | generated |\n| b   | not existent |\n\nResults for a can be found [here](http://touk.pl?id=a)\n"
                   )
                 )
               )
