@@ -17,7 +17,7 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
-class MigrationApiEndpointsBusinessSpec
+class MigrationApiEndpointsSecuritySpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithRichDesignerConfig
@@ -30,7 +30,7 @@ class MigrationApiEndpointsBusinessSpec
 
   private val sourceEnvironmentId = "DEV"
 
-  private val exampleProcessName = ProcessName("test2")
+  private val exampleProcessName = ProcessName("test")
 
   private val exampleScenario =
     ScenarioBuilder
@@ -65,7 +65,7 @@ class MigrationApiEndpointsBusinessSpec
   private val requestJsonBodyPlain: String = prepareRequestJsonBodyPlain(exampleProcessName.value)
 
   "The endpoint for scenario migration between environments should" - {
-    "migrate scenario and add update comment" in {
+    "authorize user with all permissions" in {
       given()
         .applicationState(
           createSavedScenario(exampleScenario, Category1)
@@ -76,43 +76,19 @@ class MigrationApiEndpointsBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
-
-      given()
-        .when()
-        .basicAuthAllPermUser()
-        .get(s"$nuDesignerHttpAddress/api/processes/${exampleProcessName.value}/activity")
-        .Then()
-        .statusCode(200)
-        .body(matchJsonWithRegexValues(s"""
-            |{
-            |  "comments": [
-            |    {
-            |      "id": 0,
-            |      "processVersionId": 1,
-            |      "content": "Scenario migrated from DEV by allpermuser",
-            |      "user": "allpermuser",
-            |      "createDate": "${regexes.zuluDateRegex}"
-            |    }
-            |  ],
-            |  "attachments": []
-            |}
-            |""".stripMargin))
-
     }
-    "fail when scenario is archived on target environment" in {
+    "reject other user" in {
       given()
         .applicationState(
-          createArchivedExampleScenario(exampleProcessName, Category1)
+          createSavedScenario(exampleScenario, Category1)
         )
         .when()
-        .basicAuthAllPermUser()
+        .basicAuthReader()
         .jsonBody(requestJsonBodyPlain)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
-        .statusCode(500)
-        .equalsPlainBody(
-          s"Cannot migrate, scenario ${exampleProcessName.value} is archived on test. You have to unarchive scenario on test in order to migrate."
-        )
+        .statusCode(401)
+        .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
     }
   }
 

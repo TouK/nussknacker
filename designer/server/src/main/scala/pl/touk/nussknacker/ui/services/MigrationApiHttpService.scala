@@ -5,10 +5,9 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetails}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser, MigrationApiEndpoints}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
@@ -21,16 +20,15 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
 }
 import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.FatalValidationError
+import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.internal.FatalError
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class MigrationApiHttpService(
     config: Config,
@@ -70,70 +68,79 @@ class MigrationApiHttpService(
           val updateScenarioCommand =
             UpdateScenarioCommand(scenarioGraphUnsafe, updateProcessComment, forwardedUsername)
 
-          EitherT(
-            for {
-              validation <- Future.successful(
-                FatalValidationError.renderNotAllowedAsError(
-                  processResolver
-                    .forTypeUnsafe(processingType)
-                    .validateBeforeUiResolving(scenarioGraphUnsafe, processName, isFragment)
-                )
+          val future: Future[Unit] = for {
+            validation <- Future.successful(
+              FatalValidationError.renderNotAllowedAsError(
+                processResolver
+                  .forTypeUnsafe(processingType)
+                  .validateBeforeUiResolving(scenarioGraphUnsafe, processName, isFragment)
               )
+            )
 
-              _ <- validation match {
-                case Left(e) => Future.failed(e)
-                case Right(validationResults) =>
-                  if (validationResults.errors == ValidationErrors.success) // TODO: change me to inequality!!!
-                    Future.failed(MigrationValidationError(validationResults.errors))
-                  else Future.successful(())
-              }
+            _ <- validation match {
+              case Left(e) => Future.failed(e)
+              case Right(validationResults) =>
+                if (validationResults.errors != ValidationErrors.success)
+                  Future.failed(MigrationValidationError(validationResults.errors))
+                else Future.successful(())
+            }
 
-              processIdO <- processService.getProcessId(processName)
+            processIdO <- processService.getProcessId(processName)
 
-              _ <- processIdO match {
-                case Some(pid) =>
-                  val processIdWithName = ProcessIdWithName(pid, processName)
-                  processService
-                    .getLatestProcessWithDetails(
-                      processIdWithName,
-                      GetScenarioWithDetailsOptions(
-                        FetchScenarioGraph(FetchScenarioGraph.DontValidate),
-                        fetchState = true
-                      )
+            _ <- processIdO match {
+              case Some(pid) =>
+                val processIdWithName = ProcessIdWithName(pid, processName)
+                processService
+                  .getLatestProcessWithDetails(
+                    processIdWithName,
+                    GetScenarioWithDetailsOptions(
+                      FetchScenarioGraph(FetchScenarioGraph.DontValidate),
+                      fetchState = true
                     )
-                    .transformWith[Either[NuDesignerError, Unit]] {
-                      case Success(scenarioWithDetails) if scenarioWithDetails.isArchived =>
-                        Future
-                          .failed(MigrationToArchivedError(scenarioWithDetails.name, targetEnvironmentId))
-                      case Success(_) => Future.successful(Right(()))
-                      case Failure(e) => Future.failed(e)
-                    }
-                case None =>
-                  createProcess(processName, parameters, isFragment, forwardedUsername, useLegacyCreateScenarioApi)
+                  )
+                  .transformWith[Unit] {
+                    case Success(scenarioWithDetails) if scenarioWithDetails.isArchived =>
+                      Future
+                        .failed(MigrationToArchivedError(scenarioWithDetails.name, targetEnvironmentId))
+                    case Success(_) => Future.successful(())
+                    case Failure(e) => Future.failed(e)
+                  }
+              case None =>
+                createProcess(processName, parameters, isFragment, forwardedUsername, useLegacyCreateScenarioApi)
+            }
+
+            processId <- processService.getProcessIdUnsafe(processName)
+            processIdWithName = ProcessIdWithName(processId, processName)
+
+            canWrite <- processAuthorizer.check(processId, Permission.Write, loggedUser)
+            _        <- if (canWrite) Future.successful(()) else Future.failed(new UnauthorizedError(loggedUser))
+
+            canOverrideUsername <- processAuthorizer
+              .check(processId, Permission.OverrideUsername, loggedUser)
+              .map(_ || forwardedUsername.isEmpty)
+            _ <-
+              if (canOverrideUsername) Future.successful(Right(()))
+              else Future.failed(new UnauthorizedError(loggedUser))
+
+            _ <- processService
+              .updateProcess(processIdWithName, updateScenarioCommand)
+              .withSideEffect(response =>
+                response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
+              )
+              .map(_.validationResult)
+
+          } yield ()
+
+          val transformedFuture: Future[Either[NuDesignerError, Unit]] =
+            future.transform[Either[NuDesignerError, Unit]] { (t: Try[Unit]) =>
+              t match {
+                case Failure(e: NuDesignerError) => Success(Left(e))
+                case Failure(e: Throwable)       => Failure(e)
+                case Success(())                 => Success(Right(()))
               }
+            }
 
-              processId <- processService.getProcessIdUnsafe(processName)
-              processIdWithName = ProcessIdWithName(processId, processName)
-
-              canWrite <- processAuthorizer.check(processId, Permission.Write, loggedUser)
-              _ <- if (canWrite) Future.successful(Right(())) else Future.failed(new UnauthorizedError(loggedUser))
-
-              canOverrideUsername <- processAuthorizer
-                .check(processId, Permission.OverrideUsername, loggedUser)
-                .map(_ || forwardedUsername.isEmpty)
-              _ <-
-                if (canOverrideUsername) Future.successful(Right(()))
-                else Future.failed(new UnauthorizedError(loggedUser))
-
-              _ <- processService
-                .updateProcess(processIdWithName, updateScenarioCommand)
-                .withSideEffect(response =>
-                  response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
-                )
-                .map(_.validationResult)
-
-            } yield Right(())
-          )
+          EitherT(transformedFuture)
         }
       }
   }
