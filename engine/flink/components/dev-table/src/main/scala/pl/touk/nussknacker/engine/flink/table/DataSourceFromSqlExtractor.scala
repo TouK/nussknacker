@@ -4,14 +4,15 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
 import org.apache.flink.table.catalog.{CatalogBaseTable, ObjectPath}
 import org.apache.flink.table.types.DataType
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.flink.table.SqlFromResourceReader.SqlStatement
 
 import scala.util.{Failure, Success, Try}
 
 object DataSourceFromSqlExtractor extends LazyLogging {
 
-  import scala.jdk.OptionConverters.RichOptional
   import scala.jdk.CollectionConverters._
+  import scala.jdk.OptionConverters.RichOptional
 
   private val defaultCatalogName = "default_catalog"
   private val defaultDatabase    = "default_database"
@@ -33,7 +34,7 @@ object DataSourceFromSqlExtractor extends LazyLogging {
 
     // We don't know what's the name of the table outside of this context so we create a table, extract metadata from it
     // and drop it and do that for every statement
-    // TODO local: table results show if adding table was successful - we may use this to handle failures
+    // TODO: refactor this to functional cats validated
     val tableResults = createTableStatements.flatMap { statement =>
       val tryCreateTableAndExtractData = Try(tableEnv.executeSql(statement)) match {
         case Failure(exception) =>
@@ -54,15 +55,22 @@ object DataSourceFromSqlExtractor extends LazyLogging {
 
           // Higher level api - Here we don't seem to have access to unresolved schema but we have access to resolved schema
           val tableWithResolvedSchema = tableEnv.from(tableName)
-          val columns =
-            tableWithResolvedSchema.getResolvedSchema.getColumns.asScala
-              .map(c => Column(c.getName, c.getDataType))
-              .toList
+
+          val (columns, typingMap) = tableWithResolvedSchema.getResolvedSchema.getColumns.asScala
+            .map { column =>
+              val name     = column.getName
+              val dataType = column.getDataType
+              (Column(name, dataType), name -> columnClassToTypingData(dataType))
+            }
+            .toList
+            .unzip
+
+          val typingResult = Typed.record(typingMap.toMap)
 
           tableEnv.executeSql(
             s"DROP TABLE $tableName"
           )
-          Some(SqlDataSourceConfig(tableName, connectorName, DataSourceSchema(columns), statement))
+          Some(SqlDataSourceConfig(tableName, connectorName, DataSourceSchema(columns), typingResult, statement))
       }
       tryCreateTableAndExtractData.toList
     }
@@ -70,15 +78,18 @@ object DataSourceFromSqlExtractor extends LazyLogging {
     tableResults
   }
 
+  private def columnClassToTypingData(dataType: DataType): TypingResult =
+    Typed.typedClass(dataType.getLogicalType.getDefaultConversion)
+
 }
 
 final case class SqlDataSourceConfig(
     name: String,
     connector: String,
     schema: DataSourceSchema,
+    typingResult: TypingResult,
     sqlCreateTableStatement: String
 )
 
-// TODO: check if Schema/Column from flink api can be used - there seems to be a problem with serialization
 final case class DataSourceSchema(columns: List[Column])
 final case class Column(name: String, dataType: DataType)

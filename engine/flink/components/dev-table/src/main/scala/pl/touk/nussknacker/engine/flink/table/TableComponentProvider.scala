@@ -87,7 +87,7 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
 
 object TableComponentProvider {
 
-  private val defaultDataSourceDefinitionFileName = "tables-definition.sql"
+  private val defaultDataSourceDefinitionFileName = "../../../nussknacker-dist/src/universal/conf/tables-definition.sql"
 
   lazy val ConfigIndependentComponents: List[ComponentDefinition] =
     List(
