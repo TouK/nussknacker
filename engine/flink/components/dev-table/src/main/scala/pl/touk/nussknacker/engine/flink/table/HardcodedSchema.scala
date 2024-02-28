@@ -14,8 +14,8 @@ object HardcodedSchema {
 
   val schema: Schema = Schema
     .newBuilder()
-    .column("someString", DataTypes.STRING())
-    .column("someInt", DataTypes.INT())
+    .column(stringColumnName, DataTypes.STRING())
+    .column(intColumnName, DataTypes.INT())
     .build()
 
   val rowDataType: DataType = DataTypes.ROW(
@@ -23,7 +23,7 @@ object HardcodedSchema {
     DataTypes.FIELD(intColumnName, DataTypes.INT()),
   )
 
-  val typingResult: TypingResult = Typed.record(Map("someInt" -> Typed[Integer], "someString" -> Typed[String]))
+  val typingResult: TypingResult = Typed.record(Map(intColumnName -> Typed[Integer], stringColumnName -> Typed[String]))
 
   object MapRowConversion {
 
