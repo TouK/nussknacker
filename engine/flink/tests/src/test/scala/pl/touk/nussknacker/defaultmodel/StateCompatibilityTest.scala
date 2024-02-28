@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVers
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -44,7 +45,7 @@ object StateCompatibilityTest {
   * @see description in [[pl.touk.nussknacker.engine.process.util.Serializers]]
   * @see https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html
   */
-class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with LazyLogging {
+class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import spel.Implicits._
@@ -157,11 +158,11 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
       SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState)
     )
     // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
-    sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
+    sendAvro(givenMatchingAvroObj, inputTopicConfig.input).futureValue
 
     val jobExecutionResult = env.execute(streamGraph)
     env.waitForStart(jobExecutionResult.getJobID, process1.name.value)()
-    sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input)
+    sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input).futureValue
 
     verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
     env.stopJob(process1.name.value, jobExecutionResult)
