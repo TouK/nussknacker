@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
-  CustomActionRequest,
   CustomActionResult,
   DeploymentData,
   DeploymentId,
@@ -88,7 +87,9 @@ class DeploymentServiceImpl(
           comment,
           buildInfoProcessIngType
         ) {
-          dispatcher.deploymentManagerUnsafe(processDetails.processingType).cancel(processId.name, user.toManagerUser)
+          dispatcher
+            .deploymentManagerUnsafe(processDetails.processingType)
+            .processCommand(CancelScenarioCommand(processId.name, user.toManagerUser))
         }.map(_ => ())
       }
     }
@@ -127,11 +128,13 @@ class DeploymentServiceImpl(
             ) {
               dispatcher
                 .deploymentManagerUnsafe(processDetails.processingType)
-                .deploy(
-                  validationResult.processVersion,
-                  validationResult.deploymentData,
-                  validationResult.resolvedScenario,
-                  savepointPath
+                .processCommand(
+                  RunDeploymentCommand(
+                    validationResult.processVersion,
+                    validationResult.deploymentData,
+                    validationResult.resolvedScenario,
+                    savepointPath
+                  )
                 )
             }
             Future.successful(deploymentFuture)
@@ -160,7 +163,9 @@ class DeploymentServiceImpl(
         scenarioResolver.forTypeUnsafe(processDetails.processingType).resolveScenario(processDetails.json)
       )
       deploymentData = prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId))
-      _ <- deploymentManager.validate(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
+      _ <- deploymentManager.processCommand(
+        ValidateScenarioCommand(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
+      )
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
   }
 
@@ -580,16 +585,17 @@ class DeploymentServiceImpl(
         processState <- DBIOAction.from(getProcessState(processDetails))
         manager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
         // Fetch and validate custom action details
-        actionReq = CustomActionRequest(
+        actionCommand = CustomActionCommand(
           actionName,
           processDetails.toEngineProcessVersion,
+          processDetails.json,
           loggedUser.toManagerUser,
           params
         )
-        customActionOpt = manager.customActions.find(_.name == actionName)
+        customActionOpt = manager.customActionsDefinitions.find(_.name == actionName)
         _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
         _ = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
-        invokeActionResult <- DBIOAction.from(manager.invokeCustomAction(actionReq, processDetails.json))
+        invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
     )
   }
@@ -600,7 +606,7 @@ class DeploymentServiceImpl(
       ps: ProcessState,
       manager: DeploymentManager
   ): Unit = {
-    val allowedActionsForStatus = manager.customActions.collect {
+    val allowedActionsForStatus = manager.customActionsDefinitions.collect {
       case a if a.allowedStateStatusNames.contains(ps.status.name) => a.name
     }.distinct
     if (!allowedActionsForStatus.contains(actionName)) {

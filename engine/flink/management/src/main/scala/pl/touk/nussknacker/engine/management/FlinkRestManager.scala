@@ -150,17 +150,19 @@ class FlinkRestManager(
     }
   }
 
-  override def cancel(processName: ProcessName, user: User): Future[Unit] = {
+  override protected def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+    import command._
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    getProcessStates(processName).map(_.value).flatMap { statuses =>
-      cancelEachMatchingJob(processName, None, statuses)
+    getProcessStates(scenarioName).map(_.value).flatMap { statuses =>
+      cancelEachMatchingJob(scenarioName, None, statuses)
     }
   }
 
-  override def cancel(processName: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = {
+  override protected def cancelDeployment(command: CancelDeploymentCommand): Future[Unit] = {
+    import command._
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    getProcessStates(processName).map(_.value).flatMap { statuses =>
-      cancelEachMatchingJob(processName, Some(deploymentId), statuses.filter(_.deploymentId.contains(deploymentId)))
+    getProcessStates(scenarioName).map(_.value).flatMap { statuses =>
+      cancelEachMatchingJob(scenarioName, Some(deploymentId), statuses.filter(_.deploymentId.contains(deploymentId)))
     }
   }
 
@@ -175,17 +177,17 @@ class FlinkRestManager(
           s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink."
         )
         Future.successful(())
-      case single :: Nil => cancelJob(single)
+      case single :: Nil => cancelFlinkJob(single)
       case moreThanOne @ (_ :: _ :: _) =>
         logger.warn(
           s"Found duplicate jobs of $processName${deploymentId.map(" with id: " + _).getOrElse("")}: $moreThanOne. Cancelling all in non terminal state."
         )
-        Future.sequence(moreThanOne.map(cancelJob)).map(_ => ())
+        Future.sequence(moreThanOne.map(cancelFlinkJob)).map(_ => ())
     }
   }
 
-  private def cancelJob(details: StatusDetails) = {
-    cancel(
+  private def cancelFlinkJob(details: StatusDetails): Future[Unit] = {
+    cancelFlinkJob(
       details.externalDeploymentId.getOrElse(
         throw new IllegalStateException(
           "Error during cancelling scenario: returned status details has no external deployment id"
@@ -194,7 +196,7 @@ class FlinkRestManager(
     )
   }
 
-  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
+  override protected def cancelFlinkJob(deploymentId: ExternalDeploymentId): Future[Unit] = {
     client.cancel(deploymentId)
   }
 
