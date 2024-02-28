@@ -47,6 +47,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidation
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
+  UIGlobalError,
   ValidationErrors,
   ValidationResult,
   ValidationWarnings
@@ -233,7 +234,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val result = configuredValidator.validate(process)
 
     result.errors.globalErrors shouldBe List(
-      NodeValidationError(
+      UIGlobalError(
+        NodeValidationError(
+          "DuplicatedNodeIds",
+          "Two nodes cannot have same id",
+          "Duplicate node ids: inID",
+          None,
+          RenderNotAllowed
+        ),
+        Nil,
         "DuplicatedNodeIds",
         "Two nodes cannot have same id",
         "Duplicate node ids: inID",
@@ -261,7 +270,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val result = configuredValidator.validate(process)
 
     result.errors.globalErrors shouldBe List(
-      NodeValidationError(
+      UIGlobalError(
+        NodeValidationError(
+          "DuplicatedNodeIds",
+          "Two nodes cannot have same id",
+          "Duplicate node ids: switchID",
+          None,
+          RenderNotAllowed
+        ),
+        Nil,
         "DuplicatedNodeIds",
         "Two nodes cannot have same id",
         "Duplicate node ids: switchID",

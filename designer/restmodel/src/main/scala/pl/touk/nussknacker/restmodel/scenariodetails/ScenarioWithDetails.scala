@@ -27,6 +27,8 @@ final case class ScenarioWithDetails(
     isFragment: Boolean,
     processingType: ProcessingType,
     processCategory: String,
+    processingMode: String = "Unbounded-Stream",
+    engineSetupName: String = "Flink",
     modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
     modifiedAt: Instant,
     modifiedBy: String,
@@ -38,6 +40,9 @@ final case class ScenarioWithDetails(
     lastAction: Option[ProcessAction],
     // TODO: move things like processingType, category and validationResult on the root level and rename json to scenarioGraph
     json: Option[ValidatedDisplayableProcess],
+    // added for compatibility with Nu 1.14
+    scenarioGraph: Option[DisplayableProcess] = None,
+    validationResult: Option[ValidationResults.ValidationResult] = None,
     history: Option[List[ScenarioVersion]],
     modelVersion: Option[Int],
     state: Option[ProcessState]
@@ -48,7 +53,11 @@ final case class ScenarioWithDetails(
   def withScenarioGraphAndValidationResult(
       scenarioWithValidationResult: ValidatedDisplayableProcess
   ): ScenarioWithDetails = {
-    copy(json = Some(scenarioWithValidationResult))
+    copy(
+      json = Some(scenarioWithValidationResult),
+      scenarioGraph = Some(scenarioWithValidationResult.toDisplayable),
+      validationResult = scenarioWithValidationResult.validationResult
+    )
   }
 
   def historyUnsafe: List[ScenarioVersion] = history.getOrElse(throw new IllegalStateException("Missing history"))
@@ -57,10 +66,6 @@ final case class ScenarioWithDetails(
 
   def validationResultUnsafe: ValidationResults.ValidationResult =
     validationResult.getOrElse(throw new IllegalStateException("Missing validation result"))
-
-  def validationResult: Option[ValidationResults.ValidationResult] = {
-    scenarioGraphAndValidationResultUnsafe.validationResult
-  }
 
   def scenarioGraphAndValidationResultUnsafe: ValidatedDisplayableProcess =
     json.getOrElse(throw new IllegalStateException("Missing scenario graph and validation result"))

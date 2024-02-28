@@ -50,7 +50,7 @@ object ValidationResults {
       nodeResults.mapValuesNow(_.typingInfo)
 
     private def allErrors: List[NodeValidationError] =
-      (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors).toList
+      (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors.map(_.error)).toList
 
   }
 
@@ -73,19 +73,30 @@ object ValidationResults {
   @JsonCodec final case class ValidationErrors(
       invalidNodes: Map[String, List[NodeValidationError]],
       processPropertiesErrors: List[NodeValidationError],
-      globalErrors: List[NodeValidationError]
+      globalErrors: List[UIGlobalError]
   ) {
     def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
   }
 
   @JsonCodec final case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
 
+  // compatibility with Nu 1.14
+  @JsonCodec final case class UIGlobalError(
+      error: NodeValidationError,
+      nodeIds: List[String],
+      typ: String,
+      message: String,
+      description: String,
+      fieldName: Option[String],
+      errorType: NodeValidationErrorType.Value,
+  )
+
   @JsonCodec final case class NodeValidationError(
       typ: String,
       message: String,
       description: String,
       fieldName: Option[String],
-      errorType: NodeValidationErrorType.Value
+      errorType: NodeValidationErrorType.Value,
   )
 
   object ValidationErrors {
@@ -112,7 +123,9 @@ object ValidationResults {
         ValidationErrors(
           invalidNodes = invalidNodes,
           processPropertiesErrors = processPropertiesErrors,
-          globalErrors = globalErrors
+          globalErrors = globalErrors.map(e =>
+            UIGlobalError(e, List.empty, e.typ, e.message, e.description, e.fieldName, e.errorType)
+          )
         ),
         ValidationWarnings.success,
         Map.empty
