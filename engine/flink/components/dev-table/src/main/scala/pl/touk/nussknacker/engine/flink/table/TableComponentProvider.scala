@@ -13,7 +13,11 @@ import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.{
   defaultDataSourceDefinitionFileName
 }
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
-import pl.touk.nussknacker.engine.flink.table.source.{HardcodedValuesTableSourceFactory, TableSourceFactory}
+import pl.touk.nussknacker.engine.flink.table.source.{
+  HardcodedSchemaTableSourceFactory,
+  HardcodedValuesTableSourceFactory,
+  SqlTableSourceFactory
+}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 import scala.util.{Failure, Success, Try}
@@ -26,28 +30,38 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
 
-    val dataSourceComponents: List[ComponentDefinition] = for {
+    val dataSourceComponentsFromConfig: List[ComponentDefinition] = for {
       tableDataSourcesConfig <- parseConfigOpt(config).toList
       dataSourceConfig       <- tableDataSourcesConfig.dataSources
       componentDefinitions <- List(
         ComponentDefinition(
-          tableDataSourceComponentId("source", dataSourceConfig),
-          new TableSourceFactory(dataSourceConfig)
+          tableDataSourceComponentId("source", dataSourceConfig.connector, dataSourceConfig.name),
+          new HardcodedSchemaTableSourceFactory(dataSourceConfig)
         ),
         ComponentDefinition(
-          tableDataSourceComponentId("sink", dataSourceConfig),
+          tableDataSourceComponentId("sink", dataSourceConfig.connector, dataSourceConfig.name),
           new TableSinkFactory(dataSourceConfig)
         )
       )
     } yield componentDefinitions
 
     val dataSourceConfigFromSql = extractDataSourceConfigFromSqlFile()
+    val sqlDataSourceComponents = dataSourceConfigFromSql.map(sqlConfig =>
+      ComponentDefinition(
+        tableDataSourceComponentId("source", sqlConfig.connector, sqlConfig.name),
+        new SqlTableSourceFactory(sqlConfig)
+      )
+    )
 
-    ConfigIndependentComponents ::: dataSourceComponents
+    ConfigIndependentComponents ::: dataSourceComponentsFromConfig ::: sqlDataSourceComponents
   }
 
-  private def tableDataSourceComponentId(componentType: String, config: DataSourceConfig): String = {
-    s"tableApi-$componentType-${config.connector}-${config.name}"
+  private def tableDataSourceComponentId(
+      componentType: String,
+      connector: String,
+      componentNamePart: String
+  ): String = {
+    s"tableApi-$componentType-$connector-$componentNamePart"
   }
 
   private def parseConfigOpt(config: Config): Option[TableDataSourcesConfig] = {
@@ -60,7 +74,7 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
     tryParse.toOption
   }
 
-  private def extractDataSourceConfigFromSqlFile(): List[DataSourceConfigWithSql] = {
+  private def extractDataSourceConfigFromSqlFile(): List[SqlDataSourceConfig] = {
     val sqlStatements = readFileFromResources(defaultDataSourceDefinitionFileName)
     extractTablesFromFlinkRuntime(sqlStatements)
   }

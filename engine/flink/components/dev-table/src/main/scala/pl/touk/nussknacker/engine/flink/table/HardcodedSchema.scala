@@ -19,8 +19,8 @@ object HardcodedSchema {
     .build()
 
   val rowDataType: DataType = DataTypes.ROW(
-    DataTypes.FIELD(stringColumnName, DataTypes.STRING()),
     DataTypes.FIELD(intColumnName, DataTypes.INT()),
+    DataTypes.FIELD(stringColumnName, DataTypes.STRING()),
   )
 
   val typingResult: TypingResult = Typed.record(Map(intColumnName -> Typed[Integer], stringColumnName -> Typed[String]))

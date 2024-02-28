@@ -17,7 +17,7 @@ object DataSourceFromSqlExtractor extends LazyLogging {
   private val defaultDatabase    = "default_database"
   private val connectorKey       = "connector"
 
-  def extractTablesFromFlinkRuntime(createTableStatements: List[SqlStatement]): List[DataSourceConfigWithSql] = {
+  def extractTablesFromFlinkRuntime(createTableStatements: List[SqlStatement]): List[SqlDataSourceConfig] = {
     val settings = EnvironmentSettings
       .newInstance()
       .build()
@@ -62,7 +62,7 @@ object DataSourceFromSqlExtractor extends LazyLogging {
           tableEnv.executeSql(
             s"DROP TABLE $tableName"
           )
-          Some(DataSourceConfigWithSql(tableName, connectorName, DataSourceSchema(columns), statement))
+          Some(SqlDataSourceConfig(tableName, connectorName, DataSourceSchema(columns), statement))
       }
       tryCreateTableAndExtractData.toList
     }
@@ -72,12 +72,13 @@ object DataSourceFromSqlExtractor extends LazyLogging {
 
 }
 
-final case class DataSourceConfigWithSql(
+final case class SqlDataSourceConfig(
     name: String,
     connector: String,
     schema: DataSourceSchema,
     sqlCreateTableStatement: String
 )
 
+// TODO: check if Schema/Column from flink api can be used - there seems to be a problem with serialization
 final case class DataSourceSchema(columns: List[Column])
 final case class Column(name: String, dataType: DataType)

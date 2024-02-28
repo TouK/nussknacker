@@ -2,30 +2,26 @@ package pl.touk.nussknacker.engine.flink.table.source
 
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.Expressions.row
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkContextInitializingFunction,
-  FlinkCustomNodeContext,
-  FlinkSource
-}
-import pl.touk.nussknacker.engine.flink.table.HardcodedSchema
-import pl.touk.nussknacker.engine.flink.table.TableUtils.rowToMap
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.table.TableUtils.{buildTableDescriptor, rowToMap}
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
+import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
 
-object HardcodedValuesTableSourceFactory extends SourceFactory with UnboundedStreamComponent {
+// TODO: Should be BoundedStreamComponent - change it after configuring batch Deployment Manager
+class HardcodedSchemaTableSourceFactory(config: DataSourceConfig) extends SourceFactory with UnboundedStreamComponent {
 
   @MethodToInvoke
   def invoke(): Source = {
-    new HardcodedValuesSource()
+    new TableSource()
   }
 
-  private class HardcodedValuesSource extends FlinkSource with ReturningType {
+  private class TableSource extends FlinkSource with ReturningType {
 
     override def sourceStream(
         env: StreamExecutionEnvironment,
@@ -33,11 +29,11 @@ object HardcodedValuesTableSourceFactory extends SourceFactory with UnboundedStr
     ): DataStream[Context] = {
       val tableEnv = StreamTableEnvironment.create(env);
 
-      val table = tableEnv.fromValues(
-        HardcodedSchema.rowDataType,
-        row(1, "AAA"),
-        row(2, "BBB")
-      )
+      val tableName = "some_table_name"
+
+      val tableDescriptorFilled = buildTableDescriptor(config, HardcodedSchema.schema)
+      tableEnv.createTable(tableName, tableDescriptorFilled)
+      val table = tableEnv.from(tableName)
 
       val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 
