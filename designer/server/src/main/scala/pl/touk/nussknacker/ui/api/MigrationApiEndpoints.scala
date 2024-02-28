@@ -9,6 +9,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui._
+import pl.touk.nussknacker.ui.process.migrate.MigrationToArchivedError
 import sttp.model.StatusCode._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -38,6 +39,10 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       oneOfVariant(
         NotFound,
         plainBody[NotFoundError]
+      ),
+      oneOfVariant(
+        BadRequest,
+        plainBody[MigrationToArchivedError]
       ),
       oneOfVariant(
         BadRequest,
@@ -72,6 +77,11 @@ object MigrationApiEndpoints {
     implicit val notFoundErrorCodec: Codec[String, NotFoundError, CodecFormat.TextPlain] =
       Codec.string.map(
         Mapping.from[String, NotFoundError](deserializationException)(_.getMessage)
+      )
+
+    implicit val migrationToArchivedErrorCodec: Codec[String, MigrationToArchivedError, CodecFormat.TextPlain] =
+      Codec.string.map(
+        Mapping.from[String, MigrationToArchivedError](deserializationException)(_.getMessage)
       )
 
     implicit val badRequestErrorCodec: Codec[String, BadRequestError, CodecFormat.TextPlain] =

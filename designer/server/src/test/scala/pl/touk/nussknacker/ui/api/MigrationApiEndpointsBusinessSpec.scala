@@ -109,7 +109,7 @@ class MigrationApiEndpointsBusinessSpec
         .jsonBody(requestJsonBodyPlain)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
-        .statusCode(500)
+        .statusCode(400)
         .equalsPlainBody(
           s"Cannot migrate, scenario ${exampleProcessName.value} is archived on test. You have to unarchive scenario on test in order to migrate."
         )
