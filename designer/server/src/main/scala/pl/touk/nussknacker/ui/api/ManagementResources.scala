@@ -137,7 +137,7 @@ class ManagementResources(
               convertSavepointResultToResponse(
                 dispatcher
                   .deploymentManagerUnsafe(processId)(ec, user)
-                  .flatMap(_.processCommand(MakeAScenarioSavepointCommand(processId.name, savepointDir)))
+                  .flatMap(_.processCommand(MakeScenarioSavepointCommand(processId.name, savepointDir)))
               )
             }
           }

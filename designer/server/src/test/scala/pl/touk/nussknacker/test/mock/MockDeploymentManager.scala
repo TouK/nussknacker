@@ -231,7 +231,7 @@ class MockDeploymentManager(
   }
 
   override protected def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] =
-    command.scenarioName.value match {
+    command.actionName.value match {
       case "hello" | "invalid-status" => Future.successful(CustomActionResult("Hi"))
       case _                          => Future.failed(new NotImplementedError())
     }

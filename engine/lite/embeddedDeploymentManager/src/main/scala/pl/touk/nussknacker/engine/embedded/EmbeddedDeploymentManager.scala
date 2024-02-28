@@ -102,7 +102,7 @@ class EmbeddedDeploymentManager(
       case command: CancelDeploymentCommand => cancelDeployment(command)
       case command: CancelScenarioCommand   => cancelScenario(command)
       case command: TestScenarioCommand     => processTestActionCommand(command)
-      case _: StopDeploymentCommand | _: StopScenarioCommand | _: MakeAScenarioSavepointCommand |
+      case _: StopDeploymentCommand | _: StopScenarioCommand | _: MakeScenarioSavepointCommand |
           _: CustomActionCommand =>
         notImplemented
     }

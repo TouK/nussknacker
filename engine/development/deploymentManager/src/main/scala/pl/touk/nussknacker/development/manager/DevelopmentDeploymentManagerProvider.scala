@@ -84,10 +84,10 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     case CancelDeploymentCommand(name, _, user) =>
       // TODO: cancelling specific deployment
       cancelScenario(CancelScenarioCommand(name, user))
-    case command: CancelScenarioCommand   => cancelScenario(command)
-    case command: CustomActionCommand     => invokeCustomAction(command)
-    case _: MakeAScenarioSavepointCommand => Future.successful(SavepointResult(""))
-    case _: TestScenarioCommand           => notImplemented
+    case command: CancelScenarioCommand  => cancelScenario(command)
+    case command: CustomActionCommand    => invokeCustomAction(command)
+    case _: MakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
+    case _: TestScenarioCommand          => notImplemented
   }
 
   private def description(canonicalProcess: CanonicalProcess) = {
@@ -153,12 +153,12 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private def invokeCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
     val processName = command.processVersion.processName
     val statusOpt = customActionStatusMapping
-      .collectFirst { case (customAction, status) if customAction.name == command.scenarioName => status }
+      .collectFirst { case (customAction, status) if customAction.name == command.actionName => status }
 
     statusOpt match {
       case Some(newStatus) =>
         asyncChangeState(processName, newStatus)
-        Future.successful(CustomActionResult(s"Done ${command.scenarioName}"))
+        Future.successful(CustomActionResult(s"Done ${command.actionName}"))
       case _ =>
         Future.failed(new NotImplementedError())
     }

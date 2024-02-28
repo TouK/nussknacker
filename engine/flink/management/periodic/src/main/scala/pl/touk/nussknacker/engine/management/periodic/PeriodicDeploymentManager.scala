@@ -116,7 +116,7 @@ class PeriodicDeploymentManager private[periodic] (
       case command: StopScenarioCommand     => stopScenario(command)
       case command: CustomActionCommand     => customActionsProvider.invokeCustomAction(command)
       case _: TestScenarioCommand | _: CancelDeploymentCommand | _: StopDeploymentCommand |
-          _: MakeAScenarioSavepointCommand | _: CustomActionCommand =>
+          _: MakeScenarioSavepointCommand | _: CustomActionCommand =>
         delegate.processCommand(command)
     }
 

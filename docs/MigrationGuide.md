@@ -20,7 +20,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `cancel` without `deploymentId` argument - `CancelScenarioCommand`
     * `stop` with `deploymentId` argument - `StopDeploymentCommand`
     * `stop` without `deploymentId` argument - `StopScenarioCommand`
-    * `savepoint` - `MakeAScenarioSavepointCommand`
+    * `savepoint` - `MakeScenarioSavepointCommand`
     * `test` - `TestScenarioCommand`
 
 ### Other changes

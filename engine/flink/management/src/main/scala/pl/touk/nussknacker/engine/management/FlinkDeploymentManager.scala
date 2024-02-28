@@ -109,7 +109,7 @@ abstract class FlinkDeploymentManager(
         requireSingleRunningJob(processName, _ => true) {
           stop(_, savepointDir)
         }
-      case MakeAScenarioSavepointCommand(processName, savepointDir) =>
+      case MakeScenarioSavepointCommand(processName, savepointDir) =>
         // TODO: savepoint for given deployment id
         requireSingleRunningJob(processName, _ => true) {
           makeSavepoint(_, savepointDir)

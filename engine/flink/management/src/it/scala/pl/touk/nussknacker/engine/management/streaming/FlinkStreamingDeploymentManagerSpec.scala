@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.deployment.{
   CancelScenarioCommand,
-  MakeAScenarioSavepointCommand,
+  MakeScenarioSavepointCommand,
   RunDeploymentCommand,
   StopScenarioCommand
 }
@@ -123,7 +123,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       val savepointDir = Files.createTempDirectory("customSavepoint")
       val savepointPathFuture = deploymentManager
         .processCommand(
-          MakeAScenarioSavepointCommand(
+          MakeScenarioSavepointCommand(
             processEmittingOneElementAfterStart.name,
             savepointDir = Some(savepointDir.toUri.toString)
           )

@@ -60,7 +60,7 @@ case class StopDeploymentCommand(
 //       a dedicated code on the FE side. Not every new command need to be a custom scenario command.
 //       We should also describe it in some scaladoc
 case class CustomActionCommand(
-    scenarioName: ScenarioActionName,
+    actionName: ScenarioActionName,
     processVersion: ProcessVersion,
     canonicalProcess: CanonicalProcess,
     user: User,
@@ -75,7 +75,7 @@ case class TestScenarioCommand(
     scenarioTestData: ScenarioTestData
 ) extends ScenarioCommand[TestResults]
 
-case class MakeAScenarioSavepointCommand(scenarioName: ProcessName, savepointDir: Option[String])
+case class MakeScenarioSavepointCommand(scenarioName: ProcessName, savepointDir: Option[String])
     extends ScenarioCommand[SavepointResult]
 
 case class CancelScenarioCommand(scenarioName: ProcessName, user: User) extends ScenarioCommand[Unit]

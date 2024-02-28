@@ -217,7 +217,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val manager     = createManager(List(buildRunningJobOverview(processName)), acceptSavepoint = true)
 
     manager
-      .processCommand(MakeAScenarioSavepointCommand(processName, savepointDir = None))
+      .processCommand(MakeScenarioSavepointCommand(processName, savepointDir = None))
       .futureValue shouldBe SavepointResult(path = savepointPath)
   }
 
