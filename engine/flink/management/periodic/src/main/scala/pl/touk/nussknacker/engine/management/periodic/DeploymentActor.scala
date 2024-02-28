@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import akka.actor.{Actor, Props, Timers}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.DeploymentActor.{
   CheckToBeDeployed,
   DeploymentCompleted,
@@ -20,8 +21,8 @@ object DeploymentActor {
   }
 
   private[periodic] def props(
-      findToBeDeployed: => Future[Seq[PeriodicProcessDeployment]],
-      deploy: PeriodicProcessDeployment => Future[Unit],
+      findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]],
+      deploy: PeriodicProcessDeployment[CanonicalProcess] => Future[Unit],
       interval: FiniteDuration
   ) = {
     Props(new DeploymentActor(findToBeDeployed, deploy, interval))
@@ -29,14 +30,14 @@ object DeploymentActor {
 
   private[periodic] case object CheckToBeDeployed
 
-  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment])
+  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment[CanonicalProcess]])
 
   private case object DeploymentCompleted
 }
 
 class DeploymentActor(
-    findToBeDeployed: => Future[Seq[PeriodicProcessDeployment]],
-    deploy: PeriodicProcessDeployment => Future[Unit],
+    findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]],
+    deploy: PeriodicProcessDeployment[CanonicalProcess] => Future[Unit],
     interval: FiniteDuration
 ) extends Actor
     with Timers
@@ -72,7 +73,7 @@ class DeploymentActor(
       }
   }
 
-  private def receiveOngoingDeployment(runDetails: PeriodicProcessDeployment): Receive = {
+  private def receiveOngoingDeployment(runDetails: PeriodicProcessDeployment[CanonicalProcess]): Receive = {
     case CheckToBeDeployed =>
       logger.debug(s"Still waiting for ${runDetails.display} to be deployed")
     case DeploymentCompleted =>

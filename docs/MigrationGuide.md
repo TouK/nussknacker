@@ -136,6 +136,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `SingleGenericContextTransformationWrapper` to `SingleInputDynamicComponentWrapper`
     * `SourceFactoryGenericContextTransformationWrapper` to `SourceFactoryDynamicComponentWrapper`
     * `JoinGenericContextTransformationWrapper` to `JoinDynamicComponentWrapper`
+* [#5641](https://github.com/TouK/nussknacker/pull/5641) `PeriodicProcessDeployment`/`DeploymentWithJarData`/`PeriodicProcess` now takes type parameter `CanonicalProcess` or `Unit` to point out whether it contains scenario json.
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
