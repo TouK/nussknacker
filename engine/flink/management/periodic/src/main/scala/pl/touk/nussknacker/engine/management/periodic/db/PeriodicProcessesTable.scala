@@ -27,7 +27,7 @@ trait PeriodicProcessesTableFactory {
       ProcessActionId(_)
     )
 
-  class PeriodicProcessesTable(tag: Tag) extends Table[PeriodicProcessEntity](tag, "periodic_processes") {
+  abstract class PeriodicProcessesTable(tag: Tag) extends Table[PeriodicProcessEntity](tag, "periodic_processes") {
 
     def id: Rep[PeriodicProcessId] = column[PeriodicProcessId]("id", O.PrimaryKey, O.AutoInc)
 
@@ -36,8 +36,6 @@ trait PeriodicProcessesTableFactory {
     def processVersionId: Rep[Long] = column[Long]("process_version_id", NotNull)
 
     def processingType: Rep[String] = column[String]("processing_type", NotNull)
-
-    def processJson: Rep[String] = column[String]("process_json", NotNull)
 
     def inputConfigDuringExecutionJson: Rep[String] = column[String]("input_config_during_execution", NotNull)
 
@@ -50,6 +48,12 @@ trait PeriodicProcessesTableFactory {
     def createdAt: Rep[LocalDateTime] = column[LocalDateTime]("created_at", NotNull)
 
     def processActionId: Rep[Option[ProcessActionId]] = column[Option[ProcessActionId]]("process_action_id")
+
+  }
+
+  class PeriodicProcessesWithJsonTable(tag: Tag) extends PeriodicProcessesTable(tag) {
+
+    def processJson: Rep[String] = column[String]("process_json", NotNull)
 
     override def * : ProvenShape[PeriodicProcessEntity] = (
       id,
@@ -64,7 +68,7 @@ trait PeriodicProcessesTableFactory {
       createdAt,
       processActionId
     ) <> (
-      (PeriodicProcessEntity.create _).tupled,
+      (PeriodicProcessEntity.createWithJson _).tupled,
       (e: PeriodicProcessEntity) =>
         PeriodicProcessEntity.unapply(e).map {
           case (
@@ -98,13 +102,62 @@ trait PeriodicProcessesTableFactory {
 
   }
 
-  object PeriodicProcesses extends TableQuery(new PeriodicProcessesTable(_))
+  class PeriodicProcessWithoutJson(tag: Tag) extends PeriodicProcessesTable(tag) {
+
+    override def * : ProvenShape[PeriodicProcessEntity] = (
+      id,
+      processName,
+      processVersionId,
+      processingType,
+      inputConfigDuringExecutionJson,
+      jarFileName,
+      scheduleProperty,
+      active,
+      createdAt,
+      processActionId
+    ) <> (
+      (PeriodicProcessEntity.createWithoutJson _).tupled,
+      (e: PeriodicProcessEntity) =>
+        PeriodicProcessEntity.unapply(e).map {
+          case (
+                id,
+                processName,
+                versionId,
+                processingType,
+                _,
+                inputConfigDuringExecutionJson,
+                jarFileName,
+                scheduleProperty,
+                active,
+                createdAt,
+                processActionId
+              ) =>
+            (
+              id,
+              processName.value,
+              versionId.value,
+              processingType,
+              inputConfigDuringExecutionJson,
+              jarFileName,
+              scheduleProperty,
+              active,
+              createdAt,
+              processActionId
+            )
+        }
+    )
+
+  }
+
+  object PeriodicProcessesWithJson extends TableQuery(new PeriodicProcessesWithJsonTable(_))
+
+  object PeriodicProcessesWithoutJson extends TableQuery(new PeriodicProcessWithoutJson(_))
 
 }
 
 object PeriodicProcessEntity {
 
-  def create(
+  def createWithJson(
       id: PeriodicProcessId,
       processName: String,
       processVersionId: Long,
@@ -122,7 +175,33 @@ object PeriodicProcessEntity {
       ProcessName(processName),
       VersionId(processVersionId),
       processingType,
-      ProcessMarshaller.fromJsonUnsafe(processJson),
+      Some(ProcessMarshaller.fromJsonUnsafe(processJson)),
+      inputConfigDuringExecutionJson,
+      jarFileName,
+      scheduleProperty,
+      active,
+      createdAt,
+      processActionId
+    )
+
+  def createWithoutJson(
+      id: PeriodicProcessId,
+      processName: String,
+      processVersionId: Long,
+      processingType: String,
+      inputConfigDuringExecutionJson: String,
+      jarFileName: String,
+      scheduleProperty: String,
+      active: Boolean,
+      createdAt: LocalDateTime,
+      processActionId: Option[ProcessActionId]
+  ): PeriodicProcessEntity =
+    PeriodicProcessEntity(
+      id,
+      ProcessName(processName),
+      VersionId(processVersionId),
+      processingType,
+      None,
       inputConfigDuringExecutionJson,
       jarFileName,
       scheduleProperty,
@@ -138,7 +217,7 @@ case class PeriodicProcessEntity(
     processName: ProcessName,
     processVersionId: VersionId,
     processingType: String,
-    processJson: CanonicalProcess,
+    processJson: Option[CanonicalProcess],
     inputConfigDuringExecutionJson: String,
     jarFileName: String,
     scheduleProperty: String,

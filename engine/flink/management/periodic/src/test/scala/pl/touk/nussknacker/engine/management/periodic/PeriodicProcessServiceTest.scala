@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -89,8 +90,12 @@ class PeriodicProcessServiceTest
 
       },
       additionalDeploymentDataProvider = new AdditionalDeploymentDataProvider {
-        override def prepareAdditionalData(runDetails: PeriodicProcessDeployment): Map[String, String] =
+
+        override def prepareAdditionalData(
+            runDetails: PeriodicProcessDeployment[CanonicalProcess]
+        ): Map[String, String] =
           additionalData + ("runId" -> runDetails.id.value.toString)
+
       },
       DeploymentRetryConfig(),
       PeriodicExecutionConfig(),

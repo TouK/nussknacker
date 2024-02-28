@@ -46,7 +46,7 @@ object ProcessConfigEnricher {
   case class DeployData(
       canonicalProcess: CanonicalProcess,
       inputConfigDuringExecutionJson: String,
-      deployment: PeriodicProcessDeployment
+      deployment: PeriodicProcessDeployment[CanonicalProcess]
   ) extends ProcessConfigEnricherInputData
 
   case class EnrichedProcessConfig(inputConfigDuringExecutionJson: String)
