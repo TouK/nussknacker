@@ -133,7 +133,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       processActionId = Some(processActionId)
     )
     processEntities += periodicProcess
-    PeriodicProcessesRepository.createPeriodicProcess(periodicProcess)
+    PeriodicProcessesRepository.createPeriodicProcessWithJson(periodicProcess)
   }
 
   override def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
@@ -204,7 +204,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   override def findProcessData(processName: ProcessName): Seq[PeriodicProcess[CanonicalProcess]] =
     processEntities(processName)
       .filter(_.active)
-      .map(PeriodicProcessesRepository.createPeriodicProcess)
+      .map(PeriodicProcessesRepository.createPeriodicProcessWithJson)
 
   private def processEntities(processName: ProcessName): Seq[PeriodicProcessEntity] =
     processEntities

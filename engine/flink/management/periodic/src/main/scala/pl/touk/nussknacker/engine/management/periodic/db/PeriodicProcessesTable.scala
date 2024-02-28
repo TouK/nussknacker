@@ -102,7 +102,7 @@ trait PeriodicProcessesTableFactory {
 
   }
 
-  class PeriodicProcessesWithUnitTable(tag: Tag) extends PeriodicProcessesTable(tag) {
+  class PeriodicProcessWithoutJson(tag: Tag) extends PeriodicProcessesTable(tag) {
 
     override def * : ProvenShape[PeriodicProcessEntity] = (
       id,
@@ -151,7 +151,7 @@ trait PeriodicProcessesTableFactory {
 
   object PeriodicProcessesWithJson extends TableQuery(new PeriodicProcessesWithJsonTable(_))
 
-  object PeriodicProcessesWithUnit extends TableQuery(new PeriodicProcessesWithUnitTable(_))
+  object PeriodicProcessesWithoutJson extends TableQuery(new PeriodicProcessWithoutJson(_))
 
 }
 
