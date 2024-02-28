@@ -174,6 +174,13 @@ class NodeCompiler(
         .sequence
         .map(_ => ())
 
+      val dictValueEditorErrors = frag.parameters
+        .map { param =>
+          FragmentParameterValidator.validateValueInputWithDictEditor(param, expressionConfig.dictionaries, classLoader)
+        }
+        .sequence
+        .map(_ => ())
+
       val parameterNameValidation = validateParameterNames(parameterDefinitions.value)
 
       val parameterExtractionValidation =
@@ -189,7 +196,7 @@ class NodeCompiler(
 
       val displayableErrors =
         if (displayUniqueNameReliantErrors)
-          parameterNameValidation |+| parameterExtractionValidation |+| fixedValuesErrors
+          parameterNameValidation |+| parameterExtractionValidation |+| fixedValuesErrors |+| dictValueEditorErrors
         else parameterNameValidation
 
       compilationResult.copy(compiledObject = displayableErrors.andThen(_ => compilationResult.compiledObject))

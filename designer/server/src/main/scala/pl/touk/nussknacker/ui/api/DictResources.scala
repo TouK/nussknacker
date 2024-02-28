@@ -10,6 +10,8 @@ import scala.concurrent.ExecutionContext
 
 class DictResources(implicit ec: ExecutionContext) extends Directives with FailFastCirceSupport {
 
+  // TODO: endpoint for getting available dictionaries?
+
   def route(dictQueryService: DictQueryService): Route =
     path("dict" / Segment / "entry") { dictId =>
       get {

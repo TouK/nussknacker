@@ -2,24 +2,28 @@ package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, RawEditor, SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.editor._
+import pl.touk.nussknacker.engine.api.parameter.{
+  FragmentParameterValueInput,
+  ValueInputWithDictEditor,
+  ValueInputWithFixedValuesProvided
+}
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
-import pl.touk.nussknacker.engine.api.parameter.{ValueInputWithFixedValues, ValueInputWithFixedValuesProvided}
 
 object EditorExtractor {
 
-  def extract(valueInput: ValueInputWithFixedValues): ParameterEditor = valueInput match {
-    case ValueInputWithFixedValuesProvided(fixedValuesList, allowOtherValue) =>
-      val fixedValuesEditor = FixedValuesParameterEditor(
-        FixedExpressionValue.nullFixedValue +: fixedValuesList
-      )
+  def extract(valueInput: FragmentParameterValueInput): ParameterEditor = {
+    val innerEditor = valueInput match {
+      case ValueInputWithFixedValuesProvided(fixedValuesList, _) =>
+        FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList)
+      case ValueInputWithDictEditor(dictId, _) =>
+        DictParameterEditor(dictId)
+    }
 
-      if (allowOtherValue) {
-        DualParameterEditor(fixedValuesEditor, DualEditorMode.SIMPLE)
-      } else {
-        fixedValuesEditor
-      }
+    if (valueInput.allowOtherValue)
+      DualParameterEditor(innerEditor, DualEditorMode.SIMPLE)
+    else
+      innerEditor
   }
 
   def extract(param: ParameterData, parameterConfig: ParameterConfig): Option[ParameterEditor] = {

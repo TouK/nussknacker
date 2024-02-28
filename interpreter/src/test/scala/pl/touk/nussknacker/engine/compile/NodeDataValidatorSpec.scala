@@ -16,8 +16,14 @@ import pl.touk.nussknacker.engine.api.component.{
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterValueCompileTimeValidation,
+  ValueInputWithDictEditor,
+  ValueInputWithFixedValuesProvided
+}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ExpressionConfig, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -92,7 +98,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             "optionalParam" -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
           )
         )
-      )
+      ),
+      configCreator = new EmptyProcessConfigCreator {
+        override def expressionConfig(
+            modelDependencies: ProcessObjectDependencies
+        ): ExpressionConfig =
+          ExpressionConfig(Map.empty, List.empty, dictionaries = Map("someDictId" -> EmbeddedDictDefinition(Map.empty)))
+      }
     )
   }
 
@@ -888,6 +900,74 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
 
   }
 
+  test("should validate unknown dict id in FragmentInputDefinition") {
+    val nodeId: String = "in"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[java.lang.Boolean],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = Some(
+                ValueInputWithDictEditor(
+                  dictId = "thisDictDoesntExist",
+                  allowOtherValue = false
+                )
+              ),
+              valueCompileTimeValidation = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: DictNotDeclared) :: Nil, None, None) =>
+      error.dictId shouldBe "thisDictDoesntExist"
+    }
+  }
+
+  test("should validate dict of invalid type in FragmentInputDefinition") {
+    val nodeId: String = "in"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[java.lang.Boolean],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = Some(
+                ValueInputWithDictEditor(
+                  dictId = "someDictId",
+                  allowOtherValue = false
+                )
+              ),
+              valueCompileTimeValidation = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: DictIsOfInvalidType) :: Nil, None, None) =>
+      error.expectedType.display shouldBe "Boolean"
+      error.actualType.display shouldBe "String @ dictValue:someDictId"
+      error.dictId shouldBe "someDictId"
+    }
+  }
+
   test("should allow expressions that reference other parameters in FragmentInputDefinition") {
     val nodeId: String        = "in"
     val referencingExpression = "#otherStringParam"
@@ -1064,7 +1144,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   }
 
   test("should fail on invalid validation expression") {
-
     val invalidReference = "#invalidReference"
 
     inside(

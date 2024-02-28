@@ -5,6 +5,7 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -318,6 +319,15 @@ object ProcessCompilationError {
 
   final case class DictNotDeclared(dictId: String, nodeId: String, paramName: String)
       extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class DictIsOfInvalidType(
+      dictId: String,
+      actualType: TypingResult,
+      expectedType: TypingResult,
+      nodeId: String,
+      paramName: String
+  ) extends PartSubGraphCompilationError
       with InASingleNode
 
   final case class DictEntryWithLabelNotExists(
