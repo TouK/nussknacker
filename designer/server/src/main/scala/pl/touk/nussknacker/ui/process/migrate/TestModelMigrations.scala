@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentReposit
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
+  UIGlobalError,
   ValidationErrors,
   ValidationResult,
   ValidationWarnings
@@ -110,6 +111,11 @@ class TestModelMigrations(
       after.filterNot(error => errorsBefore.contains(errorToKey(error)))
     }
 
+    def diffGlobalErrorLists(before: List[UIGlobalError], after: List[UIGlobalError]) = {
+      val errorsBefore = before.map(_.error).map(errorToKey).toSet
+      after.filterNot(error => errorsBefore.contains(errorToKey(error.error)))
+    }
+
     def diffOnMap(before: Map[String, List[NodeValidationError]], after: Map[String, List[NodeValidationError]]) = {
       after
         .map { case (nodeId, errorsAfter) =>
@@ -122,7 +128,7 @@ class TestModelMigrations(
       ValidationErrors(
         diffOnMap(before.errors.invalidNodes, after.errors.invalidNodes),
         diffErrorLists(before.errors.processPropertiesErrors, after.errors.processPropertiesErrors),
-        diffErrorLists(before.errors.globalErrors, after.errors.globalErrors)
+        diffGlobalErrorLists(before.errors.globalErrors, after.errors.globalErrors)
       ),
       ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)),
       Map.empty

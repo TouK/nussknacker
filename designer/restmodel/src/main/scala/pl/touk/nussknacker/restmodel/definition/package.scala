@@ -64,7 +64,8 @@ package object definition {
       // FE need this information because branch parameters aren't changed dynamically during node validation so they never
       // should be invalidated
       branchParam: Boolean,
-      hintText: Option[String]
+      hintText: Option[String],
+      label: String = "",
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
