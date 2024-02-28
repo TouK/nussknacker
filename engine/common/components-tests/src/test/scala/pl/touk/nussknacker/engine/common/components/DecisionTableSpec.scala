@@ -54,6 +54,25 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
         )
       }
     }
+
+    "return proper typingResult as java list which allows to run method on" in {
+      val result = execute[TestMessage, SCENARIO_RESULT](
+        scenario = decisionTableExampleScenario(
+          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
+          sinkValueExpression = "#dtResult.size"
+        ),
+        withData = List(
+          TestMessage(id = "1", minAge = 30),
+          TestMessage(id = "2", minAge = 18)
+        )
+      )
+
+      inside(result) { case Validated.Valid(r) =>
+        r.errors should be(List.empty)
+        r.successes should be(List(1, 2))
+      }
+    }
+
     "fail to compile expression when" - {
       "non-present column name is used" in {
         val result = execute[TestMessage, SCENARIO_RESULT](
@@ -164,6 +183,7 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
 
   private def decisionTableExampleScenario(
       expression: Expression,
+      sinkValueExpression: Expression = "#dtResult",
       basicDecisionTableDefinition: Expression = exampleDecisionTableJson
   ) = {
     ScenarioBuilder
@@ -176,7 +196,7 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
         "Basic Decision Table" -> basicDecisionTableDefinition,
         "Expression"           -> expression,
       )
-      .end("end", "value" -> "#dtResult")
+      .end("end", "value" -> sinkValueExpression)
   }
 
   private def rows(maps: java.util.Map[String, Any]*) = List(maps: _*).asJava
