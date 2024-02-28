@@ -91,6 +91,11 @@ class MiniClusterExecutionEnvironment(
     }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
   }
 
+  def assertJobNotFailing(jobID: JobID): Unit = {
+    val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
+    assertJobNotFailing(jobID, executionGraph)
+  }
+
   private def assertJobNotFailing(jobID: JobID, executionGraph: AccessExecutionGraph): Unit = {
     assert(
       !Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING).contains(executionGraph.getState),

@@ -24,6 +24,8 @@
     <logger name="pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClient" level="OFF"/>
 
     <logger name="pl.touk.nussknacker.engine.kafka.RichKafkaConsumer" level="DEBUG"/>
+    <!-- for a tests it is always good to show stack traces of handled exceptions -->
+    <logger name="pl.touk.nussknacker.engine.util.exception" level="DEBUG"/>
 
     <!-- types info extraction can have significant impact on deployment duration - uncomment this log if you want to measure it -->
 <!--    <logger name="pl.touk.nussknacker.engine.types.TypesInformationExtractor" level="TRACE"/>-->
