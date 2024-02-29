@@ -256,7 +256,7 @@ class ManagementResources(
             post {
               entity(as[CustomActionRequest]) { req =>
                 complete {
-                  val actionsList = dispatcher.deploymentManagerUnsafe(req.actionName.value).customActions
+                  val actionsList = dispatcher.deploymentManagerUnsafe(req.actionName.value).customActionsDefinitions
                   val validator   = new CustomActionValidator(actionsList)
                   validator.validateCustomActionParams(req)
                 }

@@ -622,7 +622,6 @@ class DeploymentServiceImpl(
   ): Future[CustomActionResult] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
-    // TODO: add customAction validation before running
     dbioRunner.run(
       for {
         // Fetch and validate process details
@@ -645,37 +644,11 @@ class DeploymentServiceImpl(
         _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
         // TODO: add custom action params validation
         validator = new CustomActionValidator(manager.customActionsDefinitions)
-        _         = validator.validateCustomActionParams(actionReq)
+        _         = validator.validateCustomActionParams(actionCommand)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
     )
-  }
-
-  // TODO: extract to CustomActionValidator and resolve implicits with DumbNodeId
-  private def validateCustomActionParams(request: CustomActionRequest, customAction: CustomActionDefinition): Unit = {
-    implicit val nodeId: NodeId = NodeId(customAction.actionName.value)
-    val requestParamsMap        = request.params
-    val customActionParams      = customAction.parameters
-
-    if (requestParamsMap.keys.size != customActionParams.size || requestParamsMap.keys.toSet.size != requestParamsMap.keys.size) {
-      throw new Exception("Different count of custom action parameters than provided in request for: " + request.name)
-    }
-
-    // TODO: ParamValidators won't work here - customAction validators??
-    requestParamsMap.foreach { case (k, v) =>
-      customActionParams.find(_.name == k) match {
-        case Some(param) =>
-          param.validators.foreach { validators =>
-            if (validators.nonEmpty) {
-              validators.foreach(
-                _.isValid(paramName = k, expression = Expression.spel("None"), value = Some(v), label = None)
-              )
-            }
-          }
-        case None => throw new Exception("No such parameter should be defined for this acion: " + customAction.name)
-      }
-    }
   }
 
   private def checkIfCanPerformCustomActionInState[PS: ScenarioShapeFetchStrategy](
