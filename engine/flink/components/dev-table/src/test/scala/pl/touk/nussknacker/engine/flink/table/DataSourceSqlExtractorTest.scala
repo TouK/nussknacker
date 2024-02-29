@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.flink.table
 
-import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
 import org.apache.flink.table.api.DataTypes
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -25,8 +23,8 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
     dataSourceConfigs.headOption match {
       case Some(value) =>
         value match {
-          case Valid(config)        => config shouldBe SimpleTypesTestCase.expectedConfig
-          case Validated.Invalid(e) => fail(s"Table contained error: $e")
+          case Right(config) => config shouldBe SimpleTypesTestCase.expectedConfig
+          case Left(e)       => fail(s"Table contained error: $e")
         }
       case None => fail("No table was extracted from")
     }
@@ -38,7 +36,7 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
       val dataSourceConfigs = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(statements)
 
       dataSourceConfigs.headOption should matchPattern {
-        case Some(Invalid(SqlExtractorError(`expectedErrorType`, _, _))) =>
+        case Some(Left(SqlExtractorError(`expectedErrorType`, _, _))) =>
       }
     }
   }
@@ -60,9 +58,9 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
     val dataSourceConfigs = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(statements)
 
     inside(dataSourceConfigs) { case first :: second :: Nil =>
-      inside(first) { case Invalid(SqlExtractorError(TableNotCreatedOrCreatedInNonDefaultCatalog, _, _)) =>
+      inside(first) { case Left(SqlExtractorError(TableNotCreatedOrCreatedOutsideOfContext, _, _)) =>
       }
-      inside(second) { case Invalid(SqlExtractorError(TableNotCreatedOrCreatedInNonDefaultCatalog, _, _)) =>
+      inside(second) { case Left(SqlExtractorError(TableNotCreatedOrCreatedOutsideOfContext, _, _)) =>
       }
     }
   }
@@ -120,8 +118,8 @@ object TestData {
       StatementNotExecuted
     ), // trying to create a table under non-existing database
     (
-      """|CREATE DATABASE somecatalog""".stripMargin,
-      TableNotCreatedOrCreatedInNonDefaultCatalog
+      """|CREATE DATABASE somecatalog;""".stripMargin,
+      TableNotCreatedOrCreatedOutsideOfContext
     )
   )
 

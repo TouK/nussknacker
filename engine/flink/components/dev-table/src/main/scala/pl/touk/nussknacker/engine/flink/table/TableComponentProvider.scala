@@ -31,34 +31,27 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-
-    val dataSourceComponentsFromConfig: List[ComponentDefinition] = for {
+    val configuredComponents = for {
       tableDataSourcesConfig <- parseConfigOpt(config).toList
-      dataSourceConfig       <- tableDataSourcesConfig.dataSources
-      tableComponentDefinitions <- List(
-        ComponentDefinition(
-          tableDataSourceComponentId("source", dataSourceConfig.connector, dataSourceConfig.name),
-          new HardcodedSchemaTableSourceFactory(dataSourceConfig)
-        ),
-        ComponentDefinition(
-          tableDataSourceComponentId("sink", dataSourceConfig.connector, dataSourceConfig.name),
-          new TableSinkFactory(dataSourceConfig)
+      componentDefinition <- tableDataSourcesConfig.dataSources.flatMap { dataSourceConfig =>
+        List(
+          ComponentDefinition(
+            tableDataSourceComponentId("source", dataSourceConfig.connector, dataSourceConfig.name),
+            new HardcodedSchemaTableSourceFactory(dataSourceConfig)
+          ),
+          ComponentDefinition(
+            tableDataSourceComponentId("sink", dataSourceConfig.connector, dataSourceConfig.name),
+            new TableSinkFactory(dataSourceConfig)
+          )
         )
-      )
-    } yield tableComponentDefinitions
-
-    val sqlSourceComponentsFromConfig: List[ComponentDefinition] = for {
-      tableDataSourcesConfig <- parseConfigOpt(config).toList
-      sqlStatementsFromFile  <- extractDataSourceConfigFromSqlFile(tableDataSourcesConfig.sqlFilePath)
-      sqlComponentDefinitions <- List(
+      } ++ extractDataSourceConfigFromSqlFile(tableDataSourcesConfig.sqlFilePath).map { sqlStatementsFromFile =>
         ComponentDefinition(
           tableDataSourceComponentId("source-sql", sqlStatementsFromFile.connector, sqlStatementsFromFile.name),
           new SqlTableSourceFactory(sqlStatementsFromFile)
         )
-      )
-    } yield sqlComponentDefinitions
-
-    ConfigIndependentComponents ::: dataSourceComponentsFromConfig ::: sqlSourceComponentsFromConfig
+      }
+    } yield componentDefinition
+    ConfigIndependentComponents ::: configuredComponents
   }
 
   private def tableDataSourceComponentId(
@@ -85,8 +78,8 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
 
     // TODO: just log errors or crash? Can it be considered recoverable in all cases?
     results.flatMap {
-      case Valid(config) => Some(config)
-      case Invalid(error) =>
+      case Right(config) => Some(config)
+      case Left(error) =>
         logger.error(error.toString)
         None
     }
