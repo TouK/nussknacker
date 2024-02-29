@@ -434,12 +434,12 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/migrate/v2:
+  /api/migrate:
     post:
       tags:
       - TODO
       summary: TODO
-      operationId: postApiMigrateV2
+      operationId: postApiMigrate
       requestBody:
         content:
           application/json:
@@ -1129,13 +1129,13 @@ components:
         type: string
     MigrateScenarioRequest:
       required:
-      - environmentId
+      - sourceEnvironmentId
       - processingMode
       - engineSetupName
       - scenarioWithDetailsForMigrations
       type: object
       properties:
-        environmentId:
+        sourceEnvironmentId:
           type: string
         processingMode:
           type: string
