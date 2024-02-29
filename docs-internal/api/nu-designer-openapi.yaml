@@ -931,34 +931,6 @@ components:
         createDate:
           type: string
           format: date-time
-    BranchEndData:
-      required:
-      - definition
-      type: object
-      properties:
-        definition:
-          $ref: '#/components/schemas/BranchEndDefinition'
-    BranchEndDefinition:
-      required:
-      - id
-      - joinId
-      type: object
-      properties:
-        id:
-          type: string
-        joinId:
-          type: string
-    BranchParameters:
-      required:
-      - branchId
-      type: object
-      properties:
-        branchId:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Parameter'
     BuildInfoDto:
       required:
       - name
@@ -1078,7 +1050,7 @@ components:
       type: object
       properties:
         name:
-          type: string
+          $ref: '#/components/schemas/ProcessName'
         nodesUsagesData:
           type: array
           items:
@@ -1102,26 +1074,6 @@ components:
           type: string
         lastAction:
           $ref: '#/components/schemas/ProcessAction'
-    CustomNode:
-      required:
-      - id
-      - nodeType
-      type: object
-      properties:
-        id:
-          type: string
-        outputVar:
-          type:
-          - string
-          - 'null'
-        nodeType:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Parameter'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     DataToRefresh:
       type: string
       enum:
@@ -1152,203 +1104,6 @@ components:
           type: array
           items:
             type: string
-    Edge:
-      required:
-      - from
-      - to
-      type: object
-      properties:
-        from:
-          type: string
-        to:
-          type: string
-        edgeType:
-          $ref: '#/components/schemas/EdgeType'
-    EdgeType:
-      oneOf:
-      - $ref: '#/components/schemas/FilterFalse'
-      - $ref: '#/components/schemas/FilterTrue'
-      - $ref: '#/components/schemas/FragmentOutput'
-      - $ref: '#/components/schemas/NextSwitch'
-      - $ref: '#/components/schemas/SwitchDefault'
-    Enricher:
-      required:
-      - id
-      - service
-      - output
-      type: object
-      properties:
-        id:
-          type: string
-        service:
-          $ref: '#/components/schemas/ServiceRef'
-        output:
-          type: string
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    Expression:
-      required:
-      - language
-      - expression
-      type: object
-      properties:
-        language:
-          type: string
-        expression:
-          type: string
-    Field:
-      required:
-      - name
-      - expression
-      type: object
-      properties:
-        name:
-          type: string
-        expression:
-          $ref: '#/components/schemas/Expression'
-    Filter:
-      required:
-      - id
-      - expression
-      type: object
-      properties:
-        id:
-          type: string
-        expression:
-          $ref: '#/components/schemas/Expression'
-        isDisabled:
-          type:
-          - boolean
-          - 'null'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    FilterFalse:
-      type: object
-    FilterTrue:
-      type: object
-    FixedExpressionValue:
-      required:
-      - expression
-      - label
-      type: object
-      properties:
-        expression:
-          type: string
-        label:
-          type: string
-    FragmentClazzRef:
-      required:
-      - refClazzName
-      type: object
-      properties:
-        refClazzName:
-          type: string
-    FragmentInput:
-      required:
-      - id
-      - ref
-      type: object
-      properties:
-        id:
-          type: string
-        ref:
-          $ref: '#/components/schemas/FragmentRef'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-        isDisabled:
-          type:
-          - boolean
-          - 'null'
-        fragmentParams:
-          type:
-          - array
-          - 'null'
-          items:
-            $ref: '#/components/schemas/FragmentParameter'
-    FragmentInputDefinition:
-      required:
-      - id
-      type: object
-      properties:
-        id:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/FragmentParameter'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    FragmentOutput:
-      required:
-      - name
-      type: object
-      properties:
-        name:
-          type: string
-    FragmentOutputDefinition:
-      required:
-      - id
-      - outputName
-      type: object
-      properties:
-        id:
-          type: string
-        outputName:
-          type: string
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    FragmentOutputVarDefinition:
-      required:
-      - name
-      type: object
-      properties:
-        name:
-          type: string
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-    FragmentParameter:
-      required:
-      - name
-      - typ
-      - required
-      type: object
-      properties:
-        name:
-          type: string
-        typ:
-          $ref: '#/components/schemas/FragmentClazzRef'
-        required:
-          type: boolean
-        initialValue:
-          $ref: '#/components/schemas/FixedExpressionValue'
-        hintText:
-          type:
-          - string
-          - 'null'
-        valueEditor:
-          $ref: '#/components/schemas/ValueInputWithFixedValues'
-        valueCompileTimeValidation:
-          $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
-    FragmentRef:
-      required:
-      - id
-      - outputVariableNames
-      type: object
-      properties:
-        id:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Parameter'
-        outputVariableNames:
-          $ref: '#/components/schemas/Map_String'
     FragmentUsageData:
       required:
       - fragmentNodeId
@@ -1359,20 +1114,6 @@ components:
           type: string
         nodeId:
           type: string
-    FragmentUsageOutput:
-      required:
-      - id
-      - outputName
-      type: object
-      properties:
-        id:
-          type: string
-        outputName:
-          type: string
-        outputVar:
-          $ref: '#/components/schemas/FragmentOutputVarDefinition'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     HealthCheckProcessErrorResponseDto:
       required:
       - status
@@ -1407,58 +1148,12 @@ components:
           - 'null'
           items:
             type: string
-    Join:
-      required:
-      - id
-      - nodeType
-      type: object
-      properties:
-        id:
-          type: string
-        outputVar:
-          type:
-          - string
-          - 'null'
-        nodeType:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Parameter'
-        branchParameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/BranchParameters'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    LayoutData:
-      required:
-      - x
-      - y
-      type: object
-      properties:
-        x:
-          type: integer
-          format: int64
-        y:
-          type: integer
-          format: int64
     Map_EngineSetupName_List_String:
       type: object
       additionalProperties:
         type: array
         items:
           type: string
-    Map_ExpressionTypingInfo:
-      type: object
-      additionalProperties:
-        type: string
-    Map_List_NodeValidationError:
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/NodeValidationError'
     Map_List_String:
       type: object
       additionalProperties:
@@ -1469,15 +1164,7 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_String'
-    Map_NodeTypingData:
-      type: object
-      additionalProperties:
-        $ref: '#/components/schemas/NodeTypingData'
     Map_String:
-      type: object
-      additionalProperties:
-        type: string
-    Map_TypingResult:
       type: object
       additionalProperties:
         type: string
@@ -1496,78 +1183,11 @@ components:
         engineSetupName:
           type: string
         scenarioWithDetailsForMigrations:
-          $ref: '#/components/schemas/ScenarioWithDetailsForMigrations'
-    NextSwitch:
-      required:
-      - condition
-      type: object
-      properties:
-        condition:
-          $ref: '#/components/schemas/Expression'
-    NodeData:
-      oneOf:
-      - $ref: '#/components/schemas/BranchEndData'
-      - $ref: '#/components/schemas/CustomNode'
-      - $ref: '#/components/schemas/Enricher'
-      - $ref: '#/components/schemas/Filter'
-      - $ref: '#/components/schemas/FragmentInput'
-      - $ref: '#/components/schemas/FragmentInputDefinition'
-      - $ref: '#/components/schemas/FragmentOutputDefinition'
-      - $ref: '#/components/schemas/FragmentUsageOutput'
-      - $ref: '#/components/schemas/Join'
-      - $ref: '#/components/schemas/Processor'
-      - $ref: '#/components/schemas/Sink'
-      - $ref: '#/components/schemas/Source'
-      - $ref: '#/components/schemas/Split'
-      - $ref: '#/components/schemas/Switch'
-      - $ref: '#/components/schemas/Variable'
-      - $ref: '#/components/schemas/VariableBuilder'
-    NodeTypingData:
-      required:
-      - variableTypes
-      - typingInfo
-      type: object
-      properties:
-        variableTypes:
-          $ref: '#/components/schemas/Map_TypingResult'
-        parameters:
-          type:
-          - array
-          - 'null'
-          items:
-            $ref: '#/components/schemas/UIParameter'
-        typingInfo:
-          $ref: '#/components/schemas/Map_ExpressionTypingInfo'
+          type: string
     NodeUsageData:
       oneOf:
       - $ref: '#/components/schemas/FragmentUsageData'
       - $ref: '#/components/schemas/ScenarioUsageData'
-    NodeValidationError:
-      required:
-      - typ
-      - message
-      - description
-      - errorType
-      type: object
-      properties:
-        typ:
-          type: string
-        message:
-          type: string
-        description:
-          type: string
-        fieldName:
-          type:
-          - string
-          - 'null'
-        errorType:
-          $ref: '#/components/schemas/NodeValidationErrorType'
-    NodeValidationErrorType:
-      type: string
-      enum:
-      - RenderNotAllowed
-      - SaveNotAllowed
-      - SaveAllowed
     Notification:
       required:
       - id
@@ -1594,27 +1214,6 @@ components:
       - info
       - success
       - error
-    Parameter:
-      required:
-      - name
-      - expression
-      type: object
-      properties:
-        name:
-          type: string
-        expression:
-          $ref: '#/components/schemas/Expression'
-    ParameterValueCompileTimeValidation:
-      required:
-      - validationExpression
-      type: object
-      properties:
-        validationExpression:
-          $ref: '#/components/schemas/Expression'
-        validationFailedMessage:
-          type:
-          - string
-          - 'null'
     ProcessAction:
       required:
       - id
@@ -1685,20 +1284,6 @@ components:
       - UNARCHIVE
       - PAUSE
       - RENAME
-    ProcessAdditionalFields:
-      required:
-      - properties
-      - metaDataType
-      type: object
-      properties:
-        description:
-          type:
-          - string
-          - 'null'
-        properties:
-          $ref: '#/components/schemas/Map_String'
-        metaDataType:
-          type: string
     ProcessId:
       required:
       - value
@@ -1707,29 +1292,13 @@ components:
         value:
           type: integer
           format: int64
-    ProcessProperties:
+    ProcessName:
       required:
-      - additionalFields
+      - value
       type: object
       properties:
-        additionalFields:
-          $ref: '#/components/schemas/ProcessAdditionalFields'
-    Processor:
-      required:
-      - id
-      - service
-      type: object
-      properties:
-        id:
+        value:
           type: string
-        service:
-          $ref: '#/components/schemas/ServiceRef'
-        isDisabled:
-          type:
-          - boolean
-          - 'null'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     ScenarioActivity:
       type: object
       properties:
@@ -1741,21 +1310,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Attachment'
-    ScenarioGraph:
-      required:
-      - properties
-      type: object
-      properties:
-        properties:
-          $ref: '#/components/schemas/ProcessProperties'
-        nodes:
-          type: array
-          items:
-            $ref: '#/components/schemas/NodeData'
-        edges:
-          type: array
-          items:
-            $ref: '#/components/schemas/Edge'
     ScenarioParameters:
       required:
       - processingMode
@@ -1787,135 +1341,6 @@ components:
       properties:
         nodeId:
           type: string
-    ScenarioVersion:
-      required:
-      - processVersionId
-      - createDate
-      - user
-      type: object
-      properties:
-        processVersionId:
-          $ref: '#/components/schemas/VersionId'
-        createDate:
-          type: string
-          format: date-time
-        user:
-          type: string
-        modelVersion:
-          type:
-          - integer
-          - 'null'
-          format: int32
-        actions:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProcessAction'
-    ScenarioWithDetailsForMigrations:
-      required:
-      - name
-      - isArchived
-      - isFragment
-      - processingType
-      - processCategory
-      type: object
-      properties:
-        name:
-          type: string
-        isArchived:
-          type: boolean
-        isFragment:
-          type: boolean
-        processingType:
-          type: string
-        processCategory:
-          type: string
-        scenarioGraph:
-          $ref: '#/components/schemas/ScenarioGraph'
-        validationResult:
-          $ref: '#/components/schemas/ValidationResult'
-        history:
-          type:
-          - array
-          - 'null'
-          items:
-            $ref: '#/components/schemas/ScenarioVersion'
-        modelVersion:
-          type:
-          - integer
-          - 'null'
-          format: int32
-    ServiceRef:
-      required:
-      - id
-      type: object
-      properties:
-        id:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Parameter'
-    Sink:
-      required:
-      - id
-      - ref
-      type: object
-      properties:
-        id:
-          type: string
-        ref:
-          $ref: '#/components/schemas/SinkRef'
-        legacyEndResultExpression:
-          $ref: '#/components/schemas/Expression'
-        isDisabled:
-          type:
-          - boolean
-          - 'null'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    SinkRef:
-      required:
-      - typ
-      type: object
-      properties:
-        typ:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Parameter'
-    Source:
-      required:
-      - id
-      - ref
-      type: object
-      properties:
-        id:
-          type: string
-        ref:
-          $ref: '#/components/schemas/SourceRef'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    SourceRef:
-      required:
-      - typ
-      type: object
-      properties:
-        typ:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Parameter'
-    Split:
-      required:
-      - id
-      type: object
-      properties:
-        id:
-          type: string
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     Status:
       type: string
       enum:
@@ -1924,156 +1349,6 @@ components:
       type: string
       enum:
       - ERROR
-    Switch:
-      required:
-      - id
-      type: object
-      properties:
-        id:
-          type: string
-        expression:
-          $ref: '#/components/schemas/Expression'
-        exprVal:
-          type:
-          - string
-          - 'null'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    SwitchDefault:
-      type: object
-    UIGlobalError:
-      required:
-      - error
-      type: object
-      properties:
-        error:
-          $ref: '#/components/schemas/NodeValidationError'
-        nodeIds:
-          type: array
-          items:
-            type: string
-    UIParameter:
-      required:
-      - name
-      - typ
-      - editor
-      - defaultValue
-      - additionalVariables
-      - branchParam
-      - label
-      type: object
-      properties:
-        name:
-          type: string
-        typ:
-          type: string
-        editor:
-          type: string
-        defaultValue:
-          $ref: '#/components/schemas/Expression'
-        additionalVariables:
-          $ref: '#/components/schemas/Map_TypingResult'
-        variablesToHide:
-          type: array
-          items:
-            type: string
-        branchParam:
-          type: boolean
-        hintText:
-          type:
-          - string
-          - 'null'
-        label:
-          type: string
-    UserDefinedAdditionalNodeFields:
-      type: object
-      properties:
-        description:
-          type:
-          - string
-          - 'null'
-        layoutData:
-          $ref: '#/components/schemas/LayoutData'
-    ValidationErrors:
-      required:
-      - invalidNodes
-      type: object
-      properties:
-        invalidNodes:
-          $ref: '#/components/schemas/Map_List_NodeValidationError'
-        processPropertiesErrors:
-          type: array
-          items:
-            $ref: '#/components/schemas/NodeValidationError'
-        globalErrors:
-          type: array
-          items:
-            $ref: '#/components/schemas/UIGlobalError'
-    ValidationResult:
-      required:
-      - errors
-      - warnings
-      - nodeResults
-      type: object
-      properties:
-        errors:
-          $ref: '#/components/schemas/ValidationErrors'
-        warnings:
-          $ref: '#/components/schemas/ValidationWarnings'
-        nodeResults:
-          $ref: '#/components/schemas/Map_NodeTypingData'
-    ValidationWarnings:
-      required:
-      - invalidNodes
-      type: object
-      properties:
-        invalidNodes:
-          $ref: '#/components/schemas/Map_List_NodeValidationError'
-    ValueInputWithFixedValues:
-      oneOf:
-      - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
-    ValueInputWithFixedValuesProvided:
-      required:
-      - allowOtherValue
-      type: object
-      properties:
-        fixedValuesList:
-          type: array
-          items:
-            $ref: '#/components/schemas/FixedExpressionValue'
-        allowOtherValue:
-          type: boolean
-    Variable:
-      required:
-      - id
-      - varName
-      - value
-      type: object
-      properties:
-        id:
-          type: string
-        varName:
-          type: string
-        value:
-          $ref: '#/components/schemas/Expression'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    VariableBuilder:
-      required:
-      - id
-      - varName
-      type: object
-      properties:
-        id:
-          type: string
-        varName:
-          type: string
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     VersionId:
       required:
       - value

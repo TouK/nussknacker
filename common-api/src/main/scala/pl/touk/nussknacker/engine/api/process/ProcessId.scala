@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
 import io.circe.{Decoder, Encoder}
-import sttp.tapir.Schema
 
 import scala.util.{Failure, Success, Try}
 
@@ -15,7 +14,6 @@ final case class ProcessId(value: Long) {
 object ProcessId {
   implicit val encoder: Encoder[ProcessId] = Encoder.encodeLong.contramap(_.value)
   implicit val decoder: Decoder[ProcessId] = Decoder.decodeLong.map(ProcessId(_))
-  implicit val schema: Schema[ProcessId]   = Schema.derived[ProcessId]
 
   def apply(value: String): ProcessId = Try(value.toLong) match {
     case Success(id) => ProcessId(id)

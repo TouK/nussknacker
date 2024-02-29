@@ -30,7 +30,7 @@ import sttp.tapir.Schema
 }
 
 object ScenarioWithDetailsForMigrations {
-  implicit val scenarioWithDetailsForMigrationsSchema: Schema[ScenarioWithDetailsForMigrations] = Schema.derived
+  implicit val scenarioWithDetailsForMigrationsSchema: Schema[ScenarioWithDetailsForMigrations] = Schema.string
 
   def fromScenarioWithDetails(scenarioWithDetails: ScenarioWithDetails): ScenarioWithDetailsForMigrations =
     ScenarioWithDetailsForMigrations(

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.graph.expression
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.definition.DictKeyWithLabelExpression
-import sttp.tapir.Schema
 
 // TODO in the future 'expression' should be a dedicated type rather than String, it would for example make DictKeyWithLabelExpression handling prettier
 @JsonCodec case class Expression(language: String, expression: String)
@@ -27,6 +26,4 @@ object Expression {
   )
 
   def tabularDataDefinition(definition: String): Expression = Expression(Language.TabularDataDefinition, definition)
-
-  implicit val schema: Schema[Expression] = Schema.derived[Expression]
 }
