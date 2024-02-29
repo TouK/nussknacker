@@ -600,8 +600,9 @@ class DeploymentServiceImpl(
         customActionOpt = manager.customActionsDefinitions.find(_.name == actionName)
         _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
         // TODO: add custom action params validation
-        _ = validateCustomActionParams(actionCommand, checkedCustomAction)
-        _ = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
+        validator = new CustomActionValidator(manager.customActions)
+        _         = validator.validateCustomActionParams(actionReq)
+        _         = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
     )
