@@ -702,7 +702,12 @@ class HttpService {
         return api
             .get<ProcessDefinitionDataDictOption[]>(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${label}`)
             .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"), error),
+                Promise.reject(
+                    this.#addError(
+                        i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"),
+                        error,
+                    ),
+                ),
             );
     }
 
