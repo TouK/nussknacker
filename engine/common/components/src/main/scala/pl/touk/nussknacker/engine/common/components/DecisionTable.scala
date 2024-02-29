@@ -21,7 +21,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
 
   override type State = Unit
 
-  private type DecisionTableResponse = java.util.List[java.util.Map[String, Any]]
+  private type Output = java.util.List[java.util.Map[String, Any]]
 
   private object BasicDecisionTableParameter {
     val name = "Basic Decision Table"
@@ -94,14 +94,14 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         componentUseCase: ComponentUseCase
-    ): Future[DecisionTableResponse] = Future {
+    ): Future[Output] = Future {
       filterRows(tabularData, context)
     }
 
     private def filterRows(
         tabularData: TabularTypedData,
         context: Context
-    ): DecisionTableResponse = {
+    ): Output = {
       tabularData.rows
         .filter { row =>
           val m            = row.cells.map(c => (c.definition.name, c.value)).toMap.asJava
@@ -138,7 +138,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   }
 
   private def componentResultTypingResult(columnDefinitions: Iterable[Column.Definition]): TypingResult = {
-    Typed.genericTypeClass(classOf[DecisionTableResponse], rowDataTypingResult(columnDefinitions) :: Nil)
+    Typed.genericTypeClass(classOf[Output], rowDataTypingResult(columnDefinitions) :: Nil)
   }
 
   private def rowDataTypingResult(columnDefinitions: Iterable[Column.Definition]) =
