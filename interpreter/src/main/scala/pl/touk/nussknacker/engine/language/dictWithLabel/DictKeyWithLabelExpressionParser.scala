@@ -9,14 +9,13 @@ import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _}
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.{DictKeyWithLabelExpression, Expression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.KeyWithLabelExpressionParsingError
 
-case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String]) extends ExpressionTypingInfo {
-  override def typingResult: TypingResult = typing.Unknown
-}
+case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String], typingResult: TypingResult)
+    extends ExpressionTypingInfo
 
 object DictKeyWithLabelExpressionParser extends ExpressionParser {
 
@@ -29,8 +28,8 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
   ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
     parseDictKeyWithLabelExpression(keyWithLabel).map(expr =>
       TypedExpression(
-        CompiledDictKeyExpression(expr.key),
-        DictKeyWithLabelExpressionTypingInfo(expr.key, expr.label)
+        CompiledDictKeyExpression(expr.key, expectedType),
+        DictKeyWithLabelExpressionTypingInfo(expr.key, expr.label, expectedType)
       )
     )
 
@@ -38,7 +37,7 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
       keyWithLabel: String,
       expectedType: TypingResult
   ): Validated[NonEmptyList[ExpressionParseError], CompiledExpression] = {
-    parseDictKeyWithLabelExpression(keyWithLabel).map(expr => CompiledDictKeyExpression(expr.key))
+    parseDictKeyWithLabelExpression(keyWithLabel).map(expr => CompiledDictKeyExpression(expr.key, expectedType))
   }
 
   def parseDictKeyWithLabelExpression(
@@ -53,10 +52,18 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
         }
     }
 
-  case class CompiledDictKeyExpression(key: String) extends CompiledExpression {
+  case class CompiledDictKeyExpression(key: String, expectedType: TypingResult) extends CompiledExpression {
     override def language: String = languageId
 
-    override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = key.asInstanceOf[T]
+    override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {
+      if (expectedType.canBeSubclassOf(Typed[Number])) {
+        key.toLong.asInstanceOf[T]
+      } else if (expectedType.canBeSubclassOf(Typed[Boolean])) {
+        key.toBoolean.asInstanceOf[T]
+      } else {
+        key.asInstanceOf[T]
+      }
+    }
 
     override def original: String = key
   }

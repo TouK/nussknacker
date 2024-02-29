@@ -45,6 +45,26 @@ class DictsFlowTest
 
   override def designerConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
+  test("return list of available dictionaries") {
+    val response1 = httpClient.send(
+      quickRequest
+        .get(
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts"
+        )
+        .auth
+        .basic("admin", "admin")
+    )
+
+    response1.code shouldEqual StatusCode.Ok
+    response1.bodyAsJson shouldEqual Json.arr(
+      Json.fromString("rgb"),
+      Json.fromString("long_dict"),
+      Json.fromString("bc"),
+      Json.fromString("boolean_dict"),
+      Json.fromString("dict"),
+    )
+  }
+
   test("create scenario with DictParameterEditor, save it and test it") {
     val DictId = "rgb"
 
@@ -83,9 +103,9 @@ class DictsFlowTest
     saveProcessAndTestIt(
       process,
       expressionUsingDictWithLabel = None,
-      expectedResult = """RGBDict: Some(H000000)
-         |LongDict: Some(-1500100900)
-         |BooleanDict: Some(true)""".stripMargin,
+      expectedResult = """RGBDict value to lowercase: Some(h000000)
+         |LongDict value + 1: Some(-1500100899)
+         |BooleanDict value negation: Some(false)""".stripMargin,
       variableToCheck = "data"
     )
 

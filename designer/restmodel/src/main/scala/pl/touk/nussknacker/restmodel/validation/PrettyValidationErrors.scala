@@ -178,6 +178,12 @@ object PrettyValidationErrors {
           "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
+      case UnsupportedDictParameterEditorType(paramName, typ, _) =>
+        node(
+          s"Dictionary parameter editor can only be used for parameters of type String, Long or Boolean, found: $typ",
+          "Please check component definition",
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
+        )
       case RequireValueFromEmptyFixedList(paramName, _) =>
         node(
           s"Required parameter '$paramName' cannot be a member of an empty fixed list",

@@ -51,7 +51,8 @@ class DefinitionResourcesSpec
           new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.processingType),
           fragmentRepository
         ),
-        processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService
+        processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService,
+        processingTypeData.designerModelData.modelData.modelDefinition.expressionConfig.dictionaries,
       )
     }
   )

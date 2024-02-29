@@ -78,7 +78,7 @@ class ProcessDictSubstitutor(
       nodeExpressionId: NodeExpressionId
   ) =
     optionalExpressionTypingInfo match {
-      case Some(DictKeyWithLabelExpressionTypingInfo(key, label)) =>
+      case Some(DictKeyWithLabelExpressionTypingInfo(key, label, _)) =>
         Expression.dictKeyWithLabel(key, label)
       case _ => // can happen if the expression isn't compiled successfully (and so it's TypingInfo isn't available)
         logger.debug(

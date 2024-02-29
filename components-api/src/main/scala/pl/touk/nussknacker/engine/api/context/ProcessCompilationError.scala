@@ -287,6 +287,9 @@ object ProcessCompilationError {
   final case class UnsupportedFixedValuesType(paramName: String, typ: String, nodeIds: Set[String])
       extends PartSubGraphCompilationError
 
+  final case class UnsupportedDictParameterEditorType(paramName: String, typ: String, nodeIds: Set[String])
+      extends PartSubGraphCompilationError
+
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
   final case class DisablingManyOutputsFragment(fragmentNodeId: String)

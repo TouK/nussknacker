@@ -23,17 +23,17 @@ class ServiceWithDictParameterEditor extends Service with Serializable with Time
         `type` = SimpleEditorType.DICT_EDITOR,
         dictId = "boolean_dict"
       )
-      booleanDict: Option[Boolean],
+      booleanDict: Option[java.lang.Boolean],
       @ParamName("LongDict")
       @SimpleEditor(
         `type` = SimpleEditorType.DICT_EDITOR,
         dictId = "long_dict"
       )
-      longDict: Option[Long]
+      longDict: Option[java.lang.Long]
   ): Future[String] = {
-    Future.successful(s"""RGBDict: $rgb
-         |LongDict: $longDict
-         |BooleanDict: $booleanDict""".stripMargin)
+    Future.successful(s"""RGBDict value to lowercase: ${rgb.map(_.toLowerCase)}
+         |LongDict value + 1: ${longDict.map(_ + 1)}
+         |BooleanDict value negation: ${booleanDict.map(!_)}""".stripMargin)
   }
 
 }

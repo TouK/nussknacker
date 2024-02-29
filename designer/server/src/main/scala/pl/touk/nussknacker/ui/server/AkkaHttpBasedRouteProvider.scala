@@ -55,7 +55,6 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{
-  AnonymousAccess,
   AuthenticationConfiguration,
   AuthenticationResources,
   LoggedUser,
@@ -334,7 +333,8 @@ class AkkaHttpBasedRouteProvider(
                   new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
                   fragmentRepository
                 ),
-                processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService
+                processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService,
+                processingTypeData.designerModelData.modelData.modelDefinition.expressionConfig.dictionaries
               )
             }
           ),

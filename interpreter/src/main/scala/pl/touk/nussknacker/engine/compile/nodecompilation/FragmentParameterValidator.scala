@@ -36,7 +36,7 @@ object FragmentParameterValidator {
       paramName: String,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, ParameterEditor] = {
-    validateFixedValuesSupportedType(valueEditor, refClazz, paramName, nodeIds)
+    validateValueEditorSupportedType(valueEditor, refClazz, paramName, nodeIds)
       .andThen(_ =>
         ValueEditorValidator.validateAndGetEditor(
           valueEditor,
@@ -47,7 +47,7 @@ object FragmentParameterValidator {
       )
   }
 
-  private def validateFixedValuesSupportedType(
+  private def validateValueEditorSupportedType(
       valueEditor: FragmentParameterValueInput,
       refClazz: FragmentClazzRef,
       paramName: String,
@@ -59,7 +59,12 @@ object FragmentParameterValidator {
           Valid(())
         else
           invalidNel(UnsupportedFixedValuesType(paramName, refClazz.refClazzName, nodeIds))
-      case _ => Valid(())
+      case ValueInputWithDictEditor(_, _) =>
+        if (List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String], FragmentClazzRef[java.lang.Long])
+            .contains(refClazz)) // todo number not just long ?
+          Valid(())
+        else
+          invalidNel(UnsupportedDictParameterEditorType(paramName, refClazz.refClazzName, nodeIds))
     }
 
   def validateFixedExpressionValues(
