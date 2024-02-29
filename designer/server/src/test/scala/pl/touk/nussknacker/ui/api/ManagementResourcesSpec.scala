@@ -445,7 +445,7 @@ class ManagementResourcesSpec
     ) ~> check {
       // TODO: "conflict" is coherrent with "canceled process can't be canceled again" above, consider changing to Forbidden
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe "Action: invalid-status is not allowed in scenario (fooProcess) state: NOT_DEPLOYED, allowed actions: hello,not-implemented."
+      responseAs[String] shouldBe "Action: invalid-status is not allowed in scenario (fooProcess) state: NOT_DEPLOYED, allowed actions: DEPLOY,ARCHIVE,RENAME,hello,not-implemented."
     }
   }
 
