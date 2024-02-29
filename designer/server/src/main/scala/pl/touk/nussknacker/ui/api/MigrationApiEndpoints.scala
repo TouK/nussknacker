@@ -153,6 +153,9 @@ object MigrationApiEndpoints {
         Mapping.from[String, FatalError](deserializationException)(_.getMessage)
       )
 
+    implicit val processingModeSchema: Schema[ProcessingMode]   = Schema.string
+    implicit val engineSetupNameSchema: Schema[EngineSetupName] = Schema.string
+
     @derive(encoder, decoder, schema)
     final case class MigrateScenarioRequest(
         sourceEnvironmentId: String,
