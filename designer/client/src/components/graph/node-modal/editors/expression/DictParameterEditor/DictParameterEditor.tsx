@@ -30,7 +30,7 @@ export const DictParameterEditor: SimpleEditor<Props> = (props: Props) => {
             return null;
         }
 
-        return JSON.parse(JSON.stringify(props.expressionObj.expression));
+        return JSON.parse(props.expressionObj.expression);
     });
     const [inputValue, setInputValue] = React.useState("");
 
@@ -65,7 +65,7 @@ export const DictParameterEditor: SimpleEditor<Props> = (props: Props) => {
                 options={options}
                 filterOptions={(x) => x}
                 onChange={(_, value) => {
-                    props.onValueChange(value?.key || "");
+                    props.onValueChange(JSON.stringify(value) || "");
                     setValue(value);
                     setOpen(false);
                 }}
@@ -78,7 +78,7 @@ export const DictParameterEditor: SimpleEditor<Props> = (props: Props) => {
                 onBlur={() => {
                     setOpen(false);
                 }}
-                noOptionsText={i18next.t("editors.dictParameterEditor.noOptionsFOund", "No options found")}
+                noOptionsText={i18next.t("editors.dictParameterEditor.noOptionsFound", "No options found")}
                 getOptionLabel={(option) => option.label}
                 isOptionEqualToValue={() => true}
                 value={value}
