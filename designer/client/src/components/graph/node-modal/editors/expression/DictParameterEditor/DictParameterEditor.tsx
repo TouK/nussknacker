@@ -12,15 +12,26 @@ import { NodeInput } from "../../../../../withFocus";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
 import i18next from "i18next";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
+import { cx } from "@emotion/css";
+import { isEmpty } from "lodash";
 
 interface Props {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
     fieldErrors: FieldError[];
     param: ParamType;
+    showValidation: boolean;
+    readOnly: boolean;
 }
 
-export const DictParameterEditor: SimpleEditor<Props> = ({ fieldErrors, expressionObj, param, onValueChange }: Props) => {
+export const DictParameterEditor: SimpleEditor<Props> = ({
+    fieldErrors,
+    expressionObj,
+    param,
+    onValueChange,
+    showValidation,
+    readOnly,
+}: Props) => {
     const scenario = useSelector(getScenario);
     const theme = useTheme();
     const { menuOption } = selectStyled(theme);
@@ -55,12 +66,21 @@ export const DictParameterEditor: SimpleEditor<Props> = ({ fieldErrors, expressi
         }, 400);
     }, [fetchProcessDefinitionDataDict]);
 
+    const isValid = isEmpty(fieldErrors);
+
     return (
         <Box className={"node-value"}>
             <Autocomplete
                 renderInput={({ inputProps, InputProps }) => (
                     <div ref={InputProps.ref}>
-                        <NodeInput {...inputProps} />
+                        <NodeInput
+                            {...inputProps}
+                            className={cx(
+                                inputProps.className,
+                                showValidation && !isValid && "node-input-with-error",
+                                readOnly && "read-only",
+                            )}
+                        />
                     </div>
                 )}
                 options={options}
@@ -97,7 +117,7 @@ export const DictParameterEditor: SimpleEditor<Props> = ({ fieldErrors, expressi
                     setInputValue(value);
                 }}
             />
-            <ValidationLabels fieldErrors={fieldErrors} />
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </Box>
     );
 };
