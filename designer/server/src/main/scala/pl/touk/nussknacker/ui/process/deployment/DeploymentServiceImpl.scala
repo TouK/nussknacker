@@ -15,21 +15,12 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
-import pl.touk.nussknacker.engine.deployment.{
-  CustomActionResult,
-  DeploymentData,
-  DeploymentId,
-  ExternalDeploymentId,
-  User
-}
+import pl.touk.nussknacker.engine.deployment.{CustomActionResult, DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
-  OnActionExecutionFinished,
-  OnDeployActionFailed,
-  OnDeployActionSuccess
-}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -39,7 +30,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
-import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import pl.touk.nussknacker.ui.validation.{CustomActionValidator, UIProcessValidator}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
 
@@ -653,7 +644,8 @@ class DeploymentServiceImpl(
         customActionOpt = manager.customActionsDefinitions.find(_.actionName == actionName)
         _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
         // TODO: add custom action params validation
-        _ = validateCustomActionParams(actionCommand, checkedCustomAction)
+        validator = new CustomActionValidator(manager.customActionsDefinitions)
+        _         = validator.validateCustomActionParams(actionReq)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
@@ -662,7 +654,7 @@ class DeploymentServiceImpl(
 
   // TODO: extract to CustomActionValidator and resolve implicits with DumbNodeId
   private def validateCustomActionParams(request: CustomActionRequest, customAction: CustomActionDefinition): Unit = {
-    implicit val nodeId: NodeId = NodeId(customAction.name.value)
+    implicit val nodeId: NodeId = NodeId(customAction.actionName.value)
     val requestParamsMap        = request.params
     val customActionParams      = customAction.parameters
 

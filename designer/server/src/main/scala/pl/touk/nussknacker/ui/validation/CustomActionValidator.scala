@@ -1,17 +1,27 @@
 package pl.touk.nussknacker.ui.validation
 
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionRequest}
+import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, User}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.ui.process.deployment.ValidationError
 
-object CustomActionValidator {
+class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
 
-  def validateCustomActionParams(request: CustomActionRequest, customAction: CustomActionDefinition): Unit = {
+  private def existsOrFail[T](checkThisOpt: Option[T], failWith: Exception): T = {
+    checkThisOpt match {
+      case Some(checked) => checked
+      case None          => throw failWith
+    }
+  }
 
-    implicit val nodeId: NodeId = NodeId(customAction.name.value)
+  def validateCustomActionParams(request: pl.touk.nussknacker.engine.deployment.CustomActionRequest): Unit = {
+
+    val customActionOpt     = allowedActions.find(_.name == request.name)
+    val checkedCustomAction = existsOrFail(customActionOpt, new IllegalArgumentException("actionReq.name"))
+
+    implicit val nodeId: NodeId = NodeId(checkedCustomAction.name.value)
     val requestParamsMap        = request.params
-    val customActionParams      = customAction.parameters
+    val customActionParams      = checkedCustomAction.parameters
 
     if (requestParamsMap.keys.size != customActionParams.size) {
       throw ValidationError("Different count of custom action parameters than provided in request for: " + request.name)
@@ -27,9 +37,21 @@ object CustomActionValidator {
               )
             }
           }
-        case None => throw ValidationError("No such parameter should be defined for this action: " + customAction.name)
+        case None =>
+          throw ValidationError("No such parameter should be defined for this action: " + checkedCustomAction.name)
       }
     }
+  }
+
+  def validateCustomActionParams(dtoRequest: pl.touk.nussknacker.restmodel.CustomActionRequest): Unit = {
+    this.validateCustomActionParams(
+      pl.touk.nussknacker.engine.deployment.CustomActionRequest(
+        dtoRequest.actionName,
+        ProcessVersion.empty,
+        User("empty", "empty"),
+        dtoRequest.params.getOrElse(ValidationError)
+      )
+    )
   }
 
 }
