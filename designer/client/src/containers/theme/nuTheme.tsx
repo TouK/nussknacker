@@ -387,6 +387,11 @@ export const nuTheme = createTheme({
                     marginTop: theme.spacing(0.5),
                     backgroundColor: theme.custom.colors.secondaryBackground,
                 }),
+                loading: ({ theme }) => ({
+                    padding: theme.spacing(0.75, 2),
+                    marginTop: theme.spacing(0.5),
+                    backgroundColor: theme.custom.colors.secondaryBackground,
+                }),
             },
         },
     },

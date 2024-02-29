@@ -11,6 +11,7 @@ import { ParamType } from "../../types";
 import { NodeInput } from "../../../../../withFocus";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
 import i18next from "i18next";
+import ValidationLabels from "../../../../../modals/ValidationLabels";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -19,32 +20,32 @@ interface Props {
     param: ParamType;
 }
 
-export const DictParameterEditor: SimpleEditor<Props> = (props: Props) => {
+export const DictParameterEditor: SimpleEditor<Props> = ({ fieldErrors, expressionObj, param, onValueChange }: Props) => {
     const scenario = useSelector(getScenario);
     const theme = useTheme();
     const { menuOption } = selectStyled(theme);
     const [options, setOptions] = useState<ProcessDefinitionDataDictOption[]>([]);
     const [open, setOpen] = useState(false);
-    const [value, setValue] = React.useState(() => {
-        if (!props.expressionObj.expression) {
+    const [value, setValue] = useState(() => {
+        if (!expressionObj.expression) {
             return null;
         }
 
-        return JSON.parse(props.expressionObj.expression);
+        return JSON.parse(expressionObj.expression);
     });
-    const [inputValue, setInputValue] = React.useState("");
+    const [inputValue, setInputValue] = useState("");
+    const [isFetching, setIsFetching] = useState(false);
 
     const fetchProcessDefinitionDataDict = useCallback(
         async (inputValue: string) => {
-            const { data } = await HttpService.fetchProcessDefinitionDataDict(
-                scenario.processingType,
-                props.param.editor.dictId,
-                inputValue,
-            );
+            setIsFetching(true);
+            const { data } = await HttpService.fetchProcessDefinitionDataDict(scenario.processingType, param.editor.dictId, inputValue);
+
+            setIsFetching(false);
 
             return data;
         },
-        [props.param.editor.dictId, scenario.processingType],
+        [param.editor.dictId, scenario.processingType],
     );
 
     const debouncedUpdateOptions = useMemo(() => {
@@ -65,7 +66,7 @@ export const DictParameterEditor: SimpleEditor<Props> = (props: Props) => {
                 options={options}
                 filterOptions={(x) => x}
                 onChange={(_, value) => {
-                    props.onValueChange(JSON.stringify(value) || "");
+                    onValueChange(JSON.stringify(value) || "");
                     setValue(value);
                     setOpen(false);
                 }}
@@ -74,15 +75,16 @@ export const DictParameterEditor: SimpleEditor<Props> = (props: Props) => {
                     setOptions(fetchedOptions);
                     setOpen(true);
                 }}
-                open={open}
-                onBlur={() => {
+                onClose={() => {
                     setOpen(false);
                 }}
+                open={open}
                 noOptionsText={i18next.t("editors.dictParameterEditor.noOptionsFound", "No options found")}
                 getOptionLabel={(option) => option.label}
                 isOptionEqualToValue={() => true}
                 value={value}
                 inputValue={inputValue}
+                loading={isFetching}
                 renderOption={(props, option) => {
                     return (
                         <Box component={"li"} sx={menuOption({}, false, false) as SxProps<Theme>} {...props} aria-selected={false}>
@@ -92,10 +94,10 @@ export const DictParameterEditor: SimpleEditor<Props> = (props: Props) => {
                 }}
                 onInputChange={async (event, value) => {
                     await debouncedUpdateOptions(value);
-                    console.log(value);
                     setInputValue(value);
                 }}
             />
+            <ValidationLabels fieldErrors={fieldErrors} />
         </Box>
     );
 };
