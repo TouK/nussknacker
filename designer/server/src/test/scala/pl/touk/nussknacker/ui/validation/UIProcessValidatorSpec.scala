@@ -9,6 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{BeMatcher, MatchResult}
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -19,7 +20,6 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValida
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -30,6 +30,7 @@ import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
@@ -55,16 +56,9 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
-  dictParameterEditorServiceId,
-  existingSinkFactory,
-  existingSourceFactory,
-  processValidator,
-  processValidatorWithDicts,
-  sampleProcessName
-}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -1049,14 +1043,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  private def procesWithDictParameterEditorService(key: String) = createGraph(
+  private def procesWithDictParameterEditorService(expression: Expression) = createGraph(
     List(
       Source("inID", SourceRef(existingSourceFactory, List())),
       Enricher(
         "custom",
         ServiceRef(
           dictParameterEditorServiceId,
-          List(NodeParameter("expression", Expression.dictKeyWithLabel(key, Some("someLabel"))))
+          List(NodeParameter("expression", expression))
         ),
         "out"
       ),
@@ -1065,8 +1059,35 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     List(Edge("inID", "custom", None), Edge("custom", "out", None))
   )
 
+  test("reports expression parsing error in DictParameterEditor") {
+    val process = procesWithDictParameterEditorService(
+      Expression(
+        Language.DictKeyWithLabel,
+        "not parsable key with label expression"
+      )
+    )
+
+    val result = processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "KeyWithLabelExpressionParsingError",
+                "Error while parsing KeyWithLabel expression: not parsable key with label expression",
+                _,
+                Some("expression"),
+                NodeValidationErrorType.SaveAllowed
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
   test("checks for unknown dictId in DictParameterEditor") {
-    val process = procesWithDictParameterEditorService("someKey")
+    val process = procesWithDictParameterEditorService(Expression.dictKeyWithLabel("someKey", Some("someLabel")))
 
     val result = processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false)
 
@@ -1088,7 +1109,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("checks for unknown key in DictParameterEditor") {
-    val process = procesWithDictParameterEditorService("thisKeyDoesntExist")
+    val process =
+      procesWithDictParameterEditorService(Expression.dictKeyWithLabel("thisKeyDoesntExist", Some("someLabel")))
 
     val result = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map.empty))
@@ -1112,7 +1134,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("validate DictParameterEditor happy path") {
-    val process = procesWithDictParameterEditorService("someKey")
+    val process = procesWithDictParameterEditorService(Expression.dictKeyWithLabel("someKey", Some("someLabel")))
 
     val result = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))
