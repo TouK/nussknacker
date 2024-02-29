@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSp
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import sttp.tapir._
 
 @JsonCodec final case class ScenarioGraph(
     properties: ProcessProperties,
@@ -19,7 +20,15 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 
 }
 
+object ScenarioGraph {
+  implicit val schema: Schema[ScenarioGraph] = Schema.derived[ScenarioGraph]
+}
+
 @JsonCodec final case class Edge(from: String, to: String, edgeType: Option[EdgeType])
+
+object Edge {
+  implicit val schema: Schema[Edge] = Schema.derived[Edge]
+}
 
 // We have the same additionalFields name as in NodeData because properties are treated as node on the FE side
 // TODO: remove additionalFields nesting when we stop treating properties as a node on the FE side
@@ -89,4 +98,5 @@ object ProcessProperties {
     actualDecoder or legacyDecoder
   }
 
+  implicit val schema: Schema[ProcessProperties] = Schema.derived[ProcessProperties]
 }

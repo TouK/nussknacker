@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import sttp.tapir.Schema
 
 import java.net.URI
 
@@ -127,6 +128,8 @@ package object definition {
   object UIParameter {
     implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] =
       deriveConfiguredDecoder[UIParameter]
+
+    implicit val schema: Schema[UIParameter] = Schema.derived[UIParameter]
   }
 
   object UICustomAction {

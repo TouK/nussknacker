@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.graph
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
+import sttp.tapir.Schema
 
 object fragment {
 
@@ -15,5 +16,9 @@ object fragment {
       parameters: List[NodeParameter],
       outputVariableNames: Map[String, String] = Map.empty
   )
+
+  object FragmentRef {
+    implicit val schema: Schema[FragmentRef] = Schema.derived[FragmentRef]
+  }
 
 }

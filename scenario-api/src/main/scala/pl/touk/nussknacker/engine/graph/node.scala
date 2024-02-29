@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
+import sttp.tapir.Schema
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -65,6 +66,10 @@ object node {
 
   @JsonCodec case class UserDefinedAdditionalNodeFields(description: Option[String], layoutData: Option[LayoutData])
 
+  object UserDefinedAdditionalNodeFields {
+    implicit val schema: Schema[UserDefinedAdditionalNodeFields] = Schema.derived[UserDefinedAdditionalNodeFields]
+  }
+
   sealed trait NodeData {
     def id: String
 
@@ -74,6 +79,8 @@ object node {
   object NodeData {
     implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
     implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
+
+    implicit val schema: Schema[NodeData] = Schema.derived[NodeData]
   }
 
   // this represents node that originates from real node on UI, in contrast with Branch
@@ -248,6 +255,10 @@ object node {
     def joinReference: JoinReference = JoinReference(artificialNodeId, id, joinId)
   }
 
+  object BranchEndDefinition {
+    implicit val schema: Schema[BranchEndDefinition] = Schema.derived
+  }
+
   case class Sink(
       id: String,
       ref: SinkRef,
@@ -263,6 +274,10 @@ object node {
     override val componentId: String = ref.typ
 
     override def parameters: List[NodeParameter] = ref.parameters
+  }
+
+  object Sink {
+    implicit val schema: Schema[Sink] = Schema.derived[Sink]
   }
 
   // TODO: A better way of passing information regarding fragment parameter definition
@@ -288,6 +303,10 @@ object node {
   ) extends OneOutputSubsequentNodeData
 
   @JsonCodec case class FragmentOutputVarDefinition(name: String, fields: List[Field])
+
+  object FragmentOutputVarDefinition {
+    implicit val schema: Schema[FragmentOutputVarDefinition] = Schema.derived[FragmentOutputVarDefinition]
+  }
 
   // this is used only in fragment definition
   case class FragmentInputDefinition(
@@ -336,11 +355,15 @@ object node {
         )
       }
 
+      implicit val schema: Schema[FragmentParameter] = Schema.derived[FragmentParameter]
+
     }
 
     object FragmentClazzRef {
 
       def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
+
+      implicit val schema: Schema[FragmentClazzRef] = Schema.derived[FragmentClazzRef]
 
     }
 
