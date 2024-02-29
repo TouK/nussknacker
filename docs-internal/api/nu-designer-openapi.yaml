@@ -437,14 +437,55 @@ paths:
   /api/migrate:
     post:
       tags:
-      - TODO
-      summary: TODO
+      - migration
+      summary: Migration between environments service
       operationId: postApiMigrate
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/MigrateScenarioRequest'
+            examples:
+              Example:
+                summary: example migration request
+                value:
+                  sourceEnvironmentId: testEnv
+                  processingMode: Unbounded-Stream
+                  engineSetupName: Flink
+                  scenarioWithDetailsForMigrations:
+                    name: example
+                    isArchived: false
+                    isFragment: false
+                    processingType: streaming1
+                    processCategory: Category1
+                    scenarioGraph:
+                      properties:
+                        additionalFields:
+                          properties:
+                            parallelism: ''
+                          metaDataType: LiteStreamMetaData
+                      nodes:
+                      - id: source
+                        ref:
+                          typ: csv-source-lite
+                          parameters: []
+                        type: Source
+                      - id: sink
+                        ref:
+                          typ: dead-end-lite
+                          parameters: []
+                        type: Sink
+                      edges:
+                      - from: source
+                        to: sink
+                    validationResult:
+                      errors:
+                        invalidNodes: {}
+                        processPropertiesErrors: []
+                        globalErrors: []
+                      warnings:
+                        invalidNodes: {}
+                      nodeResults: {}
         required: true
       responses:
         '200':
