@@ -131,7 +131,7 @@ class BaseK8sDeploymentManagerTest
       } finally {
         manager.cancel(version.processName, DeploymentData.systemUser).futureValue
         eventually {
-          manager.getProcessStates(version.processName).futureValue shouldBe List.empty
+          manager.getProcessStates(version.processName).futureValue.value shouldBe List.empty
         }
       }
     }
