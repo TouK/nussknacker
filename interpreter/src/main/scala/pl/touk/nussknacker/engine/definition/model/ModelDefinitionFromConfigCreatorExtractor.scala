@@ -90,7 +90,6 @@ object ModelDefinitionFromConfigCreatorExtractor {
       variables,
       expressionConfig.globalImports,
       expressionConfig.additionalClasses,
-      expressionConfig.languages,
       expressionConfig.optimizeCompilation,
       expressionConfig.dictionaries,
       expressionConfig.hideMetaVariable,

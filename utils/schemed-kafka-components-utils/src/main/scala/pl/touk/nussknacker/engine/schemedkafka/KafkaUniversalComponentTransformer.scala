@@ -151,18 +151,20 @@ trait KafkaUniversalComponentTransformer[T]
       NextParameters(parameters = topicParam.value, errors = topicParam.written)
   }
 
-  protected def schemaParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
+  protected def schemaParamStep(
+      nextParams: List[Parameter]
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep((topicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
       val versionParam  = getVersionParam(preparedTopic)
       val topicValidationErrors =
         validateTopic(preparedTopic.prepared).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(topicParamName)))
       NextParameters(
-        versionParam.value :: paramsDeterminedAfterSchema,
+        versionParam.value :: nextParams,
         errors = versionParam.written ++ topicValidationErrors
       )
     case TransformationStep((topicParamName, _) :: Nil, _) =>
-      NextParameters(parameters = fallbackVersionOptionParam :: paramsDeterminedAfterSchema)
+      NextParameters(parameters = fallbackVersionOptionParam :: nextParams)
   }
 
   def paramsDeterminedAfterSchema: List[Parameter]

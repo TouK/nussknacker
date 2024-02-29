@@ -5,8 +5,9 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -131,7 +132,7 @@ package object definition {
 
   object UICustomAction {
 
-    def apply(action: CustomAction): UICustomAction = UICustomAction(
+    def apply(action: CustomActionDefinition): UICustomAction = UICustomAction(
       name = action.name,
       allowedStateStatusNames = action.allowedStateStatusNames,
       icon = action.icon,

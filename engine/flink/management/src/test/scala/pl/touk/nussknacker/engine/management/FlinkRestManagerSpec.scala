@@ -150,11 +150,13 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
 
     createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new TimeoutException("tooo looong")))
-      .deploy(
-        defaultVersion,
-        defaultDeploymentData,
-        canonicalProcess,
-        None
+      .processCommand(
+        RunDeploymentCommand(
+          defaultVersion,
+          defaultDeploymentData,
+          canonicalProcess,
+          None
+        )
       )
       .futureValue shouldBe None
   }
@@ -164,11 +166,13 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val manager =
       createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
 
-    val result = manager.deploy(
-      defaultVersion,
-      defaultDeploymentData,
-      canonicalProcess,
-      None
+    val result = manager.processCommand(
+      RunDeploymentCommand(
+        defaultVersion,
+        defaultDeploymentData,
+        canonicalProcess,
+        None
+      )
     )
     expectException(result, "Exception when sending request: POST http://test.pl/jars/file/run")
     result.failed.futureValue.getCause.getMessage shouldBe "heeelo?"
@@ -182,15 +186,21 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val message =
       "Not enough free slots on Flink cluster. Available slots: 0, requested: 1. Extend resources of Flink cluster resources"
-    expectException(manager.validate(defaultVersion, defaultDeploymentData, canonicalProcess), message)
-    expectException(manager.deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None), message)
+    expectException(
+      manager.processCommand(ValidateScenarioCommand(defaultVersion, defaultDeploymentData, canonicalProcess)),
+      message
+    )
+    expectException(
+      manager.processCommand(RunDeploymentCommand(defaultVersion, defaultDeploymentData, canonicalProcess, None)),
+      message
+    )
   }
 
   test("allow deploy if process is failed") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
 
     createManager(statuses, acceptDeploy = true)
-      .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None)
+      .processCommand(RunDeploymentCommand(defaultVersion, defaultDeploymentData, canonicalProcess, None))
       .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
@@ -198,7 +208,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
 
     createManager(statuses, acceptDeploy = true, acceptSavepoint = true)
-      .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None)
+      .processCommand(RunDeploymentCommand(defaultVersion, defaultDeploymentData, canonicalProcess, None))
       .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
@@ -206,7 +216,9 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val processName = ProcessName("p1")
     val manager     = createManager(List(buildRunningJobOverview(processName)), acceptSavepoint = true)
 
-    manager.savepoint(processName, savepointDir = None).futureValue shouldBe SavepointResult(path = savepointPath)
+    manager
+      .processCommand(MakeScenarioSavepointCommand(processName, savepointDir = None))
+      .futureValue shouldBe SavepointResult(path = savepointPath)
   }
 
   test("should stop") {
@@ -214,7 +226,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val manager     = createManager(List(buildRunningJobOverview(processName)), acceptStop = true)
 
     manager
-      .stop(processName, savepointDir = None, user = User("user1", "user"))
+      .processCommand(StopScenarioCommand(processName, savepointDir = None, user = User("user1", "user")))
       .futureValue shouldBe SavepointResult(path = savepointPath)
   }
 
@@ -235,7 +247,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     cancellableStatuses
       .map(status => ProcessName(s"process_$status"))
-      .map(manager.cancel(_, User("test_id", "Jack")))
+      .map(deploymentId => manager.processCommand(CancelScenarioCommand(deploymentId, User("test_id", "Jack"))))
       .foreach(_.futureValue shouldBe (()))
 
     statuses.map(_.jid).foreach(id => history should contain(HistoryEntry("cancel", Some(id))))
@@ -266,7 +278,9 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val (manager, history) = createManagerWithHistory(statuses)
 
-    manager.cancel(processName, fooDeploymentId, User("user1", "user1")).futureValue shouldBe (())
+    manager
+      .processCommand(CancelDeploymentCommand(processName, fooDeploymentId, User("user1", "user1")))
+      .futureValue shouldBe (())
 
     history should contain(HistoryEntry("cancel", Some(fooDeploymentId.value)))
     history should not contain HistoryEntry("cancel", Some(barDeploymentId.value))
@@ -283,7 +297,9 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val (manager, history) = createManagerWithHistory(statuses)
 
-    manager.cancel(ProcessName("test"), User("test_id", "Jack")).futureValue shouldBe (())
+    manager.processCommand(CancelScenarioCommand(ProcessName("test"), User("test_id", "Jack"))).futureValue shouldBe (
+      ()
+    )
 
     history.filter(_.operation == "cancel").map(_.jobId.get) should contain theSameElementsAs
       statuses.filter(_.state == JobStatus.RUNNING.name()).map(_.jid)
@@ -293,7 +309,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
     val (manager, history) = createManagerWithHistory(statuses, acceptCancel = false)
 
-    manager.cancel(ProcessName("p1"), User("test_id", "Jack")).futureValue shouldBe (())
+    manager.processCommand(CancelScenarioCommand(ProcessName("p1"), User("test_id", "Jack"))).futureValue shouldBe (())
     history.filter(_.operation == "cancel") shouldBe Nil
   }
 

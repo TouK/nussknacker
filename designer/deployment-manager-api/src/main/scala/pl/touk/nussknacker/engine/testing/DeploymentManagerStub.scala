@@ -2,16 +2,13 @@ package pl.touk.nussknacker.engine.testing
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
-import pl.touk.nussknacker.engine.testmode.TestProcess
+import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
@@ -19,45 +16,10 @@ import pl.touk.nussknacker.engine.{
   MetaDataInitializer
 }
 
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
-class DeploymentManagerStub extends DeploymentManager {
-
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = Future.successful(())
-
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] =
-    Future.successful(None)
-
-  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] =
-    Future.successful(SavepointResult(""))
-
-  override def stop(
-      name: ProcessName,
-      deploymentId: DeploymentId,
-      savepointDir: Option[String],
-      user: User
-  ): Future[SavepointResult] =
-    Future.successful(SavepointResult(""))
-
-  override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(())
-
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = Future.successful(())
-
-  override def test(
-      name: ProcessName,
-      canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] = ???
+class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands {
 
   // We map lastStateAction to state to avoid some corner/blocking cases with the deleting/canceling scenario on tests..
   override def resolve(
@@ -84,20 +46,26 @@ class DeploymentManagerStub extends DeploymentManager {
     )
   }
 
-  override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
-    Future.successful(SavepointResult(""))
-
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
 
-  override def customActions: List[CustomAction] = Nil
-
-  override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
-      canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] =
-    Future.failed(new NotImplementedError())
+  override def customActionsDefinitions: List[CustomActionDefinition] = Nil
 
   override def close(): Unit = {}
+
+}
+
+trait StubbingCommands { self: DeploymentManager =>
+
+  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = command match {
+    case _: ValidateScenarioCommand                      => Future.successful(())
+    case _: RunDeploymentCommand                         => Future.successful(None)
+    case _: StopDeploymentCommand                        => Future.successful(SavepointResult(""))
+    case _: StopScenarioCommand                          => Future.successful(SavepointResult(""))
+    case _: CancelDeploymentCommand                      => Future.successful(())
+    case _: CancelScenarioCommand                        => Future.successful(())
+    case _: MakeScenarioSavepointCommand                 => Future.successful(SavepointResult(""))
+    case _: CustomActionCommand | _: TestScenarioCommand => notImplemented
+  }
 
 }
 

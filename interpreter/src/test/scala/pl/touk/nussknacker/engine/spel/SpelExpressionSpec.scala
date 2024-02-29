@@ -14,7 +14,6 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.{
   ExpressionParseError,
   GenericFunctionTypingError,
@@ -27,6 +26,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
   InvalidMethodReference,
   TypeReferenceError

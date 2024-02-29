@@ -41,13 +41,12 @@ object ModelData extends LazyLogging {
   def apply(processingTypeConfig: ProcessingTypeConfig, dependencies: ModelDependencies): ModelData = {
     val modelClassLoader = ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt)
     ClassLoaderModelData(
-      modelConfigLoader =>
-        modelConfigLoader
-          .resolveInputConfigDuringExecution(processingTypeConfig.modelConfig, modelClassLoader.classLoader),
+      _.resolveInputConfigDuringExecution(processingTypeConfig.modelConfig, modelClassLoader.classLoader),
       modelClassLoader,
       Some(processingTypeConfig.category),
       dependencies.determineDesignerWideId,
       dependencies.additionalConfigsFromProvider,
+      _ => true,
       dependencies.shouldIncludeComponentProvider
     )
   }
@@ -82,6 +81,7 @@ object ModelData extends LazyLogging {
       category = None,
       determineDesignerWideId = id => DesignerWideComponentId(id.toString),
       additionalConfigsFromProvider = Map.empty,
+      shouldIncludeConfigCreator = _ => true,
       shouldIncludeComponentProvider = _ => true
     )
   }
@@ -92,14 +92,10 @@ object ModelData extends LazyLogging {
 
 }
 
-case class ModelDependencies(
+final case class ModelDependencies(
     additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
     workingDirectoryOpt: Option[Path],
-    // This property is for easier testing when for some reason, some jars with ComponentProvider are
-    // on the test classpath and CPs collide with other once with the same name.
-    // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
-    // add liteKafkaComponents (which are in test scope), see comment next to designer module
     shouldIncludeComponentProvider: ComponentProvider => Boolean
 )
 
@@ -109,14 +105,20 @@ case class ClassLoaderModelData private (
     override val category: Option[String],
     override val determineDesignerWideId: ComponentId => DesignerWideComponentId,
     override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-    shouldIncludeComponentProvider: ComponentProvider => Boolean
+    // This property is for easier testing when for some reason, some jars with ComponentProvider are
+    // on the test classpath and CPs collide with other once with the same name.
+    // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
+    // add liteKafkaComponents (which are in test scope), see comment next to designer module
+    shouldIncludeConfigCreator: ProcessConfigCreator => Boolean,
+    shouldIncludeComponentProvider: ComponentProvider => Boolean,
 ) extends ModelData
     with LazyLogging {
 
   logger.debug("Loading model data from: " + modelClassLoader)
 
   // this is not lazy, to be able to detect if creator can be created...
-  override val configCreator: ProcessConfigCreator = ProcessConfigCreatorLoader.justOne(modelClassLoader.classLoader)
+  override val configCreator: ProcessConfigCreator =
+    new ProcessConfigCreatorLoader(shouldIncludeConfigCreator).justOne(modelClassLoader.classLoader)
 
   override lazy val modelConfigLoader: ModelConfigLoader = {
     Multiplicity(ScalaServiceLoader.load[ModelConfigLoader](modelClassLoader.classLoader)) match {

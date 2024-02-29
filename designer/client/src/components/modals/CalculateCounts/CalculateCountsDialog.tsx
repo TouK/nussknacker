@@ -10,6 +10,7 @@ import { WindowContent } from "../../../windowManager";
 import { PickerInput } from "./Picker";
 import { CalculateCountsForm } from "./CalculateCountsForm";
 import moment from "moment";
+import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 
 export type State = {
     from: PickerInput;
@@ -42,6 +43,7 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
                 action: () => {
                     props.close();
                 },
+                classname: LoadingButtonTypes.secondaryButton,
             },
             {
                 title: t("dialog.button.ok", "Ok"),

@@ -7,17 +7,16 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
-import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
@@ -77,7 +76,7 @@ class NotificationServiceTest
         user: LoggedUser
     ): Option[ExternalDeploymentId] = {
       when(
-        deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])
+        deploymentManager.processCommand(any[RunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
       deploymentService.deployProcessAsync(processIdWithName, None, None)(user, global).flatten.futureValue
@@ -117,9 +116,9 @@ class NotificationServiceTest
         user: LoggedUser
     ): Option[ExternalDeploymentId] = {
       when(
-        deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])
+        deploymentManager.processCommand(any[RunDeploymentCommand])
       ).thenAnswer { invocation =>
-        passedDeploymentId = Some(invocation.getArgument[DeploymentData](1).deploymentId)
+        passedDeploymentId = Some(invocation.getArgument[RunDeploymentCommand](0).deploymentData.deploymentId)
         Future.fromTry(givenDeployResult)
       }
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
@@ -162,6 +161,7 @@ class NotificationServiceTest
       mock[ProcessingTypeDataProvider[UIProcessValidator, _]],
       mock[ProcessingTypeDataProvider[ScenarioResolver, _]],
       mock[ProcessChangeListener],
+      None,
       None,
       clock
     ) {

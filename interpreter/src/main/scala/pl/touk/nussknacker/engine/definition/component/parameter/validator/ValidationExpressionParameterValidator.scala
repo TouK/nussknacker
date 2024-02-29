@@ -5,9 +5,9 @@ import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.Validator
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator.variableName
+import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.util.Try

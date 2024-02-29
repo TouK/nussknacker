@@ -52,21 +52,23 @@ trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { s
       processVersion: ProcessVersion,
       savepointPath: Option[String] = None
   ): Option[ExternalDeploymentId] = {
-    deploymentManager.deploy(processVersion, DeploymentData.empty, process, savepointPath).futureValue
+    deploymentManager
+      .processCommand(RunDeploymentCommand(processVersion, DeploymentData.empty, process, savepointPath))
+      .futureValue
   }
 
   protected def cancelProcess(processName: ProcessName): Unit = {
-    deploymentManager.cancel(processName, user = userToAct).futureValue
+    deploymentManager.processCommand(CancelScenarioCommand(processName, user = userToAct)).futureValue
     eventually {
       val statuses = deploymentManager
         .getProcessStates(processName)
         .futureValue
         .value
-      val runningOrDurringCancelJobs = statuses
+      val runningOrDuringCancelJobs = statuses
         .filter(state => Set(SimpleStateStatus.Running, SimpleStateStatus.DuringCancel).contains(state.status))
 
       logger.debug(s"waiting for jobs: $processName, $statuses")
-      if (runningOrDurringCancelJobs.nonEmpty) {
+      if (runningOrDuringCancelJobs.nonEmpty) {
         throw new IllegalStateException("Job still exists")
       }
     }

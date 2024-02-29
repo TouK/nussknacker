@@ -3,10 +3,10 @@ package pl.touk.nussknacker.ui.process.deployment
 import cats.Traverse
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.deployment.{CustomActionResult, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, ScenarioWithDetailsEntity}
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,10 +21,10 @@ trait DeploymentService extends ProcessStateService {
   def deployProcessAsync(
       id: ProcessIdWithName,
       savepointPath: Option[String],
-      deploymentComment: Option[DeploymentComment]
+      comment: Option[String]
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]]
 
-  def cancelProcess(id: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(
+  def cancelProcess(id: ProcessIdWithName, comment: Option[String])(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[Unit]

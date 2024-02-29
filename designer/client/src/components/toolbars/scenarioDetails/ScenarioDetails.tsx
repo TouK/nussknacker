@@ -17,7 +17,7 @@ import {
     ProcessName,
     ProcessRename,
 } from "./ScenarioDetailsComponents";
-import { Chip, Link, Typography } from "@mui/material";
+import { Box, Chip, Link, Typography } from "@mui/material";
 import BatchIcon from "../../../assets/img/batch.svg";
 import RequestResponseIcon from "../../../assets/img/request-response.svg";
 import StreamingIcon from "../../../assets/img/streaming.svg";
@@ -63,9 +63,10 @@ const ScenarioDetails = memo(({ id }: ToolbarPanelProps) => {
                             </PanelScenarioDetailsIcon>
                             <Typography variant={"caption"}>{description}</Typography>
                         </ScenarioDetailsItemWrapper>
-                        <div>
-                            <Chip size={"small"} label={scenario.processCategory} sx={{ mt: 1 }} />
-                        </div>
+                        <Box display={"flex"} mt={1} alignItems={"center"}>
+                            <Typography variant={"caption"}>{i18next.t("panels.scenarioDetails.category", "Category:")}</Typography>
+                            <Chip size={"small"} label={scenario.processCategory} sx={{ ml: 1 }} />
+                        </Box>
                         <div>
                             <Typography
                                 component={Link}

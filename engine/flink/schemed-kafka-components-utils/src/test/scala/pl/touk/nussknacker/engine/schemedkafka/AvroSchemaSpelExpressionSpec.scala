@@ -10,11 +10,11 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedDict}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser

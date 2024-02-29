@@ -2,6 +2,31 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.15.x (Not released yet)
+
+### Code API changes
+
+* [#5609](https://github.com/TouK/nussknacker/pull/5609) Refactoring around DeploymentManager's actions:
+  * Custom Actions
+    * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module
+    * `CustomActionResult.req` was removed
+    * `CustomAction` was renamed to `CustomActionDefinition`
+    * `CustomActionRequest` (from the `extension-api`) was renamed to `CustomActionCommand`
+  * Other "action" methods - all methods operating on a scenario (or its deployment) were replaced by case classes and
+    one method handling them all: `processCommand(command)`:
+    * `validate` - `ValidateScenarioCommand`
+    * `deploy` - `RunDeploymentCommand`
+    * `cancel` with `deploymentId` argument - `CancelDeploymentCommand`
+    * `cancel` without `deploymentId` argument - `CancelScenarioCommand`
+    * `stop` with `deploymentId` argument - `StopDeploymentCommand`
+    * `stop` without `deploymentId` argument - `StopScenarioCommand`
+    * `savepoint` - `MakeScenarioSavepointCommand`
+    * `test` - `TestScenarioCommand`
+
+### Other changes
+
+* [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the plugable expression languages: `ExpressionConfig.languages` removed
+
 ## In version 1.14.x (Not released yet)
 
 ### Code API changes

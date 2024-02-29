@@ -4,7 +4,6 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.json.JsonSchema
-import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
@@ -75,7 +74,6 @@ class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
           .take(1)
           .map(_.message())
           .toList
-      processed.size shouldBe 1
       processed.head shouldBe parseJson(record)
     }
   }

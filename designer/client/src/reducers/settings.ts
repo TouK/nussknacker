@@ -80,9 +80,10 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
             };
         }
         case "PROCESS_DEFINITION_DATA": {
+            const { processDefinitionData } = action;
             return {
                 ...state,
-                processDefinitionData: action.processDefinitionData,
+                processDefinitionData,
             };
         }
         case "PROCESS_TOOLBARS_CONFIGURATION_LOADED": {

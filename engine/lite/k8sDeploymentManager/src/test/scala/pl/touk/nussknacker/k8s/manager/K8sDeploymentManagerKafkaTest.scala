@@ -7,7 +7,12 @@ import org.scalatest.Inspectors.forAll
 import org.scalatest.OptionValues
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.deployment.{
+  CancelScenarioCommand,
+  DataFreshnessPolicy,
+  RunDeploymentCommand,
+  ValidateScenarioCommand
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -77,7 +82,7 @@ class K8sDeploymentManagerKafkaTest
         )
 
       val pversion = ProcessVersion(VersionId(version), scenario.name, ProcessId(1234), "testUser", Some(22))
-      manager.deploy(pversion, DeploymentData.empty, scenario, None).futureValue
+      manager.processCommand(RunDeploymentCommand(pversion, DeploymentData.empty, scenario, None)).futureValue
       pversion
     }
 
@@ -173,7 +178,7 @@ class K8sDeploymentManagerKafkaTest
 
     def withManager(manager: K8sDeploymentManager)(action: ProcessVersion => Unit): Unit = {
       val version = ProcessVersion(VersionId(11), f.scenario.name, ProcessId(1234), "testUser", Some(22))
-      manager.deploy(version, DeploymentData.empty, f.scenario, None).futureValue
+      manager.processCommand(RunDeploymentCommand(version, DeploymentData.empty, f.scenario, None)).futureValue
 
       action(version)
       cancelAndAssertCleanup(manager, version)
@@ -274,7 +279,10 @@ class K8sDeploymentManagerKafkaTest
       )
     ) // two pods takes test setup
 
-    f.manager.validate(f.version, DeploymentData.empty, f.scenario).failed.futureValue shouldEqual
+    f.manager
+      .processCommand(ValidateScenarioCommand(f.version, DeploymentData.empty, f.scenario))
+      .failed
+      .futureValue shouldEqual
       ResourceQuotaExceededException("Cluster is full. Release some cluster resources.")
 
     cancelAndAssertCleanup(f.manager, f.version)
@@ -351,7 +359,7 @@ class K8sDeploymentManagerKafkaTest
   }
 
   private def cancelAndAssertCleanup(manager: K8sDeploymentManager, version: ProcessVersion) = {
-    manager.cancel(version.processName, DeploymentData.systemUser).futureValue
+    manager.processCommand(CancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
     eventually {
       manager.getProcessStates(version.processName).map(_.value).futureValue shouldBe List.empty
     }
