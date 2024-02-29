@@ -8,8 +8,10 @@ import pl.touk.nussknacker.engine.api.definition.{
   NotNullParameterValidator,
   StringParameterEditor
 }
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionParameter, CustomActionRequest}
-import pl.touk.nussknacker.engine.deployment.User
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
+import pl.touk.nussknacker.restmodel.CustomActionRequest
+import pl.touk.nussknacker.ui.process.deployment.ValidationError
 
 class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
@@ -24,16 +26,20 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
       ) :: Nil
 
   private val testCustomAction =
-    CustomAction(testCustomActionName, "testStatus1" :: "testStatus2" :: Nil, testCustomActionParams)
+    CustomActionDefinition(
+      ScenarioActionName(testCustomActionName),
+      "testStatus1" :: "testStatus2" :: Nil,
+      testCustomActionParams
+    )
+
+  private val validator = new CustomActionValidator(testCustomAction :: Nil)
 
   type TestParams = Map[String, String]
 
   private def customActionRequest(params: TestParams) = {
     CustomActionRequest(
-      testCustomActionName,
-      ProcessVersion.empty,
-      User("testId", "testUser"),
-      params
+      ScenarioActionName(testCustomActionName),
+      Some(params)
     )
   }
 
@@ -45,7 +51,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
   private val validRequest = customActionRequest(validTestParams)
 
   test("should pass when validating correct data") {
-    val result: Unit = CustomActionValidator.validateCustomActionParams(validRequest, testCustomAction)
+    val result: Unit = validator.validateCustomActionParams(validRequest)
     result should be((): Unit)
   }
 
@@ -56,12 +62,12 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
     val invalidRequestTooFewParams = customActionRequest(invalidTestParamsTooFewParams)
 
-    val caughtException = intercept[Exception] {
-      CustomActionValidator.validateCustomActionParams(invalidRequestTooFewParams, testCustomAction)
+    val caughtException = intercept[ValidationError] {
+      validator.validateCustomActionParams(invalidRequestTooFewParams)
     }
 
     caughtException.getMessage shouldBe
-      "Different count of custom action parameters than provided in request for: " + invalidRequestTooFewParams.name
+      "Different count of custom action parameters than provided in request for: " + invalidRequestTooFewParams.actionName
   }
 
   test("should fail when validating incorrect data") {
@@ -72,12 +78,12 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
     val invalidRequestInvalidValues = customActionRequest(invalidTestParamsInvalidValues)
 
-    val caughtException = intercept[Exception] {
-      CustomActionValidator.validateCustomActionParams(invalidRequestInvalidValues, testCustomAction)
+    val caughtException = intercept[ValidationError] {
+      validator.validateCustomActionParams(invalidRequestInvalidValues)
     }
 
     caughtException.getMessage shouldBe
-      "This field is required and can not be null"
+      "EmptyMandatoryParameter(This field is required and can not be null,Please fill field for this parameter,testParam1,testCustomAction)"
   }
 
   test("should fail when provided with incorrect param names") {
@@ -88,8 +94,8 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
     val invalidRequestInvalidValues = customActionRequest(invalidTestParamsInvalidParamNames)
 
-    val caughtException = intercept[Exception] {
-      CustomActionValidator.validateCustomActionParams(invalidRequestInvalidValues, testCustomAction)
+    val caughtException = intercept[ValidationError] {
+      validator.validateCustomActionParams(invalidRequestInvalidValues)
     }
 
     caughtException.getMessage shouldBe
