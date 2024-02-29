@@ -336,29 +336,28 @@ jobs:
         shell: bash
         run:  tar xfz target.tgz
       # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
-#      - uses: AbsaOSS/k3d-action@v2.4.0
-#        env:
-#          PROJECT_ROOT: ${{ github.workspace }}
-#        with:
-#          cluster-name: "k3s-default"
-#          k3d-version: "v5.4.9" # default version - change with caution, there was some problem with 500 exit codes for after upgrade
-#          args: >-
-#            --config=.k3d/single-cluster.yml
-#            --trace
+      - uses: AbsaOSS/k3d-action@v2.4.0
+        env:
+          PROJECT_ROOT: ${{ github.workspace }}
+        with:
+          cluster-name: "k3s-default"
+          k3d-version: "v5.6.0"
+          args: >-
+            --config=.k3d/single-cluster.yml
+            --trace
       - name: Slow tests
         env:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         shell: bash
-#        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
-        run: ./ciRunSbt.sh designer/Slow/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
-#      - name: docker logs
-#        if: success() || failure()
-#        run: |
-#          docker logs k3d-k3s-default-server-0
-#          docker logs k3d-k3s-default-agent-0
-#          docker logs k3d-k3s-default-serverlb
+        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
+      - name: docker logs
+        if: success() || failure()
+        run: |
+          docker logs k3d-k3s-default-server-0
+          docker logs k3d-k3s-default-agent-0
+          docker logs k3d-k3s-default-serverlb
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v3
