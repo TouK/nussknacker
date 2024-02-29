@@ -4,9 +4,14 @@ import io.circe.syntax._
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  NodeValidationErrorType,
+  ValidationResult
+}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.{
@@ -31,6 +36,7 @@ class MigrationApiEndpointsBusinessSpec
   private val sourceEnvironmentId = "DEV"
 
   private val exampleProcessName = ProcessName("test2")
+  private val illegalProcessName = ProcessName("#test")
 
   private val exampleScenario =
     ScenarioBuilder
@@ -38,11 +44,26 @@ class MigrationApiEndpointsBusinessSpec
       .source("source", "csv-source-lite")
       .emptySink("sink", "dead-end-lite")
 
+  private val validFragment =
+    ScenarioBuilder.fragmentWithInputNodeId("source", "csv-source-lite").emptySink("sink", "dead-end-lite")
+
   private val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
 
-  private val validationResult = ValidationResult.success
+  private val successValidationResult = ValidationResult.success
 
-  private def prepareRequestJsonBodyPlain(scenarioName: String): String =
+  private val errorValidationResult =
+    ValidationResult.errors(
+      Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed))),
+      List(),
+      List()
+    )
+
+  private def prepareRequestJsonData(
+      scenarioName: String,
+      validationResult: ValidationResult,
+      scenarioGraph: ScenarioGraph,
+      isFragment: Boolean
+  ): String =
     s"""
        |{
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
@@ -51,10 +72,10 @@ class MigrationApiEndpointsBusinessSpec
        |  "scenarioWithDetailsForMigrations": {
        |    "name": "${scenarioName}",
        |    "isArchived": false,
-       |    "isFragment": false,
+       |    "isFragment": $isFragment,
        |    "processingType": "streaming1",
        |    "processCategory": "Category1",
-       |    "scenarioGraph": ${exampleGraph.asJson.noSpaces},
+       |    "scenarioGraph": ${scenarioGraph.asJson.noSpaces},
        |    "validationResult": ${validationResult.asJson.noSpaces},
        |    "history": null,
        |    "modelVersion": null
@@ -62,7 +83,17 @@ class MigrationApiEndpointsBusinessSpec
        |}
        |""".stripMargin
 
-  private val requestJsonBodyPlain: String = prepareRequestJsonBodyPlain(exampleProcessName.value)
+  private val validRequestData: String =
+    prepareRequestJsonData(exampleProcessName.value, successValidationResult, exampleGraph, false)
+
+  private val invalidRequestData: String =
+    prepareRequestJsonData(exampleProcessName.value, errorValidationResult, exampleGraph, false)
+
+  private val requestDataWithInvalidScenarioName: String =
+    prepareRequestJsonData(illegalProcessName.value, successValidationResult, exampleGraph, false)
+
+  private val validRequestDataForFragment: String =
+    prepareRequestJsonData(exampleProcessName.value, successValidationResult, exampleGraph, true)
 
   "The endpoint for scenario migration between environments should" - {
     "migrate scenario and add update comment" in {
@@ -72,7 +103,7 @@ class MigrationApiEndpointsBusinessSpec
         )
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(requestJsonBodyPlain)
+        .jsonBody(validRequestData)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
@@ -99,6 +130,18 @@ class MigrationApiEndpointsBusinessSpec
             |""".stripMargin))
 
     }
+    "fail when scenario name contains illegal character(s)" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(requestDataWithInvalidScenarioName)
+        .post(s"$nuDesignerHttpAddress/api/migrate")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody(
+          "Cannot migrate, following errors occurred: Invalid scenario name #test. Only digits, letters, underscore (_), hyphen (-) and space in the middle are allowed"
+        )
+    }
     "fail when scenario is archived on target environment" in {
       given()
         .applicationState(
@@ -106,13 +149,38 @@ class MigrationApiEndpointsBusinessSpec
         )
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(requestJsonBodyPlain)
+        .jsonBody(validRequestData)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(400)
         .equalsPlainBody(
           s"Cannot migrate, scenario ${exampleProcessName.value} is archived on test. You have to unarchive scenario on test in order to migrate."
         )
+    }
+    "fail when validation on source environment has errors" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(invalidRequestData)
+        .post(s"$nuDesignerHttpAddress/api/migrate")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody(
+          s"Cannot migrate, following errors occurred: n1 - message"
+        )
+    }
+    "migrate fragment" in {
+      given()
+        .applicationState(
+          createSavedScenario(validFragment, Category1)
+        )
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(validRequestDataForFragment)
+        .post(s"$nuDesignerHttpAddress/api/migrate")
+        .Then()
+        .statusCode(200)
+
     }
   }
 

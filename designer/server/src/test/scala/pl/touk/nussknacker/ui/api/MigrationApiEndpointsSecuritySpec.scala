@@ -42,7 +42,7 @@ class MigrationApiEndpointsSecuritySpec
 
   private val validationResult = ValidationResult.success
 
-  private def prepareRequestJsonBodyPlain(scenarioName: String): String =
+  private def prepareRequestData(scenarioName: String): String =
     s"""
        |{
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
@@ -62,7 +62,7 @@ class MigrationApiEndpointsSecuritySpec
        |}
        |""".stripMargin
 
-  private val requestJsonBodyPlain: String = prepareRequestJsonBodyPlain(exampleProcessName.value)
+  private val requestData: String = prepareRequestData(exampleProcessName.value)
 
   "The endpoint for scenario migration between environments should" - {
     "authorize user with all permissions" in {
@@ -72,23 +72,36 @@ class MigrationApiEndpointsSecuritySpec
         )
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(requestJsonBodyPlain)
+        .jsonBody(requestData)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
     }
-    "reject other user" in {
+    "reject user with limited reading permissions" in {
       given()
         .applicationState(
           createSavedScenario(exampleScenario, Category1)
         )
         .when()
         .basicAuthReader()
-        .jsonBody(requestJsonBodyPlain)
+        .jsonBody(requestData)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(401)
         .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
+    }
+    "reject user with limited writing permissions" in {
+      given()
+        .applicationState(
+          createSavedScenario(exampleScenario, Category1)
+        )
+        .when()
+        .basicAuthWriter()
+        .jsonBody(requestData)
+        .post(s"$nuDesignerHttpAddress/api/migrate")
+        .Then()
+        .statusCode(401)
+        .equalsPlainBody("The supplied user [writer] is not authorized to access this resource")
     }
   }
 

@@ -56,16 +56,6 @@ trait RemoteEnvironment {
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ScenarioVersion]]
 
   def migrate(
-      localProcess: ScenarioGraph,
-      processName: ProcessName,
-      parameters: ScenarioParameters,
-      isFragment: Boolean
-  )(
-      implicit ec: ExecutionContext,
-      loggedUser: LoggedUser
-  ): Future[Either[NuDesignerError, Unit]]
-
-  def migrateV2(
       processingMode: ProcessingMode,
       engineSetupName: EngineSetupName,
       scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations
@@ -198,43 +188,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   override def migrate(
-      localGraph: ScenarioGraph,
-      processName: ProcessName,
-      parameters: ScenarioParameters,
-      isFragment: Boolean
-  )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-    (for {
-      validation <- EitherT(validateScenarioGraph(localGraph, processName))
-      _ <- EitherT.fromEither[Future](
-        if (validation.errors != ValidationErrors.success)
-          Left[NuDesignerError, Unit](MigrationValidationError(validation.errors))
-        else Right(())
-      )
-      remoteProcessEither <- fetchProcessDetails(processName)
-      _ <- remoteProcessEither match {
-        case Right(processDetails) if processDetails.isArchived =>
-          EitherT.leftT[Future, NuDesignerError](
-            MigrationToArchivedError(processDetails.name, environmentId)
-          )
-        case Right(_) => EitherT.rightT[Future, NuDesignerError](())
-        case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) =>
-          val userToForward = if (passUsernameInMigration) Some(loggedUser) else None
-          createProcessOnRemote(processName, parameters, isFragment, userToForward)
-        case Left(other) => EitherT.leftT[Future, NuDesignerError](other)
-      }
-      usernameToPass = if (passUsernameInMigration) Some(RemoteUserName(loggedUser.username)) else None
-      _ <- EitherT {
-        saveProcess(
-          localGraph,
-          processName,
-          UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}"),
-          usernameToPass
-        )
-      }
-    } yield ()).value
-  }
-
-  override def migrateV2(
       processingMode: ProcessingMode,
       engineSetupName: EngineSetupName,
       scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations

@@ -57,6 +57,7 @@ class MigrationApiHttpService(
           val processCategory                  = scenarioWithDetailsForMigrations.processCategory
           val engineSetupName                  = migrateScenarioRequest.engineSetupName
           val parameters                       = ScenarioParameters(processingMode, processCategory, engineSetupName)
+          val sourceValidation                 = scenarioWithDetailsForMigrations.validationResult
           val processingType                   = scenarioWithDetailsForMigrations.processingType
           val scenarioGraphUnsafe              = scenarioWithDetailsForMigrations.scenarioGraphUnsafe
           val processName                      = scenarioWithDetailsForMigrations.name
@@ -69,6 +70,15 @@ class MigrationApiHttpService(
             UpdateScenarioCommand(scenarioGraphUnsafe, updateProcessComment, forwardedUsername)
 
           val future: Future[Unit] = for {
+
+            _ <- sourceValidation match {
+              case Some(validationResult) =>
+                if (validationResult.errors != ValidationErrors.success)
+                  Future.failed(MigrationValidationError(validationResult.errors))
+                else Future.successful(())
+              case None => Future.successful(())
+            }
+
             validation <- Future.successful(
               FatalValidationError.renderNotAllowedAsError(
                 processResolver
@@ -79,9 +89,9 @@ class MigrationApiHttpService(
 
             _ <- validation match {
               case Left(e) => Future.failed(e)
-              case Right(validationResults) =>
-                if (validationResults.errors != ValidationErrors.success)
-                  Future.failed(MigrationValidationError(validationResults.errors))
+              case Right(validationResult) =>
+                if (validationResult.errors != ValidationErrors.success)
+                  Future.failed(MigrationValidationError(validationResult.errors))
                 else Future.successful(())
             }
 

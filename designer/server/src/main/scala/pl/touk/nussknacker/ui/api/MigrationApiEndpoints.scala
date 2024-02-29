@@ -9,7 +9,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui._
-import pl.touk.nussknacker.ui.process.migrate.MigrationToArchivedError
+import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
 import sttp.model.StatusCode._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -47,6 +47,10 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       oneOfVariant(
         BadRequest,
         plainBody[BadRequestError]
+      ),
+      oneOfVariant(
+        BadRequest,
+        plainBody[MigrationValidationError]
       ),
       oneOfVariant(
         Unauthorized,
@@ -102,6 +106,11 @@ object MigrationApiEndpoints {
     implicit val otherErrorCodec: Codec[String, OtherError, CodecFormat.TextPlain] =
       Codec.string.map(
         Mapping.from[String, OtherError](deserializationException)(_.getMessage)
+      )
+
+    implicit val migrationValidationErrorCodec: Codec[String, MigrationValidationError, CodecFormat.TextPlain] =
+      Codec.string.map(
+        Mapping.from[String, MigrationValidationError](deserializationException)(_.getMessage)
       )
 
     implicit val fatalErrorCodec: Codec[String, FatalError, CodecFormat.TextPlain] =

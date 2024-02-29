@@ -185,16 +185,6 @@ class RemoteEnvironmentResourcesSpec
     var migrateInvocations = List[ScenarioGraph]()
     var compareInvocations = List[ScenarioGraph]()
 
-    override def migrate(
-        localScenarioGraph: ScenarioGraph,
-        remoteProcessName: ProcessName,
-        parameters: ScenarioParameters,
-        isFragment: Boolean
-    )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-      migrateInvocations = localScenarioGraph :: migrateInvocations
-      Future.successful(Right(()))
-    }
-
     override def compare(
         localScenarioGraph: ScenarioGraph,
         remoteProcessName: ProcessName,
@@ -223,7 +213,7 @@ class RemoteEnvironmentResourcesSpec
       Future.successful(Right(testMigrationResults))
     }
 
-    override def migrateV2(
+    override def migrate(
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations

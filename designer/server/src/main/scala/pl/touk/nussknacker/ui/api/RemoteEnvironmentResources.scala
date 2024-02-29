@@ -71,7 +71,7 @@ class RemoteEnvironmentResources(
                 processIdWithName,
                 version,
                 details =>
-                  remoteEnvironment.migrateV2(
+                  remoteEnvironment.migrate(
                     details.processingMode,
                     details.engineSetupName,
                     ScenarioWithDetailsForMigrations.fromScenarioWithDetails(details)
