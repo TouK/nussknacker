@@ -5,7 +5,7 @@ import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
 import org.apache.flink.table.catalog.{CatalogBaseTable, ObjectPath}
 import org.apache.flink.table.types.DataType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.flink.table.SqlFromResourceReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.SqlStatementReader.SqlStatement
 
 import scala.util.{Failure, Success, Try}
 
@@ -78,6 +78,7 @@ object DataSourceFromSqlExtractor extends LazyLogging {
     tableResults
   }
 
+  // TODO: handle complex data types - Maps, Arrays, Rows, Raw
   private def columnClassToTypingData(dataType: DataType): TypingResult =
     Typed.typedClass(dataType.getLogicalType.getDefaultConversion)
 

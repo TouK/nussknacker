@@ -14,6 +14,8 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.spel
 
+import java.nio.file.Files
+
 class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
 
   import spel.Implicits._
@@ -41,12 +43,37 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
 
   private val testTopicPart1: String    = "table-api.topic1"
   private val testTopicPart2: String    = "table-api.topic2"
+  private val testTopicPart3: String    = "table-api.topic3"
   private lazy val inputTopicNameTest1  = TopicConfig.inputTopicName(testTopicPart1)
   private lazy val inputTopicNameTest2  = TopicConfig.inputTopicName(testTopicPart2)
   private lazy val outputTopicNameTest2 = TopicConfig.outputTopicName(testTopicPart2)
+  private lazy val inputTopicNameTest3  = TopicConfig.inputTopicName(testTopicPart3)
+
+  private lazy val sqlTablesConfig =
+    s"""CREATE TABLE table1
+       | (
+       |   someInt     INT,
+       |   someString  STRING
+       | ) WITH (
+       |  'connector' = 'kafka',
+       |  'topic' = '$inputTopicNameTest3',
+       |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
+       |  'properties.group.id' = 'someConsumerGroupId',
+       |  'scan.startup.mode' = 'earliest-offset',
+       |  'format' = 'json'
+       | );""".stripMargin
+
+  // TODO: how else to handle this?
+  private lazy val sqlTablesDefinitionFilePath = {
+    val tempDir  = Files.createTempDirectory("sqlConfigTemp")
+    val filePath = tempDir.resolve("tables-definition-test.sql")
+    Files.writeString(filePath, sqlTablesConfig)
+    filePath
+  }
 
   private lazy val kafkaTableConfig =
     s"""
+       | sqlFilePath: $sqlTablesDefinitionFilePath
        | dataSources: [
        |   {
        |     name: "input-test1"
@@ -142,6 +169,40 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
         "end",
         "tableApi-sink-kafka-output-test2",
         TableSinkFactory.rawValueParamName -> "#input"
+      )
+
+    run(process) {
+      val result = kafkaClient
+        .createConsumer()
+        .consumeWithJson[Json](topics.output)
+        .take(1)
+        .map(_.message())
+
+      result.head shouldBe parseJson(record2)
+    }
+  }
+
+  test("should ping-pong with sql defined table kafka source and dataStream kafka sink") {
+    val topics = createAndRegisterTopicConfig(testTopicPart3, schema)
+
+    sendAsJson(record1, topics.input)
+    sendAsJson(record2, topics.input)
+
+    val scenarioId = "scenarioId"
+    val sourceId   = "input"
+    val process = ScenarioBuilder
+      .streaming(scenarioId)
+      .parallelism(1)
+      .source(sourceId, "tableApi-source-sql-kafka-table1")
+      .filter("filterId", "#input.someInt != 1")
+      .emptySink(
+        "output",
+        "kafka",
+        KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
+        KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topics.output}'",
+        KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
       )
 
     run(process) {

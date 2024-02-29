@@ -5,8 +5,6 @@ import org.apache.flink.types.Row
 
 object TableUtils {
 
-  import scala.jdk.CollectionConverters._
-
   def buildTableDescriptor(config: DataSourceConfig, schema: Schema): TableDescriptor = {
     val sinkTableDescriptorBuilder = TableDescriptor
       .forConnector(config.connector)
@@ -17,6 +15,12 @@ object TableUtils {
     }
     sinkTableDescriptorBuilder.build()
   }
+
+}
+
+object RowConversions {
+
+  import scala.jdk.CollectionConverters._
 
   def rowToMap(row: Row): java.util.Map[String, Any] = {
     val fieldNames = row.getFieldNames(true).asScala
