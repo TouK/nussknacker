@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.table
+package pl.touk.nussknacker.engine.flink.table.utils
 
 import org.apache.flink.table.api.{DataTypes, Schema}
 import org.apache.flink.table.types.DataType

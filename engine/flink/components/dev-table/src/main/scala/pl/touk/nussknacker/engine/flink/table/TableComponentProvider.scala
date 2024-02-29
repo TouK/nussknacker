@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.flink.table
 
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.flink.table.DataSourceFromSqlExtractor.extractTablesFromFlinkRuntime
-import pl.touk.nussknacker.engine.flink.table.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.extractor.DataSourceSqlExtractor.extractTablesFromFlinkRuntime
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.ConfigIndependentComponents
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.{
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.engine.flink.table.source.{
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.flink.table.TableDataSourcesConfig.defaultDataSourceDefinitionFileName
+import pl.touk.nussknacker.engine.flink.table.extractor.{SqlDataSourceConfig, SqlStatementReader}
 import pl.touk.nussknacker.engine.util.ResourceLoader
 
 import java.nio.file.{Path, Paths}
@@ -79,7 +81,15 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
 
   private def extractDataSourceConfigFromSqlFile(filePath: String): List[SqlDataSourceConfig] = {
     val sqlStatements = readSqlFromFile(Paths.get(filePath))
-    extractTablesFromFlinkRuntime(sqlStatements)
+    val results       = extractTablesFromFlinkRuntime(sqlStatements)
+
+    // TODO: just log errors or crash? Can it be considered recoverable in all cases?
+    results.flatMap {
+      case Valid(config) => Some(config)
+      case Invalid(error) =>
+        logger.error(error.toString)
+        None
+    }
   }
 
   private def readSqlFromFile(pathToFile: Path): List[SqlStatement] =

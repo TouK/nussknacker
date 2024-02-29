@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSource
 }
-import pl.touk.nussknacker.engine.flink.table.{HardcodedSchema, RowConversions}
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
+import pl.touk.nussknacker.engine.flink.table.utils.{HardcodedSchema, RowConversions}
 
 object HardcodedValuesTableSourceFactory extends SourceFactory with UnboundedStreamComponent {
 

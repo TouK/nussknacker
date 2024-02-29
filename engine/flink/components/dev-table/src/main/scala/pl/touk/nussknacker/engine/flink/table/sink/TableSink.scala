@@ -8,9 +8,10 @@ import org.apache.flink.table.api.{Schema, Table}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
-import pl.touk.nussknacker.engine.flink.table.HardcodedSchema.{intColumnName, stringColumnName}
-import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTableDescriptor
-import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
+import pl.touk.nussknacker.engine.flink.table.utils.HardcodedSchema.{intColumnName, stringColumnName}
+import pl.touk.nussknacker.engine.flink.table.utils.TableUtils.buildTableDescriptor
+import pl.touk.nussknacker.engine.flink.table.DataSourceConfig
+import pl.touk.nussknacker.engine.flink.table.utils.HardcodedSchema
 
 class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[String, Any]]) extends FlinkSink {
 

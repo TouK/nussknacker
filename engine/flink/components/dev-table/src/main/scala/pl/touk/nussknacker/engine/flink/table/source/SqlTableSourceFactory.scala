@@ -13,8 +13,9 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.table.{RowConversions, SqlDataSourceConfig}
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlDataSourceConfig
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
+import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
 class SqlTableSourceFactory(config: SqlDataSourceConfig) extends SourceFactory with UnboundedStreamComponent {
 

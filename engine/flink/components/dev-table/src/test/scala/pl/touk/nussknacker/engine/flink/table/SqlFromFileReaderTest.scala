@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.table
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
 
 class SqlFromFileReaderTest extends AnyFunSuite with Matchers {
 

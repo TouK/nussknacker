@@ -9,9 +9,10 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTableDescriptor
+import pl.touk.nussknacker.engine.flink.table.utils.TableUtils.buildTableDescriptor
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
-import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema, RowConversions}
+import pl.touk.nussknacker.engine.flink.table.utils.{HardcodedSchema, RowConversions}
+import pl.touk.nussknacker.engine.flink.table.DataSourceConfig
 
 // TODO: Should be BoundedStreamComponent - change it after configuring batch Deployment Manager
 class HardcodedSchemaTableSourceFactory(config: DataSourceConfig) extends SourceFactory with UnboundedStreamComponent {
