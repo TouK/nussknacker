@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api.description
 
 import cats.implicits.toTraverseOps
+import cats.data.NonEmptyList
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
@@ -306,7 +307,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
     Any
   ] = {
     baseNuApiEndpoint
-      .summary("Validate node parameters")
+      .summary("Validate given parameters")
       .tag("Nodes")
       .post
       .in("parameters" / path[ProcessingType]("processingType") / "validate")
@@ -789,7 +790,18 @@ object TypingDtoSchemas {
   import sttp.tapir.SchemaType.SProductField
   import sttp.tapir.{FieldName, Schema, SchemaType}
 
-  implicit lazy val typingResult: Schema[TypingResult] = Schema.derived
+  implicit lazy val typingResult: Schema[TypingResult] =
+    Schema.derived
+//    Schema.oneOfUsingField[TypingResult, TypingType](_.`type`, _.toString)(
+//      TypingType.Unknown                  -> unknownSchema,
+//      TypingType.TypedNull                -> typedNullSchema,
+//      TypingType.TypedClass               -> typedClassSchema,
+//      TypingType.TypedUnion               -> typedUnionSchema,
+//      TypingType.TypedDict                -> typedDictSchema,
+//      TypingType.TypedTaggedValue         -> typedTaggedSchema,
+//      TypingType.TypedObjectWithValue     -> typedObjectSchema,
+//      TypingType.TypedObjectTypingResult  -> typedObjectTypingResultSchema
+//    )
 
   implicit lazy val singleTypingResultSchema: Schema[SingleTypingResult] =
     Schema.derived.hidden(true)
@@ -797,13 +809,14 @@ object TypingDtoSchemas {
   implicit lazy val additionalDataValueSchema: Schema[AdditionalDataValue] = Schema.derived
 
   implicit lazy val typedObjectTypingResultSchema: Schema[TypedObjectTypingResult] = {
+    lazy val typingResultSchema: Schema[TypingResult] = typingResult
     Schema(
       SchemaType.SProduct(
         sProductFieldForDisplayAndType :::
           List(
             SProductField[String, Map[String, TypingResult]](
               FieldName("fields"),
-              Schema.schemaForMap[TypingResult],
+              Schema.schemaForMap[TypingResult](typingResultSchema),
               _ => None
             )
           ) :::
@@ -859,22 +872,28 @@ object TypingDtoSchemas {
   }
 
   implicit lazy val typedNullSchema: Schema[TypedNull.type] =
-    Schema.derived.name(Schema.SName("TypedNull")).title("TypedNull")
+    Schema.string.name(Schema.SName("TypedNull")).title("TypedNull")
 
   implicit lazy val unknownSchema: Schema[Unknown.type] =
-    Schema.derived
+    Schema.string
       .name(Schema.SName("Unknown"))
       .title("Unknown")
 
   implicit lazy val typedUnionSchema: Schema[TypedUnion] = {
+    val schem: Schema[NonEmptyList[TypingResult]] = Schema.derived
     Schema(
       SchemaType.SProduct(
         sProductFieldForDisplayAndType :::
           List(
-            SProductField[String, List[TypingResult]](
+            SProductField[String, NonEmptyList[TypingResult]](
               FieldName("union"),
-              Schema.schemaForArray[TypingResult].as,
-              _ => Some(List(Unknown))
+//              schem.copy(isOptional = true),
+              Schema
+//                .schemaForIterable[TypingResult, NonEmptyList](typingResult)
+                .schemaForArray[TypingResult](typingResult)
+                .copy(isOptional = false)
+                .as,
+              _ => Some(NonEmptyList(Unknown, List.empty))
             )
           )
       ),
@@ -912,7 +931,7 @@ object TypingDtoSchemas {
   }
 
   private lazy val sProductFieldForKlassAndParams: List[SProductField[String]] = {
-    lazy val typingResultSchema: Schema[TypingResult] = Schema.derived
+    lazy val typingResultSchema: Schema[TypingResult] = typingResult
     List(
       SProductField[String, String](FieldName("refClazzName"), Schema.string, refClazzName => Some(refClazzName)),
       SProductField[String, List[TypingResult]](
