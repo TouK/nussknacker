@@ -227,33 +227,23 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   ): ServiceInvoker = {
     val state          = finalState.get
     val cacheTTLOption = params.extract[Duration](CacheTTLParamName)
-    cacheTTLOption match {
+    val createInvoker = cacheTTLOption match {
+      case None | Some(null) =>
+        new DatabaseEnricherInvoker(_, _, _, _, _, _, _, _, _)
       case Some(cacheTTL) =>
-        new DatabaseEnricherInvokerWithCache(
-          state.query,
-          state.argsCount,
-          state.tableDef,
-          state.strategy,
-          queryArgumentsExtractor,
-          cacheTTL,
-          state.outputType,
-          () => dataSource.getConnection(),
-          () => timeMeasurement,
-          params
-        )
-      case None =>
-        new DatabaseEnricherInvoker(
-          state.query,
-          state.argsCount,
-          state.tableDef,
-          state.strategy,
-          queryArgumentsExtractor,
-          state.outputType,
-          () => dataSource.getConnection(),
-          () => timeMeasurement,
-          params
-        )
+        new DatabaseEnricherInvokerWithCache(_, _, _, _, _, cacheTTL, _, _, _, _)
     }
+    createInvoker(
+      state.query,
+      state.argsCount,
+      state.tableDef,
+      state.strategy,
+      queryArgumentsExtractor,
+      state.outputType,
+      () => dataSource.getConnection(),
+      () => timeMeasurement,
+      params
+    )
   }
 
 }
