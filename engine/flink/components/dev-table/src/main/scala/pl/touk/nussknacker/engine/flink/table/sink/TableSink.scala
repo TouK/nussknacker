@@ -33,9 +33,6 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
     val env      = dataStream.getExecutionEnvironment
     val tableEnv = StreamTableEnvironment.create(env)
 
-    // TODO: this will not work with multiple sinks
-    val outputTableName = "some_sink_table_name"
-
     /*
       DataStream to Table transformation:
       1. Map the dataStream to dataStream[Row] to fit schema in later step
@@ -75,10 +72,9 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
       )
 
     val sinkTableDescriptor = buildTableDescriptor(config, HardcodedSchema.schema)
-    tableEnv.createTable(outputTableName, sinkTableDescriptor)
 
     val statementSet = tableEnv.createStatementSet();
-    statementSet.add(flatInputValueTable.insertInto(outputTableName))
+    statementSet.add(flatInputValueTable.insertInto(sinkTableDescriptor))
     statementSet.attachAsDataStream()
 
     /*

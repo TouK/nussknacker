@@ -29,11 +29,8 @@ class HardcodedSchemaTableSourceFactory(config: DataSourceConfig) extends Source
     ): DataStream[Context] = {
       val tableEnv = StreamTableEnvironment.create(env);
 
-      val tableName = "some_table_name"
-
-      val tableDescriptorFilled = buildTableDescriptor(config, HardcodedSchema.schema)
-      tableEnv.createTable(tableName, tableDescriptorFilled)
-      val table = tableEnv.from(tableName)
+      val tableDescriptor = buildTableDescriptor(config, HardcodedSchema.schema)
+      val table           = tableEnv.from(tableDescriptor)
 
       val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 
