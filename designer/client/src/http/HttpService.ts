@@ -16,7 +16,14 @@ import {
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import {
+    Expression,
+    NodeType,
+    ProcessAdditionalFields,
+    ProcessDefinitionData,
+    ScenarioGraph,
+    VariableTypes
+} from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -123,6 +130,12 @@ export interface PropertiesValidationRequest {
     name: string;
     additionalFields: ProcessAdditionalFields;
 }
+
+export interface CustomActionValidationRequest {
+    actionName: string;
+    params?: Record<string, string>;
+}
+
 
 export interface ExpressionSuggestionRequest {
     expression: Expression;
@@ -476,6 +489,20 @@ class HttpService {
                 );
                 return;
             });
+    }
+
+    validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData | void>{
+        return api
+            .post(`/proceessManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
+            .then((res) => res.data)
+            .catch((error) => {
+                this.#addError(
+                    i18next.t("notification.error.failedToValidateCustomAction", "Failed to get CustomActionValidation"),
+                    error,
+                    true,
+                );
+                return;
+            })
     }
 
     getNodeAdditionalInfo(processName: string, node: NodeType, controller?: AbortController): Promise<AdditionalInfo | null> {
