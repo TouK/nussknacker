@@ -34,12 +34,10 @@ object TestScenarioRunner {
   type RunnerResult        = ValidatedNel[ProcessCompilationError, RunResult]
   type RunnerListResult[R] = ValidatedNel[ProcessCompilationError, RunListResult[R]]
 
-  // Maybe we should replace ids with more meaningful: test-data, rest-result?
+  // TODO: Maybe we should replace ids with more meaningful: test-data, rest-result?
   val testDataSource = "source"
   val noopSource     = "noopSource"
-  // Maybe we should unify those two test result nodes?
-  val testResultSink    = "sink"
-  val testResultService = "invocationCollector"
+  val testResultSink = "sink"
 
   def componentUseCase(testRuntimeMode: Boolean): ComponentUseCase = if (testRuntimeMode) TestRuntime else EngineRuntime
 }

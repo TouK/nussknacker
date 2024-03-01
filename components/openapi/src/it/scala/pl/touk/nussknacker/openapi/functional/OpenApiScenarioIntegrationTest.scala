@@ -116,7 +116,7 @@ class OpenApiScenarioIntegrationTest
       .parallelism(1)
       .source("start", TestScenarioRunner.testDataSource)
       .enricher("customer", "customer", "getCustomer", params: _*)
-      .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#customer")
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#customer")
   }
 
   private def prepareScenarioRunner(

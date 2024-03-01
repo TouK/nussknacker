@@ -7,10 +7,18 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  DefinedEagerParameter,
+  NodeDependencyValue,
+  SingleInputDynamicComponent
+}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterWithExtractor}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkLazyParameterFunctionHelper}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 import java.util.concurrent.atomic.AtomicReference
+import java.util.function.BinaryOperator
 import scala.concurrent.{ExecutionContext, Future}
 
 class TestResultService extends Service {
@@ -34,70 +42,91 @@ object TestResultService {
   def extractFromTestComponentsHolder[R](testExtensionsHolder: TestExtensionsHolder): List[R] = {
     testExtensionsHolder.components
       .collectFirst {
-        case ComponentDefinition(name, component: Service, _, _) if name == TestScenarioRunner.testResultService =>
+        case ComponentDefinition(name, component: Service, _, _) if name == TestScenarioRunner.testResultSink =>
           component
       }
-      .getOrElse(throw new IllegalStateException(s"No ${TestScenarioRunner.testResultService} service registered"))
+      .getOrElse(throw new IllegalStateException(s"No ${TestScenarioRunner.testResultSink} registered"))
       .asInstanceOf[TestResultService]
       .data[R]()
   }
 
 }
 
-class TestResultSink extends BasicFlinkSink with Serializable {
+class TestResultSink(value: LazyParameter[AnyRef]) extends BasicFlinkSink with Serializable {
 
   override type Value = AnyRef
+
+  val id = this.hashCode()
 
   override def valueFunction(
       helper: FlinkLazyParameterFunctionHelper
   ): FlatMapFunction[Context, ValueWithContext[Value]] =
-    new FlatMapFunction[Context, ValueWithContext[Value]] {
-
-      override def flatMap(value: Context, out: Collector[ValueWithContext[Value]]): Unit = {
-        println(s"TestResultSink#valueFunction#flatMap: $value")
-      }
-
-    }
+    helper.lazyMapFunction(value)
 
   override val toFlinkFunction: SinkFunction[Value] = new SinkFunction[Value] {
 
     override def invoke(value: Value, context: SinkFunction.Context): Unit = {
-      println(s"TestResultSink#toFlinkFunction#invoke: $value")
+      val accumulated = TestResultSinkFactory.results.accumulateAndGet(List(value), _ ::: _)
+      println(s"[$id] TestResultSink#toFlinkFunction#invoke: $value, accumulated: [${accumulated.mkString(",")}]")
     }
 
   }
 
-  def data[T](): List[T] =
-    List.empty
 }
 
-class TestResultSinkFactory extends SinkFactory {
+class TestResultSinkFactory extends SinkFactory { // with SingleInputDynamicComponent[Sink] {
 
-  private val createdComponent = new AtomicReference[Option[TestResultSink]](None)
+  private val createdComponent = new AtomicReference[List[TestResultSink]](List.empty)
 
   @MethodToInvoke
-  def create(@ParamName("value") value: Any): Sink = {
-    val sink = new TestResultSink()
-    createdComponent.set(Some(sink))
+  def create(@ParamName("value") value: LazyParameter[AnyRef]): Sink = {
+    val sink = new TestResultSink(value)
+    createdComponent.accumulateAndGet(sink :: Nil, _ ::: _)
     sink
   }
+//  override type State = Unit
+//
+//  private val rawValueParam = ParameterWithExtractor.lazyMandatory[AnyRef]("value")
+//
+//  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+//      implicit nodeId: NodeId
+//  ): ContextTransformationDefinition = {
+//    case TransformationStep(Nil, _) =>
+//      NextParameters(rawValueParam.parameter :: Nil)
+//    case TransformationStep(("value", _) :: Nil, _) =>
+//      FinalResults(context, List.empty, None)
+//  }
+//
+//  override def implementation(
+//      params: Params,
+//      dependencies: List[NodeDependencyValue],
+//      finalState: Option[State]
+//  ): Sink = {
+//    val sink = new TestResultSink(???)
+//    createdComponent.set(Some(sink))
+//    sink
+//  }
+//
+//  override def nodeDependencies: List[NodeDependency] = List.empty
 
 }
 
 object TestResultSinkFactory {
 
+  val results = new AtomicReference[List[AnyRef]](List.empty)
+
   def extractFromTestComponentsHolder[R](testExtensionsHolder: TestExtensionsHolder): List[R] = {
-    testExtensionsHolder.components
-      .collectFirst {
-        case ComponentDefinition(name, component, _, _) if name == TestScenarioRunner.testResultService =>
-          component
-      }
-      .getOrElse(throw new IllegalStateException(s"No ${TestScenarioRunner.testResultService} service registered"))
-      .asInstanceOf[TestResultSinkFactory]
-      .createdComponent
-      .get()
-      .get
-      .data[R]()
+    results.getAndSet(List.empty).map(_.asInstanceOf[R])
+//    testExtensionsHolder.components
+//      .collectFirst {
+//        case ComponentDefinition(name, component, _, _) if name == TestScenarioRunner.testResultService =>
+//          component
+//      }
+//      .getOrElse(throw new IllegalStateException(s"No ${TestScenarioRunner.testResultService} service registered"))
+//      .asInstanceOf[TestResultSinkFactory]
+//      .createdComponent
+//      .get()
+//      .flatMap(_.data[R]())
   }
 
 }

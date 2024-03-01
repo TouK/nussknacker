@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.test.testComponents.{
   noopSourceComponent,
   testDataSourceComponent,
-  testResultServiceComponent
+  testResultSinkComponent
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -52,8 +52,8 @@ private object testComponents {
     )
   }
 
-  def testResultServiceComponent: ComponentDefinition = {
-    ComponentDefinition(TestScenarioRunner.testResultService, new TestResultSinkFactory)
+  def testResultSinkComponent: ComponentDefinition = {
+    ComponentDefinition(TestScenarioRunner.testResultSink, new TestResultSinkFactory)
   }
 
 }
@@ -89,7 +89,7 @@ class FlinkTestScenarioRunner(
       scenario: CanonicalProcess,
       testDataSourceComponent: ComponentDefinition
   ): RunnerListResult[R] = {
-    val testComponents = testDataSourceComponent :: noopSourceComponent :: testResultServiceComponent :: Nil
+    val testComponents = testDataSourceComponent :: noopSourceComponent :: testResultSinkComponent :: Nil
     Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
       testComponentHolder =>
         run(scenario, testComponentHolder).map { runResult =>
@@ -102,7 +102,7 @@ class FlinkTestScenarioRunner(
    * Can be used to test Flink bounded sources - we wait for the scenario to finish.
    */
   def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
-    val testComponents = noopSourceComponent :: testResultServiceComponent :: Nil
+    val testComponents = noopSourceComponent :: testResultSinkComponent :: Nil
     Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
       testComponentHolder =>
         run(scenario, testComponentHolder).map { runResult =>
