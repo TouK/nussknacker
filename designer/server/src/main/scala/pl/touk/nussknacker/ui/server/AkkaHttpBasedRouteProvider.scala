@@ -334,7 +334,8 @@ class AkkaHttpBasedRouteProvider(
                   fragmentRepository
                 ),
                 processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService,
-                processingTypeData.designerModelData.modelData.modelDefinition.expressionConfig.dictionaries
+                processingTypeData.designerModelData.modelData.modelDefinition.expressionConfig.dictionaries,
+                processingTypeData.designerModelData.modelData.modelClassLoader.classLoader
               )
             }
           ),

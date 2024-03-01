@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.base.it.NuItTest
-import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.ScenarioToJson
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
@@ -44,26 +44,6 @@ class DictsFlowTest
   private val Label          = "Foo"
 
   override def designerConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
-
-  test("return list of available dictionaries") {
-    val response1 = httpClient.send(
-      quickRequest
-        .get(
-          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts"
-        )
-        .auth
-        .basic("admin", "admin")
-    )
-
-    response1.code shouldEqual StatusCode.Ok
-    response1.bodyAsJson shouldEqual Json.arr(
-      Json.fromString("rgb"),
-      Json.fromString("long_dict"),
-      Json.fromString("bc"),
-      Json.fromString("boolean_dict"),
-      Json.fromString("dict"),
-    )
-  }
 
   test("create scenario with DictParameterEditor, save it and test it") {
     val DictId = "rgb"

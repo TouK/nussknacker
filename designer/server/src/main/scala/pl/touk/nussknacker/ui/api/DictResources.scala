@@ -4,14 +4,25 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictQueryService}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.ui.api.DictResources.DictListRequest
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{TypingResultInJson, prepareTypingResultDecoder}
 
 import scala.concurrent.ExecutionContext
 
+object DictResources {
+  @JsonCodec
+  case class DictListRequest(expectedType: TypingResultInJson)
+}
+
 class DictResources(implicit ec: ExecutionContext) extends Directives with FailFastCirceSupport {
 
-  def route(dictQueryService: DictQueryService, dictionaries: Map[String, DictDefinition]): Route =
+  def route(
+      dictQueryService: DictQueryService,
+      dictionaries: Map[String, DictDefinition],
+      classLoader: ClassLoader
+  ): Route =
     path("dict" / Segment / "entry") { dictId =>
       get {
         parameter("label".as[String]) { labelPattern =>
@@ -26,17 +37,19 @@ class DictResources(implicit ec: ExecutionContext) extends Directives with FailF
         }
       }
     } ~ path("dicts") {
-      get {
-        complete {
-          dictionaries
-            .filter { case (id, dictDefinition) =>
-              val dictValueType = dictDefinition.valueType(id)
-              List(Typed[String], Typed[java.lang.Long], Typed[java.lang.Boolean]).exists(
-                dictValueType.canBeSubclassOf
-              ) // only types supported by DictParameterEditor
-            }
-            .keys
-            .toList
+      post {
+        entity(as[DictListRequest]) { dictListRequest =>
+          prepareTypingResultDecoder(classLoader).decodeJson(dictListRequest.expectedType) match {
+            case Left(failure) =>
+              complete(HttpResponse(status = StatusCodes.BadRequest, entity = s"Malformed expected type: $failure"))
+            case Right(expectedType) =>
+              complete {
+                dictionaries
+                  .filter { case (id, dictDefinition) => dictDefinition.valueType(id).canBeSubclassOf(expectedType) }
+                  .keys
+                  .toList
+              }
+          }
         }
       }
     }

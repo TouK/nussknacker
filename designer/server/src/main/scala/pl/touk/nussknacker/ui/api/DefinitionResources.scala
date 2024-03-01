@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext
 
 class DefinitionResources(
     definitionsServices: ProcessingTypeDataProvider[
-      (DefinitionsService, DictQueryService, Map[String, DictDefinition]),
+      (DefinitionsService, DictQueryService, Map[String, DictDefinition], ClassLoader),
       _
     ],
 )(implicit val ec: ExecutionContext)
@@ -28,14 +28,14 @@ class DefinitionResources(
     pathPrefix("processDefinitionData" / Segment) { processingType =>
       definitionsServices
         .forType(processingType)
-        .map { case (definitionsService, dictQueryService, dictionaries) =>
+        .map { case (definitionsService, dictQueryService, dictionaries, classLoader) =>
           pathEndOrSingleSlash {
             get {
               parameter(Symbol("isFragment").as[Boolean]) { isFragment =>
                 complete(definitionsService.prepareUIDefinitions(processingType, isFragment))
               }
             }
-          } ~ dictResources.route(dictQueryService, dictionaries)
+          } ~ dictResources.route(dictQueryService, dictionaries, classLoader)
         }
         .getOrElse {
           complete(HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario type: $processingType not found"))
