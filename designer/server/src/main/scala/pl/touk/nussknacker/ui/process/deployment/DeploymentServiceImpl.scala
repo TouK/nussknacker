@@ -105,7 +105,6 @@ class DeploymentServiceImpl(
   // We split deploy process that way because we want to be able to split FE logic into two phases:
   // - validations - it is quick part, the result will be displayed on deploy modal
   // - deployment on engine side - it is longer part, the result will be shown as a notification
-  // TODO: refactor this into smaller steps, currently "validators" in this method have a lot of side effects and the whole thing is pretty confusing
   override def deployProcessAsync(
       processId: ProcessIdWithName,
       savepointPath: Option[String],
@@ -130,6 +129,7 @@ class DeploymentServiceImpl(
         deployedScenarioData.resolvedScenario,
         savepointPath
       )
+      // TODO: move validateBeforeDeploy before creating an action
       result <- validateBeforeDeploy(ctx.processDetails, deployedScenarioData).transformWith {
         case Failure(ex) =>
           dbioRunner.runInTransaction(actionRepository.removeAction(ctx.actionId)).transform(_ => Failure(ex))
@@ -152,6 +152,10 @@ class DeploymentServiceImpl(
     } yield result
   }
 
+  /**
+    * Common validations and operations for a command execution.
+    * @return gathered data for further command execution
+    */
   private def prepareCommandContextWithAction[PS: ScenarioShapeFetchStrategy](
       processId: ProcessIdWithName,
       actionType: ProcessActionType,
@@ -162,20 +166,22 @@ class DeploymentServiceImpl(
     val actionName                                    = ScenarioActionName(actionType)
     dbioRunner.runInTransaction(
       for {
+        // 1.1 TODO common parameter validations
+        // 1.2 lock for critical section
         _ <- actionRepository.lockActionsTable
-        // 1.2. fetch scenario data
+        // 1.3. fetch scenario data
         processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id)
         processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name))
-        // 1.3. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
+        // 1.4. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
         versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
         buildInfoProcessingType    = getBuildInfoProcessingType(processDetails)
-        // 1.4. check if action is performed on proper scenario (not fragment, not archived)
+        // 1.5. check if action is performed on proper scenario (not fragment, not archived)
         _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
-        // 1.5. check if action is allowed for current state
+        // 1.6. check if action is allowed for current state
         inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
         processState          <- getProcessState(processDetails, inProgressActionTypes)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
-        // 1.6. create new action, action is started with "in progress" state, the whole command execution can take some time
+        // 1.7. create new action, action is started with "in progress" state, the whole command execution can take some time
         actionId <- actionRepository.addInProgressAction(
           processDetails.processId,
           actionType,
@@ -186,6 +192,7 @@ class DeploymentServiceImpl(
     )
   }
 
+  // TODO: Use buildInfo explicitly instead of ProcessingType-that-is-used-to-calculate-buildInfo
   private case class CommandContext[PS: ScenarioShapeFetchStrategy](
       processDetails: ScenarioWithDetailsEntity[PS],
       actionId: ProcessActionId,

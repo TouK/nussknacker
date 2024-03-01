@@ -5,6 +5,8 @@
 * [#5760](https://github.com/TouK/nussknacker/pull/5760) Libraries bump:
   * Tapir: 1.7.4 -> 1.9.11
   * openapi-circe-yaml: 0.6.0 -> 0.7.4 
+* [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
+    * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
 
 1.14.0 (21 Mar 2024)
 -------------------------
@@ -47,8 +49,6 @@
   * Fixed the ability to download an unrelated attachment from a given scenario
 * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) Scenario status caching more often
 * [#5505](https://github.com/TouK/nussknacker/pull/5505) [#5710](https://github.com/TouK/nussknacker/pull/5710) Fix: anonymous user handling regression
-* [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
-    * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
 * [#5371](https://github.com/TouK/nussknacker/pull/5371) Added new parameter editor type: DictParameterEditor.
 * [#5373](https://github.com/TouK/nussknacker/pull/5373) API changes related to components development
 * [#5566](https://github.com/TouK/nussknacker/pull/5566) [#5550](https://github.com/TouK/nussknacker/pull/5537) 
