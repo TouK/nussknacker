@@ -76,7 +76,7 @@ class DefinitionsService(
         (if (forFragment) FragmentPropertiesConfig.properties else finalizedScenarioPropertiesConfig)
           .mapValuesNow(createUIScenarioPropertyConfig),
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
-      customActions = deploymentManager.customActions.map(UICustomAction(_))
+      customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
     )
   }
 

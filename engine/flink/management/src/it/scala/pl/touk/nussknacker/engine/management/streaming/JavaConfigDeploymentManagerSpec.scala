@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.streaming
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.{CancelScenarioCommand, RunDeploymentCommand}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -24,7 +25,14 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
 
     assert(
       deploymentManager
-        .deploy(ProcessVersion.empty.copy(processName = process.name), DeploymentData.empty, process, None)
+        .processCommand(
+          RunDeploymentCommand(
+            ProcessVersion.empty.copy(processName = process.name),
+            DeploymentData.empty,
+            process,
+            None
+          )
+        )
         .isReadyWithin(100 seconds)
     )
 
@@ -33,7 +41,9 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
       jobStatus.map(_.status) shouldBe List(SimpleStateStatus.Running)
     }
 
-    assert(deploymentManager.cancel(process.name, user = userToAct).isReadyWithin(10 seconds))
+    assert(
+      deploymentManager.processCommand(CancelScenarioCommand(process.name, user = userToAct)).isReadyWithin(10 seconds)
+    )
   }
 
 }

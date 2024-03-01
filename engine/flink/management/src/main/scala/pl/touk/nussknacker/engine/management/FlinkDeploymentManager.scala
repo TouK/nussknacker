@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
   CustomActionDefinition,
-  CustomActionRequest,
   CustomActionResult,
   DeploymentData,
   DeploymentId,
@@ -96,23 +95,40 @@ abstract class FlinkDeploymentManager(
     }
   }
 
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = {
+  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+    command match {
+      case command: ValidateScenarioCommand => validate(command)
+      case command: RunDeploymentCommand    => runDeployment(command)
+      case command: CancelDeploymentCommand => cancelDeployment(command)
+      case command: CancelScenarioCommand   => cancelScenario(command)
+      case StopDeploymentCommand(processName, deploymentId, savepointDir, _) =>
+        requireSingleRunningJob(processName, _.deploymentId.contains(deploymentId)) {
+          stop(_, savepointDir)
+        }
+      case StopScenarioCommand(processName, savepointDir, _) =>
+        requireSingleRunningJob(processName, _ => true) {
+          stop(_, savepointDir)
+        }
+      case MakeScenarioSavepointCommand(processName, savepointDir) =>
+        // TODO: savepoint for given deployment id
+        requireSingleRunningJob(processName, _ => true) {
+          makeSavepoint(_, savepointDir)
+        }
+      case TestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
+        testRunner.test(canonicalProcess, scenarioTestData)
+      case command: CustomActionCommand => processCustomAction(command)
+    }
+
+  private def validate(command: ValidateScenarioCommand): Future[Unit] = {
+    import command._
     for {
       oldJob <- oldJobsToStop(processVersion)
       _      <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.externalDeploymentId))
     } yield ()
   }
 
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  protected def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+    import command._
     val processName = processVersion.processName
 
     val stoppingResult = for {
@@ -160,45 +176,7 @@ abstract class FlinkDeploymentManager(
       currentlyDeployedJobsIds: List[ExternalDeploymentId]
   ): Future[Unit]
 
-  override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
-    // TODO: savepoint for given deployment id
-    requireSingleRunningJob(processName, _ => true) {
-      makeSavepoint(_, savepointDir)
-    }
-  }
-
-  override def stop(processName: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    requireSingleRunningJob(processName, _ => true) {
-      stop(_, savepointDir)
-    }
-  }
-
-  override def stop(
-      processName: ProcessName,
-      deploymentId: DeploymentId,
-      savepointDir: Option[String],
-      user: User
-  ): Future[SavepointResult] = {
-    requireSingleRunningJob(processName, _.deploymentId.contains(deploymentId)) {
-      stop(_, savepointDir)
-    }
-  }
-
-  override def test(
-      processName: ProcessName,
-      canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestResults] = {
-    testRunner.test(canonicalProcess, scenarioTestData)
-  }
-
-  override def customActions: List[CustomActionDefinition] = List.empty
-
-  override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
-      canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] =
-    Future.failed(new NotImplementedError())
+  override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
 
   private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(
       action: ExternalDeploymentId => Future[T]
@@ -238,11 +216,17 @@ abstract class FlinkDeploymentManager(
       savepointResult <- makeSavepoint(deploymentId, savepointDir = None)
       savepointPath = savepointResult.path
       _ <- checkIfJobIsCompatible(savepointPath, canonicalProcess, processVersion)
-      _ <- cancel(deploymentId)
+      _ <- cancelFlinkJob(deploymentId)
     } yield savepointPath
   }
 
-  protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit]
+  protected def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = notImplemented
+
+  protected def cancelScenario(command: CancelScenarioCommand): Future[Unit]
+
+  protected def cancelDeployment(command: CancelDeploymentCommand): Future[Unit]
+
+  protected def cancelFlinkJob(deploymentId: ExternalDeploymentId): Future[Unit]
 
   protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
 

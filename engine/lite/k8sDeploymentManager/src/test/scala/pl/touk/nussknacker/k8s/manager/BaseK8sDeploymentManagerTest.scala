@@ -8,7 +8,12 @@ import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessingTypeDeploymentServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.{
+  CancelScenarioCommand,
+  DataFreshnessPolicy,
+  ProcessingTypeDeploymentServiceStub,
+  RunDeploymentCommand
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -118,7 +123,7 @@ class BaseK8sDeploymentManagerTest
       with LazyLogging {
 
     def withRunningScenario(action: => Unit): Unit = {
-      manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
+      manager.processCommand(RunDeploymentCommand(version, DeploymentData.empty, scenario, None)).futureValue
       try {
         waitForRunning(version)
         action
@@ -129,7 +134,7 @@ class BaseK8sDeploymentManagerTest
           }
           throw ex
       } finally {
-        manager.cancel(version.processName, DeploymentData.systemUser).futureValue
+        manager.processCommand(CancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
         eventually {
           manager.getProcessStates(version.processName).futureValue shouldBe List.empty
         }
