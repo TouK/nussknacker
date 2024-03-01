@@ -4,16 +4,15 @@ import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink, Si
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
 import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.{Schema, Table}
+import org.apache.flink.table.api.{ApiExpression, DataTypes, Schema, Table}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
-import pl.touk.nussknacker.engine.flink.table.utils.HardcodedSchema.{intColumnName, stringColumnName}
-import pl.touk.nussknacker.engine.flink.table.utils.TableUtils.buildTableDescriptor
-import pl.touk.nussknacker.engine.flink.table.DataSourceConfig
-import pl.touk.nussknacker.engine.flink.table.utils.HardcodedSchema
+import pl.touk.nussknacker.engine.flink.table.extractor.{Column, SqlDataSourceConfig}
 
-class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[String, Any]]) extends FlinkSink {
+import scala.jdk.CollectionConverters._
+
+class SqlTableSink(config: SqlDataSourceConfig, value: LazyParameter[java.util.Map[String, Any]]) extends FlinkSink {
 
   override type Value = java.util.Map[String, Any]
 
@@ -23,7 +22,7 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
   ): DataStream[ValueWithContext[Value]] = {
     dataStream.flatMap(
       flinkNodeContext.lazyParameterHelper.lazyMapFunction(value),
-      flinkNodeContext.valueWithContextInfo.forType(HardcodedSchema.typingResult)
+      flinkNodeContext.valueWithContextInfo.forType(config.typingResult)
     )
   }
 
@@ -46,7 +45,22 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
       7. Continue with a DiscardingSink as DataStream
      */
     val streamOfRows: SingleOutputStreamOperator[Row] =
-      dataStream.map(ctx => HardcodedSchema.MapRowConversion.fromMap(ctx.value))
+      dataStream.map(ctx => {
+        val map: java.util.Map[String, Any] = ctx.value
+        val row                             = Row.withNames()
+        config.schema.columns.foreach(c => row.setField(c.name, map.get(c.name)))
+        row
+      })
+
+    //    def fromMap(map: java.util.Map[String, Any]): Row = {
+    //      val stringVal: String = map.get(stringColumnName).asInstanceOf[String]
+    //      val intVal: Int       = map.get(intColumnName).asInstanceOf[Int]
+    //
+    //      val row = Row.withNames()
+    //      row.setField(stringColumnName, stringVal)
+    //      row.setField(intColumnName, intVal)
+    //      row
+    //    }
 
     /*
       This "f0" value is name given by flink at conversion of one element stream. For details read:
@@ -58,7 +72,7 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
       .newBuilder()
       .column(
         nestedRowColumnName,
-        HardcodedSchema.rowDataType
+        columnsToRowSchema(config.schema.columns)
       )
       .build()
     val tableWithNestedRow: Table = tableEnv.fromDataStream(
@@ -66,16 +80,18 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
       nestedRowSchema
     )
 
+    val selectExpressions: List[ApiExpression] =
+      config.schema.columns.map(c => $(nestedRowColumnName).get(c.name).as(c.name))
+
     val flatInputValueTable = tableWithNestedRow
       .select(
-        $(nestedRowColumnName).get(stringColumnName).as(stringColumnName),
-        $(nestedRowColumnName).get(intColumnName).as(intColumnName)
+        selectExpressions: _*
       )
 
-    val sinkTableDescriptor = buildTableDescriptor(config, HardcodedSchema.schema)
+    tableEnv.executeSql(config.sqlCreateTableStatement)
 
-    val statementSet = tableEnv.createStatementSet();
-    statementSet.add(flatInputValueTable.insertInto(sinkTableDescriptor))
+    val statementSet = tableEnv.createStatementSet()
+    statementSet.add(flatInputValueTable.insertInto(config.tableName))
     statementSet.attachAsDataStream()
 
     /*
@@ -83,6 +99,17 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
       https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
      */
     dataStream.addSink(new DiscardingSink())
+  }
+//
+//  private def columnsToSchema(columns: List[Column]): Schema = {
+//    val builder = Schema.newBuilder()
+//    columns.foreach(c => builder.column(c.name, c.dataType))
+//    builder.build()
+//  }
+
+  private def columnsToRowSchema(columns: List[Column]) = {
+    val fields: java.util.List[DataTypes.Field] = columns.map(c => DataTypes.FIELD(c.name, c.dataType)).asJava
+    DataTypes.ROW(fields)
   }
 
 }

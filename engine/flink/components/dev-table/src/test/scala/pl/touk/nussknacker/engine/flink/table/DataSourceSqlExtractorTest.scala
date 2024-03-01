@@ -41,6 +41,7 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
     }
   }
 
+  // TODO: find and test more edge cases
   test(
     "return correct error type for valid sql statements that are queries or operating outside of controlled context"
   ) {

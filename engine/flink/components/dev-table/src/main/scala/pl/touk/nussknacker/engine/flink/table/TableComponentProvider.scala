@@ -1,30 +1,30 @@
 package pl.touk.nussknacker.engine.flink.table
 
-import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.ConfigIndependentComponents
+import pl.touk.nussknacker.engine.flink.table.TableDataSourcesConfig.defaultDataSourceDefinitionFileName
 import pl.touk.nussknacker.engine.flink.table.extractor.DataSourceSqlExtractor.extractTablesFromFlinkRuntime
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.ConfigIndependentComponents
-import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
+import pl.touk.nussknacker.engine.flink.table.extractor.{SqlDataSourceConfig, SqlStatementReader}
+import pl.touk.nussknacker.engine.flink.table.sink.{HardcodedSchemaTableSinkFactory, SqlTableSinkFactory}
 import pl.touk.nussknacker.engine.flink.table.source.{
   HardcodedSchemaTableSourceFactory,
   HardcodedValuesTableSourceFactory,
   SqlTableSourceFactory
 }
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.flink.table.TableDataSourcesConfig.defaultDataSourceDefinitionFileName
-import pl.touk.nussknacker.engine.flink.table.extractor.{SqlDataSourceConfig, SqlStatementReader}
 import pl.touk.nussknacker.engine.util.ResourceLoader
+import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 import java.nio.file.{Path, Paths}
 import scala.util.{Failure, Success, Try}
 
 class TableComponentProvider extends ComponentProvider with LazyLogging {
+
+  import net.ceedubs.ficus.Ficus._
 
   override def providerName: String = "tableApi"
 
@@ -41,13 +41,19 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
           ),
           ComponentDefinition(
             tableDataSourceComponentId("sink", dataSourceConfig.connector, dataSourceConfig.name),
-            new TableSinkFactory(dataSourceConfig)
+            new HardcodedSchemaTableSinkFactory(dataSourceConfig)
           )
         )
-      } ++ extractDataSourceConfigFromSqlFile(tableDataSourcesConfig.sqlFilePath).map { sqlStatementsFromFile =>
-        ComponentDefinition(
-          tableDataSourceComponentId("source-sql", sqlStatementsFromFile.connector, sqlStatementsFromFile.name),
-          new SqlTableSourceFactory(sqlStatementsFromFile)
+      } ++ extractDataSourceConfigFromSqlFile(tableDataSourcesConfig.sqlFilePath).flatMap { sqlStatementsFromFile =>
+        List(
+          ComponentDefinition(
+            tableDataSourceComponentId("source-sql", sqlStatementsFromFile.connector, sqlStatementsFromFile.tableName),
+            new SqlTableSourceFactory(sqlStatementsFromFile)
+          ),
+          ComponentDefinition(
+            tableDataSourceComponentId("sink-sql", sqlStatementsFromFile.connector, sqlStatementsFromFile.tableName),
+            new SqlTableSinkFactory(sqlStatementsFromFile)
+          )
         )
       }
     } yield componentDefinition
@@ -58,9 +64,8 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
       componentType: String,
       connector: String,
       componentNamePart: String
-  ): String = {
+  ): String =
     s"tableApi-$componentType-$connector-$componentNamePart"
-  }
 
   private def parseConfigOpt(config: Config): Option[TableDataSourcesConfig] = {
     val tryParse = Try(config.rootAs[TableDataSourcesConfig]) match {
@@ -72,6 +77,7 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
     tryParse.toOption
   }
 
+  // TODO: also do validation - check for connectors/formats not present on classpath
   private def extractDataSourceConfigFromSqlFile(filePath: String): List[SqlDataSourceConfig] = {
     val sqlStatements = readSqlFromFile(Paths.get(filePath))
     val results       = extractTablesFromFlinkRuntime(sqlStatements)

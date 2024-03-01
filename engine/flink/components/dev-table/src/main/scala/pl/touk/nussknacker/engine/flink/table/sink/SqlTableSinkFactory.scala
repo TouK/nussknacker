@@ -6,14 +6,14 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterWithExtractor, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.DataSourceConfig
-import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory.rawValueParamName
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlDataSourceConfig
+import pl.touk.nussknacker.engine.flink.table.sink.SqlTableSinkFactory.rawValueParamName
 
-object TableSinkFactory {
+object SqlTableSinkFactory {
   val rawValueParamName = "Value"
 }
 
-class TableSinkFactory(config: DataSourceConfig) extends SingleInputDynamicComponent[Sink] with SinkFactory {
+class SqlTableSinkFactory(config: SqlDataSourceConfig) extends SingleInputDynamicComponent[Sink] with SinkFactory {
 
   override type State = Nothing
   private val rawValueParam = ParameterWithExtractor.lazyMandatory[java.util.Map[String, Any]](rawValueParamName)
@@ -37,7 +37,7 @@ class TableSinkFactory(config: DataSourceConfig) extends SingleInputDynamicCompo
       finalStateOpt: Option[State]
   ): Sink = {
     val lazyValueParam = rawValueParam.extractValue(params)
-    new TableSink(config, lazyValueParam)
+    new SqlTableSink(config, lazyValueParam)
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[NodeId])

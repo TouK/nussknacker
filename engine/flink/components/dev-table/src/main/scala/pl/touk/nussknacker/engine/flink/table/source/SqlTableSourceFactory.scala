@@ -33,7 +33,7 @@ class SqlTableSourceFactory(config: SqlDataSourceConfig) extends SourceFactory w
       val tableEnv = StreamTableEnvironment.create(env);
 
       tableEnv.executeSql(config.sqlCreateTableStatement)
-      val table = tableEnv.from(config.name)
+      val table = tableEnv.from(config.tableName)
 
       val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 

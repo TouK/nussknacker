@@ -127,7 +127,7 @@ object DataSourceSqlExtractor extends LazyLogging {
 
 //  TODO: add boundedness information
 final case class SqlDataSourceConfig(
-    name: String,
+    tableName: String,
     connector: Connector,
     schema: DataSourceSchema,
     typingResult: TypingResult,
