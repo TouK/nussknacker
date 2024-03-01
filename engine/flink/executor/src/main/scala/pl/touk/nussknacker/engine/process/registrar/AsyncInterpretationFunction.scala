@@ -41,12 +41,14 @@ private[registrar] class AsyncInterpretationFunction(
   }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
+    println(s"ASYNC INVOKE: $input") // todo: remove
     try {
       invokeInterpreter(input) {
         case Right(results) =>
           val exceptions = results.collect { case Right(exInfo) => exInfo }
           val successes  = results.collect { case Left(value) => value }
           handleResults(collector, successes, exceptions)
+          println(s"ASYNC RESULT: $results") // todo: remove
         case Left(ex) =>
           logger.warn("Unexpected error", ex)
           handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
