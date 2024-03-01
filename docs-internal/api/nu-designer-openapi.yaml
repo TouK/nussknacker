@@ -1714,9 +1714,13 @@ components:
           - string
           - 'null'
         valueEditor:
-          $ref: '#/components/schemas/ValueInputWithFixedValues'
+          $ref: '#/components/schemas/FragmentParameterValueInput'
         valueCompileTimeValidation:
           $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
+    FragmentParameterValueInput:
+      oneOf:
+      - $ref: '#/components/schemas/ValueInputWithDictEditor'
+      - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
     FragmentRef:
       required:
       - id
@@ -2551,9 +2555,16 @@ components:
           - 'null'
         layoutData:
           $ref: '#/components/schemas/LayoutData'
-    ValueInputWithFixedValues:
-      oneOf:
-      - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
+    ValueInputWithDictEditor:
+      required:
+      - dictId
+      - allowOtherValue
+      type: object
+      properties:
+        dictId:
+          type: string
+        allowOtherValue:
+          type: boolean
     ValueInputWithFixedValuesProvided:
       required:
       - allowOtherValue
