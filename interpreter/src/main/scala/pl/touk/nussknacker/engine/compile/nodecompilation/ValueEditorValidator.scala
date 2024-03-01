@@ -21,8 +21,10 @@ import pl.touk.nussknacker.engine.api.parameter.{
 
 object ValueEditorValidator {
 
-  // This method doesn't validate the compilation validity of FixedExpressionValues (it requires validationContext and expressionCompiler, see FragmentParameterValidator.validateFixedExpressionValues)
-  // It also doesn't validate in ValueInputWithDictEditor that `dictId` is a declared dictionary and of a correct type (it requires declared dictionaries, see FragmentParameterValidator.validateValueInputWithDictEditor)
+  // This method doesn't validate the compilation validity of FixedExpressionValues
+  //  (it requires validationContext and expressionCompiler, see FragmentParameterValidator.validateFixedExpressionValues)
+  // It also doesn't validate in ValueInputWithDictEditor that `dictId` is a declared dictionary and of a correct type
+  //  (it requires declared dictionaries, see FragmentParameterValidator.validateValueInputWithDictEditor)
   def validateAndGetEditor(
       valueEditor: FragmentParameterValueInput,
       initialValue: Option[FixedExpressionValue],
@@ -38,11 +40,11 @@ object ValueEditorValidator {
       case ValueInputWithDictEditor(dictId, _) => Valid(DictParameterEditor(dictId))
     }
 
-    validatedInnerEditor.andThen { innerEditor =>
+    validatedInnerEditor.map { innerEditor =>
       if (valueEditor.allowOtherValue)
-        Valid(DualParameterEditor(innerEditor, DualEditorMode.SIMPLE))
+        DualParameterEditor(innerEditor, DualEditorMode.SIMPLE)
       else
-        Valid(innerEditor)
+        innerEditor
     }
   }
 

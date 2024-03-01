@@ -61,7 +61,7 @@ object FragmentParameterValidator {
           invalidNel(UnsupportedFixedValuesType(paramName, refClazz.refClazzName, nodeIds))
       case ValueInputWithDictEditor(_, _) =>
         if (List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String], FragmentClazzRef[java.lang.Long])
-            .contains(refClazz)) // todo number not just long ?
+            .contains(refClazz))
           Valid(())
         else
           invalidNel(UnsupportedDictParameterEditorType(paramName, refClazz.refClazzName, nodeIds))
