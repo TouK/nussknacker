@@ -5,11 +5,20 @@ import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import sttp.tapir.Schema
 
 import java.time.temporal.ChronoUnit
 import scala.util.Try
 
 @ConfiguredJsonCodec sealed trait ParameterEditor
+
+object ParameterEditor {
+  implicit lazy val parameterEditorSchema: Schema[ParameterEditor]    = Schema.derived
+  implicit lazy val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
+  implicit lazy val expressionSchema: Schema[Expression]              = Schema.derived
+  implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
+}
 
 case object RawParameterEditor extends ParameterEditor
 

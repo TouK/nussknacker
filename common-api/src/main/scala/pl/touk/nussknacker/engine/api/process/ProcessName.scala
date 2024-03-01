@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
+import sttp.tapir._
 
 // This class is a mostly used as a human-friendly identifier - something like a slug.
 // For a legacy reasons it is called Name. Probably because of collision with ProcessId (see docs there)
@@ -16,4 +17,6 @@ object ProcessName {
 
   implicit val keyEncoder: KeyEncoder[ProcessName] = KeyEncoder.encodeKeyString.contramap(_.value)
   implicit val keyDecoder: KeyDecoder[ProcessName] = KeyDecoder.decodeKeyString.map(ProcessName(_))
+
+  implicit val schema: Schema[ProcessName] = Schema.string
 }
