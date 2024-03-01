@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSource
 }
-import pl.touk.nussknacker.engine.flink.table.HardcodedSchema
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
+import pl.touk.nussknacker.engine.flink.table.utils.{HardcodedSchema, TypeConversions}
 
 object HardcodedValuesTableSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
@@ -42,7 +42,7 @@ object HardcodedValuesTableSourceFactory extends SourceFactory with UnboundedStr
       val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 
       val streamOfMaps = streamOfRows
-        .map(r => { HardcodedSchema.MapRowConversion.toMap(r): RECORD })
+        .map(r => { TypeConversions.rowToMap(r): RECORD })
         .returns(classOf[RECORD])
 
       val contextStream = streamOfMaps.map(

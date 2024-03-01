@@ -19,10 +19,11 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
-import pl.touk.nussknacker.engine.flink.table.HardcodedSchema._
-import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTableDescriptor
+import pl.touk.nussknacker.engine.flink.table.DataSourceConfig
+import pl.touk.nussknacker.engine.flink.table.utils.HardcodedSchema._
+import pl.touk.nussknacker.engine.flink.table.utils.TableUtils.buildTableDescriptor
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
+import pl.touk.nussknacker.engine.flink.table.utils.{HardcodedSchema, TypeConversions}
 
 // TODO: Should be BoundedStreamComponent - change it after configuring batch Deployment Manager
 class TableSourceFactory(config: DataSourceConfig) extends SourceFactory with UnboundedStreamComponent {
@@ -48,9 +49,8 @@ class TableSourceFactory(config: DataSourceConfig) extends SourceFactory with Un
 
       val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 
-      // TODO: infer returnType dynamically from table schema based on table.getResolvedSchema.getColumns
       val streamOfMaps = streamOfRows
-        .map(r => { HardcodedSchema.MapRowConversion.toMap(r): RECORD })
+        .map(r => { TypeConversions.rowToMap(r): RECORD })
         .returns(classOf[RECORD])
 
       val contextStream = streamOfMaps.map(
