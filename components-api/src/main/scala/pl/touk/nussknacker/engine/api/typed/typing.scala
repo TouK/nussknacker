@@ -22,7 +22,7 @@ object typing {
 
   object TypingResult {
     implicit val encoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder
-    implicit val schema: Schema[TypingResult]   = Schema.string // TODO: Type that properly
+    implicit val schema: Schema[TypingResult]   = Schema.anyObject // TODO: Type that properly
   }
 
   // TODO: Rename to Typed

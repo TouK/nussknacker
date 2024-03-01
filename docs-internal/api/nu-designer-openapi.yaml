@@ -1961,7 +1961,7 @@ components:
     Map_TypingResult:
       type: object
       additionalProperties:
-        type: string
+        type: object
     Map_TypingResultInJson:
       type: object
       additionalProperties:
@@ -2729,7 +2729,7 @@ components:
         name:
           type: string
         typ:
-          type: string
+          type: object
         editor:
           $ref: '#/components/schemas/ParameterEditor'
         defaultValue:
