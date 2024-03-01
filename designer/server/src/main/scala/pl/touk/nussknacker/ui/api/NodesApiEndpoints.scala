@@ -482,6 +482,7 @@ object NodesApiEndpoints {
       final case object NoPermission                                    extends NodesError with CustomAuthorizationError
       final case class MalformedTypingResult(msg: String)               extends NodesError
 
+      // FIXME: what does this message mean??
       private def deserializationNotSupportedException =
         (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
 
