@@ -274,6 +274,7 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         notificationService = notificationService
       )
+
       val nodesApiHttpService = new NodesApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
@@ -289,6 +290,7 @@ class AkkaHttpBasedRouteProvider(
         ),
         scenarioService = processService
       )
+
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,

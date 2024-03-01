@@ -25,10 +25,9 @@ class NuDesignerExposedApiHttpService(
       notificationApiHttpService.serverEndpoints ++
       scenarioActivityApiHttpService.serverEndpoints ++
       scenarioParametersHttpService.serverEndpoints ++
-      migrationApiHttpService.serverEndpoints
-
-  scenarioParametersHttpService.serverEndpoints ++
-    nodesApiHttpService.serverEndpoints
+      migrationApiHttpService.serverEndpoints ++
+      scenarioParametersHttpService.serverEndpoints ++
+      nodesApiHttpService.serverEndpoints
 
   private val endpointDefinitions = apiEndpoints.map(_.endpoint)
 
