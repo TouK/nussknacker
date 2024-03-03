@@ -10,6 +10,8 @@ import pl.touk.nussknacker.ui.process.deployment.ValidationError
 
 class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
 
+  // TODO: maybe pass around List[ParameterValidationError] in order to provide all information about the errors.
+  // Currently we just throw the first that occurs.
   def validateCustomActionParams(request: CustomActionRequest): Unit = {
 
     val customActionOpt     = allowedActions.find(_.name == request.actionName)

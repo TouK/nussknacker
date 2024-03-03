@@ -7,16 +7,18 @@ import pl.touk.nussknacker.security.AuthCredentials
 import sttp.tapir.{EndpointInput, path, statusCode}
 import TapirCodecs.ScenarioNameCodec._
 import sttp.model.StatusCode.Ok
-import sttp.tapir.generic.auto.schemaForCaseClass
+import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 import io.circe.generic.auto._
 import sttp.tapir._
+import pl.touk.nussknacker.ui.process.deployment.ValidationError
+import sttp.model.StatusCode
 
-class ManagementEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
+class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   private lazy val baseProcessManagementEndpoint = baseNuApiEndpoint.in("processManagement")
 
-  lazy val customActionValidationEndpoint: SecuredEndpoint[(ProcessName, CustomActionRequest), Unit, Unit, Any] = {
+  lazy val customActionValidationEndpoint: SecuredEndpoint[(ProcessName, CustomActionRequest), ValidationError, Unit, Any] = {
     baseProcessManagementEndpoint
       .summary("Endpoint to validate input in custom action fields")
       .tag("CustomAction")
@@ -26,9 +28,17 @@ class ManagementEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       .out(
         statusCode(Ok)
       )
-      .errorOut()
+      .errorOut(
+        validationErrorOutput
+        )
       .withSecurity(auth)
-
   }
 
+  private lazy val validationErrorOutput: EndpointOutput.OneOf[ValidationError, ValidationError] =
+    oneOf[ValidationError](
+      oneOfVariantFromMatchType(
+      StatusCode.BadRequest,
+      jsonBody[ValidationError]
+      )
+    )
 }
