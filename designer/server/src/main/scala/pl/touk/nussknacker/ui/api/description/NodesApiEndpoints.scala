@@ -43,6 +43,7 @@ import sttp.tapir.SchemaType.SString
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.derevo.schema
+import sttp.tapir.generic.Configuration
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 
@@ -790,21 +791,78 @@ object TypingDtoSchemas {
   import sttp.tapir.SchemaType.SProductField
   import sttp.tapir.{FieldName, Schema, SchemaType}
 
-  implicit lazy val typingResult: Schema[TypingResult] =
-    Schema.derived
-//    Schema.oneOfUsingField[TypingResult, TypingType](_.`type`, _.toString)(
-//      TypingType.Unknown                  -> unknownSchema,
-//      TypingType.TypedNull                -> typedNullSchema,
-//      TypingType.TypedClass               -> typedClassSchema,
-//      TypingType.TypedUnion               -> typedUnionSchema,
-//      TypingType.TypedDict                -> typedDictSchema,
-//      TypingType.TypedTaggedValue         -> typedTaggedSchema,
-//      TypingType.TypedObjectWithValue     -> typedObjectSchema,
-//      TypingType.TypedObjectTypingResult  -> typedObjectTypingResultSchema
-//    )
+  implicit lazy val typingResult: Schema[TypingResult] = {
+    implicit val conf: Configuration = sttp.tapir.generic.Configuration.default.copy(
+      discriminator = Some("type"),
+      toDiscriminatorValue = sName => sName.fullName
+    )
 
-  implicit lazy val singleTypingResultSchema: Schema[SingleTypingResult] =
-    Schema.derived.hidden(true)
+    val derived =
+      Schema.oneOfUsingField[TypingResult, TypingType](
+        typ => TypingType.forType(typ),
+        typingType => typingType.toString
+      )(
+        (TypingType.Unknown, unknownSchema),
+        (TypingType.TypedClass, typedClassSchema)
+      )(conf, Schema.derivedEnumerationValue[TypingType])
+
+//
+//      Schema.oneOfWrapped[TypingResult] (
+//        sttp.tapir.generic.Configuration.default.copy(
+//          discriminator = Some("type"),
+//          toDiscriminatorValue = sName => sName.fullName
+//        )
+//      )
+
+//    derived.schemaType match {
+//      case s: SchemaType.SCoproduct[_] => derived.copy(schemaType = s.addDiscriminatorField[TypingType](
+//        FieldName("type"),
+//        Schema.derivedEnumerationValue[TypingType],
+//        Map(
+//          TypingType.Unknown.toString                  -> SchemaType.SRef(Schema.SName("#/$defs/Unknown")),
+//          TypingType.TypedNull.toString                -> SchemaType.SRef(Schema.SName("#/$defs/TypedNull")),
+////          TypingType.TypedClass.toString               -> SchemaType.SRef(Schema.SName("#/$defs/KnownTypingResult")),
+////          TypingType.TypedUnion.toString               -> SchemaType.SRef(Schema.SName("#/$defs/KnownTypingResult")),
+////          TypingType.TypedDict.toString                -> SchemaType.SRef(Schema.SName("#/$defs/KnownTypingResult")),
+////          TypingType.TypedTaggedValue.toString         -> SchemaType.SRef(Schema.SName("#/$defs/KnownTypingResult")),
+////          TypingType.TypedObjectWithValue.toString     -> SchemaType.SRef(Schema.SName("#/$defs/KnownTypingResult")),
+////          TypingType.TypedObjectTypingResult.toString  -> SchemaType.SRef(Schema.SName("#/$defs/KnownTypingResult")),
+//          TypingType.TypedClass.toString               -> SchemaType.SRef(Schema.SName("#/$defs/TypedClass")),
+//          TypingType.TypedUnion.toString               -> SchemaType.SRef(Schema.SName("#/$defs/TypedUnion")),
+//          TypingType.TypedDict.toString                -> SchemaType.SRef(Schema.SName("#/$defs/TypedDict")),
+//          TypingType.TypedTaggedValue.toString         -> SchemaType.SRef(Schema.SName("#/$defs/TypedTaggedValue")),
+//          TypingType.TypedObjectWithValue.toString     -> SchemaType.SRef(Schema.SName("#/$defs/TypedObjectWithValue")),
+//          TypingType.TypedObjectTypingResult.toString  -> SchemaType.SRef(Schema.SName("#/$defs/TypedObjectTypingResult"))
+//        )
+//      ))
+//      case _ =>
+//        derived
+//    }
+    derived
+  }
+
+  //  lazy val schema: Schema[TypingResult] = Schema.derived
+
+//  implicit lazy val knownTypingResultSchema: Schema[KnownTypingResult] = {
+//    val derived = Schema.derived[KnownTypingResult]
+//
+//    derived.schemaType match {
+//        case s: SchemaType.SCoproduct[_] => derived.copy(schemaType = s.addDiscriminatorField(
+//          FieldName("type"),
+//          Schema.string,
+//          Map(
+//            TypingType.TypedClass.toString               -> SchemaType.SRef(Schema.SName("#/$defs/TypedClass")),
+//            TypingType.TypedUnion.toString               -> SchemaType.SRef(Schema.SName("#/$defs/TypedUnion")),
+//            TypingType.TypedDict.toString                -> SchemaType.SRef(Schema.SName("#/$defs/TypedDict")),
+//            TypingType.TypedTaggedValue.toString         -> SchemaType.SRef(Schema.SName("#/$defs/TypedTaggedValue")),
+//            TypingType.TypedObjectWithValue.toString     -> SchemaType.SRef(Schema.SName("#/$defs/TypedObjectWithValue")),
+//            TypingType.TypedObjectTypingResult.toString  -> SchemaType.SRef(Schema.SName("#/$defs/TypedObjectTypingResult"))
+//          )
+//        ))
+//        case _ =>
+//          derived
+//      }
+//  }
 
   implicit lazy val additionalDataValueSchema: Schema[AdditionalDataValue] = Schema.derived
 
@@ -878,9 +936,9 @@ object TypingDtoSchemas {
     Schema.string
       .name(Schema.SName("Unknown"))
       .title("Unknown")
+      .as
 
   implicit lazy val typedUnionSchema: Schema[TypedUnion] = {
-    val schem: Schema[NonEmptyList[TypingResult]] = Schema.derived
     Schema(
       SchemaType.SProduct(
         sProductFieldForDisplayAndType :::
@@ -931,12 +989,14 @@ object TypingDtoSchemas {
   }
 
   private lazy val sProductFieldForKlassAndParams: List[SProductField[String]] = {
-    lazy val typingResultSchema: Schema[TypingResult] = typingResult
+//    lazy val typingResultSchema: Schema[TypingResult] = typingResult
     List(
       SProductField[String, String](FieldName("refClazzName"), Schema.string, refClazzName => Some(refClazzName)),
       SProductField[String, List[TypingResult]](
         FieldName("params"),
-        Schema.schemaForIterable[TypingResult, List](typingResultSchema),
+        Schema.schemaForIterable[TypingResult, List](
+          Schema(SchemaType.SRef(SName("#/components/schemas/TypingResult")))
+        ),
         _ => Some(List(Unknown))
       )
     )
