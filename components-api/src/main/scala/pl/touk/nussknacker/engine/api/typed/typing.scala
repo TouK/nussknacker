@@ -42,6 +42,7 @@ object typing {
 
     def display: String
 
+    def `type`: String = this.getClass.getName // todo: remove?
   }
 
   sealed trait KnownTypingResult extends TypingResult
@@ -133,7 +134,8 @@ object typing {
   //   Thanks to that we avoid nasty types like String | null (String type is nullable as well)
   //   We can avoid this case by changing this folding logic - see the comment there
   case object TypedNull extends TypingResult {
-    override def withoutValue: TypedNull.type = TypedNull
+
+    override val withoutValue: TypingResult = this
 
     // this value is intentionally `Some(null)` (and not `None`), as TypedNull represents null value
     override val valueOpt: Some[Null] = Some(null)
@@ -152,7 +154,7 @@ object typing {
 
   // It is not a case class because we want to ignore the order of elements but still ensure that it has >= 2 elements
   // Because of that, we have our own equals and hashCode
-  final class TypedUnion private[typing] (
+  final class TypedUnion(
       private val firstType: SingleTypingResult,
       private val secondType: SingleTypingResult,
       private val restOfTypes: List[SingleTypingResult]
