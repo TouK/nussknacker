@@ -11,8 +11,8 @@ import org.everit.json.schema.loader.{SchemaClient, SchemaLoader}
 import org.hamcrest.Matchers.equalTo
 import org.json.JSONObject
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.typed.{EnabledTypedFeatures, TypingResultGen}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.{EnabledTypedFeatures, TypingResultGen, typing}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
@@ -965,17 +965,22 @@ class NodesApiHttpServiceBusinessSpec
 //      Typed.apply(Typed.apply(Class.forName("java.lang.Boolean")), Typed.apply(Class.forName("java.lang.Long")))
 
 //      TypedClass -> is correctly validated if union in TypedUnion is not optional -> otherwise it finds 2 possible schemas
-      Typed.apply(Class.forName("java.lang.Boolean"))
+//      Typed.apply(Class.forName("java.lang.Boolean"))
+      typing.Unknown
+//    TypedNull
 
     val sampleJson = TypingResult.encoder.apply(sample)
 
     val typingSchema = TypingDtoSchemas.typingResult
+//    println(typingSchema)
     val jsonSchema = TapirSchemaToJsonSchema(
       typingSchema,
       markOptionsAsNullable = true
     ).asJson
     val schemaStr: String = Printer.spaces2.print(jsonSchema.deepDropNullValues)
     val jsonObject        = new JSONObject(schemaStr)
+
+//    println(schemaStr)
 
     val schemaLoader = SchemaLoader
       .builder()
@@ -989,7 +994,7 @@ class NodesApiHttpServiceBusinessSpec
         .load()
         .build()
         .asInstanceOf[Schema]
-
+    println(schema)
     val sampleStr: String = Printer.spaces2.print(sampleJson)
     println(sampleStr)
     Try(
