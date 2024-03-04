@@ -55,14 +55,22 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
     const filtersContext = useFilterContext<ScenariosFiltersModel>();
 
     return (
-        <Stack direction="row" spacing={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-            <ModificationDate row={row} />
-            {filteredByCreation ? (
-                <>
-                    {" "}
-                    (<CreationDate row={row} />)
-                </>
-            ) : null}
+        <Stack
+            direction="row"
+            spacing={1.25}
+            mt={1}
+            alignItems="center"
+            divider={<Divider orientation="vertical" variant={"inset"} flexItem />}
+        >
+            <div>
+                <ModificationDate row={row} />
+                {filteredByCreation ? (
+                    <>
+                        {" "}
+                        (<CreationDate row={row} />)
+                    </>
+                ) : null}
+            </div>
             {!row.isFragment && !row.isArchived && <ScenarioStatus state={row.state} />}
             <Category value={row.processCategory} filtersContext={filtersContext} />
         </Stack>
@@ -72,10 +80,10 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
 function CreationDate({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
     return (
-        <span>
+        <Typography variant={"caption"}>
             {t("scenario.createdAt", "created {{date, relativeDate}}", { date: new Date(row.createdAt) })} {t("scenario.authorBy", "by")}{" "}
             <Author value={row.createdBy} />
-        </span>
+        </Typography>
     );
 }
 
@@ -83,9 +91,10 @@ function ModificationDate({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
 
     return (
-        <span>
+        <Typography variant={"caption"}>
+            {t("scenario.modifiedAtLabel", "Last modified:")}{" "}
             {t("scenario.modifiedAt", "{{date, relativeDate}}", { date: row.modificationDate })} {t("scenario.authorBy", "by")}{" "}
             <Author value={row.modifiedBy} />
-        </span>
+        </Typography>
     );
 }

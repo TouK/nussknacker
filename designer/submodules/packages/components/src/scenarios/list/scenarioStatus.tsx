@@ -13,7 +13,7 @@ export const ScenarioStatus = ({ state }: Props) => {
     const { t } = useTranslation();
 
     return (
-        <Box fontSize={"1rem"} display={"flex"} gap={1}>
+        <Box fontSize={"1rem"} display={"flex"} gap={1} alignItems={"center"}>
             <NuIcon
                 title={t("scenario.iconTitle", "{{tooltip}}", {
                     context: state.status.name,

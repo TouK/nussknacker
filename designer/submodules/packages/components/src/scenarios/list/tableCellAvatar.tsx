@@ -7,21 +7,20 @@ export function TableCellAvatar({ children }: PropsWithChildren<unknown>) {
             variant="rounded"
             sx={{
                 bgcolor: "transparent",
-                color: "inherit",
                 transition: (theme) =>
                     theme.transitions.create("font-size", {
                         easing: theme.transitions.easing.easeOut,
                         duration: theme.transitions.duration.shorter,
                     }),
-                fontSize: "1.5em",
+                fontSize: "1em",
                 ".MuiDataGrid-row:hover &": {
-                    fontSize: "2em",
+                    fontSize: "1.25em",
                 },
                 "a:hover &": {
-                    fontSize: "2em",
+                    fontSize: "1.25em",
                 },
                 ".MuiSvgIcon-root": {
-                    fontSize: "inherit",
+                    fontSize: "1em",
                 },
             }}
         >
