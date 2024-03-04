@@ -3,8 +3,10 @@ import "@glideapps/glide-data-grid/dist/index.css";
 import DataEditor, {
     CompactSelection,
     DataEditorProps,
+    DataEditorRef,
     GridCell,
     GridCellKind,
+    GridColumn,
     GridSelection,
     GroupHeaderClickedEventArgs,
     HeaderClickedEventArgs,
@@ -12,13 +14,11 @@ import DataEditor, {
     Rectangle,
 } from "@glideapps/glide-data-grid";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GridColumn } from "@glideapps/glide-data-grid/dist/ts/data-grid/data-grid-types";
 import ErrorBoundary from "../../../../../common/ErrorBoundary";
 import { Sizer } from "./Sizer";
 import { css } from "@emotion/css";
 import { useTypeOptions } from "../../../fragment-input-definition/FragmentInputDefinition";
 import { PopoverPosition } from "@mui/material/Popover/Popover";
-import { DataEditorRef } from "@glideapps/glide-data-grid/dist/ts/data-editor/data-editor";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { useTableState } from "./state/tableState";
 import { TypesMenu } from "./TypesMenu";
@@ -26,9 +26,9 @@ import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenu
 import { useTableTheme } from "./tableTheme";
 import i18next from "i18next";
 import { Box } from "@mui/material";
-
 import { ActionTypes } from "./state/action";
 import { longestRow } from "./state/helpers";
+import { useErrorHighlights } from "./errorHighlights";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",
@@ -78,7 +78,7 @@ const RightElement = ({ onColumnAppend }: { onColumnAppend: () => void }) => {
     );
 };
 
-export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorProps, "fieldErrors" | "showValidation">) => {
+export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: EditorProps) => {
     const tableDateContext = useTableState(expressionObj);
     const [{ rows, columns }, dispatch, rawExpression] = tableDateContext;
 
@@ -293,6 +293,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
     }, []);
 
     const ref = useRef<DataEditorRef>();
+    const { toggleTooltip, highlightRegions, drawCell, tooltipElement } = useErrorHighlights(fieldErrors, columns, ref);
 
     const onDataEditorColumnResize = useCallback(
         (column, newSize, colIndex, newSizeWithGrow) => {
@@ -387,15 +388,22 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
                     width="100%"
                     trailingRowOptions={trailingRowOptions}
                     gridSelection={selection}
-                    onGridSelectionChange={setSelection}
+                    onGridSelectionChange={(selection) => {
+                        setSelection(selection);
+                        toggleTooltip(selection);
+                    }}
                     onHeaderClicked={onDataEditorHeaderClicked}
                     onHeaderMenuClick={openTypeMenu}
                     onHeaderContextMenu={onHeaderContextMenu}
                     onGroupHeaderContextMenu={onHeaderContextMenu}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     onColumnResize={onDataEditorColumnResize}
+                    highlightRegions={highlightRegions()}
+                    onItemHovered={toggleTooltip}
+                    drawCell={drawCell}
                 />
             </Sizer>
+            {tooltipElement}
             <TypesMenu
                 anchorPosition={typesMenuData?.position}
                 currentValue={columns[typesMenuData?.column]?.[1]}
@@ -459,7 +467,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
     );
 };
 
-export const TableEditor: ExtendedEditor = ({ showValidation, fieldErrors, className, ...props }: EditorProps) => {
+export const TableEditor: ExtendedEditor = ({ className, ...props }: EditorProps) => {
     return (
         <Box className={className}>
             <Box display="flex">
@@ -467,7 +475,7 @@ export const TableEditor: ExtendedEditor = ({ showValidation, fieldErrors, class
                     <Table {...props} />
                 </ErrorBoundary>
             </Box>
-            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
+            {props.showValidation && <ValidationLabels fieldErrors={props.fieldErrors} />}
         </Box>
     );
 };
