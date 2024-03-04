@@ -1,17 +1,18 @@
-package pl.touk.nussknacker.engine.api.definition
+package pl.touk.nussknacker.engine.graph.expression
 
-import io.circe
+import cats.data.NonEmptyList
 import io.circe.Decoder.Result
-import io.circe.syntax.EncoderOps
 import io.circe._
-import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.definition.TabularTypedData.Cell.RawValue
-import pl.touk.nussknacker.engine.api.definition.TabularTypedData.{Column, Row}
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Cell.RawValue
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.InvalidCellValues.CellCoordinates
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{CellsCountInRowDifferentThanColumnsCount, ColumnNameUniquenessViolation, InvalidCellValues}
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Error.{CannotCreateError, CannotParseError}
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.{Column, Row}
 
 import scala.util.Try
 
 final case class TabularTypedData private (columns: Vector[Column]) {
-  val rows: Vector[Row]                            = columns.transpose(_.cells).map(Row.apply)
+  val rows: Vector[Row] = columns.transpose(_.cells).zipWithIndex.map { case (rowCells, idx) => Row(idx, rowCells) }
   val columnDefinitions: Vector[Column.Definition] = columns.map(_.definition)
 }
 
@@ -36,16 +37,27 @@ object TabularTypedData {
     final case class RawValue(value: String)
   }
 
-  final case class Row(cells: Vector[Cell])
-
-  type HumanReadableErrorMessage = String
+  final case class Row(index: Int, cells: Vector[Cell])
 
   lazy val empty: TabularTypedData = TabularTypedData(Vector.empty)
+
+  sealed trait CreationError
+
+  object CreationError {
+    final case class ColumnNameUniquenessViolation(columnNames: NonEmptyList[String]) extends CreationError
+    case object CellsCountInRowDifferentThanColumnsCount                              extends CreationError
+    final case class InvalidCellValues(invalidCells: NonEmptyList[CellCoordinates])   extends CreationError
+
+    object InvalidCellValues {
+      final case class CellCoordinates(columnName: Column.Definition, rowIndex: Int)
+    }
+
+  }
 
   def create(
       columns: Vector[Column.Definition],
       rows: Vector[Vector[RawValue]]
-  ): Either[HumanReadableErrorMessage, TabularTypedData] = {
+  ): Either[CreationError, TabularTypedData] = {
     for {
       _    <- validateColumnNamesUniqueness(columns)
       _    <- validateCellsCount(columns, rows)
@@ -64,32 +76,40 @@ object TabularTypedData {
     }
   }
 
-  private def validateColumnNamesUniqueness(
-      columns: Vector[Column.Definition]
-  ): Either[HumanReadableErrorMessage, Unit] = {
+  private def validateColumnNamesUniqueness(columns: Vector[Column.Definition]): Either[CreationError, Unit] = {
     val originColumnNames = columns.map(_.name)
     val duplicates        = originColumnNames.diff(originColumnNames.distinct)
-    if (duplicates.isEmpty) Right(())
-    else Left(s"Column names should be unique. Duplicates: ${duplicates.distinct.mkString(",")}")
-  }
-
-  private def validateCellsCount(columns: Vector[Column.Definition], rows: Vector[Vector[Any]]) = {
-    rows.foldLeft(Right(()): Either[HumanReadableErrorMessage, Unit]) {
-      case (r @ Right(()), row) if row.size == columns.size => r
-      case (Right(()), _)   => Left("All rows should have the same number of cells as there are columns")
-      case (l @ Left(_), _) => l
+    NonEmptyList.fromFoldable(duplicates) match {
+      case None      => Right(())
+      case Some(nel) => Left(ColumnNameUniquenessViolation(nel))
     }
   }
 
-  private def validateCellValuesType(data: TabularTypedData): Either[HumanReadableErrorMessage, Unit] = {
-    data.rows.flatMap(_.cells).foldLeft(Right(()): Either[HumanReadableErrorMessage, Unit]) {
-      case (r @ Right(()), cell) if cell.rawValue == RawValue(null) => r
-      case (r @ Right(()), cell) if doesCellValueLookOK(cell)       => r
-      case (Right(()), cell) =>
-        Left(
-          s"Column has a '${cell.definition.aType.getCanonicalName}' type but the value '${cell.rawValue.value}' cannot be converted to it."
-        )
-      case (l @ Left(_), _) => l
+  private def validateCellsCount(columns: Vector[Column.Definition], rows: Vector[Vector[Any]]) = {
+    rows.foldLeft(Right(()): Either[CreationError, Unit]) {
+      case (r @ Right(()), row) if row.size == columns.size => r
+      case (Right(()), _)                                   => Left(CellsCountInRowDifferentThanColumnsCount)
+      case (l @ Left(_), _)                                 => l
+    }
+  }
+
+  private def validateCellValuesType(data: TabularTypedData): Either[CreationError, Unit] = {
+    val cellErrors = data.rows
+      .foldLeft(List.empty[CellCoordinates]) { case (acc, row) =>
+        validateCellsInRow(row) ::: acc
+      }
+      .reverse
+    NonEmptyList.fromList(cellErrors) match {
+      case None    => Right(())
+      case Some(e) => Left(InvalidCellValues(e))
+    }
+  }
+
+  private def validateCellsInRow(row: Row) = {
+    row.cells.foldLeft(List.empty[CellCoordinates]) {
+      case (acc, cell) if cell.rawValue == RawValue(null) => acc
+      case (acc, cell) if doesCellValueLookOK(cell)       => acc
+      case (acc, cell)                                    => CellCoordinates(cell.definition, row.index) :: acc
     }
   }
 
@@ -122,14 +142,28 @@ object TabularTypedData {
 
   implicit class Stringify(data: TabularTypedData) {
 
-    def stringify: String = Coders.TabularTypedDataEncoder(data).noSpaces
+    def stringify: String = Coders
+      .TabularTypedDataEncoder(
+        (data.columnDefinitions, data.rows.map(_.cells.map(_.rawValue)))
+      )
+      .noSpaces
+
   }
 
-  def fromString(value: String): Either[circe.Error, TabularTypedData] = {
+  def fromString(value: String): Either[Error, TabularTypedData] = {
     for {
-      json <- io.circe.parser.parse(value)
-      data <- Coders.TabularTypedDataDecoder.decodeJson(json)
-    } yield data
+      json <- io.circe.parser.parse(value).left.map(failure => CannotParseError(failure.message))
+      data <- Coders.TabularTypedDataDecoder.decodeJson(json).left.map(failure => CannotParseError(failure.message))
+      (columns, rows) = data
+      tabularTypedData <- TabularTypedData.create(columns, rows).left.map(CannotCreateError.apply)
+    } yield tabularTypedData
+  }
+
+  sealed trait Error
+
+  object Error {
+    final case class CannotParseError(message: String)       extends Error
+    final case class CannotCreateError(error: CreationError) extends Error
   }
 
 }
@@ -171,18 +205,16 @@ object TabularTypedData {
  */
 private object Coders {
 
-  object TabularTypedDataEncoder extends Encoder[TabularTypedData] {
-    override def apply(data: TabularTypedData): Json = dataEncoder(data)
+  type NotValidatedTabularTypedData = (Vector[Column.Definition], Vector[Vector[RawValue]])
 
-    private implicit lazy val dataEncoder: Encoder[TabularTypedData] =
-      Encoder.forProduct2("columns", "rows")(data => (data.columns, data.rows))
+  object TabularTypedDataEncoder extends Encoder[NotValidatedTabularTypedData] {
+    override def apply(data: NotValidatedTabularTypedData): Json = dataEncoder(data)
 
-    private implicit lazy val columnEncoder: Encoder[Column] =
-      Encoder.forProduct2("name", "type")(column => (column.definition.name, column.definition.aType.getCanonicalName))
+    private implicit lazy val dataEncoder: Encoder[NotValidatedTabularTypedData] =
+      Encoder.forProduct2("columns", "rows")(data => (data._1, data._2))
 
-    private implicit lazy val rowEncoder: Encoder[Row] = Encoder.instance { row =>
-      row.cells.map(_.rawValue).asJson
-    }
+    private implicit lazy val columnEncoder: Encoder[Column.Definition] =
+      Encoder.forProduct2("name", "type")(definition => (definition.name, definition.aType.getCanonicalName))
 
     private implicit lazy val rawValueEncoder: Encoder[RawValue] = Encoder.encodeJson.contramap {
       case RawValue(null)    => Json.Null
@@ -191,17 +223,13 @@ private object Coders {
 
   }
 
-  object TabularTypedDataDecoder extends Decoder[TabularTypedData] {
+  object TabularTypedDataDecoder extends Decoder[NotValidatedTabularTypedData] {
 
-    override def apply(c: HCursor): Result[TabularTypedData] = {
+    override def apply(c: HCursor): Result[NotValidatedTabularTypedData] = {
       for {
         columns <- c.downField("columns").as[Vector[Column.Definition]]
         rows    <- c.downField("rows").as[Vector[Vector[RawValue]]]
-        data <- TabularTypedData
-          .create(columns, rows)
-          .left
-          .map(message => DecodingFailure(message, List.empty))
-      } yield data
+      } yield (columns, rows)
     }
 
     private implicit val classDecoder: Decoder[Class[_]] =

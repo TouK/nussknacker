@@ -335,7 +335,8 @@ class BaseFlowTest
               "Invalid parameter type.",
               "Failed to load i.do.not.exist",
               Some("$param.badParam.$typ"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }

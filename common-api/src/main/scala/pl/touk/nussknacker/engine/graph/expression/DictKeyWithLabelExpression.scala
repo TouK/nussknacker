@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.api.definition
+package pl.touk.nussknacker.engine.graph.expression
 
 import io.circe.generic.JsonCodec
 

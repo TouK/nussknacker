@@ -7,12 +7,12 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.definition.TabularTypedData
-import pl.touk.nussknacker.engine.api.definition.TabularTypedData.Column
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Column
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._

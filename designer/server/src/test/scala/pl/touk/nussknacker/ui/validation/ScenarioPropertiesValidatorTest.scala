@@ -70,8 +70,9 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               "MissingRequiredProperty",
               _,
               _,
-              Some(reqFieldName),
-              NodeValidationErrorType.SaveAllowed
+              Some("reqFieldName"),
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -86,7 +87,14 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
-            NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
+            NodeValidationError(
+              "EmptyMandatoryParameter",
+              _,
+              _,
+              Some("propReq"),
+              NodeValidationErrorType.SaveAllowed,
+              None
+            )
           ) =>
     }
   }
@@ -118,7 +126,8 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               _,
               _,
               Some("propRegExp"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -138,7 +147,8 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               _,
               _,
               Some("propReq"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -153,8 +163,9 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               "MissingRequiredProperty",
               _,
               _,
-              Some(reqFieldName),
-              NodeValidationErrorType.SaveAllowed
+              Some("reqFieldName"),
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -173,15 +184,17 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               "InvalidPropertyFixedValue",
               _,
               _,
-              Some(optFixedFieldName),
-              NodeValidationErrorType.SaveAllowed
+              Some("optFixedFieldName"),
+              NodeValidationErrorType.SaveAllowed,
+              None
             ),
             NodeValidationError(
               "MissingRequiredProperty",
               _,
               _,
-              Some(reqFieldName),
-              NodeValidationErrorType.SaveAllowed
+              Some("reqFieldName"),
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -198,7 +211,14 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
-            NodeValidationError("UnknownProperty", _, _, Some(`unknownProperty`), NodeValidationErrorType.SaveAllowed)
+            NodeValidationError(
+              "UnknownProperty",
+              _,
+              _,
+              Some(`unknownProperty`),
+              NodeValidationErrorType.SaveAllowed,
+              None
+            )
           ) =>
     }
   }
