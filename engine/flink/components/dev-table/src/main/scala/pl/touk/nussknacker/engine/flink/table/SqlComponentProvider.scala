@@ -6,9 +6,9 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.table.extractor.DataSourceSqlExtractor.extractTablesFromFlinkRuntime
-import pl.touk.nussknacker.engine.flink.table.extractor.{SqlDataSourceConfig, SqlStatementReader}
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.source.SqlTableSourceFactory
+import pl.touk.nussknacker.engine.flink.table.extractor.{SqlDataSourceConfig, SqlStatementReader}
+import pl.touk.nussknacker.engine.flink.table.source.SqlSourceFactory
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
@@ -37,28 +37,17 @@ class SqlComponentProvider extends ComponentProvider with LazyLogging {
     // TODO: hande invalid config
     val parsedConfig = config.rootAs[SqlFileDataSourceConfig]
 
-    extractDataSourceConfigFromSqlFile(parsedConfig.sqlFilePath).flatMap { sqlStatementsFromFile =>
-      List(
-        ComponentDefinition(
-          tableDataSourceComponentId(
-            "source-sql",
-            sqlStatementsFromFile.connector,
-            sqlStatementsFromFile.tableName
-          ),
-          new SqlTableSourceFactory(sqlStatementsFromFile)
-        ),
-      )
-    }
+    val configs = extractDataSourceConfigFromSqlFile(parsedConfig.sqlFilePath)
+
+    ComponentDefinition(
+      tableDataSourceComponentId(parsedConfig),
+      new SqlSourceFactory(configs)
+    ) :: Nil
   }
 
-  private def tableDataSourceComponentId(
-      componentType: String,
-      connector: String,
-      componentNamePart: String
-  ): String =
-    s"tableApi-$componentType-$connector-$componentNamePart"
+  private def tableDataSourceComponentId(config: SqlFileDataSourceConfig): String =
+    s"tableApi-source-sql-${config.componentNameSuffix}"
 
-  // TODO: also do validation - check for connectors/formats not present on classpath
   private def extractDataSourceConfigFromSqlFile(filePath: String): List[SqlDataSourceConfig] = {
     val sqlStatements = readSqlFromFile(Paths.get(filePath))
     val results       = extractTablesFromFlinkRuntime(sqlStatements)
@@ -84,10 +73,11 @@ class SqlComponentProvider extends ComponentProvider with LazyLogging {
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
-  override def isAutoLoaded: Boolean = true
+  override def isAutoLoaded: Boolean = false
 
 }
 
 final case class SqlFileDataSourceConfig(
+    componentNameSuffix: String,
     sqlFilePath: String
 )

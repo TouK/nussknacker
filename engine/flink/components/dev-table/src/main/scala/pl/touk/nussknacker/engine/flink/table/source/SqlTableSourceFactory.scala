@@ -6,56 +6,42 @@ import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlDataSourceConfig
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
-import pl.touk.nussknacker.engine.flink.table.utils.TypeConversions
+import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
-// TODO: refactor to have multiple tables inside single component
-class SqlTableSourceFactory(config: SqlDataSourceConfig) extends SourceFactory with UnboundedStreamComponent {
+class SqlSource(config: SqlDataSourceConfig) extends FlinkSource {
 
-  @MethodToInvoke
-  def invoke(): Source = {
-    new TableSource()
-  }
+  override def sourceStream(
+      env: StreamExecutionEnvironment,
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStream[Context] = {
+    val tableEnv = StreamTableEnvironment.create(env);
 
-  private class TableSource extends FlinkSource with ReturningType {
+    tableEnv.executeSql(config.sqlCreateTableStatement)
+    val table = tableEnv.from(config.tableName)
 
-    override def sourceStream(
-        env: StreamExecutionEnvironment,
-        flinkNodeContext: FlinkCustomNodeContext
-    ): DataStream[Context] = {
-      val tableEnv = StreamTableEnvironment.create(env);
+    val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 
-      tableEnv.executeSql(config.sqlCreateTableStatement)
-      val table = tableEnv.from(config.tableName)
+    val streamOfMaps = streamOfRows
+      .map(RowConversions.rowToMap)
+      .returns(classOf[RECORD])
 
-      val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
+    val contextStream = streamOfMaps.map(
+      new FlinkContextInitializingFunction(
+        contextInitializer,
+        flinkNodeContext.nodeId,
+        flinkNodeContext.convertToEngineRuntimeContext
+      ),
+      flinkNodeContext.contextTypeInfo
+    )
 
-      val streamOfMaps = streamOfRows
-        .map(TypeConversions.rowToMap)
-        .returns(classOf[RECORD])
-
-      val contextStream = streamOfMaps.map(
-        new FlinkContextInitializingFunction(
-          contextInitializer,
-          flinkNodeContext.nodeId,
-          flinkNodeContext.convertToEngineRuntimeContext
-        ),
-        flinkNodeContext.contextTypeInfo
-      )
-
-      contextStream
-    }
-
-    override def returnType: typing.TypingResult = config.schema.typingResult
-
+    contextStream
   }
 
 }

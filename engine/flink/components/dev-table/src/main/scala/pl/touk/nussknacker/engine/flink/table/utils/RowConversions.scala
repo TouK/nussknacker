@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.table.utils
 
 import org.apache.flink.types.Row
 
-object TypeConversions {
+object RowConversions {
 
   import scala.jdk.CollectionConverters._
 

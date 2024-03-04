@@ -42,9 +42,8 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
     ConfigIndependentComponents ::: dataSourceComponents
   }
 
-  private def tableDataSourceComponentId(componentType: String, config: DataSourceConfig): String = {
+  private def tableDataSourceComponentId(componentType: String, config: DataSourceConfig): String =
     s"tableApi-$componentType-${config.connector}-${config.name}"
-  }
 
   private def parseConfigOpt(config: Config): Option[TableDataSourcesConfig] = {
     val tryParse = Try(config.rootAs[TableDataSourcesConfig]) match {
