@@ -32,7 +32,7 @@ export const ScenarioStatus = ({ state, filtersContext }: Props) => {
     return (
         <Button
             color={isSelected ? "primary" : "inherit"}
-            sx={{ textTransform: "capitalize", display: "flex", gap: 1, alignItems: "center", fontSize: "1rem" }}
+            sx={{ textTransform: "capitalize", display: "flex", gap: 1, alignItems: "center", fontSize: "1rem", py: 0.25 }}
             onClick={onClick}
         >
             <NuIcon
