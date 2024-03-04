@@ -65,12 +65,9 @@ class SqlSourceFactory(configs: List[SqlDataSourceConfig])
   // TODO: evaluate based on config
   override val allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.UnboundedStream))
 
-  private def getSelectedTableUnsafe(tableName: String): SqlDataSourceConfig = {
+  private def getSelectedTableUnsafe(tableName: String): SqlDataSourceConfig =
     configs
       .find(_.tableName == tableName)
-      .getOrElse(
-        throw new IllegalStateException("Table with selected name not found.")
-      )
-  }
+      .getOrElse(throw new IllegalStateException("Table with selected name not found."))
 
 }
