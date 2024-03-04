@@ -20,6 +20,7 @@ export const svgRule = {
     oneOf: [
         {
             issuer: /\.[tj]sx?$/,
+            type: "asset/resource",
             use: [
                 {
                     loader: require.resolve("babel-loader"),
