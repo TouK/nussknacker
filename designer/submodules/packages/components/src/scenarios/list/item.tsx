@@ -71,7 +71,7 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
                     </>
                 ) : null}
             </div>
-            {!row.isFragment && !row.isArchived && <ScenarioStatus state={row.state} />}
+            {!row.isFragment && !row.isArchived && <ScenarioStatus state={row.state} filtersContext={filtersContext} />}
             <Category value={row.processCategory} filtersContext={filtersContext} />
         </Stack>
     );
