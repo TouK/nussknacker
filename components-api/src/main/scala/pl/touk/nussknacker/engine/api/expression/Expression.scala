@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.expression
 
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 // TODO: rename to CompiledExpression
 // It is used in two places:
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 //       move this class to the extensions-api and rename it
 trait Expression {
 
-  def language: String
+  def language: Language
 
   def original: String
 

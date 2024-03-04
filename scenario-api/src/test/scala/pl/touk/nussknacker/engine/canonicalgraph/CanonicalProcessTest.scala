@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{
   SwitchNode
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -185,7 +186,7 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
 
   private implicit def asSampleExpression(expression: String): Expression =
     Expression(
-      language = "sample",
+      language = Language.Spel,
       expression = expression
     )
 
