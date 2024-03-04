@@ -28,13 +28,25 @@ export function OtherOptionsStack(): JSX.Element {
                 color="default"
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.SCENARIOS)}
                 onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.SCENARIOS], getTypeFilter()))}
-                label={t("table.filter.SCENARIOS", "Scenarios")}
+                label={
+                    <FilterListItemLabel
+                        name={ScenariosFiltersModelType.SCENARIOS}
+                        displayableName={t("table.filter.SCENARIOS", "Scenarios")}
+                        icon={"/assets/icons/scenario.svg"}
+                    />
+                }
             />
             <FilterListItem
                 color="default"
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.FRAGMENTS)}
                 onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.FRAGMENTS], getTypeFilter()))}
-                label={t("table.filter.FRAGMENTS", "Fragments")}
+                label={
+                    <FilterListItemLabel
+                        name={ScenariosFiltersModelType.FRAGMENTS}
+                        displayableName={t("table.filter.FRAGMENTS", "Fragments")}
+                        icon={"/assets/icons/fragment.svg"}
+                    />
+                }
             />
         </OptionsStack>
     );
