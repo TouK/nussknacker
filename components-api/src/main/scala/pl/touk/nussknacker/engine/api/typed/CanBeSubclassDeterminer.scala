@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import cats.data.Validated._
-import cats.data.{NonEmptyList, NonEmptySet, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, _}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._

@@ -81,7 +81,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     typeExpression(s"$testRecordExpr['boolean']").validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[Boolean], true)
     typeExpression(s"$testRecordExpr['null']").validValue.finalResult.typingResult shouldBe
-      TypedNull
+      TypedNull()
   }
 
   test("indexing on records with string literal index") {
@@ -185,7 +185,7 @@ object TyperSpecTestData {
     val testRecordTyped: TypedObjectTypingResult = Typed.record(
       Map(
         "string"  -> TypedObjectWithValue(Typed.typedClass[String], "stringVal"),
-        "null"    -> TypedNull,
+        "null"    -> TypedNull(),
         "boolean" -> TypedObjectWithValue(Typed.typedClass[Boolean], true),
         "int"     -> TypedObjectWithValue(Typed.typedClass[Int], 1),
         "nestedRecord" -> Typed.record(

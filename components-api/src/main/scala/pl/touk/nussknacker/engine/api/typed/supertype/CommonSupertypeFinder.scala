@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api.typed.supertype
 import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.{
-  Default,
   SupertypeClassResolutionStrategy,
   looseFinder
 }
