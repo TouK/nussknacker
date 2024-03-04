@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import sttp.tapir.Schema
 
 object ValidationResults {
 
@@ -60,8 +59,6 @@ object ValidationResults {
     // FIXME: BaseFlowTest fails otherwise??
     implicit val typingInfoDecoder: Decoder[Map[String, ExpressionTypingInfo]] =
       Decoder.const(Map.empty) // Decoder.failedWithMessage("typingInfo shouldn't be decoded")
-
-    implicit val schema: Schema[NodeTypingData] = Schema.derived
   }
 
   @JsonCodec final case class NodeTypingData(
@@ -93,10 +90,6 @@ object ValidationResults {
 
   @JsonCodec final case class UIGlobalError(error: NodeValidationError, nodeIds: List[String])
 
-  object UIGlobalError {
-    implicit val schema: Schema[UIGlobalError] = Schema.derived
-  }
-
   @JsonCodec final case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
 
   @JsonCodec final case class NodeValidationError(
@@ -107,18 +100,12 @@ object ValidationResults {
       errorType: NodeValidationErrorType.Value
   )
 
-  object NodeValidationError {
-    implicit val schema: Schema[NodeValidationError] = Schema.derived
-  }
-
   object ValidationErrors {
-    val success: ValidationErrors                 = ValidationErrors(Map.empty, List.empty, List.empty)
-    implicit val schema: Schema[ValidationErrors] = Schema.derived
+    val success: ValidationErrors = ValidationErrors(Map.empty, List.empty, List.empty)
   }
 
   object ValidationWarnings {
-    val success: ValidationWarnings                 = ValidationWarnings(Map.empty)
-    implicit val schema: Schema[ValidationWarnings] = Schema.derived
+    val success: ValidationWarnings = ValidationWarnings(Map.empty)
   }
 
   object ValidationResult {
@@ -151,8 +138,6 @@ object ValidationResults {
         Map.empty
       )
     }
-
-    implicit val schema: Schema[ValidationResult] = Schema.derived
 
   }
 

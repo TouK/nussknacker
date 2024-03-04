@@ -6,13 +6,8 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder, HCursor}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import sttp.tapir.Schema
 
 @JsonCodec case class LayoutData(x: Long, y: Long)
-
-object LayoutData {
-  implicit val schema: Schema[LayoutData] = Schema.derived
-}
 
 // TODO: This class should be moved into components-api, scenario-api shouldn't use this. It should hold only properties
 //       and ScenarioRuntimeMetadata (Currently called ProcessVersion)
@@ -120,7 +115,5 @@ object ProcessAdditionalFields {
     )
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
-
-  implicit val schema: Schema[ProcessAdditionalFields] = Schema.derived
 
 }

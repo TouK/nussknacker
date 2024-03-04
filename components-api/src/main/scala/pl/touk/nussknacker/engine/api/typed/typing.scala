@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import sttp.tapir.Schema
 
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
@@ -22,7 +21,6 @@ object typing {
 
   object TypingResult {
     implicit val encoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder
-    implicit val schema: Schema[TypingResult]   = Schema.anyObject // TODO: Type that properly
   }
 
   // TODO: Rename to Typed

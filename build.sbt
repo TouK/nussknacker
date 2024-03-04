@@ -1491,10 +1491,9 @@ lazy val extensionsApi = (project in file("extensions-api"))
   .settings(
     name := "nussknacker-extensions-api",
     libraryDependencies ++= Seq(
-      "org.springframework"          % "spring-expression" % springV,
-      "com.softwaremill.sttp.tapir" %% "tapir-core"        % tapirV,
+      "org.springframework"      % "spring-expression" % springV,
       // needed by scala-compiler for spring-expression...
-      "com.google.code.findbugs"     % "jsr305"            % findBugsV,
+      "com.google.code.findbugs" % "jsr305"            % findBugsV,
     )
   )
   .dependsOn(testUtils % "test", componentsApi, scenarioApi)
@@ -1514,12 +1513,11 @@ lazy val commonApi = (project in file("common-api"))
   .settings(
     name := "nussknacker-common-api",
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules"      %% "scala-collection-compat" % scalaCollectionsCompatV,
-      "io.circe"                    %% "circe-parser"            % circeV,
-      "io.circe"                    %% "circe-generic"           % circeV,
-      "io.circe"                    %% "circe-generic-extras"    % circeGenericExtrasV,
-      "com.softwaremill.sttp.tapir" %% "tapir-core"              % tapirV,
-      "org.scalatest"               %% "scalatest"               % scalaTestV % "test"
+      "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
+      "io.circe"               %% "circe-parser"            % circeV,
+      "io.circe"               %% "circe-generic"           % circeV,
+      "io.circe"               %% "circe-generic-extras"    % circeGenericExtrasV,
+      "org.scalatest"          %% "scalatest"               % scalaTestV % "test"
     )
   )
 

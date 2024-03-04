@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api.process
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
-import sttp.tapir.Schema
 
 import java.time.Instant
 
@@ -13,7 +12,3 @@ import java.time.Instant
     modelVersion: Option[Int],
     actions: List[ProcessAction]
 )
-
-object ScenarioVersion {
-  implicit val schema: Schema[ScenarioVersion] = Schema.derived
-}

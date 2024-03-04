@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
-import sttp.tapir.Schema
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -66,10 +65,6 @@ object node {
 
   @JsonCodec case class UserDefinedAdditionalNodeFields(description: Option[String], layoutData: Option[LayoutData])
 
-  object UserDefinedAdditionalNodeFields {
-    implicit val schema: Schema[UserDefinedAdditionalNodeFields] = Schema.derived
-  }
-
   sealed trait NodeData {
     def id: String
 
@@ -79,7 +74,6 @@ object node {
   object NodeData {
     implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
     implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
-    implicit val schema: Schema[NodeData]           = Schema.derived
   }
 
   // this represents node that originates from real node on UI, in contrast with Branch
@@ -133,10 +127,6 @@ object node {
     override def parameters: List[NodeParameter] = ref.parameters
   }
 
-  object Source {
-    implicit val schema: Schema[Source] = Schema.derived
-  }
-
   // TODO JOIN: move branchParameters to BranchEnd
   case class Join(
       id: String,
@@ -149,10 +139,6 @@ object node {
   ) extends StartingNodeData
       with CustomNodeData {
     override val componentId: String = nodeType
-  }
-
-  object Join {
-    implicit val schema: Schema[Join] = Schema.derived
   }
 
   case class Filter(
@@ -249,10 +235,6 @@ object node {
     override val id: String = definition.artificialNodeId
   }
 
-  object BranchEndData {
-    implicit val schema: Schema[BranchEndData] = Schema.derived
-  }
-
   // id - id of particular branch ending in joinId, currently on UI it's id of *previous* node (i.e. node where branch edge originates)
   // joinId - id of join node
   @JsonCodec case class BranchEndDefinition(id: String, joinId: String) {
@@ -264,10 +246,6 @@ object node {
 
     // TODO: remove it and replace with sth more understandable
     def joinReference: JoinReference = JoinReference(artificialNodeId, id, joinId)
-  }
-
-  object BranchEndDefinition {
-    implicit val schema: Schema[BranchEndDefinition] = Schema.derived
   }
 
   case class Sink(
@@ -310,10 +288,6 @@ object node {
   ) extends OneOutputSubsequentNodeData
 
   @JsonCodec case class FragmentOutputVarDefinition(name: String, fields: List[Field])
-
-  object FragmentOutputVarDefinition {
-    implicit val schema: Schema[FragmentOutputVarDefinition] = Schema.derived
-  }
 
   // this is used only in fragment definition
   case class FragmentInputDefinition(
@@ -362,15 +336,11 @@ object node {
         )
       }
 
-      implicit val schema: Schema[FragmentParameter] = Schema.derived
-
     }
 
     object FragmentClazzRef {
 
       def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
-
-      implicit val schema: Schema[FragmentClazzRef] = Schema.string
 
     }
 

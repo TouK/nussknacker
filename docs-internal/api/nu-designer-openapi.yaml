@@ -1479,7 +1479,7 @@ components:
       type: object
       properties:
         name:
-          type: string
+          $ref: '#/components/schemas/ProcessName'
         nodesUsagesData:
           type: array
           items:
@@ -1718,6 +1718,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FixedExpressionValue'
+    FragmentClazzRef:
+      required:
+      - refClazzName
+      type: object
+      properties:
+        refClazzName:
+          type: string
     FragmentInput:
       required:
       - id
@@ -1797,7 +1804,7 @@ components:
         name:
           type: string
         typ:
-          type: string
+          $ref: '#/components/schemas/FragmentClazzRef'
         required:
           type: boolean
         initialValue:
@@ -1926,16 +1933,6 @@ components:
         type: array
         items:
           type: string
-    Map_ExpressionTypingInfo:
-      type: object
-      additionalProperties:
-        type: string
-    Map_List_NodeValidationError:
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/NodeValidationError'
     Map_List_String:
       type: object
       additionalProperties:
@@ -1950,29 +1947,10 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
-    Map_NodeTypingData:
-      type: object
-      additionalProperties:
-        $ref: '#/components/schemas/NodeTypingData'
     Map_String:
       type: object
       additionalProperties:
         type: string
-    Map_TypingResult:
-      type: object
-      additionalProperties:
-        type: object
-    Map_TypingResultInJson:
-      type: object
-      additionalProperties:
-        $ref: '#/components/schemas/TypingResult'
-    MarkdownAdditionalInfo:
-      required:
-      - content
-      type: object
-      properties:
-        content:
-          type: string
     MigrateScenarioRequest:
       required:
       - sourceEnvironmentId
@@ -1988,7 +1966,22 @@ components:
         engineSetupName:
           type: string
         scenarioWithDetailsForMigrations:
-          $ref: '#/components/schemas/ScenarioWithDetailsForMigrations'
+          type: string
+    Map_TypingResult:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/TypingResult'
+    Map_TypingResultInJson:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/TypingResult'
+    MarkdownAdditionalInfo:
+      required:
+      - content
+      type: object
+      properties:
+        content:
+          type: string
     NextSwitch:
       required:
       - condition
@@ -2014,22 +2007,6 @@ components:
       - $ref: '#/components/schemas/Switch'
       - $ref: '#/components/schemas/Variable'
       - $ref: '#/components/schemas/VariableBuilder'
-    NodeTypingData:
-      required:
-      - variableTypes
-      - typingInfo
-      type: object
-      properties:
-        variableTypes:
-          $ref: '#/components/schemas/Map_TypingResult'
-        parameters:
-          type:
-          - array
-          - 'null'
-          items:
-            $ref: '#/components/schemas/UIParameter'
-        typingInfo:
-          $ref: '#/components/schemas/Map_ExpressionTypingInfo'
     NodeUsageData:
       oneOf:
       - $ref: '#/components/schemas/FragmentUsageData'
@@ -2348,21 +2325,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Attachment'
-    ScenarioGraph:
-      required:
-      - properties
-      type: object
-      properties:
-        properties:
-          $ref: '#/components/schemas/ProcessProperties'
-        nodes:
-          type: array
-          items:
-            $ref: '#/components/schemas/NodeData'
-        edges:
-          type: array
-          items:
-            $ref: '#/components/schemas/Edge'
     ScenarioParameters:
       required:
       - processingMode
@@ -2394,63 +2356,6 @@ components:
       properties:
         nodeId:
           type: string
-    ScenarioVersion:
-      required:
-      - processVersionId
-      - createDate
-      - user
-      type: object
-      properties:
-        processVersionId:
-          $ref: '#/components/schemas/VersionId'
-        createDate:
-          type: string
-          format: date-time
-        user:
-          type: string
-        modelVersion:
-          type:
-          - integer
-          - 'null'
-          format: int32
-        actions:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProcessAction'
-    ScenarioWithDetailsForMigrations:
-      required:
-      - name
-      - isArchived
-      - isFragment
-      - processingType
-      - processCategory
-      type: object
-      properties:
-        name:
-          type: string
-        isArchived:
-          type: boolean
-        isFragment:
-          type: boolean
-        processingType:
-          type: string
-        processCategory:
-          type: string
-        scenarioGraph:
-          $ref: '#/components/schemas/ScenarioGraph'
-        validationResult:
-          $ref: '#/components/schemas/ValidationResult'
-        history:
-          type:
-          - array
-          - 'null'
-          items:
-            $ref: '#/components/schemas/ScenarioVersion'
-        modelVersion:
-          type:
-          - integer
-          - 'null'
-          format: int32
     ServiceRef:
       required:
       - id
@@ -2704,50 +2609,6 @@ components:
       - TypedObjectWithValue
       - TypedNull
       - Unknown
-    UIGlobalError:
-      required:
-      - error
-      type: object
-      properties:
-        error:
-          $ref: '#/components/schemas/NodeValidationError'
-        nodeIds:
-          type: array
-          items:
-            type: string
-    UIParameter:
-      required:
-      - name
-      - typ
-      - editor
-      - defaultValue
-      - additionalVariables
-      - branchParam
-      - label
-      type: object
-      properties:
-        name:
-          type: string
-        typ:
-          type: object
-        editor:
-          $ref: '#/components/schemas/ParameterEditor'
-        defaultValue:
-          $ref: '#/components/schemas/Expression'
-        additionalVariables:
-          $ref: '#/components/schemas/Map_TypingResult'
-        variablesToHide:
-          type: array
-          items:
-            type: string
-        branchParam:
-          type: boolean
-        hintText:
-          type:
-          - string
-          - 'null'
-        label:
-          type: string
     UIParameterDto:
       required:
       - name
@@ -2806,41 +2667,6 @@ components:
           - 'null'
         layoutData:
           $ref: '#/components/schemas/LayoutData'
-    ValidationErrors:
-      required:
-      - invalidNodes
-      type: object
-      properties:
-        invalidNodes:
-          $ref: '#/components/schemas/Map_List_NodeValidationError'
-        processPropertiesErrors:
-          type: array
-          items:
-            $ref: '#/components/schemas/NodeValidationError'
-        globalErrors:
-          type: array
-          items:
-            $ref: '#/components/schemas/UIGlobalError'
-    ValidationResult:
-      required:
-      - errors
-      - warnings
-      - nodeResults
-      type: object
-      properties:
-        errors:
-          $ref: '#/components/schemas/ValidationErrors'
-        warnings:
-          $ref: '#/components/schemas/ValidationWarnings'
-        nodeResults:
-          $ref: '#/components/schemas/Map_NodeTypingData'
-    ValidationWarnings:
-      required:
-      - invalidNodes
-      type: object
-      properties:
-        invalidNodes:
-          $ref: '#/components/schemas/Map_List_NodeValidationError'
     ValueInputWithFixedValues:
       oneOf:
       - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'

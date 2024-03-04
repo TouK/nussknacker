@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
 import io.circe.{Decoder, Encoder}
-import sttp.tapir.Schema
 
 import scala.util.{Failure, Success, Try}
 
@@ -20,7 +19,5 @@ object ProcessId {
     case Success(id) => ProcessId(id)
     case Failure(_)  => throw new IllegalArgumentException(s"Value '$value' is not valid ProcessId.")
   }
-
-  implicit val schema: Schema[ProcessId] = Schema.derived
 
 }

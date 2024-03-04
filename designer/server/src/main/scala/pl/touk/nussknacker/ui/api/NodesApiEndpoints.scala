@@ -292,6 +292,10 @@ object NodesApiEndpoints {
     )
 
     private object UIParameterDto {
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]    = Schema.derived
+      implicit lazy val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
+      implicit lazy val expressionSchema: Schema[Expression]              = Schema.derived
+      implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
 
       def apply(param: UIParameter): UIParameterDto = new UIParameterDto(
         param.name,

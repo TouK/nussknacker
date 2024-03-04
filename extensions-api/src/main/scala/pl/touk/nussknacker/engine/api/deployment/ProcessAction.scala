@@ -6,7 +6,6 @@ import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrapped
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import sttp.tapir.Schema
 
 import java.time.Instant
 import java.util.UUID
@@ -29,10 +28,6 @@ import java.util.UUID
     buildInfo: Map[String, String]
 )
 
-object ProcessAction {
-  implicit val schema: Schema[ProcessAction] = Schema.derived
-}
-
 final case class ProcessActionId(value: UUID) {
   override def toString: String = value.toString
 }
@@ -41,8 +36,6 @@ object ProcessActionId {
 
   implicit val typeEncoder: Encoder[ProcessActionId] = Encoder.encodeUUID.contramap(_.value)
   implicit val typeDecoder: Decoder[ProcessActionId] = Decoder.decodeUUID.map(ProcessActionId(_))
-
-  implicit val schema: Schema[ProcessActionId] = Schema.derived
 
 }
 
