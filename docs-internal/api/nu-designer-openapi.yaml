@@ -1951,22 +1951,6 @@ components:
       type: object
       additionalProperties:
         type: string
-    MigrateScenarioRequest:
-      required:
-      - sourceEnvironmentId
-      - processingMode
-      - engineSetupName
-      - scenarioWithDetailsForMigrations
-      type: object
-      properties:
-        sourceEnvironmentId:
-          type: string
-        processingMode:
-          type: string
-        engineSetupName:
-          type: string
-        scenarioWithDetailsForMigrations:
-          type: string
     Map_TypingResult:
       type: object
       additionalProperties:
@@ -1982,6 +1966,22 @@ components:
       properties:
         content:
           type: string
+    MigrateScenarioRequest:
+      required:
+      - sourceEnvironmentId
+      - processingMode
+      - engineSetupName
+      - scenarioWithDetailsForMigrations
+      type: object
+      properties:
+        sourceEnvironmentId:
+          type: string
+        processingMode:
+          type: string
+        engineSetupName:
+          type: string
+        scenarioWithDetailsForMigrations:
+          type: object
     NextSwitch:
       required:
       - condition
