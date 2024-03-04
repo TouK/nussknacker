@@ -13,6 +13,7 @@ import { RowType } from "../list/listPart";
 import { Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { processingModeItems } from "../list/processingMode";
+import { ProcessingModeStack } from "./processingModeStack";
 
 export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[]; isLoading?: boolean; withSort?: boolean }): JSX.Element {
     const { t } = useTranslation();
@@ -78,7 +79,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                         label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
                         count={getFilter("PROCESSING_MODE", true).length}
                     >
-                        <SimpleOptionsStack
+                        <ProcessingModeStack
                             label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
                             options={filterableValues.processingMode}
                             value={getFilter("PROCESSING_MODE", true)}

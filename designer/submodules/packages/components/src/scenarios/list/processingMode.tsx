@@ -4,6 +4,9 @@ import { FiltersContextType } from "../../common/filters/filtersContext";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { NuIcon } from "../../common";
 import i18next from "i18next";
+import Streaming from "../../assets/icons/streaming.svg";
+import Batch from "../../assets/icons/batch.svg";
+import RequestResponse from "../../assets/icons/request-response.svg";
 
 export enum ProcessingMode {
     "streaming" = "Unbounded-Stream",
@@ -15,17 +18,17 @@ export const processingModeItems = [
     {
         name: ProcessingMode.streaming,
         displayableName: i18next.t(`scenarioDetails.processingModeVariants.streaming`, "Streaming"),
-        icon: "/assets/processing-mode/streaming.svg",
+        Icon: Streaming,
     },
     {
         name: ProcessingMode.requestResponse,
         displayableName: i18next.t(`scenarioDetails.processingModeVariants.requestResponse`, "Request-Response"),
-        icon: "/assets/processing-mode/request-response.svg",
+        Icon: RequestResponse,
     },
     {
         name: ProcessingMode.batch,
         displayableName: i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch"),
-        icon: "/assets/processing-mode/batch.svg",
+        Icon: Batch,
     },
 ];
 
@@ -54,14 +57,13 @@ export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) =>
         return null;
     }
 
-    console.log(item);
     return (
         <Button
             color={isSelected ? "primary" : "inherit"}
             sx={{ textTransform: "capitalize", display: "flex", gap: 1, alignItems: "center", fontSize: "1rem", py: 0.25 }}
             onClick={onClick}
         >
-            <NuIcon src={item.icon} sx={{ fontSize: "1.2em", color: "inherit" }} />
+            <item.Icon sx={{ fontSize: "1.2em", color: "inherit" }} />
             <Typography variant={"caption"}>{item.displayableName}</Typography>
         </Button>
     );
