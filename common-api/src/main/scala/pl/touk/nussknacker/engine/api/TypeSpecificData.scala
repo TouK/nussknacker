@@ -83,7 +83,7 @@ object StreamMetaData {
 
 }
 
-case class CustomMetaData(customProperties: Map[String, String]) extends ScenarioSpecificData {
+final case class CustomMetaData(customProperties: Map[String, String]) extends ScenarioSpecificData {
   override def toMap: Map[String, String] = customProperties
 
   override def metaDataType: String = "CustomMetadata"
