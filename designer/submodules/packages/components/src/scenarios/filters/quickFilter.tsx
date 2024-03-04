@@ -32,6 +32,7 @@ export function QuickFilter<F extends Record<string, any>>({
                     value={getFilter(filter) || ""}
                     onChange={setFilter(filter)}
                     sx={{
+                        flex: 1,
                         ".MuiOutlinedInput-notchedOutline": {
                             borderStartEndRadius: 0,
                             borderEndEndRadius: 0,

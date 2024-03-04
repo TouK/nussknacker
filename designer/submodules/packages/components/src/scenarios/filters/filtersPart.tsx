@@ -12,6 +12,7 @@ import { ActiveFilters } from "./activeFilters";
 import { RowType } from "../list/listPart";
 import { Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { processingModeItems } from "../list/processingMode";
 
 export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[]; isLoading?: boolean; withSort?: boolean }): JSX.Element {
     const { t } = useTranslation();
@@ -28,6 +29,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                 .map((v) => ({ name: v })),
             status: sortBy(statusDefinitions, (v) => v.displayableName),
             processCategory: (userData?.categories || []).map((name) => ({ name })),
+            processingMode: processingModeItems,
         };
     }, [data, filterableKeys, statusDefinitions, userData?.categories]);
 
@@ -52,6 +54,8 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                     return t("table.filter.ARCHIVED", "Archived");
                 case "STATUS":
                     return t("table.filter.status." + value, statusFilterLabels[value]);
+                case "PROCESSING_MODE":
+                    return processingModeItems.find((processingModeItem) => processingModeItem.name === value).displayableName;
             }
 
             if (value?.toString().length) {
@@ -69,6 +73,17 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                 <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                     <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
                         <StatusOptionsStack options={filterableValues.status} withArchived={true} />
+                    </FilterMenu>
+                    <FilterMenu
+                        label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
+                        count={getFilter("PROCESSING_MODE", true).length}
+                    >
+                        <SimpleOptionsStack
+                            label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
+                            options={filterableValues.processingMode}
+                            value={getFilter("PROCESSING_MODE", true)}
+                            onChange={setFilter("PROCESSING_MODE")}
+                        />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                         <SimpleOptionsStack

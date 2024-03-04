@@ -1,4 +1,5 @@
 import { SortableFiltersModel } from "./common/sortableFiltersModel";
+import { ProcessingMode } from "../list/processingMode";
 
 export interface ScenariosFiltersModel extends SortableFiltersModel {
     NAME?: string;
@@ -7,7 +8,7 @@ export interface ScenariosFiltersModel extends SortableFiltersModel {
     TYPE?: string[];
     CREATED_BY?: string[];
     STATUS?: string[];
-    PROCESSING_MODE?: string[];
+    PROCESSING_MODE?: ProcessingMode[];
 }
 
 export enum ScenariosFiltersModelType {

@@ -11,7 +11,7 @@ export enum ProcessingMode {
     "batch" = "Bounded-Stream",
 }
 
-const processingModeItems = [
+export const processingModeItems = [
     {
         name: ProcessingMode.streaming,
         displayableName: i18next.t(`scenarioDetails.processingModeVariants.streaming`, "Streaming"),
@@ -24,7 +24,7 @@ const processingModeItems = [
     },
     {
         name: ProcessingMode.batch,
-        displayableName: i18next.t(`scenarioDetails.processingModeVariants.requestResponse`, "Batch"),
+        displayableName: i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch"),
         icon: "/assets/processing-mode/batch.svg",
     },
 ];
