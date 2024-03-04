@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.component
 
 import io.circe.{Decoder, Encoder}
-import sttp.tapir.Schema
 
 sealed trait ProcessingMode {
   def value: String
@@ -32,7 +31,5 @@ object ProcessingMode {
     case str if str == BoundedStream.value   => BoundedStream
     case other                               => throw new IllegalArgumentException(s"Not known processing mode: $other")
   }
-
-  implicit val schema: Schema[ProcessingMode] = Schema.string
 
 }

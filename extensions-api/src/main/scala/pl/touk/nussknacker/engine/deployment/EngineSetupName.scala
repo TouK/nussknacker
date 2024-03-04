@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.deployment
 
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
-import sttp.tapir.Schema
 
 final case class EngineSetupName(value: String) {
   def withSuffix(suffix: String): EngineSetupName = EngineSetupName(value + suffix)
@@ -15,6 +14,4 @@ object EngineSetupName {
 
   implicit val keyEncoder: KeyEncoder[EngineSetupName] = KeyEncoder.encodeKeyString.contramap(_.value)
   implicit val keyDecoder: KeyDecoder[EngineSetupName] = KeyDecoder.decodeKeyString.map(EngineSetupName(_))
-
-  implicit val schema: Schema[EngineSetupName] = Schema.string
 }

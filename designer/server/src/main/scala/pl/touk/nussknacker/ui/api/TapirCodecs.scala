@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
 import cats.implicits.toTraverseOps
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor}
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor, SimpleParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
@@ -10,8 +11,9 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValida
 import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.graph.EdgeType
-import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -29,10 +31,12 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.restmodel.definition.UIParameter
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeTypingData,
   NodeValidationError,
   UIGlobalError,
+  ValidationErrors,
   ValidationResult,
   ValidationWarnings
 }
@@ -139,140 +143,252 @@ object TapirCodecs {
     implicit val schema: Schema[FixedExpressionValue] = Schema.derived
   }
 
+  object ExpressionCodec {
+    implicit val expressionSchema: Schema[Expression] = Schema.derived
+  }
+
   object ParameterValueCompileTimeValidationCodec {
-    implicit val schema: Schema[ParameterValueCompileTimeValidation] = Schema.derived
+    import ExpressionCodec._
+    implicit val parameterValueCompileTimeValidationSchema: Schema[ParameterValueCompileTimeValidation] = Schema.derived
   }
 
   object ValueInputWithFixedValuesCodec {
-    implicit val schema: Schema[ValueInputWithFixedValues] = Schema.derived
+    import FixedExpressionValueCodec._
+    implicit val valueInputWithFixedValuesSchema: Schema[ValueInputWithFixedValues] = Schema.derived
   }
 
   object ProcessIdCodec {
-    implicit val schema: Schema[ProcessId] = Schema.derived
-  }
-
-  object ExpressionCodec {
-    implicit val schema: Schema[Expression] = Schema.derived
+    implicit val processIdSchema: Schema[ProcessId] = Schema.derived
   }
 
   object TypingResultCodec {
-    implicit val schema: Schema[TypingResult] = Schema.string // TODO: Type that properly
+    implicit val typingResultSchema: Schema[TypingResult] = Schema.string // TODO: Type me
+  }
+
+  object ParameterEditorCodec {
+    import ExpressionCodec._
+    import FixedExpressionValueCodec._
+    implicit val parameterEditorSchema: Schema[ParameterEditor]             = Schema.derived
+    implicit val simpleParameterEditorSchema: Schema[SimpleParameterEditor] = Schema.anyObject // TODO: type me
+    implicit val dualEditorSchema: Schema[DualEditorMode]                   = Schema.string
+    implicit val timeSchema: Schema[java.time.temporal.ChronoUnit]          = Schema.anyObject
   }
 
   object UIParameterCodec {
-    implicit lazy val schema: Schema[UIParameter] = Schema.derived
-  }
 
-  object ValidationResultsCodec {
-    implicit val schema: Schema[NodeTypingData] = Schema.derived
-  }
+    import TypingResultCodec._
+    import ParameterEditorCodec._
+    import ExpressionCodec._
 
-  object UIGlobalErrorCodec {
-    implicit val schema: Schema[UIGlobalError] = Schema.derived
-  }
-
-  object NodeValidationErrorCodec {
-    implicit val schema: Schema[NodeValidationError] = Schema.derived
-  }
-
-  object ValidationWarningsCodec {
-    implicit val schema: Schema[ValidationWarnings] = Schema.derived
-  }
-
-  object ValidationResultCodec {
-    implicit val schema: Schema[ValidationResult] = Schema.derived
-  }
-
-  object ProcessActionCodec {
-    implicit val schema: Schema[ProcessAction] = Schema.derived
-  }
-
-  object ProcessActionIdCodec {
-    implicit val schema: Schema[ProcessActionId] = Schema.derived
+    implicit lazy val uiParameterSchema: Schema[UIParameter] = Schema.derived
   }
 
   object ExpressionTypingInfoCodec {
-    implicit val schema: Schema[ExpressionTypingInfo] = Schema.string // TODO: type me
+    implicit val expressionTypingInfoSchema: Schema[ExpressionTypingInfo] = Schema.string // TODO: type me
   }
 
-  object ScenarioGraphCodec {
-    implicit val schema: Schema[ScenarioGraph] = Schema.derived
+  object NodeTypingDataCodec {
+
+    import TypingResultCodec._
+    import UIParameterCodec._
+    import ExpressionTypingInfoCodec._
+
+    implicit val nodeTypingDataSchema: Schema[NodeTypingData] = Schema.derived
   }
 
-  object EdgeCodec {
-    implicit val schema: Schema[Edge] = Schema.derived
+  object NodeValidationErrorCodec {
+    implicit val nodeValidationErrorSchema: Schema[NodeValidationError] = Schema.derived
+  }
+
+  object UIGlobalErrorCodec {
+    import NodeValidationErrorCodec._
+    implicit val uiGlobalErrorSchema: Schema[UIGlobalError] = Schema.derived
+  }
+
+  object ValidationWarningsCodec {
+    import NodeValidationErrorCodec._
+    implicit val validationWarningSchema: Schema[ValidationWarnings] = Schema.derived
+  }
+
+  object ValidationErrorsCodec {
+    import NodeValidationErrorCodec._
+    import UIGlobalErrorCodec._
+    implicit val validationErrorsSchema: Schema[ValidationErrors] = Schema.derived
+  }
+
+  object ValidationResultCodec {
+
+    import ValidationErrorsCodec._
+    import ValidationWarningsCodec._
+    import NodeTypingDataCodec._
+
+    implicit val validationResultSchema: Schema[ValidationResult] = Schema.derived
+  }
+
+  object ProcessActionIdCodec {
+    implicit val processActionIdSchema: Schema[ProcessActionId] = Schema.derived
+  }
+
+  object ProcessActionCodec {
+
+    import ProcessActionIdCodec._
+    import ProcessIdCodec._
+    import VersionIdCodec._
+
+    implicit val processActionSchema: Schema[ProcessAction] = Schema.derived
   }
 
   object ProcessPropertiesCodec {
-    implicit val schema: Schema[ProcessProperties] = Schema.derived
-  }
-
-  object ScenarioVersionCodec {
-    implicit val schema: Schema[ScenarioVersion] = Schema.derived
-  }
-
-  object EdgeTypeCodec {
-    implicit val schema: Schema[EdgeType] = Schema.derived
-  }
-
-  object BranchParametersCodec {
-    implicit val schema: Schema[BranchParameters] = Schema.derived
-  }
-
-  object FragmentRefCodec {
-    implicit val schema: Schema[FragmentRef] = Schema.derived
-  }
-
-  object UserDefinedAdditionalNodeFieldsCodec {
-    implicit val schema: Schema[UserDefinedAdditionalNodeFields] = Schema.derived
-  }
-
-  object NodeDataCodec {
-    implicit val schema: Schema[NodeData] = Schema.derived
-  }
-
-  object SourceCodec {
-    implicit val schema: Schema[Source] = Schema.derived
-  }
-
-  object JoinCodec {
-    implicit val schema: Schema[Join] = Schema.derived
+    import ProcessAdditionalFieldsCodec._
+    implicit val processPropertiesSchema: Schema[ProcessProperties] = Schema.derived
   }
 
   object BranchEndDataCodec {
-    implicit val schema: Schema[BranchEndData] = Schema.derived
+    import BranchEndDefinitionCodec._
+    implicit val branchEndDataSchema: Schema[BranchEndData] = Schema.derived
   }
 
   object BranchEndDefinitionCodec {
-    implicit val schema: Schema[BranchEndDefinition] = Schema.derived
+    implicit val branchEndDefinitionSchema: Schema[BranchEndDefinition] = Schema.derived
+  }
+
+  object NodeDataCodec {
+
+    import BranchEndDataCodec._
+    import ParameterCodec._
+    import UserDefinedAdditionalNodeFieldsCodec._
+    import ServiceRefCodec._
+    import ExpressionCodec._
+    import FragmentRefCodec._
+    import FragmentParameterCodec._
+    import FieldCodec._
+    import FragmentOutputVarDefinitionCodec._
+    import BranchParametersCodec._
+    import SinkRefCodec._
+    import SourceRefCodec._
+
+    implicit val nodeDataSchema: Schema[NodeData] = Schema.derived
+  }
+
+  object ScenarioGraphCodec {
+
+    import ProcessPropertiesCodec._
+    import NodeDataCodec._
+    import EdgeCodec._
+
+    implicit val scenarioGraphSchema: Schema[ScenarioGraph] = Schema.derived
+  }
+
+  object EdgeCodec {
+    import EdgeTypeCodec._
+    implicit val edgeSchema: Schema[Edge] = Schema.derived
+  }
+
+  object ScenarioVersionCodec {
+    import VersionIdCodec._
+    import ProcessActionCodec._
+    implicit val scenarioVersionSchema: Schema[ScenarioVersion] = Schema.derived
+  }
+
+  object EdgeTypeCodec {
+    import ExpressionCodec._
+    implicit val edgeTypeSchema: Schema[EdgeType] = Schema.derived
+  }
+
+  object ParameterCodec {
+    import ExpressionCodec._
+    implicit val parameterSchema: Schema[Parameter] = Schema.derived
+  }
+
+  object BranchParametersCodec {
+    import ParameterCodec._
+    implicit val branchParameterSchema: Schema[BranchParameters] = Schema.derived
+  }
+
+  object FragmentRefCodec {
+    import ParameterCodec._
+    implicit val fragmentRefSchema: Schema[FragmentRef] = Schema.derived
+  }
+
+  object UserDefinedAdditionalNodeFieldsCodec {
+    import LayoutDataCodec._
+    implicit val userDefinedAdditionalNodeFieldsSchema: Schema[UserDefinedAdditionalNodeFields] = Schema.derived
+  }
+
+  object SourceCodec {
+    import SourceRefCodec._
+    import UserDefinedAdditionalNodeFieldsCodec._
+    implicit val sourceSchema: Schema[Source] = Schema.derived
+  }
+
+  object JoinCodec {
+
+    import ParameterCodec._
+    import BranchParametersCodec._
+    import UserDefinedAdditionalNodeFieldsCodec._
+
+    implicit val joinSchema: Schema[Join] = Schema.derived
   }
 
   object FragmentOutputVarDefinitionCodec {
-    implicit val schema: Schema[FragmentOutputVarDefinition] = Schema.derived
+    import FieldCodec._
+    implicit val fragmentOutputDefinitionSchema: Schema[FragmentOutputVarDefinition] = Schema.derived
   }
 
   object FragmentParameterCodec {
-    implicit val schema: Schema[FragmentParameter] = Schema.derived
+
+    import FragmentClazzRefCodec._
+    import FixedExpressionValueCodec._
+    import ValueInputWithFixedValuesCodec._
+    import ParameterValueCompileTimeValidationCodec._
+
+    implicit val fragmentParameterSchema: Schema[FragmentParameter] = Schema.derived
   }
 
   object FragmentClazzRefCodec {
-    implicit val schema: Schema[FragmentClazzRef] = Schema.string
+    implicit val fragmentClazzRefSchema: Schema[FragmentClazzRef] = Schema.string
   }
 
   object ServiceRefCodec {
-    implicit val schema: Schema[ServiceRef] = Schema.derived
+    import ParameterCodec._
+    implicit val serviceRefSchema: Schema[ServiceRef] = Schema.derived
   }
 
   object SinkRefCodec {
-    implicit val schema: Schema[SinkRef] = Schema.derived
+    import ParameterCodec._
+    implicit val sinkRefSchema: Schema[SinkRef] = Schema.derived
   }
 
   object SourceRefCodec {
-    implicit val schema: Schema[SourceRef] = Schema.derived
+    import ParameterCodec._
+    implicit val sourceRefSchema: Schema[SourceRef] = Schema.derived
   }
 
   object FieldCodec {
-    implicit val schema: Schema[Field] = Schema.derived
+    import ExpressionCodec._
+    implicit val fieldSchema: Schema[Field] = Schema.derived
+  }
+
+  object ProcessingModeCodec {
+    implicit val processingModeSchema: Schema[ProcessingMode] = Schema.string
+  }
+
+  object EngineSetupNameCodec {
+    implicit val engineSetupNameSchema: Schema[EngineSetupName] = Schema.string
+  }
+
+  object ProcessNameCodec {
+    implicit val processNameSchema: Schema[ProcessName] = Schema.string
+  }
+
+  object ScenarioWithDetailsForMigrationsCodec {
+
+    import ProcessNameCodec._
+    import ScenarioGraphCodec._
+    import ValidationResultCodec._
+    import ScenarioVersionCodec._
+
+    implicit val scenarioWithDetailsForMigrationsSchema: Schema[ScenarioWithDetailsForMigrations] = Schema.derived
   }
 
 }
