@@ -7,6 +7,7 @@ export interface ScenariosFiltersModel extends SortableFiltersModel {
     TYPE?: string[];
     CREATED_BY?: string[];
     STATUS?: string[];
+    PROCESSING_MODE?: string[];
 }
 
 export enum ScenariosFiltersModelType {

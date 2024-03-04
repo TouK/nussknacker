@@ -10,6 +10,7 @@ import { FiltersContextType } from "../../common/filters/filtersContext";
 import { CopyTooltip } from "./copyTooltip";
 import { ProcessActionType } from "nussknackerUi/components/Process/types";
 import { ScenarioStatus } from "./scenarioStatus";
+import { ProcessingModeItem } from "./processingMode";
 
 function Category({ value, filtersContext }: { value: string; filtersContext: FiltersContextType<ScenariosFiltersModel> }): JSX.Element {
     const { setFilter, getFilter } = filtersContext;
@@ -72,6 +73,7 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
                 ) : null}
             </div>
             {!row.isFragment && !row.isArchived && <ScenarioStatus state={row.state} filtersContext={filtersContext} />}
+            <ProcessingModeItem processingMode={row.processingMode} filtersContext={filtersContext} />
             <Category value={row.processCategory} filtersContext={filtersContext} />
         </Stack>
     );

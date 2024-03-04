@@ -28,4 +28,5 @@ export const filterRules = createFilterRules<RowType, ScenariosFiltersModel>({
     CREATED_BY: (row, value) =>
         !value?.length || [].concat(value).some((f) => row["createdBy"]?.includes(f) || row["modifiedBy"]?.includes(f)),
     STATUS: (row, value) => !value?.length || [].concat(value).some((f) => row["state"]?.status.name.includes(f)),
+    PROCESSING_MODE: (row, value) => !value?.length || [].concat(value).some((f) => row["processingMode"].includes(f)),
 });
