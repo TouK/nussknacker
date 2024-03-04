@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
-import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
+import pl.touk.nussknacker.engine.api.typed.{TypingResultDecoder, typing}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -793,18 +793,20 @@ object TypingDtoSchemas {
 
   implicit lazy val typingResult: Schema[TypingResult] = {
     implicit val conf: Configuration = sttp.tapir.generic.Configuration.default.copy(
-      discriminator = Some("type"),
-      toDiscriminatorValue = sName => sName.fullName
+//      discriminator = Some("type"),
+//      toDiscriminatorValue = sName => {
+//        println("SNAME: "${sName)
+//      }
+//        sName.fullName.drop(44)
     )
 
-    val derived =
-      Schema.oneOfUsingField[TypingResult, TypingType](
-        typ => TypingType.forType(typ),
-        typingType => typingType.toString
-      )(
-        (TypingType.Unknown, unknownSchema),
-        (TypingType.TypedClass, typedClassSchema)
-      )(conf, Schema.derivedEnumerationValue[TypingType])
+    val derived = // Schema.oneOfWrapped[TypingResult]
+      Schema.oneOfUsingField[TypingResult, String](_.`type`, identity)(
+        ("Unknown", unknownSchema),
+        ("TypedClass", typedClassSchema),
+        ("TypedDict", typedDictSchema),
+        ("Null", typedNullSchema)
+      )(conf, Schema.string)
 
 //
 //      Schema.oneOfWrapped[TypingResult] (
@@ -967,7 +969,7 @@ object TypingDtoSchemas {
         sProductFieldForDisplayAndType :::
           sProductFieldForKlassAndParams
       ),
-      Some(SName("TypedClass"))
+      Some(SName("TypedClass")),
     )
       .title("TypedClass")
       .as
@@ -980,11 +982,11 @@ object TypingDtoSchemas {
         Schema(SString(), isOptional = true),
         display => Some(display)
       ),
-      SProductField[String, TypingType](
-        FieldName("type"),
-        Schema.derivedEnumerationValue,
-        _ => Some(TypingType.Unknown)
-      )
+//      SProductField[String, TypingType](
+//        FieldName("type"),
+//        Schema.derivedEnumerationValue,
+//        _ => Some(TypingType.Unknown)
+//      )
     )
   }
 
