@@ -268,6 +268,13 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         categories = processingTypeDataProvider.mapValues(_.category)
       )
+
+      val managementApiHttpService = new ManagementApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        dispatcher = dmDispatcher
+      )
+
       val notificationApiHttpService = new NotificationApiHttpService(
         authenticator = authenticationResources,
         notificationService = notificationService
@@ -409,14 +416,15 @@ class AkkaHttpBasedRouteProvider(
         new NuDesignerExposedApiHttpService(
           appApiHttpService,
           componentsApiHttpService,
-          userApiHttpService,
+          dictApiHttpService,
+          deploymentHttpService,
+          managementApiHttpService,
+          migrationApiHttpService,
+          nodesApiHttpService,
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
-          migrationApiHttpService,
-          nodesApiHttpService,
-          dictApiHttpService,
-          deploymentHttpService
+          userApiHttpService
         )
 
       val akkaHttpServerInterpreter = {

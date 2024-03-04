@@ -8,7 +8,6 @@ import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, V
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.validation.CustomActionValidator
 
-import java.io.ObjectInputFilter.Config
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 

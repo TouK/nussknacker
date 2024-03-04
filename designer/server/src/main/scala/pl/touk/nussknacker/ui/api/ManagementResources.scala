@@ -252,16 +252,6 @@ class ManagementResources(
                   toHttpResponse(CustomActionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
                 )
             }
-          } ~ path("validation") {
-            post {
-              entity(as[CustomActionRequest]) { req =>
-                complete {
-                  val actionsList = dispatcher.deploymentManagerUnsafe(req.actionName.value).customActionsDefinitions
-                  val validator   = new CustomActionValidator(actionsList)
-                  validator.validateCustomActionParams(req)
-                }
-              }
-            }
           }
         }
     }
