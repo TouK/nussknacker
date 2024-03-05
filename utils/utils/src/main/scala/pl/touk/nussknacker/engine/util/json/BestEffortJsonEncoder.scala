@@ -68,8 +68,12 @@ case class BestEffortJsonEncoder(
           case a: ZonedDateTime  => encodeZonedDateTimeWithFormatter(DateTimeFormatter.ISO_OFFSET_DATE_TIME).apply(a)
           case a: Instant        => Encoder[Instant].apply(a)
           case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
-          case a: UUID           => safeString(a.toString)
-          case a: DisplayJson    => a.asJson
+          case a: java.util.HashMap[java.util.Map[String, Any] @unchecked, _] =>
+            encodeMap(a.asScala.toMap.map { case (map, value) =>
+              (encodeMap(map.asScala.toMap).toString(), value)
+            })
+          case a: UUID                                       => safeString(a.toString)
+          case a: DisplayJson                                => a.asJson
           case a: scala.collection.Map[String @unchecked, _] => encodeMap(a.toMap)
           case a: java.util.Map[String @unchecked, _]        => encodeMap(a.asScala.toMap)
           case a: Iterable[_]                                => fromValues(a.map(encode))
