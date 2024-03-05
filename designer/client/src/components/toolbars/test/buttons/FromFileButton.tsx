@@ -1,19 +1,20 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { RootState } from "../../../../reducers";
-import { connect } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { getProcessName, getScenarioGraph, getTestCapabilities } from "../../../../reducers/selectors/graph";
 import Icon from "../../../../assets/img/toolbarButtons/from-file.svg";
 import { ToolbarButtonProps } from "../../types";
 import { testProcessFromFile } from "../../../../actions/nk/displayTestResults";
 
-type Props = StateProps & ToolbarButtonProps;
-
-function FromFileButton(props: Props) {
-    const { processName, scenarioGraph, testCapabilities, disabled } = props;
-    const { testProcessFromFile } = props;
+function FromFileButton(props: ToolbarButtonProps) {
+    const dispatch = useDispatch();
+    const testCapabilities = useSelector(getTestCapabilities);
+    const processName = useSelector(getProcessName);
+    const scenarioGraph = useSelector(getScenarioGraph);
+    const { disabled } = props;
     const { t } = useTranslation();
+
     const available = !disabled && testCapabilities && testCapabilities.canBeTested;
 
     return (
@@ -23,21 +24,9 @@ function FromFileButton(props: Props) {
             title={t("panels.actions.test-from-file.button.title", "run test on data from file")}
             icon={<Icon />}
             disabled={!available}
-            onDrop={(files) => files.forEach((file) => testProcessFromFile(processName, file, scenarioGraph))}
+            onDrop={(files) => files.forEach((file) => dispatch(testProcessFromFile(processName, file, scenarioGraph)))}
         />
     );
 }
 
-const mapState = (state: RootState) => ({
-    testCapabilities: getTestCapabilities(state),
-    processName: getProcessName(state),
-    scenarioGraph: getScenarioGraph(state),
-});
-
-const mapDispatch = {
-    testProcessFromFile,
-};
-
-export type StateProps = typeof mapDispatch & ReturnType<typeof mapState>;
-
-export default connect(mapState, mapDispatch)(FromFileButton);
+export default FromFileButton;
