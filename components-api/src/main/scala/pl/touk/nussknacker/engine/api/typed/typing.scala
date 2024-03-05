@@ -42,7 +42,6 @@ object typing {
 
     def display: String
 
-    def `type`: String = this.getClass.getName // todo: remove?
   }
 
   sealed trait KnownTypingResult extends TypingResult
