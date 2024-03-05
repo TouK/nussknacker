@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 object Expression {
 
-  sealed trait Language
+  sealed trait Language extends Serializable
 
   object Language {
     object Spel                  extends Language

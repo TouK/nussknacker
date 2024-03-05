@@ -60,7 +60,7 @@ object TabularDataDefinitionParser extends ExpressionParser {
   )
 
   private def createTabularDataDefinitionExpression(tabularTypedData: TabularTypedData, anOriginal: String) = {
-    new CompiledExpression {
+    new Expression {
       override val language: Language                                      = languageId
       override val original: String                                        = anOriginal
       override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = tabularTypedData.asInstanceOf[T]
@@ -91,8 +91,8 @@ object TabularDataDefinitionParser extends ExpressionParser {
               invalidCells.toList.map { coordinates =>
                 TabularDataDefinitionParserErrorDetails.CellError(
                   columnName = coordinates.columnName.name,
-                  rowIdx = coordinates.rowIndex,
-                  message =
+                  rowIndex = coordinates.rowIndex,
+                  errorMessage =
                     s"Column has a '${coordinates.columnName.aType.getSimpleName}' type but its value cannot be converted to the type."
                 )
               }

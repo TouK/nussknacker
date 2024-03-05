@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunn
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
-import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.SpecialSpELElement.{EmptyMap, Input}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, SpecialSpELElement, ValidatedValuesDetailedMessage}
 
@@ -136,7 +136,7 @@ class LiteRequestResponseFunctionalTest
     val result = runner.runWithRequests(scenario) { _ => }
 
     result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _), Nil))
+      case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _, None), Nil))
           if message.startsWith("Bad expression type") =>
     }
   }

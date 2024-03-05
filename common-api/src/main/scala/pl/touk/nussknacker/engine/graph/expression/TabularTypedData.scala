@@ -5,7 +5,11 @@ import io.circe.Decoder.Result
 import io.circe._
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Cell.RawValue
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.InvalidCellValues.CellCoordinates
-import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{CellsCountInRowDifferentThanColumnsCount, ColumnNameUniquenessViolation, InvalidCellValues}
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{
+  CellsCountInRowDifferentThanColumnsCount,
+  ColumnNameUniquenessViolation,
+  InvalidCellValues
+}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Error.{CannotCreateError, CannotParseError}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.{Column, Row}
 
@@ -46,7 +50,7 @@ object TabularTypedData {
   object CreationError {
     final case class ColumnNameUniquenessViolation(columnNames: NonEmptyList[String]) extends CreationError
     case object CellsCountInRowDifferentThanColumnsCount                              extends CreationError
-    final case class InvalidCellValues(invalidCells: NonEmptyList[CellCoordinates])   extends CreationError
+    final case class InvalidCellValues(cells: NonEmptyList[CellCoordinates])          extends CreationError
 
     object InvalidCellValues {
       final case class CellCoordinates(columnName: Column.Definition, rowIndex: Int)

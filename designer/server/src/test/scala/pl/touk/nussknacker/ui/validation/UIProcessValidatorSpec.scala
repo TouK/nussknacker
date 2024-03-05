@@ -1100,7 +1100,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "Error while parsing KeyWithLabel expression: not parsable key with label expression",
                 _,
                 Some("expression"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1685,22 +1686,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   private def validate(scenarioGraph: ScenarioGraph): ValidationResult = {
     TestFactory.processValidator.validate(scenarioGraph, ProcessTestData.sampleProcessName, isFragment = false)
   }
-
-  private def scenarioWithDictParameterEditorService(key: String) = createGraph(
-    List(
-      Source("inID", SourceRef(existingSourceFactory, List())),
-      Enricher(
-        "custom",
-        ServiceRef(
-          dictParameterEditorServiceId,
-          List(NodeParameter("expression", Expression.dictKeyWithLabel(key, Some("someLabel"))))
-        ),
-        "out"
-      ),
-      Sink("out", SinkRef(existingSinkFactory, List()))
-    ),
-    List(Edge("inID", "custom", None), Edge("custom", "out", None))
-  )
 
 }
 

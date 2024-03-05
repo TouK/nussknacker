@@ -37,6 +37,7 @@ import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithIm
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -843,7 +844,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val process = ScenarioBuilder
       .streaming("test")
       .source("start", "transaction-source")
-      .buildSimpleVariable("result-end", resultVariable, Expression("literal", testExpression))
+      .buildSimpleVariable("result-end", resultVariable, Expression(Language.Spel, testExpression))
       .emptySink("end-end", "dummySink")
 
     interpretProcess(process, Transaction()) should equal(testExpression)
@@ -1131,7 +1132,7 @@ object InterpreterSpec {
 
   object LiteralExpressionParser extends ExpressionParser {
 
-    override def languageId: String = "literal"
+    override val languageId: Language = Language.Spel
 
     override def parse(
         original: String,
@@ -1150,7 +1151,7 @@ object InterpreterSpec {
     )
 
     case class LiteralExpression(original: String) extends CompiledExpression {
-      override def language: String = languageId
+      override val language: Language = languageId
 
       override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = original.asInstanceOf[T]
     }

@@ -53,7 +53,7 @@ private object testComponents {
   }
 
   def testResultServiceComponent: ComponentDefinition = {
-    ComponentDefinition(TestScenarioRunner.testResultService, new TestResultSinkFactory)
+    ComponentDefinition(TestScenarioRunner.testResultService, new TestResultService)
   }
 
 }
@@ -180,8 +180,7 @@ class FlinkTestScenarioRunner(
       testExtensionsHolder: TestExtensionsHolder,
       runResult: RunResult
   ): RunListResult[R] = {
-    val results = TestResultSinkFactory.extractFromTestComponentsHolder(testExtensionsHolder)
-//    val results = TestResultService.extractFromTestComponentsHolder(testExtensionsHolder) // todo:
+    val results = TestResultService.extractFromTestComponentsHolder(testExtensionsHolder)
     RunListResult(successes = results, errors = runResult.errors)
   }
 

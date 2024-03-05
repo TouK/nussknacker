@@ -23,7 +23,7 @@ object ExpressionParseError {
       extends ExpressionParserCompilationErrorDetails(Language.TabularDataDefinition)
 
   object TabularDataDefinitionParserErrorDetails {
-    @JsonCodec final case class CellError(columnName: String, rowIdx: Int, message: String)
+    @JsonCodec final case class CellError(columnName: String, rowIndex: Int, errorMessage: String)
   }
 
 }
