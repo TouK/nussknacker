@@ -6,6 +6,7 @@ export function TableCellAvatar({ children }: PropsWithChildren<unknown>) {
         <Avatar
             variant="rounded"
             sx={{
+                color: "inherit",
                 bgcolor: "transparent",
                 transition: (theme) =>
                     theme.transitions.create("font-size", {

@@ -9,6 +9,8 @@ import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersUsageType } fr
 import { useDebouncedValue } from "rooks";
 import { FilterLinkCell } from "../cellRenderers";
 import { UsageWithStatus } from "../useComponentsQuery";
+import { Box } from "@mui/material";
+import { ScenarioStatusFormatted } from "../cellRenderers/scenarioStatusFormatted";
 
 export function nodeFilter(f, u: NodeUsageData) {
     switch (f) {
@@ -31,7 +33,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
         (): Columns<UsageWithStatus> => [
             {
                 field: "name",
-                cellClassName: "noPadding stretch",
+                cellClassName: "stretch",
                 headerName: t("table.usages.title.NAME", "Name"),
                 flex: 3,
                 minWidth: 160,
@@ -39,11 +41,42 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 hideable: false,
             },
             {
+                field: "state",
+                cellClassName: "stretch",
+                headerName: t("table.usages.title.STATUS", "Status"),
+                minWidth: 130,
+                renderCell: (props) => {
+                    if (!props.value) {
+                        return (
+                            <Box marginY={"auto"} px={1.25}>
+                                -
+                            </Box>
+                        );
+                    }
+
+                    return (
+                        <FilterLinkCell
+                            filterKey="STATUS"
+                            {...props}
+                            value={props.value.status.name}
+                            formattedValue={
+                                <ScenarioStatusFormatted
+                                    value={props.value.status.name}
+                                    icon={props.value.icon}
+                                    tooltip={props.value.tooltip}
+                                />
+                            }
+                        />
+                    );
+                },
+            },
+
+            {
                 field: "processCategory",
-                cellClassName: "noPadding stretch",
+                cellClassName: "stretch",
                 headerName: t("table.usages.title.PROCESS_CATEGORY", "Category"),
                 renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CATEGORY" {...props} />,
-                flex: 1,
+                minWidth: 160,
             },
             {
                 field: "createdAt",
@@ -56,7 +89,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
             },
             {
                 field: "createdBy",
-                cellClassName: "noPadding stretch",
+                cellClassName: "stretch",
                 headerName: t("table.usages.title.CREATED_BY", "Author"),
                 renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CREATED_BY" {...props} />,
                 hide: true,
@@ -64,18 +97,18 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
             },
             {
                 field: "modifiedBy",
-                cellClassName: "noPadding stretch",
+                cellClassName: "stretch",
                 headerName: t("table.usages.title.MODIFIED_BY", "Editor"),
                 renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CREATED_BY" {...props} />,
-                flex: 1,
+                minWidth: 100,
             },
             {
                 field: "modificationDate",
                 headerName: t("table.usages.title.MODIFICATION_DATE", "Modification date"),
                 type: "string",
-                flex: 2,
                 renderCell: (props) => <Highlight filterText={filterText} {...props} />,
                 sortingOrder: ["desc", "asc", null],
+                minWidth: 180,
             },
             {
                 field: "nodesUsagesData",

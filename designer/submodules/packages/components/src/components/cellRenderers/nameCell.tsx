@@ -15,7 +15,7 @@ export function NameCell(props: CellRendererParams): JSX.Element {
     const isFragment = row.componentGroupName === "fragments";
     return (
         <CellLink component={ExternalLink} underline="hover" disabled={!isFragment} color="inherit" href={scenarioHref(value)}>
-            <Stack direction="row" alignItems="center">
+            <Stack direction="row" alignItems="center" fontSize={"1.25rem"}>
                 <ComponentAvatar src={row.icon} title={row.componentType} fragment={isFragment} />
                 <Highlight value={value} filterText={filter} />
                 {isFragment ? (

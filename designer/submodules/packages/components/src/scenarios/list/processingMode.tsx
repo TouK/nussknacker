@@ -60,7 +60,7 @@ export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) =>
     return (
         <Button
             color={isSelected ? "primary" : "inherit"}
-            sx={{ textTransform: "capitalize", display: "flex", gap: 1, alignItems: "center", fontSize: "1rem", py: 0.25 }}
+            sx={{ textTransform: "capitalize", display: "flex", gap: 1, alignItems: "center", fontSize: "1rem", py: 0.25, mx: 0 }}
             onClick={onClick}
         >
             <item.Icon sx={{ fontSize: "1.2em", color: "inherit" }} />
