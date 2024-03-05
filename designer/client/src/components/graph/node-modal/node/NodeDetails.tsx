@@ -45,10 +45,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const dispatch = useDispatch();
 
     const performNodeEdit = useCallback(async () => {
-        await dispatch(await editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
-
-        //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like props.close doesn't unmount component.
-        mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+        await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
         props.close();
     }, [scenario, node, editedNode, outputEdges, dispatch, props]);
 
@@ -59,7 +56,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
             !readOnly
                 ? {
                       title: t("dialog.button.apply", "apply"),
-                      action: () => performNodeEdit(),
+                      action: performNodeEdit,
                       disabled: !editedNode.id?.length,
                   }
                 : null,
@@ -81,7 +78,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     );
 
     const cancelButtonData = useMemo(
-        () => ({ title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton }),
+        () => ({ title: t("dialog.button.cancel", "cancel"), action: props.close, classname: LoadingButtonTypes.secondaryButton }),
         [props, t],
     );
 
