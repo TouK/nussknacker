@@ -6,13 +6,14 @@ import io.circe.Json
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
 import org.apache.avro.{Schema, SchemaBuilder}
+import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider.KafkaUniversalName
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, KafkaConsumerRecord}
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner._
@@ -34,6 +35,8 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.{KafkaConfigProperties, ValidatedValuesDetailedMessage}
 
+import java.util.Collections
+
 // TODO: make this test use mocked schema registry instead of the real one
 @Network
 class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
@@ -41,14 +44,26 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
   private val schemaRegistryClientFactory = AzureSchemaRegistryClientFactory
 
   private val eventHubsNamespace = Option(System.getenv("AZURE_EVENT_HUBS_NAMESPACE")).getOrElse("nu-cloud")
+  private val eventHubsSharedAccessKeyName =
+    Option(System.getenv("AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME")).getOrElse("unknown")
+  private val eventHubsSharedAccessKey =
+    Option(System.getenv("AZURE_EVENT_HUBS_SHARED_ACCESS_KEY")).getOrElse("unknown")
 
-  private val config = ConfigFactory
-    .empty()
-    .withValue(
-      KafkaConfigProperties.property("schema.registry.url"),
-      fromAnyRef(s"https://$eventHubsNamespace.servicebus.windows.net")
-    )
-    .withValue(KafkaConfigProperties.property("schema.group"), fromAnyRef("test-group"))
+  // See https://nussknacker.io/documentation/cloud/azure/#setting-up-nussknacker-cloud
+  private val config = ConfigFactory.parseString(s"""
+       | kafka {
+       |   kafkaProperties {
+       |     "bootstrap.servers"  : "$eventHubsNamespace.servicebus.windows.net:9093"
+       |     "security.protocol"  : "SASL_SSL"
+       |     "sasl.mechanism"     : "PLAIN"
+       |     "sasl.jaas.config"   : "org.apache.kafka.common.security.plain.PlainLoginModule required username=\\"$$ConnectionString\\" password=\\"Endpoint=sb://$eventHubsNamespace.servicebus.windows.net/;SharedAccessKeyName=$eventHubsSharedAccessKeyName;SharedAccessKey=$eventHubsSharedAccessKey\\";"
+       |     "schema.registry.url": "https://$eventHubsNamespace.servicebus.windows.net"
+       |     "schema.group"       : "test-group"
+       |   }
+       | }
+       |""".stripMargin)
+
+  private val kafkaConfig = KafkaConfig.parseConfig(config)
 
   private val testRunner =
     TestScenarioRunner
@@ -57,17 +72,21 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
       .build()
 
   private val schemaRegistryClient =
-    schemaRegistryClientFactory.create(KafkaConfig.parseConfig(config).schemaRegistryClientKafkaConfig)
+    schemaRegistryClientFactory.create(kafkaConfig.schemaRegistryClientKafkaConfig)
 
   test("round-trip Avro serialization using Azure Schema Registry") {
     val (
       inputTopic: String,
       inputSchema: Schema,
       inputSchemaId: SchemaId,
+      outputTopic: String,
       outputSchema: Schema,
       outputSchemaId: SchemaId,
       scenario: CanonicalProcess
     ) = prepareAvroSetup
+
+    registerTopic(inputTopic)
+    registerTopic(outputTopic)
 
     val inputValue = new GenericRecordBuilder(inputSchema)
       .set("a", "aValue")
@@ -84,8 +103,19 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
   }
 
   test("round-trip Avro schema with json payload serialization on Azure") {
-    val (inputTopic: String, _: Schema, _: SchemaId, _: Schema, outputSchemaId: SchemaId, scenario: CanonicalProcess) =
+    val (
+      inputTopic: String,
+      _: Schema,
+      _: SchemaId,
+      outputTopic: String,
+      _: Schema,
+      outputSchemaId: SchemaId,
+      scenario: CanonicalProcess
+    ) =
       prepareAvroSetup
+
+    registerTopic(inputTopic)
+    registerTopic(outputTopic)
 
     val jsonPayloadTestRunner = TestScenarioRunner
       .kafkaLiteBased(config.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
@@ -130,13 +160,16 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
         SinkRawEditorParamName -> "true",
         SinkValueParamName     -> "#input"
       )
-    (inputTopic, inputSchema, inputSchemaId, outputSchema, outputSchemaId, scenario)
+    (inputTopic, inputSchema, inputSchemaId, outputTopic, outputSchema, outputSchemaId, scenario)
   }
 
   test("round-trip Avro serialization with primitive types on Azure") {
     val scenarioName = "primitive"
     val inputTopic   = s"$scenarioName-input"
     val outputTopic  = s"$scenarioName-output"
+
+    registerTopic(inputTopic)
+    registerTopic(outputTopic)
 
     val inputSchema  = SchemaBuilder.builder().intType()
     val outputSchema = SchemaBuilder.builder().longType()
@@ -176,6 +209,9 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
     val scenarioName = "avro-schemaevolution"
     val inputTopic   = s"$scenarioName-input"
     val outputTopic  = s"$scenarioName-output"
+
+    registerTopic(inputTopic)
+    registerTopic(outputTopic)
 
     val aFieldOnly    = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
     val bDefaultValue = "bDefault"
@@ -251,6 +287,12 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
       .namespace("not.important.namespace")
       .fields()
     assemblyFields(fields).endRecord()
+  }
+
+  private def registerTopic(topicName: String): Unit = {
+    KafkaUtils.usingAdminClient(kafkaConfig) {
+      _.createTopics(Collections.singletonList[NewTopic](new NewTopic(topicName, Collections.emptyMap())))
+    }
   }
 
 }
