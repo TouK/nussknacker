@@ -14,7 +14,6 @@ import pl.touk.nussknacker.test.config.{
   WithRichConfigRestAssuredUsersExtensions,
   WithRichDesignerConfig
 }
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 
 class NodesApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -547,35 +546,40 @@ class NodesApiHttpServiceSecuritySpec
                |      "message": "Property numberOfThreads (Number of threads) has invalid value",
                |      "description": "Expected one of 1, 2, got: a.",
                |      "fieldName": "numberOfThreads",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property parallelism",
                |      "description": "Property parallelism is not known",
                |      "fieldName": "parallelism",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property checkpointIntervalInSeconds",
                |      "description": "Property checkpointIntervalInSeconds is not known",
                |      "fieldName": "checkpointIntervalInSeconds",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property spillStateToDisk",
                |      "description": "Property spillStateToDisk is not known",
                |      "fieldName": "spillStateToDisk",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property useAsyncInterpretation",
                |      "description": "Property useAsyncInterpretation is not known",
                |      "fieldName": "useAsyncInterpretation",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    }
                |  ],
                |  "validationPerformed": true
@@ -668,35 +672,40 @@ class NodesApiHttpServiceSecuritySpec
                |      "message": "Property numberOfThreads (Number of threads) has invalid value",
                |      "description": "Expected one of 1, 2, got: a.",
                |      "fieldName": "numberOfThreads",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property parallelism",
                |      "description": "Property parallelism is not known",
                |      "fieldName": "parallelism",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property checkpointIntervalInSeconds",
                |      "description": "Property checkpointIntervalInSeconds is not known",
                |      "fieldName": "checkpointIntervalInSeconds",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property spillStateToDisk",
                |      "description": "Property spillStateToDisk is not known",
                |      "fieldName": "spillStateToDisk",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property useAsyncInterpretation",
                |      "description": "Property useAsyncInterpretation is not known",
                |      "fieldName": "useAsyncInterpretation",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    }
                |  ],
                |  "validationPerformed": true

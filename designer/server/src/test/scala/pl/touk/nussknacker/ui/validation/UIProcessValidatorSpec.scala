@@ -1110,7 +1110,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("checks for unknown dictId in DictParameterEditor") {
-    val process = procesWithDictParameterEditorService("someKey")
+    val process = procesWithDictParameterEditorService(Expression.dictKeyWithLabel("someKey", Some("someLabel")))
 
     val result = processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false)
 
@@ -1133,7 +1133,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("checks for unknown key in DictParameterEditor") {
-    val process = procesWithDictParameterEditorService("thisKeyDoesntExist")
+    val process =
+      procesWithDictParameterEditorService(Expression.dictKeyWithLabel("thisKeyDoesntExist", Some("someLabel")))
 
     val result = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map.empty))
