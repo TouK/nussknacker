@@ -111,6 +111,8 @@ Regarding authentication, a couple of options can be used - you can provide cred
 by Azure's [DefaultAzureCredential](https://learn.microsoft.com/en-us/java/api/overview/azure/identity-readme?view=azure-java-stable#defaultazurecredential).
 For example via Azure CLI or Azure PowerShell.
 
+Integration with Azure Schema Registry requires Kafka connection, make sure you have provided proper [configuration](#kafka---authentication).
+
 ## Messaging
 
 You can use standard kafka-cli commands like `kafka-console-consumer`, `kafka-console-producer`, [kcat](https://github.com/edenhill/kcat), Confluent's
