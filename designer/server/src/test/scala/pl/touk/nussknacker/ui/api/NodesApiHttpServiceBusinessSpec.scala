@@ -4,15 +4,13 @@ import io.circe.Printer
 import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-
-import java.net.URI
-import org.everit.json.schema.{Schema, ValidationException}
 import org.everit.json.schema.loader.{SchemaClient, SchemaLoader}
+import org.everit.json.schema.{Schema, ValidationException}
 import org.hamcrest.Matchers.equalTo
 import org.json.JSONObject
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypingResult}
-import pl.touk.nussknacker.engine.api.typed.{EnabledTypedFeatures, TypingResultGen, typing}
+import pl.touk.nussknacker.engine.api.typed.{EnabledTypedFeatures, TypingResultGen}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
@@ -25,8 +23,8 @@ import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, Rest
 import sttp.apispec.circe._
 import sttp.tapir.docs.apispec.schema._
 
-import scala.reflect.ClassTag
-import scala.util.{Failure, Success, Try}
+import java.net.URI
+import scala.util.{Failure, Try}
 
 class NodesApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -957,30 +955,14 @@ class NodesApiHttpServiceBusinessSpec
   }
 
   "TypingResult schemas shouldn't go out of sync with Codecs" in {
-    val sample =
-//      TypedObjectTypingResult -> is correctly validated if union in TypedUnion is optional -> otherwise it finds 2 possible schemas
-//      Typed.record(Map("abc" -> Typed.apply(Class.forName("java.lang.Boolean")), "cde" -> Typed.apply(Class.forName("java.lang.Boolean"))))
-
-//       TypedUnion -> is correctly validated if union is not optional -> otherwise 0 subschemas matched
-//      Typed.apply(Typed.apply(Class.forName("java.lang.Boolean")), Typed.apply(Class.forName("java.lang.Long")))
-
-//      TypedClass -> is correctly validated if union in TypedUnion is not optional -> otherwise it finds 2 possible schemas
-//      Typed.apply(Class.forName("java.lang.Boolean"))
-      typing.Unknown
-//    TypedNull
-
-    val sampleJson = TypingResult.encoder.apply(sample)
-
     val typingSchema = TypingDtoSchemas.typingResult
-//    println(typingSchema)
+
     val jsonSchema = TapirSchemaToJsonSchema(
       typingSchema,
       markOptionsAsNullable = true
     ).asJson
     val schemaStr: String = Printer.spaces2.print(jsonSchema.deepDropNullValues)
     val jsonObject        = new JSONObject(schemaStr)
-
-//    println(schemaStr)
 
     val schemaLoader = SchemaLoader
       .builder()
@@ -994,39 +976,23 @@ class NodesApiHttpServiceBusinessSpec
         .load()
         .build()
         .asInstanceOf[Schema]
-    println(schema)
-    val sampleStr: String = Printer.spaces2.print(sampleJson)
-    println(sampleStr)
-    Try(
-      schema.validate(
-        new JSONObject(sampleStr)
-      )
-    ) match {
-      case Failure(ex: ValidationException) =>
-        println(ex)
-        println(ex.getAllMessages)
-        println(ex.getCausingExceptions)
-        false shouldBe true
-      case _ => true shouldBe true
-    }
 
-//        for (_ <- 1 to 10) {
-//          TypingResultGen.typingResultGen(EnabledTypedFeatures.apply(false, false)).sample match {
-//            case Some(sample) =>
-//              val sampleJson   = TypingResult.encoder.apply(sample)
-//              val sampleStr: String = Printer.spaces2.print(sampleJson)
-//              println(sampleStr + "\n-------------------")
-//              Try(schema.validate(sampleStr)) match {
-//                case Failure(ex: ValidationException) =>
-//                  println(ex)
-//                  println(ex.getAllMessages)
-//                  println(ex.getCausingExceptions)
-//                  false shouldBe true
-//                case _ => true shouldBe true
-//              }
-//            case None =>
-//          }
-//        }
+    for (_ <- 1 to 10) {
+      TypingResultGen.typingResultGen(EnabledTypedFeatures.All).sample match {
+        case Some(sample) =>
+          val sampleJson = TypingResult.encoder.apply(sample)
+
+          Try(schema.validate(sampleJson)) match {
+            case Failure(ex: ValidationException) =>
+              println(ex)
+              println(ex.getAllMessages)
+              println(ex.getCausingExceptions)
+              false shouldBe true
+            case _ => true shouldBe true
+          }
+        case None =>
+      }
+    }
   }
 
   private lazy val exampleScenario = ScenarioBuilder
