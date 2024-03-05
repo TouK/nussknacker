@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../actions/nk";
 import HttpService from "../../http/HttpService";
-import { CustomAction } from "../../types";
+import {CustomAction, NodeValidationError, ValidationErrors} from "../../types";
 import { UnknownRecord } from "../../types/common";
 import { WindowContent, WindowKind } from "../../windowManager";
 import { ChangeableValue } from "../ChangeableValue";
@@ -16,6 +16,8 @@ import ErrorBoundary from "../common/ErrorBoundary";
 import { FormControl, FormHelperText, FormLabel } from "@mui/material";
 import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import {getValidationErrorsForField} from "../graph/node-modal/editors/Validators";
+import {validateCustomAction} from "../../actions/nk/CustomActionDetails";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -38,6 +40,18 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
 
     useEffect(() => onChange(state), [onChange, state]);
 
+    const [errors, setErrors] = useState<NodeValidationError[]>([])
+
+    useEffect( () => {
+        const handleValidateCustomAction = async () => {
+            const data = await validateCustomAction()
+
+            setErrors(data.errors)
+        }
+        handleValidateCustomAction()
+        }, []);
+
+
     return (
         <NodeTable>
             {(action?.parameters || []).map((param) => {
@@ -51,7 +65,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                             <Editor
                                 editorConfig={param?.editor}
                                 className={"node-value"}
-                                fieldErrors={undefined}
+                                fieldErrors={getValidationErrorsForField(errors, param.name)}
                                 formatter={null}
                                 expressionInfo={null}
                                 onValueChange={setParam(fieldName)}
