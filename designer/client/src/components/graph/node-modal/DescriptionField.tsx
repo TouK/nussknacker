@@ -10,7 +10,7 @@ interface DescriptionFieldProps {
     isEditMode?: boolean;
     node: NodeType;
     readonly?: boolean;
-    renderFieldLabel: (paramName: string) => JSX.Element;
+    renderFieldLabel: (paramName: string) => React.ReactNode;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
     errors: NodeValidationError[];

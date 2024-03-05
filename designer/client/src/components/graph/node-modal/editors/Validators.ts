@@ -37,10 +37,6 @@ export const uniqueValueValidator: (otherValues: string[]) => Validator = (other
     description: () => i18next.t("validator.unique.description", "Please fill field with unique value"),
     handledErrorType: HandledErrorType.UniqueParameter,
 });
-export const uniqueListValueValidator = (list: string[], currentIndex: number): Validator => ({
-    ...uniqueValueValidator(list.filter((v, i) => i !== currentIndex)),
-    message: () => i18next.t("uniqueListValueValidator.message", "This field has to be unique across list"),
-});
 export const uniqueScenarioValueValidator: typeof uniqueValueValidator = (otherValues) => ({
     ...uniqueValueValidator(otherValues),
     message: () => i18next.t("uniqueScenarioValueValidator.message", "This field has to be unique across scenario"),
