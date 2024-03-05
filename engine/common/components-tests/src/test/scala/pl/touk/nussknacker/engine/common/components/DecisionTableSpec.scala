@@ -6,6 +6,8 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -139,11 +141,31 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
           errors should be(
             NonEmptyList.one(
               ExpressionParserCompilationError(
-                message = "Column has a 'java.lang.Object' type but the value 'John' cannot be converted to it.",
+                message = "Typing error in some cells",
                 nodeId = "decision-table",
                 fieldName = Some("Basic Decision Table"),
                 originalExpr = invalidColumnTypeDecisionTableJson.expression,
-                details = None
+                details = Some(
+                  TabularDataDefinitionParserErrorDetails(
+                    List(
+                      CellError(
+                        columnName = "name",
+                        rowIndex = 0,
+                        errorMessage = "Column has 'Object' type but its value cannot be converted to the type."
+                      ),
+                      CellError(
+                        columnName = "name",
+                        rowIndex = 1,
+                        errorMessage = "Column has 'Object' type but its value cannot be converted to the type."
+                      ),
+                      CellError(
+                        columnName = "name",
+                        rowIndex = 2,
+                        errorMessage = "Column has 'Object' type but its value cannot be converted to the type."
+                      )
+                    )
+                  )
+                )
               )
             )
           )
@@ -244,7 +266,7 @@ class FlinkEngineRunDecisionTableSpec extends DecisionTableSpec with FlinkSpec {
   override protected def addEndNode(
       builder: GraphBuilder[CanonicalProcess]
   )(id: String, params: Seq[(String, Expression)]): CanonicalProcess = {
-    builder.emptySink(id, TestScenarioRunner.testResultService, params: _*)
+    builder.processorEnd(id, TestScenarioRunner.testResultService, params: _*)
   }
 
 }

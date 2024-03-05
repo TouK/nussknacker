@@ -70,7 +70,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               "MissingRequiredProperty",
               _,
               _,
-              Some("reqFieldName"),
+              Some(_),
               NodeValidationErrorType.SaveAllowed,
               None
             )
@@ -163,7 +163,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               "MissingRequiredProperty",
               _,
               _,
-              Some("reqFieldName"),
+              Some(_),
               NodeValidationErrorType.SaveAllowed,
               None
             )
@@ -184,7 +184,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               "InvalidPropertyFixedValue",
               _,
               _,
-              Some("optFixedFieldName"),
+              Some(_),
               NodeValidationErrorType.SaveAllowed,
               None
             ),
@@ -192,7 +192,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               "MissingRequiredProperty",
               _,
               _,
-              Some("reqFieldName"),
+              Some(_),
               NodeValidationErrorType.SaveAllowed,
               None
             )

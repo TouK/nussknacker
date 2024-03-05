@@ -93,7 +93,7 @@ object TabularDataDefinitionParser extends ExpressionParser {
                   columnName = coordinates.columnName.name,
                   rowIndex = coordinates.rowIndex,
                   errorMessage =
-                    s"Column has a '${coordinates.columnName.aType.getSimpleName}' type but its value cannot be converted to the type."
+                    s"Column has '${coordinates.columnName.aType.getSimpleName}' type but its value cannot be converted to the type."
                 )
               }
             )
