@@ -36,16 +36,17 @@ class FlinkProcessCompilerData(
     val componentUseCase: ComponentUseCase
 ) {
 
-  def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData], isTest: Boolean = false): Unit = {
+  def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compilerData.lifecycle(nodesToUse)
-    if (!isTest) {
-      lifecycle.foreach {
-        _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
-      }
-    } else {
-      lifecycle.foreach {
-        _.open(FlinkTestEngineRuntimeContextImpl(jobData, runtimeContext))
-      }
+    componentUseCase match {
+      case ComponentUseCase.TestRuntime =>
+        lifecycle.foreach {
+          _.open(FlinkTestEngineRuntimeContextImpl(jobData, runtimeContext))
+        }
+      case _ =>
+        lifecycle.foreach {
+          _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
+        }
     }
 
   }

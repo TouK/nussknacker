@@ -51,7 +51,7 @@ class FlinkTestMain(
       val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
       val env             = createEnv
 
-      registrar.register(env, process, processVersion, deploymentData, resultCollector, isTest = true)
+      registrar.register(env, process, processVersion, deploymentData, resultCollector)
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results
     }

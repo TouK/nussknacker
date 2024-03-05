@@ -10,12 +10,11 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 
 class FlinkCompilerLazyInterpreterCreator(
     runtimeContext: RuntimeContext,
-    compilerData: FlinkProcessCompilerData,
-    isTest: Boolean = false
+    compilerData: FlinkProcessCompilerData
 ) extends CompilerLazyParameterInterpreter {
 
   // TODO: is this good place?
-  compilerData.open(runtimeContext, Nil, isTest)
+  compilerData.open(runtimeContext, Nil)
 
   val deps: LazyInterpreterDependencies = compilerData.lazyInterpreterDeps
 

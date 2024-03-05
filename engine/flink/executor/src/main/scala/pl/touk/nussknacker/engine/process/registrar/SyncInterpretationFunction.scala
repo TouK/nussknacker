@@ -22,15 +22,14 @@ private[registrar] class SyncInterpretationFunction(
     val compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
     val node: SplittedNode[_ <: NodeData],
     validationContext: ValidationContext,
-    useIOMonad: Boolean,
-    isTest: Boolean
+    useIOMonad: Boolean
 ) extends RichFlatMapFunction[Context, InterpretationResult]
     with ProcessPartFunction {
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
   private lazy val compiledNode                  = compilerData.compileSubPart(node, validationContext)
 
-  override def open(parameters: Configuration): Unit = super.open(parameters, isTest)
+  override def open(parameters: Configuration): Unit = super.open(parameters)
 
   override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
     (try {

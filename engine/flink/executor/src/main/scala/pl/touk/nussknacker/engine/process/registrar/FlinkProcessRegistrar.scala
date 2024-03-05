@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -74,8 +74,7 @@ class FlinkProcessRegistrar(
       process: CanonicalProcess,
       processVersion: ProcessVersion,
       deploymentData: DeploymentData,
-      resultCollector: ResultCollector,
-      isTest: Boolean = false
+      resultCollector: ResultCollector
   ): Unit = {
     usingRightClassloader(env) { userClassLoader =>
       val compilerDataForUsedNodesAndClassloader =
@@ -93,8 +92,7 @@ class FlinkProcessRegistrar(
         compilerData,
         process,
         resultCollector,
-        typeInformationDetection,
-        isTest
+        typeInformationDetection
       )
       streamExecutionEnvPreparer.postRegistration(env, compilerData, deploymentData)
     }
@@ -116,14 +114,12 @@ class FlinkProcessRegistrar(
   }
 
   protected def createInterpreter(
-      compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
-      isTest: Boolean = false
+      compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData
   ): RuntimeContext => FlinkCompilerLazyInterpreterCreator =
     (runtimeContext: RuntimeContext) =>
       new FlinkCompilerLazyInterpreterCreator(
         runtimeContext,
-        compilerDataForClassloader(runtimeContext.getUserCodeClassLoader),
-        isTest
+        compilerDataForClassloader(runtimeContext.getUserCodeClassLoader)
       )
 
   private def register(
@@ -132,8 +128,7 @@ class FlinkProcessRegistrar(
       compilerData: FlinkProcessCompilerData,
       process: CanonicalProcess,
       resultCollector: ResultCollector,
-      typeInformationDetection: TypeInformationDetection,
-      isTest: Boolean
+      typeInformationDetection: TypeInformationDetection
   ): Unit = {
 
     val metaData         = compilerData.metaData
@@ -147,12 +142,10 @@ class FlinkProcessRegistrar(
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
       val jobData = compilerData.jobData
       val engineRuntimeContext =
-        if (isTest) { eng =>
-          FlinkTestEngineRuntimeContextImpl(jobData, eng)
-        } else
-          { eng =>
-            FlinkEngineRuntimeContextImpl(jobData, eng)
-          }.asInstanceOf[RuntimeContext => EngineRuntimeContext]
+        compilerData.componentUseCase match {
+          case ComponentUseCase.TestRuntime => eng => FlinkTestEngineRuntimeContextImpl(jobData, eng)
+          case _                            => eng => FlinkEngineRuntimeContextImpl(jobData, eng)
+        }
       FlinkCustomNodeContext(
         jobData,
         nodeComponentId.nodeId,
@@ -161,7 +154,7 @@ class FlinkProcessRegistrar(
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
           exceptionHandlerPreparer,
-          createInterpreter(compilerDataForProcessPart(None), isTest)
+          createInterpreter(compilerDataForProcessPart(None))
         ),
         exceptionHandlerPreparer = exceptionHandlerPreparer,
         globalParameters = globalParameters,
@@ -178,25 +171,26 @@ class FlinkProcessRegistrar(
         .sources
         .toList
         .foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
-          case (branchEnds, next: SourcePart)         => branchEnds ++ registerSourcePart(next, isTest)
+          case (branchEnds, next: SourcePart)         => branchEnds ++ registerSourcePart(next)
           case (branchEnds, joinPart: CustomNodePart) => branchEnds ++ registerJoinPart(joinPart, branchEnds)
         }
     }
 
-    def registerSourcePart(part: SourcePart, isTest: Boolean): Map[BranchEndDefinition, BranchEndData] = {
+    def registerSourcePart(part: SourcePart): Map[BranchEndDefinition, BranchEndData] = {
       // TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource]
 
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
       val start: SingleOutputStreamOperator[Context] =
-        if (!isTest) {
-          source
-            .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
-            .process(new SourceMetricsFunction(part.id), contextTypeInformation)
-        } else {
-          source
-            .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
-            .process(new TestSourceMetricsFunction(part.id), contextTypeInformation)
+        compilerData.componentUseCase match {
+          case ComponentUseCase.TestRuntime =>
+            source
+              .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
+              .process(new TestSourceMetricsFunction(part.id), contextTypeInformation)
+          case _ =>
+            source
+              .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
+              .process(new SourceMetricsFunction(part.id), contextTypeInformation)
         }
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
@@ -396,8 +390,7 @@ class FlinkProcessRegistrar(
             compilerDataForProcessPart(Some(part)),
             node,
             validationContext,
-            useIOMonad,
-            isTest
+            useIOMonad
           ),
           ti
         )
