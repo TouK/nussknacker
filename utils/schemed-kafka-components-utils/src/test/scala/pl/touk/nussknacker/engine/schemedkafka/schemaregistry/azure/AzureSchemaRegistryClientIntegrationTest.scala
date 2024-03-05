@@ -38,7 +38,7 @@ class AzureSchemaRegistryClientIntegrationTest
       "bootstrap.servers" -> s"$eventHubsNamespace.servicebus.windows.net:9093",
       "security.protocol" -> "SASL_SSL",
       "sasl.mechanism"    -> "PLAIN",
-      "sasl.jaas.config" -> s"org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$$ConnectionString\" password=\"Endpoint=sb://$eventHubsNamespace.servicebus.windows.net/;SharedAccessKeyName=$eventHubsSharedAccessKeyName;SharedAccessKey=$eventHubsSharedAccessKey\";",
+      "sasl.jaas.config" -> s"""org.apache.kafka.common.security.plain.PlainLoginModule required username="$$ConnectionString" password="Endpoint=sb://$eventHubsNamespace.servicebus.windows.net/;SharedAccessKeyName=$eventHubsSharedAccessKeyName;SharedAccessKey=$eventHubsSharedAccessKey";""",
       "schema.registry.url" -> s"https://$eventHubsNamespace.servicebus.windows.net",
       "schema.group"        -> "test-group",
     )
