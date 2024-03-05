@@ -7,27 +7,63 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTo
 
 class SchemaNameTopicMatchStrategyTest extends AnyFunSuite with Matchers with OptionValues {
 
-  test("schema name extraction") {
-    FullSchemaNameDecomposed.unapply("some.namespace.FooBarKey").value shouldEqual ("foo-bar", Some(
+  test("should decompose full schema name") {
+    FullSchemaNameDecomposed.unapply("some.namespace.FooBarKey").value shouldEqual ("FooBar", Some(
       "some.namespace"
     ), true)
-    FullSchemaNameDecomposed.unapply("some.namespace.FooBarValue").value shouldEqual ("foo-bar", Some(
+    FullSchemaNameDecomposed.unapply("some.namespace.FooBarValue").value shouldEqual ("FooBar", Some(
       "some.namespace"
     ), false)
     FullSchemaNameDecomposed.unapply("some.namespace.FooBar") should be(empty)
-    FullSchemaNameDecomposed.unapply("FooBarKey").value shouldEqual ("foo-bar", None, true)
-
-    SchemaNameTopicMatchStrategy.topicNameFromKeySchemaName("some.namespace.FooBarKey").value shouldEqual "foo-bar"
-    SchemaNameTopicMatchStrategy.topicNameFromValueSchemaName("some.namespace.FooBarKey") should be(empty)
-    SchemaNameTopicMatchStrategy.topicNameFromKeySchemaName("some.namespace.FooBarValue") should be(empty)
-    SchemaNameTopicMatchStrategy.topicNameFromValueSchemaName("some.namespace.FooBarValue").value shouldEqual "foo-bar"
+    FullSchemaNameDecomposed.unapply("FooBarKey").value shouldEqual ("FooBar", None, true)
+    FullSchemaNameDecomposed.unapply("FooBar") should be(empty)
   }
 
-  test("topic to schema name conversion") {
+  test("should convert topic to schema name") {
     SchemaNameTopicMatchStrategy.keySchemaNameFromTopicName("foo") shouldEqual "FooKey"
     SchemaNameTopicMatchStrategy.keySchemaNameFromTopicName("foo-bar") shouldEqual "FooBarKey"
+    SchemaNameTopicMatchStrategy.keySchemaNameFromTopicName("foo.bar") shouldEqual "FooBarKey"
     SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName("foo") shouldEqual "FooValue"
     SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName("foo-bar") shouldEqual "FooBarValue"
+    SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName("foo.bar") shouldEqual "FooBarValue"
+  }
+
+  test("should list topics matching schemas") {
+    val referenceTopics = List(
+      "foo.bar",
+      "foo-baz",
+      "without.schema"
+    )
+    val schemasToMatch = List(
+      "some.namespace.FooBarKey",
+      "some.namespace.FooBarValue",
+      "some.namespace.FooBazValue",
+      "some.namespace.WithoutTopicValue"
+    )
+    val matchStrategy = SchemaNameTopicMatchStrategy(referenceTopics)
+    matchStrategy.matchAllTopics(schemasToMatch, isKey = false) shouldEqual List(
+      "foo.bar",
+      "foo-baz"
+    )
+  }
+
+  test("should list schemas matching reference topics") {
+    val referenceTopics = List(
+      "foo.bar",
+      "foo-baz",
+      "without.schema"
+    )
+    val schemasToMatch = List(
+      "some.namespace.FooBarKey",
+      "some.namespace.FooBarValue",
+      "some.namespace.FooBazValue",
+      "some.namespace.WithoutTopicValue"
+    )
+    val matchStrategy = SchemaNameTopicMatchStrategy(referenceTopics)
+    matchStrategy.matchAllSchemas(schemasToMatch, isKey = false) shouldEqual List(
+      "some.namespace.FooBarValue",
+      "some.namespace.FooBazValue"
+    )
   }
 
 }

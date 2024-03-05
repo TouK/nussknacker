@@ -3,13 +3,20 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.avro.reflect.ReflectData
+import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
-import pl.touk.nussknacker.engine.kafka.{SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
+import pl.touk.nussknacker.engine.kafka.{
+  KafkaConfig,
+  KafkaUtils,
+  SchemaRegistryCacheConfig,
+  SchemaRegistryClientKafkaConfig
+}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
+import java.util.Collections
 import scala.beans.BeanProperty
 
 @Network
@@ -20,25 +27,45 @@ class AzureSchemaRegistryClientIntegrationTest
     with OptionValues {
 
   private val eventHubsNamespace = Option(System.getenv("AZURE_EVENT_HUBS_NAMESPACE")).getOrElse("nu-cloud")
+  private val eventHubsSharedAccessKeyName =
+    Option(System.getenv("AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME")).getOrElse("unknown")
+  private val eventHubsSharedAccessKey =
+    Option(System.getenv("AZURE_EVENT_HUBS_SHARED_ACCESS_KEY")).getOrElse("unknown")
 
-  private val schemaRegistryConfigMap =
-    Map("schema.registry.url" -> s"https://$eventHubsNamespace.servicebus.windows.net", "schema.group" -> "test-group")
+  // See https://nussknacker.io/documentation/cloud/azure/#setting-up-nussknacker-cloud
+  private val kafkaPropertiesConfigMap =
+    Map(
+      "bootstrap.servers" -> s"$eventHubsNamespace.servicebus.windows.net:9093",
+      "security.protocol" -> "SASL_SSL",
+      "sasl.mechanism"    -> "PLAIN",
+      "sasl.jaas.config" -> s"org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$$ConnectionString\" password=\"Endpoint=sb://$eventHubsNamespace.servicebus.windows.net/;SharedAccessKeyName=$eventHubsSharedAccessKeyName;SharedAccessKey=$eventHubsSharedAccessKey\";",
+      "schema.registry.url" -> s"https://$eventHubsNamespace.servicebus.windows.net",
+      "schema.group"        -> "test-group",
+    )
 
   private val schemaRegistryConfig =
-    SchemaRegistryClientKafkaConfig(schemaRegistryConfigMap, SchemaRegistryCacheConfig(), None)
+    SchemaRegistryClientKafkaConfig(kafkaPropertiesConfigMap, SchemaRegistryCacheConfig(), None)
   private val schemaRegistryClient = AzureSchemaRegistryClientFactory.create(schemaRegistryConfig)
 
   test("getAllTopics should return topic for corresponding schema based on schema name") {
     val givenTopic = "nu-cloud-integration-test"
-    registerSchemaMatchingTopicNameConvention(givenTopic)
+    registerTopic(givenTopic)
+
+    val value  = new NuCloudIntegrationTestValue
+    val schema = createReflectSchema(value)
+    SchemaNameTopicMatchStrategy(List(givenTopic)).matchAllTopics(List(schema.name()), isKey = false) shouldEqual List(
+      givenTopic
+    )
+    schemaRegistryClient.registerSchemaVersionIfNotExists(schema)
 
     val topics = schemaRegistryClient.getAllTopics.validValue
-
     topics should contain(givenTopic)
   }
 
   test("getFreshSchema should return version for topic for corresponding schema based on schema name") {
     val givenTopic = "nu-cloud-multiple-versions-test"
+    registerTopic(givenTopic)
+
     val aFieldOnlySchema =
       createRecordSchema(givenTopic, _.name("a").`type`(Schema.create(Schema.Type.STRING)).noDefault())
     val abFieldsSchema = createRecordSchema(
@@ -65,20 +92,24 @@ class AzureSchemaRegistryClientIntegrationTest
     resultForABFieldsSchema.id.asString shouldEqual abFieldsSchemaProps.getId
   }
 
-  private def registerSchemaMatchingTopicNameConvention(topicName: String): Unit = {
-    val value = new NuCloudIntegrationTestValue
+  private def createReflectSchema[T](value: T): AvroSchema = {
     // Azure Serializer doesn't support reflect schema inferring but generally reflect schema approach shows convention
     // which Avro follow in other places like generated specific record approach)
     val schema = ReflectData.get().getSchema(classOf[NuCloudIntegrationTestValue])
-    SchemaNameTopicMatchStrategy.topicNameFromValueSchemaName(schema.getFullName).value shouldEqual topicName
+    new AvroSchema(schema)
+  }
 
-    schemaRegistryClient.registerSchemaVersionIfNotExists(new AvroSchema(schema))
+  private def registerTopic(topicName: String): Unit = {
+    val kafkaConfig = KafkaConfig(Some(schemaRegistryConfig.kafkaProperties), None)
+    KafkaUtils.usingAdminClient(kafkaConfig) {
+      _.createTopics(Collections.singletonList[NewTopic](new NewTopic(topicName, Collections.emptyMap())))
+    }
   }
 
   private def createRecordSchema(
       topicName: String,
       assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]
-  ) = {
+  ): AvroSchema = {
     val fields = SchemaBuilder
       .record(SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName(topicName))
       .namespace("not.important.namespace")
