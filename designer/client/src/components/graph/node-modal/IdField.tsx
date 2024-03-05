@@ -30,7 +30,7 @@ export function applyIdFromFakeName({ id, ...editedNode }: NodeType & { [FAKE_NA
 
 export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showValidation, errors }: IdFieldProps): JSX.Element {
     const nodes = useSelector(getProcessNodesIds);
-    const otherNodes = useMemo(() => nodes.filter((n) => n !== node.id), [node.id, nodes]);
+    const [otherNodes] = useState(() => nodes.filter((n) => n !== node[propName]));
 
     const [isMarked] = useDiffMark();
     const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node]);
