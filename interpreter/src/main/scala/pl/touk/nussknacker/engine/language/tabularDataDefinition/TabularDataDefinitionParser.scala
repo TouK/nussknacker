@@ -4,7 +4,7 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionTypingInfo, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{ErrorDetails, TabularDataDefinitionParserErrorDetails}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -53,7 +53,7 @@ object TabularDataDefinitionParser extends ExpressionParser {
   )
 
   private def createTabularDataDefinitionExpression(tabularTypedData: TabularTypedData, anOriginal: String) = {
-    new Expression {
+    new CompiledExpression {
       override val language: Language                                      = languageId
       override val original: String                                        = anOriginal
       override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = tabularTypedData.asInstanceOf[T]
