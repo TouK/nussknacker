@@ -292,17 +292,26 @@ class AzureSchemaRegistryKafkaAvroTest
     assemblyFields(fields).endRecord()
   }
 
-  private def registerTopic(topicNames: List[String]): Unit = {
+  private def registerTopic(topicNames: List[String], retries: Int = 3): Unit = {
     import scala.jdk.CollectionConverters._
+    logger.info(s"Register topics ${topicNames.mkString(",")}, retries = $retries")
     KafkaUtils.usingAdminClient(kafkaConfig) { admin =>
-      val topicList      = topicNames.map(name => new NewTopic(name, Collections.emptyMap())).asJava
-      val timeoutSeconds = 5
-      try {
-        logger.info(s"Create topics: ${topicNames.mkString(",")}")
-        admin.createTopics(topicList).all().get(timeoutSeconds, TimeUnit.SECONDS)
-      } catch {
-        case NonFatal(e) =>
-          logger.error(s"Other exception for ${topicNames.mkString(",")}", e)
+      val existingTopics     = admin.listTopics().names().get().asScala.toList
+      val (toSkip, toCreate) = topicNames.partition(existingTopics.contains)
+      logger.info(s"Skip existing topics: ${toSkip.mkString(",")}")
+      if (toCreate.nonEmpty) {
+        val topicsToCreate = toCreate.map(name => new NewTopic(name, Collections.emptyMap())).asJavaCollection
+        try {
+          logger.info(s"Create topics: ${topicNames.mkString(",")}")
+          admin.createTopics(topicsToCreate).all().get(5, TimeUnit.SECONDS)
+        } catch {
+          case NonFatal(e) =>
+            logger.error(s"Other exception for ${topicNames.mkString(",")}", e)
+            if (retries > 0) {
+              Thread.sleep(1000)
+              registerTopic(toCreate, retries - 1)
+            }
+        }
       }
     }
   }
