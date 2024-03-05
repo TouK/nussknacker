@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
@@ -33,13 +34,19 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaV
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
-import pl.touk.nussknacker.test.{KafkaConfigProperties, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.util.Collections
+import java.util.concurrent.TimeUnit
+import scala.util.control.NonFatal
 
 // TODO: make this test use mocked schema registry instead of the real one
 @Network
-class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+class AzureSchemaRegistryKafkaAvroTest
+    extends AnyFunSuite
+    with Matchers
+    with ValidatedValuesDetailedMessage
+    with LazyLogging {
 
   private val schemaRegistryClientFactory = AzureSchemaRegistryClientFactory
 
@@ -85,8 +92,7 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
       scenario: CanonicalProcess
     ) = prepareAvroSetup
 
-    registerTopic(inputTopic)
-    registerTopic(outputTopic)
+    registerTopic(List(inputTopic, outputTopic))
 
     val inputValue = new GenericRecordBuilder(inputSchema)
       .set("a", "aValue")
@@ -114,8 +120,7 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
     ) =
       prepareAvroSetup
 
-    registerTopic(inputTopic)
-    registerTopic(outputTopic)
+    registerTopic(List(inputTopic, outputTopic))
 
     val jsonPayloadTestRunner = TestScenarioRunner
       .kafkaLiteBased(config.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
@@ -168,8 +173,7 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
     val inputTopic   = s"$scenarioName-input"
     val outputTopic  = s"$scenarioName-output"
 
-    registerTopic(inputTopic)
-    registerTopic(outputTopic)
+    registerTopic(List(inputTopic, outputTopic))
 
     val inputSchema  = SchemaBuilder.builder().intType()
     val outputSchema = SchemaBuilder.builder().longType()
@@ -210,8 +214,7 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
     val inputTopic   = s"$scenarioName-input"
     val outputTopic  = s"$scenarioName-output"
 
-    registerTopic(inputTopic)
-    registerTopic(outputTopic)
+    registerTopic(List(inputTopic, outputTopic))
 
     val aFieldOnly    = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
     val bDefaultValue = "bDefault"
@@ -289,9 +292,18 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
     assemblyFields(fields).endRecord()
   }
 
-  private def registerTopic(topicName: String): Unit = {
-    KafkaUtils.usingAdminClient(kafkaConfig) {
-      _.createTopics(Collections.singletonList[NewTopic](new NewTopic(topicName, Collections.emptyMap())))
+  private def registerTopic(topicNames: List[String]): Unit = {
+    import scala.jdk.CollectionConverters._
+    KafkaUtils.usingAdminClient(kafkaConfig) { admin =>
+      val topicList      = topicNames.map(name => new NewTopic(name, Collections.emptyMap())).asJava
+      val timeoutSeconds = 5
+      try {
+        logger.info(s"Create topics: ${topicNames.mkString(",")}")
+        admin.createTopics(topicList).all().get(timeoutSeconds, TimeUnit.SECONDS)
+      } catch {
+        case NonFatal(e) =>
+          logger.error(s"Other exception for ${topicNames.mkString(",")}", e)
+      }
     }
   }
 
