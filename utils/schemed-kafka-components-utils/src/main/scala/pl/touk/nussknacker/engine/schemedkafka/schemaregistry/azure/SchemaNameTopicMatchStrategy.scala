@@ -13,23 +13,12 @@ class SchemaNameTopicMatchStrategy(referenceTopicList: List[String]) {
   /**
     * List all reference topics matching schema names.
     */
-  def matchAllTopics(fullSchemaNames: List[String], isKey: Boolean): List[String] = {
-    val coreSchemaNames = fullSchemaNames.collect { case _ @FullSchemaNameDecomposed(coreName, _, `isKey`) =>
+  def getAllMatchingTopics(fullSchemaNames: List[String], isKey: Boolean): List[String] = {
+    val coreSchemaNames = fullSchemaNames.collect { case _ @FullSchemaNameDecomposed(coreName, `isKey`) =>
       coreName
     }
     referenceTopicList.collect {
       case topicName if coreSchemaNames.contains(toSchemaNamingConvention(topicName)) => topicName
-    }
-  }
-
-  /**
-    * List all schemas matching reference topics.
-    */
-  def matchAllSchemas(fullSchemaNames: List[String], isKey: Boolean): List[String] = {
-    fullSchemaNames.collect {
-      case fullSchemaName @ FullSchemaNameDecomposed(coreName, _, `isKey`)
-          if referenceTopicList.map(toSchemaNamingConvention).contains(coreName) =>
-        fullSchemaName
     }
   }
 
@@ -44,8 +33,6 @@ object SchemaNameTopicMatchStrategy {
     referenceTopicList
   )
 
-  def keySchemaNameFromTopicName(topicName: String): String = schemaNameFromTopicName(topicName, isKey = true)
-
   def valueSchemaNameFromTopicName(topicName: String): String = schemaNameFromTopicName(topicName, isKey = false)
 
   def schemaNameFromTopicName(topicName: String, isKey: Boolean): String = {
@@ -54,20 +41,31 @@ object SchemaNameTopicMatchStrategy {
   }
 
   /**
+    * List all schemas matching reference topics.
+    */
+  def getMatchingSchemas(topicName: String, fullSchemaNames: List[String], isKey: Boolean): List[String] = {
+    fullSchemaNames.collect {
+      case fullSchemaName @ FullSchemaNameDecomposed(coreName, `isKey`)
+          if toSchemaNamingConvention(topicName) == coreName =>
+        fullSchemaName
+    }
+  }
+
+  /**
     * Transforms topic name to schema naming convention.
     * @see https://nussknacker.io/documentation/docs/integration/KafkaIntegration/#association-between-schema-with-topic
     */
   def toSchemaNamingConvention(topicName: String): String =
-    topicName.toLowerCase.replaceAll("\\W", " ").split(" ").map(_.capitalize).mkString("")
+    topicName.toLowerCase.replaceAll("\\W+", " ").split(" ").map(_.capitalize).mkString("")
 
   object FullSchemaNameDecomposed {
 
-    private def fullSchemaNamePattern(suffix: String) = ("^(.*\\.)?([^.]*)" + suffix + "$").r
+    private def fullSchemaNamePattern(suffix: String) = ("^(?:.*\\.)?([^.]*)" + suffix + "$").r
     private val namespaceAndNameKey                   = fullSchemaNamePattern(KeySuffix)
     private val namespaceAndNameValue                 = fullSchemaNamePattern(ValueSuffix)
 
     /**
-      * Decompose schema (full) name to: topicName, namespace (optional) and isKey.
+      * Extracts core schema name and isKey flag from full schema name.
       *
       * Only schemas ends with Key or Value will be recognized - we assume that other schemas are for other purpose
       * and won't appear on any Nussknacker lists.
@@ -76,20 +74,14 @@ object SchemaNameTopicMatchStrategy {
       * Topics (event hubs) can have capital letters but generally it is a good rule to not use them in topic names to avoid
       * mistakes in interpretation shortcuts and so on - similar like with sql tables.
       *
-      * For example: full schema name "some.optional.namespace.CoreSchemaNameValue" is decomposed into
-      * <ul>
-      * <li>name = CoreSchemaName</li>
-      * <li>namespace = some.optional.namespace</li>
-      * <li>"isKey" flag = true</li>
-      * </ul>
+      * For example: for full schema name "some.optional.namespace.CoreSchemaNameValue"
+      * it extracts: name = CoreSchemaName and "isKey" flag = true.
       */
-    def unapply(fullSchemaName: String): Option[(String, Option[String], Boolean)] = {
+    def unapply(fullSchemaName: String): Option[(String, Boolean)] = {
       fullSchemaName match {
-        case namespaceAndNameKey(null, core)        => Some((core, None, true))
-        case namespaceAndNameKey(namespace, core)   => Some((core, Some(namespace.replaceAll("\\.$", "")), true))
-        case namespaceAndNameValue(null, core)      => Some((core, None, false))
-        case namespaceAndNameValue(namespace, core) => Some((core, Some(namespace.replaceAll("\\.$", "")), false))
-        case _                                      => None
+        case namespaceAndNameKey(core)   => Some((core, true))
+        case namespaceAndNameValue(core) => Some((core, false))
+        case _                           => None
       }
     }
 

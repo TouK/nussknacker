@@ -53,7 +53,8 @@ class AzureSchemaRegistryClientIntegrationTest
 
     val value  = new NuCloudIntegrationTestValue
     val schema = createReflectSchema(value)
-    SchemaNameTopicMatchStrategy(List(givenTopic)).matchAllTopics(List(schema.name()), isKey = false) shouldEqual List(
+    SchemaNameTopicMatchStrategy(List(givenTopic))
+      .getAllMatchingTopics(List(schema.name()), isKey = false) shouldEqual List(
       givenTopic
     )
     schemaRegistryClient.registerSchemaVersionIfNotExists(schema)

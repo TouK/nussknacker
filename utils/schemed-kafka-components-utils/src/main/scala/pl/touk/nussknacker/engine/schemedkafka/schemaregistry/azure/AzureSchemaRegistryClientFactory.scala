@@ -126,7 +126,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
       admin.listTopics().names().get().asScala.toList
     }
     val matchStrategy = SchemaNameTopicMatchStrategy(topics)
-    getAllFullSchemaNames.map(matchStrategy.matchAllTopics(_, isKey = false))
+    getAllFullSchemaNames.map(matchStrategy.getAllMatchingTopics(_, isKey = false))
   }
 
   override def getAllVersions(topicName: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]] = {
@@ -135,8 +135,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
 
   private def getOneMatchingSchemaName(topicName: String, isKey: Boolean): Validated[SchemaRegistryError, String] = {
     getAllFullSchemaNames.andThen { fullSchemaNames =>
-      val matchStrategy           = SchemaNameTopicMatchStrategy(List(topicName))
-      val matchingFullSchemaNames = matchStrategy.matchAllSchemas(fullSchemaNames, isKey)
+      val matchingFullSchemaNames = SchemaNameTopicMatchStrategy.getMatchingSchemas(topicName, fullSchemaNames, isKey)
       matchingFullSchemaNames match {
         case one :: Nil =>
           Valid(one)
