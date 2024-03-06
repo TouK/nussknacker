@@ -5,12 +5,12 @@ declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace Cypress {
         interface Chainable {
-            createTestProcess: typeof createProcess;
+            createTestProcess: typeof createTestProcess;
             deleteTestProcess: typeof deleteTestProcess;
             getTestProcesses: typeof getTestProcesses;
             deleteAllTestProcesses: typeof deleteAllTestProcesses;
             createTestProcessName: typeof createTestProcessName;
-            createTestFragment: typeof createProcess;
+            createTestFragment: typeof createTestFragment;
             importTestProcess: typeof importTestProcess;
             visitNewProcess: typeof visitNewProcess;
             visitNewFragment: typeof visitNewFragment;
@@ -31,16 +31,27 @@ function createTestProcessName(name?: string) {
     const index = padStart(processIndexes[name].toString(), 3, "0");
     return cy.wrap(`${Cypress.env("processNamePrefix")}-${index}-${name}-test-process`);
 }
-
-function createProcess(name?: string, fixture?: string, category = "Category1", isFragment?: boolean) {
+function createProcess(
+    name?: string,
+    fixture?: string,
+    category = "Category1",
+    isFragment = false,
+    processingMode?: string,
+    engineSetupName?: string,
+) {
     return cy.createTestProcessName(name).then((processName) => {
-        let url = `/api/processes/${processName}/${category}`;
-        if (isFragment) {
-            url += "?isFragment=true";
-        }
+        const url = `/api/processes`;
+
         cy.request({
             method: "POST",
             url,
+            body: {
+                name: processName,
+                category,
+                isFragment,
+                processingMode: processingMode,
+                engineSetupName,
+            },
         })
             .its("status")
             .should("equal", 201);
@@ -48,9 +59,11 @@ function createProcess(name?: string, fixture?: string, category = "Category1", 
     });
 }
 
-const createTestProcess = (name?: string, fixture?: string, category = "Category1") => createProcess(name, fixture, category);
+const createTestProcess = (name?: string, fixture?: string, category = "Category1", processingMode?: string, engineSetupName?: string) =>
+    createProcess(name, fixture, category, false, processingMode, engineSetupName);
 
-const createTestFragment = (name?: string, fixture?: string, category = "Category1") => createProcess(name, fixture, category, true);
+const createTestFragment = (name?: string, fixture?: string, category = "Category1", processingMode?: string, engineSetupName?: string) =>
+    createProcess(name, fixture, category, true, processingMode, engineSetupName);
 
 function visitProcess(processName: string) {
     cy.visit(`/visualization/${processName}`);

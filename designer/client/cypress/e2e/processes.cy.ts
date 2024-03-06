@@ -4,6 +4,10 @@ describe("Processes list", () => {
     before(() => {
         cy.deleteAllTestProcesses({ filter: NAME, force: true });
         cy.createTestProcessName(NAME).as("processName");
+        cy.createTestProcess(`${NAME}-processing-mode-Request-Response`, undefined, "RequestResponse", "Request-Response").as(
+            "request-response-scenario",
+        );
+        cy.createTestProcess(`${NAME}-processing-mode-Streaming`, undefined, undefined, "Unbounded-Stream");
     });
 
     after(() => {
@@ -43,6 +47,35 @@ describe("Processes list", () => {
         cy.contains(this.processName).should("be.visible"); //.matchImage() FIXME
         cy.contains(this.processName).click({ x: 10, y: 10 });
         cy.url().should("contain", `visualization/${this.processName}`);
+    });
+
+    it("should filter by processing mode", function () {
+        cy.get("[placeholder='Search...']").type(`${NAME}-processing-mode`);
+        cy.contains(/every of the 2 rows match the filters/i).should("be.visible");
+
+        cy.get("[role='grid']").matchImage({ maxDiffThreshold: 0.0001 });
+
+        cy.contains("button", /processing mode/i).click();
+
+        cy.get("ul[role='menu']").matchImage();
+
+        cy.get("ul[role='menu']").within(() => {
+            cy.contains(/streaming/i).click();
+        });
+
+        cy.contains(/1 of the 2 rows match the filters/i).should("be.visible");
+
+        cy.get("ul[role='menu']").within(() => {
+            cy.contains(/Default/i).click();
+        });
+
+        cy.contains(/every of the 2 rows match the filters/i).should("be.visible");
+
+        cy.get("ul[role='menu']").within(() => {
+            cy.contains(/Request-Response/i).click();
+        });
+
+        cy.contains(/1 of the 2 rows match the filters/i).should("be.visible");
     });
 });
 
