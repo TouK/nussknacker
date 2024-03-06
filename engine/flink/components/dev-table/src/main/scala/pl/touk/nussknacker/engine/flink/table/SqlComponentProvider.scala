@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentP
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.table.extractor.DataSourceSqlExtractor.extractTablesFromFlinkRuntime
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.extractor.{SqlDataSourceConfig, SqlStatementReader}
+import pl.touk.nussknacker.engine.flink.table.extractor.{DataSourceTableDefinition, SqlStatementReader}
 import pl.touk.nussknacker.engine.flink.table.source.SqlSourceFactory
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
@@ -34,30 +34,29 @@ class SqlComponentProvider extends ComponentProvider with LazyLogging {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    // TODO: hande invalid config
-    val parsedConfig = config.rootAs[SqlFileDataSourceConfig]
+    val parsedConfig = config.rootAs[SqlFileDataSourcesConfig]
 
-    val configs = extractDataSourceConfigFromSqlFile(parsedConfig.sqlFilePath)
+    val configs = extractDataSourceConfigFromSqlFileOrThrow(parsedConfig.sqlFilePath)
 
     ComponentDefinition(
-      tableDataSourceComponentId(parsedConfig),
+      "tableApi-source-sql",
       new SqlSourceFactory(configs)
     ) :: Nil
   }
 
-  private def tableDataSourceComponentId(config: SqlFileDataSourceConfig): String =
-    s"tableApi-source-sql-${config.componentNameSuffix}"
-
-  private def extractDataSourceConfigFromSqlFile(filePath: String): List[SqlDataSourceConfig] = {
+  private def extractDataSourceConfigFromSqlFileOrThrow(filePath: String): SqlDataSourcesDefinition = {
     val sqlStatements = readSqlFromFile(Paths.get(filePath))
     val results       = extractTablesFromFlinkRuntime(sqlStatements)
 
-    results.flatMap {
-      case Right(config) => Some(config)
-      case Left(error) =>
-        logger.error(error.toString)
-        None
+    if (results.sqlStatementExecutionErrors.nonEmpty) {
+      throw new RuntimeException(
+        "Errors occurred when parsing sql component configuration file: " + results.sqlStatementExecutionErrors
+          .map(_.message)
+          .mkString(", ")
+      )
     }
+
+    SqlDataSourcesDefinition(results.tableDefinitions, sqlStatements)
   }
 
   private def readSqlFromFile(pathToFile: Path): List[SqlStatement] =
@@ -77,7 +76,9 @@ class SqlComponentProvider extends ComponentProvider with LazyLogging {
 
 }
 
-final case class SqlFileDataSourceConfig(
-    componentNameSuffix: String,
-    sqlFilePath: String
+final case class SqlDataSourcesDefinition(
+    tableDefinitions: List[DataSourceTableDefinition],
+    sqlStatements: List[SqlStatement]
 )
+
+final case class SqlFileDataSourcesConfig(sqlFilePath: String)

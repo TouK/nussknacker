@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.flink.table
 
-import org.apache.flink.table.api.DataTypes
-import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.flink.table.SqlTestData.{SimpleTypesTestCase, invalidSqlStatements}
 import pl.touk.nussknacker.engine.flink.table.extractor._
@@ -15,35 +13,29 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
     val statements        = SqlStatementReader.readSql(SimpleTypesTestCase.sqlStatement)
     val dataSourceConfigs = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(statements)
 
-    dataSourceConfigs.headOption match {
-      case Some(value) =>
-        value match {
-          case Right(config) => config shouldBe SimpleTypesTestCase.expectedConfig
-          case Left(e)       => fail(s"Table contained error: $e")
-        }
-      case None => fail("No table was extracted from")
-    }
+    val expectedResult = DataSourceSqlExtractorResult(
+      tableDefinitions = List(
+        DataSourceTableDefinition(
+          SimpleTypesTestCase.tableName,
+          SimpleTypesTestCase.schemaTypingResult
+        )
+      ),
+      sqlStatementExecutionErrors = List.empty
+    )
+
+    dataSourceConfigs.sqlStatementExecutionErrors shouldBe empty
+    dataSourceConfigs shouldBe expectedResult
   }
 
-  test("return correct error type for invalid sql statement or queries") {
-    forAll(invalidSqlStatements) { case (statement, expectedErrorType) =>
-      val statements        = SqlStatementReader.readSql(statement)
-      val dataSourceConfigs = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(statements)
-
-      dataSourceConfigs.headOption should matchPattern {
-        case Some(Left(SqlExtractorError(`expectedErrorType`, _, _))) =>
-      }
-    }
-  }
-
-  // TODO: find and test more edge cases
-  test(
-    "return correct error type for valid sql statements that are queries or operating outside of controlled context"
-  ) {
+  test("extracts configuration from tables outside of builtin catalog and database") {
     val statementsStr = """
-       |CREATE DATABASE someDatabase;
+       |CREATE CATALOG someCatalog WITH (
+       |  'type' = 'generic_in_memory'
+       |);
        |
-       |CREATE TABLE someDatabase.testTable
+       |CREATE DATABASE someCatalog.someDatabase;
+       |
+       |CREATE TABLE someCatalog.someDatabase.testTable
        |(
        |    someString  STRING
        |) WITH (
@@ -51,13 +43,21 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
        |);""".stripMargin
 
     val statements        = SqlStatementReader.readSql(statementsStr)
-    val dataSourceConfigs = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(statements)
+    val extractionResults = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(statements)
 
-    inside(dataSourceConfigs) { case first :: second :: Nil =>
-      inside(first) { case Left(SqlExtractorError(TableNotCreatedOrCreatedOutsideOfContext, _, _)) =>
-      }
-      inside(second) { case Left(SqlExtractorError(TableNotCreatedOrCreatedOutsideOfContext, _, _)) =>
-      }
+    extractionResults.sqlStatementExecutionErrors shouldBe empty
+    extractionResults.tableDefinitions shouldBe List(
+      DataSourceTableDefinition("testTable", Typed.record(Map("someString" -> Typed[String])))
+    )
+  }
+
+  test("returns errors for statements that cannot be executed") {
+    invalidSqlStatements.foreach { invalidStatement =>
+      val parsedStatement   = SqlStatementReader.readSql(invalidStatement)
+      val extractionResults = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(parsedStatement)
+
+      extractionResults.sqlStatementExecutionErrors.size shouldBe 1
+      extractionResults.tableDefinitions shouldBe empty
     }
   }
 
@@ -65,58 +65,36 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
 
 object SqlTestData {
 
-  import org.scalatest.prop.TableDrivenPropertyChecks._
-
-  val invalidSqlStatements: TableFor2[String, SqlExtractionErrorType] = Table(
-    ("statement", "expectedErrorType"),
-    (
-      """|CREATE TABLE testTable
+  val invalidSqlStatements: List[String] = List(
+    """|CREATE TABLE testTable
        |(
        |    someString  STRING
        |) WITH (
        |      'connector' = 'datagen
-       |);""".stripMargin,
-      StatementNotExecuted
-    ), // no closing quote
-    (
-      """|CREATE TABLE testTable
+       |);""".stripMargin, // no closing quote
+    """|CREATE TABLE testTable
         |(
         |    someString  STRING
         |)
-        |;""".stripMargin,
-      StatementNotExecuted
-    ), // no WITH clause
-    (
-      """|CREATE TABLE testTable
+        |;""".stripMargin, // no WITH clause
+    """|CREATE TABLE testTable
         |(
         |    someString  STRING
         |) WITH (
         |      'connector' = ''
-        |);""".stripMargin,
-      StatementNotExecuted
-    ), // empty string connector - does not reach the dedicated error because fails earlier
-    (
-      """|CREATE TABLE test-table
+        |);""".stripMargin, // empty string connector - does not reach the dedicated error because fails earlier
+    """|CREATE TABLE test-table
          |(
          |    someString  STRING
          |) WITH (
          |      'connector' = 'datagen'
-         |);""".stripMargin,
-      StatementNotExecuted
-    ), // invalid table name
-    (
-      """|CREATE TABLE somedb.testTable
+         |);""".stripMargin, // invalid table name
+    """|CREATE TABLE somedb.testTable
          |(
          |    someString  STRING
          |) WITH (
          |      'connector' = 'datagen'
-         |);""".stripMargin,
-      StatementNotExecuted
-    ), // trying to create a table under non-existing database
-    (
-      """|CREATE DATABASE somecatalog;""".stripMargin,
-      TableNotCreatedOrCreatedOutsideOfContext
-    )
+         |);""".stripMargin, // trying to create a table under non-existing database
   )
 
   object SimpleTypesTestCase {
@@ -134,26 +112,12 @@ object SqlTestData {
          |      'connector' = '$connector'
          |);""".stripMargin
 
-    val schema: Schema = Schema(
-      columns = List(
-        Column("someString", DataTypes.STRING()),
-        Column("someVarChar", DataTypes.VARCHAR(150)),
-        Column("someInt", DataTypes.INT())
-      ),
-      typingResult = Typed.record(
-        Map(
-          "someString"  -> Typed[String],
-          "someVarChar" -> Typed[String],
-          "someInt"     -> Typed[Integer],
-        )
+    val schemaTypingResult: TypingResult = Typed.record(
+      Map(
+        "someString"  -> Typed[String],
+        "someVarChar" -> Typed[String],
+        "someInt"     -> Typed[Integer],
       )
-    )
-
-    val expectedConfig: SqlDataSourceConfig = SqlDataSourceConfig(
-      tableName,
-      connector,
-      schema,
-      sqlStatement
     )
 
   }

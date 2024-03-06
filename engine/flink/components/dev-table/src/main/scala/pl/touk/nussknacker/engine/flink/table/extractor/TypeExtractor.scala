@@ -10,16 +10,11 @@ object TypeExtractor {
 
   private case class ColumnTypingResult(columnName: String, typingResult: TypingResult)
 
-  def extractTypedSchema(tableFromEnv: Table): Schema = {
-    val (columns, columnsTypingData) = tableFromEnv.getResolvedSchema.getColumns.asScala
-      .map { column =>
-        val name     = column.getName
-        val dataType = column.getDataType
-        (Column(name, dataType), ColumnTypingResult(name, flinkTypeToTypingResult(dataType)))
-      }
-      .toList
-      .unzip
-    Schema(columns, typedColumnsToRecordTypingResult(columnsTypingData))
+  def extractTypingResult(tableFromEnv: Table): TypingResult = {
+    val columnsTypingData = tableFromEnv.getResolvedSchema.getColumns.asScala.map { column =>
+      ColumnTypingResult(column.getName, flinkTypeToTypingResult(column.getDataType))
+    }.toList
+    typedColumnsToRecordTypingResult(columnsTypingData)
   }
 
   // TODO: handle complex types like maps, lists, rows, raws

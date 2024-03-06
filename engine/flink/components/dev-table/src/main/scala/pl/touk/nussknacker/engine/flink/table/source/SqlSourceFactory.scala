@@ -10,28 +10,28 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlDataSourceConfig
+import pl.touk.nussknacker.engine.flink.table.SqlDataSourcesDefinition
+import pl.touk.nussknacker.engine.flink.table.extractor.DataSourceTableDefinition
 
-class SqlSourceFactory(configs: List[SqlDataSourceConfig])
-    extends SingleInputDynamicComponent[Source]
-    with SourceFactory {
+class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynamicComponent[Source] with SourceFactory {
 
-  override type State = Nothing
+  override type State = DataSourceTableDefinition
 
-  private val tableNamParamName = "Table"
+  private val tableNameParamName = "Table"
 
   private val tableNameParam: ParameterWithExtractor[String] = {
-    val param                    = ParameterWithExtractor.mandatory[String](tableNamParamName)
-    val possibleTableParamValues = configs.map(c => FixedExpressionValue(s"'${c.tableName}'", c.tableName))
-    param.copy(parameter =
-      param.parameter.copy(
-        editor = Some(FixedValuesParameterEditor(possibleTableParamValues)),
-        validators = List(
-          MandatoryParameterValidator,
-          FixedValuesValidator(possibleTableParamValues)
-        )
+    val possibleTableParamValues =
+      defs.tableDefinitions.map(c => FixedExpressionValue(s"'${c.tableName}'", c.tableName))
+    val parameter = Parameter[String](
+      name = tableNameParamName
+    ).copy(
+      editor = Some(FixedValuesParameterEditor(possibleTableParamValues)),
+      validators = List(
+        MandatoryParameterValidator,
+        FixedValuesValidator(possibleTableParamValues)
       )
     )
+    ParameterWithExtractor(parameter)
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -43,11 +43,11 @@ class SqlSourceFactory(configs: List[SqlDataSourceConfig])
         errors = List.empty,
         state = None
       )
-    case TransformationStep((`tableNamParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
+    case TransformationStep((`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
       val selectedTable = getSelectedTableUnsafe(tableName)
-      val typingResult  = selectedTable.schema.typingResult
+      val typingResult  = selectedTable.schemaTypingResult
       val initializer   = new BasicContextInitializer(typingResult)
-      FinalResults.forValidation(context, Nil, None)(initializer.validationContext)
+      FinalResults.forValidation(context, Nil, Some(selectedTable))(initializer.validationContext)
   }
 
   override def implementation(
@@ -55,18 +55,18 @@ class SqlSourceFactory(configs: List[SqlDataSourceConfig])
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]
   ): Source = {
-    val tableName     = tableNameParam.extractValue(params)
-    val selectedTable = getSelectedTableUnsafe(tableName)
-    new SqlSource(selectedTable)
+    val selectedTable = finalStateOpt.getOrElse(
+      throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
+    )
+    new SqlSource(SqlDataSourceDefinition(selectedTable, defs.sqlStatements))
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[NodeId])
 
-  // TODO: evaluate based on config
   override val allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.UnboundedStream))
 
-  private def getSelectedTableUnsafe(tableName: String): SqlDataSourceConfig =
-    configs
+  private def getSelectedTableUnsafe(tableName: String): DataSourceTableDefinition =
+    defs.tableDefinitions
       .find(_.tableName == tableName)
       .getOrElse(throw new IllegalStateException("Table with selected name not found."))
 

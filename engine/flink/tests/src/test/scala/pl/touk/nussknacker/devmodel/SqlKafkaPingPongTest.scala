@@ -44,11 +44,7 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
     filePath
   }
 
-  private lazy val kafkaTableConfig =
-    s"""
-       | sqlFilePath: $sqlTablesDefinitionFilePath
-       | componentNameSuffix: "testTable"
-       |""".stripMargin
+  private lazy val kafkaTableConfig = s"sqlFilePath: $sqlTablesDefinitionFilePath"
 
   private lazy val tableKafkaComponentsConfig: Config = ConfigFactory.parseString(kafkaTableConfig)
 
@@ -66,7 +62,7 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
     val process = ScenarioBuilder
       .streaming("testScenario")
       .parallelism(1)
-      .source("start", "tableApi-source-sql-testTable")
+      .source("start", "tableApi-source-sql")
       .filter("filterId", "#input.someInt != 1")
       .emptySink(
         "output",
