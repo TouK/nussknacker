@@ -1,8 +1,6 @@
-import React from "react";
+import React, { ReactNode } from "react";
 import { FilterListItem } from "./filterListItem";
 import { OptionsStack } from "./optionsStack";
-import { FilterListItemLabel } from "./filterListItemLabel";
-import { NuIcon } from "../../common";
 import { Stack } from "@mui/material";
 
 export interface FiltersParams<V extends string = string, T = string> {
@@ -12,7 +10,9 @@ export interface FiltersParams<V extends string = string, T = string> {
     onChange?: (value: V[]) => void;
 }
 
-export function ProcessingModeStack(props: FiltersParams<string, { name: string; Icon?: string }>): JSX.Element {
+export function ProcessingModeStack(
+    props: FiltersParams<string, { name: string; Icon?: string; displayableName?: ReactNode }>,
+): JSX.Element {
     const { options = [], value = [], onChange } = props;
     return (
         <OptionsStack {...props}>
@@ -27,7 +27,7 @@ export function ProcessingModeStack(props: FiltersParams<string, { name: string;
                         label={
                             <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
                                 <span>{option.displayableName}</span>
-                                <option.Icon sx={{ fontSize: "1.2em", color: "inherit" }} />
+                                <option.Icon />
                             </Stack>
                         }
                     />

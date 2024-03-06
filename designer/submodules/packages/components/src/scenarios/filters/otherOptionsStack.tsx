@@ -33,7 +33,7 @@ export function OtherOptionsStack(): JSX.Element {
                 label={
                     <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
                         <span>{t("table.filter.SCENARIOS", "Scenarios")}</span>
-                        <ScanarioIcon width={"1em"} height={"1em"} sx={{ color: "inherit" }} />
+                        <ScanarioIcon width={"1em"} height={"1em"} />
                     </Stack>
                 }
             />
@@ -44,7 +44,7 @@ export function OtherOptionsStack(): JSX.Element {
                 label={
                     <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
                         <span>{t("table.filter.FRAGMENTS", "Fragments")}</span>
-                        <FragmentIcon width={"1em"} height={"1em"} sx={{ color: "inherit" }} />
+                        <FragmentIcon width={"1em"} height={"1em"} />
                     </Stack>
                 }
             />
