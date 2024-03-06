@@ -45,7 +45,6 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
-import pl.touk.nussknacker.ui.migrations.{MigrationService, MigrationServiceImpl}
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -252,19 +251,14 @@ class AkkaHttpBasedRouteProvider(
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
       )
 
-      val migrationService: MigrationService = new MigrationServiceImpl(
+      val migrationApiHttpService = new MigrationApiHttpService(
         config = resolvedConfig,
+        authenticator = authenticationResources,
         processService = processService,
         processResolver = processResolver,
         processAuthorizer = processAuthorizer,
         processChangeListener = processChangeListener,
         useLegacyCreateScenarioApi = true
-      )
-
-      val migrationApiHttpService = new MigrationApiHttpService(
-        config = resolvedConfig,
-        authenticator = authenticationResources,
-        migrationService = migrationService
       )
       val componentsApiHttpService = new ComponentApiHttpService(
         config = resolvedConfig,

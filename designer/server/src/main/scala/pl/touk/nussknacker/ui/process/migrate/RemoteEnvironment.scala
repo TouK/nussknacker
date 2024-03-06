@@ -87,6 +87,11 @@ final case class MigrationValidationError(errors: ValidationErrors)
       s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
     })
 
+case object MissingScenarioGraphError
+    extends FatalError(
+      s"Cannot migrate, error happened while fetching scenario graph."
+    )
+
 final case class MigrationToArchivedError(processName: ProcessName, environment: String)
     extends FatalError(
       s"Cannot migrate, scenario $processName is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
@@ -193,12 +198,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
     val migrateScenarioRequest: MigrateScenarioRequest =
-      MigrateScenarioRequest(
-        environmentId,
-        processingMode,
-        engineSetupName,
-        scenarioWithDetailsForMigrations
-      )
+      MigrateScenarioRequest(environmentId, processingMode, engineSetupName, scenarioWithDetailsForMigrations)
     invokeForSuccess(
       HttpMethods.POST,
       List("migrate"),

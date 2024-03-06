@@ -26,20 +26,10 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
   import MigrationApiEndpoints.Dtos._
   import MigrationApiEndpoints.Dtos.MigrateScenarioRequest._
 
-  val exampleProcess = ScenarioBuilder
-    .streamingLite("test")
-    .source("source", "csv-source-lite")
-    .emptySink("sink", "dead-end-lite")
-
-  val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleProcess)
-
-  private val errorValidationResult =
-    ValidationResults.ValidationResult.success
-
   lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequest, NuDesignerError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Migration between environments service")
-      .tag("migration")
+      .tag("migrations")
       .post
       .in("migrate")
       .in(
@@ -69,7 +59,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .errorOut(nuDesignerErrorOutput)
       .withSecurity(auth)
 
-  val nuDesignerErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
+  private val nuDesignerErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
     oneOf[NuDesignerError](
       oneOfVariant(
         NotFound,
@@ -104,6 +94,16 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
         plainBody[FatalError]
       )
     )
+
+  private val exampleProcess = ScenarioBuilder
+    .streamingLite("test")
+    .source("source", "csv-source-lite")
+    .emptySink("sink", "dead-end-lite")
+
+  private val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleProcess)
+
+  private val errorValidationResult =
+    ValidationResults.ValidationResult.success
 
 }
 
@@ -163,7 +163,7 @@ object MigrationApiEndpoints {
         sourceEnvironmentId: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
-        scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations
+        scenarioToMigrate: ScenarioWithDetailsForMigrations
     )
 
   }

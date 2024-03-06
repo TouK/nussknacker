@@ -70,7 +70,7 @@ object TapirCodecs {
 
     implicit val versionIdCodec: PlainCodec[VersionId] = Codec.long.mapDecode(decode)(encode)
 
-    implicit val schema: Schema[VersionId] = Schema.derived
+    implicit val schema: Schema[VersionId] = versionIdCodec.schema
   }
 
   object ContentDispositionCodec {

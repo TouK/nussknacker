@@ -17,7 +17,7 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
-class MigrationApiEndpointsSecuritySpec
+class MigrationApiHttpSecuritySpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithRichDesignerConfig
@@ -27,6 +27,67 @@ class MigrationApiEndpointsSecuritySpec
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
+
+  "The endpoint for scenario migration between environments when" - {
+    "authenticated should" - {
+      "return response for allowed scenario" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .equalsPlainBody("")
+      }
+    }
+    "not authenticated should" - {
+      "forbid access for user with limited reading permissions" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .basicAuthReader()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
+      }
+      "forbid access for user with limited writing permissions" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .basicAuthWriter()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied user [writer] is not authorized to access this resource")
+      }
+    }
+    "no credentials were passes should" - {
+      "forbid access" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .noAuth()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied user [anonymous] is not authorized to access this resource")
+      }
+    }
+  }
 
   private val sourceEnvironmentId = "DEV"
 
@@ -48,7 +109,7 @@ class MigrationApiEndpointsSecuritySpec
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "processingMode": "Unbounded-Stream",
        |  "engineSetupName": "Flink",
-       |  "scenarioWithDetailsForMigrations": {
+       |  "scenarioToMigrate": {
        |    "name": "${scenarioName}",
        |    "isArchived": false,
        |    "isFragment": false,
@@ -63,46 +124,5 @@ class MigrationApiEndpointsSecuritySpec
        |""".stripMargin
 
   private val requestData: String = prepareRequestData(exampleProcessName.value)
-
-  "The endpoint for scenario migration between environments should" - {
-    "authorize user with all permissions" in {
-      given()
-        .applicationState(
-          createSavedScenario(exampleScenario, Category1)
-        )
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(requestData)
-        .post(s"$nuDesignerHttpAddress/api/migrate")
-        .Then()
-        .statusCode(200)
-    }
-    "reject user with limited reading permissions" in {
-      given()
-        .applicationState(
-          createSavedScenario(exampleScenario, Category1)
-        )
-        .when()
-        .basicAuthReader()
-        .jsonBody(requestData)
-        .post(s"$nuDesignerHttpAddress/api/migrate")
-        .Then()
-        .statusCode(401)
-        .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
-    }
-    "reject user with limited writing permissions" in {
-      given()
-        .applicationState(
-          createSavedScenario(exampleScenario, Category1)
-        )
-        .when()
-        .basicAuthWriter()
-        .jsonBody(requestData)
-        .post(s"$nuDesignerHttpAddress/api/migrate")
-        .Then()
-        .statusCode(401)
-        .equalsPlainBody("The supplied user [writer] is not authorized to access this resource")
-    }
-  }
 
 }

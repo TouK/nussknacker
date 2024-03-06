@@ -23,8 +23,9 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.ui.NuDesignerError
+import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 import pl.touk.nussknacker.ui.process.migrate.{
+  MissingScenarioGraphError,
   RemoteEnvironment,
   RemoteEnvironmentCommunicationError,
   TestMigrationResult
@@ -221,7 +222,9 @@ class RemoteEnvironmentResourcesSpec
       val localScenarioGraph = scenarioWithDetailsForMigrations.scenarioGraphUnsafe
       migrateInvocations = localScenarioGraph :: migrateInvocations
       Future.successful(Right(()))
-    }
+    }.recover[Either[NuDesignerError, Unit]] { case _: IllegalStateException =>
+      Left(MissingScenarioGraphError)
+    }(ec)
 
   }
 
