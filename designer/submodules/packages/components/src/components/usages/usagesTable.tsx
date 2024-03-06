@@ -33,10 +33,10 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
         (): Columns<UsageWithStatus> => [
             {
                 field: "name",
-                cellClassName: "stretch",
+                cellClassName: "noPadding stretch",
                 headerName: t("table.usages.title.NAME", "Name"),
                 flex: 3,
-                minWidth: 160,
+                minWidth: 180,
                 renderCell: (props) => <ScenarioCell filterText={filterText} {...props} />,
                 hideable: false,
             },
@@ -93,7 +93,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 headerName: t("table.usages.title.CREATED_BY", "Author"),
                 renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CREATED_BY" {...props} />,
                 hide: true,
-                flex: 1,
+                minWidth: 100,
             },
             {
                 field: "modifiedBy",
@@ -113,7 +113,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
             {
                 field: "nodesUsagesData",
                 headerName: t("table.usages.title.NODES_ID", "Nodes"),
-                minWidth: 250,
+                minWidth: 230,
                 flex: 4,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
                 renderCell: (props) => <NodesCell filterText={filterText} {...props} />,
