@@ -828,6 +828,7 @@ object TypingDtoSchemas {
     )
   }
 
+  implicit lazy val singleTypingResultSchema: Schema[SingleTypingResult]   = Schema.derived
   implicit lazy val additionalDataValueSchema: Schema[AdditionalDataValue] = Schema.derived
 
   object TypedObjectTypingResultSchemaHelper {
@@ -876,7 +877,7 @@ object TypingDtoSchemas {
   }
 
   implicit lazy val typedDictSchema: Schema[TypedDict] = {
-    final case class Dict(id: String, valueType: TypedTaggedValue)
+    final case class Dict(id: String, valueType: SingleTypingResult)
     lazy val dictSchema: Schema[Dict] = Schema.derived
     Schema(
       SchemaType.SProduct(
