@@ -209,7 +209,10 @@ For other clusters you can select other image tag using `dockerTagName` system e
 Azure integration tests are not run by default using `sbt test`. You need to run tests in `ExternalDepsTests` scope e.g. `sbt schemedKafkaComponentsUtils/ExternalDepsTests/test`.
 To run them you should have configured one of authentication options described here:
 https://github.com/Azure/azure-sdk-for-java/wiki/Azure-Identity-Examples#authenticating-with-defaultazurecredential e.g. Intellij plugin, Azure CLI or environment variables.
-Tests connect to schema registry registered in Event Hubs Namespace from AZURE_EVENT_HUBS_NAMESPACE environment variable (by default nu-cloud).
+To run the tests set up environment variables:
+- AZURE_EVENT_HUBS_NAMESPACE, that is Event Hubs Namespace where schema registry is registered (by default nu-cloud).
+- AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME and AZURE_EVENT_HUBS_SHARED_ACCESS_KEY, to configure Kafka admin client that uses "sasl.jaas.config" to authenticate
+(see properties configuration in https://nussknacker.io/documentation/cloud/azure/#setting-up-nussknacker-cloud)
 
 ### Using logs in tests
 
