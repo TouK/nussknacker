@@ -278,7 +278,7 @@ class ScenarioParametersServiceTest
     ).foreach(listFiles)
   }
 
-  // This ugly hack is because of Idea classloader issue, see comment in ModelDependencies
+  // This ugly hack is because of Idea classloader issue, see comment in ClassLoaderModelData
   private def shouldIncludeComponentProvider(processingType: ProcessingType, componentProvider: ComponentProvider) = {
     (
       processingType,

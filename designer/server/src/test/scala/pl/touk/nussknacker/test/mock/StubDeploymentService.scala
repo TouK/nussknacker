@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.test.mock
 
 import cats.Traverse
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType}
-import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{CustomActionResult, ExternalDeploymentId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, ScenarioWithDetailsEntity}
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,11 +27,11 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   override def deployProcessAsync(
       id: ProcessIdWithName,
       savepointPath: Option[String],
-      deploymentComment: Option[DeploymentComment]
+      deploymentComment: Option[String]
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] =
     Future.successful(Future.successful(None))
 
-  override def cancelProcess(id: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(
+  override def cancelProcess(id: ProcessIdWithName, deploymentComment: Option[String])(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[Unit] = Future.successful(())
@@ -64,10 +63,7 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
       ec: ExecutionContext
   ): Future[CustomActionResult] =
     Future.successful(
-      CustomActionResult(
-        req = CustomActionRequest(actionName, ProcessVersion.empty, User(loggedUser.id, loggedUser.username), params),
-        msg = "stub response"
-      )
+      CustomActionResult("stub response")
     )
 
 }

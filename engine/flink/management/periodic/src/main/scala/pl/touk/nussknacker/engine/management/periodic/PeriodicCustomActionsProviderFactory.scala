@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.CustomActionCommand
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionResult}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 
 import scala.concurrent.Future
@@ -21,21 +22,19 @@ object PeriodicCustomActionsProviderFactory {
 }
 
 trait PeriodicCustomActionsProvider {
-  def customActions: List[CustomAction]
+  def customActions: List[CustomActionDefinition]
 
   def invokeCustomAction(
-      actionRequest: CustomActionRequest,
-      canonicalProcess: CanonicalProcess
+      actionRequest: CustomActionCommand
   ): Future[CustomActionResult]
 
 }
 
 object EmptyPeriodicCustomActionsProvider extends PeriodicCustomActionsProvider {
-  override def customActions: List[CustomAction] = Nil
+  override def customActions: List[CustomActionDefinition] = Nil
 
   override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
-      canonicalProcess: CanonicalProcess
+      actionRequest: CustomActionCommand
   ): Future[CustomActionResult] =
     Future.failed(new NotImplementedError())
 

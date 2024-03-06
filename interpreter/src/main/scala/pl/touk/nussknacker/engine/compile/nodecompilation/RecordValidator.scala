@@ -6,10 +6,10 @@ import cats.implicits.{catsSyntaxTuple2Semigroupal, toFoldableOps}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
-import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.compile.nodecompilation.BaseComponentValidationHelper.validateVariableValue
 import pl.touk.nussknacker.engine.graph.node.{recordKeyFieldName, recordValueFieldName}
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 
 final case class CompiledIndexedRecordField(
     field: Field,

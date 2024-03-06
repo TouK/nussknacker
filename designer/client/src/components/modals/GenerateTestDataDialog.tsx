@@ -19,6 +19,7 @@ import { NodeInput } from "../withFocus";
 import ValidationLabels from "./ValidationLabels";
 import { isEmpty } from "lodash";
 import { Typography } from "@mui/material";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
@@ -42,7 +43,7 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close() },
+            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
             { title: t("dialog.button.ok", "Ok"), disabled: !isValid, action: () => confirmAction() },
         ],
         [t, confirmAction, props, isValid],

@@ -434,6 +434,390 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/nodes/{scenarioName}/additionalInfo:
+    post:
+      tags:
+      - Nodes
+      summary: Additional info for provided node
+      operationId: postApiNodesScenarionameAdditionalinfo
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeData'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalInfo'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+      security:
+      - {}
+      - httpAuth: []
+  /api/nodes/{scenarioName}/validation:
+    post:
+      tags:
+      - Nodes
+      summary: Validate provided Node
+      operationId: postApiNodesScenarionameValidation
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeValidationRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeValidationResultDto'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+      security:
+      - {}
+      - httpAuth: []
+  /api/parameters/{processingType}/suggestions:
+    post:
+      tags:
+      - Nodes
+      summary: Suggest possible variables
+      operationId: postApiParametersProcessingtypeSuggestions
+      parameters:
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpressionSuggestionRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpressionSuggestionDto'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - {}
+      - httpAuth: []
+  /api/parameters/{processingType}/validate:
+    post:
+      tags:
+      - Nodes
+      summary: Validate node parameters
+      operationId: postApiParametersProcessingtypeValidate
+      parameters:
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParametersValidationRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParametersValidationResultDto'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - {}
+      - httpAuth: []
+  /api/properties/{scenarioName}/additionalInfo:
+    post:
+      tags:
+      - Nodes
+      summary: Additional info for provided properties
+      operationId: postApiPropertiesScenarionameAdditionalinfo
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessProperties'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalInfo'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+      security:
+      - {}
+      - httpAuth: []
+  /api/properties/{scenarioName}/validation:
+    post:
+      tags:
+      - Nodes
+      summary: Validate node properties
+      operationId: postApiPropertiesScenarionameValidation
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropertiesValidationRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeValidationResultDto'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+      security:
+      - {}
+      - httpAuth: []
   /api/notifications:
     get:
       tags:
@@ -809,6 +1193,9 @@ paths:
       - httpAuth: []
 components:
   schemas:
+    AdditionalInfo:
+      oneOf:
+      - $ref: '#/components/schemas/MarkdownAdditionalInfo'
     Attachment:
       required:
       - id
@@ -831,6 +1218,36 @@ components:
         createDate:
           type: string
           format: date-time
+    BoolParameterEditor:
+      type: object
+    BranchEndData:
+      required:
+      - definition
+      type: object
+      properties:
+        definition:
+          $ref: '#/components/schemas/BranchEndDefinition'
+    BranchEndDefinition:
+      required:
+      - id
+      - joinId
+      type: object
+      properties:
+        id:
+          type: string
+        joinId:
+          type: string
+    BranchParameters:
+      required:
+      - branchId
+      type: object
+      properties:
+        branchId:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
     BuildInfoDto:
       required:
       - name
@@ -852,6 +1269,18 @@ components:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
           $ref: '#/components/schemas/Map_String'
+    CaretPosition2d:
+      required:
+      - row
+      - column
+      type: object
+      properties:
+        row:
+          type: integer
+          format: int32
+        column:
+          type: integer
+          format: int32
     Comment:
       required:
       - id
@@ -974,12 +1403,55 @@ components:
           type: string
         lastAction:
           $ref: '#/components/schemas/ProcessAction'
+    CronParameterEditor:
+      type: object
+    CustomNode:
+      required:
+      - id
+      - nodeType
+      type: object
+      properties:
+        id:
+          type: string
+        outputVar:
+          type:
+          - string
+          - 'null'
+        nodeType:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     DataToRefresh:
       type: string
       enum:
       - versions
       - activity
       - state
+    DateParameterEditor:
+      type: object
+    DateTimeParameterEditor:
+      type: object
+    Dict:
+      required:
+      - id
+      - valueType
+      type: object
+      properties:
+        id:
+          type: string
+        valueType:
+          $ref: '#/components/schemas/TypedTaggedValue'
+    DictParameterEditor:
+      required:
+      - dictId
+      type: object
+      properties:
+        dictId:
+          type: string
     DisplayableUser:
       required:
       - id
@@ -1004,6 +1476,261 @@ components:
           type: array
           items:
             type: string
+    DualParameterEditor:
+      required:
+      - simpleEditor
+      - defaultMode
+      type: object
+      properties:
+        simpleEditor:
+          $ref: '#/components/schemas/SimpleParameterEditor'
+        defaultMode:
+          type: string
+    DurationParameterEditor:
+      type: object
+      properties:
+        timeRangeComponents:
+          type: array
+          items:
+            type: object
+    Edge:
+      required:
+      - from
+      - to
+      type: object
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        edgeType:
+          $ref: '#/components/schemas/EdgeType'
+    EdgeType:
+      oneOf:
+      - $ref: '#/components/schemas/FilterFalse'
+      - $ref: '#/components/schemas/FilterTrue'
+      - $ref: '#/components/schemas/FragmentOutput'
+      - $ref: '#/components/schemas/NextSwitch'
+      - $ref: '#/components/schemas/SwitchDefault'
+    Enricher:
+      required:
+      - id
+      - service
+      - output
+      type: object
+      properties:
+        id:
+          type: string
+        service:
+          $ref: '#/components/schemas/ServiceRef'
+        output:
+          type: string
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    Expression:
+      required:
+      - language
+      - expression
+      type: object
+      properties:
+        language:
+          type: string
+        expression:
+          type: string
+    ExpressionSuggestionDto:
+      required:
+      - methodName
+      - refClazz
+      - fromClass
+      type: object
+      properties:
+        methodName:
+          type: string
+        refClazz:
+          $ref: '#/components/schemas/TypingResult'
+        fromClass:
+          type: boolean
+        description:
+          type:
+          - string
+          - 'null'
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParameterDto'
+    ExpressionSuggestionRequestDto:
+      required:
+      - expression
+      - caretPosition2d
+      - variableTypes
+      type: object
+      properties:
+        expression:
+          $ref: '#/components/schemas/Expression'
+        caretPosition2d:
+          $ref: '#/components/schemas/CaretPosition2d'
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultInJson'
+    Field:
+      required:
+      - name
+      - expression
+      type: object
+      properties:
+        name:
+          type: string
+        expression:
+          $ref: '#/components/schemas/Expression'
+    Filter:
+      required:
+      - id
+      - expression
+      type: object
+      properties:
+        id:
+          type: string
+        expression:
+          $ref: '#/components/schemas/Expression'
+        isDisabled:
+          type:
+          - boolean
+          - 'null'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    FilterFalse:
+      type: object
+    FilterTrue:
+      type: object
+    FixedExpressionValue:
+      required:
+      - expression
+      - label
+      type: object
+      properties:
+        expression:
+          type: string
+        label:
+          type: string
+    FixedValuesParameterEditor:
+      type: object
+      properties:
+        possibleValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValue'
+    FragmentClazzRef:
+      required:
+      - refClazzName
+      type: object
+      properties:
+        refClazzName:
+          type: string
+    FragmentInput:
+      required:
+      - id
+      - ref
+      type: object
+      properties:
+        id:
+          type: string
+        ref:
+          $ref: '#/components/schemas/FragmentRef'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+        isDisabled:
+          type:
+          - boolean
+          - 'null'
+        fragmentParams:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/FragmentParameter'
+    FragmentInputDefinition:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/FragmentParameter'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    FragmentOutput:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+    FragmentOutputDefinition:
+      required:
+      - id
+      - outputName
+      type: object
+      properties:
+        id:
+          type: string
+        outputName:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    FragmentOutputVarDefinition:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+    FragmentParameter:
+      required:
+      - name
+      - typ
+      - required
+      type: object
+      properties:
+        name:
+          type: string
+        typ:
+          $ref: '#/components/schemas/FragmentClazzRef'
+        required:
+          type: boolean
+        initialValue:
+          $ref: '#/components/schemas/FixedExpressionValue'
+        hintText:
+          type:
+          - string
+          - 'null'
+        valueEditor:
+          $ref: '#/components/schemas/ValueInputWithFixedValues'
+        valueCompileTimeValidation:
+          $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
+    FragmentRef:
+      required:
+      - id
+      - outputVariableNames
+      type: object
+      properties:
+        id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+        outputVariableNames:
+          $ref: '#/components/schemas/Map_String'
     FragmentUsageData:
       required:
       - fragmentNodeId
@@ -1014,6 +1741,20 @@ components:
           type: string
         nodeId:
           type: string
+    FragmentUsageOutput:
+      required:
+      - id
+      - outputName
+      type: object
+      properties:
+        id:
+          type: string
+        outputName:
+          type: string
+        outputVar:
+          $ref: '#/components/schemas/FragmentOutputVarDefinition'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     HealthCheckProcessErrorResponseDto:
       required:
       - status
@@ -1048,6 +1789,44 @@ components:
           - 'null'
           items:
             type: string
+    Join:
+      required:
+      - id
+      - nodeType
+      type: object
+      properties:
+        id:
+          type: string
+        outputVar:
+          type:
+          - string
+          - 'null'
+        nodeType:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+        branchParameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/BranchParameters'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    JsonParameterEditor:
+      type: object
+    LayoutData:
+      required:
+      - x
+      - y
+      type: object
+      properties:
+        x:
+          type: integer
+          format: int64
+        y:
+          type: integer
+          format: int64
     Map_EngineSetupName_List_String:
       type: object
       additionalProperties:
@@ -1064,14 +1843,122 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_String'
+    Map_Map_String_TypingResultInJson:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Map_TypingResultInJson'
     Map_String:
       type: object
       additionalProperties:
         type: string
+    Map_TypingResult:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/TypingResult'
+    Map_TypingResultInJson:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/TypingResult'
+    MarkdownAdditionalInfo:
+      required:
+      - content
+      type: object
+      properties:
+        content:
+          type: string
+    NextSwitch:
+      required:
+      - condition
+      type: object
+      properties:
+        condition:
+          $ref: '#/components/schemas/Expression'
+    NodeData:
+      oneOf:
+      - $ref: '#/components/schemas/BranchEndData'
+      - $ref: '#/components/schemas/CustomNode'
+      - $ref: '#/components/schemas/Enricher'
+      - $ref: '#/components/schemas/Filter'
+      - $ref: '#/components/schemas/FragmentInput'
+      - $ref: '#/components/schemas/FragmentInputDefinition'
+      - $ref: '#/components/schemas/FragmentOutputDefinition'
+      - $ref: '#/components/schemas/FragmentUsageOutput'
+      - $ref: '#/components/schemas/Join'
+      - $ref: '#/components/schemas/Processor'
+      - $ref: '#/components/schemas/Sink'
+      - $ref: '#/components/schemas/Source'
+      - $ref: '#/components/schemas/Split'
+      - $ref: '#/components/schemas/Switch'
+      - $ref: '#/components/schemas/Variable'
+      - $ref: '#/components/schemas/VariableBuilder'
     NodeUsageData:
       oneOf:
       - $ref: '#/components/schemas/FragmentUsageData'
       - $ref: '#/components/schemas/ScenarioUsageData'
+    NodeValidationError:
+      required:
+      - typ
+      - message
+      - description
+      - errorType
+      type: object
+      properties:
+        typ:
+          type: string
+        message:
+          type: string
+        description:
+          type: string
+        fieldName:
+          type:
+          - string
+          - 'null'
+        errorType:
+          $ref: '#/components/schemas/NodeValidationErrorType'
+    NodeValidationErrorType:
+      type: string
+      enum:
+      - RenderNotAllowed
+      - SaveNotAllowed
+      - SaveAllowed
+    NodeValidationRequestDto:
+      required:
+      - nodeData
+      - processProperties
+      - variableTypes
+      type: object
+      properties:
+        nodeData:
+          type: object
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultInJson'
+        branchVariableTypes:
+          $ref: '#/components/schemas/Map_Map_String_TypingResultInJson'
+        outgoingEdges:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/Edge'
+    NodeValidationResultDto:
+      required:
+      - validationPerformed
+      type: object
+      properties:
+        parameters:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/UIParameterDto'
+        expressionType:
+          $ref: '#/components/schemas/TypingResult'
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeValidationError'
+        validationPerformed:
+          type: boolean
     Notification:
       required:
       - id
@@ -1098,6 +1985,85 @@ components:
       - info
       - success
       - error
+    Parameter:
+      required:
+      - name
+      - expression
+      type: object
+      properties:
+        name:
+          type: string
+        expression:
+          $ref: '#/components/schemas/Expression'
+    ParameterDto:
+      required:
+      - name
+      - refClazz
+      type: object
+      properties:
+        name:
+          type: string
+        refClazz:
+          $ref: '#/components/schemas/TypingResult'
+    ParameterEditor:
+      oneOf:
+      - $ref: '#/components/schemas/BoolParameterEditor'
+      - $ref: '#/components/schemas/CronParameterEditor'
+      - $ref: '#/components/schemas/DateParameterEditor'
+      - $ref: '#/components/schemas/DateTimeParameterEditor'
+      - $ref: '#/components/schemas/DictParameterEditor'
+      - $ref: '#/components/schemas/DualParameterEditor'
+      - $ref: '#/components/schemas/DurationParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/PeriodParameterEditor'
+      - $ref: '#/components/schemas/RawParameterEditor'
+      - $ref: '#/components/schemas/SpelTemplateParameterEditor'
+      - $ref: '#/components/schemas/SqlParameterEditor'
+      - $ref: '#/components/schemas/StringParameterEditor'
+      - $ref: '#/components/schemas/TabularTypedDataEditor'
+      - $ref: '#/components/schemas/TextareaParameterEditor'
+      - $ref: '#/components/schemas/TimeParameterEditor'
+    ParameterValueCompileTimeValidation:
+      required:
+      - validationExpression
+      type: object
+      properties:
+        validationExpression:
+          $ref: '#/components/schemas/Expression'
+        validationFailedMessage:
+          type:
+          - string
+          - 'null'
+    ParametersValidationRequestDto:
+      required:
+      - variableTypes
+      type: object
+      properties:
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/UIValueParameterDto'
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultInJson'
+    ParametersValidationResultDto:
+      required:
+      - validationPerformed
+      type: object
+      properties:
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeValidationError'
+        validationPerformed:
+          type: boolean
+    PeriodParameterEditor:
+      type: object
+      properties:
+        timeRangeComponents:
+          type: array
+          items:
+            type: object
     ProcessAction:
       required:
       - id
@@ -1168,6 +2134,20 @@ components:
       - UNARCHIVE
       - PAUSE
       - RENAME
+    ProcessAdditionalFields:
+      required:
+      - properties
+      - metaDataType
+      type: object
+      properties:
+        description:
+          type:
+          - string
+          - 'null'
+        properties:
+          $ref: '#/components/schemas/Map_String'
+        metaDataType:
+          type: string
     ProcessId:
       required:
       - value
@@ -1183,6 +2163,41 @@ components:
       properties:
         value:
           type: string
+    ProcessProperties:
+      required:
+      - additionalFields
+      type: object
+      properties:
+        additionalFields:
+          $ref: '#/components/schemas/ProcessAdditionalFields'
+    Processor:
+      required:
+      - id
+      - service
+      type: object
+      properties:
+        id:
+          type: string
+        service:
+          $ref: '#/components/schemas/ServiceRef'
+        isDisabled:
+          type:
+          - boolean
+          - 'null'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    PropertiesValidationRequestDto:
+      required:
+      - additionalFields
+      - name
+      type: object
+      properties:
+        additionalFields:
+          $ref: '#/components/schemas/ProcessAdditionalFields'
+        name:
+          $ref: '#/components/schemas/ProcessName'
+    RawParameterEditor:
+      type: object
     ScenarioActivity:
       type: object
       properties:
@@ -1225,6 +2240,99 @@ components:
       properties:
         nodeId:
           type: string
+    ServiceRef:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+    SimpleParameterEditor:
+      oneOf:
+      - $ref: '#/components/schemas/BoolParameterEditor'
+      - $ref: '#/components/schemas/CronParameterEditor'
+      - $ref: '#/components/schemas/DateParameterEditor'
+      - $ref: '#/components/schemas/DateTimeParameterEditor'
+      - $ref: '#/components/schemas/DictParameterEditor'
+      - $ref: '#/components/schemas/DurationParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/PeriodParameterEditor'
+      - $ref: '#/components/schemas/SpelTemplateParameterEditor'
+      - $ref: '#/components/schemas/SqlParameterEditor'
+      - $ref: '#/components/schemas/StringParameterEditor'
+      - $ref: '#/components/schemas/TabularTypedDataEditor'
+      - $ref: '#/components/schemas/TextareaParameterEditor'
+      - $ref: '#/components/schemas/TimeParameterEditor'
+    Sink:
+      required:
+      - id
+      - ref
+      type: object
+      properties:
+        id:
+          type: string
+        ref:
+          $ref: '#/components/schemas/SinkRef'
+        legacyEndResultExpression:
+          $ref: '#/components/schemas/Expression'
+        isDisabled:
+          type:
+          - boolean
+          - 'null'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    SinkRef:
+      required:
+      - typ
+      type: object
+      properties:
+        typ:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+    Source:
+      required:
+      - id
+      - ref
+      type: object
+      properties:
+        id:
+          type: string
+        ref:
+          $ref: '#/components/schemas/SourceRef'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    SourceRef:
+      required:
+      - typ
+      type: object
+      properties:
+        typ:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+    SpelTemplateParameterEditor:
+      type: object
+    Split:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    SqlParameterEditor:
+      type: object
     Status:
       type: string
       enum:
@@ -1233,6 +2341,261 @@ components:
       type: string
       enum:
       - ERROR
+    StringParameterEditor:
+      type: object
+    Switch:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+        expression:
+          $ref: '#/components/schemas/Expression'
+        exprVal:
+          type:
+          - string
+          - 'null'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    SwitchDefault:
+      type: object
+    TabularTypedDataEditor:
+      type: object
+    TextareaParameterEditor:
+      type: object
+    TimeParameterEditor:
+      type: object
+    TypedClass:
+      title: TypedClass
+      required:
+      - type
+      - refClazzName
+      type: object
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypingType'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    TypedDict:
+      title: TypedDict
+      required:
+      - type
+      - dict
+      type: object
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypingType'
+        dict:
+          $ref: '#/components/schemas/Dict'
+    TypedNull:
+      title: TypedNull
+      type: object
+    TypedObjectTypingResult:
+      title: TypedObjectTypingResult
+      required:
+      - type
+      - fields
+      - refClazzName
+      type: object
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypingType'
+        fields:
+          $ref: '#/components/schemas/Map_TypingResult'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    TypedObjectWithValue:
+      title: TypedObjectWithValue
+      required:
+      - value
+      - type
+      - refClazzName
+      type: object
+      properties:
+        value: {}
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypingType'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    TypedTaggedValue:
+      title: TypedTaggedValue
+      required:
+      - tag
+      - type
+      - refClazzName
+      type: object
+      properties:
+        tag:
+          type: string
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypingType'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    TypedUnion:
+      title: TypedUnion
+      required:
+      - type
+      type: object
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypingType'
+        union:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    TypingResult:
+      oneOf:
+      - $ref: '#/components/schemas/TypedClass'
+      - $ref: '#/components/schemas/TypedDict'
+      - $ref: '#/components/schemas/TypedNull'
+      - $ref: '#/components/schemas/TypedObjectTypingResult'
+      - $ref: '#/components/schemas/TypedObjectWithValue'
+      - $ref: '#/components/schemas/TypedTaggedValue'
+      - $ref: '#/components/schemas/TypedUnion'
+      - $ref: '#/components/schemas/Unknown'
+    TypingType:
+      type: string
+      enum:
+      - TypedUnion
+      - TypedDict
+      - TypedObjectTypingResult
+      - TypedTaggedValue
+      - TypedClass
+      - TypedObjectWithValue
+      - TypedNull
+      - Unknown
+    UIParameterDto:
+      required:
+      - name
+      - typ
+      - editor
+      - defaultValue
+      - additionalVariables
+      - branchParam
+      - label
+      type: object
+      properties:
+        name:
+          type: string
+        typ:
+          $ref: '#/components/schemas/TypingResult'
+        editor:
+          $ref: '#/components/schemas/ParameterEditor'
+        defaultValue:
+          $ref: '#/components/schemas/Expression'
+        additionalVariables:
+          $ref: '#/components/schemas/Map_TypingResult'
+        variablesToHide:
+          type: array
+          items:
+            type: string
+        branchParam:
+          type: boolean
+        hintText:
+          type:
+          - string
+          - 'null'
+        label:
+          type: string
+    UIValueParameterDto:
+      required:
+      - name
+      - typ
+      - expression
+      type: object
+      properties:
+        name:
+          type: string
+        typ:
+          $ref: '#/components/schemas/TypingResult'
+        expression:
+          $ref: '#/components/schemas/Expression'
+    Unknown:
+      title: Unknown
+      type: object
+    UserDefinedAdditionalNodeFields:
+      type: object
+      properties:
+        description:
+          type:
+          - string
+          - 'null'
+        layoutData:
+          $ref: '#/components/schemas/LayoutData'
+    ValueInputWithFixedValues:
+      oneOf:
+      - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
+    ValueInputWithFixedValuesProvided:
+      required:
+      - allowOtherValue
+      type: object
+      properties:
+        fixedValuesList:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValue'
+        allowOtherValue:
+          type: boolean
+    Variable:
+      required:
+      - id
+      - varName
+      - value
+      type: object
+      properties:
+        id:
+          type: string
+        varName:
+          type: string
+        value:
+          $ref: '#/components/schemas/Expression'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    VariableBuilder:
+      required:
+      - id
+      - varName
+      type: object
+      properties:
+        id:
+          type: string
+        varName:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     VersionId:
       required:
       - value

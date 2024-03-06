@@ -496,6 +496,24 @@ class NodesApiHttpServiceBusinessSpec
              |  "validationPerformed": true
              |}""".stripMargin)
     }
+
+    "return 404 for not existent fragment validation" in {
+      val fragmentName = "fragment"
+
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .basicAuth("allpermuser", "allpermuser")
+        .jsonBody(exampleNodeValidationRequestForFragment(fragmentName))
+        .when()
+        .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
+        .Then()
+        .statusCode(404)
+        .body(
+          equalTo(s"No scenario $fragmentName found")
+        )
+    }
   }
 
   "The endpoint for properties additional info should" - {
@@ -830,6 +848,20 @@ class NodesApiHttpServiceBusinessSpec
              |  "validationPerformed": true
              |}""".stripMargin)
     }
+
+    "return 404 for not existent processing type" in {
+      val notExistentProcessingType = "not-existent"
+      given()
+        .basicAuth("allpermuser", "allpermuser")
+        .jsonBody(exampleParametersValidationRequestBody)
+        .when()
+        .post(s"$nuDesignerHttpAddress/api/parameters/$notExistentProcessingType/validate")
+        .Then()
+        .statusCode(404)
+        .body(
+          equalTo(s"ProcessingType type: $notExistentProcessingType not found")
+        )
+    }
   }
 
   "The endpoint for parameters suggestions should" - {
@@ -924,6 +956,115 @@ class NodesApiHttpServiceBusinessSpec
        |  "output": "out",
        |  "additionalFields": null,
        |  "type": "Enricher"
+       |}""".stripMargin
+
+  private def exampleNodeValidationRequestForFragment(fragmentName: String): String =
+    s"""{
+       |    "outgoingEdges": [
+       |        {
+       |            "from": "$fragmentName",
+       |            "to": "variable",
+       |            "edgeType": {
+       |                "name": "output",
+       |                "type": "FragmentOutput"
+       |            }
+       |        }
+       |    ],
+       |    "nodeData": {
+       |        "additionalFields": {
+       |            "layoutData": {
+       |                "x": 175,
+       |                "y": 180
+       |            }
+       |        },
+       |        "ref": {
+       |            "id": "$fragmentName",
+       |            "parameters": [],
+       |            "outputVariableNames": {
+       |                "output": "output"
+       |            }
+       |        },
+       |        "isDisabled": null,
+       |        "fragmentParams": null,
+       |        "type": "FragmentInput",
+       |        "branchParametersTemplate": [],
+       |        "id": "fragment"
+       |    },
+       |    "processProperties": {
+       |        "isFragment": false,
+       |        "additionalFields": {
+       |            "description": null,
+       |            "properties": {
+       |                "parallelism": "1",
+       |                "checkpointIntervalInSeconds": "",
+       |                "maxEvents": "1",
+       |                "numberOfThreads": "1",
+       |                "spillStateToDisk": "true",
+       |                "environment": "test",
+       |                "useAsyncInterpretation": ""
+       |            },
+       |            "metaDataType": "StreamMetaData"
+       |        }
+       |    },
+       |    "branchVariableTypes": {},
+       |    "variableTypes": {
+       |        "input": {
+       |            "display": "CsvRecord",
+       |            "type": "TypedClass",
+       |            "refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.CsvRecord",
+       |            "params": []
+       |        }
+       |    }
+       |}""".stripMargin
+
+  private lazy val exampleParametersValidationRequestBody =
+    s"""{
+       |    "parameters": [
+       |        {
+       |            "name": "condition",
+       |            "typ": {
+       |                "display": "Boolean",
+       |                "type": "TypedClass",
+       |                "refClazzName": "java.lang.Boolean",
+       |                "params": []
+       |            },
+       |            "expression": {
+       |                "language": "spel",
+       |                "expression": "#input.amount > 2"
+       |            }
+       |        }
+       |    ],
+       |    "variableTypes": {
+       |        "input": {
+       |            "display": "Record{amount: Long(5)}",
+       |            "type": "TypedObjectTypingResult",
+       |            "fields": {
+       |                "amount": {
+       |                    "value": 5,
+       |                    "display": "Long(5)",
+       |                    "type": "TypedObjectWithValue",
+       |                    "refClazzName": "java.lang.Long",
+       |                    "params": []
+       |                }
+       |            },
+       |            "refClazzName": "java.util.Map",
+       |            "params": [
+       |                {
+       |                    "display": "String",
+       |                    "type": "TypedClass",
+       |                    "refClazzName": "java.lang.String",
+       |                    "params": []
+       |                },
+       |                {
+       |                    "value": 5,
+       |                    "display": "Long(5)",
+       |                    "type": "TypedObjectWithValue",
+       |                    "refClazzName": "java.lang.Long",
+       |                    "params": []
+       |                }
+       |            ]
+       |        }
+       |    }
        |}""".stripMargin
 
 }

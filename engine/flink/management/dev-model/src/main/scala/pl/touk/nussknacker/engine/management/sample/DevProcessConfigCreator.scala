@@ -270,7 +270,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       globalProcessVariables,
       List.empty,
       additionalClasses,
-      LanguageConfiguration(List()),
       dictionaries = Map(
         TestDictionary.id           -> TestDictionary.definition,
         RGBDictionary.id            -> RGBDictionary.definition,

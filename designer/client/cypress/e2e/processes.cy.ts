@@ -23,7 +23,7 @@ describe("Processes list", () => {
     });
 
     it("should allow creating new process", function () {
-        cy.contains(/^new scenario$/i)
+        cy.contains(/^add new scenario$/i)
             .should("be.visible")
             .click();
         cy.get("#newProcessName", { timeout: 30000 }).type(this.processName);
@@ -70,7 +70,7 @@ describe.skip("Processes list (new table)", () => {
     });
 
     it("should allow creating new process", function () {
-        cy.contains(/^new scenario$/i)
+        cy.contains(/^add new scenario$/i)
             .should("be.visible")
             .click();
         cy.get("#newProcessName", { timeout: 30000 }).type(this.processName);
