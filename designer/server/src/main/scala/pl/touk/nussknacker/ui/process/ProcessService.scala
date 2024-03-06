@@ -39,7 +39,8 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
   ProcessCreated,
   RemoteUserName,
-  UpdateProcessAction
+  UpdateScenarioAction,
+  UpdateScenarioGraphAction
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -63,7 +64,7 @@ object ProcessService {
   ) extends BaseCreateScenarioCommand
 
   @JsonCodec final case class UpdateScenarioCommand(
-      scenarioGraph: ScenarioGraph,
+      scenarioGraph: Option[ScenarioGraph],
       comment: UpdateProcessComment,
       forwardedUserName: Option[RemoteUserName]
   )
@@ -394,25 +395,20 @@ class DBProcessService(
   }
 
   // FIXME: Update process should update process and create process version in transactional way, but right we do all in process repository..
-  override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateScenarioCommand)(
+  override def updateProcess(processIdWithName: ProcessIdWithName, command: UpdateScenarioCommand)(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
-      val processResolver = processResolverByProcessingType.forTypeUnsafe(details.processingType)
-      val validation =
-        FatalValidationError.saveNotAllowedAsError(
-          processResolver.validateBeforeUiResolving(action.scenarioGraph, details.name, details.isFragment)
-        )
-      val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
-      val updateProcessAction = UpdateProcessAction(
-        processIdWithName.id,
-        substituted,
-        Option(action.comment),
-        increaseVersionWhenJsonNotChanged = false,
-        forwardedUserName = action.forwardedUserName
-      )
+      val (updateScenarioAction, validation) = command match {
+        case UpdateScenarioCommand(Some(scenarioGraph), _, _) =>
+          toUpdateScenarioGraphAction(command, scenarioGraph, details)
+        case UpdateScenarioCommand(None, _, _) =>
+          // FIXME
+          ???
+      }
+
       dbioRunner
-        .runInTransaction(processRepository.updateProcess(updateProcessAction))
+        .runInTransaction(processRepository.updateProcess(updateScenarioAction))
         .map { processUpdated =>
           UpdateProcessResponse(
             processUpdated.newVersion
@@ -422,6 +418,31 @@ class DBProcessService(
           )
         }
     }
+
+  private def toUpdateScenarioGraphAction(
+      command: UpdateScenarioCommand,
+      scenarioGraph: ScenarioGraph,
+      details: ScenarioWithDetails
+  )(
+      implicit user: LoggedUser
+  ) = {
+    val processResolver = processResolverByProcessingType.forTypeUnsafe(details.processingType)
+    val validation =
+      FatalValidationError.saveNotAllowedAsError(
+        processResolver.validateBeforeUiResolving(scenarioGraph, details.name, details.isFragment)
+      )
+    val substituted = processResolver.resolveExpressions(scenarioGraph, details.name, validation.typingInfo)
+    (
+      UpdateScenarioGraphAction(
+        details.idWithNameUnsafe,
+        substituted,
+        Option(command.comment),
+        increaseVersionWhenJsonNotChanged = false,
+        forwardedUserName = command.forwardedUserName
+      ),
+      Some(validation)
+    )
+  }
 
   def importProcess(processId: ProcessIdWithName, jsonString: String)(
       implicit user: LoggedUser

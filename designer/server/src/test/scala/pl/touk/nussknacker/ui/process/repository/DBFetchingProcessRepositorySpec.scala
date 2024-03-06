@@ -22,7 +22,8 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
   ProcessUpdated,
-  UpdateProcessAction
+  UpdateScenarioAction,
+  UpdateScenarioGraphAction
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -288,8 +289,8 @@ class DBFetchingProcessRepositorySpec
       canonicalProcess: CanonicalProcess,
       increaseVersionWhenJsonNotChanged: Boolean = false
   ): ProcessUpdated = {
-    val action = UpdateProcessAction(
-      processId,
+    val action = UpdateScenarioGraphAction(
+      ProcessIdWithName(processId, canonicalProcess.name),
       canonicalProcess,
       comment = None,
       increaseVersionWhenJsonNotChanged,

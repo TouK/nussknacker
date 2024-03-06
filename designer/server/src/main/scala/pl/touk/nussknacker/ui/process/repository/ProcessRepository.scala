@@ -16,7 +16,8 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
   ProcessCreated,
   ProcessUpdated,
-  UpdateProcessAction
+  UpdateScenarioAction,
+  UpdateScenarioGraphAction
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -54,15 +55,19 @@ object ProcessRepository {
       forwardedUserName: Option[RemoteUserName]
   )
 
-  final case class UpdateProcessAction(
-      private val processId: ProcessId,
-      canonicalProcess: CanonicalProcess,
-      comment: Option[Comment],
-      increaseVersionWhenJsonNotChanged: Boolean,
-      forwardedUserName: Option[RemoteUserName]
-  ) {
-    def id: ProcessIdWithName = ProcessIdWithName(processId, canonicalProcess.name)
+  sealed trait UpdateScenarioAction {
+    def idWithName: ProcessIdWithName
+    def comment: Option[Comment]
+    def forwardedUserName: Option[RemoteUserName]
   }
+
+  final case class UpdateScenarioGraphAction(
+      override val idWithName: ProcessIdWithName,
+      canonicalProcess: CanonicalProcess,
+      override val comment: Option[Comment],
+      increaseVersionWhenJsonNotChanged: Boolean,
+      override val forwardedUserName: Option[RemoteUserName]
+  ) extends UpdateScenarioAction
 
   final case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
@@ -73,7 +78,7 @@ trait ProcessRepository[F[_]] {
 
   def saveNewProcess(action: CreateProcessAction)(implicit loggedUser: LoggedUser): F[Option[ProcessCreated]]
 
-  def updateProcess(action: UpdateProcessAction)(implicit loggedUser: LoggedUser): F[ProcessUpdated]
+  def updateProcess(action: UpdateScenarioAction)(implicit loggedUser: LoggedUser): F[ProcessUpdated]
 
   def archive(processId: ProcessIdWithName, isArchived: Boolean): F[Unit]
 
@@ -128,9 +133,13 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
             (insertNew += processToSave)
               .flatMap(entity =>
                 updateProcessInternal(
-                  ProcessIdWithName(entity.id, entity.name),
-                  action.canonicalProcess,
-                  increaseVersionWhenJsonNotChanged = false,
+                  UpdateScenarioGraphAction(
+                    ProcessIdWithName(entity.id, entity.name),
+                    action.canonicalProcess,
+                    None,
+                    increaseVersionWhenJsonNotChanged = false,
+                    None
+                  ),
                   userName = userName
                 )
               )
@@ -140,20 +149,15 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
   }
 
   def updateProcess(
-      updateProcessAction: UpdateProcessAction
+      updateScenarioAction: UpdateScenarioAction
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
-    val userName = updateProcessAction.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
+    val userName = updateScenarioAction.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
 
     def addNewCommentToVersion(processId: ProcessId, versionId: VersionId) = {
-      newCommentAction(processId, versionId, updateProcessAction.comment)
+      newCommentAction(processId, versionId, updateScenarioAction.comment)
     }
 
-    updateProcessInternal(
-      updateProcessAction.id,
-      updateProcessAction.canonicalProcess,
-      updateProcessAction.increaseVersionWhenJsonNotChanged,
-      userName
-    ).flatMap {
+    updateProcessInternal(updateScenarioAction, userName).flatMap {
       // Comment should be added via ProcessService not to mix this repository responsibility.
       case updateProcessRes @ ProcessUpdated(processId, _, Some(newVersion)) =>
         addNewCommentToVersion(processId, newVersion).map(_ => updateProcessRes)
@@ -164,48 +168,61 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
   }
 
   private def updateProcessInternal(
-      processId: ProcessIdWithName,
-      canonicalProcess: CanonicalProcess,
-      increaseVersionWhenJsonNotChanged: Boolean,
+      updateScenarioAction: UpdateScenarioAction,
       userName: String
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
+    logger.debug(s"Updating scenario ${updateScenarioAction.idWithName.name} by user $userName")
+    for {
+      maybeScenario <- processTableFilteredByUser.filter(_.id === updateScenarioAction.idWithName.id).result.headOption
+      scenario = maybeScenario.getOrElse(throw ProcessNotFoundError(updateScenarioAction.idWithName.name))
+      (oldVersionOpt, newVersionOpt) <- updateScenarioAction match {
+        case updateScenarioGraphAction: UpdateScenarioGraphAction =>
+          updateScenarioGraph(updateScenarioGraphAction, userName, scenario.processingType)
+      }
+    } yield ProcessUpdated(
+      scenario.id,
+      oldVersion = oldVersionOpt,
+      newVersion = newVersionOpt
+    )
+  }
+
+  private def updateScenarioGraph(
+      updateScenarioGraphAction: UpdateScenarioGraphAction,
+      userName: String,
+      processingType: ProcessingType
+  )(implicit loggedUser: LoggedUser) = {
     def createProcessVersionEntityData(version: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
       id = version,
-      processId = processId.id,
-      json = Some(canonicalProcess),
+      processId = updateScenarioGraphAction.idWithName.id,
+      json = Some(updateScenarioGraphAction.canonicalProcess),
       createDate = Timestamp.from(now),
       user = userName,
       modelVersion = modelVersion.forType(processingType),
-      componentsUsages = Some(ScenarioComponentsUsagesHelper.compute(canonicalProcess)),
+      componentsUsages = Some(ScenarioComponentsUsagesHelper.compute(updateScenarioGraphAction.canonicalProcess)),
     )
 
     def isLastVersionContainsSameProcess(lastVersion: ProcessVersionEntityData): Boolean =
-      lastVersion.json.contains(canonicalProcess)
+      lastVersion.json.contains(updateScenarioGraphAction.canonicalProcess)
 
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processingType: ProcessingType) =
       latestProcessVersion match {
-        case Some(version) if isLastVersionContainsSameProcess(version) && !increaseVersionWhenJsonNotChanged =>
+        case Some(version)
+            if isLastVersionContainsSameProcess(
+              version
+            ) && !updateScenarioGraphAction.increaseVersionWhenJsonNotChanged =>
           None
         case Some(version) =>
           Some(createProcessVersionEntityData(version.id.increase, processingType))
         case _ =>
           Some(createProcessVersionEntityData(VersionId.initialVersionId, processingType))
       }
-
-    logger.debug(s"Updating scenario ${processId.name} by user $userName")
     for {
-      maybeProcess <- processTableFilteredByUser.filter(_.id === processId.id).result.headOption
-      process = maybeProcess.getOrElse(throw ProcessNotFoundError(processId.name))
-      latestProcessVersion <- fetchProcessLatestVersionsQuery(processId.id)(
+      latestScenarioVersion <- fetchProcessLatestVersionsQuery(updateScenarioGraphAction.idWithName.id)(
         ScenarioShapeFetchStrategy.FetchScenarioGraph
       ).result.headOption
-      newProcessVersionOpt = versionToInsert(latestProcessVersion, process.processingType)
-      _ <- newProcessVersionOpt.map(processVersionsTable += _).getOrElse(dbMonad.pure(0))
-    } yield ProcessUpdated(
-      process.id,
-      oldVersion = latestProcessVersion.map(_.id),
-      newVersion = newProcessVersionOpt.map(_.id)
-    )
+      newScenarioVersionOpt = versionToInsert(latestScenarioVersion, processingType)
+      _ <- newScenarioVersionOpt.map(processVersionsTable += _).getOrElse(dbMonad.pure(0))
+    } yield (latestScenarioVersion.map(_.id), newScenarioVersionOpt.map(_.id))
   }
 
   def deleteProcess(processId: ProcessIdWithName): DB[Unit] =

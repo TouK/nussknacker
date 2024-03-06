@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.{NotFoundError, NuDesignerError, UnauthorizedError}
+import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError, NuDesignerError, UnauthorizedError}
 
 class ScenarioParametersService private (
     parametersForProcessingType: Map[ProcessingType, ScenarioParameters],
@@ -172,6 +172,6 @@ class ProcessingTypeNotFoundError(
     category: Option[String],
     processingMode: Option[ProcessingMode],
     engineSetupName: Option[EngineSetupName]
-) extends NotFoundError(
-      s"Processing type for combinations of parameters: category: $category, processing mode: $processingMode, engine setup: $engineSetupName"
+) extends BadRequestError(
+      s"Processing type for combinations of parameters: category: $category, processing mode: $processingMode, engine setup: $engineSetupName not found"
     )

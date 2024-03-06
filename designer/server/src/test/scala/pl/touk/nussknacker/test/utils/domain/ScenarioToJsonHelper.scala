@@ -15,7 +15,7 @@ object ScenarioToJsonHelper {
   private implicit val ptsEncoder: Encoder[UpdateScenarioCommand] = deriveConfiguredEncoder
 
   implicit class ScenarioGraphToJson(scenarioGraph: ScenarioGraph) {
-    def toJsonAsProcessToSave: Json = UpdateScenarioCommand(scenarioGraph, UpdateProcessComment(""), None).asJson
+    def toJsonAsProcessToSave: Json = UpdateScenarioCommand(Some(scenarioGraph), UpdateProcessComment(""), None).asJson
   }
 
   implicit class ScenarioToJson(scenario: CanonicalProcess) {
