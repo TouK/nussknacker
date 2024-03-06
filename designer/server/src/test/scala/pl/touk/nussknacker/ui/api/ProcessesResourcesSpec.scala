@@ -833,6 +833,44 @@ class ProcessesResourcesSpec
     }
   }
 
+  test(
+    "adding scenario with not configured scenario parameters combination should result with bad request response status code"
+  ) {
+    val processName = ProcessName("p1")
+    val command = CreateScenarioCommand(
+      processName,
+      Some("not existing category"),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUserOrAdmin(isAdmin =
+      true
+    ) ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.BadRequest
+    }
+  }
+
+  test("changing scenario parameters should be possible") {
+    val processName = ProcessName("scenario-parameters-change")
+    createProcessRequest(processName, TestCategory.Category1, isFragment = false) { status =>
+      status shouldEqual StatusCodes.OK
+
+      val command = UpdateScenarioCommand(
+        None,
+        UpdateProcessComment("Scenario parameters updated comment"),
+        forwardedUserName = None
+      )
+      Put(s"/api/processes/$processName", command.toJsonRequestEntity()) ~> withAllPermUserOrAdmin(isAdmin =
+        true
+      ) ~> applicationRoute ~> check {
+        status shouldEqual StatusCodes.BadRequest
+      }
+
+    }
+  }
+
   test("return all non-validated processes with details") {
     val firstProcessName  = ProcessName("firstProcessName")
     val secondProcessName = ProcessName("secondProcessName")
@@ -1129,7 +1167,11 @@ class ProcessesResourcesSpec
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateScenarioCommand(CanonicalProcessConverter.toScenarioGraph(process), UpdateProcessComment(comment), None),
+      UpdateScenarioCommand(
+        Some(CanonicalProcessConverter.toScenarioGraph(process)),
+        UpdateProcessComment(comment),
+        None
+      ),
       process.name
     )(
       testCode
@@ -1191,7 +1233,7 @@ class ProcessesResourcesSpec
   private def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, UpdateProcessComment(""), None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(Some(process), UpdateProcessComment(""), None), name)(testCode)
 
   private lazy val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
     TestFactory.newFutureFetchingScenarioRepository(testDbRef)

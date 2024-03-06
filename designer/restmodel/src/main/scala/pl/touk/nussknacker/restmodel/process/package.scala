@@ -18,8 +18,10 @@ package object process {
   @JsonCodec final case class ProcessResponse(id: ProcessId, versionId: VersionId, processName: ProcessName)
 
   @JsonCodec final case class UpdateProcessResponse(
+      // processResponse is defined only if new version of scenario graph is added
       processResponse: Option[ProcessResponse],
-      validationResult: ValidationResult
+      // validationResult is returned only if scenario graph update was requested
+      validationResult: Option[ValidationResult]
   )
 
 }

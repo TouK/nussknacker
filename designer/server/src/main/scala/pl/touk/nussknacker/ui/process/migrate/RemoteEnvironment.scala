@@ -353,7 +353,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       forwardedUserName: Option[RemoteUserName]
   )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, ValidationResult]] = {
     for {
-      processToSave <- Marshal(UpdateScenarioCommand(scenarioGraph, comment, forwardedUserName))
+      processToSave <- Marshal(UpdateScenarioCommand(Some(scenarioGraph), comment, forwardedUserName))
         .to[MessageEntity](marshaller, ec)
       response <- invokeJson[ValidationResult](
         HttpMethods.PUT,
