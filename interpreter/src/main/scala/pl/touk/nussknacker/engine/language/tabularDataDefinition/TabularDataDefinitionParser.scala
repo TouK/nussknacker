@@ -6,12 +6,20 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{ErrorDetails, TabularDataDefinitionParserErrorDetails}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
+  ErrorDetails,
+  TabularDataDefinitionParserErrorDetails
+}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
-import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{CellsCountInRowDifferentThanColumnsCount, ColumnNameUniquenessViolation, InvalidCellValues}
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{
+  CellsCountInRowDifferentThanColumnsCount,
+  ColumnNameUniquenessViolation,
+  InvalidCellValues
+}
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Error
 
 object TabularDataDefinitionParser extends ExpressionParser {
 

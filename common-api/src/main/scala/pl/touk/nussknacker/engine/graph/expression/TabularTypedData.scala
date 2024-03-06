@@ -5,7 +5,11 @@ import io.circe.Decoder.Result
 import io.circe._
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Cell.RawValue
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.InvalidCellValues.CellCoordinates
-import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{CellsCountInRowDifferentThanColumnsCount, ColumnNameUniquenessViolation, InvalidCellValues}
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{
+  CellsCountInRowDifferentThanColumnsCount,
+  ColumnNameUniquenessViolation,
+  InvalidCellValues
+}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Error.{JsonParsingError, ValidationError}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.{Column, Row}
 
