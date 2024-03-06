@@ -639,7 +639,7 @@ class HttpService {
     }
 
     testScenarioWithGeneratedData(
-        processName,
+        processName: string,
         testSampleSize: string,
         scenarioGraph: ScenarioGraph,
     ): Promise<AxiosResponse<TestProcessResponse>> {
