@@ -1748,7 +1748,7 @@ components:
         id:
           type: string
         valueType:
-          $ref: '#/components/schemas/TypedTaggedValue'
+          $ref: '#/components/schemas/SingleTypingResult'
     DictParameterEditor:
       required:
       - dictId
@@ -2604,6 +2604,13 @@ components:
       - $ref: '#/components/schemas/TabularTypedDataEditor'
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
+    SingleTypingResult:
+      oneOf:
+      - $ref: '#/components/schemas/TypedClass'
+      - $ref: '#/components/schemas/TypedDict'
+      - $ref: '#/components/schemas/TypedObjectTypingResult'
+      - $ref: '#/components/schemas/TypedObjectWithValue'
+      - $ref: '#/components/schemas/TypedTaggedValue'
     Sink:
       required:
       - id
@@ -2712,7 +2719,7 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/types6'
+          $ref: '#/components/schemas/types4'
         refClazzName:
           type: string
         params:
@@ -2800,7 +2807,7 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/types4'
+          $ref: '#/components/schemas/types6'
         refClazzName:
           type: string
         params:
@@ -2981,7 +2988,7 @@ components:
     types4:
       type: string
       enum:
-      - TypedTaggedValue
+      - TypedClass
     types5:
       type: string
       enum:
@@ -2989,7 +2996,7 @@ components:
     types6:
       type: string
       enum:
-      - TypedClass
+      - TypedTaggedValue
     types7:
       type: string
       enum:
