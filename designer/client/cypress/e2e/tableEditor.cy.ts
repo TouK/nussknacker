@@ -46,6 +46,7 @@ describe("Table editor", () => {
         cy.realPress("Enter");
         cy.realPress("Escape");
         cy.realType("xxx");
+        cy.get("@table").click(580, 25);
         snapshot();
 
         cy.get("[title=Expression]").next().find(".ace_editor").as("expr");
@@ -61,7 +62,7 @@ describe("Table editor", () => {
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
         cy.contains(`Bad expression type, expected: Boolean, found: String`).should("be.visible");
 
-        cy.get("@table").click(350, 50);
+        cy.get("@table").click(250, 50);
         cy.get("[role='menuitem']").contains("Boolean").click();
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
         cy.contains(`Bad expression type, expected: Boolean, found: String`).should("not.be.visible");
@@ -84,6 +85,8 @@ describe("Table editor", () => {
         cy.contains(/^remove 1 column$/i).click();
         cy.get("@table").rightclick(480, 125);
         cy.contains(/^remove 1 row$/i).click();
+        cy.get("@table").rightclick(480, 90);
+        cy.contains(/^remove 1 column$/i).click();
         cy.get("@table").rightclick(480, 90);
         cy.contains(/^remove 1 column$/i).click();
         snapshot();
