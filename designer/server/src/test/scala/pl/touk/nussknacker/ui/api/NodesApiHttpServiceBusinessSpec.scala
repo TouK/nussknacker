@@ -5,7 +5,7 @@ import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.everit.json.schema.loader.{SchemaClient, SchemaLoader}
-import org.everit.json.schema.{Schema, ValidationException}
+import org.everit.json.schema.Schema
 import org.hamcrest.Matchers.equalTo
 import org.json.JSONObject
 import org.scalatest.freespec.AnyFreeSpecLike
@@ -24,7 +24,7 @@ import sttp.apispec.circe._
 import sttp.tapir.docs.apispec.schema._
 
 import java.net.URI
-import scala.util.{Failure, Try}
+import scala.util.{Success, Try}
 
 class NodesApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -980,16 +980,12 @@ class NodesApiHttpServiceBusinessSpec
     for (_ <- 1 to 10) {
       TypingResultGen.typingResultGen(EnabledTypedFeatures.All).sample match {
         case Some(sample) =>
-          val sampleJson = TypingResult.encoder.apply(sample)
+          val sampleJson        = TypingResult.encoder.apply(sample)
+          val sampleStr: String = Printer.spaces2.print(sampleJson.deepDropNullValues)
+          val sampleJsonObject  = new JSONObject(sampleStr)
 
-          Try(schema.validate(sampleJson)) match {
-            case Failure(ex: ValidationException) =>
-              println(ex)
-              println(ex.getAllMessages)
-              println(ex.getCausingExceptions)
-              false shouldBe true
-            case _ => true shouldBe true
-          }
+          Try(schema.validate(sampleJsonObject)) shouldBe Success(())
+
         case None =>
       }
     }
