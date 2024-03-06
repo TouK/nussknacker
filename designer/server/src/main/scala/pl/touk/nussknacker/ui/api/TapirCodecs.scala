@@ -144,9 +144,7 @@ object TapirCodecs {
   }
 
   object ScenarioWithDetailsForMigrationsCodec {
-
-    import ProcessNameCodec._
-
+    // TODO: type me
     implicit val scenarioWithDetailsForMigrationsSchema: Schema[ScenarioWithDetailsForMigrations] = Schema.anyObject
   }
 
