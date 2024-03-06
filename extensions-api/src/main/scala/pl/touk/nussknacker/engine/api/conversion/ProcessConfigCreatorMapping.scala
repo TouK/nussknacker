@@ -42,7 +42,6 @@ object ProcessConfigCreatorMapping {
           globalProcessVariables = jec.getGlobalProcessVariables.asScala.toMap,
           globalImports = jec.getGlobalImports.asScala.toList,
           additionalClasses = jec.getAdditionalClasses.asScala.toList,
-          languages = jec.getLanguages,
           optimizeCompilation = jec.isOptimizeCompilation,
           dictionaries = jec.getDictionaries.asScala.toMap,
           hideMetaVariable = jec.isHideMetaVariable,

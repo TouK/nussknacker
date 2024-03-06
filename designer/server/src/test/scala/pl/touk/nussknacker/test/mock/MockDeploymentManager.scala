@@ -10,13 +10,18 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionResult,
+  DeploymentId,
+  ExternalDeploymentId
+}
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import shapeless.syntax.typeable.typeableOps
-import sttp.client3.testing.SttpBackendStub
+import _root_.sttp.client3.testing.SttpBackendStub
 
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
@@ -76,15 +81,11 @@ class MockDeploymentManager(
     }
   }
 
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepoint: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  override protected def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+    import command._
     logger.debug(s"Adding deploy for ${processVersion.processName}")
     deploys.add(processVersion.processName)
-    synchronized {
+    this.synchronized {
       Option(deployResult.get(processVersion.processName))
         .map(_.toArray(Array.empty[Future[Option[ExternalDeploymentId]]]))
         .getOrElse(Array.empty)
@@ -214,37 +215,34 @@ class MockDeploymentManager(
       savepointPath: Option[String]
   ): Future[Option[ExternalDeploymentId]] = ???
 
-  override def customActions: List[CustomAction] = {
+  override def customActionsDefinitions: List[CustomActionDefinition] = {
     import SimpleStateStatus._
     List(
-      CustomAction(
+      deployment.CustomActionDefinition(
         name = ScenarioActionName("hello"),
         allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
       ),
-      CustomAction(
+      deployment.CustomActionDefinition(
         name = ScenarioActionName("not-implemented"),
         allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
       ),
-      CustomAction(name = ScenarioActionName("invalid-status"), allowedStateStatusNames = Nil)
+      deployment.CustomActionDefinition(name = ScenarioActionName("invalid-status"), allowedStateStatusNames = Nil)
     )
   }
 
-  override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
-      canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] =
-    actionRequest.name.value match {
-      case "hello" | "invalid-status" => Future.successful(CustomActionResult(actionRequest, "Hi"))
+  override protected def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] =
+    command.actionName.value match {
+      case "hello" | "invalid-status" => Future.successful(CustomActionResult("Hi"))
       case _                          => Future.failed(new NotImplementedError())
     }
 
   override def close(): Unit = {}
 
-  override def cancel(name: ProcessName, user: User): Future[Unit] = cancelResult
+  override def cancelDeployment(command: CancelDeploymentCommand): Future[Unit] = Future.successful(())
 
-  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(())
+  override def cancelScenario(command: CancelScenarioCommand): Future[Unit] = cancelResult
 
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = Future.successful(())
+  override protected def cancelFlinkJob(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(())
 
   override protected def checkRequiredSlotsExceedAvailableSlots(
       canonicalProcess: CanonicalProcess,

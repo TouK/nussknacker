@@ -3,13 +3,9 @@ package pl.touk.nussknacker.engine.api.deployment.cache
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
-import pl.touk.nussknacker.engine.testmode.TestProcess
+import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContext.Implicits._
@@ -52,57 +48,12 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL
     }
   }
 
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] =
-    delegate.validate(processVersion, deploymentData, canonicalProcess)
-
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] =
-    delegate.deploy(processVersion, deploymentData, canonicalProcess, savepointPath)
-
-  override def cancel(name: ProcessName, user: User): Future[Unit] =
-    delegate.cancel(name, user)
-
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
-    delegate.cancel(name, deploymentId, user)
-
-  override def test(
-      name: ProcessName,
-      canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] =
-    delegate.test(name, canonicalProcess, scenarioTestData)
+  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+    delegate.processCommand(command)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = delegate.processStateDefinitionManager
 
-  override def customActions: List[CustomAction] = delegate.customActions
-
-  override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
-      canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] =
-    delegate.invokeCustomAction(actionRequest, canonicalProcess)
-
-  override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
-    delegate.savepoint(name, savepointDir)
-
-  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] =
-    delegate.stop(name, savepointDir, user)
-
-  override def stop(
-      name: ProcessName,
-      deploymentId: DeploymentId,
-      savepointDir: Option[String],
-      user: User
-  ): Future[SavepointResult] =
-    delegate.stop(name, deploymentId, savepointDir, user)
+  override def customActionsDefinitions: List[CustomActionDefinition] = delegate.customActionsDefinitions
 
   override def close(): Unit = delegate.close()
 

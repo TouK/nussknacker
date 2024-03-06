@@ -3,13 +3,15 @@ package pl.touk.nussknacker.engine.process
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.{ClassLoaderModelData, ConfigWithUnresolvedVersion}
 
 class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matchers {
 
@@ -30,7 +32,20 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
     }
   }
 
-  private val modelData = ModelData.duringExecution(config, ModelClassLoader.empty, resolveConfigs = true)
+  private val modelData =
+    ClassLoaderModelData(
+      _.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(ConfigFactory.empty), getClass.getClassLoader),
+      ModelClassLoader.empty,
+      category = None,
+      componentId => DesignerWideComponentId(componentId.toString),
+      additionalConfigsFromProvider = Map.empty,
+      // This ugly hack is because of Idea classloader issue, see comment in ClassLoaderModelData
+      shouldIncludeConfigCreator = {
+        case _: DevProcessConfigCreator => true
+        case _                          => false
+      },
+      shouldIncludeComponentProvider = _ => true
+    )
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()

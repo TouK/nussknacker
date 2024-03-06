@@ -12,11 +12,11 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 
 import scala.util.{Failure, Success, Try}

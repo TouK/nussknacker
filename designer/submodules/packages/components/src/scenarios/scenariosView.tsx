@@ -3,7 +3,6 @@ import { FiltersContextProvider } from "../common";
 import { useScenariosWithStatus } from "./useScenariosQuery";
 import { ScenariosFiltersModel } from "./filters/scenariosFiltersModel";
 import { FiltersPart } from "./filters";
-import { Add } from "@mui/icons-material";
 import { Avatar, Button, SpeedDial, SpeedDialAction, SpeedDialIcon, Stack, styled } from "@mui/material";
 import { useInViewRef } from "rooks";
 import { TablePart } from "./list/tablePart";
@@ -39,13 +38,13 @@ function Actions({ addScenario, addFragment }: ActionsProps): JSX.Element {
         <>
             <Stack ref={ref} direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
                 {addScenario && (
-                    <Button size="small" variant="contained" disableElevation startIcon={<Add />} onClick={addScenario}>
-                        New scenario
+                    <Button variant="contained" size={"small"} onClick={addScenario}>
+                        Add New scenario
                     </Button>
                 )}
                 {addFragment && (
-                    <Button size="small" variant="contained" disableElevation startIcon={<Add />} onClick={addFragment}>
-                        New fragment
+                    <Button variant="contained" size={"small"} onClick={addFragment}>
+                        Add New fragment
                     </Button>
                 )}
             </Stack>

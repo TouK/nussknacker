@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.expression
 
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
+import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 
 case class NullExpression(original: String, flavour: Flavour) extends CompiledExpression {

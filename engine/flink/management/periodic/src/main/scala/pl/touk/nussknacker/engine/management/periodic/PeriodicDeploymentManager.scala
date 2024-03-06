@@ -7,7 +7,14 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionResult,
+  DeploymentData,
+  DeploymentId,
+  ExternalDeploymentId,
+  User
+}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
@@ -101,24 +108,29 @@ class PeriodicDeploymentManager private[periodic] (
     extends DeploymentManager
     with LazyLogging {
 
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = {
+  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+    command match {
+      case command: ValidateScenarioCommand => validate(command)
+      case command: RunDeploymentCommand    => runDeployment(command)
+      case command: CancelScenarioCommand   => cancelScenario(command)
+      case command: StopScenarioCommand     => stopScenario(command)
+      case command: CustomActionCommand     => customActionsProvider.invokeCustomAction(command)
+      case _: TestScenarioCommand | _: CancelDeploymentCommand | _: StopDeploymentCommand |
+          _: MakeScenarioSavepointCommand | _: CustomActionCommand =>
+        delegate.processCommand(command)
+    }
+
+  private def validate(command: ValidateScenarioCommand): Future[Unit] = {
+    import command._
     for {
       scheduledProperty <- extractScheduleProperty(canonicalProcess)
       _                 <- Future.fromTry(service.prepareInitialScheduleDates(scheduledProperty).toTry)
-      _                 <- delegate.validate(processVersion, deploymentData, canonicalProcess)
+      _ <- delegate.processCommand(ValidateScenarioCommand(processVersion, deploymentData, canonicalProcess))
     } yield ()
   }
 
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  private def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+    import command._
     extractScheduleProperty(canonicalProcess).flatMap { scheduleProperty =>
       logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
       // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
@@ -131,7 +143,7 @@ class PeriodicDeploymentManager private[periodic] (
           deploymentData.deploymentId.toActionIdOpt.getOrElse(
             throw new IllegalArgumentException(s"deploymentData.deploymentId should be valid ProcessActionId")
           ),
-          cancel(processVersion.processName, deploymentData.user)
+          cancelScenario(CancelScenarioCommand(processVersion.processName, deploymentData.user))
         )
         .map(_ => None)
     }
@@ -146,40 +158,34 @@ class PeriodicDeploymentManager private[periodic] (
     }
   }
 
-  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    service.deactivate(name).flatMap { deploymentIdsToStop =>
+  private def stopScenario(command: StopScenarioCommand): Future[SavepointResult] = {
+    import command._
+    service.deactivate(scenarioName).flatMap { deploymentIdsToStop =>
       // TODO: should return List of SavepointResult
       Future
-        .sequence(deploymentIdsToStop.map(delegate.stop(name, _, savepointDir, user)))
+        .sequence(
+          deploymentIdsToStop
+            .map(deploymentId =>
+              delegate.processCommand(StopDeploymentCommand(scenarioName, deploymentId, savepointDir, user))
+            )
+        )
         .map(_.headOption.getOrElse {
-          throw new IllegalStateException(s"No running deployment for scenario: $name found")
+          throw new IllegalStateException(s"No running deployment for scenario: $scenarioName found")
         })
     }
   }
 
-  override def stop(
-      name: ProcessName,
-      deploymentId: DeploymentId,
-      savepointDir: Option[String],
-      user: User
-  ): Future[SavepointResult] =
-    Future.failed(new UnsupportedOperationException(s"Stopping of deployment is not supported"))
-
-  override def cancel(name: ProcessName, user: User): Future[Unit] = {
-    service.deactivate(name).flatMap { deploymentIdsToCancel =>
-      Future.sequence(deploymentIdsToCancel.map(delegate.cancel(name, _, user))).map(_ => ())
+  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+    import command._
+    service.deactivate(scenarioName).flatMap { deploymentIdsToCancel =>
+      Future
+        .sequence(
+          deploymentIdsToCancel
+            .map(deploymentId => delegate.processCommand(CancelDeploymentCommand(scenarioName, deploymentId, user)))
+        )
+        .map(_ => ())
     }
   }
-
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
-    Future.failed(new UnsupportedOperationException(s"Cancelling of deployment it not supported"))
-
-  override def test(
-      name: ProcessName,
-      canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] =
-    delegate.test(name, canonicalProcess, scenarioTestData)
 
   override def getProcessStates(
       name: ProcessName
@@ -204,22 +210,12 @@ class PeriodicDeploymentManager private[periodic] (
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     new PeriodicProcessStateDefinitionManager(delegate.processStateDefinitionManager)
 
-  override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
-    delegate.savepoint(name, savepointDir)
-  }
-
   override def close(): Unit = {
     logger.info("Closing periodic process manager")
     toClose()
     delegate.close()
   }
 
-  override def customActions: List[CustomAction] = customActionsProvider.customActions
-
-  override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
-      canonicalProcess: CanonicalProcess
-  ): Future[CustomActionResult] =
-    customActionsProvider.invokeCustomAction(actionRequest, canonicalProcess)
+  override def customActionsDefinitions: List[CustomActionDefinition] = customActionsProvider.customActions
 
 }

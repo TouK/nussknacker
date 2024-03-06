@@ -8,12 +8,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.{DictRegistry, EngineDictRegistry}
-import pl.touk.nussknacker.engine.api.expression.{
-  Expression => CompiledExpression,
-  ExpressionParser,
-  TypedExpression,
-  TypedExpressionMap
-}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
@@ -21,6 +15,12 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.NullExpression
+import pl.touk.nussknacker.engine.expression.parse.{
+  CompiledExpression,
+  ExpressionParser,
+  TypedExpression,
+  TypedExpressionMap
+}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -82,8 +82,7 @@ object ExpressionCompiler {
         DictKeyWithLabelExpressionParser,
         TabularDataDefinitionParser
       )
-    val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
-    val parsers    = parsersSeq.map(p => p.languageId -> p).toMap
+    val parsers = defaultParsers.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers, dictRegistry)
   }
 

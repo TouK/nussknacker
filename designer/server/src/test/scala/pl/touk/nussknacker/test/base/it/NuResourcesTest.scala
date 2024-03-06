@@ -98,6 +98,8 @@ trait NuResourcesTest
 
   protected lazy val deploymentManager: MockDeploymentManager = new MockDeploymentManager
 
+  protected val deploymentCommentSettings: Option[DeploymentCommentSettings] = None
+
   protected val dmDispatcher = new DeploymentManagerDispatcher(
     mapProcessingTypeDataProvider(Streaming.stringify -> deploymentManager),
     futureFetchingScenarioRepository
@@ -112,7 +114,8 @@ trait NuResourcesTest
       processValidatorByProcessingType,
       scenarioResolverByProcessingType,
       processChangeListener,
-      None
+      None,
+      deploymentCommentSettings
     )
 
   protected val processingTypeConfig: ProcessingTypeConfig =
@@ -208,11 +211,10 @@ trait NuResourcesTest
       )
     )
 
-  protected def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) =
+  protected def deployRoute() =
     new ManagementResources(
       processAuthorizer = processAuthorizer,
       processService = processService,
-      deploymentCommentSettings = deploymentCommentSettings,
       deploymentService = deploymentService,
       dispatcher = dmDispatcher,
       metricRegistry = new MetricRegistry,
@@ -318,25 +320,23 @@ trait NuResourcesTest
 
   protected def deployProcess(
       processName: ProcessName,
-      deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
       comment: Option[String] = None
   ): RouteTestResult =
     Post(
       s"/processManagement/deploy/$processName",
       HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
     ) ~>
-      withPermissions(deployRoute(deploymentCommentSettings), Permission.Deploy, Permission.Read)
+      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   protected def cancelProcess(
       processName: ProcessName,
-      deploymentCommentSettings: Option[DeploymentCommentSettings] = None,
       comment: Option[String] = None
   ): RouteTestResult =
     Post(
       s"/processManagement/cancel/$processName",
       HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
     ) ~>
-      withPermissions(deployRoute(deploymentCommentSettings), Permission.Deploy, Permission.Read)
+      withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
   protected def snapshot(processName: ProcessName): RouteTestResult =
     Post(s"/adminProcessManagement/snapshot/$processName") ~> withPermissions(
