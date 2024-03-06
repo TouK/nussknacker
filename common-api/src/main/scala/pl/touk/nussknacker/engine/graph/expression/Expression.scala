@@ -30,7 +30,7 @@ object Expression {
       case "spelTemplate"          => Right(SpelTemplate)
       case "dictKeyWithLabel"      => Right(DictKeyWithLabel)
       case "tabularDataDefinition" => Right(TabularDataDefinition)
-      case unknown                 => throw new IllegalArgumentException(s"Unknown language [$unknown]")
+      case unknown                 => Left(s"Unknown language [$unknown]")
     }
 
   }

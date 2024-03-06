@@ -71,21 +71,21 @@ object TabularDataDefinitionParser extends ExpressionParser {
     new ExpressionParseError {
 
       override val message: String = error match {
-        case Error.CannotParseError(message) =>
+        case Error.JsonParsingError(message) =>
           message
-        case Error.CannotCreateError(ColumnNameUniquenessViolation(columnNames)) =>
+        case Error.ValidationError(ColumnNameUniquenessViolation(columnNames)) =>
           s"Column names should be unique. Duplicates: ${columnNames.distinct.toList.mkString(",")}"
-        case Error.CannotCreateError(CellsCountInRowDifferentThanColumnsCount) =>
+        case Error.ValidationError(CellsCountInRowDifferentThanColumnsCount) =>
           "All rows should have the same number of cells as there are columns"
-        case Error.CannotCreateError(InvalidCellValues(_)) =>
+        case Error.ValidationError(InvalidCellValues(_)) =>
           "Typing error in some cells"
       }
 
       override val details: Option[ErrorDetails] = error match {
-        case Error.CannotParseError(_)                                         => None
-        case Error.CannotCreateError(ColumnNameUniquenessViolation(_))         => None
-        case Error.CannotCreateError(CellsCountInRowDifferentThanColumnsCount) => None
-        case Error.CannotCreateError(InvalidCellValues(invalidCells)) =>
+        case Error.JsonParsingError(_)                                       => None
+        case Error.ValidationError(ColumnNameUniquenessViolation(_))         => None
+        case Error.ValidationError(CellsCountInRowDifferentThanColumnsCount) => None
+        case Error.ValidationError(InvalidCellValues(invalidCells)) =>
           Some(
             TabularDataDefinitionParserErrorDetails(
               invalidCells.toList.map { coordinates =>

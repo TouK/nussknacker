@@ -5,7 +5,6 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 trait ExpressionParseError {
   def message: String
@@ -18,9 +17,9 @@ object ExpressionParseError {
 
   @ConfiguredJsonCodec sealed trait ErrorDetails
 
-  sealed abstract class ExpressionParserCompilationErrorDetails(val language: Language) extends ErrorDetails
+  sealed trait ExpressionParserCompilationErrorDetails extends ErrorDetails
   final case class TabularDataDefinitionParserErrorDetails(cellErrors: List[CellError])
-      extends ExpressionParserCompilationErrorDetails(Language.TabularDataDefinition)
+      extends ExpressionParserCompilationErrorDetails
 
   object TabularDataDefinitionParserErrorDetails {
     @JsonCodec final case class CellError(columnName: String, rowIndex: Int, errorMessage: String)

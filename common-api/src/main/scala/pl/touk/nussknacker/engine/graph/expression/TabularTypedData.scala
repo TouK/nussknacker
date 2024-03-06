@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationErro
   ColumnNameUniquenessViolation,
   InvalidCellValues
 }
-import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Error.{CannotCreateError, CannotParseError}
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Error.{JsonParsingError, ValidationError}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.{Column, Row}
 
 import scala.util.Try
@@ -63,10 +63,10 @@ object TabularTypedData {
       rows: Vector[Vector[RawValue]]
   ): Either[CreationError, TabularTypedData] = {
     for {
-      _    <- validateColumnNamesUniqueness(columns)
-      _    <- validateCellsCount(columns, rows)
-      data <- Right(createTabularTypedData(columns, rows))
-      _    <- validateCellValuesType(data)
+      _ <- validateColumnNamesUniqueness(columns)
+      _ <- validateCellsCount(columns, rows)
+      data = createTabularTypedData(columns, rows)
+      _ <- validateCellValuesType(data)
     } yield data
   }
 
@@ -98,22 +98,18 @@ object TabularTypedData {
   }
 
   private def validateCellValuesType(data: TabularTypedData): Either[CreationError, Unit] = {
-    val cellErrors = data.rows
-      .foldLeft(List.empty[CellCoordinates]) { case (acc, row) =>
-        validateCellsInRow(row) ::: acc
-      }
-      .reverse
-    NonEmptyList.fromList(cellErrors) match {
+    val cellErrors = data.rows.flatMap(validateCellsInRow)
+    NonEmptyList.fromFoldable(cellErrors) match {
       case None    => Right(())
       case Some(e) => Left(InvalidCellValues(e))
     }
   }
 
   private def validateCellsInRow(row: Row) = {
-    row.cells.foldLeft(List.empty[CellCoordinates]) {
-      case (acc, cell) if cell.rawValue == RawValue(null) => acc
-      case (acc, cell) if doesCellValueLookOK(cell)       => acc
-      case (acc, cell)                                    => CellCoordinates(cell.definition, row.index) :: acc
+    row.cells.flatMap {
+      case cell if cell.rawValue == RawValue(null) => None
+      case cell if doesCellValueLookOK(cell)       => None
+      case cell                                    => Some(CellCoordinates(cell.definition, row.index))
     }
   }
 
@@ -156,18 +152,18 @@ object TabularTypedData {
 
   def fromString(value: String): Either[Error, TabularTypedData] = {
     for {
-      json <- io.circe.parser.parse(value).left.map(failure => CannotParseError(failure.message))
-      data <- Coders.TabularTypedDataDecoder.decodeJson(json).left.map(failure => CannotParseError(failure.message))
+      json <- io.circe.parser.parse(value).left.map(failure => JsonParsingError(failure.message))
+      data <- Coders.TabularTypedDataDecoder.decodeJson(json).left.map(failure => JsonParsingError(failure.message))
       (columns, rows) = data
-      tabularTypedData <- TabularTypedData.create(columns, rows).left.map(CannotCreateError.apply)
+      tabularTypedData <- TabularTypedData.create(columns, rows).left.map(ValidationError.apply)
     } yield tabularTypedData
   }
 
   sealed trait Error
 
   object Error {
-    final case class CannotParseError(message: String)       extends Error
-    final case class CannotCreateError(error: CreationError) extends Error
+    final case class JsonParsingError(message: String)     extends Error
+    final case class ValidationError(error: CreationError) extends Error
   }
 
 }
