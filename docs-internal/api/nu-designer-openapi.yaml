@@ -434,95 +434,6 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/migrate:
-    post:
-      tags:
-      - Migrations
-      summary: Migration between environments service
-      operationId: postApiMigrate
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-            examples:
-              Example:
-                summary: example of migration request between environments
-                value:
-                  sourceEnvironmentId: testEnv
-                  processingMode: Unbounded-Stream
-                  engineSetupName: Flink
-                  processCategory: Category1
-                  scenarioGraph:
-                    properties:
-                      additionalFields:
-                        properties:
-                          parallelism: ''
-                        metaDataType: LiteStreamMetaData
-                    nodes:
-                    - id: source
-                      ref:
-                        typ: csv-source-lite
-                        parameters: []
-                      type: Source
-                    - id: sink
-                      ref:
-                        typ: dead-end-lite
-                        parameters: []
-                      type: Sink
-                    edges:
-                    - from: source
-                      to: sink
-                  processName: test
-                  isFragment: false
-        required: true
-      responses:
-        '200':
-          description: ''
-        '400':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-        '409':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-        '500':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-      security:
-      - {}
-      - httpAuth: []
   /api/nodes/{scenarioName}/additionalInfo:
     post:
       tags:
@@ -895,7 +806,7 @@ paths:
     post:
       tags:
       - Nodes
-      summary: Validate node parameters
+      summary: Validate given parameters
       operationId: postApiParametersProcessingtypeValidate
       parameters:
       - name: processingType
@@ -1661,9 +1572,7 @@ components:
         processingType:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
-          oneOf:
-          - $ref: '#/components/schemas/Map_String'
-          - type: 'null'
+          $ref: '#/components/schemas/Map_String'
     CaretPosition2d:
       required:
       - row
@@ -1676,20 +1585,6 @@ components:
         column:
           type: integer
           format: int32
-    CellError:
-      required:
-      - columnName
-      - rowIndex
-      - errorMessage
-      type: object
-      properties:
-        columnName:
-          type: string
-        rowIndex:
-          type: integer
-          format: int32
-        errorMessage:
-          type: string
     Comment:
       required:
       - id
@@ -1811,9 +1706,7 @@ components:
         createdBy:
           type: string
         lastAction:
-          oneOf:
-          - $ref: '#/components/schemas/ProcessAction'
-          - type: 'null'
+          $ref: '#/components/schemas/ProcessAction'
     CronParameterEditor:
       type: object
     CustomNode:
@@ -1835,9 +1728,7 @@ components:
           items:
             $ref: '#/components/schemas/Parameter'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     DataToRefresh:
       type: string
       enum:
@@ -1917,9 +1808,7 @@ components:
         to:
           type: string
         edgeType:
-          oneOf:
-          - $ref: '#/components/schemas/EdgeType'
-          - type: 'null'
+          $ref: '#/components/schemas/EdgeType'
     EdgeType:
       oneOf:
       - $ref: '#/components/schemas/FilterFalse'
@@ -1941,12 +1830,7 @@ components:
         output:
           type: string
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
-    ErrorDetails:
-      oneOf:
-      - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     Expression:
       required:
       - language
@@ -1967,7 +1851,15 @@ components:
         methodName:
           type: string
         refClazz:
-          $ref: '#/components/schemas/TypingResult'
+          oneOf:
+          - $ref: '#/components/schemas/TypedClass'
+          - $ref: '#/components/schemas/TypedDict'
+          - $ref: '#/components/schemas/TypedNull'
+          - $ref: '#/components/schemas/TypedObjectTypingResult'
+          - $ref: '#/components/schemas/TypedObjectWithValue'
+          - $ref: '#/components/schemas/TypedTaggedValue'
+          - $ref: '#/components/schemas/TypedUnion'
+          - $ref: '#/components/schemas/Unknown'
         fromClass:
           type: boolean
         description:
@@ -2016,9 +1908,7 @@ components:
           - boolean
           - 'null'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     FilterFalse:
       type: object
     FilterTrue:
@@ -2058,9 +1948,7 @@ components:
         ref:
           $ref: '#/components/schemas/FragmentRef'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
         isDisabled:
           type:
           - boolean
@@ -2083,9 +1971,7 @@ components:
           items:
             $ref: '#/components/schemas/FragmentParameter'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     FragmentOutput:
       required:
       - name
@@ -2108,9 +1994,7 @@ components:
           items:
             $ref: '#/components/schemas/Field'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     FragmentOutputVarDefinition:
       required:
       - name
@@ -2136,21 +2020,15 @@ components:
         required:
           type: boolean
         initialValue:
-          oneOf:
-          - $ref: '#/components/schemas/FixedExpressionValue'
-          - type: 'null'
+          $ref: '#/components/schemas/FixedExpressionValue'
         hintText:
           type:
           - string
           - 'null'
         valueEditor:
-          oneOf:
-          - $ref: '#/components/schemas/ValueInputWithFixedValues'
-          - type: 'null'
+          $ref: '#/components/schemas/ValueInputWithFixedValues'
         valueCompileTimeValidation:
-          oneOf:
-          - $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
-          - type: 'null'
+          $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
     FragmentRef:
       required:
       - id
@@ -2186,13 +2064,9 @@ components:
         outputName:
           type: string
         outputVar:
-          oneOf:
-          - $ref: '#/components/schemas/FragmentOutputVarDefinition'
-          - type: 'null'
+          $ref: '#/components/schemas/FragmentOutputVarDefinition'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     HealthCheckProcessErrorResponseDto:
       required:
       - status
@@ -2250,9 +2124,7 @@ components:
           items:
             $ref: '#/components/schemas/BranchParameters'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     JsonParameterEditor:
       type: object
     LayoutData:
@@ -2294,11 +2166,19 @@ components:
     Map_TypingResult:
       type: object
       additionalProperties:
-        $ref: '#/components/schemas/TypingResult'
+        $ref: '#'
     Map_TypingResultInJson:
       type: object
       additionalProperties:
-        $ref: '#/components/schemas/TypingResult'
+        oneOf:
+        - $ref: '#/components/schemas/TypedClass'
+        - $ref: '#/components/schemas/TypedDict'
+        - $ref: '#/components/schemas/TypedNull'
+        - $ref: '#/components/schemas/TypedObjectTypingResult'
+        - $ref: '#/components/schemas/TypedObjectWithValue'
+        - $ref: '#/components/schemas/TypedTaggedValue'
+        - $ref: '#/components/schemas/TypedUnion'
+        - $ref: '#/components/schemas/Unknown'
     MarkdownAdditionalInfo:
       required:
       - content
@@ -2355,10 +2235,6 @@ components:
           - 'null'
         errorType:
           $ref: '#/components/schemas/NodeValidationErrorType'
-        details:
-          oneOf:
-          - $ref: '#/components/schemas/ErrorDetails'
-          - type: 'null'
     NodeValidationErrorType:
       type: string
       enum:
@@ -2377,9 +2253,7 @@ components:
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultInJson'
         branchVariableTypes:
-          oneOf:
-          - $ref: '#/components/schemas/Map_Map_String_TypingResultInJson'
-          - type: 'null'
+          $ref: '#/components/schemas/Map_Map_String_TypingResultInJson'
         outgoingEdges:
           type:
           - array
@@ -2399,8 +2273,14 @@ components:
             $ref: '#/components/schemas/UIParameter'
         expressionType:
           oneOf:
-          - $ref: '#/components/schemas/TypingResult'
-          - type: 'null'
+          - $ref: '#/components/schemas/TypedClass'
+          - $ref: '#/components/schemas/TypedDict'
+          - $ref: '#/components/schemas/TypedNull'
+          - $ref: '#/components/schemas/TypedObjectTypingResult'
+          - $ref: '#/components/schemas/TypedObjectWithValue'
+          - $ref: '#/components/schemas/TypedTaggedValue'
+          - $ref: '#/components/schemas/TypedUnion'
+          - $ref: '#/components/schemas/Unknown'
         validationErrors:
           type: array
           items:
@@ -2422,9 +2302,7 @@ components:
         message:
           type: string
         type:
-          oneOf:
-          - $ref: '#/components/schemas/NotificationType'
-          - type: 'null'
+          $ref: '#/components/schemas/NotificationType'
         toRefresh:
           type: array
           items:
@@ -2454,7 +2332,15 @@ components:
         name:
           type: string
         refClazz:
-          $ref: '#/components/schemas/TypingResult'
+          oneOf:
+          - $ref: '#/components/schemas/TypedClass'
+          - $ref: '#/components/schemas/TypedDict'
+          - $ref: '#/components/schemas/TypedNull'
+          - $ref: '#/components/schemas/TypedObjectTypingResult'
+          - $ref: '#/components/schemas/TypedObjectWithValue'
+          - $ref: '#/components/schemas/TypedTaggedValue'
+          - $ref: '#/components/schemas/TypedUnion'
+          - $ref: '#/components/schemas/Unknown'
     ParameterEditor:
       oneOf:
       - $ref: '#/components/schemas/BoolParameterEditor'
@@ -2635,9 +2521,7 @@ components:
           - boolean
           - 'null'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     PropertiesValidationRequestDto:
       required:
       - additionalFields
@@ -2731,17 +2615,13 @@ components:
         ref:
           $ref: '#/components/schemas/SinkRef'
         legacyEndResultExpression:
-          oneOf:
-          - $ref: '#/components/schemas/Expression'
-          - type: 'null'
+          $ref: '#/components/schemas/Expression'
         isDisabled:
           type:
           - boolean
           - 'null'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SinkRef:
       required:
       - typ
@@ -2764,9 +2644,7 @@ components:
         ref:
           $ref: '#/components/schemas/SourceRef'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SourceRef:
       required:
       - typ
@@ -2788,9 +2666,7 @@ components:
         id:
           type: string
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SqlParameterEditor:
       type: object
     Status:
@@ -2811,26 +2687,15 @@ components:
         id:
           type: string
         expression:
-          oneOf:
-          - $ref: '#/components/schemas/Expression'
-          - type: 'null'
+          $ref: '#/components/schemas/Expression'
         exprVal:
           type:
           - string
           - 'null'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SwitchDefault:
       type: object
-    TabularDataDefinitionParserErrorDetails:
-      type: object
-      properties:
-        cellErrors:
-          type: array
-          items:
-            $ref: '#/components/schemas/CellError'
     TabularTypedDataEditor:
       type: object
     TextareaParameterEditor:
@@ -2847,13 +2712,13 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/TypingType'
+          $ref: '#/components/schemas/types6'
         refClazzName:
           type: string
         params:
           type: array
           items:
-            $ref: '#/components/schemas/TypingResult'
+            $ref: '#'
     TypedDict:
       title: TypedDict
       required:
@@ -2864,12 +2729,25 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/TypingType'
+          $ref: '#/components/schemas/types3'
         dict:
           $ref: '#/components/schemas/Dict'
     TypedNull:
       title: TypedNull
+      required:
+      - type
       type: object
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/types1'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#'
     TypedObjectTypingResult:
       title: TypedObjectTypingResult
       required:
@@ -2881,7 +2759,7 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/TypingType'
+          $ref: '#/components/schemas/types2'
         fields:
           $ref: '#/components/schemas/Map_TypingResult'
         refClazzName:
@@ -2889,7 +2767,7 @@ components:
         params:
           type: array
           items:
-            $ref: '#/components/schemas/TypingResult'
+            $ref: '#'
     TypedObjectWithValue:
       title: TypedObjectWithValue
       required:
@@ -2902,13 +2780,13 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/TypingType'
+          $ref: '#/components/schemas/types5'
         refClazzName:
           type: string
         params:
           type: array
           items:
-            $ref: '#/components/schemas/TypingResult'
+            $ref: '#'
     TypedTaggedValue:
       title: TypedTaggedValue
       required:
@@ -2922,48 +2800,28 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/TypingType'
+          $ref: '#/components/schemas/types4'
         refClazzName:
           type: string
         params:
           type: array
           items:
-            $ref: '#/components/schemas/TypingResult'
+            $ref: '#'
     TypedUnion:
       title: TypedUnion
       required:
       - type
+      - union
       type: object
       properties:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/TypingType'
+          $ref: '#/components/schemas/types7'
         union:
           type: array
           items:
-            $ref: '#/components/schemas/TypingResult'
-    TypingResult:
-      oneOf:
-      - $ref: '#/components/schemas/TypedClass'
-      - $ref: '#/components/schemas/TypedDict'
-      - $ref: '#/components/schemas/TypedNull'
-      - $ref: '#/components/schemas/TypedObjectTypingResult'
-      - $ref: '#/components/schemas/TypedObjectWithValue'
-      - $ref: '#/components/schemas/TypedTaggedValue'
-      - $ref: '#/components/schemas/TypedUnion'
-      - $ref: '#/components/schemas/Unknown'
-    TypingType:
-      type: string
-      enum:
-      - TypedUnion
-      - TypedDict
-      - TypedObjectTypingResult
-      - TypedTaggedValue
-      - TypedClass
-      - TypedObjectWithValue
-      - TypedNull
-      - Unknown
+            $ref: '#'
     UIParameter:
       required:
       - name
@@ -2978,7 +2836,15 @@ components:
         name:
           type: string
         typ:
-          $ref: '#/components/schemas/TypingResult'
+          oneOf:
+          - $ref: '#/components/schemas/TypedClass'
+          - $ref: '#/components/schemas/TypedDict'
+          - $ref: '#/components/schemas/TypedNull'
+          - $ref: '#/components/schemas/TypedObjectTypingResult'
+          - $ref: '#/components/schemas/TypedObjectWithValue'
+          - $ref: '#/components/schemas/TypedTaggedValue'
+          - $ref: '#/components/schemas/TypedUnion'
+          - $ref: '#/components/schemas/Unknown'
         editor:
           $ref: '#/components/schemas/ParameterEditor'
         defaultValue:
@@ -3007,12 +2873,33 @@ components:
         name:
           type: string
         typ:
-          $ref: '#/components/schemas/TypingResult'
+          oneOf:
+          - $ref: '#/components/schemas/TypedClass'
+          - $ref: '#/components/schemas/TypedDict'
+          - $ref: '#/components/schemas/TypedNull'
+          - $ref: '#/components/schemas/TypedObjectTypingResult'
+          - $ref: '#/components/schemas/TypedObjectWithValue'
+          - $ref: '#/components/schemas/TypedTaggedValue'
+          - $ref: '#/components/schemas/TypedUnion'
+          - $ref: '#/components/schemas/Unknown'
         expression:
           $ref: '#/components/schemas/Expression'
     Unknown:
       title: Unknown
+      required:
+      - type
       type: object
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/types'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#'
     UserDefinedAdditionalNodeFields:
       type: object
       properties:
@@ -3021,9 +2908,7 @@ components:
           - string
           - 'null'
         layoutData:
-          oneOf:
-          - $ref: '#/components/schemas/LayoutData'
-          - type: 'null'
+          $ref: '#/components/schemas/LayoutData'
     ValueInputWithFixedValues:
       oneOf:
       - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
@@ -3052,9 +2937,7 @@ components:
         value:
           $ref: '#/components/schemas/Expression'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     VariableBuilder:
       required:
       - id
@@ -3070,9 +2953,7 @@ components:
           items:
             $ref: '#/components/schemas/Field'
         additionalFields:
-          oneOf:
-          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-          - type: 'null'
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     VersionId:
       required:
       - value
@@ -3081,6 +2962,38 @@ components:
         value:
           type: integer
           format: int64
+    types:
+      type: string
+      enum:
+      - Unknown
+    types1:
+      type: string
+      enum:
+      - TypedNull
+    types2:
+      type: string
+      enum:
+      - TypedObjectTypingResult
+    types3:
+      type: string
+      enum:
+      - TypedDict
+    types4:
+      type: string
+      enum:
+      - TypedTaggedValue
+    types5:
+      type: string
+      enum:
+      - TypedObjectWithValue
+    types6:
+      type: string
+      enum:
+      - TypedClass
+    types7:
+      type: string
+      enum:
+      - TypedUnion
   securitySchemes:
     httpAuth:
       type: http
