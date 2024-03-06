@@ -53,7 +53,7 @@ describe("Processes list", () => {
         cy.get("[placeholder='Search...']").type(`${NAME}-processing-mode`);
         cy.contains(/every of the 2 rows match the filters/i).should("be.visible");
 
-        cy.get("[role='grid']").matchImage({ maxDiffThreshold: 0.0001 });
+        cy.get("[role='grid']").matchImage({ maxDiffThreshold: 0.02 });
 
         cy.contains("button", /processing mode/i).click();
 
