@@ -217,13 +217,13 @@ class RemoteEnvironmentResourcesSpec
     override def migrate(
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
-        scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations
+        scenarioToMigrate: ScenarioWithDetailsForMigrations
     )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-      val localScenarioGraph = scenarioWithDetailsForMigrations.scenarioGraphUnsafe
+      val localScenarioGraph = scenarioToMigrate.scenarioGraphUnsafe
       migrateInvocations = localScenarioGraph :: migrateInvocations
       Future.successful(Right(()))
-    }.recover[Either[NuDesignerError, Unit]] { case _: IllegalStateException =>
-      Left(MissingScenarioGraphError)
+    }.recover[Either[NuDesignerError, Unit]] { case e: IllegalStateException =>
+      Left(MissingScenarioGraphError(e.getMessage))
     }(ec)
 
   }

@@ -58,7 +58,7 @@ trait RemoteEnvironment {
   def migrate(
       processingMode: ProcessingMode,
       engineSetupName: EngineSetupName,
-      scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations
+      scenarioToMigrate: ScenarioWithDetailsForMigrations
   )(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
@@ -87,9 +87,9 @@ final case class MigrationValidationError(errors: ValidationErrors)
       s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
     })
 
-case object MissingScenarioGraphError
+case class MissingScenarioGraphError(msg: String)
     extends FatalError(
-      s"Cannot migrate, error happened while fetching scenario graph."
+      msg
     )
 
 final case class MigrationToArchivedError(processName: ProcessName, environment: String)
@@ -195,10 +195,10 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   override def migrate(
       processingMode: ProcessingMode,
       engineSetupName: EngineSetupName,
-      scenarioWithDetailsForMigrations: ScenarioWithDetailsForMigrations
+      scenarioToMigrate: ScenarioWithDetailsForMigrations
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
     val migrateScenarioRequest: MigrateScenarioRequest =
-      MigrateScenarioRequest(environmentId, processingMode, engineSetupName, scenarioWithDetailsForMigrations)
+      MigrateScenarioRequest(environmentId, processingMode, engineSetupName, scenarioToMigrate)
     invokeForSuccess(
       HttpMethods.POST,
       List("migrate"),

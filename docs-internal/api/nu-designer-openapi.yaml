@@ -437,7 +437,7 @@ paths:
   /api/migrate:
     post:
       tags:
-      - migration
+      - migrations
       summary: Migration between environments service
       operationId: postApiMigrate
       requestBody:
@@ -452,7 +452,7 @@ paths:
                   sourceEnvironmentId: testEnv
                   processingMode: Unbounded-Stream
                   engineSetupName: Flink
-                  scenarioWithDetailsForMigrations:
+                  scenarioToMigrate:
                     name: example
                     isArchived: false
                     isFragment: false
@@ -1971,7 +1971,7 @@ components:
       - sourceEnvironmentId
       - processingMode
       - engineSetupName
-      - scenarioWithDetailsForMigrations
+      - scenarioToMigrate
       type: object
       properties:
         sourceEnvironmentId:
@@ -1980,7 +1980,7 @@ components:
           type: string
         engineSetupName:
           type: string
-        scenarioWithDetailsForMigrations:
+        scenarioToMigrate:
           type: object
     NextSwitch:
       required:
