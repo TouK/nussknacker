@@ -85,7 +85,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     (argsCount: Int, params: Params, context: Context) => {
       QueryArguments(
         (1 to argsCount).map { argNo =>
-          QueryArgument(index = argNo, value = params.extractOrEvaluateUnsafe(s"$ArgPrefix$argNo", context))
+          QueryArgument(index = argNo, value = params._extractOrEvaluateUnsafe(s"$ArgPrefix$argNo", context))
         }.toList
       )
     }
@@ -226,7 +226,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       finalState: Option[TransformationState]
   ): ServiceInvoker = {
     val state          = finalState.get
-    val cacheTTLOption = params.extract[Duration](CacheTTLParamName)
+    val cacheTTLOption = params._extractOld[Duration](CacheTTLParamName)
     val createInvoker = cacheTTLOption match {
       case None | Some(null) =>
         new DatabaseEnricherInvoker(_, _, _, _, _, _, _, _, _)

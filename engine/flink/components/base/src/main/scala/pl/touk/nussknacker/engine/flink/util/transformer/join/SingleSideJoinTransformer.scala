@@ -108,7 +108,7 @@ class SingleSideJoinTransformer(
     val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParam.extractValue(params)
     val aggregator: Aggregator                                  = AggregatorParam.extractValue(params)
     val window: Duration                                        = WindowLengthParam.extractValue(params)
-    val aggregateBy: LazyParameter[AnyRef] = params.extractUnsafe[LazyParameter[AnyRef]](AggregateByParamName)
+    val aggregateBy: LazyParameter[AnyRef] = params._extractUnsafe[LazyParameter[AnyRef]](AggregateByParamName)
     val outputType                         = aggregator.computeOutputTypeUnsafe(aggregateBy.returnType)
 
     new FlinkCustomJoinTransformation with Serializable {

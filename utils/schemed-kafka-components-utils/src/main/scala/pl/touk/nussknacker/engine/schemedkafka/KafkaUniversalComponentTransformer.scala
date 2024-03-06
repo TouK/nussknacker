@@ -108,7 +108,7 @@ trait KafkaUniversalComponentTransformer[T]
   }
 
   protected def extractPreparedTopic(params: Params): PreparedKafkaTopic =
-    prepareTopic(params.extractUnsafe(topicParamName))
+    prepareTopic(params._extractUnsafe(topicParamName))
 
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
     KafkaComponentsUtils.prepareKafkaTopic(topic, modelDependencies)
@@ -151,7 +151,9 @@ trait KafkaUniversalComponentTransformer[T]
       NextParameters(parameters = topicParam.value, errors = topicParam.written)
   }
 
-  protected def schemaParamStep(nextParams: List[Parameter])(implicit nodeId: NodeId): ContextTransformationDefinition = {
+  protected def schemaParamStep(
+      nextParams: List[Parameter]
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep((topicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
       val versionParam  = getVersionParam(preparedTopic)

@@ -12,8 +12,19 @@ import scala.reflect.runtime.universe._
  */
 case class ParameterWithExtractor[V](parameter: Parameter) {
 
-  def extractValue(params: Params): V = params.extractUnsafe[V](parameter.name)
+  def extractValue(params: Params): V = params.extractPresentValueUnsafe[V](parameter.name)
 
+}
+
+sealed trait ParameterWithExtractor2[RESULT] {
+  def parameter: Parameter
+  def extractValue(params: Params): RESULT
+}
+
+final case class MandatoryParameterWithExtractor[T](override val parameter: Parameter)
+    extends ParameterWithExtractor2[Option[T]] {
+
+  override def extractValue(params: Params): Option[T] = ???
 }
 
 object ParameterWithExtractor {

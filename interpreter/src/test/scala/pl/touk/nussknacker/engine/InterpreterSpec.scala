@@ -1241,6 +1241,7 @@ object InterpreterSpec {
         finalState: Option[Nothing]
     ): ServiceInvoker = {
 
+      // todo: do we need it?
       val paramName = staticParam.extractValue(params)
 
       new ServiceInvoker {
@@ -1249,7 +1250,7 @@ object InterpreterSpec {
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
-          val value = params.extractOrEvaluateUnsafe[AnyRef](paramName, context)
+          val value = params._extractOrEvaluateUnsafe[AnyRef](paramName, context)
           Future.successful(value)
         }
       }

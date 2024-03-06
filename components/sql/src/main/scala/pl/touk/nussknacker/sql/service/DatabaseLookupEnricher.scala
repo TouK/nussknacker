@@ -65,7 +65,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
   override protected val queryArgumentsExtractor: (Int, Params, Context) => QueryArguments =
     (_: Int, params: Params, context: Context) => {
       QueryArguments(
-        QueryArgument(index = 1, value = params.extractOrEvaluateUnsafe(KeyValueParamName, context)) :: Nil
+        QueryArgument(index = 1, value = params._extractOrEvaluateUnsafe(KeyValueParamName, context)) :: Nil
       )
     }
 
