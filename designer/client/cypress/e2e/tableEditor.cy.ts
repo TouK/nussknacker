@@ -57,7 +57,7 @@ describe("Table editor", () => {
                 x: 210,
                 y: 50,
             });
-        cy.get("@table").dblclick(385, 50);
+        cy.get("@table").dblclick(383, 50);
         snapshot();
 
         cy.get("[title=Expression]").next().find(".ace_editor").as("expr");
