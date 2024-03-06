@@ -58,9 +58,9 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
   ): Source = {
     extractDelayInMillis(params) match {
       case Some(millis) if millis > 0 =>
-        val timestampFieldName = extractTimestampField(params)
         val timestampAssignerWithExtract: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
-          timestampFieldName
+          extractTimestampField(params)
+            .flatMap(Option(_))
             .map(fieldName => prepareTimestampAssigner(kafkaConfig, extractTimestampFromField(fieldName)))
             .orElse(timestampAssigner)
         createDelayedKafkaSourceWithFixedDelay(
