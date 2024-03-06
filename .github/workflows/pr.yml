@@ -350,6 +350,8 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME: ${{ secrets.AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME }}
+          AZURE_EVENT_HUBS_SHARED_ACCESS_KEY: ${{ secrets.AZURE_EVENT_HUBS_SHARED_ACCESS_KEY }}
         shell: bash
 #        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
         run: ./ciRunSbt.sh designer/Slow/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
