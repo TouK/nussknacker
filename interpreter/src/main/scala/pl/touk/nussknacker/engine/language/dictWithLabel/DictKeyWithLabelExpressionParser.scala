@@ -56,12 +56,14 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
     override def language: String = languageId
 
     override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {
-      if (expectedType.canBeSubclassOf(Typed[Number])) {
+      if (expectedType.canBeSubclassOf(Typed[Long])) {
         key.toLong.asInstanceOf[T]
       } else if (expectedType.canBeSubclassOf(Typed[Boolean])) {
         key.toBoolean.asInstanceOf[T]
-      } else {
+      } else if (expectedType.canBeSubclassOf(Typed[String])) {
         key.asInstanceOf[T]
+      } else {
+        throw new IllegalStateException(s"DictKeyExpression of unsupported type: ${key.getClass}")
       }
     }
 

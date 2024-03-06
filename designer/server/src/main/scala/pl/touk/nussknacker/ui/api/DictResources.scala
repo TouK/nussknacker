@@ -4,16 +4,21 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Json
 import io.circe.generic.JsonCodec
+import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictQueryService}
+import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.ui.api.DictResources.DictListRequest
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{TypingResultInJson, prepareTypingResultDecoder}
 
 import scala.concurrent.ExecutionContext
 
 object DictResources {
   @JsonCodec
-  case class DictListRequest(expectedType: TypingResultInJson)
+  case class DictListRequest(expectedType: TypingResultJson)
+
+  @JsonCodec
+  case class TypingResultJson(value: Json)
 }
 
 class DictResources(implicit ec: ExecutionContext) extends Directives with FailFastCirceSupport {
@@ -39,7 +44,9 @@ class DictResources(implicit ec: ExecutionContext) extends Directives with FailF
     } ~ path("dicts") {
       post {
         entity(as[DictListRequest]) { dictListRequest =>
-          prepareTypingResultDecoder(classLoader).decodeJson(dictListRequest.expectedType) match {
+          val decoder = new TypingResultDecoder(ClassUtils.forName(_, classLoader)).decodeTypingResults
+
+          decoder.decodeJson(dictListRequest.expectedType.value) match {
             case Left(failure) =>
               complete(HttpResponse(status = StatusCodes.BadRequest, entity = s"Malformed expected type: $failure"))
             case Right(expectedType) =>

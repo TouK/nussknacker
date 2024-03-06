@@ -5,11 +5,11 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 
 @ConfiguredJsonCodec
-sealed trait FragmentParameterValueInput {
+sealed trait ParameterValueInput {
   def allowOtherValue: Boolean
 }
 
 case class ValueInputWithFixedValuesProvided(fixedValuesList: List[FixedExpressionValue], allowOtherValue: Boolean)
-    extends FragmentParameterValueInput
+    extends ParameterValueInput
 
-case class ValueInputWithDictEditor(dictId: String, allowOtherValue: Boolean) extends FragmentParameterValueInput
+case class ValueInputWithDictEditor(dictId: String, allowOtherValue: Boolean) extends ParameterValueInput

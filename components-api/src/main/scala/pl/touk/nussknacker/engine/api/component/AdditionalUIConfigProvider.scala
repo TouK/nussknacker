@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.component
 
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.parameter.{FragmentParameterValueInput, ParameterValueCompileTimeValidation}
+import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ParameterValueInput}
 
 /**
  * Trait allowing the provision of UI configuration for components and scenario properties.
@@ -33,6 +33,6 @@ case class ParameterAdditionalUIConfig(
     required: Boolean,
     initialValue: Option[FixedExpressionValue],
     hintText: Option[String],
-    valueEditor: Option[FragmentParameterValueInput],
+    valueEditor: Option[ParameterValueInput],
     valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation]
 )

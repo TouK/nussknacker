@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.parameter.{
-  FragmentParameterValueInput,
+  ParameterValueInput,
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
@@ -26,7 +26,7 @@ object ValueEditorValidator {
   // It also doesn't validate in ValueInputWithDictEditor that `dictId` is a declared dictionary and of a correct type
   //  (it requires declared dictionaries, see FragmentParameterValidator.validateValueInputWithDictEditor)
   def validateAndGetEditor(
-      valueEditor: FragmentParameterValueInput,
+      valueEditor: ParameterValueInput,
       initialValue: Option[FixedExpressionValue],
       paramName: String,
       nodeIds: Set[String]

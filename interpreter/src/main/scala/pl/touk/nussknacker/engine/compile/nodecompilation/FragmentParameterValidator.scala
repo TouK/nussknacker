@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, Pro
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.parameter.{
-  FragmentParameterValueInput,
+  ParameterValueInput,
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
@@ -30,7 +30,7 @@ object FragmentParameterValidator {
 
   // This method doesn't fully validate valueEditor (see ValueEditorValidator.validateAndGetEditor comments)
   def validateAgainstClazzRefAndGetEditor(
-      valueEditor: FragmentParameterValueInput,
+      valueEditor: ParameterValueInput,
       initialValue: Option[FixedExpressionValue],
       refClazz: FragmentClazzRef,
       paramName: String,
@@ -48,7 +48,7 @@ object FragmentParameterValidator {
   }
 
   private def validateValueEditorSupportedType(
-      valueEditor: FragmentParameterValueInput,
+      valueEditor: ParameterValueInput,
       refClazz: FragmentClazzRef,
       paramName: String,
       nodeIds: Set[String]

@@ -10,8 +10,7 @@ import pl.touk.nussknacker.test.WithTestHttpClient
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
-import pl.touk.nussknacker.ui.api.DictResources.DictListRequest
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TypingResultInJson
+import pl.touk.nussknacker.ui.api.DictResources.{DictListRequest, TypingResultJson}
 import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{MediaType, StatusCode}
 
@@ -32,7 +31,7 @@ class DictsResourcesTest
         )
         .contentType(MediaType.ApplicationJson)
         .body(
-          DictListRequest(TypingResultInJson(Typed[String].asJson)).asJson.spaces2
+          DictListRequest(TypingResultJson(Typed[String].asJson)).asJson.spaces2
         )
         .auth
         .basic("admin", "admin")
@@ -47,7 +46,6 @@ class DictsResourcesTest
   }
 
   test("return list of available dictionaries for DictParameterEditor - Long") {
-
     val response = httpClient.send(
       quickRequest
         .post(
@@ -55,7 +53,7 @@ class DictsResourcesTest
         )
         .contentType(MediaType.ApplicationJson)
         .body(
-          DictListRequest(TypingResultInJson(Typed[Long].asJson)).asJson.spaces2
+          DictListRequest(TypingResultJson(Typed[Long].asJson)).asJson.spaces2
         )
         .auth
         .basic("admin", "admin")
@@ -76,7 +74,7 @@ class DictsResourcesTest
         )
         .contentType(MediaType.ApplicationJson)
         .body(
-          DictListRequest(TypingResultInJson(Json.fromString("qwerty"))).asJson.spaces2
+          DictListRequest(TypingResultJson(Json.fromString("qwerty"))).asJson.spaces2
         )
         .auth
         .basic("admin", "admin")

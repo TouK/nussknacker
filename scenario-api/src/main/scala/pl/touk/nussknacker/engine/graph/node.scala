@@ -7,7 +7,7 @@ import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.parameter.{FragmentParameterValueInput, ParameterValueCompileTimeValidation}
+import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ParameterValueInput}
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -318,7 +318,7 @@ object node {
         required: Boolean = false,
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
-        valueEditor: Option[FragmentParameterValueInput],
+        valueEditor: Option[ParameterValueInput],
         valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
     )
 

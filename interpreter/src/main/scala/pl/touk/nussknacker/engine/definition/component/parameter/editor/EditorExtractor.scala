@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.parameter.{
-  FragmentParameterValueInput,
+  ParameterValueInput,
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 
 object EditorExtractor {
 
-  def extract(valueInput: FragmentParameterValueInput): ParameterEditor = {
+  def extract(valueInput: ParameterValueInput): ParameterEditor = {
     val innerEditor = valueInput match {
       case ValueInputWithFixedValuesProvided(fixedValuesList, _) =>
         FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList)

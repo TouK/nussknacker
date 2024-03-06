@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 
@@ -19,9 +19,9 @@ class ServiceWithDictParameterEditor extends Service with Serializable with Time
       )
       rgb: Option[String],
       @ParamName("BooleanDict")
-      @SimpleEditor(
-        `type` = SimpleEditorType.DICT_EDITOR,
-        dictId = "boolean_dict"
+      @DualEditor(
+        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.DICT_EDITOR, dictId = "boolean_dict"),
+        defaultMode = DualEditorMode.SIMPLE
       )
       booleanDict: Option[java.lang.Boolean],
       @ParamName("LongDict")
