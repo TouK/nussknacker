@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.table.extractor
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementNotExecutedError.statementNotExecutedErrorDescription
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.extractor.TypeExtractor.extractTypingResult
@@ -44,8 +44,8 @@ object DataSourceSqlExtractor extends LazyLogging {
         .getOrElse(
           throw new IllegalStateException(s"Table extractor could not locate a created table with path: $tablePath")
         )
-      tableSchemaTypingResult = extractTypingResult(table)
-    } yield DataSourceTableDefinition(tableName, tableSchemaTypingResult)
+      typedTable = extractTypingResult(table)
+    } yield TableDefinition(tableName, typedTable.typingResult, typedTable.columns)
 
     DataSourceSqlExtractorResult(tableDefinitions, sqlErrors)
   }
@@ -53,13 +53,8 @@ object DataSourceSqlExtractor extends LazyLogging {
 }
 
 final case class DataSourceSqlExtractorResult(
-    tableDefinitions: List[DataSourceTableDefinition],
+    tableDefinitions: List[TableDefinition],
     sqlStatementExecutionErrors: List[SqlStatementNotExecutedError]
-)
-
-final case class DataSourceTableDefinition(
-    tableName: String,
-    schemaTypingResult: TypingResult,
 )
 
 final case class SqlStatementNotExecutedError(

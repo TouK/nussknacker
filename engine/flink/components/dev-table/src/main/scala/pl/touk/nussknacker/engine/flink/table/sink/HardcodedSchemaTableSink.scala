@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.table.utils.TableUtils.buildTableDescrip
 import pl.touk.nussknacker.engine.flink.table.DataSourceConfig
 import pl.touk.nussknacker.engine.flink.table.utils.HardcodedSchema
 
-class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[String, Any]]) extends FlinkSink {
+class HardcodedSchemaTableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[String, Any]]) extends FlinkSink {
 
   override type Value = java.util.Map[String, Any]
 

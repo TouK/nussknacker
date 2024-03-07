@@ -11,13 +11,14 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.SqlDataSourcesDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.DataSourceTableDefinition
-import pl.touk.nussknacker.engine.flink.table.source.SqlSourceFactory._
+import pl.touk.nussknacker.engine.flink.table.{SqlDataSourcesDefinition, TableDefinition}
+import pl.touk.nussknacker.engine.flink.table.utils.SqlComponentFactory._
 
-class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynamicComponent[Source] with SourceFactory {
+class SqlSourceFactory(definition: SqlDataSourcesDefinition)
+    extends SingleInputDynamicComponent[Source]
+    with SourceFactory {
 
-  override type State = DataSourceTableDefinition
+  override type State = TableDefinition
 
   private val tableNameParamDeclaration = {
     val possibleTableParamValues = defs.tableDefinitions
@@ -41,8 +42,8 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
         state = None
       )
     case TransformationStep((`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
-      val selectedTable = getSelectedTableUnsafe(tableName)
-      val typingResult  = selectedTable.schemaTypingResult
+      val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
+      val typingResult  = selectedTable.typingResult
       val initializer   = new BasicContextInitializer(typingResult)
       FinalResults.forValidation(context, Nil, Some(selectedTable))(initializer.validationContext)
   }
@@ -55,7 +56,7 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
     val selectedTable = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
-    new SqlSource(SqlDataSourceDefinition(selectedTable, defs.sqlStatements))
+    new SqlSource(selectedTable, definition.sqlStatements)
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[NodeId])

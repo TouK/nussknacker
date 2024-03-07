@@ -7,7 +7,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.ConfigIndependentComponents
-import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
+import pl.touk.nussknacker.engine.flink.table.sink.HardcodedSchemaTableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.{
   HardcodedSchemaTableSourceFactory,
   HardcodedValuesTableSourceFactory
@@ -34,7 +34,7 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
         ),
         ComponentDefinition(
           tableDataSourceComponentId("sink", dataSourceConfig),
-          new TableSinkFactory(dataSourceConfig)
+          new HardcodedSchemaTableSinkFactory(dataSourceConfig)
         )
       )
     } yield componentDefinitions

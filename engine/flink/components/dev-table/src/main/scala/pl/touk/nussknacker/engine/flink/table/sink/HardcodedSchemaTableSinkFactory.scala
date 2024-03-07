@@ -8,18 +8,18 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.DataSourceConfig
-import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory.rawValueParamName
+import pl.touk.nussknacker.engine.flink.table.sink.HardcodedSchemaTableSinkFactory.RawValueParamName
 
 object TableSinkFactory {
   val rawValueParamName: ParameterName = ParameterName("Value")
 }
 
-class TableSinkFactory(config: DataSourceConfig) extends SingleInputDynamicComponent[Sink] with SinkFactory {
+class HardcodedSchemaTableSinkFactory(config: DataSourceConfig) extends SingleInputDynamicComponent[Sink] with SinkFactory {
 
   override type State = Nothing
 
   private val rawValueParamDeclaration = ParameterDeclaration
-    .lazyMandatory[java.util.Map[String, Any]](rawValueParamName)
+    .lazyMandatory[java.util.Map[String, Any]](RawValueParamName)
     .withCreator()
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -31,7 +31,7 @@ class TableSinkFactory(config: DataSourceConfig) extends SingleInputDynamicCompo
         errors = List.empty,
         state = None
       )
-    case TransformationStep((`rawValueParamName`, _) :: Nil, _) =>
+    case TransformationStep((RawValueParamName, _) :: Nil, _) =>
       FinalResults(context, Nil, None)
   }
 
@@ -41,7 +41,7 @@ class TableSinkFactory(config: DataSourceConfig) extends SingleInputDynamicCompo
       finalStateOpt: Option[State]
   ): Sink = {
     val lazyValueParam = rawValueParamDeclaration.extractValueUnsafe(params)
-    new TableSink(config, lazyValueParam)
+    new HardcodedSchemaTableSink(config, lazyValueParam)
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[NodeId])

@@ -11,14 +11,12 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.table.extractor.DataSourceTableDefinition
+import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
-final case class SqlDataSourceDefinition(tableDefinition: DataSourceTableDefinition, sqlStatements: List[SqlStatement])
-
-class SqlSource(config: SqlDataSourceDefinition) extends FlinkSource {
+class SqlSource(tableDefinition: TableDefinition, sqlStatements: List[SqlStatement]) extends FlinkSource {
 
   override def sourceStream(
       env: StreamExecutionEnvironment,
@@ -26,9 +24,9 @@ class SqlSource(config: SqlDataSourceDefinition) extends FlinkSource {
   ): DataStream[Context] = {
     val tableEnv = StreamTableEnvironment.create(env);
 
-    config.sqlStatements.foreach(tableEnv.executeSql)
+    sqlStatements.foreach(tableEnv.executeSql)
 
-    val table = tableEnv.from(config.tableDefinition.tableName)
+    val table = tableEnv.from(tableDefinition.tableName)
 
     val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 
