@@ -169,6 +169,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   On the other hand starting from this version, you can use the same category for many scenarioTypes. You only have to ensure that they 
   have components with other processing modes or other deployment configuration.
 
+### Helm chart changes
+* [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Helm chart now has two preconfigured scenario types (`streaming` and `request-response`) instead of one (`default`).
+  Because of that, scenario created using previous version of helm chart will have invalid configuration in the database.
+  To fix that, you have to manually connect to the database and execute sql statement:
+  ```sql
+    UPDATE processes SET processing_type = 'given-scenario-type' where processing_type = 'default';
+  ```
+
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
