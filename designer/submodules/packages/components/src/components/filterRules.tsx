@@ -25,4 +25,7 @@ export const filterRules = createFilterRules<ComponentType, ComponentsFiltersMod
             return true;
         });
     },
+    PROCESSING_MODE: (row, value) => {
+        return row;
+    },
 });

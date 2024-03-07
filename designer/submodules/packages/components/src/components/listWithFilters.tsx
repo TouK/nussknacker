@@ -13,6 +13,7 @@ import { useUserQuery } from "../scenarios/useScenariosQuery";
 import { ActiveFilters } from "../scenarios/filters/activeFilters";
 import { OptionsStack } from "../scenarios/filters/optionsStack";
 import { FilterListItem } from "../scenarios/filters/filterListItem";
+import { ProcessingModeStack } from "../scenarios/filters/processingModeStack";
 
 function CountFilterItem({ count }: { count: number }) {
     const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
@@ -95,6 +96,14 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
                         options={filterableValues["componentGroupName"]}
                         value={getFilter("GROUP", true)}
                         onChange={setFilter("GROUP")}
+                    />
+                </FilterMenu>
+                <FilterMenu label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")} count={getFilter("PROCESSING_MODE", true).length}>
+                    <ProcessingModeStack
+                        label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
+                        options={filterableValues.processingMode}
+                        value={getFilter("PROCESSING_MODE", true)}
+                        onChange={setFilter("PROCESSING_MODE")}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
