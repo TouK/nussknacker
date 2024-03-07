@@ -10,7 +10,7 @@ export type MetricsType = {
 
 export type UsageStatisticsReports = {
     enabled: boolean;
-    url: string;
+    url?: string;
 };
 
 export type SurveySettings = {

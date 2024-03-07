@@ -33,17 +33,21 @@ class TabularTypedDataCodersSpec extends AnyFreeSpec with Matchers {
     TabularTypedData
       .create(columns, rows)
       .left
-      .map(msg => new RuntimeException(msg))
+      .map(error => new RuntimeException(error.toString))
       .toTry
       .get
   }
 
   private def roundTripCoding = {
-    encode _ andThen decode
+    (encode _ andThen decode).andThen { case (columns, rows) => TabularTypedData.create(columns, rows).toOption.get }
   }
 
   private def encode(data: TabularTypedData) = {
-    Coders.TabularTypedDataEncoder(data).spaces2
+    Coders
+      .TabularTypedDataEncoder(
+        (data.columnDefinitions, data.rows.map(_.cells.map(_.rawValue)))
+      )
+      .spaces2
   }
 
   private def decode(value: String) = {

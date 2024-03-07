@@ -100,7 +100,6 @@ trait NuResourcesTest
 
   protected val deploymentCommentSettings: Option[DeploymentCommentSettings] = None
 
-
   protected val dmDispatcher = new DeploymentManagerDispatcher(
     mapProcessingTypeDataProvider(Streaming.stringify -> deploymentManager),
     futureFetchingScenarioRepository

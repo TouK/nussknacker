@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ExpressionParserCompilationError
 }
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, FragmentSpecificData, MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -200,7 +200,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     inside(result.result) {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _),
+              ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _, _),
               _
             )
           ) =>
@@ -324,7 +324,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     lazy val run = runProcess(model, resolvedScenario)
 
-    the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
+    the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input,None)"
   }
 
   test("sum tumbling aggregate emit on event, emit context of variables") {

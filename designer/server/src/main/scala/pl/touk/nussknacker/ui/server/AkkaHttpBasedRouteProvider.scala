@@ -270,11 +270,14 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData),
         typeToProcessValidator = processValidator,
-        typeToNodeValidator = typeToConfig.mapValues(v => new NodeValidator(v.designerModelData.modelData, fragmentRepository)),
-        typeToExpressionSuggester =
-          typeToConfig.mapValues(v => ExpressionSuggester(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)),
-        typeToParametersValidator =
-          typeToConfig.mapValues(v => new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)),
+        typeToNodeValidator =
+          typeToConfig.mapValues(v => new NodeValidator(v.designerModelData.modelData, fragmentRepository)),
+        typeToExpressionSuggester = typeToConfig.mapValues(v =>
+          ExpressionSuggester(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
+        ),
+        typeToParametersValidator = typeToConfig.mapValues(v =>
+          new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
+        ),
         scenarioService = processService
       )
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
@@ -368,7 +371,8 @@ class AkkaHttpBasedRouteProvider(
       val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
       val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(
         usageStatisticsReportsConfig,
-        typeToConfig.mapValues(_.usageStatistics)
+        processService,
+        typeToConfig.mapValues(_.deploymentData.deploymentManagerType)
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
@@ -376,7 +380,7 @@ class AkkaHttpBasedRouteProvider(
         featureTogglesConfig,
         authenticationResources.name,
         analyticsConfig,
-        usageStatisticsReportsSettingsDeterminer.determineSettings()
+        () => usageStatisticsReportsSettingsDeterminer.determineStatisticsUrl()
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),

@@ -6,6 +6,8 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -54,6 +56,25 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
         )
       }
     }
+
+    "return proper typingResult as java list which allows to run method on" in {
+      val result = execute[TestMessage, SCENARIO_RESULT](
+        scenario = decisionTableExampleScenario(
+          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
+          sinkValueExpression = "#dtResult.size"
+        ),
+        withData = List(
+          TestMessage(id = "1", minAge = 30),
+          TestMessage(id = "2", minAge = 18)
+        )
+      )
+
+      inside(result) { case Validated.Valid(r) =>
+        r.errors should be(List.empty)
+        r.successes should be(List(1, 2))
+      }
+    }
+
     "fail to compile expression when" - {
       "non-present column name is used" in {
         val result = execute[TestMessage, SCENARIO_RESULT](
@@ -72,7 +93,8 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
                 message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
                 nodeId = "decision-table",
                 fieldName = Some("Expression"),
-                originalExpr = "#ROW['years'] > #input.minAge"
+                originalExpr = "#ROW['years'] > #input.minAge",
+                details = None
               )
             )
           )
@@ -95,7 +117,8 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
                 message = "Wrong part types",
                 nodeId = "decision-table",
                 fieldName = Some("Expression"),
-                originalExpr = "#ROW['name'] > #input.minAge"
+                originalExpr = "#ROW['name'] > #input.minAge",
+                details = None
               )
             )
           )
@@ -118,10 +141,31 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
           errors should be(
             NonEmptyList.one(
               ExpressionParserCompilationError(
-                message = "Column has a 'java.lang.Object' type but the value 'John' cannot be converted to it.",
+                message = "Typing error in some cells",
                 nodeId = "decision-table",
                 fieldName = Some("Basic Decision Table"),
-                originalExpr = invalidColumnTypeDecisionTableJson.expression
+                originalExpr = invalidColumnTypeDecisionTableJson.expression,
+                details = Some(
+                  TabularDataDefinitionParserErrorDetails(
+                    List(
+                      CellError(
+                        columnName = "name",
+                        rowIndex = 0,
+                        errorMessage = "Column has 'Object' type but its value cannot be converted to the type."
+                      ),
+                      CellError(
+                        columnName = "name",
+                        rowIndex = 1,
+                        errorMessage = "Column has 'Object' type but its value cannot be converted to the type."
+                      ),
+                      CellError(
+                        columnName = "name",
+                        rowIndex = 2,
+                        errorMessage = "Column has 'Object' type but its value cannot be converted to the type."
+                      )
+                    )
+                  )
+                )
               )
             )
           )
@@ -164,6 +208,7 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
 
   private def decisionTableExampleScenario(
       expression: Expression,
+      sinkValueExpression: Expression = "#dtResult",
       basicDecisionTableDefinition: Expression = exampleDecisionTableJson
   ) = {
     ScenarioBuilder
@@ -176,7 +221,7 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
         "Basic Decision Table" -> basicDecisionTableDefinition,
         "Expression"           -> expression,
       )
-      .end("end", "value" -> "#dtResult")
+      .end("end", "value" -> sinkValueExpression)
   }
 
   private def rows(maps: java.util.Map[String, Any]*) = List(maps: _*).asJava

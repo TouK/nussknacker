@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
@@ -106,7 +107,7 @@ class ComponentGroupsPreparerSpec
   }
 
   test("return default value defined in parameter") {
-    val defaultValueExpression = Expression("fooLang", "'fooDefault'")
+    val defaultValueExpression = Expression(Language.Spel, "'fooDefault'")
     val parameter              = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValueExpression))
     val definition = withStaticDefinition(
       ModelDefinitionBuilder.empty

@@ -254,7 +254,7 @@ object SpelExpressionParseError {
         nodeId: String,
         paramName: String
     ): ProcessCompilationError.KeyWithLabelExpressionParsingError =
-      ProcessCompilationError.KeyWithLabelExpressionParsingError(keyWithLabel, message, nodeId, paramName)
+      ProcessCompilationError.KeyWithLabelExpressionParsingError(keyWithLabel, message, paramName, nodeId)
 
   }
 
