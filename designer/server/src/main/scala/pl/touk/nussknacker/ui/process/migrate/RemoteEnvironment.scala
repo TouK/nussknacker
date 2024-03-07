@@ -87,7 +87,7 @@ final case class MigrationValidationError(errors: ValidationErrors)
       s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
     })
 
-case class MissingScenarioGraphError(msg: String)
+final case class MissingScenarioGraphError(msg: String)
     extends FatalError(
       msg
     )

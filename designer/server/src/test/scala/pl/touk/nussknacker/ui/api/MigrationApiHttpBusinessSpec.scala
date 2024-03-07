@@ -7,7 +7,11 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  NodeValidationErrorType,
+  ValidationResult
+}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
@@ -95,25 +99,25 @@ class MigrationApiHttpBusinessSpec
     }
   }
 
-  private val sourceEnvironmentId = "DEV"
+  private lazy val sourceEnvironmentId = "DEV"
 
-  private val exampleProcessName = ProcessName("test2")
-  private val illegalProcessName = ProcessName("#test")
+  private lazy val exampleProcessName = ProcessName("test2")
+  private lazy val illegalProcessName = ProcessName("#test")
 
-  private val exampleScenario =
+  private lazy val exampleScenario =
     ScenarioBuilder
       .withCustomMetaData(exampleProcessName.value, Map("environment" -> "test"))
       .source("source", "csv-source-lite")
       .emptySink("sink", "dead-end-lite")
 
-  private val validFragment =
+  private lazy val validFragment =
     ScenarioBuilder.fragmentWithInputNodeId("source", "csv-source-lite").emptySink("sink", "dead-end-lite")
 
-  private val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
+  private lazy val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
 
-  private val successValidationResult = ValidationResult.success
+  private lazy val successValidationResult = ValidationResult.success
 
-  private val errorValidationResult =
+  private lazy val errorValidationResult =
     ValidationResult.errors(
       Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed))),
       List(),
@@ -145,16 +149,16 @@ class MigrationApiHttpBusinessSpec
        |}
        |""".stripMargin
 
-  private val validRequestData: String =
+  private lazy val validRequestData: String =
     prepareRequestJsonData(exampleProcessName.value, successValidationResult, exampleGraph, false)
 
-  private val invalidRequestData: String =
+  private lazy val invalidRequestData: String =
     prepareRequestJsonData(exampleProcessName.value, errorValidationResult, exampleGraph, false)
 
-  private val requestDataWithInvalidScenarioName: String =
+  private lazy val requestDataWithInvalidScenarioName: String =
     prepareRequestJsonData(illegalProcessName.value, successValidationResult, exampleGraph, false)
 
-  private val validRequestDataForFragment: String =
+  private lazy val validRequestDataForFragment: String =
     prepareRequestJsonData(exampleProcessName.value, successValidationResult, exampleGraph, true)
 
 }

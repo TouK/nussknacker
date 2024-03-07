@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import derevo.derive
 import derevo.circe._
+import derevo.derive
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -10,7 +10,6 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -23,8 +22,8 @@ import sttp.tapir.json.circe.jsonBody
 
 class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  import MigrationApiEndpoints.Dtos._
   import MigrationApiEndpoints.Dtos.MigrateScenarioRequest._
+  import MigrationApiEndpoints.Dtos._
 
   lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequest, NuDesignerError, Unit, Any] =
     baseNuApiEndpoint
@@ -110,10 +109,6 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
 object MigrationApiEndpoints {
 
   object Dtos {
-
-    import pl.touk.nussknacker.ui.api.TapirCodecs.ProcessingModeCodec._
-    import pl.touk.nussknacker.ui.api.TapirCodecs.EngineSetupNameCodec._
-    import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioWithDetailsForMigrationsCodec._
 
     def deserializationException =
       (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")

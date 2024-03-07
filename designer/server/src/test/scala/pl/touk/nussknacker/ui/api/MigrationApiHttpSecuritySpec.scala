@@ -89,19 +89,19 @@ class MigrationApiHttpSecuritySpec
     }
   }
 
-  private val sourceEnvironmentId = "DEV"
+  private lazy val sourceEnvironmentId = "DEV"
 
-  private val exampleProcessName = ProcessName("test")
+  private lazy val exampleProcessName = ProcessName("test")
 
-  private val exampleScenario =
+  private lazy val exampleScenario =
     ScenarioBuilder
       .withCustomMetaData(exampleProcessName.value, Map("environment" -> "test"))
       .source("source", "csv-source-lite")
       .emptySink("sink", "dead-end-lite")
 
-  private val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
+  private lazy val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
 
-  private val validationResult = ValidationResult.success
+  private lazy val validationResult = ValidationResult.success
 
   private def prepareRequestData(scenarioName: String): String =
     s"""
@@ -123,6 +123,6 @@ class MigrationApiHttpSecuritySpec
        |}
        |""".stripMargin
 
-  private val requestData: String = prepareRequestData(exampleProcessName.value)
+  private lazy val requestData: String = prepareRequestData(exampleProcessName.value)
 
 }
