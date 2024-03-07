@@ -437,7 +437,7 @@ paths:
   /api/migrate:
     post:
       tags:
-      - migrations
+      - Migrations
       summary: Migration between environments service
       operationId: postApiMigrate
       requestBody:
