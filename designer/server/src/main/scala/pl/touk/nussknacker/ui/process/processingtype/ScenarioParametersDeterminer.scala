@@ -49,7 +49,7 @@ object ScenarioParametersDeterminer {
       nameInputDatas: Map[ProcessingType, EngineNameInputData]
   ): Map[ProcessingType, EngineSetupName] = {
     val grouped = nameInputDatas.toList.map { case (processingType, in) =>
-      (in.defaultName, in.identity) -> processingType
+      (in.nameSpecifiedInConfig.getOrElse(in.defaultName), in.identity) -> processingType
     }.toGroupedMap
 
     grouped
@@ -71,5 +71,5 @@ object ScenarioParametersDeterminer {
 final case class EngineNameInputData(
     defaultName: EngineSetupName,
     identity: Any,
-    specifiedName: Option[EngineSetupName]
+    nameSpecifiedInConfig: Option[EngineSetupName]
 )

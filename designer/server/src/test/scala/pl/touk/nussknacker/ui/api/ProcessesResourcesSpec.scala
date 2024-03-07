@@ -13,6 +13,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -830,6 +831,45 @@ class ProcessesResourcesSpec
       createProcessRequest(processName, category = Category1, isFragment = false) { status =>
         status shouldEqual StatusCodes.BadRequest
       }
+    }
+  }
+
+  test(
+    "adding scenario with not configured scenario parameters combination should result with bad request response status code"
+  ) {
+    val processName = ProcessName("p1")
+    val command = CreateScenarioCommand(
+      processName,
+      Some("not existing category"),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUserOrAdmin(isAdmin =
+      true
+    ) ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.BadRequest
+    }
+  }
+
+  test(
+    "adding scenario with ambiguous scenario parameters combination should result with bad request response status code"
+  ) {
+    val processName                                    = ProcessName("p1")
+    val processingModeUsedInMoreThanOneProcessingTypes = ProcessingMode.UnboundedStream
+    val command = CreateScenarioCommand(
+      processName,
+      None,
+      processingMode = Some(processingModeUsedInMoreThanOneProcessingTypes),
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUserOrAdmin(isAdmin =
+      true
+    ) ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.BadRequest
     }
   }
 

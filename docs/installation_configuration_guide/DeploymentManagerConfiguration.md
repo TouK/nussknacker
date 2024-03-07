@@ -15,12 +15,14 @@ Below you can find a snippet of Deployment Manager configuration.
 deploymentConfig {     
   type: "flinkStreaming"
   restUrl: "http://localhost:8081"
+  engineSetupName: "My Flink Cluster"
   
   # additional configuration goes here
 }
 ```
 
 `type` parameter determines engine to which the scenario is deployed. It is set in the [minimal configuration file](./Common.md#minimal-configuration-file) (docker image, binary distribution) and in the Helm chart - you will not need to set it on your own.
+`engineSetupName` parameter is optional. It specifies how the engine will be displayed in the GUI. If not specified, default name will be used instead (e.g. `Flink` for `flinkStreaming` Deployment Manager).   
 
 ## Kubernetes native Lite engine configuration
 
