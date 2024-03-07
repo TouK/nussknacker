@@ -4,7 +4,9 @@ import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -73,12 +75,12 @@ object ProcessCompilationError {
 
   final case class DisabledNode(nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  final case class NotSupportedExpressionLanguage(languageId: String, nodeId: String)
+  final case class NotSupportedExpressionLanguage(languageId: Language, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
   object NotSupportedExpressionLanguage {
-    def apply(languageId: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+    def apply(languageId: Language)(implicit nodeId: NodeId): PartSubGraphCompilationError =
       NotSupportedExpressionLanguage(languageId, nodeId.id)
   }
 
@@ -86,7 +88,8 @@ object ProcessCompilationError {
       message: String,
       nodeId: String,
       fieldName: Option[String],
-      originalExpr: String
+      originalExpr: String,
+      details: Option[ErrorDetails]
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -109,10 +112,10 @@ object ProcessCompilationError {
 
   object ExpressionParserCompilationError {
 
-    def apply(message: String, fieldName: Option[String], originalExpr: String)(
+    def apply(message: String, fieldName: Option[String], originalExpr: String, details: Option[ErrorDetails])(
         implicit nodeId: NodeId
     ): PartSubGraphCompilationError =
-      ExpressionParserCompilationError(message, nodeId.id, fieldName, originalExpr)
+      ExpressionParserCompilationError(message, nodeId.id, fieldName, originalExpr, details)
 
   }
 

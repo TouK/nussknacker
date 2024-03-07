@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.process.compiler.StubbedFlinkProcessCompilerDataFactoryTest.mockServiceResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
@@ -139,7 +140,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   test("stubbing for test purpose should work for one source using parameter record") {
     val scenarioTestData = ScenarioTestData(
       List(1, 2, 3).map(v =>
-        ScenarioTestParametersRecord(NodeId("left-source"), Map("input" -> Expression("spel", v.toString)))
+        ScenarioTestParametersRecord(NodeId("left-source"), Map("input" -> Expression(Language.Spel, v.toString)))
       )
     )
     val compiledProcess = testCompile(scenarioWithSingleTestParametersSource, scenarioTestData)

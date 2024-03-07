@@ -6,17 +6,16 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettings
 import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 
 import java.net.URL
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class SettingsResources(
     config: FeatureTogglesConfig,
     authenticationMethod: String,
     analyticsConfig: Option[AnalyticsConfig],
-    usageStatisticsReportsSettings: => UsageStatisticsReportsSettings
+    determineStatisticsUrl: () => Future[Option[String]]
 )(implicit ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -26,28 +25,30 @@ class SettingsResources(
     pathPrefix("settings") {
       get {
         complete {
-          val toggleOptions = ToggleFeaturesOptions(
-            counts = config.counts.isDefined,
-            metrics = config.metrics,
-            remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
-            environmentAlert = config.environmentAlert,
-            commentSettings = config.commentSettings,
-            deploymentCommentSettings = config.deploymentCommentSettings,
-            surveySettings = config.surveySettings,
-            tabs = config.tabs,
-            intervalTimeSettings = config.intervalTimeSettings,
-            testDataSettings = config.testDataSettings,
-            redirectAfterArchive = config.redirectAfterArchive,
-            usageStatisticsReports = usageStatisticsReportsSettings,
-          )
+          determineStatisticsUrl().map { statisticsUrl =>
+            val toggleOptions = ToggleFeaturesOptions(
+              counts = config.counts.isDefined,
+              metrics = config.metrics,
+              remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
+              environmentAlert = config.environmentAlert,
+              commentSettings = config.commentSettings,
+              deploymentCommentSettings = config.deploymentCommentSettings,
+              surveySettings = config.surveySettings,
+              tabs = config.tabs,
+              intervalTimeSettings = config.intervalTimeSettings,
+              testDataSettings = config.testDataSettings,
+              redirectAfterArchive = config.redirectAfterArchive,
+              usageStatisticsReports = UsageStatisticsReportsSettings(statisticsUrl.isDefined, statisticsUrl),
+            )
 
-          val authenticationSettings = AuthenticationSettings(
-            authenticationMethod
-          )
+            val authenticationSettings = AuthenticationSettings(
+              authenticationMethod
+            )
 
-          val analyticsSettings =
-            analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
-          UISettings(toggleOptions, authenticationSettings, analyticsSettings)
+            val analyticsSettings =
+              analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
+            UISettings(toggleOptions, authenticationSettings, analyticsSettings)
+          }
         }
       }
     }
@@ -145,3 +146,5 @@ object TopTabType extends Enumeration {
     authentication: AuthenticationSettings,
     analytics: Option[AnalyticsSettings]
 )
+
+@JsonCodec final case class UsageStatisticsReportsSettings(enabled: Boolean, url: Option[String])

@@ -56,7 +56,9 @@ class StandardRemoteEnvironmentSpec
         if (path.toString.contains("processValidation") && method == HttpMethods.POST) {
           Marshal(
             ValidationResult.errors(
-              Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed))),
+              Map(
+                "n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed, None))
+              ),
               List(),
               List()
             )
@@ -80,7 +82,7 @@ class StandardRemoteEnvironmentSpec
     ) { result =>
       result.leftValue shouldBe MigrationValidationError(
         ValidationErrors(
-          Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed))),
+          Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed, None))),
           List(),
           List()
         )

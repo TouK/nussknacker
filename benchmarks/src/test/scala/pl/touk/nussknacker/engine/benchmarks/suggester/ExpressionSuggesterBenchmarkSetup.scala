@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.benchmarks.suggester
 
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
@@ -10,6 +9,7 @@ import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionExtractor, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 import java.time.{Duration, LocalDateTime}
 import scala.concurrent.duration.{Duration => ScalaDuration}
@@ -57,7 +57,7 @@ class ExpressionSuggesterBenchmarkSetup() {
   def test(expression: String, position: Int): AnyRef = {
     Await.result(
       expressionSuggester.expressionSuggestions(
-        Expression("spel", expression),
+        Expression(Language.Spel, expression),
         CaretPosition2d(0, position),
         variables
       )(ExecutionContext.global),
