@@ -8,9 +8,23 @@ final case class Params(nameToValueMap: Map[String, Any]) {
       case Some(value)       => Some(cast(value))
     }
 
-  def extractUnsafe[T](paramName: String): T =
+  def extractMandatory[T](paramName: String): T =
     extract[T](paramName)
       .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(paramName)))
+
+  def extractOrEvaluateLazyParam[T](paramName: String, context: Context): Option[T] = {
+    rawValueExtract(paramName)
+      .map {
+        case lp: LazyParameter[_] => lp.evaluate(context)
+        case other                => other
+      }
+      .map(cast[T])
+  }
+
+  def extractMandatoryOrEvaluateLazyParamUnsafe[T](paramName: String, context: Context): T = {
+    extractOrEvaluateLazyParam[T](paramName, context)
+      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(paramName)))
+  }
 
   private def rawValueExtract(paramName: String) = nameToValueMap.get(paramName)
 

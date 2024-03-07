@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
-import org.apache.avro.generic.GenericRecord
 import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.process._
@@ -10,7 +9,7 @@ import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.generic.FlinkKafkaDelayedSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{
-  DelayParameterName,
+  delayParameter,
   timestampFieldParamName
 }
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
@@ -85,10 +84,10 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
       .source(
         "start",
         "kafka-universal-delayed",
-        s"$TopicParamName"          -> s"'$topic'",
-        s"$SchemaVersionParamName"  -> asSpelExpression(formatVersionParam(version)),
-        s"$timestampFieldParamName" -> s"$timestampField",
-        s"$DelayParameterName"      -> s"$delay"
+        s"$TopicParamName"                  -> s"'$topic'",
+        s"$SchemaVersionParamName"          -> asSpelExpression(formatVersionParam(version)),
+        s"$timestampFieldParamName"         -> s"$timestampField",
+        s"${delayParameter.parameter.name}" -> s"$delay"
       )
       .emptySink("out", "sinkForLongs", SinkValueParamName -> "T(java.time.Instant).now().toEpochMilli()")
   }

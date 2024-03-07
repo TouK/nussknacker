@@ -37,7 +37,7 @@ class CodeHandlingTest
 
     def runWithCode(code: Int) = {
       implicit val contextId: ContextId = ContextId("1")
-      service.invoke(Params(Map(codeParameter -> code))).futureValue.asInstanceOf[AnyRef]
+      service.invoke(Map(codeParameter -> code)).futureValue.asInstanceOf[AnyRef]
     }
 
     runWithCode(customEmptyCode) shouldBe null

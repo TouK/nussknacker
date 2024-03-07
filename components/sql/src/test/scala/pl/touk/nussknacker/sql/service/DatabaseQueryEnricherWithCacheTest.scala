@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
-import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.CacheTTLParamName
+import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.cacheTTLParamName
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
 import scala.concurrent.Await
@@ -36,7 +36,7 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
     val implementation = service.implementation(
       params = Params(
         Map(
-          CacheTTLParamName -> java.time.Duration.ofDays(1),
+          cacheTTLParamName -> java.time.Duration.ofDays(1),
           "arg1"            -> 1
         )
       ),

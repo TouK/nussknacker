@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.common.components.DecisionTable
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{
   EspDeserializationSchema,
@@ -34,13 +33,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializatio
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
-import pl.touk.nussknacker.engine.management.sample.dict.{
-  BooleanDictionary,
-  BusinessConfigDictionary,
-  LongDictionary,
-  RGBDictionary,
-  TestDictionary
-}
+import pl.touk.nussknacker.engine.management.sample.dict._
 import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper

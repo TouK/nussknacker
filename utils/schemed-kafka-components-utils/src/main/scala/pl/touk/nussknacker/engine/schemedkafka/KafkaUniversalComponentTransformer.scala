@@ -121,7 +121,7 @@ trait KafkaUniversalComponentTransformer[T]
   }
 
   protected def extractPreparedTopic(params: Params): PreparedKafkaTopic =
-    prepareTopic(params.extractUnsafe(topicParamName))
+    prepareTopic(params.extractMandatory(topicParamName))
 
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
     KafkaComponentsUtils.prepareKafkaTopic(topic, modelDependencies)

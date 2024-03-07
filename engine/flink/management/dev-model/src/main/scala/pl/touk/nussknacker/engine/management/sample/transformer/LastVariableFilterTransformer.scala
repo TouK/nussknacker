@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, Params, ValueWithContext}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation,
@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   OneParamLazyParameterFunction
 }
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
-import pl.touk.nussknacker.engine.api.NodeId
 
 /* This is example for GenericTransformation
    the idea is that we have two parameters:
@@ -35,22 +34,25 @@ object LastVariableFilterTransformer
 
   private val valueParameterName = "value"
 
-  private val conditionParameterName = "condition"
-
   private val valueParameter = ParameterWithExtractor.lazyMandatory[AnyRef](valueParameterName)
 
   private val groupByParameterName = "groupBy"
 
   private val groupByParameter = ParameterWithExtractor.lazyMandatory[String](groupByParameterName)
 
-  private def conditionParameter(valueType: TypingResult) = Parameter(conditionParameterName, Typed[Boolean])
-    .copy(
-      isLazyParameter = true,
-      additionalVariables = Map(
-        "current"  -> AdditionalVariableProvidedInRuntime(valueType),
-        "previous" -> AdditionalVariableProvidedInRuntime(valueType)
+  private val conditionParameterName = "condition"
+
+  private def conditionParameter(valueType: TypingResult) = {
+    ParameterWithExtractor.lazyMandatory[java.lang.Boolean](
+      conditionParameterName,
+      _.copy(additionalVariables =
+        Map(
+          "current"  -> AdditionalVariableProvidedInRuntime(valueType),
+          "previous" -> AdditionalVariableProvidedInRuntime(valueType)
+        )
       )
     )
+  }
 
   type State = Nothing
 
@@ -59,10 +61,10 @@ object LastVariableFilterTransformer
   ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(groupByParameter.parameter :: valueParameter.parameter :: Nil)
     case TransformationStep((_, _) :: (`valueParameterName`, DefinedLazyParameter(expr)) :: Nil, _) =>
-      NextParameters(conditionParameter(expr) :: Nil)
+      NextParameters(conditionParameter(expr).parameter :: Nil)
     // if we cannot determine value, we'll assume it's type is Unknown
     case TransformationStep((_, _) :: (`valueParameterName`, FailedToDefineParameter) :: Nil, _) =>
-      NextParameters(conditionParameter(Unknown) :: Nil)
+      NextParameters(conditionParameter(Unknown).parameter :: Nil)
     case TransformationStep((_, _) :: (`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil, _) =>
       FinalResults(context)
   }
@@ -75,7 +77,7 @@ object LastVariableFilterTransformer
       finalState: Option[State]
   ): FlinkCustomStreamTransformation = {
     val value     = valueParameter.extractValue(params)
-    val condition = params.extractUnsafe[LazyParameter[java.lang.Boolean]](conditionParameterName)
+    val condition = params.extractMandatory[LazyParameter[java.lang.Boolean]](conditionParameterName)
     val groupBy   = groupByParameter.extractValue(params)
 
     FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {
