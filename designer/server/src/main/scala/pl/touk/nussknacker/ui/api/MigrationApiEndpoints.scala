@@ -28,7 +28,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
   lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequest, NuDesignerError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Migration between environments service")
-      .tag("migrations")
+      .tag("Migrations")
       .post
       .in("migrate")
       .in(

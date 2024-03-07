@@ -144,7 +144,7 @@ object TapirCodecs {
   }
 
   object ScenarioWithDetailsForMigrationsCodec {
-    // TODO: type me
+    // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
     implicit val scenarioWithDetailsForMigrationsSchema: Schema[ScenarioWithDetailsForMigrations] = Schema.anyObject
   }
 
