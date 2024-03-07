@@ -119,7 +119,7 @@ class MigrationApiHttpBusinessSpec
 
   private lazy val errorValidationResult =
     ValidationResult.errors(
-      Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed))),
+      Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed, None))),
       List(),
       List()
     )
