@@ -18,6 +18,8 @@ import { isEmpty } from "lodash";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { FormControl } from "@mui/material";
 import ErrorBoundary from "../common/ErrorBoundary";
+import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 export type GenericActionLayout = {
     name: string;
@@ -135,7 +137,11 @@ export function GenericActionDialog(props: WindowContentProps<WindowKind, Generi
     const confirmText = action.layout.confirmText ? action.layout.confirmText : "confirm";
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t(`dialog.generic.button.${cancelText}`, cancelText), action: () => props.close() },
+            {
+                title: t(`dialog.generic.button.${cancelText}`, cancelText),
+                action: () => props.close(),
+                classname: LoadingButtonTypes.secondaryButton,
+            },
             { title: t(`dialog.generic.button.${confirmText}`, confirmText), action: () => confirm(), disabled: !isValid },
         ],
         [cancelText, confirm, confirmText, isValid, props, t],
