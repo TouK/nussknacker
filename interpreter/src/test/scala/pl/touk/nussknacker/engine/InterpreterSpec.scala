@@ -1057,14 +1057,14 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Params)(
+    override def invoke(eagerParameters: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
-      Future.successful(params.nameToValueMap.head._2.toString)
+      Future.successful(eagerParameters.head._2.toString)
     }
 
   }
@@ -1079,14 +1079,14 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Params)(
+    override def invoke(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
-      Future.successful(params.nameToValueMap.head._2.toString)
+      Future.successful(params.head._2.toString)
     }
 
   }
@@ -1101,14 +1101,14 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Params)(
+    override def invoke(eagerParameters: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[Any] = {
-      Future.successful(params.nameToValueMap.head._2.toString)
+      Future.successful(eagerParameters.head._2.toString)
     }
 
   }

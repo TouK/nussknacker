@@ -57,7 +57,7 @@ class SwaggerEnricher(
   override def returnType: typing.TypingResult =
     swaggerService.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit])
 
-  override def invoke(params: Map[String, Any])(
+  override def invoke(eagerParameters: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       contextId: ContextId,
@@ -65,7 +65,7 @@ class SwaggerEnricher(
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] =
     measuring {
-      swaggerHttpService.invoke(parameterExtractor.prepareParams(params))
+      swaggerHttpService.invoke(parameterExtractor.prepareParams(eagerParameters))
     }
 
   override def open(runtimeContext: EngineRuntimeContext): Unit = {
