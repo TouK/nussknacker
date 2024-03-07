@@ -35,9 +35,14 @@ object DataSourceSqlExtractor extends LazyLogging {
       catalog      <- tableEnv.getCatalog(catalogName).toScala.toList
       databaseName <- catalog.listDatabases.asScala.toList
       tableName    <- tableEnv.listTables(catalogName, databaseName).toList
+      // table path may be different for some catalog-managed tables - for example JDBC catalog adds a schema name to
+      // table name when listing tables, but querying using tablePath with catalog.database.schema.tableName throws
+      // exception
       tablePath = s"$catalogName.$databaseName.$tableName"
       table = Try(tableEnv.from(tablePath))
-        .getOrElse(throw new IllegalStateException("Table extractor could not locate a created table."))
+        .getOrElse(
+          throw new IllegalStateException(s"Table extractor could not locate a created table with path: $tablePath")
+        )
       tableSchemaTypingResult = extractTypingResult(table)
     } yield DataSourceTableDefinition(tableName, tableSchemaTypingResult)
 
@@ -64,7 +69,7 @@ final case class SqlStatementNotExecutedError(
   val message: String = {
     val baseErrorMessage    = s"$statementNotExecutedErrorDescription"
     val sqlStatementMessage = s"Sql statement: $statement"
-    val exceptionMessage    = s"Caused by: ${exception.getMessage}"
+    val exceptionMessage    = s"Caused by: $exception"
     s"$baseErrorMessage\n$sqlStatementMessage\n$exceptionMessage."
   }
 
