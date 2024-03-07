@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.api.common.functions.RichFlatMapFunction
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
@@ -28,8 +27,6 @@ private[registrar] class SyncInterpretationFunction(
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
   private lazy val compiledNode                  = compilerData.compileSubPart(node, validationContext)
-
-  override def open(parameters: Configuration): Unit = super.open(parameters)
 
   override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
     (try {

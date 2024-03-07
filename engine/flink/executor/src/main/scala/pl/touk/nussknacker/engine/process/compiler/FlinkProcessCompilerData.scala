@@ -78,8 +78,15 @@ class FlinkProcessCompilerData(
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkExceptionHandler = {
-    exceptionHandler.open(FlinkTestEngineRuntimeContextImpl(jobData, runtimeContext))
-    exceptionHandler
+    componentUseCase match {
+      case ComponentUseCase.TestRuntime =>
+        exceptionHandler.open(FlinkTestEngineRuntimeContextImpl(jobData, runtimeContext))
+        exceptionHandler
+      case _ =>
+        exceptionHandler.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
+        exceptionHandler
+    }
+
   }
 
 }
