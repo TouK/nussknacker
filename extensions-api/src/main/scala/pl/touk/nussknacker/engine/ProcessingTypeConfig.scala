@@ -20,7 +20,7 @@ object ProcessingTypeConfig {
   def read(config: ConfigWithUnresolvedVersion): ProcessingTypeConfig = {
     ProcessingTypeConfig(
       config.resolved.getString("deploymentConfig.type"),
-      config.resolved.getAs[String]("deploymentConfig.engineSetupName").map(EngineSetupName(_)),
+      config.resolved.getAs[EngineSetupName]("deploymentConfig.engineSetupName"),
       config.resolved.as[List[String]]("modelConfig.classPath"),
       config.resolved.getConfig("deploymentConfig"),
       config.getConfig("modelConfig"),
