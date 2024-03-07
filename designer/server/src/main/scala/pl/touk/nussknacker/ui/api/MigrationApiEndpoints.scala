@@ -24,36 +24,18 @@ import sttp.tapir.json.circe.jsonBody
 class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import MigrationApiEndpoints.Dtos.MigrateScenarioRequest._
+  import MigrationApiEndpoints.Dtos.MigrateScenarioRequestV2._
   import MigrationApiEndpoints.Dtos._
+  import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
 
-  lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequest, NuDesignerError, Unit, Any] =
+  lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequestV2, NuDesignerError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Migration between environments service")
       .tag("Migrations")
       .post
       .in("migrate")
       .in(
-        jsonBody[MigrateScenarioRequest].example(
-          Example.of(
-            summary = Some("example migration request"),
-            value = MigrateScenarioRequest(
-              "testEnv",
-              ProcessingMode.UnboundedStream,
-              EngineSetupName("Flink"),
-              ScenarioWithDetailsForMigrations(
-                name = ProcessName("example"),
-                isArchived = false,
-                isFragment = false,
-                processingType = "streaming1",
-                processCategory = "Category1",
-                scenarioGraph = Some(exampleGraph),
-                validationResult = Some(errorValidationResult),
-                history = None,
-                modelVersion = None
-              )
-            )
-          )
-        )
+        jsonBody[MigrateScenarioRequestV2]
       )
       .out(statusCode(Ok))
       .errorOut(nuDesignerErrorOutput)
@@ -166,7 +148,7 @@ object MigrationApiEndpoints {
         scenarioToMigrate: ScenarioWithDetailsForMigrations
     )
 
-    @derive(encoder, decoder, schema)
+    @derive(encoder, decoder)
     final case class MigrateScenarioRequestV2(
         sourceEnvironmentId: String,
         processingMode: ProcessingMode,

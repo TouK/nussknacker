@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{MigrateScenarioRequest, MigrateScenarioRequestV2}
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
@@ -41,42 +41,31 @@ class MigrationService(
   private val passUsernameInMigration = true
 
   def migrate(
-      migrateScenarioRequest: MigrateScenarioRequest
+      migrateScenarioRequest: MigrateScenarioRequestV2
   )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-    val scenarioWithDetailsForMigrations = migrateScenarioRequest.scenarioToMigrate
-    val sourceEnvironmentId              = migrateScenarioRequest.sourceEnvironmentId
-    val targetEnvironmentId              = config.getString("environment")
-    val processingMode                   = migrateScenarioRequest.processingMode
-    val processCategory                  = scenarioWithDetailsForMigrations.processCategory
-    val engineSetupName                  = migrateScenarioRequest.engineSetupName
-    val parameters                       = ScenarioParameters(processingMode, processCategory, engineSetupName)
-    val sourceValidation                 = scenarioWithDetailsForMigrations.validationResult
-    val processingType                   = scenarioWithDetailsForMigrations.processingType
-    val scenarioGraphUnsafe              = scenarioWithDetailsForMigrations.scenarioGraphUnsafe
-    val processName                      = scenarioWithDetailsForMigrations.name
-    val isFragment                       = scenarioWithDetailsForMigrations.isFragment
-    val forwardedUser                    = if (passUsernameInMigration) Some(loggedUser) else None
-    val forwardedUsername                = forwardedUser.map(user => RemoteUserName(user.username))
+    val sourceEnvironmentId = migrateScenarioRequest.sourceEnvironmentId
+    val targetEnvironmentId = config.getString("environment")
+    val processingMode      = migrateScenarioRequest.processingMode
+    val processCategory     = migrateScenarioRequest.processCategory
+    val engineSetupName     = migrateScenarioRequest.engineSetupName
+    val parameters          = ScenarioParameters(processingMode, processCategory, engineSetupName)
+    val processingType      = migrateScenarioRequest.processingType
+    val scenarioGraph       = migrateScenarioRequest.scenarioGraph
+    val processName         = migrateScenarioRequest.processName
+    val isFragment          = migrateScenarioRequest.isFragment
+    val forwardedUser       = if (passUsernameInMigration) Some(loggedUser) else None
+    val forwardedUsername   = forwardedUser.map(user => RemoteUserName(user.username))
     val updateProcessComment =
       UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by ${loggedUser.username}")
     val updateScenarioCommand =
-      UpdateScenarioCommand(scenarioGraphUnsafe, updateProcessComment, forwardedUsername)
+      UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsername)
 
     val future: Future[Unit] = for {
-
-      _ <- sourceValidation match {
-        case Some(validationResult) =>
-          if (validationResult.errors != ValidationErrors.success)
-            Future.failed(MigrationValidationError(validationResult.errors))
-          else Future.successful(())
-        case None => Future.successful(())
-      }
-
       validation <- Future.successful(
         FatalValidationError.renderNotAllowedAsError(
           processResolver
             .forTypeUnsafe(processingType)
-            .validateBeforeUiResolving(scenarioGraphUnsafe, processName, isFragment)
+            .validateBeforeUiResolving(scenarioGraph, processName, isFragment)
         )
       )
 

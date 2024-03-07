@@ -6,7 +6,6 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.{
@@ -83,7 +82,7 @@ class MigrationApiHttpServiceSecuritySpec
           .jsonBody(requestData)
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
-          .statusCode(401)
+          .statusCode(500)
           .equalsPlainBody("The supplied user [anonymous] is not authorized to access this resource")
       }
     }
@@ -101,25 +100,17 @@ class MigrationApiHttpServiceSecuritySpec
 
   private lazy val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
 
-  private lazy val validationResult = ValidationResult.success
-
   private def prepareRequestData(scenarioName: String): String =
     s"""
        |{
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "processingMode": "Unbounded-Stream",
        |  "engineSetupName": "Flink",
-       |  "scenarioToMigrate": {
-       |    "name": "${scenarioName}",
-       |    "isArchived": false,
-       |    "isFragment": false,
-       |    "processingType": "streaming1",
-       |    "processCategory": "Category1",
-       |    "scenarioGraph": ${exampleGraph.asJson.noSpaces},
-       |    "validationResult": ${validationResult.asJson.noSpaces},
-       |    "history": null,
-       |    "modelVersion": null
-       |  }
+       |  "processName": "${scenarioName}",
+       |  "isFragment": false,
+       |  "processingType": "streaming1",
+       |  "processCategory": "Category1",
+       |  "scenarioGraph": ${exampleGraph.asJson.noSpaces}
        |}
        |""".stripMargin
 

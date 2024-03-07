@@ -71,18 +71,6 @@ class MigrationApiHttpServiceBusinessSpec
           s"Cannot migrate, scenario ${exampleProcessName.value} is archived on test. You have to unarchive scenario on test in order to migrate."
         )
     }
-    "fail when validation on source environment has errors" in {
-      given()
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(invalidRequestData)
-        .post(s"$nuDesignerHttpAddress/api/migrate")
-        .Then()
-        .statusCode(400)
-        .equalsPlainBody(
-          s"Cannot migrate, following errors occurred: n1 - message"
-        )
-    }
     "migrate fragment" in {
       given()
         .applicationState(
@@ -126,7 +114,6 @@ class MigrationApiHttpServiceBusinessSpec
 
   private def prepareRequestJsonData(
       scenarioName: String,
-      validationResult: ValidationResult,
       scenarioGraph: ScenarioGraph,
       isFragment: Boolean
   ): String =
@@ -135,30 +122,21 @@ class MigrationApiHttpServiceBusinessSpec
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "processingMode": "Unbounded-Stream",
        |  "engineSetupName": "Flink",
-       |  "scenarioToMigrate": {
-       |    "name": "${scenarioName}",
-       |    "isArchived": false,
-       |    "isFragment": $isFragment,
-       |    "processingType": "streaming1",
-       |    "processCategory": "Category1",
-       |    "scenarioGraph": ${scenarioGraph.asJson.noSpaces},
-       |    "validationResult": ${validationResult.asJson.noSpaces},
-       |    "history": null,
-       |    "modelVersion": null
-       |  }
+       |  "processName": "${scenarioName}",
+       |  "isFragment": $isFragment,
+       |  "processingType": "streaming1",
+       |  "processCategory": "Category1",
+       |  "scenarioGraph": ${scenarioGraph.asJson.noSpaces}
        |}
        |""".stripMargin
 
   private lazy val validRequestData: String =
-    prepareRequestJsonData(exampleProcessName.value, successValidationResult, exampleGraph, false)
-
-  private lazy val invalidRequestData: String =
-    prepareRequestJsonData(exampleProcessName.value, errorValidationResult, exampleGraph, false)
+    prepareRequestJsonData(exampleProcessName.value, exampleGraph, false)
 
   private lazy val requestDataWithInvalidScenarioName: String =
-    prepareRequestJsonData(illegalProcessName.value, successValidationResult, exampleGraph, false)
+    prepareRequestJsonData(illegalProcessName.value, exampleGraph, false)
 
   private lazy val validRequestDataForFragment: String =
-    prepareRequestJsonData(exampleProcessName.value, successValidationResult, exampleGraph, true)
+    prepareRequestJsonData(exampleProcessName.value, exampleGraph, true)
 
 }

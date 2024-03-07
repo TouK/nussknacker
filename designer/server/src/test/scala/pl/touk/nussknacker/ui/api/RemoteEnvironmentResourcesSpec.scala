@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
@@ -217,9 +217,13 @@ class RemoteEnvironmentResourcesSpec
     override def migrate(
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
-        scenarioToMigrate: ScenarioWithDetailsForMigrations
+        processCategory: String,
+        processingType: ProcessingType,
+        scenarioGraph: ScenarioGraph,
+        processName: ProcessName,
+        isFragment: Boolean
     )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-      val localScenarioGraph = scenarioToMigrate.scenarioGraphUnsafe
+      val localScenarioGraph = scenarioGraph
       migrateInvocations = localScenarioGraph :: migrateInvocations
       Future.successful(Right(()))
     }.recover[Either[NuDesignerError, Unit]] { case e: IllegalStateException =>

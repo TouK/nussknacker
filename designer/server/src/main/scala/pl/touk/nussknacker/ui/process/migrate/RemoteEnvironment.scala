@@ -16,7 +16,7 @@ import io.circe.Decoder
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.{
   ScenarioParameters,
@@ -25,7 +25,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.{
 }
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{MigrateScenarioRequest, MigrateScenarioRequestV2}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
@@ -58,7 +58,11 @@ trait RemoteEnvironment {
   def migrate(
       processingMode: ProcessingMode,
       engineSetupName: EngineSetupName,
-      scenarioToMigrate: ScenarioWithDetailsForMigrations
+      processCategory: String,
+      processingType: ProcessingType,
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean
   )(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
@@ -195,10 +199,23 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   override def migrate(
       processingMode: ProcessingMode,
       engineSetupName: EngineSetupName,
-      scenarioToMigrate: ScenarioWithDetailsForMigrations
+      processCategory: String,
+      processingType: ProcessingType,
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-    val migrateScenarioRequest: MigrateScenarioRequest =
-      MigrateScenarioRequest(environmentId, processingMode, engineSetupName, scenarioToMigrate)
+    val migrateScenarioRequest: MigrateScenarioRequestV2 =
+      MigrateScenarioRequestV2(
+        environmentId,
+        processingMode,
+        engineSetupName,
+        processCategory,
+        processingType,
+        scenarioGraph,
+        processName,
+        isFragment
+      )
     invokeForSuccess(
       HttpMethods.POST,
       List("migrate"),

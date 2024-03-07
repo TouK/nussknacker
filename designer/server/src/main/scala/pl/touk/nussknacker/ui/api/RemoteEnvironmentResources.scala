@@ -74,7 +74,11 @@ class RemoteEnvironmentResources(
                   remoteEnvironment.migrate(
                     details.processingMode,
                     details.engineSetupName,
-                    ScenarioWithDetailsForMigrations.fromScenarioWithDetails(details)
+                    details.processCategory,
+                    details.processingType,
+                    details.scenarioGraphUnsafe,
+                    details.name,
+                    details.isFragment
                   )
               )
             }
