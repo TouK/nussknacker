@@ -1,6 +1,7 @@
 import { css, styled } from "@mui/material";
 import { customCheckbox } from "./CustomCheckbox";
 
+export const HiddenTextareaPixelHeight = 100;
 export const NodeTableStyled = styled("div")(
     ({ theme }) => css`
         font-size: 11px;
@@ -49,7 +50,7 @@ export const NodeTableStyled = styled("div")(
             }
             &.partly-hidden {
                 textarea {
-                    height: 100px !important;
+                    height: ${HiddenTextareaPixelHeight}px !important;
                 }
             }
             &.node-value-type-select {
