@@ -17,7 +17,7 @@ import scala.util.Properties
 
 //this is to simulate model reloading - we read parameters from file
 //WARN: this service is Thread unsafe for reload - currently used only in @see BaseFlowTest!
-class EagerService extends EagerServiceWithStaticParametersAndReturnType {
+class DynamicService extends EagerServiceWithStaticParametersAndReturnType {
 
   private val fileWithDefinition = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
