@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../actions/nk";
-import HttpService from "../../http/HttpService";
-import {CustomAction, NodeValidationError, ValidationErrors} from "../../types";
+import HttpService, { CustomActionValidationRequest } from "../../http/HttpService";
+import { CustomAction, NodeValidationError, ValidationErrors } from "../../types";
 import { UnknownRecord } from "../../types/common";
 import { WindowContent, WindowKind } from "../../windowManager";
 import { ChangeableValue } from "../ChangeableValue";
@@ -16,8 +16,8 @@ import ErrorBoundary from "../common/ErrorBoundary";
 import { FormControl, FormHelperText, FormLabel } from "@mui/material";
 import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
-import {getValidationErrorsForField} from "../graph/node-modal/editors/Validators";
-import {validateCustomAction} from "../../actions/nk/CustomActionDetails";
+import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
+import { debounce } from "lodash";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -40,17 +40,27 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
 
     useEffect(() => onChange(state), [onChange, state]);
 
-    const [errors, setErrors] = useState<NodeValidationError[]>([])
+    const [errors, setErrors] = useState<NodeValidationError[]>([]);
 
-    useEffect( () => {
-        const handleValidateCustomAction = async () => {
-            const data = await validateCustomAction()
+    const processName = useSelector(getProcessName);
+    const validationRequest: CustomActionValidationRequest = {
+        actionName: action.name,
+        params: state,
+    };
+    const debouncedValidateCustomAction = debounce(async () => {
+        const data = await HttpService.validateCustomAction(processName, validationRequest);
+        setErrors(data.validationErrors);
+    }, 300);
 
-            setErrors(data.errors)
-        }
-        handleValidateCustomAction()
-        }, []);
+    useEffect(() => {
+        debouncedValidateCustomAction();
+    }, [processName, validationRequest]);
 
+    useEffect(() => {
+        return () => {
+            debouncedValidateCustomAction.cancel();
+        };
+    }, []);
 
     return (
         <NodeTable>
