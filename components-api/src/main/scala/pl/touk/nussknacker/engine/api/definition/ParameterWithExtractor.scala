@@ -10,7 +10,7 @@ import scala.reflect.runtime.universe._
  * It reduce boilerplate defining `DynamicComponent` and reduce risk that definition of parameter
  * will desynchronize with implementation code using values
  */
-sealed trait ParameterWithExtractor[VALUE] {
+sealed trait ParameterWithExtractor[VALUE] extends Serializable {
   def parameter: Parameter
   def extractValue(params: Params): VALUE
 }
