@@ -19,7 +19,7 @@ import pl.touk.nussknacker.test.processes.WithRichScenarioActivitySpecAsserts
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
-class MigrationApiHttpBusinessSpec
+class MigrationApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithRichDesignerConfig

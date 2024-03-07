@@ -208,45 +208,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     )
   }
 
-  private def createProcessOnRemote(
-      processName: ProcessName,
-      parameters: ScenarioParameters,
-      isFragment: Boolean,
-      loggedUser: Option[LoggedUser]
-  )(
-      implicit ec: ExecutionContext
-  ): FutureE[Unit] = {
-    EitherT {
-      if (config.useLegacyCreateScenarioApi) {
-        val remoteUserNameHeader: List[HttpHeader] =
-          loggedUser.map(user => RawHeader(RemoteUserName.headerName, user.username)).toList
-        invokeForSuccess(
-          HttpMethods.POST,
-          List("processes", processName.value, parameters.category),
-          Query(("isFragment", isFragment.toString)),
-          HttpEntity.Empty,
-          remoteUserNameHeader
-        )
-      } else {
-        val command = CreateScenarioCommand(
-          processName,
-          Some(parameters.category),
-          Some(parameters.processingMode),
-          Some(parameters.engineSetupName),
-          isFragment = isFragment,
-          forwardedUserName = loggedUser.map(u => RemoteUserName(u.username))
-        )
-        invokeForSuccess(
-          HttpMethods.POST,
-          List("processes"),
-          Query.Empty,
-          HttpEntity(command.asJson.noSpaces),
-          List.empty
-        )
-      }
-    }
-  }
-
   // We need to be cautious when choosing maxParallelism of batchingExecutionContext as validation may call external systems and we don't want to overwhelm them with requests
   override def testMigration(
       processToInclude: ScenarioWithDetailsForMigrations => Boolean = _ => true,

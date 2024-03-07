@@ -17,7 +17,7 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
-class MigrationApiHttpSecuritySpec
+class MigrationApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithRichDesignerConfig
