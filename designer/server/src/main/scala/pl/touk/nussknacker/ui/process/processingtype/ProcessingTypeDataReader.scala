@@ -32,7 +32,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
       val nameInputData = EngineNameInputData(
         provider.defaultEngineSetupName,
         provider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
-        None // FIXME (next PRs) add deployment config and tests for that
+        processingTypeConfig.engineSetupName
       )
       (processingTypeConfig, provider, nameInputData)
     }
