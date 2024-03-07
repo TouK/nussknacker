@@ -72,11 +72,6 @@ final case class SqlStatementNotExecutedError(
 
 object SqlStatementNotExecutedError {
 
-  private val statementNotExecutedErrorDescription =
-    """
-      |Could not execute sql statement. The statement may be malformed. The statement has to be a CREATE TABLE statement
-      |according to https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/dev/table/sql/create/#create-table
-      |syntax.
-      |""".stripMargin
+  private val statementNotExecutedErrorDescription = "Could not execute sql statement. The statement may be malformed."
 
 }
