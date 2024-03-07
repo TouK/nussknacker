@@ -139,7 +139,6 @@ export interface CustomActionValidationRequest {
     params?: Record<string, string>;
 }
 
-
 export interface ExpressionSuggestionRequest {
     expression: Expression;
     caretPosition2d: CaretPosition2d;
@@ -497,7 +496,7 @@ class HttpService {
             });
     }
 
-    validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData | void>{
+    validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData> {
         return api
             .post(`/proceessManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
             .then((res) => res.data)
@@ -508,7 +507,7 @@ class HttpService {
                     true,
                 );
                 return;
-            })
+            });
     }
 
     getNodeAdditionalInfo(processName: string, node: NodeType, controller?: AbortController): Promise<AdditionalInfo | null> {

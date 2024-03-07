@@ -18,7 +18,8 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
 
   private lazy val baseProcessManagementEndpoint = baseNuApiEndpoint.in("processManagement")
 
-  lazy val customActionValidationEndpoint: SecuredEndpoint[(ProcessName, CustomActionRequest), ValidationError, Unit, Any] = {
+  lazy val customActionValidationEndpoint
+      : SecuredEndpoint[(ProcessName, CustomActionRequest), ValidationError, Unit, Any] = {
     baseProcessManagementEndpoint
       .summary("Endpoint to validate input in custom action fields")
       .tag("CustomAction")
@@ -30,15 +31,17 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       )
       .errorOut(
         validationErrorOutput
-        )
+      )
       .withSecurity(auth)
   }
 
-  private lazy val validationErrorOutput: EndpointOutput.OneOf[ValidationError, ValidationError] =
+  private lazy val validationErrorOutput: EndpointOutput.OneOf[ValidationError, ValidationError] = {
     oneOf[ValidationError](
       oneOfVariantFromMatchType(
-      StatusCode.BadRequest,
-      jsonBody[ValidationError]
+        StatusCode.Ok,
+        jsonBody[ValidationError]
       )
     )
+  }
+
 }
