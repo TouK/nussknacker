@@ -206,7 +206,7 @@ class UniversalKafkaSinkFactory(
       finalStateOpt: Option[State]
   ): Sink = {
     val preparedTopic = extractPreparedTopic(params)
-    val key           = params._extractUnsafe[LazyParameter[CharSequence]](SinkKeyParamName)
+    val key           = params.extractUnsafe[LazyParameter[CharSequence]](SinkKeyParamName)
     val finalState = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
@@ -221,7 +221,7 @@ class UniversalKafkaSinkFactory(
     )
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = extractValidationMode(
-      params._extractOld[String](SinkValidationModeParameterName).getOrElse(ValidationMode.strict.name)
+      params.extract[String](SinkValidationModeParameterName).getOrElse(ValidationMode.strict.name)
     )
 
     implProvider.createSink(

@@ -1,34 +1,37 @@
 package pl.touk.nussknacker.engine.kafka.source.delayed
 
-import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.util.TimestampUtils
 
 object DelayedKafkaSourceFactory {
 
   private final val delayValidators = List(MinimalNumberValidator(0), MaximalNumberValidator(Long.MaxValue))
 
-  final val DelayParameterName = "delayInMillis"
+  final val delayParameter =
+    ParameterWithExtractor.optional[java.lang.Long](
+      name = "delayInMillis",
+      modify = _.copy(validators = delayValidators)
+    )
 
-  final val DelayParameter =
-    Parameter.optional(DelayParameterName, Typed[java.lang.Long]).copy(validators = delayValidators)
+  final val timestampFieldParamName = "timestampField"
 
-  final val TimestampFieldParamName = "timestampField"
-
-  final val fallbackTimestampFieldParameter = Parameter
-    .optional(TimestampFieldParamName, Typed[String])
-    .copy(
-      editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
+  final val fallbackTimestampFieldParameter =
+    ParameterWithExtractor.optional[String](
+      name = timestampFieldParamName,
+      modify = _.copy(editor =
+        Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
+      )
     )
 
   // TODO this is simple way to provide better UX for timestampField usage. But probably instead of taking this further
   // one should try to allow using spel expression here. As it requires some changes in SourceFunction for Kafka, it must wait
   // until sources will be migrated to non-deprecated Source APi.
-  def timestampFieldParameter(kafkaRecordValueType: Option[TypingResult]): Parameter = {
+  def timestampFieldParameter(kafkaRecordValueType: Option[TypingResult]): ParameterWithExtractor[Option[String]] = {
     val editorOpt = kafkaRecordValueType
       .collect { case TypedObjectTypingResult(fields, _, _) => fields.toList }
       .map(_.collect {
@@ -38,18 +41,19 @@ object DelayedKafkaSourceFactory {
       .filter(_.nonEmpty)
       .map(_.sortBy(_.label))
       .map(FixedExpressionValue("", "") :: _)
-      .map(FixedValuesParameterEditor(_))
+      .map(FixedValuesParameterEditor.apply)
       .map(DualParameterEditor(_, DualEditorMode.SIMPLE))
       .orElse(Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW)))
 
-    Parameter
-      .optional(TimestampFieldParamName, Typed[String])
-      .copy(editor = editorOpt)
+    ParameterWithExtractor.optional[String](
+      name = timestampFieldParamName,
+      modify = _.copy(editor = editorOpt)
+    )
   }
 
-  def extractTimestampField(params: Params): String = params._extractOld[String](TimestampFieldParamName).getOrElse("")
+  def extractTimestampField(params: Params): Option[String] = fallbackTimestampFieldParameter.extractValue(params)
 
-  def extractDelayInMillis(params: Params): Long = params._extractOld[Long](DelayParameterName).getOrElse(0)
+  def extractDelayInMillis(params: Params): Option[java.lang.Long] = delayParameter.extractValue(params)
 
   def validateTimestampField(field: String, typingResult: TypingResult)(
       implicit nodeId: NodeId
@@ -64,7 +68,7 @@ object DelayedKafkaSourceFactory {
               new CustomNodeError(
                 nodeId.id,
                 s"Field: '$field' has invalid type: ${fieldTypingResult.display}.",
-                Some(TimestampFieldParamName)
+                Some(timestampFieldParamName)
               )
             )
           case None =>
@@ -72,7 +76,7 @@ object DelayedKafkaSourceFactory {
               new CustomNodeError(
                 nodeId.id,
                 s"Field: '$field' doesn't exist in definition: ${fields.keys.mkString(", ")}.",
-                Some(TimestampFieldParamName)
+                Some(timestampFieldParamName)
               )
             )
         }

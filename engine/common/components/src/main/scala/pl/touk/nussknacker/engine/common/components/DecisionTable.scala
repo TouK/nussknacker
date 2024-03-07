@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.common.components
 
+import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -26,25 +27,31 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   private object BasicDecisionTableParameter {
     val name = "Basic Decision Table"
 
-    val declaration: Parameter =
-      Parameter(name, Typed[TabularTypedData])
-        .copy(editor = Some(TabularTypedDataEditor))
+    val declaration: ParameterWithExtractor[TabularTypedData] =
+      ParameterWithExtractor
+        .mandatory[TabularTypedData](
+          name = name,
+          modify = _.copy(editor = Some(TabularTypedDataEditor))
+        )
 
   }
 
   private object FilterDecisionTableExpressionParameter {
     val name = "Expression"
 
-    def declaration(data: TabularTypedData): Parameter =
-      Parameter(name, Typed[java.lang.Boolean])
-        .copy(
-          isLazyParameter = true,
-          additionalVariables = Map(
-            decisionTableRowRuntimeVariableName -> AdditionalVariableProvidedInRuntime(
-              rowDataTypingResult(data.columnDefinitions)
+    def declaration(data: TabularTypedData): ParameterWithExtractor[api.LazyParameter[java.lang.Boolean]] = {
+      ParameterWithExtractor
+        .lazyMandatory[java.lang.Boolean](
+          name,
+          _.copy(additionalVariables =
+            Map(
+              decisionTableRowRuntimeVariableName -> AdditionalVariableProvidedInRuntime(
+                rowDataTypingResult(data.columnDefinitions)
+              )
             )
           )
         )
+    }
 
   }
 
@@ -62,14 +69,15 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[Unit]
-  ): ServiceInvoker = new DecisionTableImplementation(
-    params.extractNonOptionalPresentValueUnsafe(BasicDecisionTableParameter.name),
-    params.extractNonOptionalPresentValueUnsafe(FilterDecisionTableExpressionParameter.name)
-  )
+  ): ServiceInvoker = {
+    val tabularTypedData = BasicDecisionTableParameter.declaration.extractValue(params)
+    val filterExpression = FilterDecisionTableExpressionParameter.declaration(tabularTypedData).extractValue(params)
+    new DecisionTableImplementation(tabularTypedData, filterExpression)
+  }
 
   private lazy val prepare: ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     NextParameters(
-      parameters = BasicDecisionTableParameter.declaration :: Nil,
+      parameters = BasicDecisionTableParameter.declaration.parameter :: Nil,
       errors = List.empty,
       state = None
     )
@@ -79,7 +87,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
     case TransformationStep((name, DefinedEagerParameter(data: TabularTypedData, _)) :: Nil, _)
         if name == BasicDecisionTableParameter.name =>
       NextParameters(
-        parameters = FilterDecisionTableExpressionParameter.declaration(data) :: Nil,
+        parameters = FilterDecisionTableExpressionParameter.declaration(data).parameter :: Nil,
         errors = List.empty,
         state = None
       )

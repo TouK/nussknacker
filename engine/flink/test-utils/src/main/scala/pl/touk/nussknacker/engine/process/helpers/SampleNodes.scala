@@ -669,7 +669,7 @@ object SampleNodes {
         finalState: Option[State]
     ): AnyRef = {
       val map  = params.nameToValueMap.filterNot(k => List("par1", "lazyPar1").contains(k._1))
-      val bool = params._extractUnsafe[LazyParameter[java.lang.Boolean]]("lazyPar1")
+      val bool = params.extractUnsafe[LazyParameter[java.lang.Boolean]]("lazyPar1")
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
@@ -775,7 +775,7 @@ object SampleNodes {
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): Source = {
-      val out = s"${params._extractUnsafe("type")}-${params._extractUnsafe("version")}"
+      val out = s"${params.extractUnsafe("type")}-${params.extractUnsafe("version")}"
       CollectionSource(out :: Nil, None, Typed[String])
     }
 
@@ -846,7 +846,7 @@ object SampleNodes {
         finalState: Option[State]
     ): Source = {
       import scala.jdk.CollectionConverters._
-      val elements = params._extractUnsafe[java.util.List[String]](`elementsParamName`).asScala.toList
+      val elements = params.extractUnsafe[java.util.List[String]](`elementsParamName`).asScala.toList
 
       new CollectionSource(elements, None, Typed[String]) with TestDataGenerator with FlinkSourceTestSupport[String] {
 
@@ -912,8 +912,8 @@ object SampleNodes {
 
       type Value = String
 
-      private val typ     = params._extractUnsafe[String]("type")
-      private val version = params._extractUnsafe[Integer]("version")
+      private val typ     = params.extractUnsafe[String]("type")
+      private val version = params.extractUnsafe[Integer]("version")
 
       override def prepareValue(
           dataStream: DataStream[Context],
@@ -922,7 +922,7 @@ object SampleNodes {
         dataStream
           .flatMap(
             flinkNodeContext.lazyParameterHelper
-              .lazyMapFunction(params._extractUnsafe[LazyParameter[String]]("value"))
+              .lazyMapFunction(params.extractUnsafe[LazyParameter[String]]("value"))
           )
           .map(
             (v: ValueWithContext[String]) =>

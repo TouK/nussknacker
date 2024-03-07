@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.kafka.generic.FlinkKafkaDelayedSourceImplFacto
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{
   DelayParameterName,
-  TimestampFieldParamName
+  timestampFieldParamName
 }
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
@@ -87,7 +87,7 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
         "kafka-universal-delayed",
         s"$TopicParamName"          -> s"'$topic'",
         s"$SchemaVersionParamName"  -> asSpelExpression(formatVersionParam(version)),
-        s"$TimestampFieldParamName" -> s"$timestampField",
+        s"$timestampFieldParamName" -> s"$timestampField",
         s"$DelayParameterName"      -> s"$delay"
       )
       .emptySink("out", "sinkForLongs", SinkValueParamName -> "T(java.time.Instant).now().toEpochMilli()")

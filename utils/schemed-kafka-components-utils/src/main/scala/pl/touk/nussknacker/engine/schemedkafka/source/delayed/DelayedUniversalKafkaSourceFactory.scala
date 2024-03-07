@@ -24,9 +24,8 @@ class DelayedUniversalKafkaSourceFactory(
       implProvider
     ) {
 
-  override def paramsDeterminedAfterSchema: List[Parameter] = super.paramsDeterminedAfterSchema ++ List(
-    DelayParameter
-  )
+  override def paramsDeterminedAfterSchema: List[Parameter] =
+    super.paramsDeterminedAfterSchema ++ List(delayParameter.parameter)
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -41,9 +40,9 @@ class DelayedUniversalKafkaSourceFactory(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep(
-          (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
-          (TimestampFieldParamName, DefinedEagerParameter(field, _)) :: Nil,
+          (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
+          (SchemaVersionParamName, DefinedEagerParameter(_: String, _)) ::
+          (`timestampFieldParamName`, DefinedEagerParameter(field, _)) :: Nil,
           state @ Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(valueValidationResult))
         ) =>
       val timestampValidation = valueValidationResult.toOption
@@ -58,16 +57,16 @@ class DelayedUniversalKafkaSourceFactory(
       )
 
     case TransformationStep(
-          (`topicParamName`, _) :: (SchemaVersionParamName, _) :: (TimestampFieldParamName, _) :: Nil,
+          (`topicParamName`, _) :: (SchemaVersionParamName, _) :: (`timestampFieldParamName`, _) :: Nil,
           _
         ) =>
-      NextParameters(parameters = fallbackTimestampFieldParameter :: paramsDeterminedAfterSchema)
+      NextParameters(parameters = fallbackTimestampFieldParameter.parameter :: paramsDeterminedAfterSchema)
   }
 
   protected def timestampFieldParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: Nil,
+          (`SchemaVersionParamName`, DefinedEagerParameter(version: String, _)) :: Nil,
           _
         ) =>
       val preparedTopic = prepareTopic(topic)
@@ -78,11 +77,11 @@ class DelayedUniversalKafkaSourceFactory(
       )
 
       NextParameters(
-        timestampFieldParameter(valueValidationResult.map(_._2).toOption) :: Nil,
+        timestampFieldParameter(valueValidationResult.map(_._2).toOption).parameter :: Nil,
         state = Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(valueValidationResult))
       )
-    case TransformationStep((topicParamName, _) :: (schemaVersionParamName, _) :: Nil, _) =>
-      NextParameters(parameters = fallbackTimestampFieldParameter :: paramsDeterminedAfterSchema)
+    case TransformationStep((`topicParamName`, _) :: (`SchemaVersionParamName`, _) :: Nil, _) =>
+      NextParameters(parameters = fallbackTimestampFieldParameter.parameter :: paramsDeterminedAfterSchema)
   }
 
 }

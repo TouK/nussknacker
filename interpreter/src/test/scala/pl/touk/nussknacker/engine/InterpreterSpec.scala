@@ -1241,8 +1241,8 @@ object InterpreterSpec {
         finalState: Option[Nothing]
     ): ServiceInvoker = {
 
-      // todo: do we need it?
-      val paramName = staticParam.extractValue(params)
+      val dynamicParamDeclaration = dynamicParam(staticParam.extractValue(params))
+      val lazyDynamicParamValue   = dynamicParamDeclaration.extractValue(params)
 
       new ServiceInvoker {
         override def invoke(context: Context)(
@@ -1250,13 +1250,13 @@ object InterpreterSpec {
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
-          val value = params._extractOrEvaluateUnsafe[AnyRef](paramName, context)
-          Future.successful(value)
+          Future.successful(lazyDynamicParamValue.evaluate(context))
         }
       }
     }
 
-    private def dynamicParam(name: String) = ParameterWithExtractor.lazyMandatory[AnyRef](name)
+    private def dynamicParam(name: String) =
+      ParameterWithExtractor.lazyMandatory[AnyRef](name)
 
     override def nodeDependencies: List[NodeDependency] = Nil
 
