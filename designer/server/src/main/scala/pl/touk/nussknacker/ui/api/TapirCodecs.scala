@@ -144,11 +144,6 @@ object TapirCodecs {
     implicit val processNameSchema: Schema[ProcessName] = Schema.string
   }
 
-  object ScenarioWithDetailsForMigrationsCodec {
-    // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val scenarioWithDetailsForMigrationsSchema: Schema[ScenarioWithDetailsForMigrations] = Schema.anyObject
-  }
-
   object MigrateScenarioRequestCodec {
     // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
     implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequest] = Schema.anyObject

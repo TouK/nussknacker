@@ -444,48 +444,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MigrateScenarioRequest'
+              type: object
             examples:
               Example:
-                summary: example migration request
+                summary: example of migration request between environments
                 value:
                   sourceEnvironmentId: testEnv
                   processingMode: Unbounded-Stream
                   engineSetupName: Flink
-                  scenarioToMigrate:
-                    name: example
-                    isArchived: false
-                    isFragment: false
-                    processingType: streaming1
-                    processCategory: Category1
-                    scenarioGraph:
-                      properties:
-                        additionalFields:
-                          properties:
-                            parallelism: ''
-                          metaDataType: LiteStreamMetaData
-                      nodes:
-                      - id: source
-                        ref:
-                          typ: csv-source-lite
-                          parameters: []
-                        type: Source
-                      - id: sink
-                        ref:
-                          typ: dead-end-lite
-                          parameters: []
-                        type: Sink
-                      edges:
-                      - from: source
-                        to: sink
-                    validationResult:
-                      errors:
-                        invalidNodes: {}
-                        processPropertiesErrors: []
-                        globalErrors: []
-                      warnings:
-                        invalidNodes: {}
-                      nodeResults: {}
+                  processCategory: Category1
+                  processingType: streaming1
+                  scenarioGraph:
+                    properties:
+                      additionalFields:
+                        properties:
+                          parallelism: ''
+                        metaDataType: LiteStreamMetaData
+                    nodes:
+                    - id: source
+                      ref:
+                        typ: csv-source-lite
+                        parameters: []
+                      type: Source
+                    - id: sink
+                      ref:
+                        typ: dead-end-lite
+                        parameters: []
+                      type: Sink
+                    edges:
+                    - from: source
+                      to: sink
+                  processName: test
+                  isFragment: false
         required: true
       responses:
         '200':
@@ -1983,22 +1973,6 @@ components:
       properties:
         content:
           type: string
-    MigrateScenarioRequest:
-      required:
-      - sourceEnvironmentId
-      - processingMode
-      - engineSetupName
-      - scenarioToMigrate
-      type: object
-      properties:
-        sourceEnvironmentId:
-          type: string
-        processingMode:
-          type: string
-        engineSetupName:
-          type: string
-        scenarioToMigrate:
-          type: object
     NextSwitch:
       required:
       - condition

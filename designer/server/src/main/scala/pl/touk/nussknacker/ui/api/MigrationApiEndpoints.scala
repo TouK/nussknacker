@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui._
@@ -18,7 +17,6 @@ import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, Migrati
 import sttp.model.StatusCode._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
-import sttp.tapir.derevo._
 import sttp.tapir.json.circe.jsonBody
 
 class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
@@ -34,7 +32,21 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .post
       .in("migrate")
       .in(
-        jsonBody[MigrateScenarioRequest]
+        jsonBody[MigrateScenarioRequest].example(
+          Example.of(
+            summary = Some("example of migration request between environments"),
+            value = MigrateScenarioRequest(
+              sourceEnvironmentId = "testEnv",
+              processingMode = ProcessingMode.UnboundedStream,
+              engineSetupName = EngineSetupName("Flink"),
+              processCategory = "Category1",
+              processingType = "streaming1",
+              scenarioGraph = exampleGraph,
+              processName = ProcessName("test"),
+              isFragment = false
+            )
+          )
+        )
       )
       .out(statusCode(Ok))
       .errorOut(nuDesignerErrorOutput)
@@ -83,18 +95,11 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
 
   private val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleProcess)
 
-  private val errorValidationResult =
-    ValidationResults.ValidationResult.success
-
 }
 
 object MigrationApiEndpoints {
 
   object Dtos {
-
-    import pl.touk.nussknacker.ui.api.TapirCodecs.ProcessingModeCodec._
-    import pl.touk.nussknacker.ui.api.TapirCodecs.EngineSetupNameCodec._
-    import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioWithDetailsForMigrationsCodec._
 
     def deserializationException =
       (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
