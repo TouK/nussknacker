@@ -51,6 +51,7 @@ object DelayedKafkaSourceFactory {
     )
   }
 
+  // todo: fixme
   def extractTimestampField(params: Params): Option[String] = fallbackTimestampFieldParameter.extractValue(params)
 
   def extractDelayInMillis(params: Params): Option[java.lang.Long] = delayParameter.extractValue(params)

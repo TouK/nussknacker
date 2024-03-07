@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Params}
+import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
 import java.io.File
@@ -17,18 +17,18 @@ import scala.util.Properties
 
 //this is to simulate model reloading - we read parameters from file
 //WARN: this service is Thread unsafe for reload - currently used only in @see BaseFlowTest!
-class DynamicService extends EagerServiceWithStaticParametersAndReturnType {
+class EagerService extends EagerServiceWithStaticParametersAndReturnType {
 
   private val fileWithDefinition = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
-  override def invoke(params: Params)(
+  override def invoke(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       contextId: ContextId,
       metaData: MetaData,
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] = {
-    val toCollect = params.nameToValueMap.values.mkString(",")
+    val toCollect = params.values.mkString(",")
     val res       = ().asInstanceOf[AnyRef]
     collector.collect(toCollect, Some(res))(Future.successful(res))
   }

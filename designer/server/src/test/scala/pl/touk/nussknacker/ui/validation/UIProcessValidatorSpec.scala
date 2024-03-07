@@ -100,7 +100,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "Edges are not unique",
           "Node subIn has duplicate outgoing edges of type: FragmentOutput(out2), it cannot be saved properly",
           None,
-          NodeValidationErrorType.SaveNotAllowed
+          NodeValidationErrorType.SaveNotAllowed,
+          None
         )
       )
     )
@@ -148,7 +149,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "Edges are not unique",
           "Node subIn has duplicate outgoing edges to: out2, it cannot be saved properly",
           None,
-          SaveNotAllowed
+          SaveNotAllowed,
+          None
         )
       )
     )
@@ -172,7 +174,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "Loose node",
           "Node loose is not connected to source, it cannot be saved properly",
           None,
-          SaveNotAllowed
+          SaveNotAllowed,
+          None
         ),
         List("loose")
       )
@@ -220,7 +223,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "Node filter is disabled",
           "Deploying scenario with disabled node can have unexpected consequences",
           None,
-          SaveAllowed
+          SaveAllowed,
+          None
         )
       )
     )
@@ -244,7 +248,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "Two nodes cannot have same id",
           "Duplicate node ids: inID",
           None,
-          RenderNotAllowed
+          RenderNotAllowed,
+          None
         ),
         List("inID")
       )
@@ -275,7 +280,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "Two nodes cannot have same id",
           "Duplicate node ids: switchID",
           None,
-          RenderNotAllowed
+          RenderNotAllowed,
+          None
         ),
         List("switchID")
       )
@@ -320,7 +326,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("field1"),
-              ValidationResults.NodeValidationErrorType.SaveAllowed
+              ValidationResults.NodeValidationErrorType.SaveAllowed,
+              _
             )
           ) =>
     }
@@ -331,7 +338,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("field1"),
-              ValidationResults.NodeValidationErrorType.SaveAllowed
+              ValidationResults.NodeValidationErrorType.SaveAllowed,
+              _
             )
           ) =>
     }
@@ -413,7 +421,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
 
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("UnknownProperty", _, _, Some("field1"), NodeValidationErrorType.SaveAllowed)) =>
+      case List(
+            NodeValidationError("UnknownProperty", _, _, Some("field1"), NodeValidationErrorType.SaveAllowed, None)
+          ) =>
     }
   }
 
@@ -468,7 +478,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "Invalid parameter type.",
               "Failed to load thisTypeDoesntExist",
               Some("$param.subParam1.$typ"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -532,14 +543,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "The initial value provided for parameter 'subParam1' is not present in the parameter's possible values list",
               _,
               Some("$param.subParam1.$initialValue"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             ),
             NodeValidationError(
               "ExpressionParserCompilationErrorInFragmentDefinition",
               "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
               "There is a problem with expression: 'someValue'",
               Some("$param.subParam2.$fixedValuesList"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -599,14 +612,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "Invalid validation expression: Bad expression type, expected: Boolean, found: String(ab)",
               "There is a problem with validation expression: 'a' + 'b'",
               Some("$param.subParam1.$validationExpression"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             ),
             NodeValidationError(
               "InvalidValidationExpression",
               "Invalid validation expression: Wrong part types",
               "There is a problem with validation expression: #value < 7",
               Some("$param.subParam2.$validationExpression"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -721,7 +736,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("subParam1"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -732,7 +748,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("subParam1"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -849,7 +866,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("expression"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -891,7 +909,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("optionalParam"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -940,7 +959,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "some custom failure message",
                 "Please provide value that satisfies the validation expression '#value.length() < 7'",
                 Some("optionalParam"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -981,7 +1001,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("optionalParam"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1035,7 +1056,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "some custom failure message",
                 "Please provide value that satisfies the validation expression '#value.length() < 7'",
                 Some("optionalParam"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1078,7 +1100,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "Error while parsing KeyWithLabel expression: not parsable key with label expression",
                 _,
                 Some("expression"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1100,7 +1123,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("expression"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1125,7 +1149,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("expression"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1161,7 +1186,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("expression"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1188,7 +1214,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("numberOfThreads"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -1277,7 +1304,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("subIn") should matchPattern {
       case Some(
-            List(NodeValidationError("EmptyMandatoryParameter", _, _, Some("P1"), NodeValidationErrorType.SaveAllowed))
+            List(
+              NodeValidationError(
+                "EmptyMandatoryParameter",
+                _,
+                _,
+                Some("P1"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
           ) =>
     }
   }
@@ -1311,8 +1347,22 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.invalidNodes.get("subIn") should matchPattern {
       case Some(
             List(
-              NodeValidationError("EmptyMandatoryParameter", _, _, Some("P1"), NodeValidationErrorType.SaveAllowed),
-              NodeValidationError("EmptyMandatoryParameter", _, _, Some("P2"), NodeValidationErrorType.SaveAllowed)
+              NodeValidationError(
+                "EmptyMandatoryParameter",
+                _,
+                _,
+                Some("P1"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              ),
+              NodeValidationError(
+                "EmptyMandatoryParameter",
+                _,
+                _,
+                Some("P2"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
             )
           ) =>
     }
@@ -1392,8 +1442,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "CustomParameterValidationError",
                 "some failed message",
                 "Please provide value that satisfies the validation expression '#value.length() < 7'",
-                Some(paramName),
-                NodeValidationErrorType.SaveAllowed
+                Some(`paramName`),
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1538,7 +1589,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       result.errors.globalErrors should matchPattern {
         case List(
               UIGlobalError(
-                NodeValidationError("InvalidTailOfBranch", _, _, _, NodeValidationErrorType.SaveAllowed),
+                NodeValidationError("InvalidTailOfBranch", _, _, _, NodeValidationErrorType.SaveAllowed, None),
                 List("e")
               )
             ) =>
@@ -1633,7 +1684,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
   }
 
-  def validate(scenarioGraph: ScenarioGraph): ValidationResult = {
+  private def validate(scenarioGraph: ScenarioGraph): ValidationResult = {
     TestFactory.processValidator.validate(scenarioGraph, ProcessTestData.sampleProcessName, isFragment = false)
   }
 
@@ -1792,7 +1843,9 @@ private object UIProcessValidatorSpec {
       MetaData(fragmentDefinitionId, FragmentSpecificData()),
       List(
         FlatNode(FragmentInputDefinition("in", fragmentInputParams)),
-        FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", Expression("spel", "'value'"))))),
+        FlatNode(
+          FragmentOutputDefinition("out", "out1", List(Field("strField", Expression(Language.Spel, "'value'"))))
+        ),
       ),
       additionalBranches = List.empty
     )

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -70,7 +71,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
 
     source shouldBe Source(
       "start",
-      SourceRef("source1", List(NodeParameter("param1", Expression("spel", "'string1'"))))
+      SourceRef("source1", List(NodeParameter("param1", Expression(Language.Spel, "'string1'"))))
     )
   }
 
@@ -223,7 +224,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
   }
 
   private def sinkToVerify(id: String) = {
-    Sink(id, SinkRef("sink", List(NodeParameter("param1", Expression("spel", "'string1'")))))
+    Sink(id, SinkRef("sink", List(NodeParameter("param1", Expression(Language.Spel, "'string1'")))))
   }
 
   private def migrateAndConvert(oldJson: Json): CanonicalProcess = {
