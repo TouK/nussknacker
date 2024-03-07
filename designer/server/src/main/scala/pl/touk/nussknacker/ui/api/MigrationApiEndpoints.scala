@@ -24,18 +24,17 @@ import sttp.tapir.json.circe.jsonBody
 class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import MigrationApiEndpoints.Dtos.MigrateScenarioRequest._
-  import MigrationApiEndpoints.Dtos.MigrateScenarioRequestV2._
   import MigrationApiEndpoints.Dtos._
   import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
 
-  lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequestV2, NuDesignerError, Unit, Any] =
+  lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequest, NuDesignerError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Migration between environments service")
       .tag("Migrations")
       .post
       .in("migrate")
       .in(
-        jsonBody[MigrateScenarioRequestV2]
+        jsonBody[MigrateScenarioRequest]
       )
       .out(statusCode(Ok))
       .errorOut(nuDesignerErrorOutput)
@@ -140,16 +139,8 @@ object MigrationApiEndpoints {
         Mapping.from[String, FatalError](deserializationException)(_.getMessage)
       )
 
-    @derive(encoder, decoder, schema)
-    final case class MigrateScenarioRequest(
-        sourceEnvironmentId: String,
-        processingMode: ProcessingMode,
-        engineSetupName: EngineSetupName,
-        scenarioToMigrate: ScenarioWithDetailsForMigrations
-    )
-
     @derive(encoder, decoder)
-    final case class MigrateScenarioRequestV2(
+    final case class MigrateScenarioRequest(
         sourceEnvironmentId: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,

@@ -40,7 +40,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationResult,
   ValidationWarnings
 }
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.MigrateScenarioRequestV2
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
@@ -151,7 +151,7 @@ object TapirCodecs {
 
   object MigrateScenarioRequestCodec {
     // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequestV2] = Schema.anyObject
+    implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequest] = Schema.anyObject
   }
 
 }

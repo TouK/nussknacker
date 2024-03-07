@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{MigrateScenarioRequest, MigrateScenarioRequestV2}
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
@@ -41,7 +41,7 @@ class MigrationService(
   private val passUsernameInMigration = true
 
   def migrate(
-      migrateScenarioRequest: MigrateScenarioRequestV2
+      migrateScenarioRequest: MigrateScenarioRequest
   )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
     val sourceEnvironmentId = migrateScenarioRequest.sourceEnvironmentId
     val targetEnvironmentId = config.getString("environment")
