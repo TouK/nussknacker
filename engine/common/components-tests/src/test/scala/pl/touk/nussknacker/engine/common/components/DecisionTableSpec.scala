@@ -31,34 +31,29 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
 
   "Decision Table component should" - {
     "filter and return decision table's rows filtered by the expression" in {
-      (1 to 2).foreach { no =>
-        val result = execute[TestMessage, SCENARIO_RESULT](
-          scenario = decisionTableExampleScenario(
-            expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
-          ),
-          withData = List(
-            TestMessage(id = "1", minAge = 30),
-            TestMessage(id = "2", minAge = 18)
-          )
+      val result = execute[TestMessage, SCENARIO_RESULT](
+        scenario = decisionTableExampleScenario(
+          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
+        ),
+        withData = List(
+          TestMessage(id = "1", minAge = 30),
+          TestMessage(id = "2", minAge = 18)
         )
+      )
 
-        inside(result) { case Validated.Valid(r) =>
-          r.errors should be(List.empty)
-          if (r.successes.head.asScala.size == 2) {
-            println(s"FAILED: $no")
-          }
-          r.successes should be(
-            List(
-              rows(
-                rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
-              ),
-              rows(
-                rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
-                rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
-              )
+      inside(result) { case Validated.Valid(r) =>
+        r.errors should be(List.empty)
+        r.successes should be(
+          List(
+            rows(
+              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
+            ),
+            rows(
+              rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
+              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
             )
           )
-        }
+        )
       }
     }
 
