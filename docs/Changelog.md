@@ -1,8 +1,13 @@
 # Changelog
 
-1.13.1 (7 Mar 2024)
+
+1.13.2 (7 Mar 2024)
 ------------------------
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
+ 
+1.13.1 (7 Mar 2024)
+-------------------------
+[this version was skipped, please use 1.13.2 instead]
 
 1.13.0 (12 Jan 2024)
 -------------------------
