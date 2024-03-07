@@ -190,7 +190,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Property access on Unknown is not allowed",
                 "filter1",
                 Some(DefaultExpressionId),
-                _
+                _,
+                None
               ),
               _
             )
@@ -239,7 +240,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Unknown method 'copyValueOf' in String",
                 "filter1",
                 Some(DefaultExpressionId),
-                "T(String).copyValueOf('test')"
+                "T(String).copyValueOf('test')",
+                None
               ),
               _
             )
@@ -269,7 +271,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "class java.lang.System is not allowed to be passed as TypeReference",
                 "filter1",
                 Some(DefaultExpressionId),
-                "T(System).exit()"
+                "T(System).exit()",
+                None
               ),
               _
             )
@@ -312,7 +315,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Dynamic property access is not allowed",
                 "filter1",
                 Some(DefaultExpressionId),
-                _
+                _,
+                None
               ),
               _
             )
@@ -512,7 +516,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError(_, _, _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError(_, _, _, _, _), _)) =>
     }
   }
 
@@ -596,8 +600,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError(_, "customNodeId", Some("nullableLiteralIntegerParam"), "as"),
-              List(ExpressionParserCompilationError(_, "customNodeId2", Some("nullableLiteralIntegerParam"), "1.23"))
+              ExpressionParserCompilationError(_, "customNodeId", Some("nullableLiteralIntegerParam"), "as", None),
+              List(
+                ExpressionParserCompilationError(_, "customNodeId2", Some("nullableLiteralIntegerParam"), "1.23", None)
+              )
             )
           ) =>
     }
@@ -615,7 +621,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError(_, "customNodeId", Some("regExpParam"), "as"),
+              ExpressionParserCompilationError(_, "customNodeId", Some("regExpParam"), "as", None),
               _
             )
           ) =>
@@ -751,14 +757,16 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Unresolved reference 'doesNotExist1'",
                 "sampleFilter",
                 Some(DefaultExpressionId),
-                _
+                _,
+                None
               ),
               List(
                 ExpressionParserCompilationError(
                   "Unresolved reference 'doesNotExist2'",
                   "sampleFilter",
                   Some(DefaultExpressionId),
-                  _
+                  _,
+                  None
                 )
               )
             )
@@ -780,7 +788,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Non reference 'input' occurred. Maybe you missed '#' in front of it?",
                 "sampleFilter2",
                 Some(DefaultExpressionId),
-                _
+                _,
+                None
               ),
               _
             )
@@ -802,7 +811,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "There is no property 'value3' in type: AnotherSimpleRecord",
                 "sampleFilter2",
                 Some(DefaultExpressionId),
-                _
+                _,
+                None
               ),
               _
             )
@@ -826,7 +836,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "There is no property 'value3' in type: AnotherSimpleRecord",
                 "sampleFilter2",
                 Some(DefaultExpressionId),
-                _
+                _,
+                None
               ),
               _
             )
@@ -854,7 +865,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "There is no property 'value3' in type: AnotherSimpleRecord",
                 "sampleFilter2",
                 Some(DefaultExpressionId),
-                _
+                _,
+                None
               ),
               _
             )
@@ -890,7 +902,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "There is no property 'terefere' in type: AnotherSimpleRecord",
                 "sampleFilter2",
                 Some(DefaultExpressionId),
-                "#out1.terefere"
+                "#out1.terefere",
+                None
               ),
               _
             )
@@ -913,7 +926,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Unresolved reference 'strangeVar'",
                 "cNode1",
                 Some("par1"),
-                "#strangeVar"
+                "#strangeVar",
+                None
               ),
               _
             )
@@ -946,7 +960,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "There is no property 'terefere' in type: BigDecimal",
                 "sampleFilter1",
                 Some(DefaultExpressionId),
-                _
+                _,
+                None
               ),
               _
             )
@@ -975,11 +990,18 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Expression [{] @0: EL1044E: Unexpectedly ran out of input",
                 "c1",
                 Some("par1"),
-                _
+                _,
+                None
               ),
               List(
-                ExpressionParserCompilationError("Unresolved reference 'terefere'", "p1", Some("par1"), _),
-                ExpressionParserCompilationError("Unresolved reference 'terefere22'", "v1", Some("$fields-0-$value"), _)
+                ExpressionParserCompilationError("Unresolved reference 'terefere'", "p1", Some("par1"), _, None),
+                ExpressionParserCompilationError(
+                  "Unresolved reference 'terefere22'",
+                  "v1",
+                  Some("$fields-0-$value"),
+                  _,
+                  None
+                )
               )
             )
           ) =>
@@ -1058,7 +1080,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Wrong part types",
                 "notWorking",
                 Some(DefaultExpressionId),
-                "#var1.a > 10"
+                "#var1.a > 10",
+                None
               ),
               _
             )
@@ -1129,7 +1152,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Unresolved reference 'var3'",
                 "id3",
                 Some(DefaultExpressionId),
-                "#var3"
+                "#var3",
+                None
               ),
               _
             )
@@ -1146,7 +1170,13 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError("Unresolved reference 'notExist'", "switch", Some("end1"), "#notExist"),
+              ExpressionParserCompilationError(
+                "Unresolved reference 'notExist'",
+                "switch",
+                Some("end1"),
+                "#notExist",
+                None
+              ),
               _
             )
           ) =>
@@ -1325,7 +1355,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Unresolved reference 'input'",
                 "custom",
                 Some("par1"),
-                "#input.toString()"
+                "#input.toString()",
+                None
               ),
               _
             )
@@ -1392,7 +1423,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       process,
       baseDefinition.copy(expressionConfig = baseDefinition.expressionConfig.copy(hideMetaVariable = true))
     ).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'meta'", _, _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'meta'", _, _, _, _), _)) =>
     }
   }
 
@@ -1509,7 +1540,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                 "Mismatch parameter types. Found: identity(Future[String]). Required: identity(String)",
                 _,
                 _,
-                _
+                _,
+                None
               ),
               Nil
             )
@@ -1571,7 +1603,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithValidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError("Unresolved reference 'input'", "customNodeId", Some("param"), _),
+              ExpressionParserCompilationError("Unresolved reference 'input'", "customNodeId", Some("param"), _, None),
               _
             )
           ) =>

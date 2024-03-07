@@ -15,8 +15,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
-import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
@@ -90,10 +89,10 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
           MetaDataInitializer(StreamMetaData.typeName),
           Map.empty,
           List.empty,
+          DeploymentManagerType(deploymentManagerProvider.name),
           engineSetupName
         ),
-        processingTypeConfig.category,
-        ProcessingTypeUsageStatistics(None, None),
+        processingTypeConfig.category
       )
     }
 

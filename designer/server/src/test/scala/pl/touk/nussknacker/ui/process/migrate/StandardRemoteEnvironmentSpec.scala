@@ -113,6 +113,92 @@ class StandardRemoteEnvironmentSpec
 
   }
 
+  it should "migrate valid existing scenario" in {
+    var migrated: Option[Future[UpdateScenarioCommand]] = None
+    val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
+      ProcessTestData.validScenarioDetailsForMigrations,
+      ProcessTestData.validScenarioDetailsForMigrations.processCategory,
+      sampleProcessName :: Nil,
+      migrationFuture => migrated = Some(migrationFuture)
+    )
+
+    whenReady(
+      remoteEnvironment.migrate(
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.validScenarioDetailsForMigrations.name,
+        ProcessTestData.sampleScenarioParameters,
+        ProcessTestData.validScenarioDetailsForMigrations.isFragment
+      )
+    ) { result =>
+      result shouldBe Symbol("right")
+    }
+
+    migrated shouldBe Symbol("defined")
+    remoteEnvironment.triedToAddProcess shouldBe false
+    remoteEnvironment.addedFragment shouldBe None
+
+    whenReady(migrated.get) { processToSave =>
+      processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
+      processToSave.scenarioGraph shouldBe ProcessTestData.validScenarioGraph
+    }
+  }
+
+  it should "migrate valid non-existing scenario" in {
+    var migrated: Option[Future[UpdateScenarioCommand]] = None
+    val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
+      ProcessTestData.validScenarioDetailsForMigrations,
+      ProcessTestData.validScenarioDetailsForMigrations.processCategory,
+      Nil,
+      migrationFuture => migrated = Some(migrationFuture)
+    )
+
+    whenReady(
+      remoteEnvironment.migrate(
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.validScenarioDetailsForMigrations.name,
+        ProcessTestData.sampleScenarioParameters,
+        ProcessTestData.validScenarioDetailsForMigrations.isFragment
+      )
+    ) { result =>
+      result shouldBe Symbol("right")
+    }
+
+    migrated shouldBe Symbol("defined")
+    remoteEnvironment.triedToAddProcess shouldBe true
+    remoteEnvironment.addedFragment shouldBe Some(false)
+
+    whenReady(migrated.get) { processToSave =>
+      processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
+      processToSave.scenarioGraph shouldBe ProcessTestData.validScenarioGraph
+    }
+  }
+
+  it should "migrate fragment" in {
+    var migrated: Option[Future[UpdateScenarioCommand]] = None
+    val fragment                 = CanonicalProcessConverter.toScenarioGraph(ProcessTestData.sampleFragment)
+    val validatedFragmentDetails = TestProcessUtil.wrapWithDetailsForMigration(fragment, sampleFragmentName)
+    val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
+      validatedFragmentDetails,
+      expectedProcessCategory = "Category1",
+      initialRemoteProcessList = Nil,
+      onMigrate = migrationFuture => migrated = Some(migrationFuture)
+    )
+
+    remoteEnvironment
+      .migrate(fragment, sampleFragmentName, ProcessTestData.sampleScenarioParameters, isFragment = true)
+      .futureValue shouldBe Symbol(
+      "right"
+    )
+    migrated shouldBe Symbol("defined")
+    remoteEnvironment.triedToAddProcess shouldBe true
+    remoteEnvironment.addedFragment shouldBe Some(true)
+
+    whenReady(migrated.get) { processToSave =>
+      processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
+      processToSave.scenarioGraph shouldBe fragment
+    }
+  }
+
   it should "test migration" in {
     val remoteEnvironment = environmentForTestMigration(
       processes = ProcessTestData.validScenarioDetailsForMigrations :: Nil,

@@ -4,10 +4,11 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 trait ExpressionParser {
 
-  def languageId: String
+  def languageId: Language
 
   def parse(
       original: String,

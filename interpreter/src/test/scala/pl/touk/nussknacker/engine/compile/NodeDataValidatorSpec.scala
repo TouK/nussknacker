@@ -398,7 +398,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               "Non reference 'unresolvedReference' occurred. Maybe you missed '#' in front of it?",
               "recordVariable",
               Some("$fields-0-$value"),
-              "unresolvedReference"
+              "unresolvedReference",
+              None
             ) ::
             CustomParameterValidationError(
               "The key of a record has to be unique",
@@ -484,7 +485,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) {
       case ValidationPerformed(
-            List(ExpressionParserCompilationError(message, "frInput", Some("param1"), "145")),
+            List(ExpressionParserCompilationError(message, "frInput", Some("param1"), "145", None)),
             None,
             None
           ) =>
@@ -698,13 +699,15 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 "Non reference 'input' occurred. Maybe you missed '#' in front of it?",
                 "switchId",
                 Some("$expression"),
-                "input"
+                "input",
+                None
               ),
               ExpressionParserCompilationError(
                 "Non reference 'notExist' occurred. Maybe you missed '#' in front of it?",
                 "switchId",
                 Some("caseTarget1"),
-                "notExist"
+                "notExist",
+                None
               )
             ),
             None,

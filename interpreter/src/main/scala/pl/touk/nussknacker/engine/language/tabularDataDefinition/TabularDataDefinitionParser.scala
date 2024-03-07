@@ -2,19 +2,28 @@ package pl.touk.nussknacker.engine.language.tabularDataDefinition
 
 import cats.data.ValidatedNel
 import cats.implicits._
-import io.circe.DecodingFailure
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
+  ErrorDetails,
+  TabularDataDefinitionParserErrorDetails
+}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{
+  CellsCountInRowDifferentThanColumnsCount,
+  ColumnNameUniquenessViolation,
+  InvalidCellValues
+}
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Error
 
 object TabularDataDefinitionParser extends ExpressionParser {
 
-  override final val languageId: String = Language.TabularDataDefinition
+  override final val languageId: Language = Language.TabularDataDefinition
 
   override def parse(
       original: String,
@@ -53,17 +62,43 @@ object TabularDataDefinitionParser extends ExpressionParser {
 
   private def createTabularDataDefinitionExpression(tabularTypedData: TabularTypedData, anOriginal: String) = {
     new CompiledExpression {
-      override val language: String                                        = languageId
+      override val language: Language                                      = languageId
       override val original: String                                        = anOriginal
       override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = tabularTypedData.asInstanceOf[T]
     }
   }
 
-  private def toExpressionParseError(error: Throwable) = {
+  private def toExpressionParseError(error: TabularTypedData.Error) = {
     new ExpressionParseError {
+
       override val message: String = error match {
-        case DecodingFailure((message, _)) => message
-        case other                         => other.getMessage
+        case Error.JsonParsingError(message) =>
+          message
+        case Error.ValidationError(ColumnNameUniquenessViolation(columnNames)) =>
+          s"Column names should be unique. Duplicates: ${columnNames.distinct.toList.mkString(",")}"
+        case Error.ValidationError(CellsCountInRowDifferentThanColumnsCount) =>
+          "All rows should have the same number of cells as there are columns"
+        case Error.ValidationError(InvalidCellValues(_)) =>
+          "Typing error in some cells"
+      }
+
+      override val details: Option[ErrorDetails] = error match {
+        case Error.JsonParsingError(_)                                       => None
+        case Error.ValidationError(ColumnNameUniquenessViolation(_))         => None
+        case Error.ValidationError(CellsCountInRowDifferentThanColumnsCount) => None
+        case Error.ValidationError(InvalidCellValues(invalidCells)) =>
+          Some(
+            TabularDataDefinitionParserErrorDetails(
+              invalidCells.toList.map { coordinates =>
+                TabularDataDefinitionParserErrorDetails.CellError(
+                  columnName = coordinates.columnName.name,
+                  rowIndex = coordinates.rowIndex,
+                  errorMessage =
+                    s"Column has '${coordinates.columnName.aType.getSimpleName}' type but its value cannot be converted to the type."
+                )
+              }
+            )
+          )
       }
     }
   }
