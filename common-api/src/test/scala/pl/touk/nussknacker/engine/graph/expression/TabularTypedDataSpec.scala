@@ -1,9 +1,16 @@
 package pl.touk.nussknacker.engine.graph.expression
 
+import cats.data.NonEmptyList
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Cell.RawValue
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Column
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.InvalidCellValues.CellCoordinates
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{
+  CellsCountInRowDifferentThanColumnsCount,
+  ColumnNameUniquenessViolation,
+  InvalidCellValues
+}
 
 class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
 
@@ -21,7 +28,7 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
           Vector(RawValue(null), RawValue(null), RawValue("3")),
         )
       )
-      result should be(Left("Column names should be unique. Duplicates: A"))
+      result should be(Left(ColumnNameUniquenessViolation(NonEmptyList.of("A"))))
     }
     "unsupported column's type is used" in {
       val result = TabularTypedData.create(
@@ -36,7 +43,17 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
           Vector(RawValue(null), RawValue(null), RawValue("3")),
         )
       )
-      result should be(Left("Column has a 'java.lang.Object' type but the value '1' cannot be converted to it."))
+      result should be(
+        Left(
+          InvalidCellValues(
+            NonEmptyList.of(
+              CellCoordinates(Column.Definition("C", classOf[java.lang.Object]), rowIndex = 0),
+              CellCoordinates(Column.Definition("C", classOf[java.lang.Object]), rowIndex = 1),
+              CellCoordinates(Column.Definition("C", classOf[java.lang.Object]), rowIndex = 2)
+            )
+          )
+        )
+      )
     }
     "there are more cells in some rows than the columns number" in {
       val result = TabularTypedData.create(
@@ -51,7 +68,7 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
           Vector(RawValue(null), RawValue(null), RawValue("3")),
         )
       )
-      result should be(Left("All rows should have the same number of cells as there are columns"))
+      result should be(Left(CellsCountInRowDifferentThanColumnsCount))
     }
     "there are less cells in some rows than the columns number" in {
       val result = TabularTypedData.create(
@@ -66,7 +83,7 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
           Vector(RawValue(null), RawValue(null)),
         )
       )
-      result should be(Left("All rows should have the same number of cells as there are columns"))
+      result should be(Left(CellsCountInRowDifferentThanColumnsCount))
     }
     "cannot convert some cell values to declared column's type when" - {
       "the type is java.time.LocalDate" in {
@@ -82,7 +99,15 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
             Vector(RawValue(null), RawValue(null), RawValue("3")),
           )
         )
-        result should be(Left("Column has a 'java.time.LocalDate' type but the value '1.0' cannot be converted to it."))
+        result should be(
+          Left(
+            InvalidCellValues(
+              NonEmptyList.of(
+                CellCoordinates(Column.Definition("A", classOf[java.time.LocalDate]), rowIndex = 1)
+              )
+            )
+          )
+        )
       }
       "the type is java.lang.Boolean" in {
         val result = TabularTypedData.create(
@@ -97,7 +122,15 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
             Vector(RawValue("fałsz"), RawValue(null), RawValue("3")),
           )
         )
-        result should be(Left("Column has a 'java.lang.Boolean' type but the value 'fałsz' cannot be converted to it."))
+        result should be(
+          Left(
+            InvalidCellValues(
+              NonEmptyList.of(
+                CellCoordinates(Column.Definition("A", classOf[java.lang.Boolean]), rowIndex = 2)
+              )
+            )
+          )
+        )
       }
     }
   }

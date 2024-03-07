@@ -8,6 +8,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 import scala.jdk.CollectionConverters._
 
@@ -45,7 +46,7 @@ class ValidationExpressionParameterValidatorTest extends AnyFunSuite with TableD
 
 private class TestSpelExpression(expression: String) extends CompiledExpression {
 
-  override def language: String = "spel"
+  override val language: Language = Language.Spel
 
   override def original: String = expression
 

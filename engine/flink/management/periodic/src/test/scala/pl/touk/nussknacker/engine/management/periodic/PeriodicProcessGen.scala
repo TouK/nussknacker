@@ -10,12 +10,12 @@ import java.time.LocalDateTime
 
 object PeriodicProcessGen {
 
-  def apply(): PeriodicProcess = {
+  def apply(): PeriodicProcess[CanonicalProcess] = {
     PeriodicProcess(
       id = PeriodicProcessId(42),
       deploymentData = DeploymentWithJarData(
         processVersion = ProcessVersion.empty,
-        canonicalProcess = buildCanonicalProcess(),
+        process = buildCanonicalProcess(),
         inputConfigDuringExecutionJson = "{}",
         jarFileName = "jar-file-name.jar"
       ),

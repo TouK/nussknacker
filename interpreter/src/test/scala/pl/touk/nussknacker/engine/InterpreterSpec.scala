@@ -364,7 +364,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .streaming("test")
       .source("startVB", "transaction-source")
       .buildVariable("buildVar", "fooVar", "accountId" -> "#input.accountId")
-      .buildSimpleVariable("result-end", resultVariable, "#fooVar.accountId": Expression)
+      .buildSimpleVariable("result-end", resultVariable, "#fooVar.accountId")
       .emptySink("end-end", "dummySink")
 
     interpretProcess(process, Transaction(accountId = "123")) should equal("123")

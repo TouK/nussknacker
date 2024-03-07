@@ -641,7 +641,7 @@ class HttpService {
     }
 
     testScenarioWithGeneratedData(
-        processName,
+        processName: ProcessName,
         testSampleSize: string,
         scenarioGraph: ScenarioGraph,
     ): Promise<AxiosResponse<TestProcessResponse>> {
@@ -655,7 +655,7 @@ class HttpService {
         return promise;
     }
 
-    compareProcesses(processName, thisVersion, otherVersion, remoteEnv) {
+    compareProcesses(processName: ProcessName, thisVersion, otherVersion, remoteEnv) {
         const path = remoteEnv ? "remoteEnvironment" : "processes";
 
         const promise = api.get(`/${path}/${encodeURIComponent(processName)}/${thisVersion}/compare/${otherVersion}`);
