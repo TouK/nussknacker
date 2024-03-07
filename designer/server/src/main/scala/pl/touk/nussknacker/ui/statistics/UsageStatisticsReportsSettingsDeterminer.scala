@@ -1,54 +1,100 @@
 package pl.touk.nussknacker.ui.statistics
 
-import io.circe.generic.JsonCodec
+import cats.implicits.toFoldableOps
 import org.apache.commons.io.FileUtils
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
+import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
+import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
+import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer._
 
 import java.io.File
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import scala.collection.immutable.ListMap
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Random, Try}
 
 object UsageStatisticsReportsSettingsDeterminer {
 
   private val nuFingerprintFileName = "nussknacker.fingerprint"
 
-  private val knownDeploymentManagerTypes = Set("flinkStreaming", "lite-k8s", "lite-embedded")
+  private val flinkDeploymentManagerType = DeploymentManagerType("flinkStreaming")
 
-  private val streamingProcessingMode = "streaming"
+  private val liteK8sDeploymentManagerType = DeploymentManagerType("lite-k8s")
 
-  private val knownProcessingModes = Set(streamingProcessingMode, "request-response")
+  private val liteEmbeddedDeploymentManagerType = DeploymentManagerType("lite-embedded")
 
-  // We aggregate custom deployment managers and processing modes as a "custom" to avoid leaking of internal, confidential data
-  private val aggregateForCustomValues = "custom"
-
-  def apply(
-      config: UsageStatisticsReportsConfig,
-      processingTypeStatistics: ProcessingTypeDataProvider[ProcessingTypeUsageStatistics, _]
-  ): UsageStatisticsReportsSettingsDeterminer = {
-    UsageStatisticsReportsSettingsDeterminer(config, processingTypeStatistics.all(_))
-  }
+  private val knownDeploymentManagerTypes =
+    Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
 
   def apply(
       config: UsageStatisticsReportsConfig,
-      processingTypeStatistics: LoggedUser => Map[ProcessingType, ProcessingTypeUsageStatistics]
-  ): UsageStatisticsReportsSettingsDeterminer = {
+      processService: ProcessService,
+      // TODO: Instead of passing deploymentManagerTypes next to processService, we should split domain ScenarioWithDetails from DTOs - see comment in ScenarioWithDetails
+      deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _]
+  )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsDeterminer = {
     val fingerprintFile = new File(
       Try(Option(System.getProperty("java.io.tmpdir"))).toOption.flatten.getOrElse("/tmp"),
       nuFingerprintFileName
     )
-    new UsageStatisticsReportsSettingsDeterminer(config, processingTypeStatistics, fingerprintFile)
+    def fetchNonArchivedScenarioParameters(): Future[List[ScenarioStatisticsInputData]] = {
+      // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
+      //       given user has no access rights.
+      val user                                  = NussknackerInternalUser.instance
+      val deploymentManagerTypeByProcessingType = deploymentManagerTypes.all(user)
+      processService
+        .getLatestProcessesWithDetails(
+          ScenarioQuery.unarchived,
+          GetScenarioWithDetailsOptions.detailsOnly.withFetchState
+        )(user)
+        .map { scenariosDetails =>
+          scenariosDetails.map(scenario =>
+            ScenarioStatisticsInputData(
+              scenario.isFragment,
+              scenario.processingMode,
+              deploymentManagerTypeByProcessingType(scenario.processingType),
+              scenario.state.map(_.status)
+            )
+          )
+        }
+    }
+    new UsageStatisticsReportsSettingsDeterminer(config, fingerprintFile, fetchNonArchivedScenarioParameters)
   }
 
-  private[statistics] def prepareUrl(queryParams: ListMap[String, String]) = {
+  // We have four dimensions:
+  // - scenario / fragment
+  // - processing mode: streaming, r-r, batch
+  // - dm type: flink, k8s, embedded, custom
+  // - status: active (running), other
+  // We have two options:
+  // 1. To aggregate statistics for every combination - it give us 3*4*2 + 3*4 = 36 parameters
+  // 2. To aggregate statistics for every dimension separately - it gives us 2+3+4+1 = 10 parameters
+  // We decided to pick the 2nd option which gives a reasonable balance between amount of collected data and insights
+  private[statistics] def determineStatisticsForScenario(inputData: ScenarioStatisticsInputData): Map[String, Int] = {
+    Map(
+      "s_s"     -> !inputData.isFragment,
+      "s_f"     -> inputData.isFragment,
+      "s_pm_s"  -> (inputData.processingMode == ProcessingMode.UnboundedStream),
+      "s_pm_b"  -> (inputData.processingMode == ProcessingMode.BoundedStream),
+      "s_pm_rr" -> (inputData.processingMode == ProcessingMode.RequestResponse),
+      "s_dm_f"  -> (inputData.deploymentManagerType == flinkDeploymentManagerType),
+      "s_dm_l"  -> (inputData.deploymentManagerType == liteK8sDeploymentManagerType),
+      "s_dm_e"  -> (inputData.deploymentManagerType == liteEmbeddedDeploymentManagerType),
+      "s_dm_c"  -> !knownDeploymentManagerTypes.contains(inputData.deploymentManagerType),
+      "s_a"     -> inputData.status.contains(SimpleStateStatus.Running),
+    ).mapValuesNow(if (_) 1 else 0)
+  }
+
+  private[statistics] def prepareUrl(queryParams: Map[String, String]) = {
+    // Sorting for purpose of easier testing
     queryParams.toList
+      .sortBy(_._1)
       .map { case (k, v) =>
         s"${URLEncoder.encode(k, StandardCharsets.UTF_8)}=${URLEncoder.encode(v, StandardCharsets.UTF_8)}"
       }
@@ -59,60 +105,37 @@ object UsageStatisticsReportsSettingsDeterminer {
 
 class UsageStatisticsReportsSettingsDeterminer(
     config: UsageStatisticsReportsConfig,
-    processingTypeStatistics: LoggedUser => Map[ProcessingType, ProcessingTypeUsageStatistics],
-    fingerprintFile: File
-) {
+    fingerprintFile: File,
+    fetchNonArchivedScenariosInputData: () => Future[List[ScenarioStatisticsInputData]]
+)(implicit ec: ExecutionContext) {
 
-  def determineSettings(): UsageStatisticsReportsSettings = {
-    val queryParams = determineQueryParams()
-    val url         = prepareUrl(queryParams)
-    UsageStatisticsReportsSettings(config.enabled, url)
+  def determineStatisticsUrl(): Future[Option[String]] = {
+    if (config.enabled) {
+      determineQueryParams()
+        .map { queryParams =>
+          val url = prepareUrl(queryParams)
+          Some(url)
+        }
+    } else {
+      Future.successful(None)
+    }
   }
 
-  private[statistics] def determineQueryParams(): ListMap[String, String] = {
-    // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
-    //       given user has no access rights.
-    val user = NussknackerInternalUser.instance
-    val deploymentManagerTypes = processingTypeStatistics(user).values.map(_.deploymentManagerType).map {
-      case Some(dm) if knownDeploymentManagerTypes.contains(dm) => dm
-      case _                                                    => aggregateForCustomValues
-    }
-    val dmParams = prepareValuesParams(deploymentManagerTypes, "dm")
+  private[statistics] def determineQueryParams(): Future[Map[String, String]] = {
+    fetchNonArchivedScenariosInputData()
+      .map { scenariosInputData =>
+        val scenariosStatistics =
+          scenariosInputData.map(determineStatisticsForScenario).combineAll.mapValuesNow(_.toString)
 
-    val processingModes = processingTypeStatistics(user).values.map {
-      case ProcessingTypeUsageStatistics(_, Some(mode)) if knownProcessingModes.contains(mode) => mode
-      case ProcessingTypeUsageStatistics(Some(deploymentManagerType), None)
-          if deploymentManagerType.toLowerCase.contains(streamingProcessingMode) =>
-        streamingProcessingMode
-      case _ => aggregateForCustomValues
-    }
-    val mParams = prepareValuesParams(processingModes, "m")
-
-    ListMap(
-      // We filter out blank fingerprint and source because when smb uses docker-compose, and forwards env variables eg. USAGE_REPORTS_FINGERPRINT
-      // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
-      "fingerprint" -> config.fingerprint.filterNot(_.isBlank).getOrElse(fingerprint),
-      // If it is not set, we assume that it is some custom build from source code
-      "source"  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
-      "version" -> BuildInfo.version
-    ) ++ dmParams ++ mParams
-  }
-
-  private def prepareValuesParams(values: Iterable[ProcessingType], metricCategoryKeyPart: String) = {
-    val countsParams = values
-      .groupBy(identity)
-      .mapValuesNow(_.size)
-      .map { case (value, count) =>
-        s"${metricCategoryKeyPart}_$value" -> count.toString
+        Map(
+          // We filter out blank fingerprint and source because when smb uses docker-compose, and forwards env variables eg. USAGE_REPORTS_FINGERPRINT
+          // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
+          "fingerprint" -> config.fingerprint.filterNot(_.isBlank).getOrElse(fingerprint),
+          // If it is not set, we assume that it is some custom build from source code
+          "source"  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
+          "version" -> BuildInfo.version
+        ) ++ scenariosStatistics
       }
-      .toList
-      .sortBy(_._1)
-    val singleParamValue = values.toSet.toList match {
-      case Nil           => "zero"
-      case single :: Nil => single
-      case _             => "multiple"
-    }
-    ListMap(countsParams: _*) + (s"single_$metricCategoryKeyPart" -> singleParamValue)
   }
 
   private lazy val fingerprint: String = persistedFingerprint {
@@ -131,4 +154,10 @@ class UsageStatisticsReportsSettingsDeterminer(
 
 }
 
-@JsonCodec final case class UsageStatisticsReportsSettings(enabled: Boolean, url: String)
+private[statistics] case class ScenarioStatisticsInputData(
+    isFragment: Boolean,
+    processingMode: ProcessingMode,
+    deploymentManagerType: DeploymentManagerType,
+    // For fragments status is empty
+    status: Option[StateStatus]
+)

@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
-import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 import scala.util.control.NonFatal
 
@@ -17,7 +16,6 @@ final case class ProcessingTypeData private (
     designerModelData: DesignerModelData,
     deploymentData: DeploymentData,
     category: String,
-    usageStatistics: ProcessingTypeUsageStatistics,
 ) {
 
   // TODO: We should allow to have >1 processing mode configured inside one model and return a List here
@@ -71,8 +69,7 @@ object ProcessingTypeData {
         processingType,
         designerModelData,
         deploymentData,
-        category,
-        ProcessingTypeUsageStatistics(deploymentConfig),
+        category
       )
     } catch {
       case NonFatal(ex) =>
@@ -109,6 +106,7 @@ object ProcessingTypeData {
       metaDataInitializer,
       scenarioProperties,
       deploymentManagerProvider.additionalValidators(deploymentConfig),
+      DeploymentManagerType(deploymentManagerProvider.name),
       engineSetupName
     )
   }

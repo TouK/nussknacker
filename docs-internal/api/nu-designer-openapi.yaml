@@ -1281,6 +1281,20 @@ components:
         column:
           type: integer
           format: int32
+    CellError:
+      required:
+      - columnName
+      - rowIndex
+      - errorMessage
+      type: object
+      properties:
+        columnName:
+          type: string
+        rowIndex:
+          type: integer
+          format: int32
+        errorMessage:
+          type: string
     Comment:
       required:
       - id
@@ -1527,6 +1541,9 @@ components:
           type: string
         additionalFields:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+    ErrorDetails:
+      oneOf:
+      - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
     Expression:
       required:
       - language
@@ -1915,6 +1932,8 @@ components:
           - 'null'
         errorType:
           $ref: '#/components/schemas/NodeValidationErrorType'
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
     NodeValidationErrorType:
       type: string
       enum:
@@ -2360,6 +2379,13 @@ components:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SwitchDefault:
       type: object
+    TabularDataDefinitionParserErrorDetails:
+      type: object
+      properties:
+        cellErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/CellError'
     TabularTypedDataEditor:
       type: object
     TextareaParameterEditor:

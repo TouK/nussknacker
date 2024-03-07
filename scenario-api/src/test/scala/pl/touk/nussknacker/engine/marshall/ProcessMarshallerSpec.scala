@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, F
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 
@@ -228,7 +229,7 @@ class ProcessMarshallerSpec
     }
     val source = FlatNode(Source("s1", SourceRef("a", List())))
 
-    checkOneInvalid("filter", source, canonicalnode.FilterNode(Filter("filter", Expression("", "")), List()))
+    checkOneInvalid("filter", source, canonicalnode.FilterNode(Filter("filter", Expression(Language.Spel, "")), List()))
     checkOneInvalid("split", source, canonicalnode.SplitNode(Split("split"), List.empty))
     checkOneInvalid("switch", source, canonicalnode.SwitchNode(Switch("switch"), List.empty, List.empty))
   }

@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{
   MalformedTypingResult,
@@ -292,9 +293,14 @@ object NodesApiEndpoints {
     )
 
     private object UIParameterDto {
-      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]    = Schema.derived
-      implicit lazy val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
-      implicit lazy val expressionSchema: Schema[Expression]              = Schema.derived
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor] = Schema.derived
+      implicit lazy val dualEditorSchema: Schema[DualEditorMode]       = Schema.string
+
+      implicit lazy val expressionSchema: Schema[Expression] = {
+        implicit val languageSchema: Schema[Language] = Schema.string[Language]
+        Schema.derived
+      }
+
       implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
 
       def apply(param: UIParameter): UIParameterDto = new UIParameterDto(
@@ -341,7 +347,11 @@ object NodesApiEndpoints {
         expression: Expression
     )
 
-    implicit lazy val expressionSchema: Schema[Expression]           = Schema.derived
+    implicit lazy val expressionSchema: Schema[Expression] = {
+      implicit val languageSchema: Schema[Language] = Schema.string[Language]
+      Schema.derived
+    }
+
     implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 
     // Request doesn't need valid encoder
