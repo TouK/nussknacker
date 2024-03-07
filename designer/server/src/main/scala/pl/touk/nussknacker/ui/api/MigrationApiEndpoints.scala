@@ -110,6 +110,10 @@ object MigrationApiEndpoints {
 
   object Dtos {
 
+    import pl.touk.nussknacker.ui.api.TapirCodecs.ProcessingModeCodec._
+    import pl.touk.nussknacker.ui.api.TapirCodecs.EngineSetupNameCodec._
+    import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioWithDetailsForMigrationsCodec._
+
     def deserializationException =
       (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
 
