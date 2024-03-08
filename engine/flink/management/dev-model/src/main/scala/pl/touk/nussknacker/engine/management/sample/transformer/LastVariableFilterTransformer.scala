@@ -34,15 +34,15 @@ object LastVariableFilterTransformer
     with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
 
   private val valueParameterName = ParameterName("value")
-  private val valueParameter     = ParameterWithExtractor.lazyMandatory[AnyRef](valueParameterName)
+  private val valueParameter     = ParameterCreatorWithExtractor.lazyMandatory[AnyRef](valueParameterName)
 
   private val groupByParameterName = ParameterName("groupBy")
-  private val groupByParameter     = ParameterWithExtractor.lazyMandatory[String](groupByParameterName)
+  private val groupByParameter     = ParameterCreatorWithExtractor.lazyMandatory[String](groupByParameterName)
 
   private val conditionParameterName = ParameterName("condition")
 
   private def conditionParameter(valueType: TypingResult) = {
-    ParameterWithExtractor.lazyMandatory[java.lang.Boolean](
+    ParameterCreatorWithExtractor.lazyMandatory[java.lang.Boolean](
       conditionParameterName,
       _.copy(additionalVariables =
         Map(
@@ -58,12 +58,13 @@ object LastVariableFilterTransformer
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(groupByParameter.parameter :: valueParameter.parameter :: Nil)
+    case TransformationStep(Nil, _) =>
+      NextParameters(groupByParameter.createParameter :: valueParameter.createParameter :: Nil)
     case TransformationStep((_, _) :: (`valueParameterName`, DefinedLazyParameter(expr)) :: Nil, _) =>
-      NextParameters(conditionParameter(expr).parameter :: Nil)
+      NextParameters(conditionParameter(expr).createParameter :: Nil)
     // if we cannot determine value, we'll assume it's type is Unknown
     case TransformationStep((_, _) :: (`valueParameterName`, FailedToDefineParameter) :: Nil, _) =>
-      NextParameters(conditionParameter(Unknown).parameter :: Nil)
+      NextParameters(conditionParameter(Unknown).createParameter :: Nil)
     case TransformationStep((_, _) :: (`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil, _) =>
       FinalResults(context)
   }

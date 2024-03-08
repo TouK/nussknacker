@@ -1173,15 +1173,15 @@ object InterpreterSpec {
 
     final val staticParamName: ParameterName = ParameterName("static")
 
-    private val staticParam = ParameterWithExtractor.mandatory[String](staticParamName)
+    private val staticParam = ParameterCreatorWithExtractor.mandatory[String](staticParamName)
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
     ): DynamicEagerService.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        NextParameters(List(staticParam.parameter))
+        NextParameters(List(staticParam.createParameter))
       case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) :: Nil, _) =>
-        NextParameters(dynamicParam(ParameterName(value)).parameter :: Nil)
+        NextParameters(dynamicParam(ParameterName(value)).createParameter :: Nil)
       case TransformationStep(
             (`staticParamName`, DefinedEagerParameter(value: String, _)) ::
             (otherName, DefinedLazyParameter(expression)) :: Nil,
@@ -1213,7 +1213,7 @@ object InterpreterSpec {
     }
 
     private def dynamicParam(name: ParameterName) =
-      ParameterWithExtractor.lazyMandatory[AnyRef](name)
+      ParameterCreatorWithExtractor.lazyMandatory[AnyRef](name)
 
     override def nodeDependencies: List[NodeDependency] = Nil
 

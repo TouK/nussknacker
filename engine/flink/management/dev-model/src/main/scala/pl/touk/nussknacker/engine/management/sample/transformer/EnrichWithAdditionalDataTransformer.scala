@@ -34,19 +34,19 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
 
   private val roleValues = List("Events", "Additional data")
 
-  private val role = ParameterWithExtractor.branchMandatory[String](
+  private val role = ParameterCreatorWithExtractor.branchMandatory[String](
     name = ParameterName("role"),
     modify = _.copy(
       editor = Some(FixedValuesParameterEditor(roleValues.map(role => FixedExpressionValue(s"'$role'", role))))
     ),
   )
 
-  private val key = ParameterWithExtractor.branchLazyMandatory[String](ParameterName("key"))
+  private val key = ParameterCreatorWithExtractor.branchLazyMandatory[String](ParameterName("key"))
 
   private val additionalDataValueParameterName = ParameterName("additional data value")
 
   private def additionalDataValue(contexts: Map[String, ValidationContext], byBranch: Map[String, String]) =
-    ParameterWithExtractor.lazyMandatory[AnyRef](
+    ParameterCreatorWithExtractor.lazyMandatory[AnyRef](
       name = additionalDataValueParameterName,
       modify = _.copy(additionalVariables =
         right(byBranch)
@@ -65,31 +65,31 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
       implicit nodeId: NodeId
   ): EnrichWithAdditionalDataTransformer.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      NextParameters(List(role.parameter, key.parameter))
+      NextParameters(List(role.createParameter, key.createParameter))
     case TransformationStep(
           (roleParamName, DefinedEagerBranchParameter(byBranch: Map[String, String] @unchecked, _)) ::
           (keyParamName, _) :: Nil,
           _
-        ) if roleParamName == role.parameter.name && keyParamName == key.parameter.name =>
+        ) if roleParamName == role.createParameter.name && keyParamName == key.createParameter.name =>
       val error =
         if (byBranch.values.toList.sorted != roleValues.sorted)
           List(
             CustomNodeError(
               s"Has to be exactly one Event and Additional data, got: ${byBranch.values.mkString(", ")}",
-              Some(role.parameter.name)
+              Some(role.createParameter.name)
             )
           )
         else Nil
-      NextParameters(List(additionalDataValue(contexts, byBranch).parameter), error)
+      NextParameters(List(additionalDataValue(contexts, byBranch).createParameter), error)
     case TransformationStep((roleParamName, FailedToDefineParameter) :: (keyParamName, _) :: Nil, _)
-        if roleParamName == role.parameter.name && keyParamName == key.parameter.name =>
+        if roleParamName == role.createParameter.name && keyParamName == key.createParameter.name =>
       FinalResults(ValidationContext())
     case TransformationStep(
           (roleParamName, DefinedEagerBranchParameter(byBranch: Map[String, String] @unchecked, _)) ::
           (keyParamName, _) ::
           (`additionalDataValueParameterName`, rightValue: DefinedSingleParameter) :: Nil,
           _
-        ) if roleParamName == role.parameter.name && keyParamName == key.parameter.name =>
+        ) if roleParamName == role.createParameter.name && keyParamName == key.createParameter.name =>
       val outName = OutputVariableNameDependency.extract(dependencies)
       val leftCtx = left(byBranch).map(contexts).getOrElse(ValidationContext())
       FinalResults.forValidation(leftCtx)(_.withVariable(OutputVar.customNode(outName), rightValue.returnType))

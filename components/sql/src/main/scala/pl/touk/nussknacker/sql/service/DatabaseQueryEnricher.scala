@@ -31,8 +31,8 @@ object DatabaseQueryEnricher {
 
   final val cacheTTLParamName: ParameterName = ParameterName("Cache TTL")
 
-  val cacheTTL: ParameterWithExtractor[Option[Duration]] =
-    ParameterWithExtractor.optional[Duration](
+  val cacheTTL: ParameterCreatorWithExtractor[Option[Duration]] =
+    ParameterCreatorWithExtractor.optional[Duration](
       name = cacheTTLParamName,
       modify =
         _.copy(editor = Some(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))))
@@ -40,16 +40,16 @@ object DatabaseQueryEnricher {
 
   final val queryParamName: ParameterName = ParameterName("Query")
 
-  val query: ParameterWithExtractor[String] =
-    ParameterWithExtractor.mandatory[String](
+  val query: ParameterCreatorWithExtractor[String] =
+    ParameterCreatorWithExtractor.mandatory[String](
       name = queryParamName,
-      modify = _.copy(editor = Some(SqlParameterEditor))
+      create = _.copy(editor = Some(SqlParameterEditor))
     )
 
   final val resultStrategyParamName: ParameterName = ParameterName("Result strategy")
 
-  val resultStrategy: ParameterWithExtractor[String] = {
-    ParameterWithExtractor.mandatory[String](
+  val resultStrategy: ParameterCreatorWithExtractor[String] = {
+    ParameterCreatorWithExtractor.mandatory[String](
       name = resultStrategyParamName,
       _.copy(editor =
         Some(
@@ -129,7 +129,9 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
-    NextParameters(parameters = resultStrategy.parameter :: query.parameter :: cacheTTL.parameter :: Nil)
+    NextParameters(parameters =
+      resultStrategy.createParameter :: query.createParameter :: cacheTTL.createParameter :: Nil
+    )
   }
 
   protected def queryParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(

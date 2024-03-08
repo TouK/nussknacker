@@ -50,7 +50,7 @@ class SingleSideJoinTransformer(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      NextParameters(List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.parameter))
+      NextParameters(List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.createParameter))
     case TransformationStep(
           (
             `BranchTypeParamName`,
@@ -189,16 +189,16 @@ class SingleSideJoinTransformer(
 case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
 
   val BranchTypeParamName: ParameterName = ParameterName("branchType")
-  val BranchTypeParam: ParameterWithExtractor[Map[String, BranchType]] =
-    ParameterWithExtractor.branchMandatory[BranchType](BranchTypeParamName)
+  val BranchTypeParam: ParameterCreatorWithExtractor[Map[String, BranchType]] =
+    ParameterCreatorWithExtractor.branchMandatory[BranchType](BranchTypeParamName)
 
   val KeyParamName: ParameterName = ParameterName("key")
-  val KeyParam: ParameterWithExtractor[Map[String, LazyParameter[CharSequence]]] =
-    ParameterWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
+  val KeyParam: ParameterCreatorWithExtractor[Map[String, LazyParameter[CharSequence]]] =
+    ParameterCreatorWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
 
   val AggregatorParamName: ParameterName = ParameterName("aggregator")
 
-  val AggregatorParam: ParameterWithExtractor[Aggregator] = ParameterWithExtractor
+  val AggregatorParam: ParameterCreatorWithExtractor[Aggregator] = ParameterCreatorWithExtractor
     .mandatory[Aggregator](
       AggregatorParamName,
       _.copy(
@@ -208,8 +208,8 @@ case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
     )
 
   val WindowLengthParamName: ParameterName = ParameterName("windowLength")
-  val WindowLengthParam: ParameterWithExtractor[Duration] =
-    ParameterWithExtractor.mandatory[Duration](WindowLengthParamName)
+  val WindowLengthParam: ParameterCreatorWithExtractor[Duration] =
+    ParameterCreatorWithExtractor.mandatory[Duration](WindowLengthParamName)
 
   val AggregateByParamName: ParameterName = ParameterName("aggregateBy")
 

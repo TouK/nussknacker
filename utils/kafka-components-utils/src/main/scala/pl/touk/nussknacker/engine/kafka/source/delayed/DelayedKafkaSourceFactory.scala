@@ -14,7 +14,7 @@ object DelayedKafkaSourceFactory {
   private final val delayValidators = List(MinimalNumberValidator(0), MaximalNumberValidator(Long.MaxValue))
 
   final val delayParameter =
-    ParameterWithExtractor.optional[java.lang.Long](
+    ParameterCreatorWithExtractor.optional[java.lang.Long](
       name = ParameterName("delayInMillis"),
       modify = _.copy(validators = delayValidators)
     )
@@ -22,7 +22,7 @@ object DelayedKafkaSourceFactory {
   final val timestampFieldParamName = ParameterName("timestampField")
 
   final val fallbackTimestampFieldParameter =
-    ParameterWithExtractor.optional[String](
+    ParameterCreatorWithExtractor.optional[String](
       name = timestampFieldParamName,
       modify = _.copy(editor =
         Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
@@ -32,7 +32,9 @@ object DelayedKafkaSourceFactory {
   // TODO this is simple way to provide better UX for timestampField usage. But probably instead of taking this further
   // one should try to allow using spel expression here. As it requires some changes in SourceFunction for Kafka, it must wait
   // until sources will be migrated to non-deprecated Source APi.
-  def timestampFieldParameter(kafkaRecordValueType: Option[TypingResult]): ParameterWithExtractor[Option[String]] = {
+  def timestampFieldParameter(
+      kafkaRecordValueType: Option[TypingResult]
+  ): ParameterCreatorWithExtractor[Option[String]] = {
     val editorOpt = kafkaRecordValueType
       .collect { case TypedObjectTypingResult(fields, _, _) => fields.toList }
       .map(_.collect {
@@ -46,7 +48,7 @@ object DelayedKafkaSourceFactory {
       .map(DualParameterEditor(_, DualEditorMode.SIMPLE))
       .orElse(Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW)))
 
-    ParameterWithExtractor.optional[String](
+    ParameterCreatorWithExtractor.optional[String](
       name = timestampFieldParamName,
       modify = _.copy(editor = editorOpt)
     )

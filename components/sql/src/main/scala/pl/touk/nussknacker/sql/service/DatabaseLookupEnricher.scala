@@ -73,7 +73,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
   override protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
-    NextParameters(parameters = tableParam() :: cacheTTL.parameter :: Nil)
+    NextParameters(parameters = tableParam() :: cacheTTL.createParameter :: Nil)
   }
 
   private def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(

@@ -6,7 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterWithExtractor}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterCreatorWithExtractor}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
@@ -63,7 +63,7 @@ object GenericSourceWithCustomVariablesSample
 
   // There is only one parameter in this source
   private val elementsParamName = ParameterName("elements")
-  private val elements          = ParameterWithExtractor.mandatory[java.util.List[String]](elementsParamName)
+  private val elements          = ParameterCreatorWithExtractor.mandatory[java.util.List[String]](elementsParamName)
 
   private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
 
@@ -71,7 +71,7 @@ object GenericSourceWithCustomVariablesSample
       implicit nodeId: NodeId
   ): GenericSourceWithCustomVariablesSample.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      NextParameters(elements.parameter :: Nil)
+      NextParameters(elements.createParameter :: Nil)
     case TransformationStep((`elementsParamName`, _) :: Nil, None) =>
       FinalResults.forValidation(context)(customContextInitializer.validationContext)
   }
