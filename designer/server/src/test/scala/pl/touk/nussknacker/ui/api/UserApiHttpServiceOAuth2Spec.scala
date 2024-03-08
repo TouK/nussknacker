@@ -23,7 +23,6 @@ class UserApiHttpServiceOAuth2Spec
           .when()
           .auth()
           // FIXME correct token
-          // space below is not a mistake - it is temporary check for such a situation
           .oauth2("foo.bar.baz")
           .get(s"$nuDesignerHttpAddress/api/user")
           .Then()
