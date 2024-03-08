@@ -24,7 +24,7 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .summary("Endpoint to validate input in custom action fields")
       .tag("CustomAction")
       .post
-      .in(path[ProcessName]("scenarioName") / "validation")
+      .in("customAction" / path[ProcessName]("scenarioName") / "validation")
       .in(jsonBody[CustomActionRequest])
       .out(
         statusCode(Ok)
