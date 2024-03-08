@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { Variable } from "../../../../common/TestResultUtils";
 import { cx } from "@emotion/css";
 
@@ -28,9 +28,15 @@ const ReadonlyTextarea = forwardRef<HTMLTextAreaElement, { value: string }>(func
 ) {
     const innerRef = useRef<HTMLTextAreaElement>(null);
     useImperativeHandle(outerRef, () => innerRef.current, []);
-    useEffect(() => {
-        innerRef.current.style.height = innerRef.current.scrollHeight + "px";
-    }, []);
-
-    return <textarea ref={innerRef} className="node-input" readOnly value={value} rows={value.split("\n").length} />;
+    const textAreaFullHeight = innerRef?.current?.scrollHeight;
+    return (
+        <textarea
+            ref={innerRef}
+            style={{ height: textAreaFullHeight }}
+            className="node-input"
+            readOnly
+            value={value}
+            rows={value.split("\n").length}
+        />
+    );
 });
