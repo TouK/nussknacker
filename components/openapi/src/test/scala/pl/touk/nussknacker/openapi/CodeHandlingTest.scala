@@ -4,13 +4,14 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ContextId, Params}
+import pl.touk.nussknacker.engine.api.ContextId
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client3.Response
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
-import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
-import pl.touk.nussknacker.engine.api.typed.TypedMap
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -22,10 +23,10 @@ class CodeHandlingTest
     with PatientScalaFutures
     with BaseOpenAPITest {
 
-  private val codeParameter = "code"
+  private val codeParameter = ParameterName("code")
 
   private val backend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case request =>
-    val code = request.uri.params.get(codeParameter).get.toInt
+    val code = request.uri.params.get(codeParameter.value).get.toInt
     Response("{}", StatusCode(code))
   }
 
@@ -37,7 +38,7 @@ class CodeHandlingTest
 
     def runWithCode(code: Int) = {
       implicit val contextId: ContextId = ContextId("1")
-      service.invoke(Params(Map(codeParameter -> code))).futureValue.asInstanceOf[AnyRef]
+      service.invoke(Map(codeParameter -> code)).futureValue.asInstanceOf[AnyRef]
     }
 
     runWithCode(customEmptyCode) shouldBe null

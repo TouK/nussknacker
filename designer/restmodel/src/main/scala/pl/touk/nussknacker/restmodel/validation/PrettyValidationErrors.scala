@@ -3,11 +3,8 @@ package pl.touk.nussknacker.restmodel.validation
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
-  ErrorDetails,
-  TabularDataDefinitionParserErrorDetails
-}
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node._
@@ -27,7 +24,7 @@ object PrettyValidationErrors {
     ): NodeValidationError = NodeValidationError(typ, message, description, fieldName, errorType, details)
 
     def handleParameterValidationError(error: ParameterValidationError): NodeValidationError =
-      node(error.message, error.description, fieldName = Some(error.paramName))
+      node(error.message, error.description, fieldName = Some(error.paramName.value))
 
     error match {
       case ExpressionParserCompilationError(message, _, fieldName, _, details) =>
@@ -41,7 +38,8 @@ object PrettyValidationErrors {
         node(
           "Invalid parameter type.",
           s"Failed to load $refClazzName",
-          fieldName = Some(qualifiedParamFieldName(paramName = fieldName, subFieldName = Some(TypFieldName)))
+          fieldName =
+            Some(qualifiedParamFieldName(paramName = ParameterName(fieldName), subFieldName = Some(TypFieldName)))
         )
       case DuplicatedNodeIds(ids) =>
         node(
@@ -156,12 +154,12 @@ object PrettyValidationErrors {
         node(s"Cannot disable fragment with multiple outputs", "Please check fragment definition")
       case DisablingNoOutputsFragment(_) =>
         node(s"Cannot disable fragment with no outputs", "Please check fragment definition")
-      case MissingRequiredProperty(fieldName, label, _) => missingRequiredProperty(typ, fieldName, label)
-      case UnknownProperty(propertyName, _)             => unknownProperty(typ, propertyName)
-      case InvalidPropertyFixedValue(fieldName, label, value, values, _) =>
-        invalidPropertyFixedValue(typ, fieldName, label, value, values)
+      case MissingRequiredProperty(paramName, label, _) => missingRequiredProperty(typ, paramName.value, label)
+      case UnknownProperty(paramName, _)                => unknownProperty(typ, paramName.value)
+      case InvalidPropertyFixedValue(paramName, label, value, values, _) =>
+        invalidPropertyFixedValue(typ, paramName.value, label, value, values)
       case CustomNodeError(_, message, paramName) =>
-        NodeValidationError(typ, message, message, paramName, NodeValidationErrorType.SaveAllowed, None)
+        NodeValidationError(typ, message, message, paramName.map(_.value), NodeValidationErrorType.SaveAllowed, None)
       case e: DuplicateFragmentOutputNames =>
         node(
           s"Fragment output name '${e.duplicatedVarName}' has to be unique",
@@ -169,13 +167,13 @@ object PrettyValidationErrors {
         )
       case DuplicateFragmentInputParameter(paramName, _) =>
         node(
-          s"Parameter name '$paramName' has to be unique",
+          s"Parameter name '${paramName.value}' has to be unique",
           "Parameter name not unique",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ParameterNameFieldName)))
         )
       case InitialValueNotPresentInPossibleValues(paramName, _) =>
         node(
-          s"The initial value provided for parameter '$paramName' is not present in the parameter's possible values list",
+          s"The initial value provided for parameter '${paramName.value}' is not present in the parameter's possible values list",
           "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InitialValueFieldName)))
         )
@@ -187,7 +185,7 @@ object PrettyValidationErrors {
         )
       case RequireValueFromEmptyFixedList(paramName, _) =>
         node(
-          s"Required parameter '$paramName' cannot be a member of an empty fixed list",
+          s"Required parameter '${paramName.value}' cannot be a member of an empty fixed list",
           "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
         )
@@ -208,31 +206,31 @@ object PrettyValidationErrors {
         node(
           s"Dictionary not declared: $dictId",
           s"Dictionary not declared: $dictId",
-          fieldName = Some(paramName)
+          fieldName = Some(paramName.value)
         )
       case DictEntryWithKeyNotExists(dictId, key, possibleKeys, _, paramName) =>
         node(
           s"Dictionary $dictId doesn't contain entry with key: $key",
           s"Dictionary $dictId possible keys: $possibleKeys",
-          fieldName = Some(paramName)
+          fieldName = Some(paramName.value)
         )
       case DictEntryWithLabelNotExists(dictId, label, possibleLabels, _, paramName) =>
         node(
           s"Dictionary $dictId doesn't contain entry with label: $label",
           s"Dictionary $dictId possible labels: $possibleLabels",
-          fieldName = Some(paramName)
+          fieldName = Some(paramName.value)
         )
       case DictLabelByKeyResolutionFailed(dictId, key, _, paramName) =>
         node(
           s"Failed to resolve label for key: $key in dict: $dictId",
           s"Dict registry doesn't support fetching of label for dictId: $dictId",
-          fieldName = Some(paramName)
+          fieldName = Some(paramName.value)
         )
       case KeyWithLabelExpressionParsingError(keyWithLabel, message, paramName, _) =>
         node(
           s"Error while parsing KeyWithLabel expression: $keyWithLabel",
           message,
-          fieldName = Some(paramName)
+          fieldName = Some(paramName.value)
         )
     }
   }

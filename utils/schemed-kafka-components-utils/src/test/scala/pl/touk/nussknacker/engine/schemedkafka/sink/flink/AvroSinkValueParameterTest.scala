@@ -6,22 +6,15 @@ import org.apache.avro.SchemaBuilder
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  SinkKeyParamName,
-  SinkValidationModeParameterName,
-  SinkValueParamName,
-  TopicParamName
-}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaBasedParameter
-import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedRecordParameter, SingleSchemaBasedParameter}
 
 class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
@@ -70,21 +63,21 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
       result.toParameters,
       Map.empty
     ) shouldBe List(
-      Parameter(name = "a", typ = typing.Typed[String]).copy(
+      Parameter(name = ParameterName("a"), typ = typing.Typed[String]).copy(
         isLazyParameter = true,
         editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
         defaultValue = Some(Expression.spel("''"))
       ),
-      Parameter(name = "b.c", typ = typing.Typed[Long])
+      Parameter(name = ParameterName("b.c"), typ = typing.Typed[Long])
         .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("0"))),
-      Parameter(name = "c", typ = typing.Typed[String]).copy(
+      Parameter(name = ParameterName("c"), typ = typing.Typed[String]).copy(
         isLazyParameter = true,
         defaultValue = Some(Expression.spel("'c-field-default'")),
         editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
       ),
-      Parameter(name = "d", typ = typing.Typed[Long])
+      Parameter(name = ParameterName("d"), typ = typing.Typed[Long])
         .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("42L"))),
-      Parameter(name = "e", typ = typing.Typed[Long])
+      Parameter(name = ParameterName("e"), typ = typing.Typed[Long])
         .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("null")), validators = Nil)
     )
   }
@@ -105,11 +98,11 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
 
   test("typed object with restricted field names") {
     val restrictedNames: Set[ParameterName] =
-      Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
+      Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParamName, TopicParamName)
     val recordSchema = SchemaBuilder
       .record("A")
       .fields()
-      .name(SinkKeyParamName)
+      .name(SinkKeyParamName.value)
       .`type`()
       .stringType()
       .noDefault()

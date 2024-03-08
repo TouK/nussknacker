@@ -7,7 +7,11 @@ import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
+  ParameterValueCompileTimeValidation,
+  ValueInputWithFixedValues
+}
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -364,11 +368,11 @@ object node {
   val ValidationExpressionFieldName = "$validationExpression"
 
   def qualifiedParamFieldName(
-      paramName: String,
+      paramName: ParameterName,
       subFieldName: Option[String]
   ): String = // for example: "$param.P1.$initialValue"
     subFieldName match {
-      case Some(subField) => ParameterFieldNamePrefix + "." + paramName + "." + subField
+      case Some(subField) => ParameterFieldNamePrefix + "." + paramName.value + "." + subField
       case None           => ParameterFieldNamePrefix + "." + paramName
     }
 

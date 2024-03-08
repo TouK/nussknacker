@@ -64,8 +64,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka",
-        TopicParamName         -> s"'$topic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        TopicParamName.value         -> s"'$topic'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
@@ -95,8 +95,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka",
-        TopicParamName         -> s"'$topic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        TopicParamName.value         -> s"'$topic'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#input.city + '-' + #input.street")

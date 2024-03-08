@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.context.{
   ValidationContext
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -201,26 +202,26 @@ class FullOuterJoinTransformer(
 object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) {
   val KeyFieldName = "key"
 
-  val KeyParamName = "key"
+  val KeyParamName: ParameterName = ParameterName("key")
   val KeyParam: ParameterWithExtractor[Map[String, LazyParameter[CharSequence]]] =
     ParameterWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
 
-  val AggregatorParamName = "aggregator"
+  val AggregatorParamName: ParameterName = ParameterName("aggregator")
 
   val AggregatorParam: ParameterWithExtractor[Map[String, Aggregator]] = ParameterWithExtractor
     .branchMandatory[Aggregator](
-      AggregatorParamName,
-      _.copy(
+      name = AggregatorParamName,
+      modify = _.copy(
         editor = Some(AggregateHelper.DUAL_EDITOR),
         additionalVariables = Map("AGG" -> AdditionalVariableWithFixedValue(new AggregateHelper))
       )
     )
 
-  val AggregateByParamName = "aggregateBy"
+  val AggregateByParamName: ParameterName = ParameterName("aggregateBy")
   val AggregateByParam: ParameterWithExtractor[Map[String, LazyParameter[AnyRef]]] =
     ParameterWithExtractor.branchLazyMandatory[AnyRef](AggregateByParamName)
 
-  val WindowLengthParamName = "windowLength"
+  val WindowLengthParamName: ParameterName = ParameterName("windowLength")
   val WindowLengthParam: ParameterWithExtractor[Duration] =
     ParameterWithExtractor.mandatory[Duration](WindowLengthParamName)
 

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{LazyParameter, Params}
 import pl.touk.nussknacker.engine.api.util.NotNothing
 
@@ -12,14 +13,14 @@ import scala.reflect.runtime.universe._
  */
 case class ParameterWithExtractor[V](parameter: Parameter) {
 
-  def extractValue(params: Params): V = params.extractUnsafe[V](parameter.name)
+  def extractValue(params: Params): V = params.extractMandatory[V](parameter.name)
 
 }
 
 object ParameterWithExtractor {
 
   def mandatory[T: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[T] = {
     val param = modify(Parameter[T](name))
@@ -27,7 +28,7 @@ object ParameterWithExtractor {
   }
 
   def lazyMandatory[T <: AnyRef: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[LazyParameter[T]] = {
     val param = modify(Parameter[T](name).copy(isLazyParameter = true))
@@ -35,7 +36,7 @@ object ParameterWithExtractor {
   }
 
   def branchMandatory[T: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Map[String, T]] = {
     val param = modify(Parameter[T](name).copy(branchParam = true))
@@ -43,7 +44,7 @@ object ParameterWithExtractor {
   }
 
   def branchLazyMandatory[T <: AnyRef: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Map[String, LazyParameter[T]]] = {
     val param = modify(Parameter[T](name).copy(branchParam = true, isLazyParameter = true))
@@ -51,7 +52,7 @@ object ParameterWithExtractor {
   }
 
   def optional[T: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[T] = {
     val param = modify(Parameter.optional[T](name))
@@ -59,7 +60,7 @@ object ParameterWithExtractor {
   }
 
   def lazyOptional[T <: AnyRef: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[LazyParameter[T]] = {
     val param = modify(Parameter.optional[T](name).copy(isLazyParameter = true))
@@ -67,7 +68,7 @@ object ParameterWithExtractor {
   }
 
   def branchOptional[T: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[T] = {
     val param = modify(Parameter.optional[T](name).copy(branchParam = true))
@@ -75,7 +76,7 @@ object ParameterWithExtractor {
   }
 
   def branchLazyOptional[T <: AnyRef: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Map[String, LazyParameter[T]]] = {
     val param = modify(Parameter.optional[T](name).copy(branchParam = true, isLazyParameter = true))

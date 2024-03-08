@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Source, TestWithParametersSupport}
 
 class FragmentSourceWithTestWithParametersSupportFactory(
@@ -11,7 +12,7 @@ class FragmentSourceWithTestWithParametersSupportFactory(
     new Source with TestWithParametersSupport[Any] {
       override def testParametersDefinition: List[Parameter] = parameterDefinitions
 
-      override def parametersToTestData(params: Map[String, AnyRef]): Any = params
+      override def parametersToTestData(params: Map[ParameterName, AnyRef]): Any = params
     }
   }
 

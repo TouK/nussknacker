@@ -5,8 +5,9 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.transformation.BaseDefinedParameter
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
-import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.{ParameterName, RecordFieldName}
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.RecordFieldName
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
 import scala.collection.immutable.ListMap
@@ -28,7 +29,7 @@ sealed trait SchemaBasedParameter {
 
 object SchemaBasedParameter {
   type RecordFieldName = String
-  type ParameterName   = String
+  type ParameterName   = pl.touk.nussknacker.engine.api.parameter.ParameterName
 }
 
 case class SingleSchemaBasedParameter(value: Parameter, validator: TypingResultValidator) extends SchemaBasedParameter {

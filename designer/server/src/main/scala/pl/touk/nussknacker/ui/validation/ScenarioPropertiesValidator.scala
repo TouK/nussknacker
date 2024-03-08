@@ -2,17 +2,16 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, UnknownProperty}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.scenarioproperty.ScenarioPropertyValidatorDeterminerChain
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.util.Try
 
@@ -66,7 +65,9 @@ class ScenarioPropertiesValidator(
               .getOrElse(expression)
         }
         // FIXME: is this really Spel or just Literal expression? (currently we only have spel and spel template)
-        validator.isValid(property._1, Expression.spel(expression), Some(value), config.label).toValidatedNel
+        validator
+          .isValid(ParameterName(property._1), Expression.spel(expression), Some(value), config.label)
+          .toValidatedNel
       }
       .sequence
       .map(_ => ())
@@ -111,7 +112,8 @@ private final case class MissingRequiredPropertyValidator(actualPropertyNames: L
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
 
-    if (actualPropertyNames.contains(propertyName)) valid(()) else invalid(MissingRequiredProperty(propertyName, label))
+    if (actualPropertyNames.contains(propertyName)) valid(())
+    else invalid(MissingRequiredProperty(ParameterName(propertyName), label))
   }
 
 }
@@ -120,7 +122,7 @@ private final case class UnknownPropertyValidator(config: Map[String, ScenarioPr
 
   def isValid(propertyName: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
 
-    if (config.get(propertyName).nonEmpty) valid(()) else invalid(UnknownProperty(propertyName))
+    if (config.contains(propertyName)) valid(()) else invalid(UnknownProperty(ParameterName(propertyName)))
   }
 
 }

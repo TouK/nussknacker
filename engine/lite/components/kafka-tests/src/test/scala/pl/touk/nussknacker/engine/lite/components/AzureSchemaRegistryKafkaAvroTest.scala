@@ -153,17 +153,17 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        TopicParamName         -> s"'$inputTopic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        TopicParamName.value         -> s"'$inputTopic'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        TopicParamName         -> s"'$outputTopic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName       -> "",
-        SinkRawEditorParamName -> "true",
-        SinkValueParamName     -> "#input"
+        TopicParamName.value         -> s"'$outputTopic'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        SinkKeyParamName.value       -> "",
+        SinkRawEditorParamName.value -> "true",
+        SinkValueParamName.value     -> "#input"
       )
     (inputTopic, inputSchema, inputSchemaId, outputTopic, outputSchema, outputSchemaId, scenario)
   }
@@ -186,17 +186,17 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        TopicParamName         -> s"'$inputTopic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        TopicParamName.value         -> s"'$inputTopic'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        TopicParamName         -> s"'$outputTopic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName       -> "",
-        SinkRawEditorParamName -> "true",
-        SinkValueParamName     -> "#input"
+        TopicParamName.value         -> s"'$outputTopic'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        SinkKeyParamName.value       -> "",
+        SinkRawEditorParamName.value -> "true",
+        SinkValueParamName.value     -> "#input"
       )
 
     val inputValue          = 123
@@ -243,18 +243,18 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        TopicParamName         -> s"'$inputTopic'",
-        SchemaVersionParamName -> s"'${inputSchemaV2Props.getVersion}'"
+        TopicParamName.value         -> s"'$inputTopic'",
+        SchemaVersionParamName.value -> s"'${inputSchemaV2Props.getVersion}'"
       )
       .filter("filter-b-default", s"#input.b == '$bDefaultValue'")
       .emptySink(
         "sink",
         KafkaUniversalName,
-        TopicParamName         -> s"'$outputTopic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName       -> "",
-        SinkRawEditorParamName -> "true",
-        SinkValueParamName     -> "{a: #input.a, b: #input.b + 'xyz'}"
+        TopicParamName.value         -> s"'$outputTopic'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        SinkKeyParamName.value       -> "",
+        SinkRawEditorParamName.value -> "true",
+        SinkValueParamName.value     -> "{a: #input.a, b: #input.b + 'xyz'}"
       )
 
     val inputValue = new GenericRecordBuilder(inputSchemaV1)

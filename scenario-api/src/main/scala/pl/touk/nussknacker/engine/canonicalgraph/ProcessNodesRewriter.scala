@@ -151,7 +151,7 @@ trait ExpressionRewriter {
   private def rewriteParameters(
       list: List[NodeParameter]
   )(implicit metaData: MetaData, nodeId: NodeId): List[NodeParameter] =
-    list.map(p => p.copy(expression = rewriteExpressionInternal(p.expression, p.name)))
+    list.map(p => p.copy(expression = rewriteExpressionInternal(p.expression, p.name.value)))
 
   private def rewriteDefaultExpressionInternal(e: Expression)(implicit metaData: MetaData, nodeId: NodeId): Expression =
     rewriteExpressionInternal(e, DefaultExpressionId)

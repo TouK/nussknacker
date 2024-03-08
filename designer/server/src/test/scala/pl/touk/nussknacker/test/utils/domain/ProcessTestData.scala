@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ProcessingM
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -81,12 +82,12 @@ object ProcessTestData {
       .withService(existingServiceId)
       .withService(otherExistingServiceId)
       .withService(processorId, None)
-      .withService(otherExistingServiceId2, Parameter[Any]("expression"))
-      .withService(otherExistingServiceId3, Parameter[String]("expression"))
-      .withService(notBlankExistingServiceId, NotBlankParameter("expression", Typed[String]))
+      .withService(otherExistingServiceId2, Parameter[Any](ParameterName("expression")))
+      .withService(otherExistingServiceId3, Parameter[String](ParameterName("expression")))
+      .withService(notBlankExistingServiceId, NotBlankParameter(ParameterName("expression"), Typed[String]))
       .withService(
         otherExistingServiceId4,
-        Parameter[JavaSampleEnum]("expression").copy(
+        Parameter[JavaSampleEnum](ParameterName("expression")).copy(
           editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
           validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a"))))
         )
@@ -98,7 +99,8 @@ object ProcessTestData {
       )
       .withService(
         dictParameterEditorServiceId,
-        Parameter[String]("expression").copy(editor = Some(DictParameterEditor("someDictId")), validators = List.empty)
+        Parameter[String](ParameterName("expression"))
+          .copy(editor = Some(DictParameterEditor("someDictId")), validators = List.empty)
       )
       .withCustom(
         otherExistingStreamTransformer,
@@ -171,7 +173,12 @@ object ProcessTestData {
     def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
       GraphBuilder
         .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'")
-        .emptySink("end" + idSuffix, "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#output")
+        .emptySink(
+          "end" + idSuffix,
+          "kafka-string",
+          TopicParamName.value     -> "'end.topic'",
+          SinkValueParamName.value -> "#output"
+        )
     }
     ScenarioBuilder
       .streaming(ProcessTestData.sampleProcessName.value)
@@ -430,8 +437,8 @@ object ProcessTestData {
       .emptySink(
         "end" + idSuffix,
         "kafka-string",
-        TopicParamName     -> spelTemplate("end.topic"),
-        SinkValueParamName -> spelTemplate("#output")
+        TopicParamName.value     -> spelTemplate("end.topic"),
+        SinkValueParamName.value -> spelTemplate("#output")
       )
   }
 

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.functional
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -168,8 +169,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
             "joinBranchExpression",
             Nil,
             List(
-              BranchParameters("end1", List(NodeParameter("value", "#ala"))),
-              BranchParameters("end2", List(NodeParameter("value", "#ala")))
+              BranchParameters("end1", List(NodeParameter(ParameterName("value"), "#ala"))),
+              BranchParameters("end2", List(NodeParameter(ParameterName("value"), "#ala")))
             ),
             None
           )

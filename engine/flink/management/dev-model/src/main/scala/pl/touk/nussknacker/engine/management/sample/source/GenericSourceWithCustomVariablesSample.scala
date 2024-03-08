@@ -4,14 +4,15 @@ import cats.data.ValidatedNel
 import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, Params}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, Params}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
@@ -61,7 +62,7 @@ object GenericSourceWithCustomVariablesSample
   override type State = Nothing
 
   // There is only one parameter in this source
-  private val elementsParamName = "elements"
+  private val elementsParamName = ParameterName("elements")
 
   private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
 
@@ -79,7 +80,7 @@ object GenericSourceWithCustomVariablesSample
       finalState: Option[State]
   ): Source = {
     import scala.jdk.CollectionConverters._
-    val elements = params.extractUnsafe[java.util.List[String]](`elementsParamName`).asScala.toList
+    val elements = params.extractMandatory[java.util.List[String]](`elementsParamName`).asScala.toList
 
     new CollectionSource[String](elements, None, Typed[String])(TypeInformation.of(classOf[String]))
       with TestDataGenerator

@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingPa
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition.{Parameter, Validator}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -32,7 +33,7 @@ object Validations {
 
   def validateWithCustomValidators(
       parameters: List[(TypedParameter, Parameter)],
-      paramValidatorsMap: Map[String, ValidatedNel[PartSubGraphCompilationError, List[Validator]]]
+      paramValidatorsMap: Map[ParameterName, ValidatedNel[PartSubGraphCompilationError, List[Validator]]]
   )(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] =
@@ -43,14 +44,14 @@ object Validations {
       .sequence
       .map(_ => parameters)
 
-  private def validateRedundancy(definedParamNamesSet: Set[String], usedParamNamesSet: Set[String])(
+  private def validateRedundancy(definedParamNamesSet: Set[ParameterName], usedParamNamesSet: Set[ParameterName])(
       implicit nodeId: NodeId
   ) = {
     val redundantParams = usedParamNamesSet.diff(definedParamNamesSet)
     if (redundantParams.nonEmpty) RedundantParameters(redundantParams).invalidNel[Unit] else valid(())
   }
 
-  private def validateMissingness(definedParamNamesSet: Set[String], usedParamNamesSet: Set[String])(
+  private def validateMissingness(definedParamNamesSet: Set[ParameterName], usedParamNamesSet: Set[ParameterName])(
       implicit nodeId: NodeId
   ) = {
     val notUsedParams = definedParamNamesSet.diff(usedParamNamesSet)

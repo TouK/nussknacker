@@ -14,6 +14,9 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, Params, ValueWithContext}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation,
@@ -33,15 +36,14 @@ object LastVariableFilterTransformer
     extends CustomStreamTransformer
     with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
 
-  private val valueParameterName = "value"
+  private val valueParameterName = ParameterName("value")
 
-  private val conditionParameterName = "condition"
+  private val conditionParameterName = ParameterName("condition")
 
   private val valueParameter = ParameterWithExtractor.lazyMandatory[AnyRef](valueParameterName)
 
-  private val groupByParameterName = "groupBy"
-
-  private val groupByParameter = ParameterWithExtractor.lazyMandatory[String](groupByParameterName)
+  private val groupByParameterName = ParameterName("groupBy")
+  private val groupByParameter     = ParameterWithExtractor.lazyMandatory[String](groupByParameterName)
 
   private def conditionParameter(valueType: TypingResult) = Parameter(conditionParameterName, Typed[Boolean])
     .copy(
@@ -75,7 +77,7 @@ object LastVariableFilterTransformer
       finalState: Option[State]
   ): FlinkCustomStreamTransformation = {
     val value     = valueParameter.extractValue(params)
-    val condition = params.extractUnsafe[LazyParameter[java.lang.Boolean]](conditionParameterName)
+    val condition = params.extractMandatory[LazyParameter[java.lang.Boolean]](conditionParameterName)
     val groupBy   = groupByParameter.extractValue(params)
 
     FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {

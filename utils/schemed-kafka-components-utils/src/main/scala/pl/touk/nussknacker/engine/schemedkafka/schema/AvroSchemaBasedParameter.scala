@@ -7,11 +7,11 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 import pl.touk.nussknacker.engine.util.parameters.{
   SchemaBasedParameter,
   SchemaBasedRecordParameter,
@@ -35,7 +35,7 @@ object AvroSchemaBasedParameter {
 
   private def toSchemaBasedParameter(
       schema: Schema,
-      paramName: Option[String],
+      paramName: Option[ParameterName],
       defaultValue: Option[Expression],
       restrictedParamNames: Set[ParameterName]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
@@ -57,7 +57,7 @@ object AvroSchemaBasedParameter {
         val listOfValidatedParams = recordFields.map { recordField =>
           val fieldName = recordField.name()
           // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
-          val concatName = paramName.map(pn => s"$pn.$fieldName").getOrElse(fieldName)
+          val concatName = ParameterName(paramName.map(pn => s"${pn.value}.$fieldName").getOrElse(fieldName))
           val sinkValueValidated = getDefaultValue(recordField, paramName).andThen { defaultValue =>
             toSchemaBasedParameter(
               schema = recordField.schema(),
@@ -75,7 +75,7 @@ object AvroSchemaBasedParameter {
     }
   }
 
-  private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[String])(
+  private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[ParameterName])(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, Option[Expression]] =
     new AvroDefaultExpressionDeterminer(handleNotSupported = true)
@@ -84,14 +84,18 @@ object AvroSchemaBasedParameter {
 
   private def containsRestrictedNames(fields: List[Schema.Field], restrictedParamNames: Set[ParameterName]): Boolean = {
     val fieldNames = fields.map(_.name()).toSet
-    fieldNames.nonEmpty & (fieldNames & restrictedParamNames).nonEmpty
+    fieldNames.nonEmpty && (fieldNames intersect restrictedParamNames.map(_.value)).nonEmpty
   }
 
 }
 
 object AvroSinkSingleValueParameter {
 
-  def apply(paramName: Option[String], schema: Schema, defaultValue: Option[Expression]): SingleSchemaBasedParameter = {
+  def apply(
+      paramName: Option[ParameterName],
+      schema: Schema,
+      defaultValue: Option[Expression]
+  ): SingleSchemaBasedParameter = {
     val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     val name   = paramName.getOrElse(SinkValueParamName)
     val parameter = (

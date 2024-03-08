@@ -7,6 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -83,7 +84,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       List(
         FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
         canonicalnode.Fragment(
-          FragmentInput("sub2", FragmentRef("fragment2", List(NodeParameter("param", "#param")))),
+          FragmentInput("sub2", FragmentRef("fragment2", List(NodeParameter(ParameterName("param"), "#param")))),
           Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty))))
         )
       ),
@@ -382,7 +383,10 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
           FragmentNode(
             FragmentInput(
               id,
-              FragmentRef(fragmentId, params.map(NodeParameter.tupled).toList),
+              FragmentRef(
+                fragmentId,
+                params.map { case (name, value) => NodeParameter(ParameterName(name), value) }.toList
+              ),
               isDisabled = Some(true)
             ),
             Map(output -> node)
@@ -398,7 +402,11 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     ): R =
       creator(
         FragmentNode(
-          FragmentInput(id, FragmentRef(fragmentId, params.map(NodeParameter.tupled)), isDisabled = Some(true)),
+          FragmentInput(
+            id,
+            FragmentRef(fragmentId, params.map { case (name, value) => NodeParameter(ParameterName(name), value) }),
+            isDisabled = Some(true)
+          ),
           outputs
         )
       )
@@ -406,7 +414,14 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     def fragmentDisabledEnd(id: String, fragmentId: String, params: (String, Expression)*): R =
       creator(
         FragmentNode(
-          FragmentInput(id, FragmentRef(fragmentId, params.map(NodeParameter.tupled).toList), isDisabled = Some(true)),
+          FragmentInput(
+            id,
+            FragmentRef(
+              fragmentId,
+              params.map { case (name, value) => NodeParameter(ParameterName(name), value) }.toList
+            ),
+            isDisabled = Some(true)
+          ),
           Map()
         )
       )

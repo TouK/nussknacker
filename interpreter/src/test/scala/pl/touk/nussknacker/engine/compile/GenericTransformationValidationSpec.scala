@@ -14,8 +14,9 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 }
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers._
@@ -61,15 +62,15 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     CustomProcessValidatorLoader.emptyCustomProcessValidator
   )
 
-  def validate(process: CanonicalProcess) = validator.validate(process, isFragment = false)
+  private def validate(process: CanonicalProcess) = validator.validate(process, isFragment = false)
 
   private val expectedGenericParameters = List(
-    Parameter[String]("par1")
+    Parameter[String](ParameterName("par1"))
       .copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
-    Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
-    Parameter("val1", Unknown),
-    Parameter("val2", Unknown),
-    Parameter("val3", Unknown)
+    Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0")),
+    Parameter(ParameterName("val1"), Unknown),
+    Parameter(ParameterName("val2"), Unknown),
+    Parameter(ParameterName("val3"), Unknown)
   )
 
   test("should validate happy path") {
@@ -205,16 +206,17 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         "val1"     -> "''"
       )
     )
-    result.result should matchPattern { case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, "val2", "end"), Nil)) =>
+    result.result should matchPattern {
+      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("val2"), "end"), Nil)) =>
     }
 
     val parameters = result.parametersInNodes("end")
     parameters shouldBe List(
-      Parameter[String]("par1")
+      Parameter[String](ParameterName("par1"))
         .copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
-      Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
-      Parameter("val1", Unknown),
-      Parameter("val2", Unknown)
+      Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0")),
+      Parameter(ParameterName("val1"), Unknown),
+      Parameter(ParameterName("val2"), Unknown)
     )
   }
 
@@ -257,7 +259,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         .emptySink("end", "dummySink")
     )
     result.result should matchPattern {
-      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, "val2", "generic"), Nil)) =>
+      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName("val2"), "generic"), Nil)) =>
     }
 
     val info1 = result.typing("end")
@@ -271,11 +273,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
     val parameters = result.parametersInNodes("generic")
     parameters shouldBe List(
-      Parameter[String]("par1")
+      Parameter[String](ParameterName("par1"))
         .copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
-      Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
-      Parameter("val1", Unknown),
-      Parameter("val2", Unknown)
+      Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0")),
+      Parameter(ParameterName("val1"), Unknown),
+      Parameter(ParameterName("val2"), Unknown)
     )
   }
 
@@ -345,7 +347,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     val parameters = result.parametersInNodes("optionalParameters")
     parameters shouldBe List(
       Parameter
-        .optional[CharSequence]("optionalParameter")
+        .optional[CharSequence](ParameterName("optionalParameter"))
         .copy(editor = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(), defaultValue = Some(""))
     )
   }

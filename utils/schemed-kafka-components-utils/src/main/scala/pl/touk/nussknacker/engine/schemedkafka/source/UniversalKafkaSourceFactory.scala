@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
@@ -83,7 +84,7 @@ class UniversalKafkaSourceFactory(
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
-  protected def determineSchemaAndType(schemaDeterminer: ParsedSchemaDeterminer, paramName: Option[String])(
+  protected def determineSchemaAndType(schemaDeterminer: ParsedSchemaDeterminer, paramName: Option[ParameterName])(
       implicit nodeId: NodeId
   ): Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)] = {
     schemaDeterminer.determineSchemaUsedInTyping
@@ -103,7 +104,7 @@ class UniversalKafkaSourceFactory(
       ],
       context: ValidationContext,
       dependencies: List[NodeDependencyValue],
-      parameters: List[(String, DefinedParameter)],
+      parameters: List[(ParameterName, DefinedParameter)],
       errors: List[ProcessCompilationError]
   )(implicit nodeId: NodeId): FinalResults = {
     val keyValidationResult = if (kafkaConfig.useStringForKey) {
@@ -132,7 +133,7 @@ class UniversalKafkaSourceFactory(
   protected def prepareSourceFinalErrors(
       context: ValidationContext,
       dependencies: List[NodeDependencyValue],
-      parameters: List[(String, DefinedParameter)],
+      parameters: List[(ParameterName, DefinedParameter)],
       errors: List[ProcessCompilationError]
   )(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
@@ -142,7 +143,7 @@ class UniversalKafkaSourceFactory(
   // Overwrite this for dynamic type definitions.
   protected def prepareContextInitializer(
       dependencies: List[NodeDependencyValue],
-      parameters: List[(String, DefinedParameter)],
+      parameters: List[(ParameterName, DefinedParameter)],
       keyTypingResult: TypingResult,
       valueTypingResult: TypingResult
   ): ContextInitializer[ConsumerRecord[Any, Any]] =

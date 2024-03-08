@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{
   Context,
   CustomStreamTransformer,
@@ -31,11 +32,11 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
  */
 object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with JoinDynamicComponent[AnyRef] {
 
-  private val roleParameter = "role"
+  private val roleParameter = ParameterName("role")
 
-  private val additionalDataValueParameter = "additional data value"
+  private val additionalDataValueParameter = ParameterName("additional data value")
 
-  private val keyParameter = "key"
+  private val keyParameter = ParameterName("key")
 
   private val roleValues = List("Events", "Additional data")
 
@@ -108,10 +109,10 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): AnyRef = {
-    val role      = params.extractUnsafe[Map[String, String]](roleParameter)
+    val role      = params.extractMandatory[Map[String, String]](roleParameter)
     val leftName  = left(role)
     val rightName = right(role)
-    val key       = params.extractUnsafe[Map[String, LazyParameter[String]]](keyParameter)
+    val key       = params.extractMandatory[Map[String, LazyParameter[String]]](keyParameter)
     new FlinkCustomJoinTransformation {
       override def transform(
           inputs: Map[String, DataStream[Context]],
@@ -125,7 +126,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
           .keyBy((v: ValueWithContext[String]) => v.value, (v: ValueWithContext[String]) => v.value)
           .process(
             new EnrichWithAdditionalDataFunction(
-              params.extractUnsafe(additionalDataValueParameter),
+              params.extractMandatory(additionalDataValueParameter),
               context.lazyParameterHelper
             )
           )

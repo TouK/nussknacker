@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.process
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitTypesToExtract}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -45,7 +46,7 @@ trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
 trait TestWithParametersSupport[+T] { self: Source =>
   // TODO add support for dynamic parameters
   def testParametersDefinition: List[Parameter]
-  def parametersToTestData(params: Map[String, AnyRef]): T
+  def parametersToTestData(params: Map[ParameterName, AnyRef]): T
 }
 
 /**

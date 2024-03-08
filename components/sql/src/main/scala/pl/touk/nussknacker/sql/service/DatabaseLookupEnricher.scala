@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
@@ -17,11 +18,11 @@ import scala.util.control.NonFatal
 
 object DatabaseLookupEnricher {
 
-  final val TableParamName: String = "Table"
+  final val TableParamName: ParameterName = ParameterName("Table")
 
-  final val KeyColumnParamName: String = "Key column"
+  final val KeyColumnParamName: ParameterName = ParameterName("Key column")
 
-  final val KeyValueParamName: String = "Key value"
+  final val KeyValueParamName: ParameterName = ParameterName("Key value")
 
   private def keyColumnParam(tableDef: TableDefinition): Parameter = {
     val columnNameValues = tableDef.columnDefs.map(column => FixedExpressionValue(s"'${column.name}'", column.name))
@@ -65,7 +66,10 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
   override protected val queryArgumentsExtractor: (Int, Params, Context) => QueryArguments =
     (_: Int, params: Params, context: Context) => {
       QueryArguments(
-        QueryArgument(index = 1, value = params.extractOrEvaluateUnsafe(KeyValueParamName, context)) :: Nil
+        QueryArgument(
+          index = 1,
+          value = params.extractMandatoryOrEvaluateLazyParamUnsafe(KeyValueParamName, context)
+        ) :: Nil
       )
     }
 

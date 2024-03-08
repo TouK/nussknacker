@@ -69,7 +69,7 @@ class ScenarioTestService(
     } yield rawTestData
   }
 
-  def performTest[T](
+  def performTest(
       idWithName: ProcessIdWithName,
       scenarioGraph: ScenarioGraph,
       isFragment: Boolean,

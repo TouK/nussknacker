@@ -1,16 +1,21 @@
 package pl.touk.nussknacker.engine.api
 
-final case class Params(nameToValueMap: Map[String, Any]) {
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
-  def extract[T](paramName: String): Option[T] =
-    rawValueExtract(paramName).map(cast[T])
+final case class Params(nameToValueMap: Map[ParameterName, Any]) {
 
-  def extractUnsafe[T](paramName: String): T =
-    extract[T](paramName)
-      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(paramName)))
+  def extract[T](name: ParameterName): Option[T] =
+    rawValueExtract(name) match {
+      case Some(null) | None => None
+      case Some(value)       => Some(cast(value))
+    }
 
-  def extractOrEvaluate[T](paramName: String, context: Context): Option[T] = {
-    rawValueExtract(paramName)
+  def extractMandatory[T](name: ParameterName): T =
+    extract[T](name)
+      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(name)))
+
+  def extractOrEvaluateLazyParam[T](name: ParameterName, context: Context): Option[T] = {
+    rawValueExtract(name)
       .map {
         case lp: LazyParameter[_] => lp.evaluate(context)
         case other                => other
@@ -18,15 +23,15 @@ final case class Params(nameToValueMap: Map[String, Any]) {
       .map(cast[T])
   }
 
-  def extractOrEvaluateUnsafe[T](paramName: String, context: Context): T = {
-    extractOrEvaluate[T](paramName, context)
-      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(paramName)))
+  def extractMandatoryOrEvaluateLazyParamUnsafe[T](name: ParameterName, context: Context): T = {
+    extractOrEvaluateLazyParam[T](name, context)
+      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(name)))
   }
 
-  private def rawValueExtract(paramName: String) = nameToValueMap.get(paramName)
+  private def rawValueExtract(paramName: ParameterName) = nameToValueMap.get(paramName)
 
-  private def cannotFindParamNameMessage(paramName: String) =
-    s"Cannot find param name [$paramName]. Available param names: ${nameToValueMap.keys.mkString(",")}"
+  private def cannotFindParamNameMessage(paramName: ParameterName) =
+    s"Cannot find param name [${paramName.value}]. Available param names: ${nameToValueMap.keys.mkString(",")}"
 
   private def cast[T](value: Any): T = value.asInstanceOf[T]
 

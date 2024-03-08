@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.util.TimestampUtils
 
@@ -12,12 +13,12 @@ object DelayedKafkaSourceFactory {
 
   private final val delayValidators = List(MinimalNumberValidator(0), MaximalNumberValidator(Long.MaxValue))
 
-  final val DelayParameterName = "delayInMillis"
+  final val DelayParameterName = ParameterName("delayInMillis")
 
   final val DelayParameter =
     Parameter.optional(DelayParameterName, Typed[java.lang.Long]).copy(validators = delayValidators)
 
-  final val TimestampFieldParamName = "timestampField"
+  final val TimestampFieldParamName = ParameterName("timestampField")
 
   final val fallbackTimestampFieldParameter = Parameter
     .optional(TimestampFieldParamName, Typed[String])

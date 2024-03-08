@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.openapi.extractor
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.json.swagger.implicits.RichSwaggerTyped
 import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
 import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerObject, SwaggerTyped}
@@ -38,10 +39,10 @@ object ParametersExtractor {
     }
   }
 
-  private def prepareParameter(propertyName: PropertyName, swaggerType: SwaggerTyped, isBodyPart: Boolean) = {
+  private def prepareParameter(propertyName: String, swaggerType: SwaggerTyped, isBodyPart: Boolean) = {
     ParameterWithBodyFlag(
       Parameter(
-        propertyName,
+        ParameterName(propertyName),
         swaggerType.typingResult,
         editor = swaggerType.editorOpt,
         validators = List.empty,
@@ -74,7 +75,7 @@ class ParametersExtractor(swaggerService: SwaggerService, fixedParams: Map[Strin
       case e =>
         List(prepareParameter(e.name, e.`type`, isBodyPart = false))
     }
-    .filterNot(parameter => fixedParams.contains(parameter.parameter.name))
+    .filterNot(parameter => fixedParams.contains(parameter.parameter.name.value))
 
   val parameterDefinition: List[Parameter] = parametersWithFlag.map(_.parameter)
 
@@ -84,14 +85,14 @@ class ParametersExtractor(swaggerService: SwaggerService, fixedParams: Map[Strin
       (
         pwb,
         params.getOrElse(
-          pwb.parameter.name,
+          pwb.parameter.name.value,
           throw new IllegalArgumentException(s"No param ${pwb.parameter.name}, should not happen")
         )
       )
     }
 
     val plainParams = baseMap.collect { case (ParameterWithBodyFlag(p, false), value) =>
-      p.name -> value
+      p.name.value -> value
     }.toMap
 
     val bodyParams = Map(SingleBodyParameter.name -> baseMap.collect { case (ParameterWithBodyFlag(p, true), value) =>

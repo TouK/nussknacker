@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 import scala.jdk.CollectionConverters._
 
@@ -16,12 +17,12 @@ trait JavaDynamicComponent[T, VC, PAR, ST] {
       context: VC,
       dependencies: java.util.List[NodeDependencyValue],
       nodeId: NodeId,
-      parameters: java.util.Map[String, PAR],
+      parameters: java.util.Map[ParameterName, PAR],
       state: Optional[ST]
   ): JavaTransformationStepResult[ST]
 
   def implementation(
-      params: java.util.Map[String, Any],
+      params: java.util.Map[ParameterName, Any],
       dependencies: java.util.List[NodeDependencyValue],
       finalState: java.util.Optional[ST]
   ): T

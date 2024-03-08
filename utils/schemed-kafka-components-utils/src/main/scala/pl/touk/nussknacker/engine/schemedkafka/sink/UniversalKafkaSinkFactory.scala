@@ -58,7 +58,7 @@ class UniversalKafkaSinkFactory(
 
   private val rawValueParam: Parameter = Parameter[AnyRef](SinkValueParamName).copy(isLazyParameter = true)
 
-  private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(editor =
+  private val validationModeParam = Parameter[String](SinkValidationModeParamName).copy(editor =
     Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))
   )
 
@@ -67,7 +67,7 @@ class UniversalKafkaSinkFactory(
     SchemaVersionParamName,
     SinkKeyParamName,
     SinkRawEditorParamName,
-    SinkValidationModeParameterName
+    SinkValidationModeParamName
   )
 
   protected def rawEditorParameterStep(
@@ -86,7 +86,7 @@ class UniversalKafkaSinkFactory(
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
           (SinkKeyParamName, _) ::
           (SinkRawEditorParamName, _) ::
-          (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
+          (SinkValidationModeParamName, DefinedEagerParameter(mode: String, _)) ::
           (SinkValueParamName, value: BaseDefinedParameter) :: Nil,
           _
         ) =>
@@ -127,7 +127,7 @@ class UniversalKafkaSinkFactory(
             SinkRawEditorParamName,
             _
           ) ::
-          (SinkValidationModeParameterName, _) :: (SinkValueParamName, _) :: Nil,
+          (SinkValidationModeParamName, _) :: (SinkValueParamName, _) :: Nil,
           _
         ) =>
       FinalResults(context, Nil)
@@ -206,7 +206,7 @@ class UniversalKafkaSinkFactory(
       finalStateOpt: Option[State]
   ): Sink = {
     val preparedTopic = extractPreparedTopic(params)
-    val key           = params.extractUnsafe[LazyParameter[CharSequence]](SinkKeyParamName)
+    val key           = params.extractMandatory[LazyParameter[CharSequence]](SinkKeyParamName)
     val finalState = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
@@ -221,7 +221,7 @@ class UniversalKafkaSinkFactory(
     )
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = extractValidationMode(
-      params.extract[String](SinkValidationModeParameterName).getOrElse(ValidationMode.strict.name)
+      params.extract[String](SinkValidationModeParamName).getOrElse(ValidationMode.strict.name)
     )
 
     implProvider.createSink(

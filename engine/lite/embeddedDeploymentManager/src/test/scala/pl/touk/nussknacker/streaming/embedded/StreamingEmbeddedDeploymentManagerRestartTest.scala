@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.streaming.embedded
 
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -18,16 +18,16 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka", TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> "'latest'")
+      .source("source", "kafka", TopicParamName.value -> s"'$inputTopic'", SchemaVersionParamName.value -> "'latest'")
       .emptySink(
         "sink",
         "kafka",
-        TopicParamName                  -> s"'$outputTopic'",
-        SchemaVersionParamName          -> "'latest'",
-        "Key"                           -> "null",
-        SinkRawEditorParamName          -> "true",
-        SinkValidationModeParameterName -> "'strict'",
-        SinkValueParamName              -> "#input"
+        TopicParamName.value              -> s"'$outputTopic'",
+        SchemaVersionParamName.value      -> "'latest'",
+        "Key"                             -> "null",
+        SinkRawEditorParamName.value      -> "true",
+        SinkValidationModeParamName.value -> "'strict'",
+        SinkValueParamName.value          -> "#input"
       )
 
     wrapInFailingLoader {
