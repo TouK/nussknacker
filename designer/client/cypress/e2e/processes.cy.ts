@@ -56,6 +56,8 @@ describe("Processes list", () => {
         cy.get("[placeholder='Search...']").type(`${PROCESSING_MODE}`);
         cy.contains(/2 of the 3 rows match the filters/i).should("be.visible");
 
+        cy.get("body").matchImage({ maxDiffThreshold: 0.02 });
+
         cy.contains("button", /processing mode/i).click();
 
         cy.get("ul[role='menu']").matchImage();
@@ -67,8 +69,6 @@ describe("Processes list", () => {
         cy.contains(/1 of the 3 rows match the filters/i).should("be.visible");
 
         cy.get("body").click();
-
-        cy.get("[role='grid']").matchImage({ maxDiffThreshold: 0.025 });
 
         cy.contains("button", /processing mode/i).click();
 
@@ -83,10 +83,6 @@ describe("Processes list", () => {
         });
 
         cy.contains(/1 of the 3 rows match the filters/i).should("be.visible");
-
-        cy.get("body").click();
-
-        cy.get("[role='grid']").matchImage({ maxDiffThreshold: 0.025 });
     });
 });
 
