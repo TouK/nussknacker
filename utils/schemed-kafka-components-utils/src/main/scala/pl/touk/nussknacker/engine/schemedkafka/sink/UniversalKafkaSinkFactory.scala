@@ -60,7 +60,7 @@ class UniversalKafkaSinkFactory(
 
   private val validationMode = ParameterCreatorWithExtractor.mandatory[String](
     name = SinkValidationModeParamName,
-    create = _.copy(editor =
+    modify = _.copy(editor =
       Some(
         FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))
       )

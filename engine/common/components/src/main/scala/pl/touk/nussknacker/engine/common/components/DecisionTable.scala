@@ -28,11 +28,11 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   private object BasicDecisionTableParameter {
     val name: ParameterName = ParameterName("Basic Decision Table")
 
-    val declaration: ParameterCreatorWithExtractor[TabularTypedData, Unit] =
-      ParameterCreatorWithExtractor
-        .mandatory[TabularTypedData, Unit](
+    val declaration: ParameterExtractor[TabularTypedData] =
+      ParameterExtractor
+        .mandatory[TabularTypedData](
           name = name,
-          create = (_, parameter) => parameter.copy(editor = Some(TabularTypedDataEditor))
+          modify = _.copy(editor = Some(TabularTypedDataEditor))
         )
 
   }
@@ -44,8 +44,8 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       ParameterCreatorWithExtractor
         .lazyMandatory[java.lang.Boolean, TabularTypedData](
           name = name,
-          create = (data, parameter) =>
-            parameter.copy(additionalVariables =
+          create = data =>
+            _.copy(additionalVariables =
               Map(
                 decisionTableRowRuntimeVariableName -> AdditionalVariableProvidedInRuntime(
                   rowDataTypingResult(data.columnDefinitions)

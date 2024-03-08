@@ -43,7 +43,7 @@ object DatabaseQueryEnricher {
   val query: ParameterCreatorWithExtractor[String] =
     ParameterCreatorWithExtractor.mandatory[String](
       name = queryParamName,
-      create = _.copy(editor = Some(SqlParameterEditor))
+      modify = _.copy(editor = Some(SqlParameterEditor))
     )
 
   final val resultStrategyParamName: ParameterName = ParameterName("Result strategy")

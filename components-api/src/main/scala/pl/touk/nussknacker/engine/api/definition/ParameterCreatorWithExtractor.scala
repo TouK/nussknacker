@@ -11,32 +11,54 @@ import scala.reflect.runtime.universe._
  * It reduce boilerplate defining `DynamicComponent` and reduce risk that definition of parameter
  * will desynchronize with implementation code using values
  */
-sealed trait ParameterCreatorWithExtractor[VALUE, S] extends Serializable {
+
+sealed trait ParameterExtractor[PARAMETER_VALUE_TYPE] extends Serializable {
   def parameterName: ParameterName
-  def createParameter: S => Parameter
-  def extractValue(params: Params): VALUE
+  def extractValue(params: Params): PARAMETER_VALUE_TYPE
+}
+
+object ParameterExtractor {
+
+  def mandatory[T: TypeTag: NotNothing](
+      name: ParameterName,
+      modify: Parameter => Parameter
+  ): ParameterExtractor[T] = {
+    new MandatoryParameterCreatorWithExtractor[T, Unit](
+      name,
+      _ => modify(Parameter[T](name))
+    )
+  }
+
+}
+
+sealed trait ParameterCreator[DATA] {
+  def createParameter: DATA => Parameter
+}
+
+sealed trait ParameterCreatorWithExtractor[PARAMETER_VALUE_TYPE, DATA]
+    extends ParameterExtractor[PARAMETER_VALUE_TYPE] {
+  def createParameter: DATA => Parameter
 }
 
 object ParameterCreatorWithExtractor {
 
-  def mandatory[T: TypeTag: NotNothing, S](
+  def mandatory[PARAMETER_VALUE_TYPE: TypeTag: NotNothing, DATA](
       name: ParameterName,
-      create: (S, Parameter) => Parameter
-  ): ParameterCreatorWithExtractor[T, S] = {
+      create: DATA => Parameter => Parameter
+  ): ParameterCreatorWithExtractor[PARAMETER_VALUE_TYPE, DATA] = {
     new MandatoryParameterCreatorWithExtractor(
       name,
-      s => create(s, Parameter[T](name))
+      data => create(data)(Parameter[PARAMETER_VALUE_TYPE](name))
     )
-//    MandatoryParameterCreatorWithExtractor.create(modify(Parameter[T](name)))
   }
 
   def lazyMandatory[T <: AnyRef: TypeTag: NotNothing, S](
       name: ParameterName,
-      create: (S, Parameter) => Parameter
+      create: S => Parameter => Parameter
   ): ParameterCreatorWithExtractor[LazyParameter[T], S] = {
     new MandatoryLazyParameterCreatorWithExtractor(
       name,
-      s => create(s, Parameter[T](name))
+      s => create(s)(Parameter[T](name))
     )
 //    MandatoryLazyParameterCreatorWithExtractor.create[T](modify(Parameter[T](name).copy(isLazyParameter = true)))
   }

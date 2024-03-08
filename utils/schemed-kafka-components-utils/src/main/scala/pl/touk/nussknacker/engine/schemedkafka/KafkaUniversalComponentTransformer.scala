@@ -80,7 +80,7 @@ trait KafkaUniversalComponentTransformer[T]
   private def getTopicParam(topics: List[String]): ParameterCreatorWithExtractor[String] = {
     ParameterCreatorWithExtractor.mandatory[String](
       name = topicParamName,
-      create = _.copy(editor =
+      modify = _.copy(editor =
         Some(
           FixedValuesParameterEditor(
             // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
@@ -117,7 +117,7 @@ trait KafkaUniversalComponentTransformer[T]
 
     ParameterCreatorWithExtractor.mandatory[String](
       name = KafkaUniversalComponentTransformer.SchemaVersionParamName,
-      create = _.copy(editor = Some(FixedValuesParameterEditor(versionValues)))
+      modify = _.copy(editor = Some(FixedValuesParameterEditor(versionValues)))
     )
   }
 

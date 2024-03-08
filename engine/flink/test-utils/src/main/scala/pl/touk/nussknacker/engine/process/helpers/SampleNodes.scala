@@ -742,7 +742,7 @@ object SampleNodes {
 
     private val aType = ParameterCreatorWithExtractor.mandatory[String](
       name = aTypeParamName,
-      create = _.copy(editor =
+      modify = _.copy(editor =
         Some(
           FixedValuesParameterEditor(
             List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))
@@ -755,7 +755,7 @@ object SampleNodes {
 
     private def version(versions: List[Int] = List.empty) = ParameterCreatorWithExtractor.mandatory[Int](
       name = versionParamName,
-      create = _.copy(editor =
+      modify = _.copy(editor =
         Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
       )
     )
@@ -905,7 +905,7 @@ object SampleNodes {
 
     private val aType = ParameterCreatorWithExtractor.mandatory[String](
       name = aTypeParamName,
-      create = _.copy(editor =
+      modify = _.copy(editor =
         Some(
           FixedValuesParameterEditor(
             List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))
@@ -919,7 +919,7 @@ object SampleNodes {
     private def version(versions: List[Int] = Nil) =
       ParameterCreatorWithExtractor.mandatory[Int](
         name = versionParamName,
-        create = _.copy(editor =
+        modify = _.copy(editor =
           Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
         )
       )
