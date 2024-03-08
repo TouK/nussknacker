@@ -28,7 +28,7 @@ object ParameterWithExtractor {
       name: String,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[LazyParameter[T]] = {
-    MandatoryLazyParameterWithExtractor.create[T](modify(Parameter[T](name)))
+    MandatoryLazyParameterWithExtractor.create[T](modify(Parameter[T](name).copy(isLazyParameter = true)))
   }
 
   def branchMandatory[T: TypeTag: NotNothing](
@@ -42,7 +42,7 @@ object ParameterWithExtractor {
       name: String,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Map[String, LazyParameter[T]]] = {
-    MandatoryBranchLazyParameterWithExtractor.create(modify(Parameter[T](name)))
+    MandatoryBranchLazyParameterWithExtractor.create(modify(Parameter[T](name).copy(isLazyParameter = true)))
   }
 
   def optional[T: TypeTag: NotNothing](
@@ -57,7 +57,7 @@ object ParameterWithExtractor {
       name: String,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Option[LazyParameter[T]]] = {
-    OptionalLazyParameterWithExtractor.create[T](modify(Parameter.optional[T](name)))
+    OptionalLazyParameterWithExtractor.create[T](modify(Parameter.optional[T](name).copy(isLazyParameter = true)))
   }
 
   def branchOptional[T: TypeTag: NotNothing](
@@ -73,7 +73,7 @@ object ParameterWithExtractor {
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Option[Map[String, LazyParameter[T]]]] = {
     // todo: optional should be moved to OptionalParameterWithExtractor
-    OptionalBranchLazyParameterWithExtractor.create[T](modify(Parameter.optional[T](name)))
+    OptionalBranchLazyParameterWithExtractor.create[T](modify(Parameter.optional[T](name).copy(isLazyParameter = true)))
   }
 
 }

@@ -899,10 +899,13 @@ object SampleNodes {
       )
     )
 
-    private def version(versions: List[Int] = Nil) = ParameterWithExtractor.mandatory[String](
-      "version",
-      _.copy(editor = Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString)))))
-    )
+    private def version(versions: List[Int] = Nil) =
+      ParameterWithExtractor.mandatory[Int](
+        name = "version",
+        modify = _.copy(editor =
+          Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
+        )
+      )
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
