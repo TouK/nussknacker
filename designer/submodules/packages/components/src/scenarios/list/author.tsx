@@ -18,7 +18,13 @@ export function Author({ value }: { value: string }): JSX.Element {
     );
 
     return (
-        <Link component="button" variant="body2" sx={{ color: isSelected ? "primary.main" : "inherit" }} tabIndex={0} onClick={onClick}>
+        <Link
+            component="button"
+            variant="caption"
+            sx={{ color: isSelected ? "primary.main" : "inherit", verticalAlign: "initial" }}
+            tabIndex={0}
+            onClick={onClick}
+        >
             {value}
         </Link>
     );

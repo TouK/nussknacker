@@ -20,8 +20,8 @@ import { ScenarioAvatar } from "./scenarioAvatar";
 
 const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
     return (
-        <ListItemButton component={ExternalLink} href={scenarioHref(row.name)}>
-            <ListItemAvatar>
+        <ListItemButton divider alignItems={"flex-start"} component={ExternalLink} href={scenarioHref(row.name)}>
+            <ListItemAvatar sx={{ minWidth: "46px" }}>
                 <ScenarioAvatar scenario={row} />
             </ListItemAvatar>
             <ListItemText primary={<FirstLine row={row} />} secondary={<SecondLine row={row} />} />
@@ -66,7 +66,7 @@ function ScenarioAndFragmentsList({
     onChildScroll: (params: { scrollTop: number }) => void;
     rows: RowType[];
 }) {
-    const rowHeight = 72.02;
+    const rowHeight = 84.02;
 
     const rowRenderer = useCallback(({ index, key, style }: ListRowProps) => <ListRow style={style} key={key} row={rows[index]} />, [rows]);
     return (
