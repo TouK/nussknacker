@@ -82,7 +82,7 @@ class MigrationApiHttpServiceSecuritySpec
           .jsonBody(requestData)
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
-          .statusCode(500)
+          .statusCode(401)
           .equalsPlainBody("The supplied user [anonymous] is not authorized to access this resource")
       }
     }

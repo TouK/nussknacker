@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, RawHeader}
+import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
@@ -18,17 +17,10 @@ import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.restmodel.scenariodetails.{
-  ScenarioParameters,
-  ScenarioWithDetails,
-  ScenarioWithDetailsForMigrations
-}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
-import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
-import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
@@ -282,12 +274,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     )
   }
 
-  private def fetchProcessDetails(
-      name: ProcessName
-  )(implicit ec: ExecutionContext): FutureE[Either[NuDesignerError, ScenarioWithDetailsForMigrations]] = {
-    EitherT(invokeJson[ScenarioWithDetailsForMigrations](HttpMethods.GET, List("processes", name.value)).map(_.asRight))
-  }
-
   private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
     invokeJson[List[ScenarioWithDetailsForMigrations]](
       HttpMethods.GET,
@@ -298,37 +284,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         ("skipNodeResults", "true"),
       )
     )
-  }
-
-  private def validateScenarioGraph(
-      scenarioGraph: ScenarioGraph,
-      processName: ProcessName
-  )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, ValidationResult]] = {
-    for {
-      scenarioGraphToValidate <- Marshal(scenarioGraph).to[MessageEntity]
-      validation <- invokeJson[ValidationResult](
-        HttpMethods.POST,
-        List("processValidation", processName.value),
-        requestEntity = scenarioGraphToValidate
-      )
-    } yield validation
-  }
-
-  private def saveProcess(
-      scenarioGraph: ScenarioGraph,
-      processName: ProcessName,
-      comment: UpdateProcessComment,
-      forwardedUserName: Option[RemoteUserName]
-  )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, ValidationResult]] = {
-    for {
-      processToSave <- Marshal(UpdateScenarioCommand(scenarioGraph, comment, forwardedUserName))
-        .to[MessageEntity](marshaller, ec)
-      response <- invokeJson[ValidationResult](
-        HttpMethods.PUT,
-        List("processes", processName.value),
-        requestEntity = processToSave
-      )
-    } yield response
   }
 
   private def invoke[T](

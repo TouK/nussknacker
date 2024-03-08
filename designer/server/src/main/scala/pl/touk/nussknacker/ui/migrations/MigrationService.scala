@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
+import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
@@ -24,7 +25,7 @@ import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.FatalValidationError
-import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
+import pl.touk.nussknacker.ui.{MissingProcessResolverError, NuDesignerError, UnauthorizedError}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -45,29 +46,40 @@ class MigrationService(
   )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
     val sourceEnvironmentId = migrateScenarioRequest.sourceEnvironmentId
     val targetEnvironmentId = config.getString("environment")
-    val processingMode      = migrateScenarioRequest.processingMode
-    val processCategory     = migrateScenarioRequest.processCategory
-    val engineSetupName     = migrateScenarioRequest.engineSetupName
-    val parameters          = ScenarioParameters(processingMode, processCategory, engineSetupName)
-    val processingType      = migrateScenarioRequest.processingType
-    val scenarioGraph       = migrateScenarioRequest.scenarioGraph
-    val processName         = migrateScenarioRequest.processName
-    val isFragment          = migrateScenarioRequest.isFragment
-    val forwardedUser       = if (passUsernameInMigration) Some(loggedUser) else None
-    val forwardedUsername   = forwardedUser.map(user => RemoteUserName(user.username))
+    val parameters = ScenarioParameters(
+      migrateScenarioRequest.processingMode,
+      migrateScenarioRequest.processCategory,
+      migrateScenarioRequest.engineSetupName
+    )
+    val processingType    = migrateScenarioRequest.processingType
+    val scenarioGraph     = migrateScenarioRequest.scenarioGraph
+    val processName       = migrateScenarioRequest.processName
+    val isFragment        = migrateScenarioRequest.isFragment
+    val forwardedUser     = if (passUsernameInMigration) Some(loggedUser) else None
+    val forwardedUsername = forwardedUser.map(user => RemoteUserName(user.username))
     val updateProcessComment =
       UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by ${loggedUser.username}")
     val updateScenarioCommand =
       UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsername)
 
     val future: Future[Unit] = for {
-      validation <- Future.successful(
-        FatalValidationError.renderNotAllowedAsError(
-          processResolver
-            .forTypeUnsafe(processingType)
-            .validateBeforeUiResolving(scenarioGraph, processName, isFragment)
-        )
-      )
+
+      validation <-
+        processResolver
+          .forTypeE(processingType) match {
+          case Left(e) => Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](Left(e))
+          case Right(uiProcessResolverO) =>
+            uiProcessResolverO match {
+              case Some(uiProcessResolver) =>
+                Future.successful(
+                  FatalValidationError.renderNotAllowedAsError(
+                    uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
+                  )
+                )
+              case None => Future.successful(Left(new MissingProcessResolverError(loggedUser, processingType)))
+            }
+
+        }
 
       _ <- validation match {
         case Left(e) => Future.failed(e)

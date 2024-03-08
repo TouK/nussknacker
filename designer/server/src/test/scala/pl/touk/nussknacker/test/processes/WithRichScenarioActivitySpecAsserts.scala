@@ -6,12 +6,7 @@ import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.test.NuRestAssureMatchers
 import pl.touk.nussknacker.test.base.it.NuItTest
-import pl.touk.nussknacker.test.config.{
-  WithRichConfigRestAssuredUsersExtensions,
-  WithRichDesignerConfig,
-  WithSimplifiedConfigRestAssuredUsersExtensions,
-  WithSimplifiedDesignerConfig
-}
+import pl.touk.nussknacker.test.config.{WithRichConfigRestAssuredUsersExtensions, WithRichDesignerConfig}
 
 trait WithRichScenarioActivitySpecAsserts
     extends AnyFreeSpecLike
@@ -36,7 +31,7 @@ trait WithRichScenarioActivitySpecAsserts
                |  "comments": [
                |    {
                |      "id": "${regexes.digitsRegex}",
-               |      "processVersionId": 1,
+               |      "processVersionId": "${regexes.digitsRegex}",
                |      "content": "$commentContent",
                |      "user": "allpermuser",
                |      "createDate": "${regexes.zuluDateRegex}"

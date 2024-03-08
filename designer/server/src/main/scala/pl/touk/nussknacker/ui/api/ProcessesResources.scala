@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
+  SkipScenarioGraph,
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process._
@@ -131,6 +132,22 @@ class ProcessesResources(
           complete {
             // FIXME: We should provide Deployment definition and return there all deployments, not actions..
             processService.getProcessActions(processId.id)
+          }
+        }
+      } ~ path("processes" / ProcessNameSegment / "basic") { processName =>
+        processId(processName) { processId =>
+          get {
+            complete {
+              processService
+                .getLatestProcessWithDetails(
+                  processId,
+                  GetScenarioWithDetailsOptions(
+                    SkipScenarioGraph,
+                    fetchState = false
+                  )
+                )
+                .map(_.copy(history = None))
+            }
           }
         }
       } ~ path("processes" / ProcessNameSegment) { processName =>
