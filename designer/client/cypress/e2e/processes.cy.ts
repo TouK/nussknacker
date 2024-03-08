@@ -64,7 +64,7 @@ describe("Processes list", () => {
             cy.contains(/streaming/i).click();
         });
 
-        cy.contains(/1 of the 5 rows match the filters/i).should("be.visible");
+        cy.contains(/1 of the 3 rows match the filters/i).should("be.visible");
 
         cy.get("body").click();
 
@@ -82,7 +82,7 @@ describe("Processes list", () => {
             cy.contains(/Request-Response/i).click();
         });
 
-        cy.contains(/1 of the 5 rows match the filters/i).should("be.visible");
+        cy.contains(/1 of the 3 rows match the filters/i).should("be.visible");
 
         cy.get("body").click();
 
