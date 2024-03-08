@@ -54,7 +54,7 @@ describe("Processes list", () => {
 
     it("should filter by processing mode", function () {
         cy.get("[placeholder='Search...']").type(`${PROCESSING_MODE}`);
-        cy.contains(/2 of the 5 rows match the filters/i).should("be.visible");
+        cy.contains(/2 of the 3 rows match the filters/i).should("be.visible");
 
         cy.contains("button", /processing mode/i).click();
 
@@ -76,7 +76,7 @@ describe("Processes list", () => {
             cy.contains(/Default/i).click();
         });
 
-        cy.contains(/2 of the 5 rows match the filters/i).should("be.visible");
+        cy.contains(/2 of the 3 rows match the filters/i).should("be.visible");
 
         cy.get("ul[role='menu']").within(() => {
             cy.contains(/Request-Response/i).click();
