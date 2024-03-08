@@ -3,7 +3,7 @@ import { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import { Moment } from "moment";
-import { SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
 import api from "../api";
 import { UserData } from "../common/models/User";
 import {
@@ -146,6 +146,8 @@ export interface ScenarioParametersCombinations {
     combinations: ScenarioParametersCombination[];
     engineSetupErrors: Record<string, string[]>;
 }
+
+export type ProcessDefinitionDataDictOption = { key: string; label: string };
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
@@ -639,7 +641,7 @@ class HttpService {
     }
 
     testScenarioWithGeneratedData(
-        processName,
+        processName: ProcessName,
         testSampleSize: string,
         scenarioGraph: ScenarioGraph,
     ): Promise<AxiosResponse<TestProcessResponse>> {
@@ -653,7 +655,7 @@ class HttpService {
         return promise;
     }
 
-    compareProcesses(processName, thisVersion, otherVersion, remoteEnv) {
+    compareProcesses(processName: ProcessName, thisVersion, otherVersion, remoteEnv) {
         const path = remoteEnv ? "remoteEnvironment" : "processes";
 
         const promise = api.get(`/${path}/${encodeURIComponent(processName)}/${thisVersion}/compare/${otherVersion}`);
@@ -694,6 +696,19 @@ class HttpService {
 
     fetchScenarioParametersCombinations() {
         return api.get<ScenarioParametersCombinations>(`/scenarioParametersCombinations`);
+    }
+
+    fetchProcessDefinitionDataDict(processingType: ProcessingType, dictId: string, label: string) {
+        return api
+            .get<ProcessDefinitionDataDictOption[]>(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${label}`)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(
+                        i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"),
+                        error,
+                    ),
+                ),
+            );
     }
 
     #addInfo(message: string) {

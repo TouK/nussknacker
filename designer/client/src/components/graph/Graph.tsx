@@ -18,7 +18,7 @@ import { handleGraphEvent } from "./utils/graphUtils";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import { rafThrottle } from "./rafThrottle";
 import { isEdgeEditable } from "../../common/EdgeUtils";
-import { NodeId, NodeType, ScenarioGraph, ProcessDefinitionData } from "../../types";
+import { NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { Layout, NodePosition, Position } from "../../actions/nk";
 import { UserSettings } from "../../reducers/userSettings";
 import User from "../../common/models/User";
@@ -214,9 +214,12 @@ export class Graph extends React.Component<Props> {
         this.processGraphPaper.unfreeze();
     });
     private panAndZoom: PanZoomPlugin;
+    fit = () => {
+        this.panAndZoom.fitSmallAndLargeGraphs();
+    };
     forceLayout = debounce(() => {
         this.directedLayout(this.props.selectionState);
-        this.panAndZoom.fitSmallAndLargeGraphs();
+        this.fit();
     }, 50);
     private _exportGraphOptions: Pick<dia.Paper, "options" | "defs">;
     private instance: HTMLElement;

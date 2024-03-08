@@ -11,6 +11,7 @@ final case class DeploymentData(
     metaDataInitializer: MetaDataInitializer,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     additionalValidators: List[CustomProcessValidator],
+    deploymentManagerType: DeploymentManagerType,
     engineSetupName: EngineSetupName
 ) {
 
@@ -24,3 +25,5 @@ final case class DeploymentData(
   }
 
 }
+
+case class DeploymentManagerType(value: String)

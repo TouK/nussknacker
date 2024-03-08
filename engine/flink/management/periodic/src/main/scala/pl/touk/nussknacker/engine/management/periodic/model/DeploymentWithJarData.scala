@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.management.periodic.model
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 
-case class DeploymentWithJarData(
+case class DeploymentWithJarData[ProcessRep](
     processVersion: ProcessVersion,
-    canonicalProcess: CanonicalProcess,
+    process: ProcessRep,
     inputConfigDuringExecutionJson: String,
     jarFileName: String
 )

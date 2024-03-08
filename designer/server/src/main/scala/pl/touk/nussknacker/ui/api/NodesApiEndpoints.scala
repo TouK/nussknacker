@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
@@ -25,11 +26,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{
-  MalformedTypingResult,
-  NoProcessingType,
-  NoScenario
-}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{MalformedTypingResult, NoProcessingType, NoScenario}
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.services.BaseHttpService.CustomAuthorizationError
@@ -291,9 +288,14 @@ object NodesApiEndpoints {
     )
 
     private object UIParameterDto {
-      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]    = Schema.derived
-      implicit lazy val dualEditorSchema: Schema[DualEditorMode]          = Schema.string
-      implicit lazy val expressionSchema: Schema[Expression]              = Schema.derived
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor] = Schema.derived
+      implicit lazy val dualEditorSchema: Schema[DualEditorMode]       = Schema.string
+
+      implicit lazy val expressionSchema: Schema[Expression] = {
+        implicit val languageSchema: Schema[Language] = Schema.string[Language]
+        Schema.derived
+      }
+
       implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema.anyObject
 
       def apply(param: UIParameter): UIParameterDto = new UIParameterDto(
@@ -340,7 +342,11 @@ object NodesApiEndpoints {
         expression: Expression
     )
 
-    implicit lazy val expressionSchema: Schema[Expression]           = Schema.derived
+    implicit lazy val expressionSchema: Schema[Expression] = {
+      implicit val languageSchema: Schema[Language] = Schema.string[Language]
+      Schema.derived
+    }
+
     implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 
     // Request doesn't need valid encoder

@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.expression.parse.{
 }
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
 import pl.touk.nussknacker.engine.language.tabularDataDefinition.TabularDataDefinitionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -87,7 +88,7 @@ object ExpressionCompiler {
 
 }
 
-class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictRegistry: DictRegistry) {
+class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dictRegistry: DictRegistry) {
 
   // used only for services and fragments - in places where component is an Executor instead of a factory
   // that creates Executor
@@ -305,7 +306,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
         .parse(n.expression, validationCtx, expectedType)
         .leftMap(errs =>
           errs.map(err =>
-            ProcessCompilationError.ExpressionParserCompilationError(err.message, fieldName, n.expression)
+            ProcessCompilationError.ExpressionParserCompilationError(err.message, fieldName, n.expression, err.details)
           )
         )
     }
@@ -325,7 +326,8 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser], dictR
         .parseWithoutContextValidation(n.expression, expectedType)
         .leftMap(errs =>
           errs.map(err =>
-            ProcessCompilationError.ExpressionParserCompilationError(err.message, Some(fieldName), n.expression)
+            ProcessCompilationError
+              .ExpressionParserCompilationError(err.message, Some(fieldName), n.expression, err.details)
           )
         )
     }

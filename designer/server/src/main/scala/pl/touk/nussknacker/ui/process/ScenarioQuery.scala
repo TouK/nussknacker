@@ -14,6 +14,7 @@ final case class ScenarioQuery(
 object ScenarioQuery {
   def empty: ScenarioQuery = ScenarioQuery(None, None, None, None, None, None)
 
+  // TODO: rename to nonArchived
   def unarchived: ScenarioQuery = empty.copy(isArchived = Some(false))
 
   def unarchivedProcesses: ScenarioQuery = unarchived.copy(isFragment = Some(false))

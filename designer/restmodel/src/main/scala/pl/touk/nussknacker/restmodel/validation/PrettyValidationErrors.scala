@@ -3,6 +3,11 @@ package pl.touk.nussknacker.restmodel.validation
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
+  ErrorDetails,
+  TabularDataDefinitionParserErrorDetails
+}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node._
@@ -17,18 +22,20 @@ object PrettyValidationErrors {
         message: String,
         description: String,
         errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
-        fieldName: Option[String] = None
-    ): NodeValidationError = NodeValidationError(typ, message, description, fieldName, errorType)
+        fieldName: Option[String] = None,
+        details: Option[ErrorDetails] = None
+    ): NodeValidationError = NodeValidationError(typ, message, description, fieldName, errorType, details)
 
     def handleParameterValidationError(error: ParameterValidationError): NodeValidationError =
       node(error.message, error.description, fieldName = Some(error.paramName))
 
     error match {
-      case ExpressionParserCompilationError(message, _, fieldName, _) =>
+      case ExpressionParserCompilationError(message, _, fieldName, _, details) =>
         node(
           s"Failed to parse expression: $message",
           s"There is problem with expression in field $fieldName - it could not be parsed.",
-          fieldName = fieldName
+          fieldName = fieldName,
+          details = details
         )
       case FragmentParamClassLoadError(fieldName, refClazzName, _) =>
         node(
@@ -154,7 +161,7 @@ object PrettyValidationErrors {
       case InvalidPropertyFixedValue(fieldName, label, value, values, _) =>
         invalidPropertyFixedValue(typ, fieldName, label, value, values)
       case CustomNodeError(_, message, paramName) =>
-        NodeValidationError(typ, message, message, paramName, NodeValidationErrorType.SaveAllowed)
+        NodeValidationError(typ, message, message, paramName, NodeValidationErrorType.SaveAllowed, None)
       case e: DuplicateFragmentOutputNames =>
         node(
           s"Fragment output name '${e.duplicatedVarName}' has to be unique",
@@ -244,21 +251,23 @@ object PrettyValidationErrors {
 
   private def unknownProperty(typ: String, propertyName: String): NodeValidationError =
     NodeValidationError(
-      typ,
-      s"Unknown property $propertyName",
-      s"Property $propertyName is not known",
-      Some(propertyName),
-      NodeValidationErrorType.SaveAllowed
+      typ = typ,
+      message = s"Unknown property $propertyName",
+      description = s"Property $propertyName is not known",
+      fieldName = Some(propertyName),
+      errorType = NodeValidationErrorType.SaveAllowed,
+      details = None
     )
 
   private def missingRequiredProperty(typ: String, fieldName: String, label: Option[String]) = {
     val labelText = getLabel(label)
     NodeValidationError(
-      typ,
-      s"Configured property $fieldName$labelText is missing",
-      s"Please fill missing property $fieldName$labelText",
-      Some(fieldName),
-      NodeValidationErrorType.SaveAllowed
+      typ = typ,
+      message = s"Configured property $fieldName$labelText is missing",
+      description = s"Please fill missing property $fieldName$labelText",
+      fieldName = Some(fieldName),
+      errorType = NodeValidationErrorType.SaveAllowed,
+      details = None
     )
   }
 
@@ -271,11 +280,12 @@ object PrettyValidationErrors {
   ) = {
     val labelText = getLabel(label)
     NodeValidationError(
-      typ,
-      s"Property $propertyName$labelText has invalid value",
-      s"Expected one of ${values.mkString(", ")}, got: $value.",
-      Some(propertyName),
-      NodeValidationErrorType.SaveAllowed
+      typ = typ,
+      message = s"Property $propertyName$labelText has invalid value",
+      description = s"Expected one of ${values.mkString(", ")}, got: $value.",
+      fieldName = Some(propertyName),
+      errorType = NodeValidationErrorType.SaveAllowed,
+      details = None
     )
   }
 
@@ -325,7 +335,8 @@ object PrettyValidationErrors {
       message = message,
       description = description,
       fieldName = Some(fieldName),
-      errorType = errorSeverity
+      errorType = errorSeverity,
+      details = None
     )
   }
 

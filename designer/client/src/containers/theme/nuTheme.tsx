@@ -380,6 +380,22 @@ export const nuTheme = createTheme({
                 "data-testid": "form-helper-text",
             },
         },
+        MuiAutocomplete: {
+            styleOverrides: {
+                noOptions: ({ theme }) => ({
+                    ...theme.typography.body2,
+                    padding: theme.spacing(0.75, 2),
+                    marginTop: theme.spacing(0.5),
+                    backgroundColor: theme.custom.colors.secondaryBackground,
+                }),
+                loading: ({ theme }) => ({
+                    ...theme.typography.body2,
+                    padding: theme.spacing(0.75, 2),
+                    marginTop: theme.spacing(0.5),
+                    backgroundColor: theme.custom.colors.secondaryBackground,
+                }),
+            },
+        },
     },
     custom,
 });
