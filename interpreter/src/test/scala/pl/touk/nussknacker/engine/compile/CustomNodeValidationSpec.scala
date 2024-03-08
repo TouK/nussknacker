@@ -7,6 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -480,7 +481,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
         BlankParameter(
           "This field value is required and can not be blank",
           "Please fill field value for this parameter",
-          "key for branch branch1",
+          ParameterName("key for branch branch1"),
           "join1"
         ),
         Nil

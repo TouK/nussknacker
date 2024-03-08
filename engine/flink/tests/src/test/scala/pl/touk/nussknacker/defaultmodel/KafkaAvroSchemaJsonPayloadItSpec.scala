@@ -47,19 +47,19 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.input}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
+        KafkaUniversalComponentTransformer.TopicParamName.value         -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.SchemaVersionParamName.value -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka",
-        KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
-        KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
-        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.output}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
-        KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
+        KafkaUniversalComponentTransformer.SinkKeyParamName.value       -> "",
+        KafkaUniversalComponentTransformer.SinkValueParamName.value     -> "#input",
+        KafkaUniversalComponentTransformer.TopicParamName.value         -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaUniversalComponentTransformer.SinkRawEditorParamName.value -> s"true",
+        KafkaUniversalComponentTransformer.SinkValidationModeParamName.value -> s"'${validationMode.name}'"
       )
 
   test("should read schemed json from kafka, filter and save it to kafka, passing timestamp") {

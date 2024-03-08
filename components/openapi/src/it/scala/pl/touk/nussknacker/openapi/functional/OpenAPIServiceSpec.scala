@@ -7,6 +7,7 @@ import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, Outcome}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -70,7 +71,7 @@ class OpenAPIServiceSpec
     implicit val contextId: ContextId = ContextId("1")
     val valueWithChosenFields =
       service
-        .invoke(Map("customer_id" -> "10"))
+        .invoke(Map(ParameterName("customer_id") -> "10"))
         .futureValue
         .asInstanceOf[TypedMap]
         .asScala

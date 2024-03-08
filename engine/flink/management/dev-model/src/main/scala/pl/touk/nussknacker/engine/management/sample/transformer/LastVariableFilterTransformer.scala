@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation,
@@ -32,15 +33,13 @@ object LastVariableFilterTransformer
     extends CustomStreamTransformer
     with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
 
-  private val valueParameterName = "value"
+  private val valueParameterName = ParameterName("value")
+  private val valueParameter     = ParameterWithExtractor.lazyMandatory[AnyRef](valueParameterName)
 
-  private val valueParameter = ParameterWithExtractor.lazyMandatory[AnyRef](valueParameterName)
+  private val groupByParameterName = ParameterName("groupBy")
+  private val groupByParameter     = ParameterWithExtractor.lazyMandatory[String](groupByParameterName)
 
-  private val groupByParameterName = "groupBy"
-
-  private val groupByParameter = ParameterWithExtractor.lazyMandatory[String](groupByParameterName)
-
-  private val conditionParameterName = "condition"
+  private val conditionParameterName = ParameterName("condition")
 
   private def conditionParameter(valueType: TypingResult) = {
     ParameterWithExtractor.lazyMandatory[java.lang.Boolean](

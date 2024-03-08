@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.expression.{
   TypedExpression,
   TypedExpressionMap
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
@@ -136,7 +137,7 @@ class NodeCompiler(
       }
     case frag @ FragmentInputDefinition(id, _, _) =>
       val parameterDefinitions                 = fragmentDefinitionExtractor.extractParametersDefinition(frag)
-      val variables: Map[String, TypingResult] = parameterDefinitions.value.map(a => a.name -> a.typ).toMap
+      val variables: Map[String, TypingResult] = parameterDefinitions.value.map(a => a.name.value -> a.typ).toMap
       val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
 
       val compilationResult = definitions.getComponent(ComponentType.Fragment, id) match {
@@ -261,7 +262,7 @@ class NodeCompiler(
     val childCtx = ctx.pushNewContext()
     val newCtx =
       validParamDefs.value.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx)) {
-        case (acc, paramDef) => acc.andThen(_.withVariable(OutputVar.variable(paramDef.name), paramDef.typ))
+        case (acc, paramDef) => acc.andThen(_.withVariable(OutputVar.variable(paramDef.name.value), paramDef.typ))
       }
     val validParams =
       expressionCompiler.compileExecutorComponentNodeParameters(validParamDefs.value, ref.parameters, ctx)
@@ -272,7 +273,9 @@ class NodeCompiler(
         .getOrElse(valid(List.empty[CompiledParameter]))
     )
     val expressionTypingInfo =
-      validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
+      validParams
+        .map(_.map(p => p.name.value -> p.typingInfo).toMap)
+        .valueOr(_ => Map.empty[String, ExpressionTypingInfo])
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParamsCombinedErrors)
   }
 
@@ -371,7 +374,7 @@ class NodeCompiler(
         case Some(out) =>
           returnTypeOpt
             .map(Valid(_))
-            .getOrElse(Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable")))))
+            .getOrElse(Invalid(NonEmptyList.of(RedundantParameters(Set(ParameterName("OutputVariable"))))))
             .andThen(validationContext.withVariable(out, _))
         case None => Valid(validationContext)
       }
@@ -443,9 +446,9 @@ class NodeCompiler(
       (node.outputVar, returnTypeOpt) match {
         case (Some(varName), Some(typ)) => ctxWithVar(OutputVar.customNode(varName), typ)
         case (None, None)               => Valid(validationContext)
-        case (Some(_), None)            => Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable"))))
-        case (None, Some(_)) if ending  => Valid(validationContext)
-        case (None, Some(_))            => Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"))))
+        case (Some(_), None) => Invalid(NonEmptyList.of(RedundantParameters(Set(ParameterName("OutputVariable")))))
+        case (None, Some(_)) if ending => Valid(validationContext)
+        case (None, Some(_)) => Invalid(NonEmptyList.of(MissingParameters(Set(ParameterName("OutputVariable")))))
       }
     }
 
@@ -570,7 +573,7 @@ class NodeCompiler(
           .map { componentExecutor =>
             val typingInfo = compiledParameters.flatMap {
               case (TypedParameter(name, TypedExpression(_, typingInfo)), _) =>
-                List(name -> typingInfo)
+                List(name.value -> typingInfo)
               case (TypedParameter(paramName, TypedExpressionMap(valueByBranch)), _) =>
                 valueByBranch.map { case (branch, TypedExpression(_, typingInfo)) =>
                   val expressionId = branchParameterExpressionId(paramName, branch)
@@ -668,7 +671,7 @@ class NodeCompiler(
         case Some(output) =>
           objWithMethod.returnType
             .map(Valid(_))
-            .getOrElse(Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable")))))
+            .getOrElse(Invalid(NonEmptyList.of(RedundantParameters(Set(ParameterName("OutputVariable"))))))
             .andThen(ctx.withVariable(output, _))
         case None => Valid(ctx)
       }
@@ -682,7 +685,7 @@ class NodeCompiler(
           resultCollector = resultCollector
         )
       }
-      val nodeTypingInfo = computedParameters.map(_.map(p => p.name -> p.typingInfo).toMap).getOrElse(Map.empty)
+      val nodeTypingInfo = computedParameters.map(_.map(p => p.name.value -> p.typingInfo).toMap).getOrElse(Map.empty)
       NodeCompilationResult(nodeTypingInfo, None, outputCtx, serviceRef)
     }
 

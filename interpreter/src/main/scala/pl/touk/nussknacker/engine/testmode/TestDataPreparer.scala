@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -43,7 +42,7 @@ class TestDataPreparer(
         s.testRecordParser.parse(jsonRecord.record)
       case (s: TestWithParametersSupport[T @unchecked], parametersRecord: ScenarioTestParametersRecord) =>
         val parameterTypingResults = s.testParametersDefinition.collect { param =>
-          parametersRecord.parameterExpressions.get(param.name) match {
+          parametersRecord.parameterExpressions.get(param.name.value) match {
             case Some(expression)          => evaluateExpression(expression, param).map(e => param.name -> e)
             case None if !param.isOptional => UnknownProperty(param.name).invalidNel
           }
@@ -67,7 +66,7 @@ class TestDataPreparer(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
     expressionCompiler
-      .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
+      .compile(expression, Some(parameter.name.value), validationContext, parameter.typ)(nodeId)
       .map { typedExpression =>
         val param = CompiledParameter(typedExpression, parameter)
         evaluator.evaluateParameter(param, dumbContext)(nodeId, metaData).value

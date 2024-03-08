@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{LazyParameter, Params}
 import pl.touk.nussknacker.engine.api.util.NotNothing
 
@@ -18,35 +19,35 @@ sealed trait ParameterWithExtractor[VALUE] extends Serializable {
 object ParameterWithExtractor {
 
   def mandatory[T: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[T] = {
     MandatoryParameterWithExtractor.create(modify(Parameter[T](name)))
   }
 
   def lazyMandatory[T <: AnyRef: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[LazyParameter[T]] = {
     MandatoryLazyParameterWithExtractor.create[T](modify(Parameter[T](name).copy(isLazyParameter = true)))
   }
 
   def branchMandatory[T: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Map[String, T]] = {
     MandatoryBranchParameterWithExtractor.create(modify(Parameter[T](name)))
   }
 
   def branchLazyMandatory[T <: AnyRef: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Map[String, LazyParameter[T]]] = {
     MandatoryBranchLazyParameterWithExtractor.create(modify(Parameter[T](name).copy(isLazyParameter = true)))
   }
 
   def optional[T: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Option[T]] = {
     // todo: optional should be moved to OptionalParameterWithExtractor
@@ -54,14 +55,14 @@ object ParameterWithExtractor {
   }
 
   def lazyOptional[T <: AnyRef: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Option[LazyParameter[T]]] = {
     OptionalLazyParameterWithExtractor.create[T](modify(Parameter.optional[T](name).copy(isLazyParameter = true)))
   }
 
   def branchOptional[T: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Option[Map[String, T]]] = {
     // todo: optional should be moved to OptionalParameterWithExtractor
@@ -69,7 +70,7 @@ object ParameterWithExtractor {
   }
 
   def branchLazyOptional[T <: AnyRef: TypeTag: NotNothing](
-      name: String,
+      name: ParameterName,
       modify: Parameter => Parameter = identity
   ): ParameterWithExtractor[Option[Map[String, LazyParameter[T]]]] = {
     // todo: optional should be moved to OptionalParameterWithExtractor

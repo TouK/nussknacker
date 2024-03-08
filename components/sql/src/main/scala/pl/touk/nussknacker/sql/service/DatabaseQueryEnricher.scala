@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
@@ -28,7 +29,7 @@ object DatabaseQueryEnricher {
 
   val metaData: TypedNodeDependency[MetaData] = TypedNodeDependency[MetaData]
 
-  final val cacheTTLParamName: String = "Cache TTL"
+  final val cacheTTLParamName: ParameterName = ParameterName("Cache TTL")
 
   val cacheTTL: ParameterWithExtractor[Option[Duration]] =
     ParameterWithExtractor.optional[Duration](
@@ -37,7 +38,7 @@ object DatabaseQueryEnricher {
         _.copy(editor = Some(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))))
     )
 
-  final val queryParamName: String = "Query"
+  final val queryParamName: ParameterName = ParameterName("Query")
 
   val query: ParameterWithExtractor[String] =
     ParameterWithExtractor.mandatory[String](
@@ -45,7 +46,7 @@ object DatabaseQueryEnricher {
       modify = _.copy(editor = Some(SqlParameterEditor))
     )
 
-  final val resultStrategyParamName: String = "Result strategy"
+  final val resultStrategyParamName: ParameterName = ParameterName("Result strategy")
 
   val resultStrategy: ParameterWithExtractor[String] = {
     ParameterWithExtractor.mandatory[String](
@@ -95,7 +96,8 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     (argsCount: Int, params: Params, context: Context) => {
       QueryArguments(
         (1 to argsCount).map { argNo =>
-          QueryArgument(index = argNo, value = params.extractOrEvaluateLazyParam(s"$ArgPrefix$argNo", context))
+          val paramName = ParameterName(s"$ArgPrefix$argNo")
+          QueryArgument(index = argNo, value = params.extractOrEvaluateLazyParam(paramName, context))
         }.toList
       )
     }
@@ -206,7 +208,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
 
   private def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =
     (1 to dbParameterMetaData.parameterCount).map { paramNo =>
-      Parameter(s"$ArgPrefix$paramNo", typing.Unknown).copy(isLazyParameter = true)
+      Parameter(ParameterName(s"$ArgPrefix$paramNo"), typing.Unknown).copy(isLazyParameter = true)
     }.toList
 
   protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(

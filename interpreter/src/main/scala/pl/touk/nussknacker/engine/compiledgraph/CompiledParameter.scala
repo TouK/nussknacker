@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionTypingInfo, TypedExpression}
 import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 object CompiledParameter {
@@ -23,7 +24,7 @@ object CompiledParameter {
 }
 
 final case class CompiledParameter(
-    override val name: String,
+    override val name: ParameterName,
     override val expression: CompiledExpression,
     override val shouldBeWrappedWithScalaOption: Boolean,
     override val shouldBeWrappedWithJavaOptional: Boolean,
@@ -31,7 +32,7 @@ final case class CompiledParameter(
 ) extends BaseCompiledParameter
 
 trait BaseCompiledParameter {
-  def name: String
+  def name: ParameterName
   def expression: CompiledExpression
   def shouldBeWrappedWithScalaOption: Boolean
   def shouldBeWrappedWithJavaOptional: Boolean

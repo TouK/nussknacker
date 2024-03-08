@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{
   Context,
   CustomStreamTransformer,
@@ -34,15 +35,15 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
   private val roleValues = List("Events", "Additional data")
 
   private val role = ParameterWithExtractor.branchMandatory[String](
-    name = "role",
+    name = ParameterName("role"),
     modify = _.copy(
       editor = Some(FixedValuesParameterEditor(roleValues.map(role => FixedExpressionValue(s"'$role'", role))))
     ),
   )
 
-  private val key = ParameterWithExtractor.branchLazyMandatory[String]("key")
+  private val key = ParameterWithExtractor.branchLazyMandatory[String](ParameterName("key"))
 
-  private val additionalDataValueParameterName = "additional data value"
+  private val additionalDataValueParameterName = ParameterName("additional data value")
 
   private def additionalDataValue(contexts: Map[String, ValidationContext], byBranch: Map[String, String]) =
     ParameterWithExtractor.lazyMandatory[AnyRef](

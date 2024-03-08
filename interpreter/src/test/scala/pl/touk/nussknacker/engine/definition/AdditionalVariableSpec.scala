@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   NodeDependency,
   Parameter
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.FragmentResolver
@@ -51,7 +52,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
     )
     val fragmentResolver = FragmentResolver(List.empty)
     val result = new NodeDataValidator(modelData).validate(
-      node.Source("sid", SourceRef("one", NodeParameter("toFail", "''") :: Nil)),
+      node.Source("sid", SourceRef("one", NodeParameter(ParameterName("toFail"), "''") :: Nil)),
       ValidationContext.empty,
       Map.empty,
       Nil,
@@ -108,7 +109,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
     ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
       NextParameters(
         List(
-          Parameter[String]("toFail")
+          Parameter[String](ParameterName("toFail"))
             .copy(
               isLazyParameter = true,
               additionalVariables = Map("failing" -> AdditionalVariableWithFixedValue("wontwork"))

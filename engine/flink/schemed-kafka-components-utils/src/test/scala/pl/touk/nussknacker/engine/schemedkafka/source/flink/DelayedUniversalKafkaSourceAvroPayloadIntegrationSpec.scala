@@ -163,7 +163,12 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
       FragmentResolver(_ => None)
     )(process.metaData)
 
-    result.asInstanceOf[ValidationPerformed].parameters.getOrElse(Nil).filter(_.name == "timestampField").loneElement
+    result
+      .asInstanceOf[ValidationPerformed]
+      .parameters
+      .getOrElse(Nil)
+      .filter(_.name.value == "timestampField")
+      .loneElement
   }
 
   private def runAndVerify(topicConfig: TopicConfig, process: CanonicalProcess, givenObj: AnyRef): Unit = {

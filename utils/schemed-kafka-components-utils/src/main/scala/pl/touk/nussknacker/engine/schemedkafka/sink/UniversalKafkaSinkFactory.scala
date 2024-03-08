@@ -59,7 +59,7 @@ class UniversalKafkaSinkFactory(
   private val rawValue = ParameterWithExtractor.lazyMandatory[AnyRef](SinkValueParamName)
 
   private val validationMode = ParameterWithExtractor.mandatory[String](
-    name = SinkValidationModeParameterName,
+    name = SinkValidationModeParamName,
     modify = _.copy(editor =
       Some(
         FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))
@@ -72,7 +72,7 @@ class UniversalKafkaSinkFactory(
     SchemaVersionParamName,
     SinkKeyParamName,
     SinkRawEditorParamName,
-    SinkValidationModeParameterName
+    SinkValidationModeParamName
   )
 
   protected def rawEditorParameterStep(
@@ -91,7 +91,7 @@ class UniversalKafkaSinkFactory(
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
           (SinkKeyParamName, _) ::
           (SinkRawEditorParamName, _) ::
-          (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
+          (SinkValidationModeParamName, DefinedEagerParameter(mode: String, _)) ::
           (SinkValueParamName, value: BaseDefinedParameter) :: Nil,
           _
         ) =>
@@ -132,7 +132,7 @@ class UniversalKafkaSinkFactory(
             SinkRawEditorParamName,
             _
           ) ::
-          (SinkValidationModeParameterName, _) :: (SinkValueParamName, _) :: Nil,
+          (SinkValidationModeParamName, _) :: (SinkValueParamName, _) :: Nil,
           _
         ) =>
       FinalResults(context, Nil)
@@ -226,7 +226,7 @@ class UniversalKafkaSinkFactory(
     )
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = extractValidationMode(
-      params.extract[String](SinkValidationModeParameterName).getOrElse(ValidationMode.strict.name)
+      params.extract[String](SinkValidationModeParamName).getOrElse(ValidationMode.strict.name)
     )
 
     implProvider.createSink(

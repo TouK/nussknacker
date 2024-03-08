@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -175,9 +176,10 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     override def testRecordParser: TestRecordParser[Int] = (testRecord: TestRecord) =>
       CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
 
-    override def testParametersDefinition: List[Parameter] = List(Parameter("input", Typed[Int]))
+    override def testParametersDefinition: List[Parameter] = List(Parameter(ParameterName("input"), Typed[Int]))
 
-    override def parametersToTestData(params: Map[String, AnyRef]): Int = params("input").asInstanceOf[Int]
+    override def parametersToTestData(params: Map[ParameterName, AnyRef]): Int =
+      params(ParameterName("input")).asInstanceOf[Int]
   }
 
   object SampleTestSupportSource

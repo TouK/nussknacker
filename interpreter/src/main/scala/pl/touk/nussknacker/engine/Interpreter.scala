@@ -68,7 +68,7 @@ private class InterpreterInternal[F[_]: Monad](
         interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
       case FragmentUsageStart(_, params, next) =>
         val (newCtx, vars) = expressionEvaluator.evaluateParameters(params, ctx)
-        interpretNext(next, newCtx.pushNewContext(vars))
+        interpretNext(next, newCtx.pushNewContext(vars.map { case (paramName, value) => (paramName.value, value) }))
       case FragmentUsageEnd(_, outputVar, next) =>
         // Here we need parent context so we can compile rest of scenario. Unfortunately some component inside fragment
         // could've cleared that context. In that case, we take current (fragment's) context so we can keep the id,

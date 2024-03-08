@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
@@ -22,9 +23,9 @@ import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleS
 
 object JsonRequestResponseSink {
 
-  final val SinkRawValueParamName: String           = "Value"
-  final val SinkRawEditorParamName: String          = "Raw editor"
-  final val SinkValidationModeParameterName: String = "Value validation mode"
+  final val SinkRawValueParamName: ParameterName           = ParameterName("Value")
+  final val SinkRawEditorParamName: ParameterName          = ParameterName("Raw editor")
+  final val SinkValidationModeParameterName: ParameterName = ParameterName("Value validation mode")
 
 }
 

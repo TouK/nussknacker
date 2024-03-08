@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -633,31 +634,38 @@ object SampleNodes {
 
     override type State = List[String]
 
-    private val mandatoryPar1 = ParameterWithExtractor.mandatory[String]("par1")
-    private val lazyPar1      = ParameterWithExtractor.lazyMandatory[java.lang.Boolean]("lazyPar1")
+    private val par1ParamName: ParameterName = ParameterName("par1")
+    private val mandatoryPar1                = ParameterWithExtractor.mandatory[String](par1ParamName)
+
+    private val lazyPar1ParamName: ParameterName = ParameterName("lazyPar1")
+    private val lazyPar1 = ParameterWithExtractor.lazyMandatory[java.lang.Boolean](lazyPar1ParamName)
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
     ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(List(mandatoryPar1.parameter, lazyPar1.parameter))
-      case TransformationStep(("par1", DefinedEagerParameter(value: String, _)) :: ("lazyPar1", _) :: Nil, None) =>
+      case TransformationStep(
+            (`par1ParamName`, DefinedEagerParameter(value: String, _)) :: (`lazyPar1ParamName`, _) :: Nil,
+            None
+          ) =>
         val split = value.split(",").toList
-        NextParameters(split.map(Parameter(_, Unknown)), state = Some(split))
-      case TransformationStep(("par1", FailedToDefineParameter) :: ("lazyPar1", _) :: Nil, None) =>
+        NextParameters(split.map(name => Parameter(ParameterName(name), Unknown)), state = Some(split))
+      case TransformationStep((`par1ParamName`, FailedToDefineParameter) :: (`lazyPar1ParamName`, _) :: Nil, None) =>
         outputParameters(context, dependencies, Nil)
-      case TransformationStep(("par1", _) :: ("lazyPar1", _) :: rest, Some(names)) if rest.map(_._1) == names =>
+      case TransformationStep((`par1ParamName`, _) :: (`lazyPar1ParamName`, _) :: rest, Some(names))
+          if rest.map(_._1) == names =>
         outputParameters(context, dependencies, rest)
     }
 
     private def outputParameters(
         context: ValidationContext,
         dependencies: List[NodeDependencyValue],
-        rest: List[(String, BaseDefinedParameter)]
+        rest: List[(ParameterName, BaseDefinedParameter)]
     )(implicit nodeId: NodeId): this.FinalResults = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
-          val result = Typed.record(rest.map { case (k, v) => k -> v.returnType }.toMap)
+          val result = Typed.record(rest.map { case (k, v) => k.value -> v.returnType }.toMap)
           FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), result))
         case None =>
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
@@ -669,13 +677,13 @@ object SampleNodes {
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): AnyRef = {
-      val map  = params.nameToValueMap.filterNot(k => List("par1", "lazyPar1").contains(k._1))
+      val map  = params.nameToValueMap.filterNot(k => List(par1ParamName, lazyPar1ParamName).contains(k._1))
       val bool = lazyPar1.extractValue(params)
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
           .map(
-            (ctx: Context) => ValueWithContext[AnyRef](TypedMap(map), ctx),
+            (ctx: Context) => ValueWithContext[AnyRef](TypedMap(map.map { case (k, v) => (k.value, v) }), ctx),
             fctx.valueWithContextInfo.forUnknown
           )
       })
@@ -730,8 +738,10 @@ object SampleNodes {
 
     override type State = Nothing
 
+    private val aTypeParamName: ParameterName = ParameterName("type")
+
     private val aType = ParameterWithExtractor.mandatory[String](
-      name = "type",
+      name = aTypeParamName,
       modify = _.copy(editor =
         Some(
           FixedValuesParameterEditor(
@@ -741,8 +751,10 @@ object SampleNodes {
       )
     )
 
+    private val versionParamName: ParameterName = ParameterName("version")
+
     private def version(versions: List[Int] = List.empty) = ParameterWithExtractor.mandatory[Int](
-      name = "version",
+      name = versionParamName,
       modify = _.copy(editor =
         Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
       )
@@ -753,7 +765,7 @@ object SampleNodes {
     ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(aType.parameter :: Nil)
-      case TransformationStep(("type", DefinedEagerParameter(value: String, _)) :: Nil, None) =>
+      case TransformationStep((`aTypeParamName`, DefinedEagerParameter(value: String, _)) :: Nil, None) =>
         // This is just sample, so we don't care about all cases, in *real* transformer we would e.g. take lists from config file, external service etc.
         val intVersions = value match {
           case "type1" => List(1, 2)
@@ -761,9 +773,9 @@ object SampleNodes {
           case _       => ???
         }
         NextParameters(version(intVersions).parameter :: Nil)
-      case TransformationStep(("type", FailedToDefineParameter) :: Nil, None) =>
+      case TransformationStep((`aTypeParamName`, FailedToDefineParameter) :: Nil, None) =>
         output(context, dependencies)
-      case TransformationStep(("type", _) :: ("version", _) :: Nil, None) =>
+      case TransformationStep((`aTypeParamName`, _) :: (`versionParamName`, _) :: Nil, None) =>
         output(context, dependencies)
     }
 
@@ -835,7 +847,7 @@ object SampleNodes {
     override type State = Nothing
 
     // There is only one parameter in this source
-    private val elementsParamName = "elements"
+    private val elementsParamName = ParameterName("elements")
     private val elements          = ParameterWithExtractor.mandatory[java.util.List[String]](elementsParamName)
 
     private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
@@ -886,10 +898,13 @@ object SampleNodes {
 
     override type State = Nothing
 
-    private val value = ParameterWithExtractor.lazyMandatory[String]("value")
+    private val valueParamName: ParameterName = ParameterName("value")
+    private val value                         = ParameterWithExtractor.lazyMandatory[String](valueParamName)
+
+    private val aTypeParamName = ParameterName("type")
 
     private val aType = ParameterWithExtractor.mandatory[String](
-      name = "type",
+      name = aTypeParamName,
       modify = _.copy(editor =
         Some(
           FixedValuesParameterEditor(
@@ -899,9 +914,11 @@ object SampleNodes {
       )
     )
 
+    private val versionParamName = ParameterName("version")
+
     private def version(versions: List[Int] = Nil) =
       ParameterWithExtractor.mandatory[Int](
-        name = "version",
+        name = versionParamName,
         modify = _.copy(editor =
           Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
         )
@@ -912,16 +929,19 @@ object SampleNodes {
     ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(value.parameter :: aType.parameter :: Nil)
-      case TransformationStep(("value", _) :: ("type", DefinedEagerParameter(value: String, _)) :: Nil, None) =>
+      case TransformationStep(
+            (`valueParamName`, _) :: (`aTypeParamName`, DefinedEagerParameter(value: String, _)) :: Nil,
+            None
+          ) =>
         val intVersions = value match {
           case "type1" => List(1, 2)
           case "type2" => List(3, 4)
           case _       => ???
         }
         NextParameters(version(intVersions).parameter :: Nil)
-      case TransformationStep(("value", _) :: ("type", FailedToDefineParameter) :: Nil, None) =>
+      case TransformationStep((`valueParamName`, _) :: (`aTypeParamName`, FailedToDefineParameter) :: Nil, None) =>
         FinalResults(context)
-      case TransformationStep(("value", _) :: ("type", _) :: ("version", _) :: Nil, None) =>
+      case TransformationStep((`valueParamName`, _) :: (`aTypeParamName`, _) :: (`versionParamName`, _) :: Nil, None) =>
         FinalResults(context)
     }
 

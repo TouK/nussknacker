@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -102,7 +103,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   protected def prepareSourceFinalResults(
       context: ValidationContext,
       dependencies: List[NodeDependencyValue],
-      parameters: List[(String, DefinedParameter)],
+      parameters: List[(ParameterName, DefinedParameter)],
       keyTypingResult: TypingResult,
       valueTypingResult: TypingResult,
       errors: List[ProcessCompilationError]
@@ -118,7 +119,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   protected def prepareSourceFinalErrors(
       context: ValidationContext,
       dependencies: List[NodeDependencyValue],
-      parameters: List[(String, DefinedParameter)],
+      parameters: List[(ParameterName, DefinedParameter)],
       errors: List[ProcessCompilationError]
   )(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
@@ -128,7 +129,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   // Overwrite this for dynamic type definitions.
   protected def prepareContextInitializer(
       dependencies: List[NodeDependencyValue],
-      parameters: List[(String, DefinedParameter)],
+      parameters: List[(ParameterName, DefinedParameter)],
       keyTypingResult: TypingResult,
       valueTypingResult: TypingResult
   ): ContextInitializer[ConsumerRecord[K, V]] =

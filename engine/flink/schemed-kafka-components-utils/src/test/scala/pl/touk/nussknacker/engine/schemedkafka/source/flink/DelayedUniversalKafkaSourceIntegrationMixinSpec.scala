@@ -89,7 +89,7 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
         s"$timestampFieldParamName"         -> s"$timestampField",
         s"${delayParameter.parameter.name}" -> s"$delay"
       )
-      .emptySink("out", "sinkForLongs", SinkValueParamName -> "T(java.time.Instant).now().toEpochMilli()")
+      .emptySink("out", "sinkForLongs", SinkValueParamName.value -> "T(java.time.Instant).now().toEpochMilli()")
   }
 
 }

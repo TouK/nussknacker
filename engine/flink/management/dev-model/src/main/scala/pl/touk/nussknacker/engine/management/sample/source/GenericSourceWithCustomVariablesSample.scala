@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterWithExtractor}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
@@ -61,7 +62,7 @@ object GenericSourceWithCustomVariablesSample
   override type State = Nothing
 
   // There is only one parameter in this source
-  private val elementsParamName = "elements"
+  private val elementsParamName = ParameterName("elements")
   private val elements          = ParameterWithExtractor.mandatory[java.util.List[String]](elementsParamName)
 
   private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
