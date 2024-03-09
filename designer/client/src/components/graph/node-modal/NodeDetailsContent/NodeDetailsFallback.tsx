@@ -14,7 +14,6 @@ export function NodeDetailsFallback(props: {
         <>
             <IdField {...props} errors={props.errors} />
             <span>Node type not known.</span>
-            <pre>{JSON.stringify(props.node, null, 2)}</pre>
         </>
     );
 }
