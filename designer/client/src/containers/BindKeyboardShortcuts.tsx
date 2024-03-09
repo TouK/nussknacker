@@ -25,7 +25,7 @@ export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): JSX
 
     const eventHandlers = useMemo(
         () => ({
-            keydown: (event) => isInputEvent(event) || keyHandlers[event.key.toUpperCase()]?.(event),
+            keydown: (event) => isInputEvent(event) || keyHandlers?.[event.key.toUpperCase()]?.(event),
             copy: (event) => (userActions.copy ? userActions.copy(event) : null),
             paste: (event) => (userActions.paste ? userActions.paste(event) : null),
             cut: (event) => (userActions.cut ? userActions.cut(event) : null),
