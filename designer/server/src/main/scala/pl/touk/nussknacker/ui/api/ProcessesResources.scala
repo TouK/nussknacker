@@ -134,6 +134,11 @@ class ProcessesResources(
             processService.getProcessActions(processId.id)
           }
         }
+        /*
+      FIXME: endpoint below is used for testing purposes in order to get limited information about process.
+             We should extend capabilities of `GetScenarioWithDetailsOptions` and pass appropiate query parameters
+             to endpoint `"processes" / ProcessNameSegment.
+         */
       } ~ path("processes" / ProcessNameSegment / "basic") { processName =>
         processId(processName) { processId =>
           get {
