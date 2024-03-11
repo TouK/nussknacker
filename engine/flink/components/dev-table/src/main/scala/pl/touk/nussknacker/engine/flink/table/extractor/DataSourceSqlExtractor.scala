@@ -14,7 +14,8 @@ object DataSourceSqlExtractor extends LazyLogging {
 
   import scala.jdk.CollectionConverters._
 
-  // TODO: Make this extractor more memory/cpu efficient and ensure closing of resources
+  // TODO: Make this extractor more memory/cpu efficient and ensure closing of resources. For more details see
+  // https://github.com/TouK/nussknacker/pull/5627#discussion_r1512881038
   def extractTablesFromFlinkRuntime(
       sqlStatements: List[SqlStatement]
   ): DataSourceSqlExtractorResult = {
