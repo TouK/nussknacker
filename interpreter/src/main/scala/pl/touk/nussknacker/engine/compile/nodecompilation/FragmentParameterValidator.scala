@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValues
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValues}
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -49,7 +49,7 @@ object FragmentParameterValidator {
     } else
       invalidNel(
         UnsupportedFixedValuesType(
-          paramName,
+          ParameterName(paramName),
           refClazz.refClazzName,
           nodeIds
         )
@@ -80,7 +80,7 @@ object FragmentParameterValidator {
             ExpressionParserCompilationErrorInFragmentDefinition(
               e.message,
               nodeId.id,
-              fragmentParameter.name,
+              ParameterName(fragmentParameter.name),
               subFieldName,
               e.originalExpr
             )
@@ -111,7 +111,7 @@ object FragmentParameterValidator {
           invalid(DuplicateFragmentInputParameter(paramName, nodeId.toString)).toValidatedNel
         } else valid(())
         val validIdentifierError = validateVariableName(
-          paramName,
+          paramName.value,
           Some(qualifiedParamFieldName(paramName, Some(ParameterNameFieldName)))
         ).map(_ => ())
         acc.combine(duplicationError).combine(validIdentifierError)

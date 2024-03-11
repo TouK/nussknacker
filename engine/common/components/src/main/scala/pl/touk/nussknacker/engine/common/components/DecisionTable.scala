@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.common.components
 
-import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -16,6 +15,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
 
+import java.lang
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
@@ -28,22 +28,20 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   private object BasicDecisionTableParameter {
     val name: ParameterName = ParameterName("Basic Decision Table")
 
-    val declaration: ParameterExtractor[TabularTypedData] =
-      ParameterExtractor
-        .mandatory[TabularTypedData](
-          name = name,
-          modify = _.copy(editor = Some(TabularTypedDataEditor))
-        )
+    val declaration: ParameterCreatorWithNoDependency with ParameterExtractor[TabularTypedData] =
+      ParameterDeclaration
+        .mandatory[TabularTypedData](name)
+        .withCreator(_.copy(editor = Some(TabularTypedDataEditor)))
 
   }
 
   private object FilterDecisionTableExpressionParameter {
     val name: ParameterName = ParameterName("Expression")
 
-    val declaration: ParameterCreatorWithExtractor[api.LazyParameter[java.lang.Boolean], TabularTypedData] =
-      ParameterCreatorWithExtractor
-        .lazyMandatory[java.lang.Boolean, TabularTypedData](
-          name = name,
+    val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[LazyParameter[lang.Boolean]] = {
+      ParameterDeclaration
+        .lazyMandatory[java.lang.Boolean](name)
+        .withCreator[TabularTypedData](
           create = data =>
             _.copy(additionalVariables =
               Map(
@@ -53,6 +51,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
               )
             )
         )
+    }
 
   }
 

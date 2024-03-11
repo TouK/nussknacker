@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   ParameterValidator
 }
 import pl.touk.nussknacker.engine.api.expression.TypedExpression
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 
@@ -41,7 +42,7 @@ object BaseComponentValidationHelper {
     expression
       .map { expr =>
         Validations
-          .validate(List(validator), TypedParameter(fieldName, expr))
+          .validate(List(validator), TypedParameter(ParameterName(fieldName), expr))
           .map(_ => ())
       }
       .getOrElse(valid(()))

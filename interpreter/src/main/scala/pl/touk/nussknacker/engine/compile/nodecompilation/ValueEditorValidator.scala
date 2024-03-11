@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   ParameterEditor
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValues
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValues}
 
 object ValueEditorValidator {
 
@@ -45,10 +45,10 @@ object ValueEditorValidator {
     if (!valueEditor.allowOtherValue) {
       List(
         if (valueEditor.fixedValuesList.isEmpty)
-          invalidNel(RequireValueFromEmptyFixedList(paramName, nodeIds))
+          invalidNel(RequireValueFromEmptyFixedList(ParameterName(paramName), nodeIds))
         else Valid(()),
         if (initialValueNotPresentInPossibleValues(valueEditor, initialValue))
-          invalidNel(InitialValueNotPresentInPossibleValues(paramName, nodeIds))
+          invalidNel(InitialValueNotPresentInPossibleValues(ParameterName(paramName), nodeIds))
         else Valid(())
       ).sequence.map(_ => ())
     } else { Valid(()) }
