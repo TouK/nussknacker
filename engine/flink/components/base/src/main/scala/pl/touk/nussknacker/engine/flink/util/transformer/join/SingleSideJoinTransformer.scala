@@ -52,7 +52,7 @@ class SingleSideJoinTransformer(
     case TransformationStep(Nil, _) =>
       NextParameters(
         List(BranchTypeParamDeclaration, KeyParamDeclaration, AggregatorParamDeclaration, WindowLengthParamDeclaration)
-          .map(_.createParameter(()))
+          .map(_.createParameter())
       )
     case TransformationStep(
           (

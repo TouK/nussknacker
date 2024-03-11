@@ -45,7 +45,7 @@ object LastVariableFilterTransformer
   private val conditionParameterDeclaration =
     ParameterDeclaration
       .lazyMandatory[java.lang.Boolean](conditionParameterName)
-      .withCreator[TypingResult](
+      .withAdvancedCreator[TypingResult](
         create = valueType =>
           _.copy(additionalVariables =
             Map(
@@ -62,7 +62,7 @@ object LastVariableFilterTransformer
   ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(
-        groupByParameterDeclaration.createParameter(()) :: valueParameterDeclaration.createParameter(()) :: Nil
+        groupByParameterDeclaration.createParameter() :: valueParameterDeclaration.createParameter() :: Nil
       )
     case TransformationStep((_, _) :: (`valueParameterName`, DefinedLazyParameter(expr)) :: Nil, _) =>
       NextParameters(conditionParameterDeclaration.createParameter(expr) :: Nil)

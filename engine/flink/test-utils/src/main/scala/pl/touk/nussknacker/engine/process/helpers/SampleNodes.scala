@@ -645,7 +645,7 @@ object SampleNodes {
         implicit nodeId: NodeId
     ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        NextParameters(List(mandatoryPar1Declaration.createParameter(()), lazyPar1Declaration.createParameter(())))
+        NextParameters(List(mandatoryPar1Declaration.createParameter(), lazyPar1Declaration.createParameter()))
       case TransformationStep(
             (`par1ParamName`, DefinedEagerParameter(value: String, _)) :: (`lazyPar1ParamName`, _) :: Nil,
             None
@@ -655,7 +655,7 @@ object SampleNodes {
       case TransformationStep((`par1ParamName`, FailedToDefineParameter) :: (`lazyPar1ParamName`, _) :: Nil, None) =>
         outputParameters(context, dependencies, Nil)
       case TransformationStep((`par1ParamName`, _) :: (`lazyPar1ParamName`, _) :: rest, Some(names))
-          if rest.map(_._1) == names =>
+          if rest.map(_._1.value) == names =>
         outputParameters(context, dependencies, rest)
     }
 
@@ -757,7 +757,7 @@ object SampleNodes {
 
     private val versionDeclaration = ParameterDeclaration
       .mandatory[Int](versionParamName)
-      .withCreator[List[Int]](
+      .withAdvancedCreator[List[Int]](
         create = versions =>
           _.copy(editor =
             Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
@@ -768,7 +768,7 @@ object SampleNodes {
         implicit nodeId: NodeId
     ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        NextParameters(aTypeDeclaration.createParameter(()) :: Nil)
+        NextParameters(aTypeDeclaration.createParameter() :: Nil)
       case TransformationStep((`aTypeParamName`, DefinedEagerParameter(value: String, _)) :: Nil, None) =>
         // This is just sample, so we don't care about all cases, in *real* transformer we would e.g. take lists from config file, external service etc.
         val intVersions = value match {
@@ -860,7 +860,7 @@ object SampleNodes {
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
     ): GenericSourceWithCustomVariables.ContextTransformationDefinition = {
-      case TransformationStep(Nil, _) => NextParameters(elementsDeclaration.createParameter(()) :: Nil)
+      case TransformationStep(Nil, _) => NextParameters(elementsDeclaration.createParameter() :: Nil)
       case TransformationStep((`elementsParamName`, _) :: Nil, None) =>
         FinalResults.forValidation(context)(customContextInitializer.validationContext)
     }
@@ -924,7 +924,7 @@ object SampleNodes {
 
     private val versionParamDeclaration = ParameterDeclaration
       .mandatory[Int](versionParamName)
-      .withCreator[List[Int]](
+      .withAdvancedCreator[List[Int]](
         create = versions =>
           _.copy(editor =
             Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
@@ -935,7 +935,7 @@ object SampleNodes {
         implicit nodeId: NodeId
     ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        NextParameters(valueParamDeclaration.createParameter(()) :: aTypeParamDeclaration.createParameter(()) :: Nil)
+        NextParameters(valueParamDeclaration.createParameter() :: aTypeParamDeclaration.createParameter() :: Nil)
       case TransformationStep(
             (`valueParamName`, _) :: (`aTypeParamName`, DefinedEagerParameter(value: String, _)) :: Nil,
             None

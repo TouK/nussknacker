@@ -49,7 +49,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
   private val additionalDataValueParamDeclaration =
     ParameterDeclaration
       .lazyMandatory[AnyRef](additionalDataValueParameterName)
-      .withCreator[(Map[String, ValidationContext], Map[String, String])](
+      .withAdvancedCreator[(Map[String, ValidationContext], Map[String, String])](
         create = { case (contexts, byBranch) =>
           _.copy(additionalVariables =
             right(byBranch)
@@ -69,7 +69,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
       implicit nodeId: NodeId
   ): EnrichWithAdditionalDataTransformer.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      NextParameters(List(roleParamDeclaration.createParameter(()), keyParamDeclaration.createParameter(())))
+      NextParameters(List(roleParamDeclaration.createParameter(), keyParamDeclaration.createParameter()))
     case TransformationStep(
           (roleParamName, DefinedEagerBranchParameter(byBranch: Map[String, String] @unchecked, _)) ::
           (keyParamName, _) :: Nil,

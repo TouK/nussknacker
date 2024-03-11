@@ -1181,10 +1181,10 @@ object InterpreterSpec {
         implicit nodeId: NodeId
     ): DynamicEagerService.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        NextParameters(List(staticParamDeclaration.createParameter(())))
+        NextParameters(List(staticParamDeclaration.createParameter()))
       case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) :: Nil, _) =>
         val dynamicParamDeclaration = createDynamicParamDeclaration(ParameterName(value))
-        NextParameters(dynamicParamDeclaration.createParameter(()) :: Nil)
+        NextParameters(dynamicParamDeclaration.createParameter() :: Nil)
       case TransformationStep(
             (`staticParamName`, DefinedEagerParameter(value: String, _)) ::
             (otherName, DefinedLazyParameter(expression)) :: Nil,

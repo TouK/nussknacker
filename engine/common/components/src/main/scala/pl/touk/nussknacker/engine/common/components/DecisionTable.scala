@@ -41,7 +41,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
     val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[LazyParameter[lang.Boolean]] = {
       ParameterDeclaration
         .lazyMandatory[java.lang.Boolean](name)
-        .withCreator[TabularTypedData](
+        .withAdvancedCreator[TabularTypedData](
           create = data =>
             _.copy(additionalVariables =
               Map(
@@ -77,7 +77,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
 
   private lazy val prepare: ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     NextParameters(
-      parameters = BasicDecisionTableParameter.declaration.createParameter(()) :: Nil,
+      parameters = BasicDecisionTableParameter.declaration.createParameter() :: Nil,
       errors = List.empty,
       state = None
     )

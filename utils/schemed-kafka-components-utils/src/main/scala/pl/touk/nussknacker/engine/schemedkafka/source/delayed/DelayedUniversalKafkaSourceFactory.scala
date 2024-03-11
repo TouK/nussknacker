@@ -25,7 +25,7 @@ class DelayedUniversalKafkaSourceFactory(
     ) {
 
   override def paramsDeterminedAfterSchema: List[Parameter] =
-    super.paramsDeterminedAfterSchema ++ List(delayParameter.createParameter(()))
+    super.paramsDeterminedAfterSchema ++ List(delayParameter.createParameter())
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -60,7 +60,7 @@ class DelayedUniversalKafkaSourceFactory(
           (`topicParamName`, _) :: (SchemaVersionParamName, _) :: (`timestampFieldParamName`, _) :: Nil,
           _
         ) =>
-      NextParameters(parameters = fallbackTimestampFieldParameter.createParameter(()) :: paramsDeterminedAfterSchema)
+      NextParameters(parameters = fallbackTimestampFieldParameter.createParameter() :: paramsDeterminedAfterSchema)
   }
 
   protected def timestampFieldParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
@@ -77,11 +77,11 @@ class DelayedUniversalKafkaSourceFactory(
       )
 
       NextParameters(
-        timestampFieldParameter(valueValidationResult.map(_._2).toOption).createParameter(()) :: Nil,
+        timestampFieldParameter(valueValidationResult.map(_._2).toOption).createParameter() :: Nil,
         state = Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(valueValidationResult))
       )
     case TransformationStep((`topicParamName`, _) :: (`SchemaVersionParamName`, _) :: Nil, _) =>
-      NextParameters(parameters = fallbackTimestampFieldParameter.createParameter(()) :: paramsDeterminedAfterSchema)
+      NextParameters(parameters = fallbackTimestampFieldParameter.createParameter() :: paramsDeterminedAfterSchema)
   }
 
 }

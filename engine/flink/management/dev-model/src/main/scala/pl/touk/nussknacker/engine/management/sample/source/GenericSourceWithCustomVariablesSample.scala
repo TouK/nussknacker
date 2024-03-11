@@ -72,7 +72,7 @@ object GenericSourceWithCustomVariablesSample
       implicit nodeId: NodeId
   ): GenericSourceWithCustomVariablesSample.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      NextParameters(elementsParamDeclaration.createParameter(()) :: Nil)
+      NextParameters(elementsParamDeclaration.createParameter() :: Nil)
     case TransformationStep((`elementsParamName`, _) :: Nil, None) =>
       FinalResults.forValidation(context)(customContextInitializer.validationContext)
   }

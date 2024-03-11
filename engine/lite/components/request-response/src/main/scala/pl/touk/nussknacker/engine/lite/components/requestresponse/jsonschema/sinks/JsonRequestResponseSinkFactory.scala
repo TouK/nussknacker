@@ -67,7 +67,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(true, _)) :: Nil, _) =>
-      NextParameters(validationModeParam :: rawValueParam.createParameter(()) :: Nil)
+      NextParameters(validationModeParam :: rawValueParam.createParameter() :: Nil)
     case TransformationStep(
           (SinkRawEditorParamName, DefinedEagerParameter(true, _)) ::
           (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
@@ -78,7 +78,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
         .getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
           val valueParam = SingleSchemaBasedParameter(
-            rawValueParam.createParameter(()),
+            rawValueParam.createParameter(),
             new JsonSchemaOutputValidator(ValidationMode.fromString(mode, SinkValidationModeParameterName))
               .validate(_, schema)
           )

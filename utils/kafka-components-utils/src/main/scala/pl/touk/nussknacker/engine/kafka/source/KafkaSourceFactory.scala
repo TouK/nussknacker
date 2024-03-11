@@ -179,7 +179,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     * Basic implementation of definition of single topic parameter.
     * In case of fetching topics from external repository: return list of topics or raise exception.
     */
-  protected def prepareInitialParameters: List[Parameter] = topicParameterDeclaration.createParameter(()) :: Nil
+  protected def prepareInitialParameters: List[Parameter] = topicParameterDeclaration.createParameter() :: Nil
 
   protected val topicParameterDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[String] =
     ParameterDeclaration

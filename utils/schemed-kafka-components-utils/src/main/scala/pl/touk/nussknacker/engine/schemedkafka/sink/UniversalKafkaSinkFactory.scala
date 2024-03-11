@@ -86,7 +86,7 @@ class UniversalKafkaSinkFactory(
           ) :: Nil,
           _
         ) =>
-      NextParameters(validationMode.createParameter(()) :: rawValue.createParameter(()) :: Nil)
+      NextParameters(validationMode.createParameter() :: rawValue.createParameter() :: Nil)
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
@@ -110,7 +110,7 @@ class UniversalKafkaSinkFactory(
               runtimeSchemaData.schema,
               rawMode = true,
               validationMode = extractValidationMode(mode),
-              rawParameter = rawValue.createParameter(()),
+              rawParameter = rawValue.createParameter(),
               restrictedParamNames
             )
             .map { extractedSinkParameter =>
@@ -164,7 +164,7 @@ class UniversalKafkaSinkFactory(
               schemaData.schema,
               rawMode = false,
               validationMode = ValidationMode.lax,
-              rawValue.createParameter(()),
+              rawValue.createParameter(),
               restrictedParamNames
             )
             .map { valueParam =>

@@ -71,7 +71,7 @@ class FullOuterJoinTransformer(
           AggregateByParamDeclaration,
           WindowLengthParamDeclaration
         )
-          .map(_.createParameter(())),
+          .map(_.createParameter()),
         errors = errors_names ++ errors_key
       )
 
@@ -97,7 +97,7 @@ class FullOuterJoinTransformer(
                 .computeOutputType(aggregateByByBranchId(id))
                 .leftMap(x => {
                   val branchParamId =
-                    ParameterNaming.getNameForBranchParameter(AggregateByParamDeclaration.createParameter(()), id)
+                    ParameterNaming.getNameForBranchParameter(AggregateByParamDeclaration.createParameter(), id)
                   NonEmptyList.one(CustomNodeError(x, Some(branchParamId)))
                 })
                 .map(id -> _)

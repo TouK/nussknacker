@@ -131,9 +131,9 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     NextParameters(parameters =
-      resultStrategyParamDeclaration.createParameter(()) ::
-        queryParamDeclaration.createParameter(()) ::
-        cacheTTLParamDeclaration.createParameter(()) :: Nil
+      resultStrategyParamDeclaration.createParameter() ::
+        queryParamDeclaration.createParameter() ::
+        cacheTTLParamDeclaration.createParameter() :: Nil
     )
   }
 
