@@ -80,7 +80,6 @@ class UIProcessValidator(
       .add(validateDuplicates(scenarioGraph))
       .add(validateLooseNodes(scenarioGraph))
       .add(validateEdgeUniqueness(scenarioGraph))
-      .add(validateScenarioProperties(scenarioGraph.properties.additionalFields.properties, isFragment))
       .add(warningValidation(scenarioGraph))
   }
 

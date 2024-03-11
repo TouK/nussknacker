@@ -83,12 +83,6 @@ object StreamMetaData {
 
 }
 
-final case class CustomMetaData(customProperties: Map[String, String]) extends ScenarioSpecificData {
-  override def toMap: Map[String, String] = customProperties
-
-  override def metaDataType: String = "CustomMetadata"
-}
-
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
 case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData {
 

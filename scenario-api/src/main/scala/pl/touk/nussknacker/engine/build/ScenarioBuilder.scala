@@ -104,9 +104,6 @@ object ScenarioBuilder {
   def streamingLite(id: String) =
     new ProcessMetaDataBuilder(MetaData(id, LiteStreamMetaData()))
 
-  def withCustomMetaData(id: String, properties: Map[String, String]) =
-    new ProcessMetaDataBuilder(MetaData(id, CustomMetaData(properties)))
-
   def requestResponse(id: String) =
     new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(Some(id))))
 
