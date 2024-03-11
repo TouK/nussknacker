@@ -1,5 +1,8 @@
 # Changelog
 
+1.15.0 (Not released yet)
+* [#5704](https://github.com/TouK/nussknacker/pull/5704) Fix: Encoding test results during: from file, generate file and ad hoc tests
+
 1.14.0 (Not released yet)
 -------------------------
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) [#5552](https://github.com/TouK/nussknacker/pull/5552) [#5645](https://github.com/TouK/nussknacker/pull/5645) Libraries bump:
