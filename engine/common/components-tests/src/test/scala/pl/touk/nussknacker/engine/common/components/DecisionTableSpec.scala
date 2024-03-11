@@ -288,7 +288,7 @@ class LiteEngineRunDecisionTableSpec extends DecisionTableSpec {
   override protected def addEndNode(
       builder: GraphBuilder[CanonicalProcess]
   )(id: String, params: Seq[(String, Expression)]): CanonicalProcess = {
-    builder.emptySink(id, TestScenarioRunner.testResultService, params: _*)
+    builder.emptySink(id, TestScenarioRunner.testResultSink, params: _*)
   }
 
 }

@@ -17,6 +17,8 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
+import scala.jdk.CollectionConverters._
+
 object GenericSourceWithCustomVariablesSample
     extends SourceFactory
     with SingleInputDynamicComponent[Source]
@@ -82,7 +84,6 @@ object GenericSourceWithCustomVariablesSample
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Source = {
-    import scala.jdk.CollectionConverters._
     val elementsValue = elementsParamDeclaration.extractValue(params).asScala.toList
 
     new CollectionSource[String](elementsValue, None, Typed[String])(TypeInformation.of(classOf[String]))

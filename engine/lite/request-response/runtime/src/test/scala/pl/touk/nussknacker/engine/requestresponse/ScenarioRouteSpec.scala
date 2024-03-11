@@ -87,7 +87,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
   }
 
   private val expectedOApiDef = parse(s"""{
-       |  "openapi" : "${defaultOpenApiVersion}",
+       |  "openapi" : "$defaultOpenApiVersion",
        |  "info" : {
        |    "title" : "test",
        |    "description" : "description",

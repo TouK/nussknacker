@@ -167,13 +167,13 @@ object PrettyValidationErrors {
         )
       case DuplicateFragmentInputParameter(paramName, _) =>
         node(
-          s"Parameter name '$paramName' has to be unique",
+          s"Parameter name '${paramName.value}' has to be unique",
           "Parameter name not unique",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ParameterNameFieldName)))
         )
       case InitialValueNotPresentInPossibleValues(paramName, _) =>
         node(
-          s"The initial value provided for parameter '$paramName' is not present in the parameter's possible values list",
+          s"The initial value provided for parameter '${paramName.value}' is not present in the parameter's possible values list",
           "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InitialValueFieldName)))
         )
@@ -185,7 +185,7 @@ object PrettyValidationErrors {
         )
       case RequireValueFromEmptyFixedList(paramName, _) =>
         node(
-          s"Required parameter '$paramName' cannot be a member of an empty fixed list",
+          s"Required parameter '${paramName.value}' cannot be a member of an empty fixed list",
           "Please check component definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
         )
