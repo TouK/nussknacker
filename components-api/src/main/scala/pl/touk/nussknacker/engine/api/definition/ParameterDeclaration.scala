@@ -91,7 +91,7 @@ object ParameterExtractor {
       params.extractMandatory[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
-      Parameter[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
+      Parameter[Map[String, PARAMETER_VALUE_TYPE]](parameterName).copy(branchParam = true)
   }
 
   final class MandatoryLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag] private[definition] (
