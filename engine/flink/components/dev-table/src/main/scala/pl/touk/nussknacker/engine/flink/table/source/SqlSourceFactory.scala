@@ -26,10 +26,7 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
       name = tableNameParamName
     ).copy(
       editor = Some(FixedValuesParameterEditor(possibleTableParamValues)),
-      validators = List(
-        MandatoryParameterValidator,
-        FixedValuesValidator(possibleTableParamValues)
-      )
+      validators = List(FixedValuesValidator(possibleTableParamValues))
     )
     ParameterWithExtractor(parameter)
   }
