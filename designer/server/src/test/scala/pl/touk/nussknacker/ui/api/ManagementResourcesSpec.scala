@@ -432,7 +432,7 @@ class ManagementResourcesSpec
       val ctx = responseAs[Json].hcursor
         .downField("results")
         .downField("nodeResults")
-        .downField("source")
+        .downField(sourceId)
         .downArray
         .downField("variables")
 
@@ -470,7 +470,7 @@ class ManagementResourcesSpec
       val ctx = responseAs[Json].hcursor
         .downField("results")
         .downField("nodeResults")
-        .downField("source")
+        .downField(sourceId)
         .downArray
         .downField("variables")
 
