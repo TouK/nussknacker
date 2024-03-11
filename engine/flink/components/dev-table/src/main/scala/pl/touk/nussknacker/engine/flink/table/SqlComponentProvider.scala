@@ -49,7 +49,7 @@ class SqlComponentProvider extends ComponentProvider with LazyLogging {
     val results       = extractTablesFromFlinkRuntime(sqlStatements)
 
     if (results.sqlStatementExecutionErrors.nonEmpty) {
-      throw new RuntimeException(
+      throw new IllegalStateException(
         "Errors occurred when parsing sql component configuration file: " + results.sqlStatementExecutionErrors
           .map(_.message)
           .mkString(", ")
@@ -59,16 +59,15 @@ class SqlComponentProvider extends ComponentProvider with LazyLogging {
     SqlDataSourcesDefinition(results.tableDefinitions, sqlStatements)
   }
 
-  private def readSqlFromFile(pathToFile: Path): List[SqlStatement] =
-    Try {
-      val fileContent = ResourceLoader.load(pathToFile)
+  private def readSqlFromFile(pathToFile: Path): List[SqlStatement] = Try(ResourceLoader.load(pathToFile)) match {
+    case Failure(exception) =>
+      throw new IllegalStateException(
+        s"""Sql file with configuration of sql data source components was not found under specified path: $pathToFile. 
+             |Exception: $exception""".stripMargin
+      )
+    case Success(fileContent) =>
       SqlStatementReader.readSql(fileContent.mkString)
-    } match {
-      case Failure(exception) =>
-        logger.warn(s"Couldn't parse sql tables definition: $exception")
-        List.empty
-      case Success(value) => value
-    }
+  }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
