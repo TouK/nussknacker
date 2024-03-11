@@ -7,29 +7,47 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
+import io.dropwizard.metrics5.MetricRegistry
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.BeMatcher
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import org.scalatestplus.mockito.MockitoSugar
+import pl.touk.nussknacker.engine.ClassLoaderModelData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType, ScenarioActionName}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.{Context, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
-import pl.touk.nussknacker.test.mock.MockDeploymentManager
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubModelDataWithModelDefinition}
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
+import pl.touk.nussknacker.ui.processreport.ProcessCounter
+import pl.touk.nussknacker.ui.security.api.LoggedUser
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class ManagementResourcesSpec
     extends AnyFunSuite
@@ -38,6 +56,7 @@ class ManagementResourcesSpec
     with Matchers
     with PatientScalaFutures
     with OptionValues
+    with MockitoSugar
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with NuResourcesTest {
@@ -351,9 +370,6 @@ class ManagementResourcesSpec
   }
 
   test("return test results of errors, including null") {
-
-    import pl.touk.nussknacker.engine.spel.Implicits._
-
     val process = ScenarioBuilder
       .streaming(processName.value)
       .parallelism(1)
@@ -371,16 +387,12 @@ class ManagementResourcesSpec
   }
 
   test("refuses to test if too much data") {
-
-    import pl.touk.nussknacker.engine.spel.Implicits._
-
-    val process = {
+    val process =
       ScenarioBuilder
         .streaming(processName.value)
-        .parallelism(1)
         .source("startProcess", "csv-source")
         .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'")
-    }
+
     saveCanonicalProcessAndAssertSuccess(process)
     val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))
 
@@ -400,6 +412,73 @@ class ManagementResourcesSpec
     testScenario(ProcessTestData.sampleScenario, testDataContent) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[String] shouldBe "Record 2 - scenario does not have source id: 'unknown'"
+    }
+  }
+
+  test("return proper converted to JSON Object (with including Model's ClassLoader) test results data") {
+    val sourceId                   = "source"
+    val managementResourcesForTest = prepareStubbedManagementResourcesForTest(sourceId, None)
+
+    val dumpScenario = ScenarioBuilder
+      .streaming(processName.value)
+      .source(sourceId, ProcessTestData.existingSourceFactory)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+
+    saveCanonicalProcessAndAssertSuccess(dumpScenario)
+
+    testScenario(dumpScenario, "", managementResourcesForTest) ~> check {
+      status shouldEqual StatusCodes.OK
+
+      val ctx = responseAs[Json].hcursor
+        .downField("results")
+        .downField("nodeResults")
+        .downField("source")
+        .downArray
+        .downField("variables")
+
+      // Default behavior with GenericRecordWithSchemaId, source value is converted to JSON Object
+      ctx
+        .downField("input")
+        .downField("pretty")
+        .focus shouldBe Some(
+        Json.fromFields(
+          Map(
+            "name" -> Json.fromString("lcl"),
+            "age"  -> Json.fromInt(18)
+          )
+        )
+      )
+    }
+  }
+
+  test("return proper converted to String (without including Model's ClassLoader) test results data") {
+    object EmptyClassLoader extends ClassLoader(null)
+
+    val sourceId                   = "source"
+    val managementResourcesForTest = prepareStubbedManagementResourcesForTest(sourceId, Some(EmptyClassLoader))
+
+    val dumpScenario = ScenarioBuilder
+      .streaming(processName.value)
+      .source(sourceId, ProcessTestData.existingSourceFactory)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
+
+    saveCanonicalProcessAndAssertSuccess(dumpScenario)
+
+    testScenario(dumpScenario, "", managementResourcesForTest) ~> check {
+      status shouldEqual StatusCodes.OK
+
+      val ctx = responseAs[Json].hcursor
+        .downField("results")
+        .downField("nodeResults")
+        .downField("source")
+        .downArray
+        .downField("variables")
+
+      // In the tests on the classPath there are all classes, so converter uses .toString on GenericRecordWithSchemaId and as a result we have string
+      ctx
+        .downField("input")
+        .downField("pretty")
+        .focus shouldBe Some(Json.fromString("{\"name\": \"lcl\", \"age\": 18}"))
     }
   }
 
@@ -473,5 +552,73 @@ class ManagementResourcesSpec
   def decodeDetails: ScenarioWithDetails = responseAs[ScenarioWithDetails]
 
   def checkThatEventually[T](body: => T): RouteTestResult => T = check(eventually(body))
+
+  private def prepareStubbedManagementResourcesForTest(
+      sourceId: String,
+      maybeClassLoader: Option[ClassLoader]
+  ): ManagementResources = {
+    val stubbedValueWhichClassShouldNotBeOnClassPath = {
+      val schema = AvroUtils.parseSchema(s"""{
+                                            |  "type": "record",
+                                            |  "name": "SampleRecord",
+                                            |  "fields": [
+                                            |    { "name": "name", "type": "string" },
+                                            |    { "name": "age", "type": "int" }
+                                            |  ]
+                                            |}
+    """.stripMargin)
+
+      AvroUtils.createRecord(schema, Map("name" -> "lcl", "age" -> 18))
+    }
+
+    val stubbedTestResults = TestResults(
+      nodeResults = Map(
+        sourceId -> List(Context(sourceId, Map("input" -> stubbedValueWhichClassShouldNotBeOnClassPath)))
+      ),
+      invocationResults = Map.empty,
+      externalInvocationResults = Map.empty,
+      exceptions = List.empty
+    )
+
+    val stubbedTestExecutorServiceImpl = mock[ScenarioTestExecutorService]
+    when(
+      stubbedTestExecutorServiceImpl.testProcess(any[ProcessIdWithName], any[CanonicalProcess], any[ScenarioTestData])(
+        any[LoggedUser],
+        any[ExecutionContext]
+      )
+    ).thenReturn(Future.successful(stubbedTestResults))
+
+    val scenarioTestService = new ScenarioTestService(
+      new ModelDataTestInfoProvider(modelData),
+      processResolver,
+      featureTogglesConfig.testDataSettings,
+      new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
+      new ProcessCounter(TestFactory.prepareSampleFragmentRepository),
+      stubbedTestExecutorServiceImpl
+    )
+
+    val stubbedTypeToConfig = typeToConfig.mapValues { value =>
+      val modelData = value.designerModelData.modelData.asInstanceOf[ClassLoaderModelData]
+
+      new StubModelDataWithModelDefinition(modelData.modelDefinition) {
+        override def modelClassLoader: ModelClassLoader =
+          maybeClassLoader
+            .map(ModelClassLoader(_, List.empty))
+            .getOrElse(modelData.modelClassLoader)
+      }
+    }
+
+    new ManagementResources(
+      processAuthorizer = processAuthorizer,
+      processService = processService,
+      deploymentService = deploymentService,
+      dispatcher = dmDispatcher,
+      metricRegistry = new MetricRegistry,
+      scenarioTestServices = mapProcessingTypeDataProvider(
+        Streaming.stringify -> scenarioTestService
+      ),
+      typeToConfig = stubbedTypeToConfig
+    )
+  }
 
 }

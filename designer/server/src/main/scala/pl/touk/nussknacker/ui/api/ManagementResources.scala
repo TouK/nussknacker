@@ -6,17 +6,11 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
-import io.circe.syntax._
-import io.circe.{Decoder, Encoder, Json, parser}
+import io.circe.{Decoder, Encoder, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
-import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{TestFromParametersRequest, prepareTestFromParametersDecoder}
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
@@ -25,86 +19,10 @@ import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
+import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ScenarioTestService, TestResultsJsonEncoder}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
-
-object ManagementResources {
-
-  import pl.touk.nussknacker.engine.api.CirceUtil._
-
-  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts] = deriveConfiguredEncoder
-
-  implicit val testResultsEncoder: Encoder[TestResults] = new Encoder[TestResults]() {
-
-    implicit val anyEncoder: Encoder[Any] = {
-      case scenarioGraph: DisplayJson =>
-        def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
-
-        val scenarioGraphJson = scenarioGraph.asJson
-        scenarioGraph.originalDisplay match {
-          case None           => Json.obj("pretty" -> scenarioGraphJson)
-          case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> scenarioGraphJson)
-        }
-      case null => Json.Null
-      case a =>
-        Json.obj(
-          "pretty" -> BestEffortJsonEncoder(failOnUnknown = false, a.getClass.getClassLoader).circeEncoder.apply(a)
-        )
-    }
-
-    // TODO: do we want more information here?
-    implicit val contextEncoder: Encoder[Context] = (a: Context) =>
-      Json.obj(
-        "id"        -> Json.fromString(a.id),
-        "variables" -> a.variables.asJson
-      )
-
-    val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
-
-    // It has to be done manually, deriveConfiguredEncoder doesn't work properly with value: Any
-    implicit val externalInvocationResultEncoder: Encoder[ExternalInvocationResult] =
-      (value: ExternalInvocationResult) =>
-        Json.obj(
-          "name"      -> Json.fromString(value.name),
-          "contextId" -> Json.fromString(value.contextId),
-          "value"     -> value.value.asJson,
-        )
-
-    // It has to be done manually, deriveConfiguredEncoder doesn't work properly with value: Any
-    implicit val expressionInvocationResultEncoder: Encoder[ExpressionInvocationResult] =
-      (value: ExpressionInvocationResult) =>
-        Json.obj(
-          "name"      -> Json.fromString(value.name),
-          "contextId" -> Json.fromString(value.contextId),
-          "value"     -> value.value.asJson,
-        )
-
-    implicit val exceptionsEncoder: Encoder[NuExceptionInfo[_ <: Throwable]] =
-      (value: NuExceptionInfo[_ <: Throwable]) =>
-        Json.obj(
-          // We don't need componentId on the FE here
-          "nodeId"    -> value.nodeComponentInfo.map(_.nodeId).asJson,
-          "throwable" -> throwableEncoder(value.throwable),
-          "context"   -> value.context.asJson
-        )
-
-    override def apply(a: TestResults): Json = a match {
-      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions) =>
-        Json.obj(
-          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.id) }.asJson,
-          "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
-          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
-            node -> list.sortBy(_.contextId)
-          }.asJson,
-          "exceptions" -> exceptions.sortBy(_.context.id).asJson
-        )
-    }
-
-  }
-
-}
 
 class ManagementResources(
     val processAuthorizer: AuthorizeProcess,
@@ -121,8 +39,6 @@ class ManagementResources(
     with FailFastCirceSupport
     with AuthorizeProcessDirectives
     with ProcessDirectives {
-
-  import ManagementResources._
 
   // TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
@@ -206,6 +122,9 @@ class ManagementResources(
                   measureTime("test", metricRegistry) {
                     parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson) match {
                       case Right(scenarioGraph) =>
+                        val modelData          = typeToConfig.forTypeUnsafe(details.processingType)
+                        val testResultsEncoder = TestResultsJsonEncoder(modelData)
+
                         scenarioTestServices
                           .forTypeUnsafe(details.processingType)
                           .performTest(
@@ -214,9 +133,7 @@ class ManagementResources(
                             details.isFragment,
                             RawScenarioTestData(testDataContent)
                           )
-                          .flatMap {
-                            mapResultsToHttpResponse
-                          }
+                          .map(testResultsEncoder.encode)
                       case Left(error) =>
                         Future.failed(ProcessUnmarshallingError(error.toString))
                     }
@@ -235,6 +152,9 @@ class ManagementResources(
                     complete {
                       measureTime("generateAndTest", metricRegistry) {
                         val scenarioTestService = scenarioTestServices.forTypeUnsafe(details.processingType)
+                        val modelData           = typeToConfig.forTypeUnsafe(details.processingType)
+                        val testResultsEncoder  = TestResultsJsonEncoder(modelData)
+
                         scenarioTestService.generateData(
                           scenarioGraph,
                           processName,
@@ -250,9 +170,7 @@ class ManagementResources(
                                 details.isFragment,
                                 rawScenarioTestData
                               )
-                              .flatMap {
-                                mapResultsToHttpResponse
-                              }
+                              .map(testResultsEncoder.encode)
                         }
                       }
                     }
@@ -265,9 +183,12 @@ class ManagementResources(
         path("testWithParameters" / ProcessNameSegment) { processName =>
           {
             (post & processDetailsForName(processName)) { process =>
-              val modelData = typeToConfig.forTypeUnsafe(process.processingType)
+              val modelData     = typeToConfig.forTypeUnsafe(process.processingType)
+              val jsonConverter = TestResultsJsonEncoder(modelData)
+
               implicit val requestDecoder: Decoder[TestFromParametersRequest] =
                 prepareTestFromParametersDecoder(modelData)
+
               (post & entity(as[TestFromParametersRequest])) { testParametersRequest =>
                 {
                   canDeploy(process.idWithNameUnsafe) {
@@ -280,9 +201,7 @@ class ManagementResources(
                           process.isFragment,
                           testParametersRequest.sourceParameters
                         )
-                        .flatMap {
-                          mapResultsToHttpResponse
-                        }
+                        .map(jsonConverter.encode)
                     }
                   }
                 }
@@ -304,14 +223,10 @@ class ManagementResources(
         }
     }
 
-  private def mapResultsToHttpResponse: ResultsWithCounts => Future[HttpResponse] = { results =>
-    Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-  }
-
   private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
 
-  private def convertSavepointResultToResponse(future: Future[SavepointResult]) = {
+  private def convertSavepointResultToResponse(future: Future[SavepointResult]): Future[HttpResponse] = {
     future
       .map { case SavepointResult(path) => HttpResponse(entity = path, status = StatusCodes.OK) }
   }

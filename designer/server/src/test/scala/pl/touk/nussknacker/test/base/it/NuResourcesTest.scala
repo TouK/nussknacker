@@ -124,7 +124,7 @@ trait NuResourcesTest
   protected val deploymentManagerProvider: DeploymentManagerProvider =
     new MockManagerProvider(deploymentManager)
 
-  private val modelData = ModelData(processingTypeConfig, modelDependencies)
+  protected val modelData: ModelData = ModelData(processingTypeConfig, modelDependencies)
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
@@ -211,7 +211,7 @@ trait NuResourcesTest
       )
     )
 
-  protected def deployRoute() =
+  protected def deployRoute(): ManagementResources = {
     new ManagementResources(
       processAuthorizer = processAuthorizer,
       processService = processService,
@@ -221,6 +221,7 @@ trait NuResourcesTest
       scenarioTestServices = scenarioTestServiceByProcessingType,
       typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData)
     )
+  }
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -356,14 +357,20 @@ trait NuResourcesTest
     Post(s"/processManagement/customAction/$processName", reqPayload.toJsonRequestEntity()) ~>
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 
-  protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
+  protected def testScenario(
+      scenario: CanonicalProcess,
+      testDataContent: String,
+      managementRoute: ManagementResources = deployRoute()
+  ): RouteTestResult = {
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
+
     val multiPart = MultipartUtils.prepareMultiParts(
       "testData"      -> testDataContent,
       "scenarioGraph" -> scenarioGraph.asJson.noSpaces
     )()
+
     Post(s"/processManagement/test/${scenario.name}", multiPart) ~> withPermissions(
-      deployRoute(),
+      managementRoute,
       Permission.Deploy,
       Permission.Read
     )
