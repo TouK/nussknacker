@@ -2,18 +2,20 @@ package pl.touk.nussknacker.devmodel
 
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
+import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.defaultmodel.{FlinkWithKafkaSuite, TopicConfig}
+import pl.touk.nussknacker.devmodel.TestData._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.{SqlComponentProvider, TableComponentProvider}
+import pl.touk.nussknacker.engine.flink.table.SqlComponentProvider
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.spel
-import TestData._
 
-import java.nio.file.Files
+import java.io.File
+import java.nio.charset.StandardCharsets
 
 class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
 
@@ -38,10 +40,10 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
        |);""".stripMargin
 
   private lazy val sqlTablesDefinitionFilePath = {
-    val tempDir  = Files.createTempDirectory("sqlConfigTemp")
-    val filePath = tempDir.resolve("tables-definition-test.sql")
-    Files.writeString(filePath, sqlTablesConfig)
-    filePath
+    val tempFile = File.createTempFile("tables-definition-test", ".sql")
+    tempFile.deleteOnExit()
+    FileUtils.writeStringToFile(tempFile, sqlTablesConfig, StandardCharsets.UTF_8)
+    tempFile.toPath
   }
 
   private lazy val kafkaTableConfig = s"sqlFilePath: $sqlTablesDefinitionFilePath"
