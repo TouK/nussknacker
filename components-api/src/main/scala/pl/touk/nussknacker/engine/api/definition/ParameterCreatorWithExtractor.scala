@@ -29,7 +29,7 @@ sealed trait ParameterExtractor[+PARAMETER_VALUE_TYPE] extends Serializable {
 
 object ParameterExtractor {
 
-  class MandatoryParamExtractor[PARAMETER_VALUE_TYPE: TypeTag: NotNothing] private[definition] (
+  final class MandatoryParamExtractor[PARAMETER_VALUE_TYPE: TypeTag: NotNothing] private[definition] (
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[PARAMETER_VALUE_TYPE] {
 
@@ -40,7 +40,18 @@ object ParameterExtractor {
       Parameter[PARAMETER_VALUE_TYPE](parameterName)
   }
 
-  class MandatoryLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag: NotNothing] private[definition] (
+  final class MandatoryBranchParamExtractor[PARAMETER_VALUE_TYPE: TypeTag: NotNothing] private[definition] (
+      override val parameterName: ParameterName,
+  ) extends ParameterExtractor[Map[String, PARAMETER_VALUE_TYPE]] {
+
+    override def extractValue(params: Params): Map[String, PARAMETER_VALUE_TYPE] =
+      params.extractMandatory[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
+
+    override private[definition] def createBase: Parameter =
+      Parameter[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
+  }
+
+  final class MandatoryLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag: NotNothing] private[definition] (
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[LazyParameter[PARAMETER_VALUE_TYPE]] {
 
@@ -51,9 +62,50 @@ object ParameterExtractor {
       Parameter[PARAMETER_VALUE_TYPE](parameterName).copy(isLazyParameter = true)
   }
 
+  final class MandatoryBranchLazyParamExtractor[
+      PARAMETER_VALUE_TYPE <: AnyRef: TypeTag: NotNothing
+  ] private[definition] (
+      override val parameterName: ParameterName,
+  ) extends ParameterExtractor[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] {
+
+    override def extractValue(params: Params): Map[String, LazyParameter[PARAMETER_VALUE_TYPE]] =
+      params.extractMandatory[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
+
+    override private[definition] def createBase: Parameter =
+      Parameter[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
+        .copy(isLazyParameter = true, branchParam = true)
+
+  }
+
+  final class OptionalParamExtractor[PARAMETER_VALUE_TYPE: TypeTag: NotNothing] private[definition] (
+      override val parameterName: ParameterName,
+  ) extends ParameterExtractor[Option[PARAMETER_VALUE_TYPE]] {
+    override def extractValue(params: Params): Option[PARAMETER_VALUE_TYPE] =
+      params.extract[PARAMETER_VALUE_TYPE](parameterName)
+
+    override private[definition] def createBase: Parameter =
+      Parameter.optional[PARAMETER_VALUE_TYPE](parameterName)
+  }
+
 }
 
 object ParameterDeclaration {
+
+  def mandatory[T: TypeTag: NotNothing](name: ParameterName): Builder[Mandatory[T]] =
+    new Builder(Mandatory[T](name))
+
+  def branchMandatory[T <: AnyRef: TypeTag: NotNothing](name: ParameterName): Builder[BranchMandatory[T]] =
+    new Builder(BranchMandatory[T](name))
+
+  def lazyMandatory[T <: AnyRef: TypeTag: NotNothing](name: ParameterName): Builder[LazyMandatory[T]] =
+    new Builder(LazyMandatory[T](name))
+
+  def branchLazyMandatory[T <: AnyRef: TypeTag: NotNothing](name: ParameterName): Builder[BranchLazyMandatory[T]] =
+    new Builder(BranchLazyMandatory[T](name))
+
+  def optional[T: TypeTag: NotNothing](name: ParameterName): Builder[Optional[T]] = {
+    new Builder(Optional[T](name))
+  }
 
   sealed abstract class ParamType {
     type EXTRACTED_VALUE_TYPE
@@ -64,49 +116,47 @@ object ParameterDeclaration {
 
     final case class Mandatory[T: TypeTag: NotNothing](parameterName: ParameterName) extends ParamType {
       override type EXTRACTED_VALUE_TYPE = T
-      lazy val extractor: ParameterExtractor[EXTRACTED_VALUE_TYPE] = new MandatoryParamExtractor[T](parameterName)
+      override lazy val extractor: ParameterExtractor[EXTRACTED_VALUE_TYPE] =
+        new MandatoryParamExtractor[T](parameterName)
     }
 
     final case class LazyMandatory[T <: AnyRef: TypeTag: NotNothing](parameterName: ParameterName) extends ParamType {
       override type EXTRACTED_VALUE_TYPE = LazyParameter[T]
-
-      def extractor: ParameterExtractor[EXTRACTED_VALUE_TYPE] = {
+      override lazy val extractor: ParameterExtractor[EXTRACTED_VALUE_TYPE] =
         new MandatoryLazyParamExtractor[T](parameterName)
-      }
-
     }
 
-    final case class BranchMandatory[T: TypeTag: NotNothing]() extends ParamType {
+    final case class BranchMandatory[T: TypeTag: NotNothing](parameterName: ParameterName) extends ParamType {
       override type EXTRACTED_VALUE_TYPE = Map[String, T]
-
-      override def extractor: ParameterExtractor[Map[String, T]] = ???
+      override lazy val extractor: ParameterExtractor[Map[String, T]] = new MandatoryBranchParamExtractor(parameterName)
     }
 
-    final case class BranchLazyMandatory[T <: AnyRef: TypeTag: NotNothing]() extends ParamType {
+    final case class BranchLazyMandatory[T <: AnyRef: TypeTag: NotNothing](parameterName: ParameterName)
+        extends ParamType {
       override type EXTRACTED_VALUE_TYPE = Map[String, LazyParameter[T]]
-
-      override def extractor: ParameterExtractor[Map[String, LazyParameter[T]]] = ???
+      override lazy val extractor: ParameterExtractor[Map[String, LazyParameter[T]]] =
+        new MandatoryBranchLazyParamExtractor[T](parameterName)
     }
 
-    final case class Optional[T: TypeTag: NotNothing]() extends ParamType {
+    final case class Optional[T: TypeTag: NotNothing](parameterName: ParameterName) extends ParamType {
       override type EXTRACTED_VALUE_TYPE = Option[T]
-
-      override def extractor: ParameterExtractor[Option[T]] = ???
+      override lazy val extractor: ParameterExtractor[Option[T]] = new OptionalParamExtractor[T](parameterName)
     }
 
-    final case class LazyOptional[T <: AnyRef: TypeTag: NotNothing]() extends ParamType {
+    final case class LazyOptional[T <: AnyRef: TypeTag: NotNothing](parameterName: ParameterName) extends ParamType {
       override type EXTRACTED_VALUE_TYPE = Option[LazyParameter[T]]
 
       override def extractor: ParameterExtractor[Option[LazyParameter[T]]] = ???
     }
 
-    final case class BranchOptional[T: TypeTag: NotNothing]() extends ParamType {
+    final case class BranchOptional[T: TypeTag: NotNothing](parameterName: ParameterName) extends ParamType {
       override type EXTRACTED_VALUE_TYPE = Option[Map[String, T]]
 
       override def extractor: ParameterExtractor[Option[Map[String, T]]] = ???
     }
 
-    final case class BranchLazyOptional[T <: AnyRef: TypeTag: NotNothing]() extends ParamType {
+    final case class BranchLazyOptional[T <: AnyRef: TypeTag: NotNothing](parameterName: ParameterName)
+        extends ParamType {
       override type EXTRACTED_VALUE_TYPE = Option[Map[String, LazyParameter[T]]]
 
       override def extractor: ParameterExtractor[Option[Map[String, LazyParameter[T]]]] = ???
@@ -145,12 +195,6 @@ object ParameterDeclaration {
     }
 
   }
-
-  def mandatory[T: TypeTag: NotNothing](name: ParameterName): Builder[Mandatory[T]] =
-    new Builder(Mandatory[T](name))
-
-  def lazyMandatory[T <: AnyRef: TypeTag: NotNothing](name: ParameterName): Builder[LazyMandatory[T]] =
-    new Builder(LazyMandatory[T](name))
 
 }
 

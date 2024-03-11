@@ -23,7 +23,7 @@ object StandardParameterEnrichment {
       original: List[Parameter],
       parametersConfig: Map[String, ParameterConfig]
   ): List[Parameter] = {
-    original.map(p => enrichParameter(p, parametersConfig.getOrElse(p.name, ParameterConfig.empty)))
+    original.map(p => enrichParameter(p, parametersConfig.getOrElse(p.name.value, ParameterConfig.empty)))
   }
 
   private def enrichParameter(original: Parameter, parameterConfig: ParameterConfig): Parameter = {

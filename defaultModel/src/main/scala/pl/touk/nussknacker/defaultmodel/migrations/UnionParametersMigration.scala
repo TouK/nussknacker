@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.defaultmodel.migrations
 
 import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
 import pl.touk.nussknacker.engine.migration.NodeMigration
 
@@ -13,8 +14,8 @@ case class UnionParametersMigration(migratedNodeType: String = "union") extends 
 
   override val description = "UnionParametersMigration"
 
-  private val oldValueParameterName            = "value"
-  private val newOutputExpressionParameterName = "Output expression"
+  private val oldValueParameterName            = ParameterName("value")
+  private val newOutputExpressionParameterName = ParameterName("Output expression")
 
   override def migrateNode(metadata: MetaData): PartialFunction[NodeData, NodeData] = {
     case node @ CustomNode(_, _, nodeType, parameters, _)

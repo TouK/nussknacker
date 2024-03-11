@@ -31,35 +31,36 @@ object DatabaseQueryEnricher {
 
   final val cacheTTLParamName: ParameterName = ParameterName("Cache TTL")
 
-  val cacheTTL: ParameterCreatorWithExtractor[Option[Duration]] =
-    ParameterCreatorWithExtractor.optional[Duration](
-      name = cacheTTLParamName,
-      modify =
-        _.copy(editor = Some(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))))
-    )
+  final val cacheTTLParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Option[Duration]] =
+    ParameterDeclaration
+      .optional[Duration](cacheTTLParamName)
+      .withCreator(
+        modify =
+          _.copy(editor = Some(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))))
+      )
 
   final val queryParamName: ParameterName = ParameterName("Query")
 
-  val query: ParameterCreatorWithExtractor[String] =
-    ParameterCreatorWithExtractor.mandatory[String](
-      name = queryParamName,
-      modify = _.copy(editor = Some(SqlParameterEditor))
-    )
+  final val queryParamDeclaration =
+    ParameterDeclaration
+      .mandatory[String](queryParamName)
+      .withCreator(modify = _.copy(editor = Some(SqlParameterEditor)))
 
   final val resultStrategyParamName: ParameterName = ParameterName("Result strategy")
 
-  val resultStrategy: ParameterCreatorWithExtractor[String] = {
-    ParameterCreatorWithExtractor.mandatory[String](
-      name = resultStrategyParamName,
-      _.copy(editor =
-        Some(
-          FixedValuesParameterEditor(
-            List(SingleResultStrategy.name, ResultSetStrategy.name, UpdateResultStrategy.name)
-              .map { strategyName => FixedExpressionValue(s"'$strategyName'", strategyName) }
+  final val resultStrategyParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[String] = {
+    ParameterDeclaration
+      .mandatory[String](resultStrategyParamName)
+      .withCreator(
+        modify = _.copy(editor =
+          Some(
+            FixedValuesParameterEditor(
+              List(SingleResultStrategy.name, ResultSetStrategy.name, UpdateResultStrategy.name)
+                .map { strategyName => FixedExpressionValue(s"'$strategyName'", strategyName) }
+            )
           )
         )
       )
-    )
   }
 
   final case class TransformationState(
@@ -130,7 +131,9 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     NextParameters(parameters =
-      resultStrategy.createParameter :: query.createParameter :: cacheTTL.createParameter :: Nil
+      resultStrategyParamDeclaration.createParameter(()) ::
+        queryParamDeclaration.createParameter(()) ::
+        cacheTTLParamDeclaration.createParameter(()) :: Nil
     )
   }
 
@@ -239,7 +242,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       finalState: Option[TransformationState]
   ): ServiceInvoker = {
     val state          = finalState.get
-    val cacheTTLOption = cacheTTL.extractValue(params)
+    val cacheTTLOption = cacheTTLParamDeclaration.extractValue(params)
     val createInvoker = cacheTTLOption match {
       case None =>
         new DatabaseEnricherInvoker(_, _, _, _, _, _, _, _, _)

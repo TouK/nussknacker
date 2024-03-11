@@ -9,32 +9,34 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, Typ
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.util.TimestampUtils
 
+import java.lang
+
 object DelayedKafkaSourceFactory {
 
   private final val delayValidators = List(MinimalNumberValidator(0), MaximalNumberValidator(Long.MaxValue))
 
-  final val delayParameter =
-    ParameterCreatorWithExtractor.optional[java.lang.Long](
-      name = ParameterName("delayInMillis"),
-      modify = _.copy(validators = delayValidators)
-    )
+  final val delayParameter: ParameterCreatorWithNoDependency with ParameterExtractor[Option[lang.Long]] =
+    ParameterDeclaration
+      .optional[java.lang.Long](ParameterName("delayInMillis"))
+      .withCreator(modify = _.copy(validators = delayValidators))
 
   final val timestampFieldParamName = ParameterName("timestampField")
 
-  final val fallbackTimestampFieldParameter =
-    ParameterCreatorWithExtractor.optional[String](
-      name = timestampFieldParamName,
-      modify = _.copy(editor =
-        Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
+  final val fallbackTimestampFieldParameter: ParameterCreatorWithNoDependency with ParameterExtractor[Option[String]] =
+    ParameterDeclaration
+      .optional[String](timestampFieldParamName)
+      .withCreator(modify =
+        _.copy(editor =
+          Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
+        )
       )
-    )
 
   // TODO this is simple way to provide better UX for timestampField usage. But probably instead of taking this further
   // one should try to allow using spel expression here. As it requires some changes in SourceFunction for Kafka, it must wait
   // until sources will be migrated to non-deprecated Source APi.
   def timestampFieldParameter(
       kafkaRecordValueType: Option[TypingResult]
-  ): ParameterCreatorWithExtractor[Option[String]] = {
+  ): ParameterCreatorWithNoDependency with ParameterExtractor[Option[String]] = {
     val editorOpt = kafkaRecordValueType
       .collect { case TypedObjectTypingResult(fields, _, _) => fields.toList }
       .map(_.collect {
@@ -48,10 +50,9 @@ object DelayedKafkaSourceFactory {
       .map(DualParameterEditor(_, DualEditorMode.SIMPLE))
       .orElse(Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW)))
 
-    ParameterCreatorWithExtractor.optional[String](
-      name = timestampFieldParamName,
-      modify = _.copy(editor = editorOpt)
-    )
+    ParameterDeclaration
+      .optional[String](timestampFieldParamName)
+      .withCreator(modify = _.copy(editor = editorOpt))
   }
 
   // todo: fixme

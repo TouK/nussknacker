@@ -42,7 +42,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
       properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema)
     )
     .source("start", "request")
-    .emptySink("end", "response", SinkRawEditorParamName -> "false", "place" -> "#input.city")
+    .emptySink("end", "response", SinkRawEditorParamName.value -> "false", "place" -> "#input.city")
 
   private val modelData =
     LocalModelData(ConfigFactory.load(), RequestResponseComponentProvider.Components)

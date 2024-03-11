@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableWithFixedValue,
   Parameter
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
@@ -52,7 +53,7 @@ object ParameterExtractor {
       DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, editor)
     )
     Parameter(
-      name,
+      ParameterName(name),
       paramType,
       editor,
       validators,

@@ -12,7 +12,11 @@ import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, SchemaDefinition, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.TableParamName
-import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{TransformationState, cacheTTL, cacheTTLParamName}
+import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{
+  TransformationState,
+  cacheTTLParamDeclaration,
+  cacheTTLParamName
+}
 
 import scala.util.control.NonFatal
 
@@ -73,7 +77,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
   override protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
-    NextParameters(parameters = tableParam() :: cacheTTL.createParameter :: Nil)
+    NextParameters(parameters = tableParam() :: cacheTTLParamDeclaration.createParameter(()) :: Nil)
   }
 
   private def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(

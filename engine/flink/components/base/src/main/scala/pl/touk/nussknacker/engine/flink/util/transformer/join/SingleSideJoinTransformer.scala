@@ -50,7 +50,10 @@ class SingleSideJoinTransformer(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      NextParameters(List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.createParameter))
+      NextParameters(
+        List(BranchTypeParamDeclaration, KeyParamDeclaration, AggregatorParamDeclaration, WindowLengthParamDeclaration)
+          .map(_.createParameter(()))
+      )
     case TransformationStep(
           (
             `BranchTypeParamName`,
@@ -105,10 +108,10 @@ class SingleSideJoinTransformer(
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomJoinTransformation = {
-    val branchTypeByBranchId: Map[String, BranchType]           = BranchTypeParam.extractValue(params)
-    val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParam.extractValue(params)
-    val aggregator: Aggregator                                  = AggregatorParam.extractValue(params)
-    val window: Duration                                        = WindowLengthParam.extractValue(params)
+    val branchTypeByBranchId: Map[String, BranchType]           = BranchTypeParamDeclaration.extractValue(params)
+    val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParamDeclaration.extractValue(params)
+    val aggregator: Aggregator                                  = AggregatorParamDeclaration.extractValue(params)
+    val window: Duration                                        = WindowLengthParamDeclaration.extractValue(params)
     val aggregateBy: LazyParameter[AnyRef] = params.extractMandatory[LazyParameter[AnyRef]](AggregateByParamName)
     val outputType                         = aggregator.computeOutputTypeUnsafe(aggregateBy.returnType)
 
@@ -189,27 +192,30 @@ class SingleSideJoinTransformer(
 case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
 
   val BranchTypeParamName: ParameterName = ParameterName("branchType")
-  val BranchTypeParam: ParameterCreatorWithExtractor[Map[String, BranchType]] =
-    ParameterCreatorWithExtractor.branchMandatory[BranchType](BranchTypeParamName)
+  val BranchTypeParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, BranchType]] =
+    ParameterDeclaration.branchMandatory[BranchType](BranchTypeParamName).withCreator()
 
   val KeyParamName: ParameterName = ParameterName("key")
-  val KeyParam: ParameterCreatorWithExtractor[Map[String, LazyParameter[CharSequence]]] =
-    ParameterCreatorWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
+
+  val KeyParamDeclaration
+      : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, LazyParameter[CharSequence]]] =
+    ParameterDeclaration.branchLazyMandatory[CharSequence](KeyParamName).withCreator()
 
   val AggregatorParamName: ParameterName = ParameterName("aggregator")
 
-  val AggregatorParam: ParameterCreatorWithExtractor[Aggregator] = ParameterCreatorWithExtractor
-    .mandatory[Aggregator](
-      AggregatorParamName,
-      _.copy(
-        editor = Some(AggregateHelper.DUAL_EDITOR),
-        additionalVariables = Map("AGG" -> AdditionalVariableWithFixedValue(new AggregateHelper))
+  val AggregatorParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Aggregator] =
+    ParameterDeclaration
+      .mandatory[Aggregator](AggregatorParamName)
+      .withCreator(
+        modify = _.copy(
+          editor = Some(AggregateHelper.DUAL_EDITOR),
+          additionalVariables = Map("AGG" -> AdditionalVariableWithFixedValue(new AggregateHelper))
+        )
       )
-    )
 
   val WindowLengthParamName: ParameterName = ParameterName("windowLength")
-  val WindowLengthParam: ParameterCreatorWithExtractor[Duration] =
-    ParameterCreatorWithExtractor.mandatory[Duration](WindowLengthParamName)
+  val WindowLengthParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Duration] =
+    ParameterDeclaration.mandatory[Duration](WindowLengthParamName).withCreator()
 
   val AggregateByParamName: ParameterName = ParameterName("aggregateBy")
 

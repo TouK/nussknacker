@@ -45,7 +45,9 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
       ),
       SimplifiedParam("age", Typed.apply[Long], None),
     )
-    parameters.map(p => SimplifiedParam(p.name, p.typ, p.editor)) should contain theSameElementsAs expectedParameters
+    parameters.map(p =>
+      SimplifiedParam(p.name.value, p.typ, p.editor)
+    ) should contain theSameElementsAs expectedParameters
   }
 
 }

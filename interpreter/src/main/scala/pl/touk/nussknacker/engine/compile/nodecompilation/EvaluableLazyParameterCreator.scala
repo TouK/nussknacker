@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compiledgraph.BaseCompiledParameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -43,7 +44,7 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
         throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}")
       )
     val compiledParameter: BaseCompiledParameter = new BaseCompiledParameter {
-      override val name: String                             = parameterDef.name.value
+      override val name: ParameterName                      = parameterDef.name
       override val expression: CompiledExpression           = compiledExpression
       override val shouldBeWrappedWithScalaOption: Boolean  = parameterDef.scalaOptionParameter
       override val shouldBeWrappedWithJavaOptional: Boolean = parameterDef.javaOptionalParameter

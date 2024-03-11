@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, FragmentSpecificData, MetaData, VariableConstants}
@@ -747,12 +748,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
             Some("aggresult"),
             "aggregate-tumbling",
             List(
-              NodeParameter("groupBy", asSpelExpression("#key")),
-              NodeParameter("aggregator", asSpelExpression("#AGG.sum")),
-              NodeParameter("aggregateBy", asSpelExpression("#aggBy")),
-              NodeParameter("windowLength", asSpelExpression("T(java.time.Duration).parse('PT2H')")),
+              NodeParameter(ParameterName("groupBy"), asSpelExpression("#key")),
+              NodeParameter(ParameterName("aggregator"), asSpelExpression("#AGG.sum")),
+              NodeParameter(ParameterName("aggregateBy"), asSpelExpression("#aggBy")),
+              NodeParameter(ParameterName("windowLength"), asSpelExpression("T(java.time.Duration).parse('PT2H')")),
               NodeParameter(
-                "emitWhen",
+                ParameterName("emitWhen"),
                 asSpelExpression(
                   "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEnd"
                 )
