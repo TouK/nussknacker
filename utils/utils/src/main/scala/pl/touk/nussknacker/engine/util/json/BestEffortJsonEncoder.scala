@@ -71,11 +71,11 @@ case class BestEffortJsonEncoder(
           case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
           case a: UUID           => safeString(a.toString)
           case a: DisplayJson    => a.asJson
-          case a: java.util.Map[java.util.Map[_, _] @unchecked, _] if allKeysAreMaps(a.keySet()) =>
+          case a: java.util.Map[java.util.Map[_, _] @unchecked, _] if allAllTheKeysAreMaps(a.keySet()) =>
             val keys = a.keySet().asScala.toList
             val m = keys.map { keyMap =>
               val v              = a.get(keyMap)
-              val encodedKey     = encodeMap(keyMap.asScala.asInstanceOf[Map[String, _]])
+              val encodedKey     = encode(keyMap)
               val stringifiedKey = encodedKey.noSpaces
               (stringifiedKey, v)
             }.toMap
@@ -102,7 +102,7 @@ case class BestEffortJsonEncoder(
     fromFields(map.mapValuesNow(encode))
   }
 
-  private def allKeysAreMaps(keys: java.util.Set[_]): Boolean =
+  private def allAllTheKeysAreMaps(keys: java.util.Set[_]): Boolean =
     keys.asScala.forall {
       case _: java.util.Map[String @unchecked, _] => true
       case _                                      => false

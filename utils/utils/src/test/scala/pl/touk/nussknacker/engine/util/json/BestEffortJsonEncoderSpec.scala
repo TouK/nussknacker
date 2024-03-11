@@ -72,6 +72,23 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
     encoder.encode(map) shouldEqual obj("key1" -> fromLong(1), "key2" -> fromString("value"))
   }
 
+  it("should encode maps with keys which are already maps as a json") {
+    val map1: util.Map[String, Any] = new util.HashMap[String, Any]()
+    map1.put("key1", "value1")
+    map1.put("key2", 2)
+
+    val map2: util.Map[String, Any] = new util.HashMap[String, Any]()
+    map2.put("key3", "value3")
+    map2.put("key4", 4)
+    val m: util.HashMap[util.Map[String, Any], util.Map[String, Any]] =
+      new util.HashMap[util.Map[String, Any], util.Map[String, Any]]()
+    m.put(map1, map2)
+
+    encoder.encode(m) shouldEqual obj(
+      "{\"key1\":\"value1\",\"key2\":2}" -> obj("key3" -> fromString("value3"), "key4" -> fromInt(4))
+    )
+  }
+
   it("should encode arrays as a json") {
     encoder.encode(Array(1, 2, 3)) shouldEqual arr(fromLong(1), fromLong(2), fromLong(3))
     encoder.encode(Seq(Array(1, 2, 3))) shouldEqual arr(arr(fromLong(1), fromLong(2), fromLong(3)))
