@@ -304,14 +304,11 @@ private[spel] class Typer(
           .collect {
             case a: PropertyOrFieldReference => a.getName
             case b: StringLiteral            => b.getLiteralValue.getValue.toString
+            case c: InlineMap                => c.toStringAST
           }
 
         typeChildrenNodes(validationContext, node, values, current) { typedValues =>
-          if (literalKeys.size != keys.size) {
-            invalid(MapWithExpressionKeysError)
-          } else {
-            valid(Typed.record(literalKeys.zip(typedValues).toMap))
-          }
+          valid(Typed.record(literalKeys.zip(typedValues).toMap))
         }
       case e: MethodReference =>
         extractMethodReference(e, validationContext, node, current)
