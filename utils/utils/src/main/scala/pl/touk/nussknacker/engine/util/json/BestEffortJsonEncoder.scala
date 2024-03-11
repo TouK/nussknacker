@@ -71,14 +71,23 @@ case class BestEffortJsonEncoder(
           case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
           case a: UUID           => safeString(a.toString)
           case a: DisplayJson    => a.asJson
-          case a: java.util.Map[Map[_, _], _] if allKeysAreMaps(a.keySet()) => ???
-          case a: scala.collection.Map[String @unchecked, _]                => encodeMap(a.toMap)
-          case a: java.util.Map[String @unchecked, _]                       => encodeMap(a.asScala.toMap)
-          case a: Iterable[_]                                               => fromValues(a.map(encode))
-          case a: Enum[_]                                                   => safeString(a.toString)
-          case a: java.util.Collection[_]                                   => fromValues(a.asScala.map(encode))
-          case a: Array[_]                                                  => fromValues(a.map(encode))
-          case _ if !failOnUnknown                                          => safeString(any.toString)
+          case a: java.util.Map[java.util.Map[_, _] @unchecked, _] if allKeysAreMaps(a.keySet()) =>
+            val keys = a.keySet().asScala.toList
+            val m = keys.map { keyMap =>
+              val v              = a.get(keyMap)
+              val encodedKey     = encodeMap(keyMap.asScala.asInstanceOf[Map[String, _]])
+              val stringifiedKey = encodedKey.noSpaces
+              (stringifiedKey, v)
+            }.toMap
+
+            encodeMap(m)
+          case a: scala.collection.Map[String @unchecked, _] => encodeMap(a.toMap)
+          case a: java.util.Map[String @unchecked, _]        => encodeMap(a.asScala.toMap)
+          case a: Iterable[_]                                => fromValues(a.map(encode))
+          case a: Enum[_]                                    => safeString(a.toString)
+          case a: java.util.Collection[_]                    => fromValues(a.asScala.map(encode))
+          case a: Array[_]                                   => fromValues(a.map(encode))
+          case _ if !failOnUnknown                           => safeString(any.toString)
           case a => throw new IllegalArgumentException(s"Invalid type: ${a.getClass}")
         }
     )
@@ -95,8 +104,8 @@ case class BestEffortJsonEncoder(
 
   private def allKeysAreMaps(keys: java.util.Set[_]): Boolean =
     keys.asScala.forall {
-      case _: java.util.Map[_, _] => true
-      case _                      => false
+      case _: java.util.Map[String @unchecked, _] => true
+      case _                                      => false
     }
 
 }
