@@ -1869,7 +1869,8 @@ lazy val designer = (project in file("designer/server"))
         "io.dropwizard.metrics5"         % "metrics-core"                    % dropWizardV,
         "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
         "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
-        "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % "test"
+        "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % "test",
+        "com.github.tomakehurst"         % "wiremock-jre8"                   % wireMockV            % Test,
       ) ++ forScalaVersion(
         scalaVersion.value,
         Seq(),
