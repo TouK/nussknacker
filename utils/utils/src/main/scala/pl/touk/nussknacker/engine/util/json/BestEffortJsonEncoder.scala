@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.util.ServiceLoader
+import java.util.Set
 
 import java.util.UUID
 import scala.jdk.CollectionConverters._
@@ -70,13 +71,14 @@ case class BestEffortJsonEncoder(
           case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
           case a: UUID           => safeString(a.toString)
           case a: DisplayJson    => a.asJson
-          case a: scala.collection.Map[String @unchecked, _] => encodeMap(a.toMap)
-          case a: java.util.Map[String @unchecked, _]        => encodeMap(a.asScala.toMap)
-          case a: Iterable[_]                                => fromValues(a.map(encode))
-          case a: Enum[_]                                    => safeString(a.toString)
-          case a: java.util.Collection[_]                    => fromValues(a.asScala.map(encode))
-          case a: Array[_]                                   => fromValues(a.map(encode))
-          case _ if !failOnUnknown                           => safeString(any.toString)
+          case a: java.util.Map[Map[_, _], _] if allKeysAreMaps(a.keySet()) => ???
+          case a: scala.collection.Map[String @unchecked, _]                => encodeMap(a.toMap)
+          case a: java.util.Map[String @unchecked, _]                       => encodeMap(a.asScala.toMap)
+          case a: Iterable[_]                                               => fromValues(a.map(encode))
+          case a: Enum[_]                                                   => safeString(a.toString)
+          case a: java.util.Collection[_]                                   => fromValues(a.asScala.map(encode))
+          case a: Array[_]                                                  => fromValues(a.map(encode))
+          case _ if !failOnUnknown                                          => safeString(any.toString)
           case a => throw new IllegalArgumentException(s"Invalid type: ${a.getClass}")
         }
     )
@@ -90,5 +92,11 @@ case class BestEffortJsonEncoder(
   private def encodeMap(map: Map[String, _]) = {
     fromFields(map.mapValuesNow(encode))
   }
+
+  private def allKeysAreMaps(keys: java.util.Set[_]): Boolean =
+    keys.asScala.forall {
+      case _: java.util.Map[_, _] => true
+      case _                      => false
+    }
 
 }
