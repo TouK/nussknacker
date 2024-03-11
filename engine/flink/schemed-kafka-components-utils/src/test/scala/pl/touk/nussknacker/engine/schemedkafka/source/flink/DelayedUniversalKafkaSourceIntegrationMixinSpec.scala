@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
-import org.apache.avro.generic.GenericRecord
 import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.process._
@@ -85,10 +84,10 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
       .source(
         "start",
         "kafka-universal-delayed",
-        s"$TopicParamName"          -> s"'$topic'",
-        s"$SchemaVersionParamName"  -> asSpelExpression(formatVersionParam(version)),
-        s"$TimestampFieldParamName" -> s"$timestampField",
-        s"$DelayParameterName"      -> s"$delay"
+        TopicParamName.value          -> s"'$topic'",
+        SchemaVersionParamName.value  -> asSpelExpression(formatVersionParam(version)),
+        TimestampFieldParamName.value -> timestampField,
+        DelayParameterName.value      -> delay
       )
       .emptySink("out", "sinkForLongs", SinkValueParamName.value -> "T(java.time.Instant).now().toEpochMilli()")
   }

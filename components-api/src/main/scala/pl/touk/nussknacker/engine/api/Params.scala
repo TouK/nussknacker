@@ -31,7 +31,7 @@ final case class Params(nameToValueMap: Map[ParameterName, Any]) {
   private def rawValueExtract(paramName: ParameterName) = nameToValueMap.get(paramName)
 
   private def cannotFindParamNameMessage(paramName: ParameterName) =
-    s"Cannot find param name [${paramName.value}]. Available param names: ${nameToValueMap.keys.mkString(",")}"
+    s"Cannot find param name [${paramName.value}]. Available param names: ${nameToValueMap.keys.map(_.value).mkString(",")}"
 
   private def cast[T](value: Any): T = value.asInstanceOf[T]
 

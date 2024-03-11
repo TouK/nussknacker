@@ -121,7 +121,7 @@ trait KafkaAvroSpecMixin
       source: SourceAvroParam,
       sink: UniversalSinkParam,
       filterExpression: Option[String] = None,
-      sourceTopicParamValue: String => String = topic => s"'${topic}'"
+      sourceTopicParamValue: String => String = topic => s"'$topic'"
   ): CanonicalProcess = {
     import spel.Implicits._
     val sourceParams = List(TopicParamName -> asSpelExpression(sourceTopicParamValue(source.topic))) ++ (source match {

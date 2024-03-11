@@ -90,9 +90,11 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val sinkParam   = UniversalSinkParam(topicConfig, LatestSchemaVersion, "#input")
     val process     = createAvroProcess(sourceParam, sinkParam, sourceTopicParamValue = _ => s"'invalid-topic'")
 
-    intercept[Exception] {
+    val message = intercept[Exception] {
       runAndVerifyResultSingleEvent(process, topicConfig, "fooBar", "fooBar")
-    }.getMessage should include("InvalidPropertyFixedValue(Topic,None,'invalid-topic',")
+    }.getMessage
+
+    message should include("InvalidPropertyFixedValue(ParameterName(Topic),None,'invalid-topic',")
   }
 
   test("should handle null value for mandatory parameter") {
@@ -101,10 +103,12 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val sinkParam   = UniversalSinkParam(topicConfig, LatestSchemaVersion, "#input")
     val process     = createAvroProcess(sourceParam, sinkParam, sourceTopicParamValue = _ => s"")
 
-    intercept[Exception] {
+    val message = intercept[Exception] {
       runAndVerifyResultSingleEvent(process, topicConfig, "fooBar", "fooBar")
-    }.getMessage should include(
-      "EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,Topic,start"
+    }.getMessage
+
+    message should include(
+      "EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,ParameterName(Topic),start"
     )
   }
 

@@ -146,7 +146,7 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
     intercept[IllegalArgumentException] {
       runAndVerify(topicConfig, process, LongFieldV1.record)
     }.getMessage should include(
-      "LowerThanRequiredParameter(This field value has to be a number greater than or equal to 0,Please fill field with proper number,delayInMillis,start)"
+      "LowerThanRequiredParameter(This field value has to be a number greater than or equal to 0,Please fill field with proper number,ParameterName(delayInMillis),start)"
     )
   }
 

@@ -44,10 +44,10 @@ case object MandatoryParameterValidator extends ParameterValidator {
     if (!expression.expression.isBlank) valid(()) else invalid(error(paramName, nodeId.id))
 
   private def error(paramName: ParameterName, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
-    "This field is mandatory and can not be empty",
-    "Please fill field for this parameter",
-    paramName,
-    nodeId
+    message = "This field is mandatory and can not be empty",
+    description = "Please fill field for this parameter",
+    paramName = paramName,
+    nodeId = nodeId
   )
 
 }
@@ -64,10 +64,10 @@ case object NotNullParameterValidator extends ParameterValidator {
   }
 
   private def error(paramName: ParameterName, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
-    "This field is required and can not be null",
-    "Please fill field for this parameter",
-    paramName,
-    nodeId
+    message = "This field is required and can not be null",
+    description = "Please fill field for this parameter",
+    paramName = paramName,
+    nodeId = nodeId
   )
 
 }
@@ -84,10 +84,10 @@ case object CompileTimeEvaluableValueValidator extends ParameterValidator {
   }
 
   private def error(paramName: ParameterName, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
-    "This field is required and value has to be evaluable at compile time",
-    "Please fill field for this parameter",
-    paramName,
-    nodeId
+    message = "This field is required and value has to be evaluable at compile time",
+    description = "Please fill field for this parameter",
+    paramName = paramName,
+    nodeId = nodeId
   )
 
 }

@@ -56,10 +56,15 @@ class UniversalKafkaSinkFactory(
 
   override def paramsDeterminedAfterSchema: List[Parameter] = UniversalKafkaSinkFactory.paramsDeterminedAfterSchema
 
-  private val rawValueParam: Parameter = Parameter[AnyRef](SinkValueParamName).copy(isLazyParameter = true)
+  private val rawValue = ParameterWithExtractor.lazyMandatory[AnyRef](SinkValueParamName)
 
-  private val validationModeParam = Parameter[String](SinkValidationModeParamName).copy(editor =
-    Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))
+  private val validationMode = ParameterWithExtractor.mandatory[String](
+    name = SinkValidationModeParamName,
+    modify = _.copy(editor =
+      Some(
+        FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))
+      )
+    )
   )
 
   private val restrictedParamNames: Set[ParameterName] = Set(
@@ -80,7 +85,7 @@ class UniversalKafkaSinkFactory(
           ) :: Nil,
           _
         ) =>
-      NextParameters(validationModeParam :: rawValueParam :: Nil)
+      NextParameters(validationMode.parameter :: rawValue.parameter :: Nil)
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
@@ -104,7 +109,7 @@ class UniversalKafkaSinkFactory(
               runtimeSchemaData.schema,
               rawMode = true,
               validationMode = extractValidationMode(mode),
-              rawParameter = rawValueParam,
+              rawParameter = rawValue.parameter,
               restrictedParamNames
             )
             .map { extractedSinkParameter =>
@@ -158,7 +163,7 @@ class UniversalKafkaSinkFactory(
               schemaData.schema,
               rawMode = false,
               validationMode = ValidationMode.lax,
-              rawValueParam,
+              rawValue.parameter,
               restrictedParamNames
             )
             .map { valueParam =>

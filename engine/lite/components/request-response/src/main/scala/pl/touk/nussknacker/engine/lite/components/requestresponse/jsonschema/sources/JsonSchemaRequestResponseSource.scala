@@ -91,8 +91,8 @@ class JsonSchemaRequestResponseSource(
       case cs: CombinedSchema => {
         params
           .get(SinkRawValueParamName)
-          .map { params =>
-            val json                       = BestEffortJsonEncoder.defaultForTests.encode(params)
+          .map { paramValue =>
+            val json                       = BestEffortJsonEncoder.defaultForTests.encode(paramValue)
             val schema                     = getFirstMatchingSchemaForJson(cs, json)
             val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
             JsonToNuStruct(json, swaggerTyped)
