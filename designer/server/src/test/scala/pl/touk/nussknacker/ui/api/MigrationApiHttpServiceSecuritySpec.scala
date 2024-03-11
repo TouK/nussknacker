@@ -94,7 +94,7 @@ class MigrationApiHttpServiceSecuritySpec
 
   private lazy val exampleScenario =
     ScenarioBuilder
-      .streamingLite(exampleProcessName.value)
+      .withCustomMetaData(exampleProcessName.value, Map("environment" -> "test"))
       .source("source", "csv-source-lite")
       .emptySink("sink", "dead-end-lite")
 

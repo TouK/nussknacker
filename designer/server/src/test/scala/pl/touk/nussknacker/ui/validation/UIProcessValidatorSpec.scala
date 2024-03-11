@@ -290,6 +290,61 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
+  test("not allow required scenario fields") {
+    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
+      Map(
+        "field1" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(MandatoryParameterValidator)),
+          label = Some("label1")
+        ),
+        "field2" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = None,
+          label = Some("label2")
+        )
+      ) ++ FlinkStreamingPropertiesConfig.properties
+    )
+
+    def validate(scenarioGraph: ScenarioGraph) =
+      processValidator.validate(scenarioGraph, ProcessTestData.sampleProcessName, isFragment = false)
+
+    validate(
+      validScenarioGraphWithFields(Map("field1" -> "a", "field2" -> "b"))
+    ) shouldBe withoutErrorsAndWarnings
+
+    validate(validScenarioGraphWithFields(Map("field1" -> "a"))) shouldBe withoutErrorsAndWarnings
+
+    validate(
+      validScenarioGraphWithFields(Map("field1" -> "", "field2" -> "b"))
+    ).errors.processPropertiesErrors should matchPattern {
+      case List(
+            NodeValidationError(
+              "EmptyMandatoryParameter",
+              _,
+              _,
+              Some("field1"),
+              ValidationResults.NodeValidationErrorType.SaveAllowed,
+              _
+            )
+          ) =>
+    }
+    validate(validScenarioGraphWithFields(Map("field2" -> "b"))).errors.processPropertiesErrors should matchPattern {
+      case List(
+            NodeValidationError(
+              "MissingRequiredProperty",
+              _,
+              _,
+              Some("field1"),
+              ValidationResults.NodeValidationErrorType.SaveAllowed,
+              _
+            )
+          ) =>
+    }
+  }
+
   test("don't validate properties on fragment") {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
       Map(
@@ -314,6 +369,62 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       isFragment = true
     ) shouldBe withoutErrorsAndWarnings
 
+  }
+
+  test("validate type scenario field") {
+    val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
+    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
+      Map(
+        "field1" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = Some(FixedValuesParameterEditor(possibleValues)),
+          validators = Some(List(FixedValuesValidator(possibleValues))),
+          label = Some("label")
+        ),
+        "field2" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(LiteralIntegerValidator)),
+          label = Some("label")
+        )
+      ) ++ FlinkStreamingPropertiesConfig.properties
+    )
+    def validate(scenarioGraph: ScenarioGraph) =
+      processValidator.validate(scenarioGraph, ProcessTestData.sampleProcessName, isFragment = false)
+
+    validate(validScenarioGraphWithFields(Map("field1" -> "true"))) shouldBe withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field1" -> "false"))) shouldBe withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field1" -> "1"))) should not be withoutErrorsAndWarnings
+
+    validate(validScenarioGraphWithFields(Map("field2" -> "1"))) shouldBe withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field2" -> "1.1"))) should not be withoutErrorsAndWarnings
+    validate(validScenarioGraphWithFields(Map("field2" -> "true"))) should not be withoutErrorsAndWarnings
+  }
+
+  test("handle unknown properties validation") {
+    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
+      Map(
+        "field2" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(CompileTimeEvaluableValueValidator)),
+          label = Some("label")
+        )
+      ) ++ FlinkStreamingPropertiesConfig.properties
+    )
+
+    val result =
+      processValidator.validate(
+        validScenarioGraphWithFields(Map("field1" -> "true")),
+        ProcessTestData.sampleProcessName,
+        isFragment = false
+      )
+
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(
+            NodeValidationError("UnknownProperty", _, _, Some("field1"), NodeValidationErrorType.SaveAllowed, None)
+          ) =>
+    }
   }
 
   test("not allows save with incorrect characters in ids") {
@@ -1078,6 +1189,33 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 NodeValidationErrorType.SaveAllowed,
                 None
               )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test("check for wrong fixed expression value in scenario property") {
+    val process = createScenarioGraphWithParams(
+      List.empty,
+      Map(
+        "numberOfThreads"        -> "wrong fixed value",
+        "requiredStringProperty" -> "test"
+      )
+    )
+
+    val result = validateWithConfiguredProperties(process)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(
+            NodeValidationError(
+              "InvalidPropertyFixedValue",
+              _,
+              _,
+              Some("numberOfThreads"),
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
