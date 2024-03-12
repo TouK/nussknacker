@@ -486,7 +486,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FilterNode(
           Filter("f1", "#param == 'a'"),
           List(
@@ -521,7 +523,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[Any])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[Any])))
+        ),
         canonicalnode.FilterNode(
           Filter("f1", "#param == '333'"),
           List(
@@ -575,7 +579,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FilterNode(
           Filter("f1", "#param == 'a'"),
           List(
@@ -610,7 +616,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         FlatNode(FragmentOutputDefinition("out1", "output", List(Field("result", "#param"))))
       ),
       List.empty
@@ -634,7 +642,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FilterNode(
           Filter("f1", "#param == 'a'"),
           List(
@@ -650,7 +660,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val nested = CanonicalProcess(
       MetaData("fragment2", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.Fragment(
           FragmentInput("sub2", FragmentRef("fragment1", List(NodeParameter(ParameterName("param"), "#param")))),
           Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty))))
@@ -689,7 +701,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.SwitchNode(
           Switch("f1"),
           List(
@@ -726,7 +740,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         FlatNode(Variable("result", "result", "'result'")),
         FlatNode(Sink("end", SinkRef("dummySink", List())))
       ),
@@ -755,8 +771,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           FragmentInputDefinition(
             "start",
             List(
-              FragmentParameter("toMultiply", FragmentClazzRef[java.lang.Integer]),
-              FragmentParameter("multiplyBy", FragmentClazzRef[java.lang.Integer])
+              FragmentParameter(ParameterName("toMultiply"), FragmentClazzRef[java.lang.Integer]),
+              FragmentParameter(ParameterName("multiplyBy"), FragmentClazzRef[java.lang.Integer])
             )
           )
         ),

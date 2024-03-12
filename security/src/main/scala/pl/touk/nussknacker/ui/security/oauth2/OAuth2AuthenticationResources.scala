@@ -50,20 +50,12 @@ class OAuth2AuthenticationResources(
   }
 
   override protected def rawAuthCredentialsMethod: EndpointInput[Option[String]] = {
-    EndpointInput
-      .Auth[Option[String], AuthType.OAuth2](
-        header[Option[String]](HeaderNames.Authorization).map(stringPrefixWithSpace(AuthenticationScheme.Bearer.name)),
-        WWWAuthenticateChallenge.bearer(realm),
-        EndpointInput.AuthType.OAuth2(
-          authorizationUrl = configuration.authorizeUrl.map(_.toString),
-          // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
-          // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
-          tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
-          scopes = ListMap.empty,
-          refreshUrl = None
-        ),
-        EndpointInput.AuthInfo.Empty
-      )
+    optionalOauth2AuthorizationCode(
+      authorizationUrl = configuration.authorizeUrl.map(_.toString),
+      // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
+      // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
+      tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
+    )
   }
 
   override protected val frontendStrategySettings: FrontendStrategySettings =
@@ -153,24 +145,33 @@ class OAuth2AuthenticationResources(
     )
   }
 
-  private def stringPrefixWithSpace(prefix: String): Mapping[Option[String], Option[String]] =
+  // The code below is copied from sttp.tapir.Tapir.auth.oauth2.authorizationCode with the only change that
+  // the authorization header is optional
+  private def optionalOauth2AuthorizationCode(
+      authorizationUrl: Option[String],
+      tokenUrl: Option[String]
+  ): EndpointInput.Auth[Option[String], AuthType.OAuth2] = {
+    EndpointInput.Auth[Option[String], AuthType.OAuth2](
+      header[Option[String]](HeaderNames.Authorization)
+        .map(optionalMapping(stringPrefixWithSpace(AuthenticationScheme.Bearer.name))),
+      WWWAuthenticateChallenge.bearer(realm),
+      EndpointInput.AuthType.OAuth2(authorizationUrl, tokenUrl, ListMap.empty, None),
+      EndpointInput.AuthInfo.Empty
+    )
+  }
+
+  private def optionalMapping[T](originalMapping: Mapping[T, T]) = {
     Mapping
-      .fromDecode[Option[String], Option[String]] {
-        case Some(value) => removePrefix(value, prefix).map(Some(_))
+      .fromDecode[Option[T], Option[T]] {
+        case Some(value) => originalMapping.decode(value).map(Some(_))
         case None        => DecodeResult.Value(None)
       } {
-        _.map(value => s"$prefix$value")
+        _.map(originalMapping.encode)
       }
+  }
 
-  private def removePrefix(value: String, prefix: String) = {
-    if (value.toLowerCase.startsWith(prefix.toLowerCase)) {
-      DecodeResult.Value(value.substring(prefix.length))
-    } else {
-      DecodeResult.Error(
-        value,
-        new IllegalArgumentException(s"Cannot remove $prefix, because the value doesn't start with it")
-      )
-    }
+  private def stringPrefixWithSpace(prefix: String): Mapping[String, String] = {
+    Mapping.stringPrefixCaseInsensitive(prefix + " ")
   }
 
 }

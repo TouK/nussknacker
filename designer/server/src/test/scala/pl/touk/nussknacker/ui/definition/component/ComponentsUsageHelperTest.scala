@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
@@ -39,7 +40,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     MetaData("fragment1", FragmentSpecificData()),
     List(
       canonicalnode.FlatNode(
-        FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))
+        FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
       ),
       canonicalnode.FlatNode(CustomNode("f1", None, ProcessTestData.otherExistingStreamTransformer2, List.empty)),
       FlatNode(FragmentOutputDefinition("out1", "output", List.empty))

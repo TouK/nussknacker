@@ -100,14 +100,20 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case sub @ FragmentInputDefinition(_, subParams, _)
-          if !subParams.exists(_.name == "param42") && subParams.exists(_.name == "param1") =>
-        sub.copy(parameters = sub.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p))
+          if !subParams
+            .exists(_.name == ParameterName("param42")) && subParams.exists(_.name == ParameterName("param1")) =>
+        sub.copy(parameters =
+          sub.parameters.map(p => if (p.name == ParameterName("param1")) p.copy(name = ParameterName("param42")) else p)
+        )
 
       case sub @ FragmentInput(_, ref, _, _, _)
-          if !ref.parameters.exists(_.name.value == "param42") && ref.parameters.exists(_.name.value == "param1") =>
+          if !ref.parameters
+            .exists(_.name == ParameterName("param42")) && ref.parameters.exists(_.name == ParameterName("param1")) =>
         sub.copy(ref =
           sub.ref.copy(parameters =
-            sub.ref.parameters.map(p => if (p.name.value == "param1") p.copy(name = ParameterName("param42")) else p)
+            sub.ref.parameters.map(p =>
+              if (p.name == ParameterName("param1")) p.copy(name = ParameterName("param42")) else p
+            )
           )
         )
     }

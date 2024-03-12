@@ -39,7 +39,7 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
 
   private def createEvaluableLazyParameter(deps: EvaluableLazyParameterCreatorDeps) = {
     val compiledExpression = deps.expressionCompiler
-      .compileWithoutContextValidation(expression, parameterDef.name.value, parameterDef.typ)(nodeId)
+      .compileWithoutContextValidation(expression, parameterDef.name, parameterDef.typ)(nodeId)
       .valueOr(err =>
         throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}")
       )

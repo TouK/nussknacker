@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.graph
 
 import io.circe._
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder, deriveUnwrappedCodec}
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -315,9 +315,11 @@ object node {
   // shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
 
+    private implicit val parameterNameCodec: Codec[ParameterName] = deriveUnwrappedCodec
+
     @ConfiguredJsonCodec
     case class FragmentParameter(
-        name: String,
+        name: ParameterName,
         typ: FragmentClazzRef,
         required: Boolean = false,
         initialValue: Option[FixedExpressionValue],
@@ -328,7 +330,7 @@ object node {
 
     object FragmentParameter {
 
-      def apply(name: String, typ: FragmentClazzRef): FragmentParameter = {
+      def apply(name: ParameterName, typ: FragmentClazzRef): FragmentParameter = {
         FragmentParameter(
           name,
           typ,
@@ -370,10 +372,12 @@ object node {
   def qualifiedParamFieldName(
       paramName: ParameterName,
       subFieldName: Option[String]
-  ): String = // for example: "$param.P1.$initialValue"
-    subFieldName match {
-      case Some(subField) => ParameterFieldNamePrefix + "." + paramName.value + "." + subField
-      case None           => ParameterFieldNamePrefix + "." + paramName
+  ): ParameterName = // for example: "$param.P1.$initialValue"
+    ParameterName {
+      subFieldName match {
+        case Some(subField) => ParameterFieldNamePrefix + "." + paramName.value + "." + subField
+        case None           => ParameterFieldNamePrefix + "." + paramName
+      }
     }
 
   def recordKeyFieldName(index: Int)   = s"$$fields-$index-$$key"

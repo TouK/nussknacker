@@ -12,6 +12,7 @@ import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -312,7 +313,10 @@ class BaseFlowTest
     val scenarioGraph = ScenarioGraph(
       properties = ProcessProperties(FragmentSpecificData()),
       nodes = List(
-        FragmentInputDefinition("input1", List(FragmentParameter("badParam", FragmentClazzRef("i.do.not.exist")))),
+        FragmentInputDefinition(
+          "input1",
+          List(FragmentParameter(ParameterName("badParam"), FragmentClazzRef("i.do.not.exist")))
+        ),
         FragmentOutputDefinition("output1", "out1")
       ),
       edges = List(Edge("input1", "output1", None)),

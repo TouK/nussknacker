@@ -307,7 +307,7 @@ class NodeCompiler(
   ): ValidatedNel[PartSubGraphCompilationError, Map[String, TypedExpression]] = {
     fields.map { field =>
       expressionCompiler
-        .compile(field.expression, Some(field.name), ctx, Unknown)
+        .compile(field.expression, Some(ParameterName(field.name)), ctx, Unknown)
         .map(typedExpr => field.name -> typedExpr)
     }
   }.sequence.map(_.toMap)

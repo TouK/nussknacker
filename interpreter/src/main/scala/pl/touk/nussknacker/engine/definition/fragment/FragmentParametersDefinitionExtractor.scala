@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
@@ -100,7 +99,7 @@ class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
       )
 
     val param = Parameter
-      .optional(ParameterName(fragmentParameter.name), typ)
+      .optional(fragmentParameter.name, typ)
       .copy(
         editor = extractedEditor,
         validators = validators.toList,

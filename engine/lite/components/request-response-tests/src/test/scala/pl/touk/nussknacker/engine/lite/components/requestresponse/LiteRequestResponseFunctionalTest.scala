@@ -137,8 +137,12 @@ class LiteRequestResponseFunctionalTest
     val result = runner.runWithRequests(scenario) { _ => }
 
     result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _, None), Nil))
-          if message.startsWith("Bad expression type") =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(message, `sinkName`, Some(ParameterName("field")), _, None),
+              Nil
+            )
+          ) if message.startsWith("Bad expression type") =>
     }
   }
 

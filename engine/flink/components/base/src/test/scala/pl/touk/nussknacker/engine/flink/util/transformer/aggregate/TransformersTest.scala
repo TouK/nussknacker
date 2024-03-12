@@ -739,7 +739,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         canonicalnode.FlatNode(
           FragmentInputDefinition(
             "start",
-            List(FragmentParameter("aggBy", FragmentClazzRef[Int]), FragmentParameter("key", FragmentClazzRef[String]))
+            List(
+              FragmentParameter(ParameterName("aggBy"), FragmentClazzRef[Int]),
+              FragmentParameter(ParameterName("key"), FragmentClazzRef[String])
+            )
           )
         ),
         canonicalnode.FlatNode(

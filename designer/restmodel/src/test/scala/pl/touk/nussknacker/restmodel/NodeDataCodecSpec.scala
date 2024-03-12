@@ -21,7 +21,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
         ProcessAdditionalFields(Some("a"), Map("field1" -> "value1"), StreamMetaData.typeName)
       ),
       List(
-        FragmentInputDefinition("proc1", List(FragmentParameter("param1", FragmentClazzRef[String]))),
+        FragmentInputDefinition("proc1", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String]))),
         CustomNode(
           "id",
           Some("out1"),

@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.graph
 
-import io.circe.{Codec, Decoder, Encoder}
+import io.circe.Codec
 import io.circe.generic.JsonCodec
+import io.circe.generic.extras.semiauto._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
@@ -14,10 +15,7 @@ object evaluatedparam {
     val tupled: ((ParameterName, Expression)) => Parameter = (Parameter.apply _).tupled
   }
 
-  private implicit val parameterNameCodec: Codec[ParameterName] = Codec.from(
-    Decoder.decodeString.map(ParameterName.apply),
-    Encoder.encodeString.contramap(_.value)
-  )
+  private implicit val parameterNameCodec: Codec[ParameterName] = deriveUnwrappedCodec
 
   // TODO: rename to NodeParameter
   @JsonCodec case class Parameter(name: ParameterName, expression: Expression)

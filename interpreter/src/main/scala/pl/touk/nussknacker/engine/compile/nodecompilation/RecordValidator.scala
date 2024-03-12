@@ -38,7 +38,7 @@ object RecordValidator {
       fields: List[CompiledIndexedRecordField]
   )(implicit nodeId: NodeId) = {
     fields.map { field =>
-      validateVariableValue(Valid(field.typedExpression), recordValueFieldName(field.index))
+      validateVariableValue(Valid(field.typedExpression), ParameterName(recordValueFieldName(field.index)))
     }.combineAll
   }
 

@@ -42,7 +42,7 @@ class TestDataPreparer(
         s.testRecordParser.parse(jsonRecord.record)
       case (s: TestWithParametersSupport[T @unchecked], parametersRecord: ScenarioTestParametersRecord) =>
         val parameterTypingResults = s.testParametersDefinition.collect { param =>
-          parametersRecord.parameterExpressions.get(param.name.value) match {
+          parametersRecord.parameterExpressions.get(param.name) match {
             case Some(expression)          => evaluateExpression(expression, param).map(e => param.name -> e)
             case None if !param.isOptional => UnknownProperty(param.name).invalidNel
           }
@@ -66,7 +66,7 @@ class TestDataPreparer(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
     expressionCompiler
-      .compile(expression, Some(parameter.name.value), validationContext, parameter.typ)(nodeId)
+      .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
       .map { typedExpression =>
         val param = CompiledParameter(typedExpression, parameter)
         evaluator.evaluateParameter(param, dumbContext)(nodeId, metaData).value

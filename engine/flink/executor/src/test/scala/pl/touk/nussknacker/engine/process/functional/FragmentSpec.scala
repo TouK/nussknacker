@@ -105,7 +105,7 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       MetaData("fragment1", FragmentSpecificData()),
       List(
         canonicalnode.FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
         ),
         canonicalnode.FilterNode(
           Filter("f1", "#param == 'a'"),
@@ -120,7 +120,7 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       MetaData("splitFragment", FragmentSpecificData()),
       List(
         canonicalnode.FlatNode(
-          FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
         ),
         canonicalnode.SplitNode(
           Split("split"),
@@ -146,7 +146,9 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     val diamondFragment = CanonicalProcess(
       MetaData("diamondFragment", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+        ),
         canonicalnode.SplitNode(
           Split("split"),
           List(

@@ -8,9 +8,9 @@ final case class Params(nameToValueMap: Map[ParameterName, Any]) {
     extractValue(name).map(cast[T])
   }
 
-  def extractMandatory[T](name: ParameterName): T =
+  def extractUnsafe[T](name: ParameterName): T =
     extract[T](name)
-      .getOrElse(throw new IllegalArgumentException(mandatoryParamValueIsNoneMessage(name)))
+      .getOrElse(throw new IllegalArgumentException(paramValueIsNoneMessage(name)))
 
   def extractOrEvaluateLazyParam[T](name: ParameterName, context: Context): Option[T] = {
     extractValue(name)
@@ -21,9 +21,9 @@ final case class Params(nameToValueMap: Map[ParameterName, Any]) {
       .map(cast[T])
   }
 
-  def extractMandatoryOrEvaluateLazyParam[T](name: ParameterName, context: Context): T = {
+  def extractOrEvaluateLazyParamUnsafe[T](name: ParameterName, context: Context): T = {
     extractOrEvaluateLazyParam(name, context)
-      .getOrElse(throw new IllegalArgumentException(mandatoryParamValueIsNoneMessage(name)))
+      .getOrElse(throw new IllegalArgumentException(paramValueIsNoneMessage(name)))
   }
 
   private def extractValue(paramName: ParameterName) = {
@@ -37,8 +37,8 @@ final case class Params(nameToValueMap: Map[ParameterName, Any]) {
   private def cannotFindParamNameMessage(paramName: ParameterName) =
     s"Cannot find param name [${paramName.value}]. Available param names: ${nameToValueMap.keys.map(_.value).mkString(",")}"
 
-  private def mandatoryParamValueIsNoneMessage(paramName: ParameterName) =
-    s"Mandatory parameter [${paramName.value}] value cannot be null"
+  private def paramValueIsNoneMessage(paramName: ParameterName) =
+    s"Parameter [${paramName.value}] doesn't expect to be null!"
 
   private def cast[T](value: Any): T = value.asInstanceOf[T]
 
