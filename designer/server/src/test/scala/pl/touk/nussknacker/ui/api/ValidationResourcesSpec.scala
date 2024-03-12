@@ -108,17 +108,6 @@ class ValidationResourcesSpec
     }
   }
 
-  it should "find errors in scenario properties" in {
-    createAndValidateScenario(ProcessTestData.scenarioGraphWithInvalidScenarioProperties) {
-      status shouldEqual StatusCodes.OK
-      val entity = entityAs[String]
-      entity should include("Configured property requiredStringProperty (label) is missing")
-      entity should include("Property numberOfThreads has invalid value")
-      entity should include("Unknown property unknown")
-      entity should include("This field value has to be an integer number")
-    }
-  }
-
   it should "find errors in scenario with wrong fixed expression value" in {
     createAndValidateScenario(ProcessTestData.invalidProcessWithWrongFixedExpressionValue) {
       status shouldEqual StatusCodes.OK

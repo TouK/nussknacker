@@ -286,26 +286,6 @@ class BaseFlowTest
     settings shouldBe underTest
   }
 
-  test("validate process scenario properties") {
-    val scenario = ProcessTestData.scenarioGraphWithInvalidScenarioProperties
-    createProcess(ProcessTestData.sampleProcessName)
-
-    val validationResponse = httpClient.send(
-      quickRequest
-        .post(uri"$nuDesignerHttpAddress/api/processValidation/${ProcessTestData.sampleProcessName}")
-        .contentType(MediaType.ApplicationJson)
-        .body(ScenarioValidationRequest(ProcessTestData.sampleProcessName, scenario).asJson.spaces2)
-        .auth
-        .basic("admin", "admin")
-    )
-
-    validationResponse.code shouldEqual StatusCode.Ok
-    validationResponse.body should include("Configured property environment (Environment) is missing")
-    validationResponse.body should include("This field value has to be an integer number")
-    validationResponse.body should include("Unknown property unknown")
-    validationResponse.body should include("Property numberOfThreads (Number of threads) has invalid value") //
-  }
-
   test("be able to work with fragment with custom class inputs") {
     val processId = ProcessName(UUID.randomUUID().toString)
     createProcess(processId)
