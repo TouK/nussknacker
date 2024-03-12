@@ -7,17 +7,20 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim}
-import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.test.base.it.NuItTest
-import pl.touk.nussknacker.test.config.WithDesignerConfig
 import pl.touk.nussknacker.test._
+import pl.touk.nussknacker.test.base.it.NuItTest
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.mock.WithWireMockServer
 
 import java.time.Clock
 
 class UserApiHttpServiceOAuth2Spec
     extends AnyFreeSpecLike
+    // Warning: WithWireMockServer must be mixed in before NuItTest to avoid NPE during wireMockServerBaseUrl determining in designerConfig method
+    with WithWireMockServer
     with NuItTest
-    with WithDesignerConfig
+    with WithSimplifiedDesignerConfig
     with NuRestAssureMatchers
     with NuRestAssureExtensions
     with RestAssuredVerboseLogging
@@ -31,37 +34,34 @@ class UserApiHttpServiceOAuth2Spec
 
   private lazy val userInfoEndpointPath = "/userInfo"
 
-  private lazy val userInfoUserId = """userInfoUserId"""
+  private lazy val userInfoUserId = "userInfoUserId"
 
-  private lazy val wireMockServer: WireMockServer = {
-    val server = AvailablePortFinder.withAvailablePortsBlocked(1)(l => new WireMockServer(l.head))
-    server.start()
-    server.stubFor(
+  override protected def setupWireMockServer(wireMockServer: WireMockServer): Unit = {
+    wireMockServer.stubFor(
       get(urlPathEqualTo(userInfoEndpointPath)).willReturn(
         aResponse()
           .withBody(s"""{"sub": "$userInfoUserId", "roles": ["adminRole"]}""")
       )
     )
-    server
   }
 
-  override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
-    ConfigFactory.parseString(
-      s"""authentication:  {
-         |  method: "Oidc"
-         |  # It contains only one rule with role = adminRole and isAdmin = true
-         |  usersFile: "designer/server/src/test/resources/config/oauth2/users.conf"
-         |  issuer: "${wireMockServer.baseUrl()}"
-         |  userinfoEndpoint: "$userInfoEndpointPath"
-         |  authorizationEndpoint: "/not-used-but-required-authorization-endpoint"
-         |  tokenEndpoint: "/not-used-but-required-token-endpoint"
-         |  clientId: "fooClientId"
-         |  clientSecret: "$configuredSymmetricKey"
-         |  audience: "$configuredAudience"
-         |}
-         |
-         |scenarioTypes {}""".stripMargin
-    )
+  override def designerConfig: Config = super.designerConfig.withValue(
+    "authentication",
+    ConfigFactory
+      .parseString(
+        s"""method: "Oidc"
+         |# It contains only one rule with role = adminRole and isAdmin = true
+         |usersFile: "designer/server/src/test/resources/config/oauth2/users.conf"
+         |issuer: "$wireMockServerBaseUrl"
+         |userinfoEndpoint: "$userInfoEndpointPath"
+         |authorizationEndpoint: "/not-used-but-required-authorization-endpoint"
+         |tokenEndpoint: "/not-used-but-required-token-endpoint"
+         |clientId: "fooClientId"
+         |clientSecret: "$configuredSymmetricKey"
+         |audience: "$configuredAudience"
+         |""".stripMargin
+      )
+      .root()
   )
 
   "The endpoint for getting user info when" - {
@@ -88,18 +88,13 @@ class UserApiHttpServiceOAuth2Spec
                |    "id": "$userInfoUserId",
                |    "username": "$userInfoUserId",
                |    "isAdmin": true,
-               |    "categories": [],
+               |    "categories": ["${TestCategory.Category1.stringify}"],
                |    "categoryPermissions": {},
                |    "globalPermissions": []
                |}""".stripMargin
           )
       }
     }
-  }
-
-  override protected def afterAll(): Unit = {
-    wireMockServer.shutdown()
-    super.afterAll()
   }
 
 }
