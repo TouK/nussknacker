@@ -175,14 +175,14 @@ class ProcessesResources(
                 }
               }
             }
-          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter) {
-            (skipValidateAndResolve, skipNodeResults) =>
+          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter & skipFetchStateParameter) {
+            (skipValidateAndResolve, skipNodeResults, skipFetchState) =>
               complete {
                 processService.getLatestProcessWithDetails(
                   processId,
                   GetScenarioWithDetailsOptions(
                     FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
-                    fetchState = true
+                    fetchState = !skipFetchState
                   )
                 )
               }
@@ -330,6 +330,10 @@ class ProcessesResources(
 
   private def skipNodeResultsParameter = {
     parameters(Symbol("skipNodeResults").as[Boolean].withDefault(false))
+  }
+
+  private val skipFetchStateParameter = {
+    parameters(Symbol("skipState").as[Boolean].withDefault(false))
   }
 
   private def validationFlagsToMode(skipValidateAndResolve: Boolean, skipNodeResults: Boolean) = {

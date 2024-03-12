@@ -417,7 +417,9 @@ class MigrationApiHttpServiceBusinessSpec
       given()
         .when()
         .basicAuthAllPermUser()
-        .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/basic")
+        .get(
+          s"$nuDesignerHttpAddress/api/processes/$scenarioName?skipValidateAndResolve=true&skipNodeResults=true&skipState=true"
+        )
         .Then()
         .statusCode(200)
         .body(
