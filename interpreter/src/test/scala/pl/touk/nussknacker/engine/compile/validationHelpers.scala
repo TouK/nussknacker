@@ -430,24 +430,27 @@ object validationHelpers {
 
     override type State = List[String]
 
+    private val par1ParamName     = ParameterName("par1")
+    private val lazyPar1ParamName = ParameterName("lazyPar1")
+
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
     ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(
           List(
-            Parameter[String](ParameterName("par1")),
-            Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true)
+            Parameter[String](par1ParamName),
+            Parameter[Long](lazyPar1ParamName).copy(isLazyParameter = true)
           )
         )
       case TransformationStep(
-            (ParameterName("par1"), DefinedEagerParameter(value: String, _)) :: (ParameterName("lazyPar1"), _) :: Nil,
+            (`par1ParamName`, DefinedEagerParameter(value: String, _)) :: (`lazyPar1ParamName`, _) :: Nil,
             None
           ) =>
         val split = value.split(",").toList
         NextParameters(split.map(v => Parameter(ParameterName(v), Unknown)), state = Some(split))
-      case TransformationStep((ParameterName("par1"), _) :: (ParameterName("lazyPar1"), _) :: rest, Some(names))
-          if rest.map(_._1) == names =>
+      case TransformationStep((`par1ParamName`, _) :: (`lazyPar1ParamName`, _) :: rest, Some(names))
+          if rest.map(_._1.value) == names =>
         outputParameters(context, dependencies, rest)
     }
 
@@ -458,7 +461,7 @@ object validationHelpers {
     )(implicit nodeId: NodeId): FinalResults = {
       val result = Typed.record(
         step.parameters.toMap
-          .filterKeysNow(k => k != ParameterName("par1") && k != ParameterName("lazyPar1"))
+          .filterKeysNow(k => k != par1ParamName && k != lazyPar1ParamName)
           .map { case (k, v) => k.value -> v.returnType }
       )
       prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, result)), step.state)
