@@ -9,17 +9,12 @@ import pl.touk.nussknacker.engine.flink.table.TableComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 
-class TableApiHardcodedSourceTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
+class TableApiHardcodedSourcePingPongTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
   import scala.jdk.CollectionConverters._
   import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.Implicits._
-
-  val sinkId       = "sinkId"
-  val sourceId     = "sourceId"
-  val resultNodeId = "resultVar"
-  val filterId     = "filter"
 
   test("should produce results for each element in list") {
     val runner = TestScenarioRunner
@@ -29,8 +24,8 @@ class TableApiHardcodedSourceTest extends AnyFunSuite with FlinkSpec with Matche
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source(sourceId, "tableApi-source-hardcoded")
-      .filter(filterId, "#input.someInt != 1")
+      .source("start", "tableApi-source-hardcoded")
+      .filter("filter", "#input.someInt != 1")
       .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#input")
 
     val expectedMap: java.util.Map[String, Any] = Map("someString" -> "BBB", "someInt" -> 2).asJava
