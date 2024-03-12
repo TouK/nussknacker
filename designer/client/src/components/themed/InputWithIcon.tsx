@@ -1,5 +1,5 @@
 import { css, cx } from "@emotion/css";
-import React, { PropsWithChildren, useCallback, useRef } from "react";
+import React, { forwardRef, PropsWithChildren, ReactElement, useCallback, useImperativeHandle, useRef } from "react";
 import { InputProps, ThemedInput } from "./ThemedInput";
 import { ClearIcon } from "../table/SearchFilter";
 import { useTheme } from "@mui/material";
@@ -9,7 +9,14 @@ type Props = PropsWithChildren<InputProps> & {
     onAddonClick?: () => void;
 };
 
-export function InputWithIcon({ children, onAddonClick, onClear, ...props }: Props): JSX.Element {
+export type Focusable = {
+    focus: () => void;
+};
+
+export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon(
+    { children, onAddonClick, onClear, ...props },
+    forwardedRef,
+): ReactElement {
     const theme = useTheme();
 
     const size = theme.custom.spacing.controlHeight;
@@ -40,7 +47,13 @@ export function InputWithIcon({ children, onAddonClick, onClear, ...props }: Pro
     });
 
     const ref = useRef<HTMLInputElement>();
-    const focus = useCallback(() => ref.current.focus(), [ref]);
+    const focus = useCallback(() => {
+        const input = ref.current;
+        input.focus();
+        input.setSelectionRange(0, props.value.length);
+    }, [props.value.length]);
+
+    useImperativeHandle(forwardedRef, () => ({ focus }), [focus]);
 
     return (
         <div className={cx(children && wrapperWithAddonStyles)}>
@@ -59,4 +72,4 @@ export function InputWithIcon({ children, onAddonClick, onClear, ...props }: Pro
             </div>
         </div>
     );
-}
+});
