@@ -1,4 +1,5 @@
 import { StatusFilterOption } from "../../scenarios/filters/otherOptionsStack";
+import { ProcessingMode } from "../../scenarios/list/processingMode";
 
 export interface UsagesFiltersModel {
     TEXT?: string;
@@ -7,6 +8,7 @@ export interface UsagesFiltersModel {
     TYPE?: UsagesFiltersModelType[];
     USAGE_TYPE?: UsagesFiltersUsageType[];
     STATUS?: string[];
+    PROCESSING_MODE?: ProcessingMode[];
 }
 
 export interface UsagesFiltersValues {

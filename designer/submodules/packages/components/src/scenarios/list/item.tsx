@@ -9,6 +9,8 @@ import { RowType } from "./listPart";
 import { FiltersContextType } from "../../common/filters/filtersContext";
 import { CopyTooltip } from "./copyTooltip";
 import { ProcessActionType } from "nussknackerUi/components/Process/types";
+import { ScenarioStatus } from "./scenarioStatus";
+import { ProcessingModeItem } from "./processingMode";
 
 function Category({ value, filtersContext }: { value: string; filtersContext: FiltersContextType<ScenariosFiltersModel> }): JSX.Element {
     const { setFilter, getFilter } = filtersContext;
@@ -39,12 +41,9 @@ export function FirstLine({ row }: { row: RowType }): JSX.Element {
     const filtersContext = useFilterContext<ScenariosFiltersModel>();
 
     return (
-        <Stack direction="row" spacing={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-            <CopyTooltip text={row.name} title={t("scenario.copyName", "Copy name to clipboard")}>
-                <Highlight value={row.name} filterText={filtersContext.getFilter("NAME")} />
-            </CopyTooltip>
-            <Category value={row.processCategory} filtersContext={filtersContext} />
-        </Stack>
+        <CopyTooltip text={row.name} title={t("scenario.copyName", "Copy name to clipboard")}>
+            <Highlight value={row.name} filterText={filtersContext.getFilter("NAME")} />
+        </CopyTooltip>
     );
 }
 
@@ -54,26 +53,39 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
     const [sortedBy] = getFilter("SORT_BY", true);
     const sortedByCreation = !sortedBy || sortedBy.startsWith("createdAt");
     const filteredByCreation = createdBy === row.createdBy;
+    const filtersContext = useFilterContext<ScenariosFiltersModel>();
+
     return (
-        <>
-            <ModificationDate row={row} />
-            {filteredByCreation ? (
-                <>
-                    {" "}
-                    (<CreationDate row={row} />)
-                </>
-            ) : null}
-        </>
+        <Stack
+            direction="row"
+            spacing={1.25}
+            mt={1}
+            alignItems="center"
+            divider={<Divider orientation="vertical" variant={"inset"} flexItem />}
+        >
+            <div>
+                <ModificationDate row={row} />
+                {filteredByCreation ? (
+                    <>
+                        {" "}
+                        (<CreationDate row={row} />)
+                    </>
+                ) : null}
+            </div>
+            {!row.isFragment && !row.isArchived && <ScenarioStatus state={row.state} filtersContext={filtersContext} />}
+            <ProcessingModeItem processingMode={row.processingMode} filtersContext={filtersContext} />
+            <Category value={row.processCategory} filtersContext={filtersContext} />
+        </Stack>
     );
 }
 
 function CreationDate({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
     return (
-        <span>
+        <Typography variant={"caption"}>
             {t("scenario.createdAt", "created {{date, relativeDate}}", { date: new Date(row.createdAt) })} {t("scenario.authorBy", "by")}{" "}
             <Author value={row.createdBy} />
-        </span>
+        </Typography>
     );
 }
 
@@ -81,9 +93,10 @@ function ModificationDate({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
 
     return (
-        <span>
+        <Typography variant={"caption"}>
+            {t("scenario.modifiedAtLabel", "Last modified:")}{" "}
             {t("scenario.modifiedAt", "{{date, relativeDate}}", { date: row.modificationDate })} {t("scenario.authorBy", "by")}{" "}
             <Author value={row.modifiedBy} />
-        </span>
+        </Typography>
     );
 }
