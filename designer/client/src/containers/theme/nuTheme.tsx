@@ -260,7 +260,7 @@ export const nuTheme = createTheme({
     palette: {
         mode: "dark",
         primary: {
-            main: `#5EB45E`,
+            main: `#D2A8FF`,
         },
         secondary: {
             main: `#762976`,
