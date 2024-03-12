@@ -7,87 +7,88 @@ import { ComponentGroup } from "../../../types";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 import Tool from "./Tool";
 import { useTranslation } from "react-i18next";
-import { css, darken, styled } from "@mui/material";
-import { alpha } from "../../../containers/theme/helpers";
+import { darken, lighten, styled } from "@mui/material";
 
-const StyledToolbox = styled("div")(
-    ({ theme }) => css`
-        font-size: 14px;
-        font-weight: 600;
-        padding: 0;
-        padding-bottom: 0.5em;
-        min-height: 2.5em;
+const StyledToolbox = styled("div")(({ theme }) => ({
+    fontSize: "14px",
+    fontWeight: "600",
+    padding: 0,
+    paddingBottom: "0.5em",
+    minHeight: "2.5em",
 
-        .tree-view {
-            background-color: ${theme.custom.colors.mineShaft};
-        }
+    ".tree-view": {
+        backgroundColor: theme.palette.background.paper,
+    },
 
-        .tree-view_item {
-            background-color: ${theme.custom.colors.primaryBackground};
-            border: 1px solid ${alpha(theme.custom.colors.arsenic, 50)};
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            padding: 0 5px;
-            height: 28px;
-            line-height: 28px;
+    ".tree-view_item": {
+        backgroundColor: theme.palette.background.paper,
+        border: `1px solid ${darken(theme.palette.background.paper, 0.2)}`,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 5px",
+        height: "28px",
+        lineHeight: "28px",
 
-            &:hover {
-                background-color: ${theme.custom.colors.arsenic};
-                color: ${theme.custom.colors.secondaryColor};
-            }
-        }
+        "&:hover": {
+            backgroundColor: theme.palette.action.hover,
+            color: theme.custom.colors.secondaryColor,
+        },
+    },
 
-        .tree-view_arrow {
-            cursor: inherit;
-        }
+    ".tree-view_children": {
+        backgroundColor: theme.palette.background.paper,
 
-        .toolWrapper {
-            background-color: ${theme.custom.colors.woodCharcoal};
-            font-weight: 400;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        "&:hover": {
+            backgroundColor: theme.palette.background.paper,
+            color: theme.custom.colors.secondaryColor,
+        },
+    },
+    ".tree-view_arrow": {
+        cursor: "inherit",
+    },
 
-        .tool {
-            margin-bottom: -1px;
-            height: 28px;
-            padding: 0 5px;
-            line-height: 28px;
-            border: 1px solid ${theme.custom.colors.arsenic};
-            &.disabled {
-                opacity: 0.4;
-                cursor: not-allowed !important;
-            }
+    ".toolWrapper": {
+        backgroundColor: theme.palette.background.paper,
+        fontWeight: 400,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+    },
 
-            &:not(.disabled) {
-                cursor: -moz-grab;
-                cursor: -webkit-grab;
-                cursor: grab;
-                &:active {
-                    cursor: -moz-grabbing;
-                    cursor: -webkit-grabbing;
-                    cursor: grabbing;
-                }
-                color: ${theme.custom.colors.canvasBackground};
+    ".tool": {
+        ...theme.typography.body2,
+        marginBottom: "-1px",
+        height: "28px",
+        padding: "0 5px",
+        lineHeight: "28px",
+        border: `1px solid ${darken(theme.palette.background.paper, 0.2)}`,
+        "&.disabled": {
+            opacity: 0.4,
+            cursor: "not-allowed !important",
+        },
 
-                &:hover {
-                    background-color: ${darken(theme.custom.colors.charcoal, 0.07)};
-                    color: ${theme.custom.colors.secondaryColor};
-                }
-            }
-        }
-        .toolIcon {
-            height: 16px;
-            width: 16px;
-            display: inline-flex;
-            vertical-align: middle;
-            margin-right: 5px;
-            margin-bottom: 2px;
-        }
-    `,
-);
+        "&:not(.disabled)": {
+            cursor: "grab",
+            "&:active": {
+                cursor: "grabbing",
+            },
+
+            "&:hover": {
+                backgroundColor: theme.palette.background.paper,
+                color: lighten(theme.palette.text.primary, 0.2),
+            },
+        },
+    },
+    ".toolIcon": {
+        height: "16px",
+        width: "16px",
+        display: "inline-flex",
+        verticalAlign: "middle",
+        marginRight: "5px",
+        marginBottom: "2px",
+    },
+}));
 
 export default function ToolBox(props: { filter: string }): JSX.Element {
     const processDefinitionData = useSelector(getProcessDefinitionData);

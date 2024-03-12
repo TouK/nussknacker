@@ -5,7 +5,7 @@ import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./ind
 import { css, cx } from "@emotion/css";
 import { variables } from "../../../stylesheets/variables";
 import { Icon } from "./ToolbarButtonStyled";
-import { Typography, useTheme } from "@mui/material";
+import { lighten, Typography, useTheme } from "@mui/material";
 
 const { buttonSize, rightPanelButtonFontSize, buttonSmallSize } = variables;
 
@@ -15,6 +15,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
 ) {
     const { variant } = useContext(ToolbarButtonsContext);
     const {
+        palette,
         custom: { colors },
     } = useTheme();
 
@@ -44,9 +45,9 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
 
         color: hasError ? colors.error : isActive ? colors.ok : colors.secondaryColor,
 
-        backgroundColor: colors.primaryBackground,
+        backgroundColor: palette.background.paper,
         ":hover": {
-            backgroundColor: disabled ? colors.primaryBackground : colors.charcoal,
+            backgroundColor: disabled ? "inherit" : palette.action.hover,
         },
     });
 

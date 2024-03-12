@@ -38,9 +38,6 @@ const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
 
 const colors = {
     borderColor: d,
-    canvasBackground: l3,
-    primaryBackground: d3,
-    secondaryBackground: d2,
     primaryColor: l,
     secondaryColor: l2,
     mutedColor: base,
@@ -48,7 +45,6 @@ const colors = {
     baseColor: l4,
     evenBackground: d3,
     cobalt: "#0058A9",
-    mineShaft: "#3e3e3e",
     tundora: d3,
     scorpion: "#5D5D5D",
     silverChalice: "#afafaf",
@@ -87,12 +83,11 @@ const colors = {
     gray: "#888888",
     emperor: "#555555",
     arsenic: "#434343",
-    woodCharcoal: "#464646",
 };
 
 const selectColors = {
     ...tintPrimary(colors.focusColor),
-    neutral0: colors.secondaryBackground,
+    neutral0: "242F3E",
     neutral5: colors.secondaryColor,
     neutral10: colors.accent,
     neutral20: colors.mutedColor,
@@ -146,7 +141,6 @@ const globalStyles = (theme: Theme) => ({
         margin: 0,
         padding: 0,
         height: "100dvh",
-        background: "#b3b3b3",
         color: custom.colors.secondaryColor,
         fontSize: "16px",
         overflow: "hidden",
@@ -279,8 +273,8 @@ export const nuTheme = createTheme({
             contrastText: `#FFFFFF`,
         },
         background: {
-            paper: colors.primaryBackground,
-            default: colors.canvasBackground,
+            paper: "#242F3E",
+            default: "#131A25",
         },
     },
     typography: {
@@ -315,29 +309,29 @@ export const nuTheme = createTheme({
         },
         MuiAlert: {
             styleOverrides: {
-                root: {
+                root: ({ theme }) => ({
                     width: 300,
                     zIndex: 20000,
                     marginTop: 10,
                     cursor: "pointer",
                     maxHeight: 400,
-                    ".MuiAlert-icon": { color: custom.colors.secondaryBackground, alignSelf: "center" },
-                },
-                standardSuccess: {
+                    ".MuiAlert-icon": { color: theme.palette.background.paper, alignSelf: "center" },
+                }),
+                standardSuccess: ({ theme }) => ({
                     backgroundColor: custom.colors.success,
-                    color: custom.colors.secondaryBackground,
-                },
-                standardError: {
+                    color: theme.palette.text.secondary,
+                }),
+                standardError: ({ theme }) => ({
                     backgroundColor: custom.colors.error,
-                    color: custom.colors.secondaryBackground,
-                },
+                    color: theme.palette.text.secondary,
+                }),
                 standardWarning: {
                     backgroundColor: custom.colors.warning,
                 },
-                standardInfo: {
-                    backgroundColor: custom.colors.secondaryColor,
-                    color: custom.colors.secondaryBackground,
-                },
+                standardInfo: ({ theme }) => ({
+                    backgroundColor: theme.palette.info.light,
+                    color: theme.palette.text.secondary,
+                }),
             },
         },
         MuiCssBaseline: {
@@ -358,7 +352,6 @@ export const nuTheme = createTheme({
                     ...theme.typography.body2,
                     display: "flex",
                     marginTop: "9px",
-                    color: custom.colors.canvasBackground,
                     flexBasis: "20%",
                     maxWidth: "20em",
                     overflowWrap: "anywhere",
@@ -386,13 +379,13 @@ export const nuTheme = createTheme({
                     ...theme.typography.body2,
                     padding: theme.spacing(0.75, 2),
                     marginTop: theme.spacing(0.5),
-                    backgroundColor: theme.custom.colors.secondaryBackground,
+                    backgroundColor: theme.palette.background.paper,
                 }),
                 loading: ({ theme }) => ({
                     ...theme.typography.body2,
                     padding: theme.spacing(0.75, 2),
                     marginTop: theme.spacing(0.5),
-                    backgroundColor: theme.custom.colors.secondaryBackground,
+                    backgroundColor: theme.palette.background.paper,
                 }),
             },
         },

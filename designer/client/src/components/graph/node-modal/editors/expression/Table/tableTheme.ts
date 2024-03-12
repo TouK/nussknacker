@@ -3,7 +3,7 @@ import { alpha, darken, getLuminance, lighten, useTheme } from "@mui/material";
 
 export const useTableTheme = (): DataEditorProps["theme"] => {
     const theme = useTheme();
-    const bgCell = theme.custom.colors.secondaryBackground;
+    const bgCell = theme.palette.background.paper;
     const text = theme.palette.getContrastText(bgCell);
     const bgIconHeader = text;
     const textHeader = getLuminance(text) > 0.5 ? darken(text, 0.2) : lighten(text, 0.2);

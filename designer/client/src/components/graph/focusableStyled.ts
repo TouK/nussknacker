@@ -6,7 +6,7 @@ import { ButtonWithFocus } from "../withFocus";
 export const buttonBase = (theme: Theme) => css`
     border: 1px solid ${theme.custom.colors.doveGray};
     border-radius: 0;
-    background-color: ${theme.custom.colors.primaryBackground};
+    background-color: ${theme.palette.background.paper};
     color: ${theme.custom.colors.secondaryColor};
     transition: background-color 0.2s;
     user-select: none;
@@ -141,21 +141,6 @@ export const FocusableStyled = styled("div")(
                 }
             }
 
-            .row-ace-editor {
-                color: ${theme.custom.colors.dimGray};
-                padding-top: 8px;
-                padding-bottom: 8px;
-                padding-left: 5px;
-                padding-right: 5px;
-                background-color: ${theme.custom.colors.secondaryBackground};
-                min-height: 35px;
-                outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
-                &.focused {
-                    outline: 2px solid ${theme.custom.colors.cobalt} !important;
-                    outline-offset: -1px !important;
-                }
-            }
-
             .testResultsSummary {
                 font-size: 13px;
                 font-weight: bold;
@@ -194,7 +179,7 @@ export const FocusableStyled = styled("div")(
                 width: 100%;
                 padding: 0 10px;
                 border: none;
-                background-color: ${theme.custom.colors.secondaryBackground};
+                background-color: ${theme.palette.background.paper};
                 color: ${theme.custom.colors.secondaryColor};
                 font-weight: 400;
                 font-size: 16px;
@@ -207,7 +192,7 @@ export const FocusableStyled = styled("div")(
           .joint-paper-background {
             overflow-y: auto;
             overflow-x: auto;
-            background-color: ${theme.custom.colors.canvasBackground};
+            background-color: ${theme.palette.background.default};
           }
           #svg-pan-zoom-controls {
             transform: translate(0, 0px) scale(0.75);

@@ -4,9 +4,9 @@ export const buttonBaseStyle = (theme: Theme) =>
     css({
         border: `1px solid ${theme.custom.colors.doveGray}`,
         borderRadius: 0,
-        backgroundColor: `${theme.custom.colors.primaryBackground}`,
+        backgroundColor: `${theme.palette.background.paper}`,
         color: `${theme.custom.colors.secondaryColor}`,
-        transition: `${theme.custom.colors.primaryBackground} 0.2s`,
+        transition: `${theme.palette.background.paper} 0.2s`,
         userSelect: "none",
         "&:disabled,&.disabled": {
             opacity: 0.3,

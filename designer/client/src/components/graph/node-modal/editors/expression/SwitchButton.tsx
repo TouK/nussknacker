@@ -13,7 +13,7 @@ export const SwitchButton = styled(ButtonWithFocus)(({ disabled, theme }) => ({
     width: 35,
     height: 35,
     padding: 5,
-    backgroundColor: theme.custom.colors.secondaryBackground,
+    backgroundColor: theme.palette.background.paper,
     border: "none",
     opacity: disabled ? 0.5 : 1,
     filter: disabled ? "saturate(0)" : "non",

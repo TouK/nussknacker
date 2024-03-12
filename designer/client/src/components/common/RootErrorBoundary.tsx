@@ -50,7 +50,7 @@ const StylesWrapper = styled("div")(
         align-items: center;
         justify-items: center;
         color: ${theme.custom.colors.primaryColor};
-        background: ${theme.custom.colors.woodCharcoal};
+        background: ${theme.palette.background.default};
 
         .position-wrapper {
             --top-margin: 8vh;

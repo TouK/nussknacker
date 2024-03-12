@@ -21,7 +21,7 @@ export const CustomRadio = forwardRef(({ label, value, Icon, disabled, active }:
                 square
                 disabled={disabled}
                 sx={(theme) => ({
-                    backgroundColor: theme.custom.colors.secondaryBackground,
+                    backgroundColor: theme.palette.background.paper,
                     p: [1, 2],
                     borderColor: active && theme.palette.primary.main,
                     cursor: "pointer",
@@ -39,7 +39,7 @@ export const CustomRadio = forwardRef(({ label, value, Icon, disabled, active }:
                     <>
                         <Box
                             sx={(theme) => ({
-                                backgroundColor: theme.custom.colors.primaryBackground,
+                                backgroundColor: theme.palette.background.paper,
                                 position: "absolute",
                                 top: theme.spacing(-1.25),
                                 right: theme.spacing(-1.25),

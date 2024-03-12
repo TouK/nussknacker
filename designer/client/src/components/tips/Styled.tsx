@@ -1,7 +1,6 @@
 import { ComponentType, SVGProps } from "react";
-import { lighten, styled } from "@mui/material";
+import { alpha, lighten, styled } from "@mui/material";
 import { Link } from "react-router-dom";
-import { alpha } from "../../containers/theme/helpers";
 
 export const LinkStyled = styled(Link)(
     ({ theme }) => `
@@ -32,8 +31,8 @@ export const TipPanelStyled = styled("div")<{
     isHighlighted: boolean;
 }>(({ isHighlighted, theme }) => ({
     height: "75px",
-    backgroundColor: isHighlighted ? alpha(theme.custom.colors.error, 0.1) : theme.custom.colors.primaryBackground,
-    padding: "8px 10px 8px 10px",
+    backgroundColor: isHighlighted ? alpha(theme.palette.error.main, 0.1) : theme.palette.background.paper,
+    padding: theme.spacing(1, 1.25),
     fontWeight: "lighter",
     fontSize: "14px",
     color: isHighlighted && theme.custom.colors.secondaryColor,

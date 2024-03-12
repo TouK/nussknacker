@@ -88,7 +88,7 @@ export const NodeTableStyled = styled("div")(
             width: 100%;
             padding: 0 10px;
             border: none;
-            background-color: ${theme.custom.colors.secondaryBackground};
+            background-color: ${theme.palette.background.paper};
             color: ${theme.custom.colors.secondaryColor};
             font-weight: 400;
             font-size: 14px;
@@ -101,9 +101,12 @@ export const NodeTableStyled = styled("div")(
             padding-bottom: 8px;
             padding-left: 5px;
             padding-right: 5px;
-            background-color: ${theme.custom.colors.secondaryBackground};
+            background-color: ${theme.palette.background.paper};
             min-height: 35px;
             outline: 1px solid rgba(255, 255, 255, 0.075);
+            .ace_editor {
+                background-color: ${theme.palette.background.paper};
+            }
             &.focused {
                 outline: 2px solid ${theme.custom.colors.cobalt};
                 outline-offset: -1px;
@@ -143,18 +146,6 @@ export const NodeTableStyled = styled("div")(
             outline: 1px solid ${theme.custom.colors.error} !important;
             outline-offset: initial !important;
             border-radius: 2px;
-        }
-        .testResultDownload {
-            padding-left: 15px;
-            font-size: 14px;
-            a {
-                color: ${theme.custom.colors.canvasBackground};
-                text-decoration: none;
-
-                &:hover {
-                    color: ${theme.custom.colors.info};
-                }
-            }
         }
         .marked {
             border: 2px solid ${theme.custom.colors.ok} !important;

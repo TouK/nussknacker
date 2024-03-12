@@ -15,7 +15,7 @@ export const CronEditorStyled = styled("div")(
         }
         .cron_builder {
             width: 100%;
-            background-color: ${theme.custom.colors.secondaryBackground};
+            background-color: ${theme.palette.background.paper};
             outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
             border: none;
             * {
@@ -126,7 +126,7 @@ export const CronEditorStyled = styled("div")(
             border-bottom: 1px solid ${theme.custom.colors.doveGray};
         }
         .cron-builder-bg {
-            background-color: ${theme.custom.colors.secondaryBackground} !important;
+            background-color: ${theme.palette.background.paper} !important;
             margin-top: 8px;
         }
         .minutes,

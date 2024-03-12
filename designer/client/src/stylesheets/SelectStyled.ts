@@ -8,7 +8,7 @@ export const selectStyled = (theme: Theme) => {
         width: 100%;
         padding: 0 ${padding};
         border: none;
-        background-color: ${theme.custom.colors.secondaryBackground};
+        background-color: ${theme.palette.background.paper};
         color: ${theme.custom.colors.secondaryColor};
         font-weight: 400;
         font-size: 14px;
@@ -17,7 +17,7 @@ export const selectStyled = (theme: Theme) => {
 
     const control = (base: CSSObjectWithLabel, isFocused: boolean, isDisabled: boolean) => css`
         ${base};
-        background-color: ${theme.custom.colors.secondaryBackground};
+        background-color: ${theme.palette.background.paper};
         max-height: 35px;
         min-height: 35px;
         border: 0;
@@ -113,7 +113,7 @@ export const selectStyled = (theme: Theme) => {
         ${base};
         ${hasValue &&
         css`
-            background-color: ${theme.custom.colors.secondaryBackground}
+            background-color: ${theme.palette.background.paper}
             color: ${theme.custom.colors.secondaryColor}
         `}
     `;

@@ -19,7 +19,7 @@ export const TimeRangeStyled = styled("div")(
         .time-range-input {
             width: 45px !important;
             border: none !important;
-            background-color: ${theme.custom.colors.secondaryBackground};
+            background-color: ${theme.palette.background.paper};
             color: ${theme.custom.colors.secondaryColor};
             text-align: center;
             padding-left: 12px;

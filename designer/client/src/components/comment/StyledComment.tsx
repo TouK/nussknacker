@@ -1,6 +1,7 @@
-import { styled } from "@mui/material";
+import { darken, lighten, styled } from "@mui/material";
 import { NkButton } from "../button/NkButton";
 import { StyledCloseIcon } from "../toolbarComponents/toolbarWrapper/ToolbarStyled";
+import { css } from "@emotion/css";
 
 export const ProcessCommentsWrapper = styled("div")`
     padding: 0 13px 10px;
@@ -32,7 +33,7 @@ export const AddCommentPanel = styled("div")(
         font-weight: 400;
         border-radius: 3px;
         border: none;
-        background-color: ${theme.custom.colors.secondaryBackground};
+        background-color: ${lighten(theme.palette.background.paper, 0.1)};
         padding: 4px 6px;
         resize: none;
         &:focus {
@@ -45,7 +46,7 @@ export const AddCommentPanel = styled("div")(
 export const CommentButton = styled(NkButton)(
     ({ theme }) => `
     font-size: 12px !important;
-    background-color: ${theme.custom.colors.secondaryBackground} !important;
+    background-color: ${lighten(theme.palette.background.paper, 0.2)} !important;
     border: none !important;
     width: 20% !important;
     height: 30px !important;
@@ -55,7 +56,7 @@ export const CommentButton = styled(NkButton)(
     border-radius: 3px !important;
     cursor: pointer;
     &:hover {
-        background-color: #3d3d3d !important;
+        background-color: ${lighten(theme.palette.background.paper, 0.2)} !important;
     }
 `,
 );

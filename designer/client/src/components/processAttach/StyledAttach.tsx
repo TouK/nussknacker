@@ -1,4 +1,4 @@
-import { styled } from "@mui/material";
+import { darken, lighten, styled } from "@mui/material";
 import { NkButton } from "../button/NkButton";
 
 export const AddAttachmentsWrapper = styled("div")`
@@ -12,27 +12,25 @@ export const AttachmentsContainer = styled("div")`
     height: 100%;
 `;
 
-export const AttachmentDropZone = styled("div")`
-    width: 100%;
-    height: 100%;
-    font-size: 12px;
-    font-weight: normal;
-    padding: 0;
-    cursor: pointer;
-    padding-top: 6px;
-    margin-bottom: 5px;
-    text-align: center;
-    transition: background-color 0.2s;
-    background-color: #333;
-    &:hover {
-        background-color: #3d3d3d !important;
-    }
-    svg {
-        width: 40px;
-        margin: auto;
-        display: inline-block;
-    }
-`;
+export const AttachmentDropZone = styled("div")(({ theme }) => ({
+    width: "100%",
+    height: "100%",
+    padding: 0,
+    cursor: "pointer",
+    paddingTop: theme.spacing(2),
+    marginBottom: "5px",
+    textAlign: "center",
+    transition: "background-color 0.2s",
+    backgroundColor: lighten(theme.palette.background.paper, 0.1),
+    "&:hover": {
+        backgroundColor: theme.palette.action.hover,
+    },
+    svg: {
+        width: "40px",
+        margin: "auto",
+        display: "inline-block",
+    },
+}));
 
 export const AttachmentButton = styled("div")`
     border-radius: 3px;
