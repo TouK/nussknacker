@@ -67,7 +67,7 @@ trait WithTestPostgresDb extends WithTestDb {
 trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
   self: Suite with WithTestDb =>
 
-  override def beforeAll(): Unit = {
+  override protected def beforeAll(): Unit = {
     super.beforeAll()
     DatabaseInitializer.initDatabase("db", testDbConfig)
   }

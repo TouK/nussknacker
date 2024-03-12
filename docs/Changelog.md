@@ -40,7 +40,7 @@
   * Added authorization check for listing activities and downloading attachments in scenario activity API
   * Fixed the ability to download an unrelated attachment from a given scenario
 * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) Scenario status caching more often
-* [#5505](https://github.com/TouK/nussknacker/pull/5505) Fix: anonymous user handling regression
+* [#5505](https://github.com/TouK/nussknacker/pull/5505) [#5710](https://github.com/TouK/nussknacker/pull/5710) Fix: anonymous user handling regression
 * [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
 * [#5371](https://github.com/TouK/nussknacker/pull/5371) Added new parameter editor type: DictParameterEditor.
