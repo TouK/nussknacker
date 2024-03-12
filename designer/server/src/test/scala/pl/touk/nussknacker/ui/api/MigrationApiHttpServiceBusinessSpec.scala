@@ -48,7 +48,8 @@ class MigrationApiHttpServiceBusinessSpec
           modifiedBy = "Remote[allpermuser]",
           createdBy = "Remote[allpermuser]",
           modelVersion = 0,
-          history = history
+          history = history,
+          scenarioGraph = scenarioGraph
         )
     }
     "migrate scenario and add update comment when scenario exists on target environment" in {
@@ -58,21 +59,23 @@ class MigrationApiHttpServiceBusinessSpec
         )
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(validRequestData)
+        .jsonBody(validRequestData2)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
         .verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by allpermuser")
         .verifyScenarioAfterMigration(
           exampleProcessName.value,
-          processVersionId = 1,
+          processVersionId = 2,
           isFragment = false,
-          modifiedBy = "admin",
+          modifiedBy = "Remote[allpermuser]",
           createdBy = "admin",
-          modelVersion = 1,
-          history = fragmentHistory
+          modelVersion = 0,
+          history = history,
+          scenarioGraph = scenarioGraphAfterMigration
         )
     }
+
     "fail when scenario name contains illegal character(s)" in {
       given()
         .when()
@@ -107,7 +110,7 @@ class MigrationApiHttpServiceBusinessSpec
         )
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(validRequestDataForFragment)
+        .jsonBody(validRequestDataForFragment2)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
@@ -119,7 +122,8 @@ class MigrationApiHttpServiceBusinessSpec
           modifiedBy = "Remote[allpermuser]",
           createdBy = "admin",
           modelVersion = 0,
-          history = history
+          history = history,
+          scenarioGraph = fragmentGraphAfterMigration
         )
     }
     "migrate fragment and add update comment when fragment does not exist in target environment" in {
@@ -138,7 +142,8 @@ class MigrationApiHttpServiceBusinessSpec
           modifiedBy = "Remote[allpermuser]",
           createdBy = "Remote[allpermuser]",
           modelVersion = 0,
-          history = history
+          history = history,
+          scenarioGraph = fragmentGraph
         )
     }
   }
@@ -168,18 +173,175 @@ class MigrationApiHttpServiceBusinessSpec
       |  ]
       |""".stripMargin
 
-  private lazy val fragmentHistory =
+  private lazy val scenarioGraph =
     s"""
-       | [
-       |    {
-       |      "processVersionId": "${regexes.digitsRegex}",
-       |      "createDate": "${regexes.zuluDateRegex}",
-       |      "user": "${regexes.any}",
-       |      "modelVersion": "${regexes.digitsRegex}",
-       |      "actions": []
+       |{
+       |  "properties": {
+       |    "additionalFields": {
+       |      "description": null,
+       |      "properties": {
+       |        "environment": "test"
+       |      },
+       |      "metaDataType": "CustomMetadata"
        |    }
-       | ]
-       |""".stripMargin
+       |  },
+       |  "nodes": [
+       |    {
+       |      "id": "source",
+       |      "ref": {
+       |        "typ": "csv-source-lite",
+       |        "parameters": []
+       |      },
+       |      "additionalFields": null,
+       |      "type": "Source"
+       |    },
+       |    {
+       |      "id": "sink",
+       |      "ref": {
+       |        "typ": "dead-end-lite",
+       |        "parameters": []
+       |      },
+       |      "endResult": null,
+       |      "isDisabled": null,
+       |      "additionalFields": null,
+       |      "type": "Sink"
+       |    }
+       |  ],
+       |  "edges": [
+       |    {
+       |      "from": "source",
+       |      "to": "sink",
+       |      "edgeType": null
+       |    }
+       |  ]
+       |}
+""".stripMargin
+
+  private lazy val scenarioGraphAfterMigration =
+    s"""
+       |{
+       |  "properties": {
+       |    "additionalFields": {
+       |      "description": null,
+       |      "properties": {
+       |        "environment": "test"
+       |      },
+       |      "metaDataType": "CustomMetadata"
+       |    }
+       |  },
+       |  "nodes": [
+       |    {
+       |      "id": "source2",
+       |      "ref": {
+       |        "typ": "csv-source-lite",
+       |        "parameters": []
+       |      },
+       |      "additionalFields": null,
+       |      "type": "Source"
+       |    },
+       |    {
+       |      "id": "sink2",
+       |      "ref": {
+       |        "typ": "dead-end-lite",
+       |        "parameters": []
+       |      },
+       |      "endResult": null,
+       |      "isDisabled": null,
+       |      "additionalFields": null,
+       |      "type": "Sink"
+       |    }
+       |  ],
+       |  "edges": [
+       |    {
+       |      "from": "source2",
+       |      "to": "sink2",
+       |      "edgeType": null
+       |    }
+       |  ]
+       |}
+""".stripMargin
+
+  private lazy val fragmentGraph =
+    s"""
+       |{
+       |  "properties": {
+       |    "additionalFields": {
+       |      "description": null,
+       |      "properties": {
+       |        "docsUrl": ""
+       |      },
+       |      "metaDataType": "FragmentSpecificData"
+       |    }
+       |  },
+       |  "nodes": [
+       |    {
+       |      "id": "csv-source-lite",
+       |      "parameters": [],
+       |      "additionalFields": null,
+       |      "type": "FragmentInputDefinition"
+       |    },
+       |    {
+       |      "id": "sink",
+       |      "ref": {
+       |        "typ": "dead-end-lite",
+       |        "parameters": []
+       |      },
+       |      "endResult": null,
+       |      "isDisabled": null,
+       |      "additionalFields": null,
+       |      "type": "Sink"
+       |    }
+       |  ],
+       |  "edges": [
+       |    {
+       |      "from": "csv-source-lite",
+       |      "to": "sink",
+       |      "edgeType": null
+       |    }
+       |  ]
+       |}
+""".stripMargin
+
+  private lazy val fragmentGraphAfterMigration =
+    s"""
+       |{
+       |  "properties": {
+       |    "additionalFields": {
+       |      "description": null,
+       |      "properties": {
+       |        "docsUrl": ""
+       |      },
+       |      "metaDataType": "FragmentSpecificData"
+       |    }
+       |  },
+       |  "nodes": [
+       |    {
+       |      "id": "csv-source-lite",
+       |      "parameters": [],
+       |      "additionalFields": null,
+       |      "type": "FragmentInputDefinition"
+       |    },
+       |    {
+       |      "id": "sink2",
+       |      "ref": {
+       |        "typ": "dead-end-lite",
+       |        "parameters": []
+       |      },
+       |      "endResult": null,
+       |      "isDisabled": null,
+       |      "additionalFields": null,
+       |      "type": "Sink"
+       |    }
+       |  ],
+       |  "edges": [
+       |    {
+       |      "from": "csv-source-lite",
+       |      "to": "sink2",
+       |      "edgeType": null
+       |    }
+       |  ]
+       |}
+""".stripMargin
 
   private lazy val exampleScenario =
     ScenarioBuilder
@@ -187,10 +349,25 @@ class MigrationApiHttpServiceBusinessSpec
       .source("source", "csv-source-lite")
       .emptySink("sink", "dead-end-lite")
 
+  private lazy val exampleScenarioV2 =
+    ScenarioBuilder
+      .withCustomMetaData(exampleProcessName.value, Map("environment" -> "test"))
+      .source("source2", "csv-source-lite")
+      .emptySink("sink2", "dead-end-lite")
+
   private lazy val validFragment =
     ScenarioBuilder.fragmentWithInputNodeId("source", "csv-source-lite").emptySink("sink", "dead-end-lite")
 
+  private lazy val validFragmentV2 =
+    ScenarioBuilder.fragmentWithInputNodeId("source2", "csv-source-lite").emptySink("sink2", "dead-end-lite")
+
   private lazy val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
+
+  private lazy val exampleGraphV2 = CanonicalProcessConverter.toScenarioGraph(exampleScenarioV2)
+
+  private lazy val exampleFragmentGraph = CanonicalProcessConverter.toScenarioGraph(validFragment)
+
+  private lazy val exampleFragmentGraphV2 = CanonicalProcessConverter.toScenarioGraph(validFragmentV2)
 
   private def prepareRequestJsonData(
       scenarioName: String,
@@ -213,11 +390,17 @@ class MigrationApiHttpServiceBusinessSpec
   private lazy val validRequestData: String =
     prepareRequestJsonData(exampleProcessName.value, exampleGraph, false)
 
+  private lazy val validRequestData2: String =
+    prepareRequestJsonData(exampleProcessName.value, exampleGraphV2, false)
+
   private lazy val requestDataWithInvalidScenarioName: String =
     prepareRequestJsonData(illegalProcessName.value, exampleGraph, false)
 
   private lazy val validRequestDataForFragment: String =
-    prepareRequestJsonData(validFragment.name.value, exampleGraph, true)
+    prepareRequestJsonData(validFragment.name.value, exampleFragmentGraph, true)
+
+  private lazy val validRequestDataForFragment2: String =
+    prepareRequestJsonData(validFragment.name.value, exampleFragmentGraphV2, true)
 
   implicit class ExtractScenario[T <: ValidatableResponse](validatableResponse: T) {
 
@@ -228,7 +411,8 @@ class MigrationApiHttpServiceBusinessSpec
         modifiedBy: String,
         createdBy: String,
         modelVersion: Int,
-        history: String
+        history: String,
+        scenarioGraph: String
     ): ValidatableResponse =
       given()
         .when()
@@ -260,7 +444,7 @@ class MigrationApiHttpServiceBusinessSpec
                |  "lastDeployedAction": null,
                |  "lastStateAction": null,
                |  "lastAction": null,
-               |  "scenarioGraph": null,
+               |  "scenarioGraph": $scenarioGraph,
                |  "validationResult": null,
                |  "history": $history,
                |  "modelVersion": $modelVersion,

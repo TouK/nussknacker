@@ -147,7 +147,7 @@ class ProcessesResources(
                 .getLatestProcessWithDetails(
                   processId,
                   GetScenarioWithDetailsOptions(
-                    SkipScenarioGraph,
+                    FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve = true, skipNodeResults = true)),
                     fetchState = false
                   )
                 )
