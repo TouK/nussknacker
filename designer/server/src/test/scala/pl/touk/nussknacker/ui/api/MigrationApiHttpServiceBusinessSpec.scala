@@ -59,7 +59,7 @@ class MigrationApiHttpServiceBusinessSpec
         )
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(validRequestData2)
+        .jsonBody(validRequestDataV2)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
@@ -110,7 +110,7 @@ class MigrationApiHttpServiceBusinessSpec
         )
         .when()
         .basicAuthAllPermUser()
-        .jsonBody(validRequestDataForFragment2)
+        .jsonBody(validRequestDataForFragmentV2)
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
@@ -390,7 +390,7 @@ class MigrationApiHttpServiceBusinessSpec
   private lazy val validRequestData: String =
     prepareRequestJsonData(exampleProcessName.value, exampleGraph, false)
 
-  private lazy val validRequestData2: String =
+  private lazy val validRequestDataV2: String =
     prepareRequestJsonData(exampleProcessName.value, exampleGraphV2, false)
 
   private lazy val requestDataWithInvalidScenarioName: String =
@@ -399,7 +399,7 @@ class MigrationApiHttpServiceBusinessSpec
   private lazy val validRequestDataForFragment: String =
     prepareRequestJsonData(validFragment.name.value, exampleFragmentGraph, true)
 
-  private lazy val validRequestDataForFragment2: String =
+  private lazy val validRequestDataForFragmentV2: String =
     prepareRequestJsonData(validFragment.name.value, exampleFragmentGraphV2, true)
 
   implicit class ExtractScenario[T <: ValidatableResponse](validatableResponse: T) {
