@@ -27,12 +27,7 @@ class ScenarioPropertiesValidator(
   type PropertyConfig = Map[String, ScenarioPropertyConfig]
 
   def validate(scenarioProperties: List[(String, String)]): ValidationResult = {
-    val validated = (
-      getConfiguredValidationsResults(scenarioPropertiesConfig, scenarioProperties),
-      getMissingRequiredPropertyValidationResults(scenarioPropertiesConfig, scenarioProperties),
-      getUnknownPropertyValidationResults(scenarioPropertiesConfig, scenarioProperties)
-    )
-      .mapN { (_, _, _) => () }
+    val validated = getConfiguredValidationsResults(scenarioPropertiesConfig, scenarioProperties)
 
     val processPropertiesErrors = validated match {
       case Invalid(e) => e.map(error => PrettyValidationErrors.formatErrorMessage(error)).toList

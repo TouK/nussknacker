@@ -146,7 +146,8 @@ class MigrationApiHttpServiceBusinessSpec
 
   private lazy val exampleScenario =
     ScenarioBuilder
-      .withCustomMetaData(exampleProcessName.value, Map("environment" -> "test"))
+      // .withCustomMetaData(exampleProcessName.value, Map("environment" -> "test"))
+      .streamingLite(exampleProcessName.value)
       .source("source", "csv-source-lite")
       .emptySink("sink", "dead-end-lite")
 
