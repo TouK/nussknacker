@@ -14,7 +14,7 @@ object SinkValue {
   def applyUnsafe(sinkParameter: SchemaBasedParameter, parameterValues: Params): SinkValue =
     sinkParameter match {
       case SingleSchemaBasedParameter(param, _) =>
-        val value = Try(parameterValues.extractMandatory[LazyParameter[AnyRef]](param.name))
+        val value = Try(parameterValues.extractUnsafe[LazyParameter[AnyRef]](param.name))
           .getOrElse(throw InvalidSinkValue(param.name.value))
         SinkSingleValue(value)
       case SchemaBasedRecordParameter(paramFields) =>

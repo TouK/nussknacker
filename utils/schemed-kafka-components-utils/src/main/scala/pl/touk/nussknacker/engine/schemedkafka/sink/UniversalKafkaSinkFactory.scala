@@ -211,7 +211,7 @@ class UniversalKafkaSinkFactory(
       finalStateOpt: Option[State]
   ): Sink = {
     val preparedTopic = extractPreparedTopic(params)
-    val key           = params.extractMandatory[LazyParameter[CharSequence]](SinkKeyParamName)
+    val key           = params.extractUnsafe[LazyParameter[CharSequence]](SinkKeyParamName)
     val finalState = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )

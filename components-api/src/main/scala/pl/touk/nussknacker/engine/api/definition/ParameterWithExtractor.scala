@@ -13,7 +13,7 @@ import scala.reflect.runtime.universe._
  */
 case class ParameterWithExtractor[V](parameter: Parameter) {
 
-  def extractValue(params: Params): V = params.extractMandatory[V](parameter.name)
+  def extractValue(params: Params): V = params.extractUnsafe[V](parameter.name)
 
 }
 

@@ -64,8 +64,8 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       dependencies: List[NodeDependencyValue],
       finalState: Option[Unit]
   ): ServiceInvoker = new DecisionTableImplementation(
-    params.extractMandatory(BasicDecisionTableParameter.name),
-    params.extractMandatory(FilterDecisionTableExpressionParameter.name)
+    params.extractUnsafe(BasicDecisionTableParameter.name),
+    params.extractUnsafe(FilterDecisionTableExpressionParameter.name)
   )
 
   private lazy val prepare: ContextTransformationDefinition = { case TransformationStep(Nil, _) =>

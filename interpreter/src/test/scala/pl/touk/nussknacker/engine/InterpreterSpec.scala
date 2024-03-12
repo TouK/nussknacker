@@ -1206,7 +1206,7 @@ object InterpreterSpec {
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
-          val value = params.extractMandatoryOrEvaluateLazyParamUnsafe[AnyRef](paramName, context)
+          val value = params.extractOrEvaluateUnsafe[AnyRef](paramName, context)
           Future.successful(value)
         }
       }

@@ -4,18 +4,15 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 final case class Params(nameToValueMap: Map[ParameterName, Any]) {
 
-  def extract[T](name: ParameterName): Option[T] =
-    rawValueExtract(name) match {
-      case Some(null) | None => None
-      case Some(value)       => Some(cast(value))
-    }
+  def extract[T](paramName: ParameterName): Option[T] =
+    rawValueExtract(paramName).map(cast[T])
 
-  def extractMandatory[T](name: ParameterName): T =
-    extract[T](name)
-      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(name)))
+  def extractUnsafe[T](paramName: ParameterName): T =
+    extract[T](paramName)
+      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(paramName)))
 
-  def extractOrEvaluateLazyParam[T](name: ParameterName, context: Context): Option[T] = {
-    rawValueExtract(name)
+  def extractOrEvaluate[T](paramName: ParameterName, context: Context): Option[T] = {
+    rawValueExtract(paramName)
       .map {
         case lp: LazyParameter[_] => lp.evaluate(context)
         case other                => other
@@ -23,12 +20,12 @@ final case class Params(nameToValueMap: Map[ParameterName, Any]) {
       .map(cast[T])
   }
 
-  def extractMandatoryOrEvaluateLazyParamUnsafe[T](name: ParameterName, context: Context): T = {
-    extractOrEvaluateLazyParam[T](name, context)
-      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(name)))
+  def extractOrEvaluateUnsafe[T](paramName: ParameterName, context: Context): T = {
+    extractOrEvaluate[T](paramName, context)
+      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(paramName)))
   }
 
-  private def rawValueExtract(paramName: ParameterName) = nameToValueMap.get(paramName)
+  private def rawValueExtract(paramName: ParameterName) = nameToValueMap.get(paramName).flatMap(Option.apply)
 
   private def cannotFindParamNameMessage(paramName: ParameterName) =
     s"Cannot find param name [${paramName.value}]. Available param names: ${nameToValueMap.keys.map(_.value).mkString(",")}"
