@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.validation
 
-import pl.touk.nussknacker.engine.api.deployment.CustomActionCommand
+import pl.touk.nussknacker.engine.api.deployment.{CustomActionCommand, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, User}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.CustomActionRequest
-import pl.touk.nussknacker.ui.process.deployment.ValidationError
+import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
 class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
 
@@ -15,17 +15,24 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
   def validateCustomActionParams(request: CustomActionRequest): Unit = {
 
     val customActionOpt     = allowedActions.find(_.name == request.actionName)
-    val checkedCustomAction = existsOrFail(customActionOpt, new IllegalArgumentException("actionReq.name"))
+    val checkedCustomAction = existsOrFail(customActionOpt, CustomActionNonExisting(request.actionName))
 
     implicit val nodeId: NodeId = NodeId(checkedCustomAction.name.value)
-    val requestParamsMap =
-      request.params.getOrElse(throw ValidationError("No params defined for action: " + request.actionName))
-    val customActionParams = checkedCustomAction.parameters
+    val customActionParams      = checkedCustomAction.parameters
 
-    if (requestParamsMap.keys.size != customActionParams.size) {
-      throw ValidationError(
-        "Different count of custom action parameters than provided in request for: " + request.actionName
-      )
+    val requestParamsMap = (customActionParams.nonEmpty, request.params) match {
+      case (true, Some(paramsMap)) =>
+        if (paramsMap.keys.size != customActionParams.size) {
+          throw ValidationError(
+            s"Different count of custom action parameters than provided in request for: ${request.actionName}"
+          )
+        }
+        paramsMap
+      case (true, None) =>
+        throw ValidationError(s"No params defined for action: ${request.actionName}")
+      case (false, Some(_)) =>
+        throw ValidationError(s"Params found for no params action: ${request.actionName}")
+      case _ => Map.empty[String, String]
     }
 
     requestParamsMap.foreach { case (k, v) =>
@@ -69,3 +76,7 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
   }
 
 }
+
+case class ValidationError(message: String) extends BadRequestError(message)
+
+case class CustomActionNonExisting(actionName: ScenarioActionName) extends NotFoundError(s"$actionName is not existing")

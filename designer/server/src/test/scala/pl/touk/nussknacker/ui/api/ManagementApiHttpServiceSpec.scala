@@ -83,7 +83,7 @@ class ManagementApiHttpServiceSpec
         .when()
         .basicAuthAllPermUser()
         .jsonBody(
-          s"""{{
+          s"""{
              |  "actionName": "non-existing",
              |  "params": {
              |    "property1": "abc",

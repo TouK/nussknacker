@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import pl.touk.nussknacker.ui.validation.{CustomActionNonExisting, ValidationError}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.{BaseEndpointDefinitions, CustomActionRequest}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -10,8 +11,8 @@ import sttp.model.StatusCode.Ok
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 import io.circe.generic.auto._
+import pl.touk.nussknacker.ui.NuDesignerError
 import sttp.tapir._
-import pl.touk.nussknacker.ui.process.deployment.ValidationError
 import sttp.model.StatusCode
 
 class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
@@ -19,7 +20,7 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
   private lazy val baseProcessManagementEndpoint = baseNuApiEndpoint.in("processManagement")
 
   lazy val customActionValidationEndpoint
-      : SecuredEndpoint[(ProcessName, CustomActionRequest), ValidationError, Unit, Any] = {
+      : SecuredEndpoint[(ProcessName, CustomActionRequest), NuDesignerError, Unit, Any] = {
     baseProcessManagementEndpoint
       .summary("Endpoint to validate input in custom action fields")
       .tag("CustomAction")
@@ -30,18 +31,18 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
         statusCode(Ok)
       )
       .errorOut(
-        validationErrorOutput
+        oneOf[NuDesignerError](
+          oneOfVariantFromMatchType(
+            StatusCode.BadRequest,
+            jsonBody[ValidationError]
+          ),
+          oneOfVariantFromMatchType(
+            StatusCode.BadRequest,
+            jsonBody[CustomActionNonExisting]
+          )
+        )
       )
       .withSecurity(auth)
-  }
-
-  private lazy val validationErrorOutput: EndpointOutput.OneOf[ValidationError, ValidationError] = {
-    oneOf[ValidationError](
-      oneOfVariantFromMatchType(
-        StatusCode.Ok,
-        jsonBody[ValidationError]
-      )
-    )
   }
 
 }
