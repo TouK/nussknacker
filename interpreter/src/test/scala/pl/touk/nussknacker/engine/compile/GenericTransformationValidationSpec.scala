@@ -361,7 +361,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
     result.result shouldBe Symbol("valid")
     val parameterNames = result.parametersInNodes("generic").map(_.name)
-    parameterNames shouldEqual List("moreParams", "extraParam")
+    parameterNames shouldEqual List(ParameterName("moreParams"), ParameterName("extraParam"))
   }
 
   test("should omit redundant parameters for generic transformations") {
@@ -373,7 +373,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
     result.result shouldBe Symbol("valid")
     val parameterNames = result.parametersInNodes("generic").map(_.name)
-    parameterNames shouldEqual List("moreParams", "extraParam")
+    parameterNames shouldEqual List(ParameterName("moreParams"), ParameterName("extraParam"))
   }
 
   test("should not fall in endless loop for buggy node implementation") {

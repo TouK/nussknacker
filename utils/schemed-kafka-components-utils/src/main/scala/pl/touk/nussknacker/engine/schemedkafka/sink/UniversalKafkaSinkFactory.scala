@@ -56,17 +56,18 @@ class UniversalKafkaSinkFactory(
 
   override def paramsDeterminedAfterSchema: List[Parameter] = UniversalKafkaSinkFactory.paramsDeterminedAfterSchema
 
-  private val rawValue = ParameterDeclaration.lazyMandatory[AnyRef](SinkValueParamName).withCreator()
+  private val rawValueParamDeclaration = ParameterDeclaration.lazyMandatory[AnyRef](SinkValueParamName).withCreator()
 
-  private val validationMode = ParameterDeclaration
-    .mandatory[String](SinkValidationModeParamName)
-    .withCreator(
-      modify = _.copy(editor =
-        Some(
-          FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))
+  private val validationModeParamDeclaration =
+    ParameterDeclaration
+      .mandatory[String](SinkValidationModeParamName)
+      .withCreator(
+        modify = _.copy(editor =
+          Some(
+            FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))
+          )
         )
       )
-    )
 
   private val restrictedParamNames: Set[ParameterName] = Set(
     topicParamName,
@@ -86,7 +87,9 @@ class UniversalKafkaSinkFactory(
           ) :: Nil,
           _
         ) =>
-      NextParameters(validationMode.createParameter() :: rawValue.createParameter() :: Nil)
+      NextParameters(
+        validationModeParamDeclaration.createParameter() :: rawValueParamDeclaration.createParameter() :: Nil
+      )
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
@@ -110,7 +113,7 @@ class UniversalKafkaSinkFactory(
               runtimeSchemaData.schema,
               rawMode = true,
               validationMode = extractValidationMode(mode),
-              rawParameter = rawValue.createParameter(),
+              rawParameter = rawValueParamDeclaration.createParameter(),
               restrictedParamNames
             )
             .map { extractedSinkParameter =>
@@ -164,7 +167,7 @@ class UniversalKafkaSinkFactory(
               schemaData.schema,
               rawMode = false,
               validationMode = ValidationMode.lax,
-              rawValue.createParameter(),
+              rawValueParamDeclaration.createParameter(),
               restrictedParamNames
             )
             .map { valueParam =>

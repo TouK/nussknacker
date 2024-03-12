@@ -4,34 +4,41 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 final case class Params(nameToValueMap: Map[ParameterName, Any]) {
 
-  def extract[T](name: ParameterName): Option[T] =
-    rawValueExtract(name) match {
-      case Some(null) | None => None
-      case Some(value)       => Some(cast(value))
-    }
+  def extract[T](name: ParameterName): Option[T] = {
+    extractValue(name).map(cast[T])
+  }
 
   def extractMandatory[T](name: ParameterName): T =
     extract[T](name)
-      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(name)))
+      .getOrElse(throw new IllegalArgumentException(mandatoryParamValueIsNoneMessage(name)))
 
   def extractOrEvaluateLazyParam[T](name: ParameterName, context: Context): Option[T] = {
-    rawValueExtract(name)
+    extractValue(name)
       .map {
-        case lp: LazyParameter[_] => lp.evaluate(context)
-        case other                => other
+        case lazyParameter: LazyParameter[_] => lazyParameter.evaluate(context)
+        case other                           => other
       }
       .map(cast[T])
   }
 
-  def extractMandatoryOrEvaluateLazyParamUnsafe[T](name: ParameterName, context: Context): T = {
-    extractOrEvaluateLazyParam[T](name, context)
-      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(name)))
+  def extractMandatoryOrEvaluateLazyParam[T](name: ParameterName, context: Context): T = {
+    extractOrEvaluateLazyParam(name, context)
+      .getOrElse(throw new IllegalArgumentException(mandatoryParamValueIsNoneMessage(name)))
   }
 
-  private def rawValueExtract(paramName: ParameterName) = nameToValueMap.get(paramName)
+  private def extractValue(paramName: ParameterName) = {
+    nameToValueMap.get(paramName) match {
+      case None        => throw new IllegalStateException(cannotFindParamNameMessage(paramName))
+      case Some(null)  => None
+      case Some(value) => Some(value)
+    }
+  }
 
   private def cannotFindParamNameMessage(paramName: ParameterName) =
-    s"Cannot find param name [${paramName.value}]. Available param names: ${nameToValueMap.keys.mkString(",")}"
+    s"Cannot find param name [${paramName.value}]. Available param names: ${nameToValueMap.keys.map(_.value).mkString(",")}"
+
+  private def mandatoryParamValueIsNoneMessage(paramName: ParameterName) =
+    s"Mandatory parameter [${paramName.value}] value cannot be null"
 
   private def cast[T](value: Any): T = value.asInstanceOf[T]
 

@@ -222,7 +222,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     val missingOutErrors = missingOutValidationResult.swap.toOption.value.toList
     missingOutErrors should have size 1
     missingOutErrors.head should matchPattern {
-      case MissingParameters(params, _) if params == Set("OutputVariable") =>
+      case MissingParameters(params, _) if params == Set(ParameterName("OutputVariable")) =>
     }
   }
 

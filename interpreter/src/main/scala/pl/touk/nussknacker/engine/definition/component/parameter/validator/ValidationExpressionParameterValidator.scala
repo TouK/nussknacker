@@ -37,10 +37,12 @@ case class ValidationExpressionParameterValidator(
       e =>
         invalid(
           CustomParameterValidationError(
-            s"Evaluation of validation expression '${validationExpression.original}' of language ${validationExpression.language} failed: ${e.getMessage}",
-            s"Please provide value that satisfies the validation expression '${validationExpression.original}'",
-            paramName,
-            nodeId.id
+            message =
+              s"Evaluation of validation expression '${validationExpression.original}' of language ${validationExpression.language} failed: ${e.getMessage}",
+            description =
+              s"Please provide value that satisfies the validation expression '${validationExpression.original}'",
+            paramName = paramName,
+            nodeId = nodeId.id
           )
         ),
       result => if (result) valid(()) else invalid(error(paramName, nodeId.id))

@@ -12,7 +12,8 @@ class FragmentSourceWithTestWithParametersSupportFactory(
     new Source with TestWithParametersSupport[Any] {
       override def testParametersDefinition: List[Parameter] = parameterDefinitions
 
-      override def parametersToTestData(params: Map[ParameterName, AnyRef]): Any = params
+      override def parametersToTestData(params: Map[ParameterName, AnyRef]): Any =
+        params.map { case (name, value) => (name.value, value) }
     }
   }
 

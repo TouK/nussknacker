@@ -84,10 +84,10 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
       .source(
         "start",
         "kafka-universal-delayed",
-        s"${TopicParamName.value}"               -> s"'$topic'",
-        s"${SchemaVersionParamName.value}"       -> asSpelExpression(formatVersionParam(version)),
-        s"${timestampFieldParamName.value}"      -> s"$timestampField",
-        s"${delayParameter.parameterName.value}" -> s"$delay"
+        TopicParamName.value               -> s"'$topic'",
+        SchemaVersionParamName.value       -> asSpelExpression(formatVersionParam(version)),
+        timestampFieldParamName.value      -> timestampField,
+        delayParameter.parameterName.value -> delay
       )
       .emptySink("out", "sinkForLongs", SinkValueParamName.value -> "T(java.time.Instant).now().toEpochMilli()")
   }
