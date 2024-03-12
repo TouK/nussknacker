@@ -47,7 +47,8 @@ class MigrationApiHttpServiceBusinessSpec
           isFragment = false,
           modifiedBy = "Remote[allpermuser]",
           createdBy = "Remote[allpermuser]",
-          modelVersion = 0
+          modelVersion = 0,
+          history = history
         )
     }
     "migrate scenario and add update comment when scenario exists on target environment" in {
@@ -68,7 +69,8 @@ class MigrationApiHttpServiceBusinessSpec
           isFragment = false,
           modifiedBy = "admin",
           createdBy = "admin",
-          modelVersion = 1
+          modelVersion = 1,
+          history = fragmentHistory
         )
     }
     "fail when scenario name contains illegal character(s)" in {
@@ -116,7 +118,8 @@ class MigrationApiHttpServiceBusinessSpec
           isFragment = true,
           modifiedBy = "Remote[allpermuser]",
           createdBy = "admin",
-          modelVersion = 0
+          modelVersion = 0,
+          history = history
         )
     }
     "migrate fragment and add update comment when fragment does not exist in target environment" in {
@@ -134,7 +137,8 @@ class MigrationApiHttpServiceBusinessSpec
           isFragment = true,
           modifiedBy = "Remote[allpermuser]",
           createdBy = "Remote[allpermuser]",
-          modelVersion = 0
+          modelVersion = 0,
+          history = history
         )
     }
   }
@@ -143,6 +147,39 @@ class MigrationApiHttpServiceBusinessSpec
 
   private lazy val exampleProcessName = ProcessName("test2")
   private lazy val illegalProcessName = ProcessName("#test")
+
+  private lazy val history =
+    s"""
+      | [
+      |    {
+      |      "processVersionId": "${regexes.digitsRegex}",
+      |      "createDate": "${regexes.zuluDateRegex}",
+      |      "user": "${regexes.any}",
+      |      "modelVersion": "${regexes.digitsRegex}",
+      |      "actions": []
+      |    },
+      |    {
+      |      "processVersionId": "${regexes.digitsRegex}",
+      |      "createDate": "${regexes.zuluDateRegex}",
+      |      "user": "${regexes.any}",
+      |      "modelVersion": "${regexes.digitsRegex}",
+      |      "actions": []
+      |    }
+      |  ]
+      |""".stripMargin
+
+  private lazy val fragmentHistory =
+    s"""
+       | [
+       |    {
+       |      "processVersionId": "${regexes.digitsRegex}",
+       |      "createDate": "${regexes.zuluDateRegex}",
+       |      "user": "${regexes.any}",
+       |      "modelVersion": "${regexes.digitsRegex}",
+       |      "actions": []
+       |    }
+       | ]
+       |""".stripMargin
 
   private lazy val exampleScenario =
     ScenarioBuilder
@@ -190,7 +227,8 @@ class MigrationApiHttpServiceBusinessSpec
         isFragment: Boolean,
         modifiedBy: String,
         createdBy: String,
-        modelVersion: Int
+        modelVersion: Int,
+        history: String
     ): ValidatableResponse =
       given()
         .when()
@@ -199,7 +237,8 @@ class MigrationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .body(
-          matchJsonWithRegexValues(s"""
+          matchJsonWithRegexValues(
+            s"""
                |{
                |  "name": "$scenarioName",
                |  "processId": null,
@@ -223,11 +262,12 @@ class MigrationApiHttpServiceBusinessSpec
                |  "lastAction": null,
                |  "scenarioGraph": null,
                |  "validationResult": null,
-               |  "history": null,
+               |  "history": $history,
                |  "modelVersion": $modelVersion,
                |  "state": null
                |}
-               |""".stripMargin)
+               |""".stripMargin
+          )
         )
 
   }

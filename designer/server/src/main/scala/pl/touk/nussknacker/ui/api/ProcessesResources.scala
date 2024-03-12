@@ -151,7 +151,6 @@ class ProcessesResources(
                     fetchState = false
                   )
                 )
-                .map(_.copy(history = None))
             }
           }
         }
