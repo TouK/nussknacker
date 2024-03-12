@@ -36,7 +36,7 @@ export type NodeType<F extends Field = Field> = {
     outputName?: string;
     service?: {
         id: string;
-        parameters?: $TodoType[];
+        parameters?: Parameter[];
     };
     nodeType?: string;
     [key: string]: any;

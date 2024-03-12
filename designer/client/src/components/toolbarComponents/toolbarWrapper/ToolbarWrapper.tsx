@@ -16,12 +16,14 @@ export type ToolbarWrapperProps = PropsWithChildren<{
     id?: string;
     title?: string;
     onClose?: () => void;
+    onExpand?: () => void;
+    onCollapse?: () => void;
     color?: string;
 }>;
 
 export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | null {
     const theme = useTheme();
-    const { title, children, id, onClose, color = theme.custom.colors.primaryBackground } = props;
+    const { title, children, id, onClose, onExpand, onCollapse, color = theme.custom.colors.primaryBackground } = props;
     const handlerProps = useDragHandler();
 
     const dispatch = useDispatch();
@@ -66,8 +68,14 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                 in={!isCollapsedLocal}
                 unmountOnExit
                 mountOnEnter
-                onEntered={() => storeIsCollapsed(false)}
-                onExited={() => storeIsCollapsed(true)}
+                onEntered={() => {
+                    storeIsCollapsed(false);
+                    onExpand?.();
+                }}
+                onExited={() => {
+                    storeIsCollapsed(true);
+                    onCollapse?.();
+                }}
             >
                 <ErrorBoundary>{children}</ErrorBoundary>
             </CollapsiblePanelContent>
