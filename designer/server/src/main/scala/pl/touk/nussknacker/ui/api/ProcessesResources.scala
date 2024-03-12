@@ -175,7 +175,7 @@ class ProcessesResources(
                 }
               }
             }
-          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter & skipFetchStateParameter) {
+          } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter & skipStateParameter) {
             (skipValidateAndResolve, skipNodeResults, skipFetchState) =>
               complete {
                 processService.getLatestProcessWithDetails(
@@ -332,7 +332,7 @@ class ProcessesResources(
     parameters(Symbol("skipNodeResults").as[Boolean].withDefault(false))
   }
 
-  private val skipFetchStateParameter = {
+  private def skipStateParameter = {
     parameters(Symbol("skipState").as[Boolean].withDefault(false))
   }
 
