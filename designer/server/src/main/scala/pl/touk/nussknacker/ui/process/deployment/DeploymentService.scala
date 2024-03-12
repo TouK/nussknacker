@@ -32,11 +32,11 @@ trait DeploymentService extends ProcessStateService {
   def invalidateInProgressActions(): Unit
 
   // Marks action execution finished. Returns true if update has some effect
-  def markActionExecutionFinished(actionId: ProcessActionId)(
+  def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(
       implicit ec: ExecutionContext
   ): Future[Boolean]
 
-  def getLastStateAction(processId: ProcessId)(
+  def getLastStateAction(processingType: ProcessingType, processId: ProcessId)(
       implicit ec: ExecutionContext
   ): Future[Option[ProcessAction]]
 

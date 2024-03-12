@@ -134,7 +134,7 @@ class NotificationServiceTest
     val deployNotificationId = notificationsAfterDeploy.head.id
 
     deploymentService
-      .markActionExecutionFinished(passedDeploymentId.value.toActionIdOpt.value)
+      .markActionExecutionFinished("Streaming", passedDeploymentId.value.toActionIdOpt.value)
       .futureValue
     val notificationAfterExecutionFinished = notificationService.notifications(user, global).futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id

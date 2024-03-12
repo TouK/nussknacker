@@ -535,7 +535,7 @@ class DeploymentServiceImpl(
       .getOrElse(state)
   }
 
-  override def markActionExecutionFinished(actionId: ProcessActionId)(
+  override def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(
       implicit ec: ExecutionContext
   ): Future[Boolean] = {
     implicit val user: AdminUser            = NussknackerInternalUser.instance
@@ -545,22 +545,55 @@ class DeploymentServiceImpl(
       DBIOAction
         .sequenceOption(actionOpt.map { action =>
           processChangeListener.handle(OnActionExecutionFinished(action.id, action.processId, action.processVersionId))
-          actionRepository.markFinishedActionAsExecutionFinished(action.id)
+          doMarkActionExecutionFinished(action, processingType)
         })
         .map(_.getOrElse(false))
     })
   }
 
-  override def getLastStateAction(processId: ProcessId)(
+  private def doMarkActionExecutionFinished(action: ProcessAction, expectedProcessingType: ProcessingType)(
+      implicit ec: ExecutionContext
+  ) = {
+    for {
+      _            <- validateExpectedProcessingType(expectedProcessingType, action.processId)
+      updateResult <- actionRepository.markFinishedActionAsExecutionFinished(action.id)
+    } yield updateResult
+  }
+
+  override def getLastStateAction(expectedProcessingType: ProcessingType, processId: ProcessId)(
       implicit ec: ExecutionContext
   ): Future[Option[ProcessAction]] = {
     dbioRunner.run {
       for {
+        _ <- validateExpectedProcessingType(expectedProcessingType, processId)
         lastStateAction <- actionRepository.getFinishedProcessActions(
           processId,
           Some(ProcessActionType.StateActionsTypes)
         )
       } yield lastStateAction.headOption
+    }
+  }
+
+  private def validateExpectedProcessingType(expectedProcessingType: ProcessingType, processId: ProcessId)(
+      implicit ec: ExecutionContext
+  ): DB[Unit] = {
+    implicit val user: AdminUser = NussknackerInternalUser.instance
+    // TODO: We should fetch ProcessName for a given ProcessId to avoid returning synthetic id in rest responses
+    val fakeProcessNameForErrorsPurpose = ProcessName(processId.value.toString)
+    processRepository.fetchProcessingType(ProcessIdWithName(processId, fakeProcessNameForErrorsPurpose)).map {
+      processingType =>
+        validateExpectedProcessingType(expectedProcessingType, processingType)
+    }
+  }
+
+  private def validateExpectedProcessingType(
+      expectedProcessingType: ProcessingType,
+      processingType: ProcessingType
+  ): Unit = {
+    if (processingType != expectedProcessingType) {
+      throw new IllegalArgumentException(
+        s"Invalid scenario processingType (expected $expectedProcessingType, got $processingType)"
+      )
     }
   }
 
