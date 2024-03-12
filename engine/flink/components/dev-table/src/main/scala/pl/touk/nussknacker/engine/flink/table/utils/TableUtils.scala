@@ -1,6 +1,7 @@
-package pl.touk.nussknacker.engine.flink.table
+package pl.touk.nussknacker.engine.flink.table.utils
 
 import org.apache.flink.table.api.{Schema, TableDescriptor}
+import pl.touk.nussknacker.engine.flink.table.DataSourceConfig
 
 object TableUtils {
 
