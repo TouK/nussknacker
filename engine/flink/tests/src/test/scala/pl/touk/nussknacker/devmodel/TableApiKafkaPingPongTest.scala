@@ -4,6 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import pl.touk.nussknacker.defaultmodel.{FlinkWithKafkaSuite, TopicConfig}
+import pl.touk.nussknacker.devmodel.TestData.{record1, record2, simpleTypesSchema}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -18,32 +19,12 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
 
   import spel.Implicits._
 
-  private val schema = new JsonSchema("""{
-                                        |  "type": "object",
-                                        |  "properties": {
-                                        |    "someInt" : { "type": "integer" },
-                                        |    "someString" : { "type": "string" }
-                                        |  }
-                                        |}
-                                        |""".stripMargin)
-
-  private val record1 =
-    """{
-      |  "someInt": 1,
-      |  "someString": "AAA"
-      |}""".stripMargin
-
-  private val record2 =
-    """{
-      |  "someInt": 2,
-      |  "someString": "BBB"
-      |}""".stripMargin
-
-  private val testTopicPart1: String    = "table-api.topic1"
-  private val testTopicPart2: String    = "table-api.topic2"
-  private lazy val inputTopicNameTest1  = TopicConfig.inputTopicName(testTopicPart1)
-  private lazy val inputTopicNameTest2  = TopicConfig.inputTopicName(testTopicPart2)
-  private lazy val outputTopicNameTest2 = TopicConfig.outputTopicName(testTopicPart2)
+  private val testNameTopicPart: String = "table-api-pp"
+  private val topicNaming1: String      = s"$testNameTopicPart.test1"
+  private val topicNaming2: String      = s"$testNameTopicPart.test2"
+  private lazy val inputTopicNameTest1  = TopicConfig.inputTopicName(topicNaming1)
+  private lazy val inputTopicNameTest2  = TopicConfig.inputTopicName(topicNaming2)
+  private lazy val outputTopicNameTest2 = TopicConfig.outputTopicName(topicNaming2)
 
   private lazy val kafkaTableConfig =
     s"""
@@ -92,20 +73,18 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
   )
 
   test("should ping-pong with table kafka source and dataStream kafka sink") {
-    val topics = createAndRegisterTopicConfig(testTopicPart1, schema)
+    val topics = createAndRegisterTopicConfig(topicNaming1, simpleTypesSchema)
 
     sendAsJson(record1, topics.input)
     sendAsJson(record2, topics.input)
 
-    val scenarioId = "scenarioId"
-    val sourceId   = "input"
     val process = ScenarioBuilder
-      .streaming(scenarioId)
+      .streaming("testScenario")
       .parallelism(1)
-      .source(sourceId, "tableApi-source-kafka-input-test1")
-      .filter("filterId", "#input.someInt != 1")
+      .source("start", "tableApi-source-kafka-input-test1")
+      .filter("filter", "#input.someInt != 1")
       .emptySink(
-        "output",
+        "end",
         "kafka",
         KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
         KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
@@ -126,18 +105,16 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
   }
 
   test("should ping-pong with table kafka source and table kafka sink") {
-    val topics = createAndRegisterTopicConfig(testTopicPart2, schema)
+    val topics = createAndRegisterTopicConfig(topicNaming2, simpleTypesSchema)
 
     sendAsJson(record1, topics.input)
     sendAsJson(record2, topics.input)
 
-    val scenarioId = "scenarioId"
-    val sourceId   = "input"
     val process = ScenarioBuilder
-      .streaming(scenarioId)
+      .streaming("testScenario")
       .parallelism(1)
-      .source(sourceId, "tableApi-source-kafka-input-test2")
-      .filter("filterId", "#input.someInt != 1")
+      .source("start", "tableApi-source-kafka-input-test2")
+      .filter("filter", "#input.someInt != 1")
       .emptySink(
         "end",
         "tableApi-sink-kafka-output-test2",
@@ -154,5 +131,30 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
       result.head shouldBe parseJson(record2)
     }
   }
+
+}
+
+object TestData {
+
+  val simpleTypesSchema: JsonSchema = new JsonSchema("""{
+      |  "type": "object",
+      |  "properties": {
+      |    "someInt" : { "type": "integer" },
+      |    "someString" : { "type": "string" }
+      |  }
+      |}
+      |""".stripMargin)
+
+  val record1: String =
+    """{
+      |  "someInt": 1,
+      |  "someString": "AAA"
+      |}""".stripMargin
+
+  val record2: String =
+    """{
+      |  "someInt": 2,
+      |  "someString": "BBB"
+      |}""".stripMargin
 
 }
